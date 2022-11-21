@@ -207,7 +207,7 @@ public class ProjectBase {
     }
 
     public void renameDataset(DatasetBase dataset, String newName) {
-        datasetMap.remove(dataset.getFileName());
+        datasetMap.remove(dataset.getFileName(), dataset);
         dataset.setFileName(newName);
         addDataset(dataset, newName);
     }

@@ -19,7 +19,6 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -55,13 +54,16 @@ import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
@@ -74,14 +76,17 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
     private static final String[] basicOps = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] commonOps = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
-    private static int iDataNum = 0;
 
     private enum DisplayMode {
         FID("FID"),
@@ -214,6 +219,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     String currentText = "";
 
     ProcessingCodeAreaUtil codeAreaUtil;
+    private ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
+    static AtomicBoolean aListUpdated = new AtomicBoolean(false);
+    private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
+    private AtomicReference<Dataset> saveObject = new AtomicReference<>();
+    ScheduledFuture futureUpdate = null;
+
 
     public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
@@ -291,20 +302,39 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         return chartProcessor;
     }
 
-    public void updateProgress(double f) {
-        if (Platform.isFxApplicationThread()) {
-            statusBar.setProgress(f);
-        } else {
-            Platform.runLater(() -> statusBar.setProgress(f));
+    class UpdateTask implements Runnable {
+
+        @Override
+        public void run() {
+            if (aListUpdated.get()) {
+                needToFireEvent.set(true);
+                aListUpdated.set(false);
+                startTimer();
+            } else if (needToFireEvent.get()) {
+                needToFireEvent.set(false);
+                ConsoleUtil.runOnFxThread(() -> saveDataset(saveObject.getAndSet(null)));
+                if (aListUpdated.get()) {
+                    startTimer();
+                }
+            }
         }
     }
 
-    public void updateStatus(String s) {
-        if (Platform.isFxApplicationThread()) {
-            setProcessingStatus(s, true);
-        } else {
-            Platform.runLater(() -> setProcessingStatus(s, true));
+    synchronized void startTimer() {
+        if (schedExecutor != null) {
+            if (needToFireEvent.get() || (futureUpdate == null) || futureUpdate.isDone()) {
+                UpdateTask updateTask = new UpdateTask();
+                futureUpdate = schedExecutor.schedule(updateTask, 1000, TimeUnit.MILLISECONDS);
+            }
         }
+    }
+
+    public void updateProgress(double f) {
+        ConsoleUtil.runOnFxThread(() -> statusBar.setProgress(f));
+    }
+
+    public void updateStatus(String s) {
+        ConsoleUtil.runOnFxThread(() -> setProcessingStatus(s, true));
     }
 
     void updateFileButton() {
@@ -468,6 +498,26 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     chart.autoScale();
                 }
             }
+        }
+    }
+
+    void viewDatasetFileInApp(File file) {
+        boolean viewingDataset = isViewingDataset();
+        Dataset currentDataset = (Dataset) chart.getDataset();
+        Dataset.datasets().stream().forEach (d -> System.out.println("d " + d.getName() + " " + d.getFileName() + " " + d.getFile()));
+        ProjectBase.getActive().getDatasetMap().entrySet().stream().forEach(e  -> System.out.println(e.getKey() + " " + e.getValue()));
+        Dataset datasetByName = Dataset.getDataset(file.getName());
+        if (datasetByName != null) {
+            datasetByName.close();
+        }
+        Dataset dataset = chart.controller.openDataset(file, false, true);
+        if ((currentDataset != null) && (currentDataset != dataset)) {
+            currentDataset.close();
+        }
+        viewMode.setValue(DisplayMode.SPECTRUM);
+        if (!viewingDataset) {
+            chart.full();
+            chart.autoScale();
         }
     }
 
@@ -916,7 +966,37 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     void finishProcessing(Dataset dataset) {
-        Platform.runLater(() -> viewDatasetInApp(dataset));
+        ConsoleUtil.runOnFxThread(() -> finishOnPlatform(dataset));
+    }
+
+    void finishOnPlatform(Dataset dataset) {
+        String oldName = dataset.getFile().toString();
+        String newName = oldName;
+        Dataset currentDataset = (Dataset) chart.getDataset();
+        if (currentDataset != null) {
+            chart.clearDrawlist();
+            currentDataset.close();
+        }
+        try {
+            dataset.setFile(new File(newName));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        setSaveState(dataset);
+        viewDatasetInApp(dataset);
+    }
+
+    public void saveDataset(Dataset dataset) {
+        if ((dataset != null) && (dataset.isMemoryFile())) {
+            try {
+                File file = dataset.getFile();
+                String path = dataset.saveMemoryFile();
+               // dataset.close();
+               // viewDatasetFileInApp(new File(path));
+            } catch (IOException|DatasetException e) {
+                log.error("Couldn't save dataset", e);
+            }
+        }
     }
 
     void processIfIdle() {
@@ -956,6 +1036,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         Processor.getProcessor().setProcessorError();
     }
 
+    private void setSaveState(Dataset dataset) {
+        aListUpdated.set(true);
+        saveObject.set(dataset);
+        startTimer();
+    }
+
     private class ProcessDataset {
         Processor processor;
         String script;
@@ -976,6 +1062,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                                 processInterp.exec("from pyproc import *");
                                 processor = Processor.getProcessor();
                                 processor.keepDatasetOpen(idleMode.get());
+                                processor.setTempFileMode(idleMode.get());
                                 processor.clearDataset();
                                 processInterp.exec("useProcessor(inNMRFx=True)");
                                 processInterp.exec(script);
@@ -989,16 +1076,14 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             ((Service<Integer>) worker).setOnSucceeded(event -> {
                 Dataset processedDataset;
                 if (idleMode.get()) {
-                     String oldName = processor.getDataset().getFileName();
-                     processedDataset = processor.releaseDataset(oldName + iDataNum++);
+                    Dataset dataset = processor.releaseDataset(null);
+                    dataset.script(script);
+                    finishProcessing(dataset);
                 } else {
                     processedDataset = processor.getDataset();
-                }
-                if (processedDataset != null) {
-                    processedDataset.script(script);
+                    ConsoleUtil.runOnFxThread(() ->  viewDatasetInApp(processedDataset));
                 }
                 processor.getNMRData();
-                finishProcessing(processedDataset);
 //                try {
 //                    writeScript(script);
 //                } catch (IOException ex) {

@@ -875,10 +875,12 @@ public class Processor {
             nDimToUse += sz > 1 ? 1 : 0;
         }
         this.acqSizesToUse = useSizes;
+        File file = new File(outputFile);
+        String key = file.getName();
         try {
             if (inMemory) {
                 if (tempFileMode) {
-                    outputFile = outputFile + ".tmp."+iDataNum++;
+                    key += ".tmp." + iDataNum++;
                 }
                 this.dataset = new Dataset(outputFile, nDimToUse);
             } else {
@@ -886,7 +888,7 @@ public class Processor {
                 for (int i=0;i<idSizes.length;i++) {
                     useSizes[i +1] = idSizes[i];
                 }
-                this.dataset = Dataset.createDataset(outputFile, outputFile, useSizes, false, false);
+                this.dataset = Dataset.createDataset(outputFile, key, outputFile, useSizes, false, false);
             }
         } catch (DatasetException ex) {
             log.error(ex.getMessage(), ex);

@@ -27,9 +27,9 @@ import org.nmrfx.datasets.*;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.math.Matrix;
@@ -233,13 +233,13 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         addFile(fileName);
     }
 
-    private Dataset(String fullName, String title,
+    private Dataset(String fullName, String fileName, String title,
             int[] dimSizes, boolean closeDataset, boolean createFile) throws DatasetException {
         try {
             file = new File(fullName);
 
             canonicalName = file.getCanonicalPath();
-            fileName = file.getName().replace(' ', '_');
+            this.fileName = fileName;
 
             this.nDim = dimSizes.length;
 
@@ -280,10 +280,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     public void setFile(File file) throws IOException {
+        ProjectBase.getActive().removeDataset(fileName, this);
         this.file = file;
         canonicalName = file.getCanonicalPath();
         fileName = file.getName().replace(' ', '_');
-
+        ProjectBase.getActive().addDataset(this, fileName);
     }
 
     // create in memory file
@@ -340,7 +341,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Create a dataset in memory for fast access. This is an experimental mode,
      * and the dataset is not currently written to disk so can't be persisted.
      *
-     * @param title Dataset title
+     * @param fullName Dataset file path
      * @param nDim Number of dataset dimensions
      * @throws DatasetException if an I/O error occurs
      */
@@ -370,7 +371,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
         layout.setFileHeaderSize(fileHeaderSize);
         // Cannot close this here as it is used in places outside this try
-        RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
+        RandomAccessFile raFile = new RandomAccessFile(file, "rw");
         createDataFile(raFile, true);
         if (useCacheFile) {
             raFile.setLength(layout.getTotalSize());
@@ -499,8 +500,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @return the created Dataset
      * @throws DatasetException if an I/O error occurred when writing out file
      */
-    public static Dataset createDataset(String fullName, String title, int[] dimSizes, boolean closeDataset, boolean createFile) throws DatasetException {
-        Dataset dataset = new Dataset(fullName, title, dimSizes, closeDataset, createFile);
+    public static Dataset createDataset(String fullName, String fileName, String title, int[] dimSizes, boolean closeDataset, boolean createFile) throws DatasetException {
+        Dataset dataset = new Dataset(fullName, fileName, title, dimSizes, closeDataset, createFile);
         if (closeDataset) {
             dataset.close();
             dataset = null;
@@ -1771,7 +1772,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int nColumns = matrix.getColumnDimension();
         int[] dimSizes = {nRows, nColumns};
         int[] pt = new int[2];
-        Dataset dataset = createDataset(fullName, datasetName, dimSizes, false, true);
+        Dataset dataset = createDataset(fullName, fullName, datasetName, dimSizes, false, true);
         for (int i = 0; i < nRows; i++) {
             for (int j = 0; j < nColumns; j++) {
                 pt[0] = i;
@@ -2146,20 +2147,24 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     }
 
-    public void saveMemoryFile() throws IOException, DatasetException {
+    public String saveMemoryFile() throws IOException, DatasetException {
+        String path = null;
         if (isMemoryFile()) {
-            copyDataset(file.getCanonicalPath());
+            path = file.getCanonicalPath();
+            copyDataset(path, file.getName()+".memtmp");
         }
+        return path;
     }
 
     /**
      * Copy dataset to a new file
      *
      * @param newFileName File name of new dataset.
+     * @param key Dataset key.
      * @throws IOException if an I/O error occurs
      * @throws DatasetException if an I/O error occured while creating dataset
      */
-    public void copyDataset(String newFileName) throws IOException, DatasetException {
+    public void copyDataset(String newFileName, String key) throws IOException, DatasetException {
         int[][] pt = new int[nDim][2];
         int[] dim = new int[nDim];
         dim[0] = 0;
@@ -2176,7 +2181,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int newSize = pt[0][1] - pt[0][0] + 1;
         Dataset newDataset = null;
         try {
-            newDataset = Dataset.createDataset(newFileName, newFileName, datasetSizes, false, true);
+            newDataset = Dataset.createDataset(newFileName, key, newFileName, datasetSizes, false, true);
 
             Vec scanVec = new Vec(newSize, false);
             ScanRegion scanRegion = new ScanRegion(pt, dim, this);
