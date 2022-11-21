@@ -303,7 +303,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     class UpdateTask implements Runnable {
-
         @Override
         public void run() {
             if (aListUpdated.get()) {
@@ -504,8 +503,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     void viewDatasetFileInApp(File file) {
         boolean viewingDataset = isViewingDataset();
         Dataset currentDataset = (Dataset) chart.getDataset();
-        Dataset.datasets().stream().forEach (d -> System.out.println("d " + d.getName() + " " + d.getFileName() + " " + d.getFile()));
-        ProjectBase.getActive().getDatasetMap().entrySet().stream().forEach(e  -> System.out.println(e.getKey() + " " + e.getValue()));
         Dataset datasetByName = Dataset.getDataset(file.getName());
         if (datasetByName != null) {
             datasetByName.close();
@@ -991,12 +988,24 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             try {
                 File file = dataset.getFile();
                 String path = dataset.saveMemoryFile();
-               // dataset.close();
-               // viewDatasetFileInApp(new File(path));
-            } catch (IOException|DatasetException e) {
+                String script = dataset.script();
+                if (!script.isBlank()) {
+                    try {
+                        writeScript(script);
+                    } catch (IOException ex) {
+                        GUIUtils.warn("Write Script Error", ex.getMessage());
+                    }
+                }
+                // dataset.close();
+                // viewDatasetFileInApp(new File(path));
+            } catch (IOException | DatasetException e) {
                 log.error("Couldn't save dataset", e);
             }
         }
+    }
+
+    public void setAutoProcess(boolean state) {
+        autoProcess.setSelected(state);
     }
 
     void processIfIdle() {
@@ -1015,13 +1024,13 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         processDataset(false);
     }
 
-    private void processDataset(boolean idleModeValue) {
+    public void processDataset(boolean idleModeValue) {
         Dataset.useCacheFile(SystemUtils.IS_OS_WINDOWS);
         doProcessWhenDone.set(false);
         isProcessing.set(true);
         idleMode.set(idleModeValue);
         statusBar.setProgress(0.0);
-        Processor.setUpdater(null);
+        Processor.setUpdater(this);
         if (!chartProcessor.isScriptValid()) {
             updateScriptDisplay();
         }
@@ -1081,14 +1090,14 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     finishProcessing(dataset);
                 } else {
                     processedDataset = processor.getDataset();
-                    ConsoleUtil.runOnFxThread(() ->  viewDatasetInApp(processedDataset));
+                    try {
+                        writeScript(script);
+                    } catch (IOException ex) {
+                        GUIUtils.warn("Write Script Error", ex.getMessage());
+                    }
+                    ConsoleUtil.runOnFxThread(() -> viewDatasetInApp(processedDataset));
                 }
                 processor.getNMRData();
-//                try {
-//                    writeScript(script);
-//                } catch (IOException ex) {
-//                    GUIUtils.warn("Write Script Error", ex.getMessage());
-//                }
                 isProcessing.set(false);
                 if (doProcessWhenDone.get()) {
                     processIfIdle();
@@ -1098,7 +1107,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 processor.clearDataset();
                 isProcessing.set(false);
                 setProcessingStatus("cancelled", false);
-              //  Processor.getProcessor().closeDataset(false);
+                //  Processor.getProcessor().closeDataset(false);
             });
             ((Service<Integer>) worker).setOnFailed(event -> {
                 processor.clearDataset();
@@ -1670,6 +1679,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
         return result;
     }
+
     public ObservableList<DatasetGroupIndex> getSkipList() {
         ObservableList<DatasetGroupIndex> groupList = FXCollections.observableArrayList();
         NMRData nmrData = getNMRData();
