@@ -611,9 +611,9 @@ public class RS2DData implements NMRData {
         }
 
         // otherwise, read from header
-        Optional<Value<?>> value = header.optional(SW_PARAMS.get(iDim));
-        if (value.isPresent()) {
-            double sw = value.get().doubleValue();
+        Parameter swParam = SW_PARAMS.get(iDim);
+        if (header.contains(swParam)) {
+            double sw = getParameterAsHertz(swParam);
             Sw[iDim] = sw;
             return sw;
         }
