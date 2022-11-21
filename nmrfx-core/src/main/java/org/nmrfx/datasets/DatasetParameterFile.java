@@ -75,7 +75,6 @@ public class DatasetParameterFile {
 
     public final void writeFile() {
         String parFileName = getParameterFileName();
-        System.out.println("write " + parFileName);
         writeFile(parFileName);
 
     }
