@@ -210,7 +210,7 @@ public class PolyChart extends Region implements PeakListener {
         initChart();
         drawPeaks = new DrawPeaks(this, peakCanvas);
         setVisible(false);
-
+        disDimProp.addListener((observable, oldValue, newValue) -> updateAxisType(true));
     }
 
     /**

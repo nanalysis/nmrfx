@@ -581,9 +581,18 @@ public class SpecAttrWindowController implements Initializable {
         disDimCombo.getItems().addAll(OneDX, TwoD);
         disDimCombo.setValue(PolyChart.getActiveChart().disDimProp.get());
         disDimCombo.valueProperty().addListener(((observable, oldValue, newValue) -> {
+            int dim = 0;
+            if (chart != null) {
+                chart.updateAxisType(true);
+                dim = chart.getNDim();
+            }
             clearDimActions();
             updateDims();
-            setupDimActions();}));
+            setupDimActions();
+            if (dim > 2) {
+                setLimits();
+            }
+        }));
         PolyChart.getActiveChart().disDimProp.bindBidirectional(disDimCombo.valueProperty());
 
         PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> {

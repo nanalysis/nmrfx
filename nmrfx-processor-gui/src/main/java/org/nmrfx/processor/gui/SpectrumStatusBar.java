@@ -226,7 +226,8 @@ public class SpectrumStatusBar {
         }
         displayModeComboBox = new ComboBox<>();
         displayModeComboBox.getItems().setAll(DisplayMode.values());
-        displayModeComboBox.addEventHandler(ActionEvent.ACTION, this::displayModeComboBoxAction);
+        displayModeComboBox.getSelectionModel().selectedItemProperty().addListener(e -> displayModeComboBoxSelectionChanged());
+
 
         for (int i = 0; i < rowMenus.length; i++) {
             final int iAxis = i + 1;
@@ -436,25 +437,6 @@ public class SpectrumStatusBar {
             }
         }
     }
-
-
-     public void whatNot() {
-         PolyChart newChart = PolyChart.getActiveChart();
-         if (!newChart.getDatasetAttributes().isEmpty()) {
-             DatasetAttributes dataAttr = newChart.getDatasetAttributes().get(0);
-             for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
-                 NMRAxis axis = newChart.axes[axNum];
-                 int indexL = newChart.axModes[axNum].getIndex(dataAttr, axNum, axis.getLowerBound());
-                 int indexU = newChart.axModes[axNum].getIndex(dataAttr, axNum, axis.getUpperBound());
-                 int center = (indexL + indexU) / 2;
-                 int dDim = dataAttr.dim[axNum];
-                 int size = dataAttr.getDataset().getSizeReal(dDim);
-                 setPlaneRanges(axNum, size);
-                 updatePlaneSpinner(center, axNum);
-             }
-         }
-     }
-
 
     public void updateRowSpinner(int row, int axNum) {
         row++;
@@ -677,8 +659,6 @@ public class SpectrumStatusBar {
             Pane nodeFiller = new Pane();
             HBox.setHgrow(nodeFiller, Priority.ALWAYS);
             nodes.add(nodeFiller);
-//            REMOVEME setChart(controller.getActiveChart());
-            whatNot();
         }
         if (mode == 0) {
             nodes.add(complexStatus);
@@ -754,41 +734,38 @@ public class SpectrumStatusBar {
     /**
      * Updates the spectrum status bar and the type of plot displayed in the active chart
      * based on the selected option.
-     * @param event The selection event.
      */
-    private void displayModeComboBoxAction(ActionEvent event) {
-        ComboBox<DisplayMode> modeComboBox = (ComboBox<DisplayMode>) event.getSource();
-        if (modeComboBox.getParent() != null) {
-            PolyChart chart = controller.getActiveChart();
-            OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
-            if (maxNDim.isEmpty()) {
-                log.warn("Unable to update display mode. No dimensions set.");
+    private void displayModeComboBoxSelectionChanged() {
+        PolyChart chart = controller.getActiveChart();
+        OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
+        if (maxNDim.isEmpty()) {
+            log.warn("Unable to update display mode. No dimensions set.");
+            return;
+        }
+        DisplayMode selected = displayModeComboBox.getSelectionModel().getSelectedItem();
+        if (selected == DisplayMode.TRACES) {
+            OptionalInt maxRows = chart.getDatasetAttributes().stream().
+                    mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
+            if (maxRows.isEmpty()) {
+                log.warn("Unable to update display mode. No rows set.");
                 return;
             }
-            DisplayMode selected = modeComboBox.getSelectionModel().getSelectedItem();
-            if (selected == DisplayMode.TRACES) {
-                OptionalInt maxRows = chart.getDatasetAttributes().stream().
-                        mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
-                if (maxRows.isEmpty()) {
-                    log.warn("Unable to update display mode. No rows set.");
-                    return;
-                }
-                chart.disDimProp.set(PolyChart.DISDIM.OneDX);
-                if (maxRows.isPresent() && (maxRows.getAsInt() > FXMLController.MAX_INITIAL_TRACES)) {
-                    chart.setDrawlist(0);
-                }
-
-                set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
-
-            } else if (selected == DisplayMode.CONTOURS) {
-                chart.disDimProp.set(PolyChart.DISDIM.TwoD);
-                chart.updateProjections();
-                chart.updateProjectionScale();
-                setMode(maxNDim.getAsInt());
+            chart.disDimProp.set(PolyChart.DISDIM.OneDX);
+            if (maxRows.isPresent() && (maxRows.getAsInt() > FXMLController.MAX_INITIAL_TRACES)) {
+                chart.setDrawlist(0);
             }
-            chart.full();
-            chart.autoScale();
+
+            set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
+
+        } else if (selected == DisplayMode.CONTOURS) {
+            chart.disDimProp.set(PolyChart.DISDIM.TwoD);
+            chart.getDatasetAttributes().get(0).drawList.clear();
+            chart.updateProjections();
+            chart.updateProjectionScale();
+            setMode(maxNDim.getAsInt());
         }
+        chart.full();
+        chart.autoScale();
     }
 
     private void dimAction(String rowName, String dimName) {
