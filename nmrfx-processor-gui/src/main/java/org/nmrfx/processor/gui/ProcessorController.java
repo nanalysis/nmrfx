@@ -1128,6 +1128,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void setProcessingStatus(String s, boolean ok, Throwable throwable) {
+        ConsoleUtil.runOnFxThread(() -> updateProcessingStatus(s, ok, throwable));
+    }
+
+    private void updateProcessingStatus(String s, boolean ok, Throwable throwable) {
         statusBar.setText(Objects.requireNonNullElse(s, ""));
         if (ok) {
             statusCircle.setFill(Color.GREEN);
@@ -1141,8 +1145,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void clearProcessingTextLabel() {
-        statusBar.setText("");
-        statusCircle.setFill(Color.GREEN);
+        setProcessingStatus("", true);
     }
 
     /**
