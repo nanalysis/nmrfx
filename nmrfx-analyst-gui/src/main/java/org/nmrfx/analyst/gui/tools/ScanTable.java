@@ -529,6 +529,7 @@ public class ScanTable {
             log.warn("Unable to load dataset, dataset only has 1 dimension.");
             return;
         }
+        scanDir = null;
         // Need to disconnect listeners before updating fileListItem or the selectionListener and filterItemListeners
         // will be triggered during every iteration of the loop, greatly reducing performance
         tableView.getSelectionModel().getSelectedIndices().removeListener(selectionListener);
