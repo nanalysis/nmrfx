@@ -577,22 +577,24 @@ public class SpecAttrWindowController implements Initializable {
         }
     }
 
+    private void updateDimensions() {
+        int dim = 0;
+        if (chart != null && chart.getDataset() != null) {
+            chart.updateAxisType(true);
+            dim = chart.getNDim();
+        }
+        clearDimActions();
+        updateDims();
+        setupDimActions();
+        if (dim > 2) {
+            setLimits();
+        }
+    }
+
     private void createViewGrid() {
         disDimCombo.getItems().addAll(OneDX, TwoD);
         disDimCombo.setValue(PolyChart.getActiveChart().disDimProp.get());
-        disDimCombo.valueProperty().addListener(((observable, oldValue, newValue) -> {
-            int dim = 0;
-            if (chart != null) {
-                chart.updateAxisType(true);
-                dim = chart.getNDim();
-            }
-            clearDimActions();
-            updateDims();
-            setupDimActions();
-            if (dim > 2) {
-                setLimits();
-            }
-        }));
+        disDimCombo.valueProperty().addListener(((observable, oldValue, newValue) -> updateDimensions()));
         PolyChart.getActiveChart().disDimProp.bindBidirectional(disDimCombo.valueProperty());
 
         PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> {
@@ -1411,6 +1413,7 @@ public class SpecAttrWindowController implements Initializable {
             chart.updateProjectionBorders();
             chart.updateProjectionScale();
         }
+        updateDimensions();
     }
 
     @FXML

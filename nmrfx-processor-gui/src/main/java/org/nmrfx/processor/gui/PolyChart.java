@@ -1727,9 +1727,11 @@ public class PolyChart extends Region implements PeakListener {
             datasetAttrs.clear();
             datasetAttrs.addAll(newAttributes);
         }
-        if (!newAttributes.isEmpty() && newAttributes.get(0).getDataset().getNDim() > axes.length) {
-            updateAxisType(false);
+        if (!newAttributes.isEmpty()) {
             FXMLController.getActiveController().updateSpectrumStatusBarOptions(false);
+            if (newAttributes.get(0).getDataset().getNDim() > axes.length) {
+                updateAxisType(false);
+            }
         }
         if (fullChart) {
             autoScale();
@@ -2431,7 +2433,7 @@ public class PolyChart extends Region implements PeakListener {
         double xPos = getLayoutX();
         double yPos = getLayoutY();
         // Only draw compatible datasets but do not remove incompatible attributes from datasetAttributes as the chart
-        // datasets may only be incombabtible in a certain display mode.
+        // datasets may only be incompatible in a certain display mode.
         List<DatasetAttributes> compatibleAttributes = new ArrayList<>(datasetAttributesList);
         removeIncompatibleDatasetAttributes(compatibleAttributes);
         for (DatasetAttributes datasetAttributes : compatibleAttributes) {
@@ -2552,6 +2554,13 @@ public class PolyChart extends Region implements PeakListener {
 
     }
 
+
+    /**
+     * Check whether the axis of the dataset attributes are compatible with the first element of the provided attributes
+     * list. Incompatible attributes are removed from the list and the range is adjusted based on the remaining
+     * attributes.
+     * @param attributes The attributes list to remove incompatible datasets from.
+     */
     private void removeIncompatibleDatasetAttributes(List<DatasetAttributes> attributes) {
         if (attributes.size() < 2) {
             return;
@@ -2571,18 +2580,27 @@ public class PolyChart extends Region implements PeakListener {
             return;
         }
         double[] limits = getRangeFromDatasetAttributesList(attributes, 0);
-        Range<Double> xRange = Range.between(limits[0], limits[1]);
-        if (!xRange.contains(getXAxis().getLowerBound()) || !xRange.contains(getXAxis().getUpperBound())) {
+        if (!currentRangeWithinNewRange(limits, 0)) {
             setXAxis(limits[0], limits[1]);
         }
         if (disDimProp.get() == DISDIM.TwoD) {
             limits = getRangeFromDatasetAttributesList(attributes, 1);
-            Range<Double> yRange = Range.between(getYAxis().getLowerBound(), getYAxis().getUpperBound());
-            if (!yRange.contains(limits[0]) || !yRange.contains(limits[1])) {
+            if (!currentRangeWithinNewRange(limits, 1)) {
                 setYAxis(limits[0], limits[1]);
             }
         }
 
+    }
+
+    /**
+     * Checks the current axis is within provided range.
+     * @param limits The limits of the new range, lower bound at index 0, upper bound at index 1
+     * @param axis The axis to check
+     * @return true if the axis range is within the provided range
+     */
+    private boolean currentRangeWithinNewRange(double[] limits, int axis) {
+        Range<Double> range = Range.between(limits[0], limits[1]);
+        return range.contains(getAxis(axis).getLowerBound()) && range.contains(getAxis(axis).getUpperBound());
     }
 
     void drawTitle(GraphicsContextInterface gC, DatasetAttributes datasetAttributes,
