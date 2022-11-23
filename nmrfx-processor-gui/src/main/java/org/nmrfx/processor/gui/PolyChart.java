@@ -43,6 +43,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import org.apache.commons.lang3.Range;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
@@ -210,7 +211,11 @@ public class PolyChart extends Region implements PeakListener {
         initChart();
         drawPeaks = new DrawPeaks(this, peakCanvas);
         setVisible(false);
-        disDimProp.addListener((observable, oldValue, newValue) -> updateAxisType(true));
+        disDimProp.addListener((observable, oldValue, newValue) -> {
+            if (!datasetAttributesList.isEmpty()) {
+                updateAxisType(true);
+            }
+        });
     }
 
     /**
@@ -2566,10 +2571,16 @@ public class PolyChart extends Region implements PeakListener {
             return;
         }
         double[] limits = getRangeFromDatasetAttributesList(attributes, 0);
-        setXAxis(limits[0], limits[1]);
+        Range<Double> xRange = Range.between(limits[0], limits[1]);
+        if (!xRange.contains(getXAxis().getLowerBound()) || !xRange.contains(getXAxis().getUpperBound())) {
+            setXAxis(limits[0], limits[1]);
+        }
         if (disDimProp.get() == DISDIM.TwoD) {
             limits = getRangeFromDatasetAttributesList(attributes, 1);
-            setYAxis(limits[0], limits[1]);
+            Range<Double> yRange = Range.between(getYAxis().getLowerBound(), getYAxis().getUpperBound());
+            if (!yRange.contains(limits[0]) || !yRange.contains(limits[1])) {
+                setYAxis(limits[0], limits[1]);
+            }
         }
 
     }
