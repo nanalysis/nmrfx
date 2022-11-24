@@ -59,11 +59,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -164,7 +160,7 @@ public class RS2DData implements NMRData {
         int numFreqDomain = 0;
         for (int i = 0; i < nDim; i++) {
             resetSW(i);
-            dataset.setComplex(i, i == 0);
+            dataset.setComplex(i, isComplex(i));
             dataset.setSf(i, getSF(i));
             dataset.setSw(i, getSW(i));
             dataset.setRefValue(i, getRef(i));
@@ -616,9 +612,9 @@ public class RS2DData implements NMRData {
         }
 
         // otherwise, read from header
-        Optional<Value<?>> value = header.optional(SW_PARAMS.get(iDim));
-        if (value.isPresent()) {
-            double sw = value.get().doubleValue();
+        Parameter swParam = SW_PARAMS.get(iDim);
+        if (header.contains(swParam)) {
+            double sw = getParameterAsHertz(swParam);
             Sw[iDim] = sw;
             return sw;
         }
