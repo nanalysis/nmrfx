@@ -59,7 +59,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -105,6 +108,7 @@ public class RS2DData implements NMRData {
     private SampleSchedule sampleSchedule = null;
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
+    private ZonedDateTime zonedDateTime = null;
 
     private String[] acqOrder;
     int nvectors = 1;
@@ -312,11 +316,29 @@ public class RS2DData implements NMRData {
                     }
                 }
             }
+            setZonedDateTime();
+
             if (!processed) {
                 setFTParams();
             }
         } catch (ParserConfigurationException | SAXException | NullPointerException ex) {
             throw new IOException(ex.getMessage());
+        }
+    }
+
+    private void setZonedDateTime() {
+        Value<String> dateTimeValue = header.get("ACQUISITION_DATE");
+        if (dateTimeValue == null) {
+            log.warn("Unable to find date. Setting date to now.");
+            zonedDateTime = ZonedDateTime.now();
+            return;
+        }
+        String dateTimeStr = dateTimeValue.stringValue();
+        try {
+            zonedDateTime = ZonedDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        } catch (DateTimeParseException dtpe) {
+            log.warn("Unable to parse date. Setting date to now. {}", dtpe.getMessage(), dtpe);
+            zonedDateTime = ZonedDateTime.now();
         }
     }
 
@@ -1177,6 +1199,11 @@ public class RS2DData implements NMRData {
     @Override
     public DatasetType getPreferredDatasetType() {
         return preferredDatasetType;
+    }
+
+    @Override
+    public long getDate() {
+        return zonedDateTime.toEpochSecond();
     }
 
     private static void writeRow(Dataset dataset, Vec vec, int[] pt, BufferedOutputStream fOut) throws IOException {
