@@ -382,7 +382,7 @@ public final class NMRDataUtil {
                         rData.setProcessed(getProcessedDataset(path2.toFile()));
                         items.add(rData);
                     }
-                } catch (IOException ex) {
+                } catch (IOException | IllegalArgumentException ex) {
                     log.warn(ex.getMessage(), ex);
                 }
             }
