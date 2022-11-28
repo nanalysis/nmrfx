@@ -119,6 +119,7 @@ public class AnalystApp extends MainApp {
     @Override
     public void start(Stage stage) throws Exception {
         Log.setupMemoryAppender();
+        // second test commit for testing github actions lfs cache
 
         //necessary to avoid "," as a decimal separator in output files or python scripts
         Locale.setDefault(Locale.Category.FORMAT, Locale.US);
