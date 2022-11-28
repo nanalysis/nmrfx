@@ -28,11 +28,10 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Git checkout
-        uses: actions/checkout@v2
+      - name: Checkout code
+        uses: nschloe/action-cached-lfs-checkout@v1
         with:
           token: ${{ secrets.SUBMODULE_ACCESS_TOKEN }}
-          lfs: 'true'
           # Check-out the submodules as well
           submodules: 'recursive'
 
