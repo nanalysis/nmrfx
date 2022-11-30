@@ -1342,10 +1342,11 @@ class refine:
         self.setSeed(self.seed)
         self.randomizeAngles()
         data = self.initializeData
+        self.readInitAngles()
         if data != None:
             if 'vienna' in data:
                 print 'Setting angles based on Vienna sequence'
-                self.setAnglesVienna(data['vienna']['restrain'])
+                self.setAnglesVienna(data['vienna'])
             elif 'doublehelix' in data:
                 print 'Setting angles based on double helix information'
                 self.setAnglesDoubleHelix(data,data['doublehelix'][0]['restrain'] )
@@ -1355,20 +1356,37 @@ class refine:
                 print 'Setting angles based on loop zone information'
                 self.setAnglesLoop(data,data['loop'][0]['restrain'] )
             self.restart()
+        self.molecule.genCoords()
         #self.output()
         #exit(0)
 
+    def readInitAngles(self):
+        global angleDict
+        helixDictFileName = 'angles.txt'
+        filetext = open(helixDictFileName, 'r')
+        headerAtoms = None
+        angleDict = {}
+        for line in filetext:
+            fields = line.strip().split()
+            if headerAtoms == None:
+                headerAtoms = fields[3:]
+            else:
+                ssType = fields[0]
+                posType = fields[1]
+                aaType = fields[2]
+                d = {}
+                for field,headerAtom in zip(fields[3:], headerAtoms):
+                    if field != '-':
+                        d[headerAtom] = float(field)
+                angleDict[ssType+':'+posType+':'+aaType] = d
+                
     def setAnglesDoubleHelix(self,data,doLock):
-        import copy
         if(doLock):
             print 'Locking angles based on double helix information after setting'
         else:
             print 'Not locking angles after setting based on double helix information'
 
-        helixDictFileName = 'angles-helix.dict'
-        filetext = open(helixDictFileName, 'r').read() # Moved dictionary loading outside loop
-        anglesDictLoad = eval(filetext)
-        # print 'anglestoset ' + str(anglesDict)
+
 		
         # Set angles based on double helix information
         polymers = self.molecule.getPolymers()
@@ -1376,8 +1394,6 @@ class refine:
             for entry in data['doublehelix']:
                 inHelix = False
                 for res in poly.getResidues():
-                    anglesDict = {}
-                    anglesDict = copy.deepcopy(anglesDictLoad) # Copy loaded dictionary
                     if (str(res) == entry['first'][0]) or (str(res) == entry['second'][0]):
                         print 'Helical segment start found at residue: ' + str(res)
                         print 'First 1: ' + entry['first'][1]
@@ -1390,19 +1406,19 @@ class refine:
                     except:
                         print 'Unexpected format for residue name: ' + str(isplit) + '... Using previous residue name'
                     if inHelix:
-                        anglesToSet = anglesDict['helix']
                         if resLett in ['G', 'A']:
-                            try:
-                                del anglesToSet['N1']
-                            except:
-                                print 'Error deleting N1 on residue: ' + str(res)
-                        if res.getAtom("X1") == None:
-                            try:
-                                del anglesToSet["O3'"]
-                            except:
-                                print "Error deleting O3' on residue: " + str(res)
+                            aaType = 'GA'
+                        else:
+                            aaType = 'UC'
+                        anglesToSet = angleDict['helix'+':0:'+aaType].copy()
+#                        if res.getAtom("X1") == None:
+#                            try:
+#                                del anglesToSet["O3'"]
+#                            except:
+#                                print "Error deleting O3' on residue: " + str(res)
                         if (str(res) == entry['first'][1]):
                             print 'Helix segment end found at residue: ' + str(res)
+                            anglesToSet = angleDict['tetra-link'+':0:'+'U'].copy()
                             inHelix = False
                             RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock and entry['locklast'])
                             print 'Residue: ' + str(res) + ' set with angles: ' + str(anglesToSet)
@@ -1410,6 +1426,7 @@ class refine:
                             RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock and entry['lockfirst'])
                             print 'Residue: ' + str(res) + ' set with angles: ' + str(anglesToSet)
                         elif (str(res) == entry['second'][0]):
+                            anglesToSet = angleDict['tetra-endlink'+':5:'+'A'].copy()
                             print 'Opposite helical segment start found at residue: ' + str(res)
                             RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock and entry['locklast'])
                             print 'Residue: ' + str(res) + ' set with angles: ' + str(anglesToSet)
@@ -1429,10 +1446,6 @@ class refine:
         else:
             print 'Not locking angles after setting based on loop information'
 			
-        loopDictFileName = 'angles-tetraloop-GNRA.dict'
-        # filetext = open(loopDictFileName, 'r').read() # Tried to move this outside loop but caused deletions to persist
-        # anglesDictLoad = eval(filetext)
-		
         # Set angles based on loop information
         polymers = self.molecule.getPolymers()
         loopResDone = 0
@@ -1440,10 +1453,6 @@ class refine:
             for entry in data['loop']:
                 inLoop = False
                 for res in poly.getResidues():
-                    filetext = open(loopDictFileName, 'r').read() # Moved this inside loop so that deletions would not persist
-                    anglesDictLoad = eval(filetext)
-                    anglesDict = {}
-                    anglesDict = anglesDictLoad
                     if (str(res) == entry['start']):
                         print 'Loop zone start found at residue: ' + str(res)
                         inLoop = True
@@ -1455,8 +1464,9 @@ class refine:
                     except:
                         print 'Unexpected format for residue name: ' + str(isplit) + '... Using previous residue name'
                     if inLoop:
-                        loopIndices = ['beforetetraloop1','tetraloop1','tetraloop2','tetraloop3','tetraloop4','aftertetraloop1']
-                        anglesToSet = anglesDict[loopIndices[loopResDone]]
+                        loopIndices = ['tetraloop1','tetraloop2','tetraloop3','tetraloop4']
+                        aaType = res.getName()
+                        anglesToSet = angleDict['tetra'+':'+str(loopResDone+1)+':'+aaType].copy()
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock)
                         print 'Residue: ' + str(res) + ' set with angles: ' + str(anglesToSet)						
                         loopResDone = loopResDone + 1
@@ -1467,10 +1477,50 @@ class refine:
                         inLoop = False
 
 		
-    def setAnglesVienna(self, doLock, lockLast=True):
-        if doLock:
-            print 'Locking Vienna angles after setting'
-
+    def setAnglesVienna(self, data):
+        doLock = data['restrain']
+        lockFirst = data['lockfirst']
+        lockLast = data['locklast']
+        polymers = self.molecule.getPolymers()
+        allResidues = []
+        for polymer in polymers:
+            allResidues += polymer.getResidues()
+        ssGen = SSGen(self.molecule, self.vienna)
+        ssGen.secondaryStructGen()
+        for ss in ssGen.structures:
+            residues = ss.getResidues()
+            if ss.getName() == "Helix":
+                strandI = residues[0::2]
+                strandJ = residues[1::2]
+                for res in residues:
+                    resLett = res.getName()
+                    if resLett in ['G', 'A']:
+                        aaType = 'GA'
+                    else:
+                        aaType = 'UC'
+                    anglesToSet = angleDict['helix'+':0:'+aaType].copy()
+                    firstRes =  res == strandI[0] or res == strandJ[0]
+                    lastRes =  res == strandI[-1] or res == strandJ[-1]
+                    lock = doLock
+                    if firstRes and not lockFirst:
+                        lock = False
+                    if lastRes and not lockLast:
+                        lock = False
+                    RNARotamer.setDihedrals(res,anglesToSet, 0.0, lock)
+            if ss.getName() == "Loop":
+                if len(residues) == 4:
+                    res = residues[0].getPrevious()
+                    anglesToSet = angleDict['tetra-link'+':0:'+'U'].copy()
+                    RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock)
+                    res = residues[-1].getNext()
+                    anglesToSet = angleDict['tetra-endlink'+':5:'+'A'].copy()
+                    RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock)
+                for iLoop,res in enumerate(residues):
+                    loopIndices = ['tetraloop1','tetraloop2','tetraloop3','tetraloop4']
+                    aaType = res.getName()
+                    anglesToSet = angleDict['tetra'+':'+str(iLoop+1)+':'+aaType].copy()
+                    RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock)
+ 
 		
     def readMolEditDict(self,seqReader, editDict):
         for entry in editDict:
