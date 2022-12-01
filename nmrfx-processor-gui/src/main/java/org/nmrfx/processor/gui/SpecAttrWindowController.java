@@ -286,6 +286,7 @@ public class SpecAttrWindowController implements Initializable {
                 updatePeakView();
             }
         });
+        chart = PolyChart.getActiveChart();
         peakTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartPeakLists();
         datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> {
             // Must remove this listener since it calls updateDatasetView, which this listener may
@@ -598,11 +599,13 @@ public class SpecAttrWindowController implements Initializable {
         PolyChart.getActiveChart().disDimProp.bindBidirectional(disDimCombo.valueProperty());
 
         PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> {
-            oldValue.disDimProp.unbindBidirectional(disDimCombo.valueProperty());
-            DISDIM curDisDim =  newValue.disDimProp.get();
-            disDimCombo.setValue(curDisDim);
-            setChart(newValue);
-            newValue.disDimProp.bindBidirectional(disDimCombo.valueProperty());
+            if (newValue != null) {
+                oldValue.disDimProp.unbindBidirectional(disDimCombo.valueProperty());
+                DISDIM curDisDim = newValue.disDimProp.get();
+                disDimCombo.setValue(curDisDim);
+                setChart(newValue);
+                newValue.disDimProp.bindBidirectional(disDimCombo.valueProperty());
+            }
         });
         limitFields = new StringProperty[rowNames.length][2];
         labelFields = new Label[rowNames.length];
@@ -810,8 +813,6 @@ public class SpecAttrWindowController implements Initializable {
 
     public void update() {
         if (isShowing()) {
-            FXMLController fxmlController = FXMLController.getActiveController();
-            chart = fxmlController.getActiveChart();
             chart.setChartDisabled(true);
             updateDatasetTableView();
             updatePeakListTableView(false);
