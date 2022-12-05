@@ -211,11 +211,6 @@ public class PolyChart extends Region implements PeakListener {
         initChart();
         drawPeaks = new DrawPeaks(this, peakCanvas);
         setVisible(false);
-        disDimProp.addListener((observable, oldValue, newValue) -> {
-            if (!datasetAttributesList.isEmpty()) {
-                updateAxisType(true);
-            }
-        });
     }
 
     /**
@@ -1745,6 +1740,8 @@ public class PolyChart extends Region implements PeakListener {
         boolean hasND = false;
         Optional<DatasetAttributes> firstNDAttr = Optional.empty();
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+            // Clear previous projection values
+            datasetAttributes.projection(-1);
             Dataset dataset = (Dataset) datasetAttributes.getDataset();
             if (dataset != null) {
                 if (dataset.getNDim() == 1) {
@@ -2020,10 +2017,6 @@ public class PolyChart extends Region implements PeakListener {
             axes = new NMRAxis[nAxes];
             axes[0] = xAxis;
             axes[1] = yAxis;
-            datasetAttributes.dim[0] = 0;
-            if (datasetAttributes.dim.length > 1) {
-                datasetAttributes.dim[1] = 1;
-            }
             axModes = new AXMODE[nAxes];
             axModes[0] = AXMODE.PPM;
             axModes[1] = AXMODE.PPM;
@@ -2031,7 +2024,6 @@ public class PolyChart extends Region implements PeakListener {
                 double[] ppmLimits = datasetAttributes.getMaxLimits(i);
                 double centerPPM = (ppmLimits[0] + ppmLimits[1]) / 2.0;
                 axes[i] = new NMRAxis(Orientation.HORIZONTAL, centerPPM, centerPPM, 0, 1);
-                datasetAttributes.dim[i] = i;
                 if (dataset.getFreqDomain(i)) {
                     axModes[i] = AXMODE.PPM;
                 } else {
