@@ -1765,7 +1765,7 @@ public class PolyChart extends Region implements PeakListener {
                 datasetAttributes.projection(-1);
             } else {
                 int[] matchDim = datasetAttributes.getMatchDim(firstNDAttr.get(), true);
-                if (matchDim[0] != -1) {
+                if (matchDim[0] != -1 && matchDim[0] < 2) {
                     if (!alreadyMatchedDims.contains(matchDim[0])) {
                         datasetAttributes.projection(matchDim[0]);
                         alreadyMatchedDims.add(matchDim[0]);
@@ -1811,6 +1811,9 @@ public class PolyChart extends Region implements PeakListener {
                     datasetAttributes.setHasLevel(true);
                 }
                 datasetAttributesList.add(datasetAttributes);
+                if (datasetAttributesList.size() > 1) {
+                    sortDatasetsByDimensions(new ArrayList<>(datasetAttributesList));
+                }
             } else {
                 peakListAttributesList.clear();
                 if (datasetAttributesList.isEmpty()) {
@@ -2565,17 +2568,21 @@ public class PolyChart extends Region implements PeakListener {
         if (attributes.size() < 2) {
             return;
         }
-        int[] matchedDims;
         Iterator<DatasetAttributes> attributesIterator = attributes.iterator();
         DatasetAttributes firstAttr = attributesIterator.next();
+        List<String> axisNucleusNames = new ArrayList<>();
+        axisNucleusNames.add(getDataset().getNucleus(firstAttr.getDims()[0]).getNumberName());
+        if (firstAttr.getDataset().getNDim() > 1) {
+            axisNucleusNames.add(getDataset().getNucleus(firstAttr.getDims()[1]).getNumberName());
+        }
         while (attributesIterator.hasNext()) {
             DatasetAttributes datasetAttributes = attributesIterator.next();
-            matchedDims = firstAttr.getMatchDim(datasetAttributes, true);
-            if (matchedDims[firstAttr.getDim(0)] == -1 || (matchedDims.length > 1 && matchedDims[firstAttr.getDim(1)] == -1)) {
+            if (isDatasetAttributesIncompatible(axisNucleusNames, datasetAttributes)) {
                 log.info("Mismatched dimensions. Unable to display dataset: {}", datasetAttributes.getDataset().getName());
                 attributesIterator.remove();
             }
         }
+        // No incompatible datasets were found
         if (attributes.size() == getDatasetAttributes().size()) {
             return;
         }
@@ -2589,7 +2596,28 @@ public class PolyChart extends Region implements PeakListener {
                 setYAxis(limits[0], limits[1]);
             }
         }
+    }
 
+
+    /**
+     * Counts the number of matches of the DatasetAttributes nucleus number names to the provided list of nucleus number
+     * names and returns true if they have matching nuclei for all the axis names. Attributes that are projections are
+     * considered to not be incompatible since they will not be displayed in the chart centre and will return false
+     * @param axisNamesToMatch The axis nucleus names for the x and y axis.
+     * @param attributesToMatch The DatasetAttributes to check the compatibility of
+     * @return true if the dataset is incompatible
+     */
+    private boolean isDatasetAttributesIncompatible(List<String> axisNamesToMatch, DatasetAttributes attributesToMatch) {
+        List<String> nucleusNames = new ArrayList<>(axisNamesToMatch);
+        int numberOfMatches = 0;
+        for (int dim: attributesToMatch.getDims()) {
+            String attributeNucleusName = attributesToMatch.getDataset().getNucleus(dim).getNumberName();
+            if (nucleusNames.contains(attributeNucleusName)) {
+                nucleusNames.remove(attributeNucleusName);
+                numberOfMatches++;
+            }
+        }
+        return numberOfMatches < Math.min(attributesToMatch.getDataset().getNDim(), 2) || attributesToMatch.isProjection();
     }
 
     /**
