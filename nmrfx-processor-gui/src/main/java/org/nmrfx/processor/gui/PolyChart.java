@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -568,7 +569,7 @@ public class PolyChart extends Region implements PeakListener {
             double startY = y > dragStart[1] ? dragStart[1] : y;
             double yPos = getLayoutY();
             annoGC.setLineDashes(null);
-            if (mouseAction == MOUSE_ACTION.DRAG_EXPAND || mouseAction == MOUSE_ACTION.DRAG_ADDREGION) {
+            if (mouseAction == MOUSE_ACTION.DRAG_EXPAND || mouseAction == MOUSE_ACTION.DRAG_ADDREGION || mouseAction == MOUSE_ACTION.DRAG_PEAKPICK) {
                 if ((dX < minMove) || (!is1D() && (dY < minMove))) {
                     annoGC.setLineDashes(5);
                 }
@@ -591,8 +592,15 @@ public class PolyChart extends Region implements PeakListener {
             }
             annoGC.setStroke(color);
             if (is1D()) {
-                annoGC.strokeLine(x, yPos + topBorder, x, yPos + getHeight()-bottomBorder);
-                annoGC.strokeLine(dragStart[0], yPos + topBorder, dragStart[0], yPos + getHeight()-bottomBorder);
+                if (mouseAction == MOUSE_ACTION.DRAG_PEAKPICK) {
+                    double yLine = y;
+                    annoGC.strokeLine(x, yLine - 20, x, yLine + 20);
+                    annoGC.strokeLine(dragStart[0], yLine - 20, dragStart[0], yLine + 20);
+                    annoGC.strokeLine(dragStart[0],y, x, y);
+                } else {
+                    annoGC.strokeLine(x, yPos + topBorder, x, yPos + getHeight()-bottomBorder);
+                    annoGC.strokeLine(dragStart[0], yPos + topBorder, dragStart[0], yPos + getHeight()-bottomBorder);
+                }
             } else {
                 annoGC.strokeRect(startX, startY, dX, dY);
             }
@@ -633,7 +641,7 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    public void finishBox(MOUSE_ACTION mouseAction, double[] dragStart, double x, double y) {
+    public boolean finishBox(MOUSE_ACTION mouseAction, double[] dragStart, double x, double y) {
         GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
         double annoWidth = annoCanvas.getWidth();
         double annoHeight = annoCanvas.getHeight();
@@ -644,6 +652,7 @@ public class PolyChart extends Region implements PeakListener {
         } else {
             limits = new double[2][2];
         }
+        boolean completed = false;
         double dX = Math.abs(x - dragStart[0]);
         double dY = Math.abs(y - dragStart[1]);
         limits[0][0] = xAxis.getValueForDisplay(dragStart[0]).doubleValue();
@@ -669,6 +678,7 @@ public class PolyChart extends Region implements PeakListener {
                     ChartUndoLimits redo = new ChartUndoLimits(this);
                     controller.undoManager.add("expand", undo, redo);
                     refresh();
+                    completed = true;
                 }
             }
         } else if (mouseAction == MOUSE_ACTION.DRAG_ADDREGION) {
@@ -676,8 +686,10 @@ public class PolyChart extends Region implements PeakListener {
                 if (is1D()) {
                     addRegion(limits[0][0], limits[0][1]);
                     refresh();
+                    completed = true;
                 }
             }
+        } else if (mouseAction == MOUSE_ACTION.DRAG_PEAKPICK) {
         } else {
             drawPeakLists(false);
             for (PeakListAttributes peakAttr : peakListAttributesList) {
@@ -691,8 +703,10 @@ public class PolyChart extends Region implements PeakListener {
                 }
                 controller.selPeaks.set(allSelPeaks);
             }
+            completed = true;
 
         }
+        return completed;
     }
 
     public NMRAxis getAxis(int iDim) {

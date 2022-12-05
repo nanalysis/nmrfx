@@ -54,6 +54,7 @@ public class MouseBindings {
         DRAG_REGION,
         DRAG_ADDREGION,
         DRAG_ANNO,
+        DRAG_PEAKPICK,
         CROSSHAIR
     }
 
@@ -280,6 +281,9 @@ public class MouseBindings {
                 handler.mousePressed(mouseEvent);
             } else {
                 if (mouseEvent.isPrimaryButtonDown()) {
+                    if (chart.getCanvasCursor().toString().equals("N_RESIZE")) {
+                        PeakPickHandler.handler(this).ifPresent(this::setHandler);
+                    }
                     boolean hadRegion = chart.hasActiveRegion();
                     Optional<DatasetRegion> previousRegion = chart.getActiveRegion();
                     boolean selectedRegion = false;

@@ -257,7 +257,7 @@ public class SpectrumStatusBar {
         controller.sliceStatus.bind(sliceStatus.selectedProperty());
         sliceStatus.setOnAction(this::sliceStatus);
         complexStatus.setOnAction(this::complexStatus);
-        cursorChoiceBox.getItems().addAll(Cursor.CROSSHAIR, SEL_CURSOR);
+        cursorChoiceBox.getItems().addAll(Cursor.CROSSHAIR, SEL_CURSOR, Cursor.N_RESIZE);
         cursorChoiceBox.setValue(Cursor.CROSSHAIR);
 
         Callback<ListView<Cursor>, ListCell<Cursor>> cellFactory = new Callback<ListView<Cursor>, ListCell<Cursor>>() {
@@ -277,8 +277,10 @@ public class SpectrumStatusBar {
                         if (item == null || empty) {
                             setGraphic(null);
                         } else {
-                            if (item.toString().equals("MOVE")) {
+                            if (item.toString().equals("MOVE") || item.toString().equals("HAND")) {
                                 icon = GlyphsDude.createIcon(FontAwesomeIcon.MOUSE_POINTER, "16");
+                            } else if (item.toString().equals("N_RESIZE")) {
+                                    icon = GlyphsDude.createIcon(FontAwesomeIcon.ARROW_UP, "16");
                             } else {
                                 icon = GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "16");
 

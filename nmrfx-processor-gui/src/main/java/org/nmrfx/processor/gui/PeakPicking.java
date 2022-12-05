@@ -63,6 +63,17 @@ public class PeakPicking {
 
     public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean useCrossHairs, boolean refineLS,
                                           Double level, boolean saveFile, String listName) {
+         return peakPickActive(chart, dataAttr,  null, useCrossHairs,  refineLS, level, saveFile, listName);
+    }
+
+    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, double[][] region,
+                                          Double level) {
+        chart.getPeakListAttributes().clear();
+        return peakPickActive(chart, dataAttr,  region, false,  false, level, false, null);
+    }
+
+    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, double[][] region, boolean useCrossHairs, boolean refineLS,
+        Double level, boolean saveFile, String listName) {
         DatasetBase datasetBase = dataAttr.getDataset();
         Dataset dataset = (Dataset) datasetBase;
         int nDim = dataset.getNDim();
@@ -86,7 +97,9 @@ public class PeakPicking {
         for (int iDim = 0; iDim < nDim; iDim++) {
             int jDim = dataAttr.getDim(iDim);
             if (iDim < 2) {
-                if (useCrossHairs) {
+                if (region != null) {
+                    peakPickPar.limit(jDim, region[iDim][0], region[iDim][1]);
+                } else if (useCrossHairs) {
                     int orientation = iDim == 0 ? PolyChart.VERTICAL : PolyChart.HORIZONTAL;
                     peakPickPar.limit(jDim,
                             chart.crossHairPositions[0][orientation],
@@ -141,7 +154,12 @@ public class PeakPicking {
         String listName = getListName(chart, dataAttr);
         double level = dataAttr.getLvl();
         if (nDim == 1) {
-            level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
+            Double threshold = dataset.getNoiseLevel();
+            if (threshold == null) {
+                threshold = 0.0;
+            }
+            level = Math.max(3.0 * threshold, y);
+            System.out.println(level);
         }
         PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendif");
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
