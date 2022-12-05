@@ -1700,15 +1700,45 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
+    /**
+     * If the dimensions are compatible, sets the dimension for each axis for the newAttr to match with the
+     * old attribute. If dimensions are not compatible, the current/default value in newAttr remains unchanged.
+     * @param originalAttr The attribute to get the current dimensions from.
+     * @param newAttr The new attribute to update the dimensions from.
+     * @return True if the newAttr dimensions were updated.
+     */
+    private boolean adjustDimensionsIfAttributesDifferent(DatasetAttributes originalAttr, DatasetAttributes newAttr) {
+        if (originalAttr == newAttr) {
+            return false;
+        }
+        List<String> axisNucleusNames = new ArrayList<>();
+        axisNucleusNames.add(originalAttr.getDataset().getNucleus(originalAttr.getDims()[0]).getNumberName());
+        if (originalAttr.getDataset().getNDim() > 1) {
+            axisNucleusNames.add(originalAttr.getDataset().getNucleus(originalAttr.getDims()[1]).getNumberName());
+        }
+        if (!isDatasetAttributesIncompatible(axisNucleusNames, newAttr)) {
+            for (int index = 0; index < axes.length; index++) {
+                String axisName = axes[index].getOrientation() == Orientation.HORIZONTAL ? "X" : "Y";
+                newAttr.setDim(axisName, axisNucleusNames.get(index));
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Sorts the datasets in descending order based on the number of dimensions, sets the sorted list to dataset
+     * attributes and updates the dimension and axis type. If disDimProp is updated, the chart is full and autoscaled.
+     * @param newAttributes the DatasetAttributes to sort.
+     */
     private void sortDatasetsByDimensions(List<DatasetAttributes> newAttributes) {
         boolean fullChart = false;
         if (!newAttributes.isEmpty()) {
+            DatasetAttributes originalFirst = newAttributes.get(0);
             // Sort the datasets by dimension and by datasets
             newAttributes.sort(Comparator.comparingInt((DatasetAttributes a )-> a.getDataset().getNDim()).reversed());
-            DISDIM newDISDIM = newAttributes.get(0).getDataset().getNDim() == 1 ? DISDIM.OneDX : TwoD;
-            // If the display has switched dimensions, full the chart otherwise the axis might be much larger than the current dataset
-            fullChart = newDISDIM != disDimProp.get();
-            disDimProp.set(newDISDIM);
+            // See what previous dims values were, if compatible, try to keep those dims, otherwise just use the default
+            fullChart = adjustDimensionsIfAttributesDifferent(originalFirst, newAttributes.get(0));
         }
         ObservableList<DatasetAttributes> datasetAttrs = getDatasetAttributes();
 
@@ -1724,9 +1754,11 @@ public class PolyChart extends Region implements PeakListener {
         }
         if (!newAttributes.isEmpty()) {
             FXMLController.getActiveController().updateSpectrumStatusBarOptions(false);
-            if (newAttributes.get(0).getDataset().getNDim() > axes.length) {
-                updateAxisType(false);
-            }
+            DISDIM newDISDIM = newAttributes.get(0).getDataset().getNDim() == 1 ? DISDIM.OneDX : TwoD;
+            // If the display has switched dimensions, full the chart otherwise the axis might be much larger than the current dataset
+            fullChart = fullChart || newDISDIM != disDimProp.get();
+            disDimProp.set(newDISDIM);
+            updateAxisType(false);
         }
         if (fullChart) {
             autoScale();
@@ -2314,7 +2346,7 @@ public class PolyChart extends Region implements PeakListener {
             if (!drawDatasets(gC)) {
                 // if we used immediate mode and didn't finish in time try again
                 // useImmediate mode will have been set to false
-                Platform.runLater(() -> layoutPlotChildren());
+                Platform.runLater(this::layoutPlotChildren);
                 gC.restore();
                 return;
             }

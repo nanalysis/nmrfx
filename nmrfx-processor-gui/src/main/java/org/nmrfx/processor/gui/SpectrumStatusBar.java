@@ -764,6 +764,7 @@ public class SpectrumStatusBar {
             chart.updateProjectionScale();
             setMode(maxNDim.getAsInt());
         }
+        chart.updateAxisType(true);
         chart.full();
         chart.autoScale();
     }
