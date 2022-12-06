@@ -159,7 +159,6 @@ public class PeakPicking {
                 threshold = 0.0;
             }
             level = Math.max(3.0 * threshold, y);
-            System.out.println(level);
         }
         PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendif");
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
