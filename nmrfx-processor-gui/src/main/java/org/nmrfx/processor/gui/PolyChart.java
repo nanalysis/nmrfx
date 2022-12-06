@@ -1717,7 +1717,7 @@ public class PolyChart extends Region implements PeakListener {
             axisNucleusNames.add(originalAttr.getDataset().getNucleus(originalAttr.getDims()[1]).getNumberName());
         }
         if (!isDatasetAttributesIncompatible(axisNucleusNames, newAttr)) {
-            for (int index = 0; index < axes.length; index++) {
+            for (int index = 0; index < axisNucleusNames.size(); index++) {
                 String axisName = axes[index].getOrientation() == Orientation.HORIZONTAL ? "X" : "Y";
                 newAttr.setDim(axisName, axisNucleusNames.get(index));
             }
