@@ -44,7 +44,7 @@ public class PeakPickHandler extends MouseHandler {
                 DatasetAttributes datasetAttr = activeData.get(0);
                 double pickX = chart.getAxis(0).getValueForDisplay(chart.getMouseX()).doubleValue();
                 double pickY = chart.getAxis(1).getValueForDisplay(chart.getMouseY()).doubleValue();
-                PeakPicking.pickAtPosition(chart, datasetAttr, pickX, pickY, false, false);
+                PeakPicking.pickAtPosition(chart, datasetAttr, pickX, pickY, mouseEvent.isShiftDown(), false);
                 completed = true;
             }
         } else {

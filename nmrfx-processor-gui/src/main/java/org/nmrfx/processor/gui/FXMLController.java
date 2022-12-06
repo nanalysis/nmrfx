@@ -171,7 +171,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     Phaser phaser;
     Set<ControllerTool> tools = new HashSet<>();
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
-    SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(Cursor.CROSSHAIR);
+    SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
 
     private BooleanProperty minBordersProperty() {
         if (minBorders == null) {
@@ -1327,12 +1327,13 @@ public class FXMLController implements  Initializable, PeakNavigable {
         Cursor cursor = cursorProperty.getValue();
         canvas.setCursor(cursor);
         for (PolyChart chart : charts) {
-            if (cursor.toString().equals("CROSSHAIR")) {
+            if (CanvasCursor.isCrosshair(cursor)) {
                 chart.getCrossHairs().setCrossHairState(true);
             } else {
                 chart.getCrossHairs().setCrossHairState(false);
             }
         }
+        statusBar.updateCursorBox();
     }
 
     public void resizeCanvases(double width, double height) {

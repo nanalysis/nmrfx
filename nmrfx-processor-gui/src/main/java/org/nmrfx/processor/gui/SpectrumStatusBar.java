@@ -24,10 +24,16 @@
 package org.nmrfx.processor.gui;
 
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextField;
+import org.controlsfx.control.SegmentedButton;
 import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,6 +105,7 @@ public class SpectrumStatusBar {
     CheckBox complexStatus = new CheckBox("Complex");
     CheckBox phaserStatus = new CheckBox("Phasing");
     MenuButton toolButton = new MenuButton("Tools");
+    SegmentedButton cursorButtons;
     List<ButtonBase> specialButtons = new ArrayList<>();
     Button peakPickButton;
 
@@ -125,9 +132,6 @@ public class SpectrumStatusBar {
     Pane filler2 = new Pane();
     static String[] dimNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
     static String[] rowNames = {"X", "Row", "Plane", "A", "B", "C", "D", "E"};
-    ComboBox<Cursor> cursorChoiceBox = new ComboBox<>();
-    HashMap<Cursor, Text> cursorMap = new HashMap<>();
-    HashMap<String, Cursor> cursorNameMap = new HashMap<>();
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
     boolean arrayMode = false;
@@ -145,7 +149,7 @@ public class SpectrumStatusBar {
         this.btoolBar = btoolBar;
         peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
         peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
-
+        buildCursorBar();
         setupTools();
 
         for (int i = 0; i < 2; i++) {
@@ -257,45 +261,53 @@ public class SpectrumStatusBar {
         controller.sliceStatus.bind(sliceStatus.selectedProperty());
         sliceStatus.setOnAction(this::sliceStatus);
         complexStatus.setOnAction(this::complexStatus);
-        cursorChoiceBox.getItems().addAll(Cursor.CROSSHAIR, SEL_CURSOR, Cursor.N_RESIZE);
-        cursorChoiceBox.setValue(Cursor.CROSSHAIR);
 
-        Callback<ListView<Cursor>, ListCell<Cursor>> cellFactory = new Callback<ListView<Cursor>, ListCell<Cursor>>() {
-            @Override
-            public ListCell<Cursor> call(ListView<Cursor> p) {
-                return new ListCell<>() {
-                    Text icon;
-                    {
-                        icon = new Text();
-                        setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-                    }
-
-                    @Override
-                    protected void updateItem(Cursor item, boolean empty) {
-                        super.updateItem(item, empty);
-
-                        if (item == null || empty) {
-                            setGraphic(null);
-                        } else {
-                            if (item.toString().equals("MOVE") || item.toString().equals("HAND")) {
-                                icon = GlyphsDude.createIcon(FontAwesomeIcon.MOUSE_POINTER, "16");
-                            } else if (item.toString().equals("N_RESIZE")) {
-                                    icon = GlyphsDude.createIcon(FontAwesomeIcon.ARROW_UP, "16");
-                            } else {
-                                icon = GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "16");
-
-                            }
-                            setGraphic(icon);
-                        }
-                    }
-                };
-            }
-        };
-        cursorChoiceBox.setButtonCell(cellFactory.call(null));
-        cursorChoiceBox.setCellFactory(cellFactory);
-        cursorChoiceBox.valueProperty().bindBidirectional(controller.getCursorProperty());
         controller.getActiveChart().disDimProp.addListener(displayedDimensionsListener);
         PolyChart.getActiveChartProperty().addListener(this::setChart);
+    }
+
+    private void buildCursorBar() {
+        List<ToggleButton> buttons = new ArrayList<>();
+        ToggleButton crosshairButton = GlyphsDude.createIconToggleButton(CanvasCursor.CROSSHAIR.getIcon(),"Crosshair",
+                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+        crosshairButton.setUserData(CanvasCursor.CROSSHAIR);
+        ToggleButton selectorButton = GlyphsDude.createIconToggleButton(CanvasCursor.SELECTOR.getIcon(),"Selector",
+                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+        selectorButton.setUserData(CanvasCursor.SELECTOR);
+        ToggleButton peakButton = GlyphsDude.createIconToggleButton(CanvasCursor.PEAK.getIcon(),"Peak",
+                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+        peakButton.setUserData(CanvasCursor.PEAK);
+        ToggleButton regionButton = GlyphsDude.createIconToggleButton(CanvasCursor.REGION.getIcon(),"Region",
+                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+        regionButton.setUserData(CanvasCursor.REGION);
+        buttons.add(selectorButton);
+        buttons.add(crosshairButton);
+        buttons.add(peakButton);
+        buttons.add(regionButton);
+        for (ButtonBase button : buttons) {
+          //  button.getStyleClass().add("toolButton");
+            button.setMinWidth(50);
+        }
+        cursorButtons = new SegmentedButton();
+        cursorButtons.getButtons().addAll(buttons);
+        selectorButton.setSelected(true);
+        cursorButtons.getToggleGroup().selectedToggleProperty().addListener((ChangeListener<? super Toggle>) (a,b,c) -> toggleChanged(c));
+    }
+
+    public void updateCursorBox() {
+        for (var button: cursorButtons.getButtons()) {
+            if (((CanvasCursor) button.getUserData()).getCursor() == controller.getCurrentCursor()) {
+                button.setSelected(true);
+                break;
+            }
+        }
+    }
+
+    private void toggleChanged(Toggle toggle) {
+        if (toggle != null) {
+            CanvasCursor canvasCursor = (CanvasCursor) toggle.getUserData();
+            controller.setCursor(canvasCursor.getCursor());
+        }
     }
 
     public void addToolBarButtons(ButtonBase... buttons) {
@@ -578,7 +590,6 @@ public class SpectrumStatusBar {
         arrayMode = true;
         setPlaneRanges(2, nRows);
         List<Node> nodes = new ArrayList<>();
-        nodes.add(cursorChoiceBox);
         nodes.add(toolButton);
         displayModeComboBox.getSelectionModel().select(DisplayMode.TRACES);
         nodes.add(displayModeComboBox);
@@ -587,6 +598,8 @@ public class SpectrumStatusBar {
         HBox.setHgrow(filler2, Priority.ALWAYS);
         nodes.add(filler1);
 
+        nodes.add(new Label("Cursor:"));
+        nodes.add(cursorButtons);
         for (int i = 0; i < 2; i++) {
             for (int j = 1; j >= 0; j--) {
                 nodes.add(crossText[i][j]);
@@ -622,7 +635,6 @@ public class SpectrumStatusBar {
         currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();
-        nodes.add(cursorChoiceBox);
         if (mode != 0) {
             nodes.add(toolButton);
         }
@@ -647,6 +659,9 @@ public class SpectrumStatusBar {
             nodes.add(displayModeComboBox);
         }
         nodes.add(filler1);
+
+        nodes.add(new Label("Cursor:"));
+        nodes.add(cursorButtons);
 
         for (int i = 0; i < 2; i++) {
             for (int j = 1; j >= 0; j--) {

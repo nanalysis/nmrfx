@@ -377,7 +377,7 @@ public class PolyChart extends Region implements PeakListener {
         yAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 1, 1));
         CHARTS.add(this);
         activeChart.set(this);
-        canvas.setCursor(Cursor.CROSSHAIR);
+        canvas.setCursor(CanvasCursor.SELECTOR.getCursor());
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             purgeInvalidPeakListAttributes();
         };
