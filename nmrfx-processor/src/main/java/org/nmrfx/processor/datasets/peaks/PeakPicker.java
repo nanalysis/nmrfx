@@ -651,13 +651,15 @@ public class PeakPicker {
             }
             checkValue = readPoint(points, dim);
             int sign = 1;
-            stats.addValue(checkValue);
-            if (stats.getN() == nStatPoints) {
-                double stDev = stats.getStandardDeviation();
-                if ((noiseLevel == null) || (stDev < noiseLevel)) {
-                    noiseLevel = stDev;
+            if (nDim > 1) {
+                stats.addValue(checkValue);
+                if (stats.getN() == nStatPoints) {
+                    double stDev = stats.getStandardDeviation();
+                    if ((noiseLevel == null) || (stDev < noiseLevel)) {
+                        noiseLevel = stDev;
+                    }
+                    stats.clear();
                 }
-                stats.clear();
             }
             boolean measurePeak = true;
             if (!peakPickPar.fixedPick) {
