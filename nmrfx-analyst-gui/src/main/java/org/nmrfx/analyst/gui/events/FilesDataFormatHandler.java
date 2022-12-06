@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class FilesDataFormatHandler implements DataFormatEventHandler {
@@ -104,6 +105,12 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
                 chart.updateProjections();
                 chart.updateProjectionBorders();
                 chart.updateProjectionScale();
+            }
+            try {
+                // TODO NMR-6048: remove sleep once threading issue fixed
+                TimeUnit.MILLISECONDS.sleep(200);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
             }
             chart.refresh();
         }

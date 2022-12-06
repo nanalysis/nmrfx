@@ -84,6 +84,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.TimeUnit;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
@@ -1415,6 +1416,13 @@ public class SpecAttrWindowController implements Initializable {
             chart.updateProjectionScale();
         }
         updateDimensions();
+        try {
+            // TODO NMR-6048: remove sleep once threading issue fixed
+            TimeUnit.MILLISECONDS.sleep(200);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+        chart.refresh();
     }
 
     @FXML
@@ -1490,6 +1498,9 @@ public class SpecAttrWindowController implements Initializable {
                     axis.upperBoundProperty().setValue(formatter.parse(limitFields[i][1].get()));
                 }
             }
+            // TODO NMR-6048: remove sleep once threading issue fixed
+            TimeUnit.MILLISECONDS.sleep(200);
+
             chart.layoutPlotChildren();
             if (isSceneMode()) {
                 List<PolyChart> charts = chart.getSceneMates(false);
@@ -1497,6 +1508,8 @@ public class SpecAttrWindowController implements Initializable {
             }
         } catch (ParseException parseE) {
             log.warn(parseE.getMessage(), parseE);
+        } catch (InterruptedException it) {
+            Thread.currentThread().interrupt();
         }
     }
 
