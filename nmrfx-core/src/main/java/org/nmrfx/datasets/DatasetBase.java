@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class DatasetBase {
     private static final Logger log = LoggerFactory.getLogger(DatasetBase.class);
@@ -2128,7 +2129,8 @@ public class DatasetBase {
     }
 
     public DatasetRegion addRegion(double min, double max) {
-        List<DatasetRegion> sortedRegions = regions.stream().sorted().toList();
+        // don't use Stream.toList as that will give an imutableList
+        List<DatasetRegion> sortedRegions = regions.stream().sorted().collect(Collectors.toList());
         boolean firstRegion = sortedRegions.isEmpty();
 
         DatasetRegion newRegion = new DatasetRegion(min, max);
