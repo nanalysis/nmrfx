@@ -28,6 +28,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
+import org.checkerframework.checker.units.qual.C;
 import org.controlsfx.control.SegmentedButton;
 import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -274,8 +275,12 @@ public class SpectrumStatusBar {
         ToggleButton selectorButton = GlyphsDude.createIconToggleButton(CanvasCursor.SELECTOR.getIcon(),"Selector",
                 MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
         selectorButton.setUserData(CanvasCursor.SELECTOR);
-        ToggleButton peakButton = GlyphsDude.createIconToggleButton(CanvasCursor.PEAK.getIcon(),"Peak",
-                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+        ToggleButton peakButton = new ToggleButton();
+        peakButton.setGraphic(IconUtilities.getIcon("crosshairs2"));
+        peakButton.setText("Peak");
+        peakButton.setContentDisplay(ContentDisplay.RIGHT);
+//        ToggleButton peakButton = GlyphsDude.createIconToggleButton(CanvasCursor.PEAK.getIcon(),"Peak",
+//                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
         peakButton.setUserData(CanvasCursor.PEAK);
         ToggleButton regionButton = GlyphsDude.createIconToggleButton(CanvasCursor.REGION.getIcon(),"Region",
                 MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
