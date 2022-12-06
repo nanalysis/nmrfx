@@ -2279,7 +2279,7 @@ public class PolyChart extends Region implements PeakListener {
                 useImmediateMode = true;
             }
         }
-        useImmediateMode = useImmediateMode && controller.getCharts().size() == 1;
+        useImmediateMode = false;
         GraphicsContext gCC = canvas.getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         GraphicsContextInterface gCPeaks = new GraphicsContextProxy(peakCanvas.getGraphicsContext2D());

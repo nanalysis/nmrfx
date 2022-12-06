@@ -206,7 +206,7 @@ public class DrawSpectrum {
         } catch (IOException ex) {
             log.warn(ex.getMessage(), ex);
         }
-        setLastPlotTime();
+        lastPlotTime = 0;
 
         return finished;
     }
@@ -371,7 +371,7 @@ public class DrawSpectrum {
                     throw new IOException(ex.getMessage());
                 }
             } while (true);
-            drawSpectrum.setLastPlotTime();
+
         }
     }
 
