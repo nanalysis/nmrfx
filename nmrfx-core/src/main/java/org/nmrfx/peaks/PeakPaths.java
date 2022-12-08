@@ -83,7 +83,7 @@ public class PeakPaths implements PeakListener {
         TITRATION,
         PRESSURE;
     }
-    Comparator<Peak> peakComparator = (o1, o2) -> Integer.compare(o1.getIdNum(), o2.getIdNum());
+    Comparator<Peak> peakComparator = Comparator.comparingInt(Peak::getIdNum);
 
     boolean fit0 = false;
     ArrayList<PeakList> peakLists = new ArrayList<>();
@@ -602,14 +602,16 @@ public class PeakPaths implements PeakListener {
 
     public void removePeak(Peak startPeak, Peak selPeak) {
         Peak pathPeak = findPathPeak(selPeak);
-        PeakPath path = getPath(pathPeak);
-        selPeak.setStatus(0);
-        System.out.println("remove " + selPeak.getName() + " " + selPeak.getStatus());
-        if ((pathPeak != null) && (path != null)) {
-            int index = peakLists.indexOf(selPeak.getPeakList());
-            path.peakDists.set(index, null);
-            //path.confirm();
-            System.out.println(path.toString());
+        if (pathPeak != null) {
+            PeakPath path = getPath(pathPeak);
+            selPeak.setStatus(0);
+            System.out.println("remove " + selPeak.getName() + " " + selPeak.getStatus());
+            if ((pathPeak != null) && (path != null)) {
+                int index = peakLists.indexOf(selPeak.getPeakList());
+                path.peakDists.set(index, null);
+                //path.confirm();
+                System.out.println(path.toString());
+            }
         }
     }
 
