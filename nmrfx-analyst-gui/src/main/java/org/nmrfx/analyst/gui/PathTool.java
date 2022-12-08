@@ -312,6 +312,24 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
     void setupChart(List<String> datasetNames) {
         chart.updateDatasets(datasetNames);
+        var peakAttrs = chart.getPeakListAttributes();
+        var peakListNames = new ArrayList<String>();
+        chart.getDatasetAttributes().stream().map(attr -> attr.getDataset()).forEach(dataset -> {
+            PeakList peakList = null;
+            for (var peakAttr : peakAttrs) {
+                if (peakAttr.getPeakList().getDatasetName().equals(dataset.getName())) {
+                    peakList = peakAttr.getPeakList();
+                }
+            }
+            if (peakList == null) {
+                peakList = PeakList.getPeakListForDataset(dataset.getName());
+            }
+            if (peakList != null) {
+                peakListNames.add(peakList.getName());
+            }
+        });
+        chart.updatePeakLists(peakListNames);
+
         for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
             peakAttr.setColorType(PeakDisplayParameters.ColorTypes.Status);
         }
@@ -727,7 +745,6 @@ checkLists(pp, 0.25, False)
 
     void extendPath() {
         if (peakPaths != null) {
-
             double radius = Double.parseDouble(radiusField.getText());
             double lim = Double.parseDouble(tolField.getText());
             Peak startPeak = peakNavigator.getPeak();
