@@ -983,6 +983,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             });
             ((Service<Integer>) worker).setOnFailed(event -> {
                 setProcessingOff();
+                // Processing is finished if it has ended with errors
+                Processor.getProcessor().setProcessorAvailableStatus(true);
                 final Throwable exception = worker.getException();
                 setProcessingStatus(exception.getMessage(), false, exception);
 

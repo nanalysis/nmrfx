@@ -354,9 +354,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         if (contentController != null) {
             contentController.setChart(activeChart);
         }
-        if (statusBar != null) {
-            statusBar.setChart(activeChart);
-        }
     }
 
     public PolyChart getActiveChart() {
@@ -743,10 +740,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         isFID = false;
         //dataset.setScale(1.0);
         int nDim = dataset.getNDim();
-        // fixme kluge as not all datasets that are freq domain have attribute set
-        for (int i = 0; ((i < nDim) && (i < 2)); i++) {
-            dataset.setFreqDomain(i, true);
-        }
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
         datasetAttributes.dim[0] = 0;
         if (nDim > 1) {

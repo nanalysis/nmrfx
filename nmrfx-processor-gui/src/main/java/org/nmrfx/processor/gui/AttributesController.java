@@ -417,6 +417,7 @@ public class AttributesController implements Initializable {
         aspectCheckBox.selectedProperty().unbindBidirectional((polyChart.chartProps.aspectProperty()));
        // polyChart.disDimProp.removeListener(dimListener);
         chart.getDatasetAttributes().removeListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
+        chart.disDimProp.unbindBidirectional(disDimCombo.valueProperty());
     }
 
     public void bindToChart(PolyChart polyChart) {
@@ -487,7 +488,7 @@ public class AttributesController implements Initializable {
         disDimCombo.setValue(curDisDim);
         //chart.disDimProp.addListener((ChangeListener<? super PolyChart.DISDIM>) dimListener);
         chart.getDatasetAttributes().addListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
-        // polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
+         polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }
 
     private void datasetsChanged() {
@@ -499,6 +500,7 @@ public class AttributesController implements Initializable {
         if (!datasetChoiceBox.getItems().isEmpty()) {
             datasetChoiceBox.setValue(datasetChoiceBox.getItems().get(0));
         }
+        updateDimensions();
     }
 
     private void refreshCharts() {
@@ -531,9 +533,22 @@ public class AttributesController implements Initializable {
         return result;
     }
 
+    private void updateDimensions() {
+        int dim = 0;
+        if (chart != null && chart.getDataset() != null) {
+            chart.updateAxisType(true);
+            dim = chart.getNDim();
+        }
+        updateDims();
+        if (dim > 2) {
+            setLimits();
+        }
+    }
+
     private void createViewGrid() {
         disDimCombo.getItems().addAll(OneDX, TwoD);
-        //disDimCombo.setValue(OneDX);
+        disDimCombo.setValue(PolyChart.getActiveChart().disDimProp.get());
+        disDimCombo.valueProperty().addListener(((observable, oldValue, newValue) -> updateDimensions()));
         limitFields = new StringProperty[rowNames.length][2];
         labelFields = new Label[rowNames.length];
         int iRow = 1;

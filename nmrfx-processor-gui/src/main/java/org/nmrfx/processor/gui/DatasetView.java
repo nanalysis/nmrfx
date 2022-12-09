@@ -23,6 +23,7 @@ import org.nmrfx.utilities.DictionarySort;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 public class DatasetView {
     FXMLController fxmlController;
@@ -32,13 +33,32 @@ public class DatasetView {
     Integer startIndex = null;
     boolean moveItemIsSelected = false;
     Node startNode = null;
+    private final ListChangeListener<DatasetAttributes> datasetAttributesListChangeListener = this::chartDatasetAttributesListener;
 
     public DatasetView(FXMLController fxmlController, ContentController controller) {
         this.fxmlController = fxmlController;
         this.attributesController = controller;
         datasetView = controller.datasetView;
-        datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartDatasets();
+        datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> {
+            PolyChart chart = this.fxmlController.getActiveChart();
+            // Must remove this listener since it calls updateDatasetView, which this listener may
+            // already have been triggered from, resulting in an UnsupportedOperationException on the datasetView(ListSelectionView)
+            chart.getDatasetAttributes().removeListener(datasetAttributesListChangeListener);
+            updateChartDatasets();
+            chart.getDatasetAttributes().addListener(datasetAttributesListChangeListener);
+        };
         datasetView.getTargetItems().addListener(datasetTargetListener);
+        this.fxmlController.getActiveChart().getDatasetAttributes().addListener(datasetAttributesListChangeListener);
+        PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> {
+
+            if (oldValue != null && this.fxmlController.getCharts().contains(oldValue)) {
+                oldValue.getDatasetAttributes().removeListener(datasetAttributesListChangeListener);
+            }
+            if (newValue != null && this.fxmlController.getCharts().contains(newValue)) {
+                newValue.getDatasetAttributes().addListener(datasetAttributesListChangeListener);
+                updateDatasetView();
+            }
+        });
         initView();
     }
 
@@ -71,6 +91,10 @@ public class DatasetView {
         return chart.getDatasetAttributes().stream().filter( dAttr -> dAttr.getDataset().getName().equals(name)).findFirst();
     }
 
+    public void chartDatasetAttributesListener(ListChangeListener.Change<? extends DatasetAttributes> change) {
+        updateDatasetView();
+    }
+
     public void updateDatasetView() {
         datasetView.getTargetItems().removeListener(datasetTargetListener);
         ObservableList<String> datasetsTarget = datasetView.getTargetItems();
@@ -94,6 +118,21 @@ public class DatasetView {
         ObservableList<String> datasetTargets = datasetView.getTargetItems();
         PolyChart chart = fxmlController.getActiveChart();
         chart.updateDatasets(datasetTargets);
+        if (datasetTargets.isEmpty()) {
+            chart.removeProjections();
+            chart.getCrossHairs().hideCrossHairs();
+        } else {
+            chart.updateProjections();
+            chart.updateProjectionBorders();
+            chart.updateProjectionScale();
+        }
+        try {
+            // TODO NMR-6048: remove sleep once threading issue fixed
+            TimeUnit.MILLISECONDS.sleep(200);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+        chart.refresh();
     }
 
 
