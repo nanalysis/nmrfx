@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -90,6 +91,12 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
                         chart.updateProjectionBorders();
                     }
                     chart.updateProjectionScale();
+                    try {
+                        // TODO NMR-6048: remove sleep once threading issue fixed
+                        TimeUnit.MILLISECONDS.sleep(200);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
                     chart.refresh();
                 });
             return true;

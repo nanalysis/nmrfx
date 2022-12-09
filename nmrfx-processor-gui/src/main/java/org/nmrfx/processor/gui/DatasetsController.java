@@ -28,6 +28,7 @@ import javafx.beans.binding.IntegerBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -236,10 +237,17 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         noiseCol.setCellValueFactory(new PropertyValueFactory<>("noiseLevel"));
         noiseCol.setCellFactory(tc -> new DatasetDoubleFieldTableCell(dsConverter));
 
-        TableColumn<DatasetBase, Integer> nDimCol = new TableColumn<>("nD");
+        TableColumn<DatasetBase, Integer> nDimCol = new TableColumn<>("dim");
         nDimCol.setCellValueFactory(new PropertyValueFactory<>("nDim"));
-        nDimCol.setPrefWidth(25);
+        nDimCol.setPrefWidth(30);
         nDimCol.setEditable(false);
+
+        TableColumn<DatasetBase, Integer> nFreqDimCol = new TableColumn<>("freq\ndim");
+        nFreqDimCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getNFreqDims()));
+        nFreqDimCol.setCellFactory(TextFieldTableCell.forTableColumn(new IntegerColumnFormatter()));
+        nFreqDimCol.setPrefWidth(30);
+        nFreqDimCol.setOnEditCommit(this::nFreqDimsChanged);
+
 
         TableColumn<DatasetBase, Boolean> posDrawOnCol = new TableColumn<>("on");
         posDrawOnCol.setCellValueFactory(new PropertyValueFactory<>("negDrawOn"));
@@ -417,9 +425,18 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             menu.getItems().add(dimItem);
         }
         dim1Column.setContextMenu(menu);
-        tableView.getColumns().setAll(fileNameCol, nDimCol, levelCol, scaleCol, noiseCol, positiveColumn, negativeColumn, dim1Column);
+        tableView.getColumns().setAll(fileNameCol, nDimCol, nFreqDimCol, levelCol, scaleCol, noiseCol, positiveColumn, negativeColumn, dim1Column);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         setDatasetList((ObservableList<DatasetBase>) ProjectBase.getActive().getDatasets());
+    }
+
+    private void nFreqDimsChanged(TableColumn.CellEditEvent<DatasetBase, Integer> event) {
+        int newFreqDim = event.getNewValue() != null ? event.getNewValue() : event.getOldValue();
+        DatasetBase dataset = event.getRowValue();
+        // freq dim must be between 0 and the max number of dimensions
+        newFreqDim = newFreqDim < 0 ? 0 : Math.min(newFreqDim, dataset.getNDim());
+        dataset.setNFreqDims(newFreqDim);
+        tableView.refresh();
     }
 
     private int getDimNum() {
@@ -664,4 +681,25 @@ public class DatasetsController implements Initializable, PropertyChangeListener
     void refresh() {
         tableView.refresh();
     }
+
+    /**
+     * Formatter to change between Integer and Strings in editable columns of Integers
+     */
+    private static class IntegerColumnFormatter extends javafx.util.converter.IntegerStringConverter {
+
+        @Override
+        public String toString(Integer object) {
+            return String.format("%d", object);
+        }
+
+        @Override
+        public Integer fromString(String string) {
+            try {
+                return Integer.parseInt(string);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+    }
+
 }

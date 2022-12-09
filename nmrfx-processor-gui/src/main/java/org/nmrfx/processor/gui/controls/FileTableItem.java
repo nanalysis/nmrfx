@@ -260,8 +260,9 @@ public class FileTableItem {
     public String toString(List<String> headers, Map<String, String> columnTypes) {
         StringBuilder sBuilder = new StringBuilder();
         char sepChar = '\t';
+        boolean first = true;
         for (String header : headers) {
-            if (sBuilder.length() > 0) {
+            if (!first) {
                 sBuilder.append(sepChar);
             }
             switch (header.toLowerCase()) {
@@ -311,6 +312,7 @@ public class FileTableItem {
 
                 }
             }
+            first = false;
         }
         return sBuilder.toString();
     }

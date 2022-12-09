@@ -84,6 +84,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.TimeUnit;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
@@ -1415,6 +1416,13 @@ public class SpecAttrWindowController implements Initializable {
             chart.updateProjectionScale();
         }
         updateDimensions();
+        try {
+            // TODO NMR-6048: remove sleep once threading issue fixed
+            TimeUnit.MILLISECONDS.sleep(200);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+        chart.refresh();
     }
 
     @FXML
@@ -1483,15 +1491,16 @@ public class SpecAttrWindowController implements Initializable {
         chart.disDimProp.set(disDimCombo.getValue());
 
         try {
-            chart.xAxis.lowerBoundProperty().setValue(formatter.parse(limitFields[0][0].get()));
-            chart.xAxis.upperBoundProperty().setValue(formatter.parse(limitFields[0][1].get()));
-            if (!chart.is1D()) {
-                for (int i = 1; (i < chart.getNDim()) && (i < chart.axes.length); i++) {
-                    NMRAxis axis = chart.axes[i];
+            for (int i = 0; (i < chart.getNDim()) && (i < chart.axes.length); i++) {
+                NMRAxis axis = chart.axes[i];
+                if (!limitFields[i][0].get().isEmpty() && limitFields[i][1].get().isEmpty()) {
                     axis.lowerBoundProperty().setValue(formatter.parse(limitFields[i][0].get()));
                     axis.upperBoundProperty().setValue(formatter.parse(limitFields[i][1].get()));
                 }
             }
+            // TODO NMR-6048: remove sleep once threading issue fixed
+            TimeUnit.MILLISECONDS.sleep(200);
+
             chart.layoutPlotChildren();
             if (isSceneMode()) {
                 List<PolyChart> charts = chart.getSceneMates(false);
@@ -1499,6 +1508,8 @@ public class SpecAttrWindowController implements Initializable {
             }
         } catch (ParseException parseE) {
             log.warn(parseE.getMessage(), parseE);
+        } catch (InterruptedException it) {
+            Thread.currentThread().interrupt();
         }
     }
 

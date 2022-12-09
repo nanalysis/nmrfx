@@ -775,6 +775,7 @@ public class SpectrumStatusBar {
             chart.updateProjectionScale();
             setMode(maxNDim.getAsInt());
         }
+        chart.updateAxisType(true);
         chart.full();
         chart.autoScale();
     }
@@ -785,6 +786,9 @@ public class SpectrumStatusBar {
                 DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
                 datasetAttr.setDim(rowName, dimName);
 
+                chart.updateProjections();
+                chart.updateProjectionBorders();
+                chart.updateProjectionScale();
                 for (int i = 0; i < chart.getNDim(); i++) {
                     chart.updateProjections();
                     chart.updateProjectionBorders();
