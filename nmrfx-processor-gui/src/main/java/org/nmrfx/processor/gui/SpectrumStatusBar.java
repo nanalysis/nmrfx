@@ -23,24 +23,8 @@
  */
 package org.nmrfx.processor.gui;
 
-import javafx.scene.control.*;
-import javafx.scene.control.Button;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextField;
-import org.checkerframework.checker.units.qual.C;
-import org.controlsfx.control.SegmentedButton;
-import org.nmrfx.utils.properties.CustomNumberTextField;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.OptionalInt;
-
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
@@ -49,26 +33,28 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
-import javafx.util.Callback;
 import org.apache.commons.lang3.SystemUtils;
+import org.controlsfx.control.SegmentedButton;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
+import org.nmrfx.processor.gui.utils.ToolBarUtils;
+import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.OptionalInt;
 
 /**
  *
@@ -125,7 +111,8 @@ public class SpectrumStatusBar {
     });
     MenuButton[] rowMenus = new MenuButton[maxSpinners];
     ChangeListener<Integer>[] planeListeners = new ChangeListener[maxSpinners];
-    ToolBar btoolBar;
+    ToolBar btoolBar1;
+    ToolBar btoolBar2;
     StackPane[][] crossTextIcons = new StackPane[2][2];
     StackPane[][] limitTextIcons = new StackPane[2][2];
     boolean[][] iconStates = new boolean[2][2];
@@ -146,8 +133,9 @@ public class SpectrumStatusBar {
         return controller;
     }
 
-    public void buildBar(ToolBar btoolBar) {
-        this.btoolBar = btoolBar;
+    public void buildBar(ToolBar btoolBar, ToolBar btoolBar2) {
+        this.btoolBar1 = btoolBar;
+        this.btoolBar2 = btoolBar2;
         peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
         peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
         buildCursorBar();
@@ -275,12 +263,8 @@ public class SpectrumStatusBar {
         ToggleButton selectorButton = GlyphsDude.createIconToggleButton(CanvasCursor.SELECTOR.getIcon(),"Selector",
                 MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
         selectorButton.setUserData(CanvasCursor.SELECTOR);
-        ToggleButton peakButton = new ToggleButton();
-        peakButton.setGraphic(IconUtilities.getIcon("crosshairs2"));
-        peakButton.setText("Peak");
-        peakButton.setContentDisplay(ContentDisplay.RIGHT);
-//        ToggleButton peakButton = GlyphsDude.createIconToggleButton(CanvasCursor.PEAK.getIcon(),"Peak",
-//                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+        ToggleButton peakButton = GlyphsDude.createIconToggleButton(CanvasCursor.PEAK.getIcon(),"Peak",
+                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
         peakButton.setUserData(CanvasCursor.PEAK);
         ToggleButton regionButton = GlyphsDude.createIconToggleButton(CanvasCursor.REGION.getIcon(),"Region",
                 MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
@@ -290,7 +274,6 @@ public class SpectrumStatusBar {
         buttons.add(peakButton);
         buttons.add(regionButton);
         for (ButtonBase button : buttons) {
-          //  button.getStyleClass().add("toolButton");
             button.setMinWidth(50);
         }
         cursorButtons = new SegmentedButton();
@@ -595,7 +578,8 @@ public class SpectrumStatusBar {
         arrayMode = true;
         setPlaneRanges(2, nRows);
         List<Node> nodes = new ArrayList<>();
-        nodes.add(toolButton);
+        List<Node> nodes2 = new ArrayList<>();
+        nodes2.add(toolButton);
         displayModeComboBox.getSelectionModel().select(DisplayMode.TRACES);
         nodes.add(displayModeComboBox);
 
@@ -626,9 +610,10 @@ public class SpectrumStatusBar {
             nodes.add(nodeFiller);
         }
         //  nodes.add(phaserStatus);
-        btoolBar.getItems().clear();
-
-        btoolBar.getItems().addAll(nodes);
+        btoolBar1.getItems().clear();
+        btoolBar1.getItems().addAll(nodes);
+        btoolBar2.getItems().clear();
+        btoolBar2.getItems().addAll(nodes2);
 
     }
 
@@ -640,15 +625,17 @@ public class SpectrumStatusBar {
         currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();
+        List<Node> nodes2 = new ArrayList<>();
         if (mode != 0) {
-            nodes.add(toolButton);
+            nodes2.add(toolButton);
+            nodes2.add(ToolBarUtils.makeFiller(10));
         }
         if (mode == 1) {
             for (var button:specialButtons) {
-                nodes.add(button);
+                nodes2.add(button);
             }
         } else if (mode > 1) {
-            nodes.add(peakPickButton);
+            nodes2.add(peakPickButton);
         }
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);
@@ -688,9 +675,11 @@ public class SpectrumStatusBar {
             nodes.add(sliceStatus);
         }
         nodes.add(phaserStatus);
-        btoolBar.getItems().clear();
-
-        btoolBar.getItems().addAll(nodes);
+        nodes2.add(ToolBarUtils.makeFiller(10));
+        btoolBar1.getItems().clear();
+        btoolBar1.getItems().addAll(nodes);
+        btoolBar2.getItems().clear();
+        btoolBar2.getItems().addAll(nodes2);
 
     }
 

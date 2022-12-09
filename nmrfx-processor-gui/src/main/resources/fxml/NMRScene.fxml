@@ -57,11 +57,11 @@
             <bottom>
                 <VBox fx:id="bottomBox">
                     <children>
-                        <ToolBar fx:id="btoolBar">
-                            <items>
+                        <VBox fx:id="btoolVBox">
+                            <children>
                                 <Pane HBox.hgrow="ALWAYS" />
-                            </items>
-                        </ToolBar>
+                            </children>
+                        </VBox>
                     </children>
                 </VBox>
             </bottom>

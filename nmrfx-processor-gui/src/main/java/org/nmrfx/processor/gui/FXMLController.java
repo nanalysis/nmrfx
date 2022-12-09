@@ -110,7 +110,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @FXML
     private ToolBar toolBar;
     @FXML
-    private ToolBar btoolBar;
+    private VBox btoolVBox;
     @FXML
     private VBox bottomBox;
     @FXML
@@ -1589,7 +1589,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
         toolBar.getItems().addAll(buttons);
 
         statusBar = new SpectrumStatusBar(this);
-        statusBar.buildBar(btoolBar);
+        ToolBar btoolBar = new ToolBar();
+        ToolBar btoolBar2 = new ToolBar();
+        btoolVBox.getChildren().addAll(btoolBar, btoolBar2);
+        statusBar.buildBar(btoolBar, btoolBar2);
         MainApp.getMainApp().addStatusBarTools(statusBar);
 
     }
