@@ -261,7 +261,7 @@ public final class NMRDataUtil {
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
-            if (attr.isRegularFile() && (file.endsWith("fid") || (file.endsWith("ser")) || file.toString().endsWith(".jdx") || file.toString().endsWith(".dx"))) {
+            if (attr.isRegularFile() && (file.endsWith("fid") || (file.endsWith("ser")) || file.toString().endsWith(".jdx") || file.toString().endsWith(".dx") || file.toString().endsWith(RS2DData.DATA_FILE_NAME))) {
                 String fidPath = NMRDataUtil.isFIDDir(file.toString());
                 if (fidPath != null) {
                     fileList.add(fidPath);

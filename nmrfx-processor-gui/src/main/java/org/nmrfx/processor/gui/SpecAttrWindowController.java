@@ -84,6 +84,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.TimeUnit;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
@@ -221,7 +222,7 @@ public class SpecAttrWindowController implements Initializable {
     ListChangeListener<String> peakTargetListener;
     ListChangeListener<String> datasetTargetListener;
     boolean shiftState = false;
-
+    private final ListChangeListener<DatasetAttributes> datasetAttributesListChangeListener = this::chartDatasetAttributesListener;
     ParSliderListener parSliderListener = new ParSliderListener();
 
     public class ParSliderListener implements ChangeListener<Number> {
@@ -286,8 +287,15 @@ public class SpecAttrWindowController implements Initializable {
                 updatePeakView();
             }
         });
+        chart = PolyChart.getActiveChart();
         peakTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartPeakLists();
-        datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartDatasets();
+        datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> {
+            // Must remove this listener since it calls updateDatasetView, which this listener may
+            // already have been triggered from, resulting in an UnsupportedOperationException on the datasetView(ListSelectionView)
+            chart.getDatasetAttributes().removeListener(datasetAttributesListChangeListener);
+            updateChartDatasets();
+            chart.getDatasetAttributes().addListener(datasetAttributesListChangeListener);
+        };
 
         datasetView.getTargetItems().addListener(datasetTargetListener);
         peakView.getTargetItems().addListener(peakTargetListener);
@@ -571,9 +579,35 @@ public class SpecAttrWindowController implements Initializable {
         }
     }
 
+    private void updateDimensions() {
+        int dim = 0;
+        if (chart != null && chart.getDataset() != null) {
+            chart.updateAxisType(true);
+            dim = chart.getNDim();
+        }
+        clearDimActions();
+        updateDims();
+        setupDimActions();
+        if (dim > 2) {
+            setLimits();
+        }
+    }
+
     private void createViewGrid() {
         disDimCombo.getItems().addAll(OneDX, TwoD);
-        //disDimCombo.setValue(OneDX);
+        disDimCombo.setValue(PolyChart.getActiveChart().disDimProp.get());
+        disDimCombo.valueProperty().addListener(((observable, oldValue, newValue) -> updateDimensions()));
+        PolyChart.getActiveChart().disDimProp.bindBidirectional(disDimCombo.valueProperty());
+
+        PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                oldValue.disDimProp.unbindBidirectional(disDimCombo.valueProperty());
+                DISDIM curDisDim = newValue.disDimProp.get();
+                disDimCombo.setValue(curDisDim);
+                setChart(newValue);
+                newValue.disDimProp.bindBidirectional(disDimCombo.valueProperty());
+            }
+        });
         limitFields = new StringProperty[rowNames.length][2];
         labelFields = new Label[rowNames.length];
         int iRow = 1;
@@ -681,6 +715,10 @@ public class SpecAttrWindowController implements Initializable {
 
     }
 
+    public void chartDatasetAttributesListener(ListChangeListener.Change<? extends DatasetAttributes> change) {
+        updateDatasetView();
+    }
+
     public void updateDatasetTableView() {
         boolean sceneMode = isSceneMode();
         if (datasetTableView == null) {
@@ -763,15 +801,19 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     public void setChart(PolyChart chart) {
+        if (chart != null) {
+            chart.getDatasetAttributes().removeListener(datasetAttributesListChangeListener);
+        }
         this.chart = chart;
         // disDimCombo.valueProperty().addListener(e -> setDisDim());
+        if (chart != null) {
+            chart.getDatasetAttributes().addListener(datasetAttributesListChangeListener);
+        }
         update();
     }
 
     public void update() {
         if (isShowing()) {
-            FXMLController fxmlController = FXMLController.getActiveController();
-            chart = fxmlController.getActiveChart();
             chart.setChartDisabled(true);
             updateDatasetTableView();
             updatePeakListTableView(false);
@@ -1373,6 +1415,14 @@ public class SpecAttrWindowController implements Initializable {
             chart.updateProjectionBorders();
             chart.updateProjectionScale();
         }
+        updateDimensions();
+        try {
+            // TODO NMR-6048: remove sleep once threading issue fixed
+            TimeUnit.MILLISECONDS.sleep(200);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+        chart.refresh();
     }
 
     @FXML
@@ -1441,15 +1491,16 @@ public class SpecAttrWindowController implements Initializable {
         chart.disDimProp.set(disDimCombo.getValue());
 
         try {
-            chart.xAxis.lowerBoundProperty().setValue(formatter.parse(limitFields[0][0].get()));
-            chart.xAxis.upperBoundProperty().setValue(formatter.parse(limitFields[0][1].get()));
-            if (!chart.is1D()) {
-                for (int i = 1; (i < chart.getNDim()) && (i < chart.axes.length); i++) {
-                    NMRAxis axis = chart.axes[i];
+            for (int i = 0; (i < chart.getNDim()) && (i < chart.axes.length); i++) {
+                NMRAxis axis = chart.axes[i];
+                if (!limitFields[i][0].get().isEmpty() && limitFields[i][1].get().isEmpty()) {
                     axis.lowerBoundProperty().setValue(formatter.parse(limitFields[i][0].get()));
                     axis.upperBoundProperty().setValue(formatter.parse(limitFields[i][1].get()));
                 }
             }
+            // TODO NMR-6048: remove sleep once threading issue fixed
+            TimeUnit.MILLISECONDS.sleep(200);
+
             chart.layoutPlotChildren();
             if (isSceneMode()) {
                 List<PolyChart> charts = chart.getSceneMates(false);
@@ -1457,6 +1508,8 @@ public class SpecAttrWindowController implements Initializable {
             }
         } catch (ParseException parseE) {
             log.warn(parseE.getMessage(), parseE);
+        } catch (InterruptedException it) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -1597,9 +1650,7 @@ public class SpecAttrWindowController implements Initializable {
         aspectSlider.valueProperty().bindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().bindBidirectional((polyChart.chartProps.aspectProperty()));
 
-        DISDIM curDisDim = polyChart.disDimProp.get();
-        disDimCombo.setValue(curDisDim);
-        // polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
+
     }
 
     void unifyWidth(boolean pos) {

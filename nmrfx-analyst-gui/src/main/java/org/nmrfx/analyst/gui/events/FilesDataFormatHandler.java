@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class FilesDataFormatHandler implements DataFormatEventHandler {
@@ -100,12 +101,16 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
             if (dimensions.size() == 1) {
                 unaddedDatasets.forEach(datasetToAdd -> controller.addDataset(datasetToAdd, true, false));
             } else {
-                // TODO NMR-5731 what to do for dragging 2D datasets onto 1D
                 chart.updateDatasets(datasetNames);
-                chart.autoScale();
                 chart.updateProjections();
                 chart.updateProjectionBorders();
                 chart.updateProjectionScale();
+            }
+            try {
+                // TODO NMR-6048: remove sleep once threading issue fixed
+                TimeUnit.MILLISECONDS.sleep(200);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
             }
             chart.refresh();
         }

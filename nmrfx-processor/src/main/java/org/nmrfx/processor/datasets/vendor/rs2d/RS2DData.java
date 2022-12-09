@@ -59,7 +59,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -105,6 +108,7 @@ public class RS2DData implements NMRData {
     private SampleSchedule sampleSchedule = null;
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
+    private ZonedDateTime zonedDateTime = null;
 
     private String[] acqOrder;
     int nvectors = 1;
@@ -157,6 +161,7 @@ public class RS2DData implements NMRData {
         Dataset dataset = new Dataset(path.toString(), datasetName, layout,
                 false, ByteOrder.BIG_ENDIAN, 0);
         dataset.newHeader();
+        int numFreqDomain = 0;
         for (int i = 0; i < nDim; i++) {
             resetSW(i);
             dataset.setComplex(i, isComplex(i));
@@ -166,11 +171,15 @@ public class RS2DData implements NMRData {
             dataset.setRefPt(i, dataset.getSizeReal(i) / 2.0);
             // State can be used to set the freq domain
             dataset.setFreqDomain(i, getState(i) == 1);
+            if (dataset.getFreqDomain(i)) {
+                numFreqDomain++;
+            }
             String nucLabel = getTN(i);
             dataset.setNucleus(i, nucLabel);
             dataset.setLabel(i, nucLabel + (i + 1));
             dataset.syncPars(i);
         }
+        dataset.setNFreqDims(numFreqDomain);
         if (nDim > 1) {
             dataset.setAxisReversed(1, true);
         }
@@ -307,11 +316,29 @@ public class RS2DData implements NMRData {
                     }
                 }
             }
+            setZonedDateTime();
+
             if (!processed) {
                 setFTParams();
             }
         } catch (ParserConfigurationException | SAXException | NullPointerException ex) {
             throw new IOException(ex.getMessage());
+        }
+    }
+
+    private void setZonedDateTime() {
+        Value<String> dateTimeValue = header.get("ACQUISITION_DATE");
+        if (dateTimeValue == null) {
+            log.warn("Unable to find date. Setting date to now.");
+            zonedDateTime = ZonedDateTime.now();
+            return;
+        }
+        String dateTimeStr = dateTimeValue.stringValue();
+        try {
+            zonedDateTime = ZonedDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        } catch (DateTimeParseException dtpe) {
+            log.warn("Unable to parse date. Setting date to now. {}", dtpe.getMessage(), dtpe);
+            zonedDateTime = ZonedDateTime.now();
         }
     }
 
@@ -1172,6 +1199,11 @@ public class RS2DData implements NMRData {
     @Override
     public DatasetType getPreferredDatasetType() {
         return preferredDatasetType;
+    }
+
+    @Override
+    public long getDate() {
+        return zonedDateTime.toEpochSecond();
     }
 
     private static void writeRow(Dataset dataset, Vec vec, int[] pt, BufferedOutputStream fOut) throws IOException {
