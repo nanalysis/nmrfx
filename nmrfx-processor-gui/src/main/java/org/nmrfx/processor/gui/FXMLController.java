@@ -298,7 +298,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         } else if (attributesButton.isSelected()) {
             rightBox.add(attributesPane, 0, 0);
-            attributesController.update();
+            attributesController.setAttributeControls();
         } else if (contentButton.isSelected()) {
             rightBox.add(contentPane, 0, 0);
             contentController.update();
@@ -1020,7 +1020,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void updateAttrDims() {
         if (attributesController != null) {
-            attributesController.updateDims();
+            attributesController.setAxisControlValues();
         }
     }
 
@@ -1141,7 +1141,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public void setActiveController() {
         activeController.set(this);
         if (attributesController != null) {
-            attributesController.update();
+            attributesController.setAttributeControls();
         }
     }
 

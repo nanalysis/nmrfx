@@ -1282,6 +1282,11 @@ public class PolyChart extends Region implements PeakListener {
         return ((dataset != null) && (dataset.getNDim() == 1) || (disDimProp.get() != DISDIM.TwoD));
     }
 
+    public boolean is1DDataset() {
+        DatasetBase dataset = getDataset();
+        return ((dataset != null) && (dataset.getNDim() == 1));
+    }
+
     public int getNDim() {
         int nDim = 0;
         DatasetBase dataset = getDataset();
@@ -1888,7 +1893,7 @@ public class PolyChart extends Region implements PeakListener {
 
             datasetFileProp.setValue(null);
         }
-        getFXMLController().attributesController.updateDims();
+        getFXMLController().attributesController.setAxisControlValues();
 
         crossHairs.hideCrossHairs();
         return datasetAttributes;

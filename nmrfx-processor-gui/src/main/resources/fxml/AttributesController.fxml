@@ -201,11 +201,11 @@
                     <VBox>
                         <children>
                             <CheckBox fx:id="peakDisplayCheckBox" mnemonicParsing="false"
-                                      onAction="#setSlices" text="Show Peaks"/>
+                                      onAction="#updateSlices" text="Show Peaks"/>
                             <CheckBox fx:id="simPeakDisplayCheckBox" mnemonicParsing="false"
-                                      onAction="#setSlices" text="Show Peak Simulation Profiles"/>
+                                      onAction="#updateSlices" text="Show Peak Simulation Profiles"/>
                             <CheckBox fx:id="linkPeakDisplayCheckBox" mnemonicParsing="false"
-                                      onAction="#setSlices" text="Show Peak Link Lines"/>
+                                      onAction="#updateSlices" text="Show Peak Link Lines"/>
                             <GridPane BorderPane.alignment="CENTER" GridPane.rowIndex="0"
                                       GridPane.columnIndex="1" GridPane.columnSpan="1">
                                 <children>
@@ -251,7 +251,7 @@
                     <VBox>
                         <children>
                             <CheckBox fx:id="sliceStatusCheckBox" mnemonicParsing="false"
-                                      onAction="#setSlices" text="Show Slices"/>
+                                      onAction="#updateSlices" text="Show Slices"/>
                             <CheckBox fx:id="offsetTrackingCheckBox" mnemonicParsing="false"
                                       onAction="#sliceAction" text="Center slices at crosshair"/>
                             <CheckBox fx:id="useDatasetColorCheckBox" mnemonicParsing="false"

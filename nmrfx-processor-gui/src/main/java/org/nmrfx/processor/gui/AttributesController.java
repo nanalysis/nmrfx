@@ -44,11 +44,13 @@ public class AttributesController implements Initializable {
     static {
         FORMATTER.setMaximumFractionDigits(3);
     }
+
     enum SelectionChoice {
         DATASET,
         CHART,
         WINDOW
     }
+
     @FXML
     ChoiceBox<SelectionChoice> datasetChoiceState;
     @FXML
@@ -58,7 +60,7 @@ public class AttributesController implements Initializable {
     @FXML
     TitledPane contourLevelPane;
     @FXML
-    TitledPane  contourAppearancePane;
+    TitledPane contourAppearancePane;
     @FXML
     TitledPane oneDPane;
     @FXML
@@ -228,11 +230,6 @@ public class AttributesController implements Initializable {
     PeakColorTypeListener peakColorTypeListener = new PeakColorTypeListener();
     PeakLabelTypeListener peakLabelTypeListener = new PeakLabelTypeListener();
 
-    ChangeListener<PolyChart.DISDIM> dimListener = (observableValue, o, t1) -> {
-        PolyChart.DISDIM disDim = t1;
-        redraw();
-    };
-
     boolean shiftState = false;
     Boolean accordionIn1D = null;
     PolyChart chart;
@@ -311,8 +308,8 @@ public class AttributesController implements Initializable {
         rightBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
         topBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
         bottomBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
-        integralPosSlider.lowValueProperty().addListener(e -> updateIntegralState());
-        integralPosSlider.highValueProperty().addListener(e -> updateIntegralState());
+        integralPosSlider.lowValueProperty().addListener(e -> setIntegralSliderText());
+        integralPosSlider.highValueProperty().addListener(e -> setIntegralSliderText());
         regionCheckBox.selectedProperty().addListener(e -> refreshLater());
         integralCheckBox.selectedProperty().addListener(e -> refreshLater());
         gridCheckBox.selectedProperty().addListener(e -> refreshLater());
@@ -334,21 +331,21 @@ public class AttributesController implements Initializable {
         aspectSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
         aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
         lvlSlider.valueProperty().addListener(lvlSliderListener);
-        lvlSlider.setOnMouseReleased(e -> updateLvlSlider());
+        lvlSlider.setOnMouseReleased(e -> setLvlSlider());
         GUIUtils.bindSliderField(lvlSlider, lvlField);
         lvlSlider1D.valueProperty().addListener(lvlSliderListener);
-        lvlSlider1D.setOnMouseReleased(e -> updateLvlSlider());
+        lvlSlider1D.setOnMouseReleased(e -> setLvlSlider());
         GUIUtils.bindSliderField(lvlSlider1D, lvlField1D);
 
         clmSlider.valueProperty().addListener(clmSliderListener);
-        clmSlider.setOnMouseReleased(e -> updateClmSlider());
+        clmSlider.setOnMouseReleased(e -> setClmSliderValue());
         GUIUtils.bindSliderField(clmSlider, clmField);
 
         nlvlsSlider.valueProperty().addListener(nlvlsSliderListener);
-        nlvlsSlider.setOnMouseReleased(e -> updateNlvlSlider());
+        nlvlsSlider.setOnMouseReleased(e -> setNlvlSlider());
 
         offsetSlider.valueProperty().addListener(offsetSliderListener);
-        offsetSlider.setOnMouseReleased(e -> updateOffsetsSlider());
+        offsetSlider.setOnMouseReleased(e -> setOffsetsSlider());
         GUIUtils.bindSliderField(offsetSlider, offsetField);
 
         posColorPicker.valueProperty().addListener(posColorListener);
@@ -356,11 +353,11 @@ public class AttributesController implements Initializable {
         negColorPicker.valueProperty().addListener(negColorListener);
 
         posWidthSlider.valueProperty().addListener(posWidthSliderListener);
-        posWidthSlider.setOnMouseReleased(e -> updatePosWidthSlider(true));
+        posWidthSlider.setOnMouseReleased(e -> setPosWidthSlider(true));
         GUIUtils.bindSliderField(posWidthSlider, posWidthField);
 
         negWidthSlider.valueProperty().addListener(negWidthSliderListener);
-        negWidthSlider.setOnMouseReleased(e -> updatePosWidthSlider(false));
+        negWidthSlider.setOnMouseReleased(e -> setPosWidthSlider(false));
         GUIUtils.bindSliderField(negWidthSlider, negWidthField);
 
         posOnCheckbox.selectedProperty().addListener(posDrawOnListener);
@@ -379,7 +376,7 @@ public class AttributesController implements Initializable {
         peakOnColorPicker.valueProperty().addListener(peakOnColorListener);
         peakOffColorPicker.valueProperty().addListener(peakOffColorListener);
         createViewGrid();
-        disDimCombo.setOnAction(e -> displayModeComboBoxAction(e));
+        disDimCombo.setOnAction(this::displayModeComboBoxAction);
     }
 
     private void unBindChart(PolyChart polyChart) {
@@ -415,7 +412,6 @@ public class AttributesController implements Initializable {
 
         aspectSlider.valueProperty().unbindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().unbindBidirectional((polyChart.chartProps.aspectProperty()));
-       // polyChart.disDimProp.removeListener(dimListener);
         chart.getDatasetAttributes().removeListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
         chart.disDimProp.unbindBidirectional(disDimCombo.valueProperty());
     }
@@ -486,9 +482,8 @@ public class AttributesController implements Initializable {
 
         PolyChart.DISDIM curDisDim = polyChart.disDimProp.get();
         disDimCombo.setValue(curDisDim);
-        //chart.disDimProp.addListener((ChangeListener<? super PolyChart.DISDIM>) dimListener);
         chart.getDatasetAttributes().addListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
-         polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
+        polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }
 
     private void datasetsChanged() {
@@ -517,18 +512,26 @@ public class AttributesController implements Initializable {
         List<DatasetAttributes> result;
         if (datasetChoiceState.getValue() == SelectionChoice.DATASET) {
             if (datasetChoiceBox.getItems().isEmpty()) {
-                result = Collections.EMPTY_LIST;
+                result = Collections.emptyList();
             } else {
                 result = List.of(datasetChoiceBox.getValue());
             }
-        } else if (datasetChoiceState.getValue() == SelectionChoice.WINDOW) {
-            result = new ArrayList<>();
-            for (var controllerChart : fxmlController.getCharts()) {
-                result.addAll(controllerChart.getDatasetAttributes());
-            }
-
         } else {
-            result = chart.getDatasetAttributes();
+            result = new ArrayList<>();
+            for (var aChart : getCharts(allCharts())) {
+                result.addAll(aChart.getDatasetAttributes());
+            }
+        }
+        return result;
+    }
+
+    private List<PeakListAttributes> getPeakListAttributes() {
+        List<PeakListAttributes> result = new ArrayList<>();
+        if (datasetChoiceState.getValue() == SelectionChoice.DATASET) {
+        } else {
+            for (var aChart : getCharts(allCharts())) {
+                result.addAll(aChart.getPeakListAttributes());
+            }
         }
         return result;
     }
@@ -539,7 +542,7 @@ public class AttributesController implements Initializable {
             chart.updateAxisType(true);
             dim = chart.getNDim();
         }
-        updateDims();
+        setAxisControlValues();
         if (dim > 2) {
             setLimits();
         }
@@ -587,8 +590,8 @@ public class AttributesController implements Initializable {
             HBox hBox = new HBox();
             hBox.getChildren().addAll(mButton, minField, maxField, label);
             viewGrid.getChildren().add(hBox);
-            viewBoxes[iRow -1] = hBox;
-           // viewGrid.add(axisLabel, 5, iRow);
+            viewBoxes[iRow - 1] = hBox;
+            // viewGrid.add(axisLabel, 5, iRow);
             axisLabels[iRow - 1] = axisLabel;
             limitFields[iRow - 1][1] = maxField.textProperty();
             iRow++;
@@ -598,7 +601,7 @@ public class AttributesController implements Initializable {
     void setViewDims(int nDim) {
         int currentN = viewGrid.getChildren().size();
         if (currentN < nDim) {
-            for (int i=currentN;i<nDim;i++) {
+            for (int i = currentN; i < nDim; i++) {
                 viewGrid.getChildren().add(viewBoxes[i]);
             }
         } else if (currentN > nDim) {
@@ -617,7 +620,7 @@ public class AttributesController implements Initializable {
             double lower = axis.getLowerBound();
             double upper = axis.getUpperBound();
             setViewBound(i, 0, lower);
-            setViewBound(i,1, upper);
+            setViewBound(i, 1, upper);
             labelFields[i].setText(chart.axModes[i].name().toLowerCase());
             if (i > 1) {
                 if (!chart.getDatasetAttributes().isEmpty()) {
@@ -645,6 +648,7 @@ public class AttributesController implements Initializable {
             chart.lastPlane(iAxis);
         }
     }
+
     private void dimAction(String rowName, Event e) {
         DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
         ComboBox cBox = (ComboBox) e.getSource();
@@ -661,6 +665,7 @@ public class AttributesController implements Initializable {
             chart.full(i);
         }
     }
+
     private void displayModeComboBoxAction(ActionEvent event) {
         ComboBox<PolyChart.DISDIM> modeComboBox = (ComboBox<PolyChart.DISDIM>) event.getSource();
         if (modeComboBox.isShowing()) {
@@ -694,15 +699,17 @@ public class AttributesController implements Initializable {
     }
 
     @FXML
-    private void setSlices() {
+    private void updateSlices() {
         final boolean status = sliceStatusCheckBox.isSelected();
         fxmlController.charts.forEach(c -> c.setSliceStatus(status));
     }
+
     abstract class ParSliderListener implements ChangeListener<Number> {
 
         boolean active = true;
 
-       abstract void update(DatasetAttributes dataAttr, double value);
+        abstract void update(DatasetAttributes dataAttr, double value);
+
         @Override
         public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
             if (active) {
@@ -714,21 +721,25 @@ public class AttributesController implements Initializable {
             }
         }
     }
+
     public class LvlSliderListener extends ParSliderListener {
         void update(DatasetAttributes dataAttr, double value) {
             dataAttr.setLvl(value);
         }
     }
+
     public class ClmSliderListener extends ParSliderListener {
         void update(DatasetAttributes dataAttr, double value) {
             dataAttr.setClm(value);
         }
     }
+
     public class OffsetSliderListener extends ParSliderListener {
         void update(DatasetAttributes dataAttr, double value) {
             dataAttr.setOffset(value);
         }
     }
+
     public class NlvlSliderListener extends ParSliderListener {
         void update(DatasetAttributes dataAttr, double value) {
             int iValue = (int) Math.round(value);
@@ -742,12 +753,14 @@ public class AttributesController implements Initializable {
             dataAttr.setPosWidth(value);
         }
     }
+
     public class NegWidthSliderListener extends ParSliderListener {
         void update(DatasetAttributes dataAttr, double value) {
             dataAttr.setNegWidth(value);
         }
     }
-    void updateSlider(ParSliderListener sliderListener, Slider slider, double min, double max, double incrValue, double value) {
+
+    void setSlider(ParSliderListener sliderListener, Slider slider, double min, double max, double incrValue, double value) {
         sliderListener.active = false;
         slider.setMin(min);
         slider.setMax(max);
@@ -756,58 +769,59 @@ public class AttributesController implements Initializable {
         sliderListener.active = true;
     }
 
-    void updateLvlSlider() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+    void setLvlSlider() {
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double value = dataAttr.getLvl();
             double min = value / 5.0;
             double max = value * 5.0;
             double incrValue = value / 50.0;
-            updateSlider(lvlSliderListener, lvlSlider, min, max,incrValue,value);
-            updateSlider(lvlSliderListener, lvlSlider1D, min, max,incrValue,value);
+            setSlider(lvlSliderListener, lvlSlider, min, max, incrValue, value);
+            setSlider(lvlSliderListener, lvlSlider1D, min, max, incrValue, value);
         }
     }
 
-    void updateClmSlider() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+    void setClmSliderValue() {
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 1.01;
             double max = 4.0;
             double incrValue = 0.01;
             double value = dataAttr.getClm();
-            updateSlider(clmSliderListener, clmSlider, min, max, incrValue, value);
+            setSlider(clmSliderListener, clmSlider, min, max, incrValue, value);
         }
     }
-    void updateOffsetsSlider() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+
+    void setOffsetsSlider() {
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 0.0;
             double max = 1.0;
             double incrValue = 0.01;
             double value = dataAttr.getOffset();
-            updateSlider(offsetSliderListener, offsetSlider, min, max, incrValue, value);
+            setSlider(offsetSliderListener, offsetSlider, min, max, incrValue, value);
         }
     }
 
-    void updateNlvlSlider() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+    void setNlvlSlider() {
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 1.0;
             double max = 50.0;
             double incrValue = 1.0;
             double value = dataAttr.getNlvls();
-            updateSlider(nlvlsSliderListener, nlvlsSlider, min, max, incrValue, value);
+            setSlider(nlvlsSliderListener, nlvlsSlider, min, max, incrValue, value);
             int iValue = (int) Math.round(value);
             nlvlsField.setText(String.format("%d", iValue));
         }
     }
 
-    void updatePosWidthSlider(boolean posMode) {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+    void setPosWidthSlider(boolean posMode) {
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double value = posMode ? dataAttr.getPosWidth() : dataAttr.getNegWidth();
@@ -815,9 +829,9 @@ public class AttributesController implements Initializable {
             double max = 3.0;
             double incrValue = 0.1;
             if (posMode) {
-                updateSlider(posWidthSliderListener, posWidthSlider, min, max, incrValue, value);
+                setSlider(posWidthSliderListener, posWidthSlider, min, max, incrValue, value);
             } else {
-                updateSlider(negWidthSliderListener, negWidthSlider, min, max, incrValue, value);
+                setSlider(negWidthSliderListener, negWidthSlider, min, max, incrValue, value);
             }
         }
     }
@@ -827,6 +841,7 @@ public class AttributesController implements Initializable {
         boolean active = true;
 
         abstract void update(DatasetAttributes dataAttr, Color value);
+
         @Override
         public void changed(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
             if (active) {
@@ -838,20 +853,23 @@ public class AttributesController implements Initializable {
             }
         }
     }
+
     public class PosColorListener extends ColorListener {
         void update(DatasetAttributes dataAttr, Color value) {
             dataAttr.setPosColor(value);
         }
     }
+
     public class NegColorListener extends ColorListener {
         void update(DatasetAttributes dataAttr, Color value) {
             dataAttr.setNegColor(value);
         }
     }
-    void updateContourColor(boolean posMode) {
+
+    void setContourColorControls(boolean posMode) {
         posColorListener.active = false;
         negColorListener.active = false;
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             if (posMode) {
@@ -866,11 +884,13 @@ public class AttributesController implements Initializable {
         posColorListener.active = true;
         negColorListener.active = true;
     }
+
     abstract class DrawOnListener implements ChangeListener<Boolean> {
 
         boolean active = true;
 
         abstract void update(DatasetAttributes dataAttr, Boolean value);
+
         @Override
         public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
             if (active) {
@@ -882,20 +902,23 @@ public class AttributesController implements Initializable {
             }
         }
     }
+
     public class PosDrawOnListener extends DrawOnListener {
         void update(DatasetAttributes dataAttr, Boolean value) {
             dataAttr.setPos(value);
         }
     }
+
     public class NegDrawOnListener extends DrawOnListener {
         void update(DatasetAttributes dataAttr, Boolean value) {
             dataAttr.setNeg(value);
         }
     }
-    void updateDrawOn(boolean posMode) {
+
+    void setDrawOnControls(boolean posMode) {
         posDrawOnListener.active = false;
         negDrawOnListener.active = false;
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             if (posMode) {
@@ -908,33 +931,38 @@ public class AttributesController implements Initializable {
         posDrawOnListener.active = true;
         negDrawOnListener.active = true;
     }
+
     abstract class PeakColorListener implements ChangeListener<Color> {
 
         boolean active = true;
 
         abstract void update(PeakListAttributes peakListAttr, Color value);
+
         @Override
         public void changed(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
             if (active) {
-                List<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
+                List<PeakListAttributes> peakListAttrs = getPeakListAttributes();
                 for (PeakListAttributes peakListAttr : peakListAttrs) {
                     update(peakListAttr, newValue);
                 }
-                chart.refresh();
+                refreshCharts();
             }
         }
     }
+
     public class PeakOnColorListener extends PeakColorListener {
         void update(PeakListAttributes peakListAttr, Color value) {
             peakListAttr.setOnColor(value);
         }
     }
+
     public class PeakOffColorListener extends PeakColorListener {
         void update(PeakListAttributes peakListAttr, Color value) {
             peakListAttr.setOffColor(value);
         }
     }
-    void updatePeakColor(boolean onMode) {
+
+    void setPeakColorControls(boolean onMode) {
         peakOnColorListener.active = false;
         peakOffColorListener.active = false;
         List<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
@@ -957,34 +985,38 @@ public class AttributesController implements Initializable {
         boolean active = true;
 
         abstract void update(PeakListAttributes peakListAttr, Boolean value);
+
         @Override
         public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
             if (active) {
-                List<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
+                List<PeakListAttributes> peakListAttrs = getPeakListAttributes();
                 for (PeakListAttributes peakListAttr : peakListAttrs) {
                     update(peakListAttr, newValue);
                 }
-                chart.refresh();
+                refreshCharts();
             }
         }
     }
+
     public class DrawPeaksListener extends PeakCheckBoxListener {
         void update(PeakListAttributes peakListAttr, Boolean value) {
             peakListAttr.setDrawPeaks(value);
         }
     }
+
     public class DrawSimPeaksListener extends PeakCheckBoxListener {
         void update(PeakListAttributes peakListAttr, Boolean value) {
             peakListAttr.setSimPeaks(value);
         }
     }
+
     public class DrawLinkPeaksListener extends PeakCheckBoxListener {
         void update(PeakListAttributes peakListAttr, Boolean value) {
             peakListAttr.setDrawLinks(value);
         }
     }
 
-    void updatePeakCheckBoxes() {
+    void setPeakCheckBoxes() {
         List<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
         if (!peakListAttrs.isEmpty()) {
             PeakListAttributes peakListAttr = peakListAttrs.get(0);
@@ -1012,34 +1044,35 @@ public class AttributesController implements Initializable {
         public void changed(ObservableValue observable,
                             Object oldValue, Object newValue) {
             if (active) {
-                List<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
+                List<PeakListAttributes> peakListAttrs = getPeakListAttributes();
                 for (PeakListAttributes peakListAttr : peakListAttrs) {
                     update(peakListAttr, (T) newValue);
                 }
-                chart.refresh();
+                refreshCharts();
             }
         }
     }
 
     class PeakColorTypeListener extends PeakTypeListener<PeakDisplayParameters.ColorTypes> {
-        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.ColorTypes value){
+        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.ColorTypes value) {
             peakListAttr.setColorType(value);
         }
     }
 
 
     class PeakDisplayTypeListener extends PeakTypeListener<PeakDisplayParameters.DisplayTypes> {
-        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.DisplayTypes value){
+        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.DisplayTypes value) {
             peakListAttr.setDisplayType(value);
         }
     }
+
     class PeakLabelTypeListener extends PeakTypeListener<PeakDisplayParameters.LabelTypes> {
-        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.LabelTypes value){
+        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.LabelTypes value) {
             peakListAttr.setLabelType(value);
         }
     }
 
-    void updatePeakDisplayComboBoxes() {
+    void setPeakDisplayComboBoxes() {
         List<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
         if (!peakListAttrs.isEmpty()) {
             PeakListAttributes peakListAttr = peakListAttrs.get(0);
@@ -1060,23 +1093,23 @@ public class AttributesController implements Initializable {
 
     public void setChart(PolyChart chart) {
         this.chart = chart;
-        update();
+        setAttributeControls();
     }
 
     private boolean isShowing() {
         return fxmlController.isSideBarAttributesShowing();
     }
 
-    private void updateContourSliders() {
-        updateLvlSlider();
-        updateNlvlSlider();
-        updateClmSlider();
-        updateOffsetsSlider();
-        updatePosWidthSlider(true);
-        updatePosWidthSlider(false);
+    private void setContourSliders() {
+        setLvlSlider();
+        setNlvlSlider();
+        setClmSliderValue();
+        setOffsetsSlider();
+        setPosWidthSlider(true);
+        setPosWidthSlider(false);
     }
 
-    void updateDim() {
+    void setDimControls() {
         if (chart.is1D() && (accordionIn1D != Boolean.TRUE)) {
             attributesAccordion.getPanes().removeAll(contourLevelPane, contourAppearancePane, oneDPane, integralsPane);
             attributesAccordion.getPanes().add(2, integralsPane);
@@ -1088,10 +1121,16 @@ public class AttributesController implements Initializable {
             attributesAccordion.getPanes().add(2, contourLevelPane);
             accordionIn1D = false;
         }
+        if (chart.is1DDataset()) {
+            disDimCombo.setDisable(true);
+        } else {
+            disDimCombo.setDisable(false);
+        }
         disDimCombo.setValue(chart.disDimProp.getValue());
 
     }
-    void updateDims() {
+
+    void setAxisControlValues() {
         // fix me is this right
         int start = 0;
         if (!chart.getDatasetAttributes().isEmpty()) {
@@ -1112,27 +1151,28 @@ public class AttributesController implements Initializable {
         }
     }
 
-    public void update() {
+    public void setAttributeControls() {
         if ((chart != null) && isShowing()) {
-            updateDim();
             chart = fxmlController.getActiveChart();
             chart.setChartDisabled(true);
             datasetsChanged();
-            updateContourSliders();
-            updateContourColor(true);
-            updateContourColor(false);
-            updateDrawOn(true);
-            updateDrawOn(false);
-            updatePeakCheckBoxes();
-            updatePeakColor(true);
-            updatePeakColor(false);
-            updatePeakDisplayComboBoxes();
+            setContourSliders();
+            setContourColorControls(true);
+            setContourColorControls(false);
+            setDrawOnControls(true);
+            setDrawOnControls(false);
+            setPeakCheckBoxes();
+            setPeakColorControls(true);
+            setPeakColorControls(false);
+            setPeakDisplayComboBoxes();
             //disDimCombo.setValue(OneDX);
 
 //            updatePeakListTableView(false);
- //           clearDimActions();
+            //           clearDimActions();
             bindToChart(chart);
-             setLimits();
+            setLimits();
+            setDimControls();
+
 //            updateDatasetView();
 //            updatePeakView();
 //            updateDims();
@@ -1144,9 +1184,11 @@ public class AttributesController implements Initializable {
 
     @FXML
     private void sliceAction(Event event) {
-        chart.sliceAttributes.setSlice1Color(slice1ColorPicker.getValue());
-        chart.sliceAttributes.setSlice2Color(slice2ColorPicker.getValue());
-        chart.getCrossHairs().refreshCrossHairs();
+        getCharts(allCharts()).forEach(aChart -> {
+            aChart.sliceAttributes.setSlice1Color(slice1ColorPicker.getValue());
+            aChart.sliceAttributes.setSlice2Color(slice2ColorPicker.getValue());
+            aChart.getCrossHairs().refreshCrossHairs();
+        });
     }
 
     @FXML
@@ -1166,47 +1208,51 @@ public class AttributesController implements Initializable {
         double x = screenBounds.getMinX() - 100.0;
         double y = screenBounds.getMaxY();
         if (posMode) {
-            setPosColorsToSchema(x, y);
+            updatePositiveColorsWithSchema(x, y);
         } else {
-            setNegColorsToSchema(x, y);
+            updateNegativeColorsWithSchema(x, y);
         }
     }
 
-    void setPosColorsToSchema(double x, double y) {
-        ColorSchemes.showSchemaChooser(this::updatePosColorsWithSchema, x, y);
+    void updatePositiveColorsWithSchema(double x, double y) {
+        ColorSchemes.showSchemaChooser(this::updatePositiveColorsWithSchema, x, y);
     }
 
-    void setNegColorsToSchema(double x, double y) {
-        ColorSchemes.showSchemaChooser(this::updateNegColorsWithSchema, x, y);
+    void updateNegativeColorsWithSchema(double x, double y) {
+        ColorSchemes.showSchemaChooser(this::updateNegativeColorsWithSchema, x, y);
     }
 
-    public void updateNegColorsWithSchema(String colorName) {
+    public void updateNegativeColorsWithSchema(String colorName) {
         updateColorsWithSchema(colorName, false);
 
     }
 
-    public void updatePosColorsWithSchema(String colorName) {
+    public void updatePositiveColorsWithSchema(String colorName) {
         updateColorsWithSchema(colorName, true);
     }
 
     public void updateColorsWithSchema(String colorName, boolean posColors) {
-        var items = chart.getDatasetAttributes();
-        if (items.size() < 2) {
-            return;
-        }
-        int i = 0;
-        List<Color> colors = ColorSchemes.getColors(colorName, items.size());
-        for (DatasetAttributes dataAttr : items) {
-            Color color = colors.get(i++);
-            if (posColors) {
-                dataAttr.setPosColor(color);
-            } else {
-                dataAttr.setNegColor(color);
+        List<PolyChart> applyCharts = getCharts(allCharts());
+        for (PolyChart applyChart : applyCharts) {
+
+            var items = applyChart.getDatasetAttributes();
+            if (items.size() < 2) {
+                return;
             }
+            int i = 0;
+            List<Color> colors = ColorSchemes.getColors(colorName, items.size());
+            for (DatasetAttributes dataAttr : items) {
+                Color color = colors.get(i++);
+                if (posColors) {
+                    dataAttr.setPosColor(color);
+                } else {
+                    dataAttr.setNegColor(color);
+                }
+            }
+            applyChart.refresh();
         }
-       // datasetTableView.refresh();
-        chart.refresh();
     }
+
     private void updateBGColor() {
         // check to see if the new background color is the same as the pos color
         // for first dataset.  If it is, change the color of the first dataset
@@ -1231,12 +1277,12 @@ public class AttributesController implements Initializable {
     }
 
     void redraw() {
-        updateProps();
+        updateChartProperties();
         refreshLater();
     }
 
     @FXML
-    private void updateProps() {
+    private void updateChartProperties() {
         chart.disDimProp.set(disDimCombo.getValue());
         if (bgColorCheckBox.isSelected()) {
             chart.chartProps.setBgColor(bgColorPicker.getValue());
@@ -1259,10 +1305,15 @@ public class AttributesController implements Initializable {
             chart.chartProps.setCross1Color(null);
         }
     }
-    void updateIntegralState() {
+
+    void setIntegralSliderText() {
         integralLowValue.setText(String.format("%.2f", integralPosSlider.getLowValue()));
         integralHighValue.setText(String.format("%.2f", integralPosSlider.getHighValue()));
         refreshLater();
+    }
+
+    boolean allCharts() {
+        return datasetChoiceState.getValue() == SelectionChoice.WINDOW;
     }
 
     List<PolyChart> getCharts(boolean all) {
@@ -1274,7 +1325,7 @@ public class AttributesController implements Initializable {
     }
 
     void updateAspectRatio() {
-        List<PolyChart> applyCharts = getCharts(shiftState);
+        List<PolyChart> applyCharts = getCharts(allCharts());
         for (PolyChart applyChart : applyCharts) {
             applyChart.chartProps.setAspect(aspectCheckBox.isSelected());
             double aspectRatio = aspectSlider.getValue();
@@ -1288,7 +1339,7 @@ public class AttributesController implements Initializable {
         chart.getCrossHairs().refreshCrossHairs();
     }
 
-    // add delay so bindings between properties and controsl activate before refresh
+    // add delay so bindings between properties and controls activate before refresh
     private void refreshLater() {
         if (!chart.isChartDisabled()) {
             PauseTransition wait = new PauseTransition(Duration.millis(50.0));
@@ -1296,5 +1347,4 @@ public class AttributesController implements Initializable {
             wait.play();
         }
     }
-
 }
