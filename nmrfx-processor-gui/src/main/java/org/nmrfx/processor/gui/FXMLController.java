@@ -726,8 +726,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         if (processorController != null) {
             processorController.viewingDataset(true);
         }
-        borderPane.setLeft(null);
-        borderPane.setBottom(null);
+//        borderPane.setLeft(null);
+//        borderPane.setBottom(null);
         updateSpectrumStatusBarOptions(true);
 
         phaser.getPhaseOp();
@@ -1311,6 +1311,24 @@ public class FXMLController implements  Initializable, PeakNavigable {
         phaser = new Phaser(this, phaserBox);
         processorPane.getChildren().addListener(this::updateStageSize);
         cursorProperty.addListener( e -> setCursor());
+        LinkedHashMap<String, Node> map = new LinkedHashMap<>();
+        map.put("Data Info", new Button("Button One"));
+        map.put("Molecule", new Button("Button Two"));
+        map.put("sdag", new Button("Button three"));
+        SideBar sb = new SideBar(SideBar.SideBarOrientation.LEFT, map, 200);
+        borderPane.setLeft(sb);
+        LinkedHashMap<String, Node> map2 = new LinkedHashMap<>();
+        map2.put("Peak Pick", new Button("Button One"));
+        map2.put("Integral", new Button("Button Two"));
+        map2.put("Multiplets", new Button("Button Three"));
+        SideBar sb2 = new SideBar(SideBar.SideBarOrientation.RIGHT, map2, 200);
+        borderPane.setRight(sb2);
+        LinkedHashMap<String, Node> map3 = new LinkedHashMap<>();
+        map3.put("Analyzer Bar", new Button("Button One"));
+        SideBar sb3 = new SideBar(SideBar.SideBarOrientation.BOTTOM, map3, 200);
+        borderPane.setBottom(sb3);
+//        bottomBox.getChildren().add(sb3);
+//        chartPane.getChildren().add(sb3);
     }
 
     public BorderPane getMainBox() {
@@ -2157,7 +2175,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         undoManager.redo();
     }
 
-    public VBox getBottomBox() {
+    public Pane getBottomBox() {
         return bottomBox;
     }
 

@@ -17,6 +17,10 @@
 .toolButton > .glyph-icon  {
     -fx-fill:black;
 }
+.side-bar-split-pane > .split-pane-divider {
+    -fx-background-color:red;
+    -fx-padding: 0 0 0 0;
+}
 .menuButton {
     -fx-font-weight: normal;
 }
