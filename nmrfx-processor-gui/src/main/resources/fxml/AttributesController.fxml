@@ -24,7 +24,6 @@
                 <TitledPane text="View">
                     <VBox>
                         <children>
-                            <ComboBox fx:id="disDimCombo" editable="false"/>
                             <VBox fx:id="viewGrid"/>
                             <Separator orientation="horizontal" minHeight="20"/>
                             <CheckBox fx:id="aspectCheckBox" text="Constrain aspect ratio"/>

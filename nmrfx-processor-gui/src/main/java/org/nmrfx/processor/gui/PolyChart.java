@@ -509,6 +509,10 @@ public class PolyChart extends Region implements PeakListener {
         });
     }
 
+    public SliceAttributes getSliceAttributes() {
+        return sliceAttributes;
+    }
+
     public void setActiveChart() {
         activeChart.set(this);
         controller.setActiveChart(this);
@@ -2374,10 +2378,10 @@ public class PolyChart extends Region implements PeakListener {
 //            GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
 //            annoGC.clearRect(0, 0, width, height);
 //        }
+            drawParameters(chartProps.getParameters());
             if (!datasetAttributesList.isEmpty()) {
                 drawPeakLists(true);
             }
-            drawParameters(chartProps.getParameters());
             drawAnnotations(gCPeaks);
             crossHairs.refreshCrossHairs();
             gC.restore();
@@ -2694,12 +2698,10 @@ public class PolyChart extends Region implements PeakListener {
                 String text = ProjectText.genText(dataset);
                 if ((parameterText == null) || (!parameterText.getText().equals(text))) {
                      if (parameterText == null) {
-                        double textY;
-                        double xPos = getLayoutX();
-                        double yPos = getLayoutY();
-                        textY = yPos + topBorder + chartProps.getTicFontSize() * 2;
+                        double xPos = 10;
+                        double yPos =   chartProps.getTicFontSize() * 2;
                         double textWidth = 200;
-                        parameterText = new AnnoText(xPos, textY, textWidth, 200,
+                        parameterText = new AnnoText(xPos, yPos, textWidth, 200,
                                 CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, text);
                         addAnnotation(parameterText);
                     } else {

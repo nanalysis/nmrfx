@@ -68,8 +68,6 @@ public class AttributesController implements Initializable {
     @FXML
     private VBox viewGrid;
     @FXML
-    private ComboBox<PolyChart.DISDIM> disDimCombo;
-    @FXML
     private CheckBox integralCheckBox;
     @FXML
     private RangeSlider integralPosSlider;
@@ -299,29 +297,29 @@ public class AttributesController implements Initializable {
         integralPosSlider.setLowValue(0.8);
         integralPosSlider.setHighValue(0.95);
 
-        ticFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
-        labelFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
-        titlesCheckBox.selectedProperty().addListener(e -> refreshLater());
-        parametersCheckBox.selectedProperty().addListener(e -> refreshLater());
-        intensityAxisCheckBox.selectedProperty().addListener(e -> refreshLater());
-        leftBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
-        rightBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
-        topBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
-        bottomBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
+        ticFontSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
+        labelFontSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
+        titlesCheckBox.selectedProperty().addListener(e -> updateChartsAndRefresh());
+        parametersCheckBox.selectedProperty().addListener(e -> updateChartsAndRefresh());
+        intensityAxisCheckBox.selectedProperty().addListener(e -> updateChartsAndRefresh());
+        leftBorderSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
+        rightBorderSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
+        topBorderSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
+        bottomBorderSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
         integralPosSlider.lowValueProperty().addListener(e -> setIntegralSliderText());
         integralPosSlider.highValueProperty().addListener(e -> setIntegralSliderText());
         regionCheckBox.selectedProperty().addListener(e -> refreshLater());
         integralCheckBox.selectedProperty().addListener(e -> refreshLater());
-        gridCheckBox.selectedProperty().addListener(e -> refreshLater());
-        offsetTrackingCheckBox.selectedProperty().addListener(e -> refreshLater());
-        useDatasetColorCheckBox.selectedProperty().addListener(e -> refreshLater());
-        slice1StateCheckBox.selectedProperty().addListener(e -> refreshSlices());
-        slice2StateCheckBox.selectedProperty().addListener(e -> refreshSlices());
-        xOffsetSlider.valueProperty().addListener(e -> refreshSlices());
-        yOffsetSlider.valueProperty().addListener(e -> refreshSlices());
-        scaleSlider.valueProperty().addListener(e -> refreshSlices());
-        slice1ColorPicker.valueProperty().addListener(e -> refreshSlices());
-        slice2ColorPicker.valueProperty().addListener(e -> refreshSlices());
+        gridCheckBox.selectedProperty().addListener(e -> updateChartsAndRefresh());
+        offsetTrackingCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
+        useDatasetColorCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
+        slice1StateCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
+        slice2StateCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
+        xOffsetSlider.valueProperty().addListener(e -> updateSlicesAndRefresh());
+        yOffsetSlider.valueProperty().addListener(e -> updateSlicesAndRefresh());
+        scaleSlider.valueProperty().addListener(e -> updateSlicesAndRefresh());
+        slice1ColorPicker.valueProperty().addListener(e -> updateSlicesAndRefresh());
+        slice2ColorPicker.valueProperty().addListener(e -> updateSlicesAndRefresh());
 
         aspectCheckBox.selectedProperty().addListener(e -> updateAspectRatio());
         aspectSlider.setMin(0.1);
@@ -376,7 +374,6 @@ public class AttributesController implements Initializable {
         peakOnColorPicker.valueProperty().addListener(peakOnColorListener);
         peakOffColorPicker.valueProperty().addListener(peakOffColorListener);
         createViewGrid();
-        disDimCombo.setOnAction(this::displayModeComboBoxAction);
     }
 
     private void unBindChart(PolyChart polyChart) {
@@ -413,7 +410,6 @@ public class AttributesController implements Initializable {
         aspectSlider.valueProperty().unbindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().unbindBidirectional((polyChart.chartProps.aspectProperty()));
         chart.getDatasetAttributes().removeListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
-        chart.disDimProp.unbindBidirectional(disDimCombo.valueProperty());
     }
 
     public void bindToChart(PolyChart polyChart) {
@@ -481,9 +477,7 @@ public class AttributesController implements Initializable {
         aspectCheckBox.selectedProperty().bindBidirectional((polyChart.chartProps.aspectProperty()));
 
         PolyChart.DISDIM curDisDim = polyChart.disDimProp.get();
-        disDimCombo.setValue(curDisDim);
         chart.getDatasetAttributes().addListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
-        polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }
 
     private void datasetsChanged() {
@@ -549,9 +543,6 @@ public class AttributesController implements Initializable {
     }
 
     private void createViewGrid() {
-        disDimCombo.getItems().addAll(OneDX, TwoD);
-        disDimCombo.setValue(PolyChart.getActiveChart().disDimProp.get());
-        disDimCombo.valueProperty().addListener(((observable, oldValue, newValue) -> updateDimensions()));
         limitFields = new StringProperty[rowNames.length][2];
         labelFields = new Label[rowNames.length];
         int iRow = 1;
@@ -1121,13 +1112,6 @@ public class AttributesController implements Initializable {
             attributesAccordion.getPanes().add(2, contourLevelPane);
             accordionIn1D = false;
         }
-        if (chart.is1DDataset()) {
-            disDimCombo.setDisable(true);
-        } else {
-            disDimCombo.setDisable(false);
-        }
-        disDimCombo.setValue(chart.disDimProp.getValue());
-
     }
 
     void setAxisControlValues() {
@@ -1165,7 +1149,6 @@ public class AttributesController implements Initializable {
             setPeakColorControls(true);
             setPeakColorControls(false);
             setPeakDisplayComboBoxes();
-            //disDimCombo.setValue(OneDX);
 
 //            updatePeakListTableView(false);
             //           clearDimActions();
@@ -1278,31 +1261,32 @@ public class AttributesController implements Initializable {
 
     void redraw() {
         updateChartProperties();
-        refreshLater();
     }
 
     @FXML
     private void updateChartProperties() {
-        chart.disDimProp.set(disDimCombo.getValue());
-        if (bgColorCheckBox.isSelected()) {
-            chart.chartProps.setBgColor(bgColorPicker.getValue());
-        } else {
-            chart.chartProps.setBgColor(null);
-        }
-        if (axisColorCheckBox.isSelected()) {
-            chart.chartProps.setAxesColor(axisColorPicker.getValue());
-        } else {
-            chart.chartProps.setAxesColor(null);
-        }
-        if (cross0ColorCheckBox.isSelected()) {
-            chart.chartProps.setCross0Color(cross0ColorPicker.getValue());
-        } else {
-            chart.chartProps.setCross0Color(null);
-        }
-        if (cross1ColorCheckBox.isSelected()) {
-            chart.chartProps.setCross1Color(cross1ColorPicker.getValue());
-        } else {
-            chart.chartProps.setCross1Color(null);
+        for (var aChart: getCharts(allCharts())) {
+            if (bgColorCheckBox.isSelected()) {
+                aChart.chartProps.setBgColor(bgColorPicker.getValue());
+            } else {
+                aChart.chartProps.setBgColor(null);
+            }
+            if (axisColorCheckBox.isSelected()) {
+                aChart.chartProps.setAxesColor(axisColorPicker.getValue());
+            } else {
+                aChart.chartProps.setAxesColor(null);
+            }
+            if (cross0ColorCheckBox.isSelected()) {
+                aChart.chartProps.setCross0Color(cross0ColorPicker.getValue());
+            } else {
+                aChart.chartProps.setCross0Color(null);
+            }
+            if (cross1ColorCheckBox.isSelected()) {
+                aChart.chartProps.setCross1Color(cross1ColorPicker.getValue());
+            } else {
+                aChart.chartProps.setCross1Color(null);
+            }
+            refreshLater(aChart);
         }
     }
 
@@ -1335,15 +1319,48 @@ public class AttributesController implements Initializable {
         }
     }
 
-    private void refreshSlices() {
-        chart.getCrossHairs().refreshCrossHairs();
+    private void refreshSlices(PolyChart aChart) {
+        aChart.getCrossHairs().refreshCrossHairs();
+    }
+    private void updateChartsAndRefresh() {
+        PauseTransition wait = new PauseTransition(Duration.millis(5.0));
+        wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(this::updateChartsAndRefreshNow));
+        wait.play();
+    }
+
+    private void updateChartsAndRefreshNow() {
+        for (var aChart:getCharts(allCharts())) {
+            if (aChart != chart) {
+                chart.chartProps.copyTo(aChart);
+            }
+            refreshLater(aChart);
+        }
+    }
+
+    private void updateSlicesAndRefresh() {
+        PauseTransition wait = new PauseTransition(Duration.millis(5.0));
+        wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(this::updateSlicesAndRefreshNow));
+        wait.play();
+    }
+
+    private void updateSlicesAndRefreshNow() {
+        for (var aChart:getCharts(allCharts())) {
+            if (aChart != chart) {
+                chart.getSliceAttributes().copyTo(aChart);
+            }
+            refreshSlices(aChart);
+        }
+    }
+
+    private void refreshLater() {
+        refreshLater(chart);
     }
 
     // add delay so bindings between properties and controls activate before refresh
-    private void refreshLater() {
-        if (!chart.isChartDisabled()) {
-            PauseTransition wait = new PauseTransition(Duration.millis(50.0));
-            wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(chart::refresh));
+    private void refreshLater(PolyChart aChart) {
+        if (!aChart.isChartDisabled()) {
+            PauseTransition wait = new PauseTransition(Duration.millis(5.0));
+            wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(aChart::refresh));
             wait.play();
         }
     }
