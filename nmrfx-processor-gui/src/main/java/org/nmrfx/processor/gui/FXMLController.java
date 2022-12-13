@@ -411,12 +411,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     @FXML
-    public void openFIDAction(ActionEvent event) {
+    public void openAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(getInitialDirectory());
-        fileChooser.setTitle("Open NMR FID");
+        fileChooser.setTitle("Open NMR File");
         fileChooser.getExtensionFilters().addAll(
-                FileExtensionFilterType.NMR_FID.getFilter(),
+                FileExtensionFilterType.NMR_FILES.getFilter(),
                 FileExtensionFilterType.ALL_FILES.getFilter()
         );
         File selectedFile = fileChooser.showOpenDialog(null);
@@ -427,69 +427,38 @@ public class FXMLController implements  Initializable, PeakNavigable {
         stage.setResizable(true);
     }
 
-    @FXML
-    public void openDatasetAction(ActionEvent event) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setInitialDirectory(getInitialDirectory());
-        fileChooser.setTitle("Open NMR Dataset");
-        fileChooser.getExtensionFilters().addAll(
-                FileExtensionFilterType.NMR_DATASET.getFilter(),
-                FileExtensionFilterType.ALL_FILES.getFilter()
-        );
-        File selectedFile = fileChooser.showOpenDialog(null);
-        openDataset(selectedFile, false, true);
-    }
-
     /**
-     * Checks if the dataset is an FID and returns true or false if it matches expectingFID. If the dataset does
-     * not match what was expected an alert message is created. If the dataset is of type NMRViewData, the dataset
-     * will be removed from the project.
-     * @param data The data to verify
-     * @param expectingFID True if the data is expected to be using FID, otherwise false
-     * @param alertMsg A String message to display if verification fails
-     * @return True if data matches expectingFID, otherwise false.
-     */
-    private boolean verifyData(NMRData data, boolean expectingFID, String alertMsg) {
-        boolean dataOkay = data.isFID() == expectingFID;
-        if (!dataOkay) {
-            Alert alert = new Alert(Alert.AlertType.WARNING, alertMsg);
-            alert.showAndWait();
-            // The NMRViewData constructor adds the dataset to the project, so it should be removed if it is
-            // not going to be displayed.
-            if (data instanceof NMRViewData) {
-                String datasetName = ((NMRViewData) data).getDataset().getName();
-                ProjectBase.getActive().removeDataset(datasetName);
-            }
-        }
-        return dataOkay;
-    }
-
-    /**
-     * Opens the dataset of the selected file. The dataset is added to the chart if addDatasetToChart is true. If
-     * append is false, the chart is cleared of any datasets before adding the new dataset, if true, the dataset is
-     * added to the chart in addition to any datasets already present.
+     * Opens the dataset from the selected file.
      * @param selectedFile The file containing the dataset.
      * @param append Whether to append the new dataset.
      * @param addDatasetToChart Whether to add the opened dataset to the chart.
-     * @return The newly opened dataset or null if no dataset was opened
+     * @return The newly opened dataset or null if no dataset was opened.
      */
     public Dataset openDataset(File selectedFile, boolean append, boolean addDatasetToChart) {
         if (selectedFile == null) {
             return null;
         }
+        NMRData nmrData = getNMRData(selectedFile.toString());
+        if (nmrData == null) {
+            return null;
+        }
+        return openDataset(nmrData, append, addDatasetToChart);
+    }
+
+    /**
+     * Gets the dataset from the provided NMRData. The dataset is added to the chart if addDatasetToChart is true. If
+     * append is false, the chart is cleared of any datasets before adding the new dataset, if true, the dataset is
+     * added to the chart in addition to any datasets already present.
+     * @param nmrData The NMRData object containing the dataset.
+     * @param append Whether to append the new dataset.
+     * @param addDatasetToChart Whether to add the opened dataset to the chart.
+     * @return The newly opened dataset or null if no dataset was opened.
+     */
+    public Dataset openDataset(NMRData nmrData, boolean append, boolean addDatasetToChart) {
+        File selectedFile = new File(nmrData.getFilePath());
         Dataset dataset = null;
         try {
             setInitialDirectory(selectedFile.getParentFile());
-            NMRData nmrData = NMRDataUtil.getNMRData(selectedFile.toString());
-            if (!verifyData(nmrData, false, "Use \"Open FID\" to open an fid file")) {
-                return null;
-            }
-            ProcessorController processorController = getActiveChart().getProcessorController(false);
-            if (processorController != null && (!selectedFile.equals(chartProcessor.datasetFile))) {
-                processorPane.getChildren().clear();
-                getActiveChart().processorController = null;
-                processorController.cleanUp();
-            }
             if (nmrData instanceof NMRViewData nvData) {
                 PreferencesController.saveRecentDatasets(selectedFile.toString());
                 dataset = nvData.getDataset();
@@ -511,9 +480,17 @@ public class FXMLController implements  Initializable, PeakNavigable {
             log.warn(ex.getMessage(), ex);
             GUIUtils.warn("Open Dataset", ex.getMessage());
         }
-        if (dataset != null && addDatasetToChart) {
-            addDataset(dataset, append, false);
-        } else if (dataset == null) {
+        if (dataset != null) {
+            if (addDatasetToChart) {
+                addDataset(dataset, append, false);
+            }
+            ProcessorController processorController = getActiveChart().getProcessorController(false);
+            if (processorController != null && (!dataset.getFile().equals(chartProcessor.datasetFile))) {
+                processorPane.getChildren().clear();
+                getActiveChart().processorController = null;
+                processorController.cleanUp();
+            }
+        } else {
             log.info("Unable to find a dataset format for: {}", selectedFile);
         }
         stage.setResizable(true);
@@ -566,61 +543,60 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
     }
 
+    /**
+     * Gets a NMRData object from the filepath.
+     * @param filePath The filepath to load the NMRData from.
+     * @return An NMRData object or null if there was a problem loading.
+     */
+    private NMRData getNMRData(String filePath) {
+        NMRData nmrData = null;
+        try {
+            nmrData = NMRDataUtil.loadNMRData(filePath, null);
+        } catch (IOException ioE) {
+            log.error("Unable to load NMR file: {}", filePath, ioE);
+            ExceptionDialog eDialog = new ExceptionDialog(ioE);
+            eDialog.showAndWait();
+        }
+        return nmrData;
+    }
+
     public void openFile(String filePath, boolean clearOps, boolean appendFile) {
         openFile(filePath, clearOps, appendFile, null);
     }
 
     public void openFile(String filePath, boolean clearOps, boolean appendFile, DatasetType datasetType) {
-        boolean reload = false;
-        try {
-            File newFile = new File(filePath);
-            if (!appendFile) {
-                if (chartProcessor != null) {
-                    NMRData oldData = chartProcessor.getNMRData();
-                    if (oldData != null) {
-                        if (oldData instanceof NMRViewData) {
-                            NMRViewData nvData = (NMRViewData) oldData;
-                            // nvData.getDataset().close();
-                        }
-                    }
-                }
-            }
-            File oldFile = getActiveChart().getDatasetFile();
-            if (!appendFile && (oldFile != null)) {
-                try {
-                    if (oldFile.getCanonicalPath().equals(newFile.getCanonicalPath())) {
-                        reload = true;
-                    }
-                } catch (java.io.IOException ioE) {
-                    reload = false;
-                }
-                //chart.closeDataset();
-            }
-            NMRData nmrData = null;
-            try {
-                nmrData = NMRDataUtil.getFID(filePath);
-            } catch (IllegalArgumentException iaE) {
-                ExceptionDialog eDialog = new ExceptionDialog(iaE);
-                eDialog.showAndWait();
-                return;
-
-            }
-            if (nmrData != null) {
-                if (!verifyData(nmrData, true, "Use \"Open Dataset\" to open non-fid file")) {
-                    return;
-                } else {
-                    if (datasetType != null) {
-                        nmrData.setPreferredDatasetType(datasetType);
-                    }
-                    addFID(nmrData, clearOps, reload);
-                }
-            }
-            PreferencesController.saveRecentFIDs(filePath);
-        } catch (IOException ioE) {
-            ExceptionDialog eDialog = new ExceptionDialog(ioE);
-            eDialog.showAndWait();
+        NMRData nmrData = getNMRData(filePath);
+        if (nmrData == null) {
             return;
         }
+        if (nmrData.isFID()) {
+            openFile(nmrData, clearOps, appendFile, datasetType);
+        } else {
+            openDataset(nmrData, appendFile, true);
+        }
+    }
+
+    public void openFile(NMRData nmrData, boolean clearOps, boolean appendFile, DatasetType datasetType) {
+        boolean reload = false;
+        File newFile = new File(nmrData.getFilePath());
+
+        File oldFile = getActiveChart().getDatasetFile();
+        if (!appendFile && (oldFile != null)) {
+            try {
+                if (oldFile.getCanonicalPath().equals(newFile.getCanonicalPath())) {
+                    reload = true;
+                }
+            } catch (java.io.IOException ioE) {
+                reload = false;
+            }
+        }
+
+        if (datasetType != null) {
+            nmrData.setPreferredDatasetType(datasetType);
+        }
+        addFID(nmrData, clearOps, reload);
+
+        PreferencesController.saveRecentFIDs(nmrData.getFilePath());
         undoManager.clear();
     }
 
@@ -1465,9 +1441,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         ArrayList<Node> buttons = new ArrayList<>();
 
         ButtonBase bButton;
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN, "Open", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(e -> openFIDAction(e));
-        // buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> showDatasetsAction(e));
         buttons.add(bButton);

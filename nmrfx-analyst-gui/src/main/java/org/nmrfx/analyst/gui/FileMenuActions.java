@@ -16,11 +16,8 @@ public class FileMenuActions extends MenuActions {
 
     @Override
     public void basic() {
-        MenuItem openMenuItem = new MenuItem("Open FID...");
-        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openFIDAction(e));
-
-        MenuItem openDatasetMenuItem = new MenuItem("Open Dataset...");
-        openDatasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDatasetAction(e));
+        MenuItem openMenuItem = new MenuItem("Open");
+        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openAction(e));
 
         Menu recentFIDMenuItem = new Menu("Recent FIDs");
         Menu recentDatasetMenuItem = new Menu("Recent Datasets");
@@ -46,7 +43,7 @@ public class FileMenuActions extends MenuActions {
         datasetBrowserMenuItem.setOnAction(e -> showDataBrowser());
 
 
-        menu.getItems().addAll(openMenuItem, openDatasetMenuItem,
+        menu.getItems().addAll(openMenuItem,
                 recentFIDMenuItem, recentDatasetMenuItem, datasetBrowserMenuItem,
                 graphicsMenu);
     }

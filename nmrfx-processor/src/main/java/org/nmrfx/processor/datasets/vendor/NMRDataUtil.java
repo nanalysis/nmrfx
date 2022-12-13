@@ -165,6 +165,43 @@ public final class NMRDataUtil {
     } // end getFID
 
     /**
+     * Load an NMRData object from the fpath. The NMRData will be loaded as either a dataset or an FID, depending on
+     * the fpath.
+     * @param fpath absolute file path
+     * @param nusFile
+     * @return An NMRData object
+     * @throws IOException
+     */
+    public static NMRData loadNMRData(String fpath, File nusFile) throws IOException {
+        StringBuilder bpath = new StringBuilder(fpath);
+        try {
+            if (NMRViewData.findFID(bpath)) {
+                return new NMRViewData(bpath.toString());
+            } else if (RS2DData.findFID(bpath)) {
+                return new RS2DData(bpath.toString(), nusFile);
+            // Most processed Bruker files would also have the fid present and pass the findFID check,
+                // so must check if it's a dataset before checking for FID
+            } else if (BrukerData.findData(bpath)) {
+                return new BrukerData(bpath.toString());
+            } else if (BrukerData.findFID(bpath)) {
+                return new BrukerData(bpath.toString(), nusFile);
+            } else if (VarianData.findFID(bpath)) {
+                return new VarianData(bpath.toString());
+            } else if (JCAMPData.findFID(bpath) || JCAMPData.findData(bpath)) {
+                return new JCAMPData(bpath.toString());
+            } else if (NMRPipeData.findFID(bpath)) {
+                return new NMRPipeData(bpath.toString(), nusFile);
+            } else if (JeolDelta.findFID(bpath)) {
+                return new JeolDelta(bpath.toString());
+            } else {
+                throw new IOException("File could not be read: " + fpath);
+            }
+        } catch (NullPointerException nullE) {
+            throw new IOException("Null pointer when reading " + fpath + " " + nullE.getMessage());
+        }
+    }
+
+    /**
      * Check if specified path represents an NMR data file
      *
      * @param fpath absolute file path
