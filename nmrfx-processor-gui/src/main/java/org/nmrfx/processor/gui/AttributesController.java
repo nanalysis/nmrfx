@@ -37,6 +37,7 @@ import java.util.*;
 public class AttributesController implements Initializable {
     private static final Logger log = LoggerFactory.getLogger(AttributesController.class);
     static final DecimalFormat FORMATTER = new DecimalFormat();
+    static final String[] rowNames = {"X", "Y", "Z", "A", "B", "C"};
 
     static {
         FORMATTER.setMaximumFractionDigits(3);
@@ -236,7 +237,6 @@ public class AttributesController implements Initializable {
     Label[] dimLabels;
     HBox[] viewBoxes;
 
-    static String[] rowNames = {"X", "Y", "Z", "A", "B", "C"};
     Label[] axisLabels;
 
     FXMLController fxmlController;
@@ -559,18 +559,6 @@ public class AttributesController implements Initializable {
             }
         }
         return result;
-    }
-
-    private void updateDimensions() {
-        int dim = 0;
-        if (chart != null && chart.getDataset() != null) {
-            chart.updateAxisType(true);
-            dim = chart.getNDim();
-        }
-        setAxisControlValues();
-        if (dim > 2) {
-            setLimits();
-        }
     }
 
     private void createViewGrid() {

@@ -3,16 +3,13 @@ package org.nmrfx.processor.gui;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.WeakMapChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.layout.Pane;
 import org.controlsfx.control.ListSelectionView;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.project.ProjectBase;
@@ -20,11 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
-import java.util.ResourceBundle;
 
-public class ContentController implements Initializable {
+public class ContentController {
     private static final Logger log = LoggerFactory.getLogger(ContentController.class);
     @FXML
     Accordion contentAccordion;
@@ -39,13 +34,7 @@ public class ContentController implements Initializable {
     PolyChart chart;
     ListChangeListener<String> peakTargetListener;
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
-    MapChangeListener mapChangeListener = new MapChangeListener() {
-        @Override
-        public void onChanged(Change change) {
-            System.out.println("changed");
-            update();
-        }
-    };
+    MapChangeListener mapChangeListener = change -> update();
 
     public static ContentController create(FXMLController fxmlController, Pane processorPane) {
         FXMLLoader loader = new FXMLLoader(ContentController.class.getResource("/fxml/ContentController.fxml"));
@@ -58,9 +47,8 @@ public class ContentController implements Initializable {
             controller.fxmlController = fxmlController;
             controller.pane = pane;
             controller.datasetViewController = new DatasetView(fxmlController, controller);
-            controller.setup();
+            pane.visibleProperty().addListener(e -> controller.updatePeakView());
             controller.update();
-
             return controller;
         } catch (IOException ioE) {
             log.warn(ioE.getMessage(), ioE);
@@ -68,26 +56,17 @@ public class ContentController implements Initializable {
         }
     }
 
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        System.out.println("init");
-    }
-
-    private void setup() {
+    @FXML
+    public void initialize() {
         peakView.setSourceFooter(showOnlyCompatibleBox);
         showOnlyCompatibleBox.getItems().add("Matching");
         showOnlyCompatibleBox.getItems().add("Compatible");
         showOnlyCompatibleBox.getItems().add("All");
         showOnlyCompatibleBox.setValue("Compatible");
         showOnlyCompatibleBox.setOnAction(e -> updatePeakView());
-        pane.visibleProperty().addListener(e -> {
-            updatePeakView();
-        });
 
         peakTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartPeakLists();
         peakView.getTargetItems().addListener(peakTargetListener);
-//        ProjectBase.getActive().addDatasetListListener(new WeakMapChangeListener(mapChangeListener));
-//        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener(mapChangeListener));
         ProjectBase.getActive().addDatasetListListener(mapChangeListener);
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
     }
