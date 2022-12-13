@@ -359,12 +359,12 @@
                                 <children>
                                     <Label text="Axis tic mark font size" GridPane.columnIndex="1"
                                            GridPane.rowIndex="1"/>
-                                    <ComboBox fx:id="ticFontSizeComboBox"
+                                    <ComboBox fx:id="ticFontSizeComboBox" editable="false"
                                               GridPane.columnIndex="2" GridPane.rowIndex="1"
                                               GridPane.columnSpan="1"/>
                                     <Label text="Axis label font size" GridPane.columnIndex="1"
                                            GridPane.rowIndex="2"/>
-                                    <ComboBox fx:id="labelFontSizeComboBox"
+                                    <ComboBox fx:id="labelFontSizeComboBox" editable="false"
                                               GridPane.columnIndex="2" GridPane.rowIndex="2"
                                               GridPane.columnSpan="1"/>
                                 </children>

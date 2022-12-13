@@ -270,12 +270,12 @@ public class AttributesController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        ticFontSizeComboBox.getItems().addAll(5.5, 6.0, 6.5, 7.0, 8.0, 9.0,
-                10.0, 11.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0,
-                28.0, 32.0, 36.0);
-        labelFontSizeComboBox.getItems().addAll(5.5, 6.0, 6.5, 7.0, 8.0, 9.0,
-                10.0, 11.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0,
-                28.0, 32.0, 36.0);
+        ticFontSizeComboBox.getItems().addAll(5, 6,7, 8, 9,
+                10, 11, 12, 14, 16, 18, 20, 22, 24, 26,
+                28, 32, 36);
+        labelFontSizeComboBox.getItems().addAll(5, 6,7, 8, 9,
+                10, 11, 12, 14, 16, 18, 20, 22, 24, 26,
+                28, 32, 36);
         leftBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
         rightBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
         topBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
@@ -299,20 +299,20 @@ public class AttributesController implements Initializable {
         integralPosSlider.setLowValue(0.8);
         integralPosSlider.setHighValue(0.95);
 
-        ticFontSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
-        labelFontSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
-        titlesCheckBox.selectedProperty().addListener(e -> updateChartsAndRefresh());
-        parametersCheckBox.selectedProperty().addListener(e -> updateChartsAndRefresh());
-        intensityAxisCheckBox.selectedProperty().addListener(e -> updateChartsAndRefresh());
-        leftBorderSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
-        rightBorderSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
-        topBorderSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
-        bottomBorderSizeComboBox.valueProperty().addListener(e -> updateChartsAndRefresh());
+        ticFontSizeComboBox.valueProperty().addListener(e -> updateCharts());
+        labelFontSizeComboBox.valueProperty().addListener(e -> updateCharts());
+        titlesCheckBox.selectedProperty().addListener(e -> updateCharts());
+        parametersCheckBox.selectedProperty().addListener(e -> updateCharts());
+        intensityAxisCheckBox.selectedProperty().addListener(e -> updateCharts());
+        leftBorderSizeComboBox.valueProperty().addListener(e -> updateCharts());
+        rightBorderSizeComboBox.valueProperty().addListener(e -> updateCharts());
+        topBorderSizeComboBox.valueProperty().addListener(e -> updateCharts());
+        bottomBorderSizeComboBox.valueProperty().addListener(e -> updateCharts());
         integralPosSlider.lowValueProperty().addListener(e -> setIntegralSliderText());
         integralPosSlider.highValueProperty().addListener(e -> setIntegralSliderText());
         regionCheckBox.selectedProperty().addListener(e -> refreshLater());
         integralCheckBox.selectedProperty().addListener(e -> refreshLater());
-        gridCheckBox.selectedProperty().addListener(e -> updateChartsAndRefresh());
+        gridCheckBox.selectedProperty().addListener(e -> updateCharts());
         offsetTrackingCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
         useDatasetColorCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
         slice1StateCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
@@ -502,6 +502,7 @@ public class AttributesController implements Initializable {
         if (!peakListChoiceBox.getItems().isEmpty()) {
             peakListChoiceBox.setValue(peakListChoiceBox.getItems().get(0));
         }
+        setPeakControls();
     }
 
     private void datasetsChanged() {
@@ -513,7 +514,7 @@ public class AttributesController implements Initializable {
         if (!datasetChoiceBox.getItems().isEmpty()) {
             datasetChoiceBox.setValue(datasetChoiceBox.getItems().get(0));
         }
-        updateDimensions();
+        setDatasetControls();
     }
 
     private void refreshCharts() {
@@ -1116,21 +1117,28 @@ public class AttributesController implements Initializable {
             datasetsChanged();
             peakListsChanged();
 
-            setContourSliders();
-            setContourColorControls(true);
-            setContourColorControls(false);
-            setDrawOnControls(true);
-            setDrawOnControls(false);
-            setPeakCheckBoxes();
-            setPeakColorControls(true);
-            setPeakColorControls(false);
-            setPeakDisplayComboBoxes();
+            setDatasetControls();
+            setPeakControls();
 
             bindToChart(chart);
             setLimits();
             setDimControls();
             chart.setChartDisabled(false);
         }
+    }
+    private void setDatasetControls() {
+        setContourSliders();
+        setContourColorControls(true);
+        setContourColorControls(false);
+        setDrawOnControls(true);
+        setDrawOnControls(false);
+    }
+
+    private void setPeakControls() {
+        setPeakCheckBoxes();
+        setPeakColorControls(true);
+        setPeakColorControls(false);
+        setPeakDisplayComboBoxes();
     }
 
     @FXML
@@ -1253,7 +1261,6 @@ public class AttributesController implements Initializable {
             } else {
                 aChart.chartProps.setCross1Color(null);
             }
-            refreshLater(aChart);
         }
     }
 
@@ -1289,18 +1296,17 @@ public class AttributesController implements Initializable {
     private void refreshSlices(PolyChart aChart) {
         aChart.getCrossHairs().refreshCrossHairs();
     }
-    private void updateChartsAndRefresh() {
+    private void updateCharts() {
         PauseTransition wait = new PauseTransition(Duration.millis(5.0));
-        wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(this::updateChartsAndRefreshNow));
+        wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(this::updateChartsNow));
         wait.play();
     }
 
-    private void updateChartsAndRefreshNow() {
+    private void updateChartsNow() {
         for (var aChart:getCharts(allCharts())) {
             if (aChart != chart) {
                 chart.chartProps.copyTo(aChart);
             }
-            refreshLater(aChart);
         }
     }
 
