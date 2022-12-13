@@ -30,7 +30,7 @@ import javafx.scene.paint.Color;
  *
  * @author brucejohnson
  */
-public class ColorProperty extends SimpleObjectProperty {
+public class ColorProperty extends SimpleObjectProperty<Color> {
 
     Color color;
 

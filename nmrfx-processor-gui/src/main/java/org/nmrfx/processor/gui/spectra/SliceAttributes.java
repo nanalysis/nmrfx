@@ -30,10 +30,10 @@ import org.nmrfx.processor.gui.PolyChart;
  */
 public class SliceAttributes {
 
-    public BooleanProperty offsetTracking;
-    public DoubleProperty offsetXValue;
-    public DoubleProperty offsetYValue;
-    public DoubleProperty scaleValue;
+    private BooleanProperty offsetTracking;
+    private DoubleProperty offsetXValue;
+    private DoubleProperty offsetYValue;
+    private DoubleProperty scaleValue;
     private ColorProperty slice1Color;
     private ColorProperty slice2Color;
     private BooleanProperty useDatasetColor;

@@ -34,9 +34,6 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.*;
 
-import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
-import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
-
 public class AttributesController implements Initializable {
     private static final Logger log = LoggerFactory.getLogger(AttributesController.class);
     static final DecimalFormat FORMATTER = new DecimalFormat();
@@ -476,7 +473,6 @@ public class AttributesController implements Initializable {
         aspectSlider.valueProperty().bindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().bindBidirectional((polyChart.chartProps.aspectProperty()));
 
-        PolyChart.DISDIM curDisDim = polyChart.disDimProp.get();
         chart.getDatasetAttributes().addListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
     }
 
@@ -521,8 +517,7 @@ public class AttributesController implements Initializable {
 
     private List<PeakListAttributes> getPeakListAttributes() {
         List<PeakListAttributes> result = new ArrayList<>();
-        if (datasetChoiceState.getValue() == SelectionChoice.DATASET) {
-        } else {
+        if (datasetChoiceState.getValue() != SelectionChoice.DATASET) {
             for (var aChart : getCharts(allCharts())) {
                 result.addAll(aChart.getPeakListAttributes());
             }
@@ -613,15 +608,13 @@ public class AttributesController implements Initializable {
             setViewBound(i, 0, lower);
             setViewBound(i, 1, upper);
             labelFields[i].setText(chart.axModes[i].name().toLowerCase());
-            if (i > 1) {
-                if (!chart.getDatasetAttributes().isEmpty()) {
-                    DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                    int lowPt = chart.axModes[i].getIndex(dataAttr, i, lower);
-                    int upPt = chart.axModes[i].getIndex(dataAttr, i, upper);
+            if ((i > 1) && !chart.getDatasetAttributes().isEmpty()) {
+                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                int lowPt = chart.axModes[i].getIndex(dataAttr, i, lower);
+                int upPt = chart.axModes[i].getIndex(dataAttr, i, upper);
 
-                    int center = ((lowPt + upPt) / 2);
-                    chart.controller.getStatusBar().updatePlaneSpinner(center, i);
-                }
+                int center = ((lowPt + upPt) / 2);
+                chart.controller.getStatusBar().updatePlaneSpinner(center, i);
             }
             i++;
         }
@@ -654,38 +647,6 @@ public class AttributesController implements Initializable {
             axisLabels[i].setText(chart.axModes[i].getDatasetLabel(datasetAttr, i));
             // fixme  should be able to swap existing limits, not go to full
             chart.full(i);
-        }
-    }
-
-    private void displayModeComboBoxAction(ActionEvent event) {
-        ComboBox<PolyChart.DISDIM> modeComboBox = (ComboBox<PolyChart.DISDIM>) event.getSource();
-        if (modeComboBox.isShowing()) {
-            PolyChart chart = fxmlController.getActiveChart();
-            OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
-            if (maxNDim.isEmpty()) {
-                log.warn("Unable to update display mode. No dimensions set.");
-                return;
-            }
-            PolyChart.DISDIM selected = modeComboBox.getSelectionModel().getSelectedItem();
-            if (selected == OneDX) {
-                OptionalInt maxRows = chart.getDatasetAttributes().stream().
-                        mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
-                if (maxRows.isEmpty()) {
-                    log.warn("Unable to update display mode. No rows set.");
-                    return;
-                }
-                chart.disDimProp.set(PolyChart.DISDIM.OneDX);
-                fxmlController.getStatusBar().set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
-                if (maxRows.isPresent() && (maxRows.getAsInt() > 1)) {
-                    chart.setDrawlist(0);
-                }
-            } else if (selected == TwoD) {
-                chart.disDimProp.set(PolyChart.DISDIM.TwoD);
-                fxmlController.getStatusBar().setMode(maxNDim.getAsInt());
-                chart.clearDrawlist();
-            }
-            chart.full();
-            chart.autoScale();
         }
     }
 
@@ -1166,7 +1127,7 @@ public class AttributesController implements Initializable {
     }
 
     @FXML
-    private void sliceAction(Event event) {
+    private void sliceAction() {
         getCharts(allCharts()).forEach(aChart -> {
             aChart.sliceAttributes.setSlice1Color(slice1ColorPicker.getValue());
             aChart.sliceAttributes.setSlice2Color(slice2ColorPicker.getValue());
@@ -1249,7 +1210,6 @@ public class AttributesController implements Initializable {
                     double diff = Math.abs(posColor.getRed() - color.getRed());
                     diff += Math.abs(posColor.getGreen() - color.getGreen());
                     diff += Math.abs(posColor.getBlue() - color.getBlue());
-                    System.out.println("color a " + diff);
                     if (diff < 0.05) {
                         dataAttr.setPosColor(PolyChart.chooseBlackWhite(color));
                     }

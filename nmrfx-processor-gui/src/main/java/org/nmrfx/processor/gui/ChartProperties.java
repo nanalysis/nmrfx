@@ -39,7 +39,7 @@ public class ChartProperties {
     public static final int PROJECTION_BORDER_DEFAULT_SIZE = 150;
     public static final int EMPTY_BORDER_DEFAULT_SIZE = 5;
 
-    final private PolyChart polyChart;
+    private final PolyChart polyChart;
 
     private IntegerProperty leftBorderSize;
     private IntegerProperty rightBorderSize;
@@ -420,8 +420,8 @@ public class ChartProperties {
             try {
                 if (beanName.contains("Color")) {
                     Object colObj = PropertyUtils.getSimpleProperty(this, beanName);
-                    if (colObj instanceof Color) {
-                        String colorName = GUIScripter.toRGBCode((Color) colObj);
+                    if (colObj instanceof Color color) {
+                        String colorName = GUIScripter.toRGBCode(color);
                         data.put(beanName, colorName);
                     }
                 } else {
