@@ -233,7 +233,6 @@ public class AttributesController implements Initializable {
     Boolean accordionIn1D = null;
     PolyChart chart;
     PolyChart boundChart = null;
-    private ComboBox[] dimCombos;
     Label[] dimLabels;
     HBox[] viewBoxes;
 
@@ -577,7 +576,6 @@ public class AttributesController implements Initializable {
         limitFields = new StringProperty[rowNames.length][2];
         labelFields = new Label[rowNames.length];
         int iRow = 1;
-        dimCombos = new ComboBox[rowNames.length];
         axisLabels = new Label[rowNames.length];
         dimLabels = new Label[rowNames.length];
         viewBoxes = new HBox[rowNames.length];
@@ -665,23 +663,6 @@ public class AttributesController implements Initializable {
             chart.firstPlane(iAxis);
         } else if (menuItem.getText().equals("Last")) {
             chart.lastPlane(iAxis);
-        }
-    }
-
-    private void dimAction(String rowName, Event e) {
-        DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
-        ComboBox cBox = (ComboBox) e.getSource();
-        int iDim = cBox.getSelectionModel().getSelectedIndex();
-        datasetAttr.setDim(rowName, iDim);
-        for (int i = 0; i < chart.getNDim(); i++) {
-            if (i < 2) {
-                dimCombos[i].getSelectionModel().select(datasetAttr.dim[i]);
-            } else {
-                dimLabels[i].setText(String.valueOf(datasetAttr.dim[i] + 1));
-            }
-            axisLabels[i].setText(chart.axModes[i].getDatasetLabel(datasetAttr, i));
-            // fixme  should be able to swap existing limits, not go to full
-            chart.full(i);
         }
     }
 
@@ -1116,9 +1097,6 @@ public class AttributesController implements Initializable {
         if (!chart.getDatasetAttributes().isEmpty()) {
             DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
             for (int i = 0; i < chart.getNDim(); i++) {
-                if ((i < 2) && (dimCombos[i] != null)) {
-                    dimCombos[i].getSelectionModel().select(datasetAttr.dim[i]);
-                }
                 axisLabels[i].setText(chart.axModes[i].getDatasetLabel(datasetAttr, i));
             }
             start = chart.getNDim();
