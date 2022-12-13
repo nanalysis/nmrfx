@@ -14,10 +14,11 @@
             <HBox spacing="5" alignment="CENTER">
                 <children>
                     <Label text="Apply to:"/>
-                    <ChoiceBox fx:id="datasetChoiceState" />
+                    <ChoiceBox fx:id="itemChoiceState" />
                 </children>
             </HBox>
             <ChoiceBox fx:id="datasetChoiceBox" maxWidth="225"/>
+            <ChoiceBox fx:id="peakListChoiceBox" maxWidth="225"/>
         </VBox>
         <Accordion fx:id="attributesAccordion" maxWidth="225">
             <panes>
@@ -196,7 +197,7 @@
                         </children>
                     </VBox>
                 </TitledPane>
-                <TitledPane text="Peak Appearance">
+                <TitledPane fx:id="peakAppearancePane" text="Peak Appearance">
                     <VBox>
                         <children>
                             <CheckBox fx:id="peakDisplayCheckBox" mnemonicParsing="false"

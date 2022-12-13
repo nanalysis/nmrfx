@@ -43,15 +43,17 @@ public class AttributesController implements Initializable {
     }
 
     enum SelectionChoice {
-        DATASET,
+        ITEM,
         CHART,
         WINDOW
     }
 
     @FXML
-    ChoiceBox<SelectionChoice> datasetChoiceState;
+    ChoiceBox<SelectionChoice> itemChoiceState;
     @FXML
     ChoiceBox<DatasetAttributes> datasetChoiceBox;
+    @FXML
+    ChoiceBox<PeakListAttributes> peakListChoiceBox;
     @FXML
     Accordion attributesAccordion;
     @FXML
@@ -62,6 +64,8 @@ public class AttributesController implements Initializable {
     TitledPane oneDPane;
     @FXML
     TitledPane integralsPane;
+    @FXML
+    TitledPane peakAppearancePane;
     @FXML
     private VBox viewGrid;
     @FXML
@@ -250,10 +254,12 @@ public class AttributesController implements Initializable {
             controller.fxmlController = fxmlController;
             controller.pane = pane;
             controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatus);
-            controller.datasetChoiceState.getItems().addAll(SelectionChoice.values());
-            controller.datasetChoiceState.setValue(SelectionChoice.CHART);
+            controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
+            controller.itemChoiceState.setValue(SelectionChoice.CHART);
             controller.datasetChoiceBox.disableProperty()
-                    .bind(controller.datasetChoiceState.valueProperty().isNotEqualTo(SelectionChoice.DATASET));
+                    .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
+            controller.peakListChoiceBox.disableProperty()
+                    .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
             controller.setChart(fxmlController.getActiveChart());
 
             return controller;
@@ -370,6 +376,9 @@ public class AttributesController implements Initializable {
         linkPeakDisplayCheckBox.selectedProperty().addListener(drawLinkPeaksListener);
         peakOnColorPicker.valueProperty().addListener(peakOnColorListener);
         peakOffColorPicker.valueProperty().addListener(peakOffColorListener);
+        peakAppearancePane.expandedProperty().addListener(e -> peakPaneExpaned());
+        peakListChoiceBox.setVisible(false);
+        datasetChoiceBox.setVisible(true);
         createViewGrid();
     }
 
@@ -407,6 +416,8 @@ public class AttributesController implements Initializable {
         aspectSlider.valueProperty().unbindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().unbindBidirectional((polyChart.chartProps.aspectProperty()));
         chart.getDatasetAttributes().removeListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
+        chart.getPeakListAttributes().removeListener((ListChangeListener<? super PeakListAttributes>) e -> peakListsChanged());
+
     }
 
     public void bindToChart(PolyChart polyChart) {
@@ -474,6 +485,24 @@ public class AttributesController implements Initializable {
         aspectCheckBox.selectedProperty().bindBidirectional((polyChart.chartProps.aspectProperty()));
 
         chart.getDatasetAttributes().addListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
+        chart.getPeakListAttributes().addListener((ListChangeListener<? super PeakListAttributes>) e -> peakListsChanged());
+    }
+
+    private void peakPaneExpaned() {
+        if (peakAppearancePane.isExpanded()) {
+            peakListChoiceBox.setVisible(true);
+            datasetChoiceBox.setVisible(false);
+        } else {
+            peakListChoiceBox.setVisible(false);
+            datasetChoiceBox.setVisible(true);
+        }
+    }
+
+    private void peakListsChanged() {
+        peakListChoiceBox.setItems(chart.getPeakListAttributes());
+        if (!peakListChoiceBox.getItems().isEmpty()) {
+            peakListChoiceBox.setValue(peakListChoiceBox.getItems().get(0));
+        }
     }
 
     private void datasetsChanged() {
@@ -489,7 +518,7 @@ public class AttributesController implements Initializable {
     }
 
     private void refreshCharts() {
-        if (datasetChoiceState.getValue() == SelectionChoice.WINDOW) {
+        if (itemChoiceState.getValue() == SelectionChoice.WINDOW) {
             for (var controllerChart : fxmlController.getCharts()) {
                 controllerChart.refresh();
             }
@@ -500,7 +529,7 @@ public class AttributesController implements Initializable {
 
     private List<DatasetAttributes> getDatasetAttributes() {
         List<DatasetAttributes> result;
-        if (datasetChoiceState.getValue() == SelectionChoice.DATASET) {
+        if (itemChoiceState.getValue() == SelectionChoice.ITEM) {
             if (datasetChoiceBox.getItems().isEmpty()) {
                 result = Collections.emptyList();
             } else {
@@ -516,8 +545,15 @@ public class AttributesController implements Initializable {
     }
 
     private List<PeakListAttributes> getPeakListAttributes() {
-        List<PeakListAttributes> result = new ArrayList<>();
-        if (datasetChoiceState.getValue() != SelectionChoice.DATASET) {
+        List<PeakListAttributes> result;
+        if (itemChoiceState.getValue() == SelectionChoice.ITEM) {
+            if (peakListChoiceBox.getItems().isEmpty()) {
+                result = Collections.emptyList();
+            } else {
+                result = List.of(peakListChoiceBox.getValue());
+            }
+        } else {
+            result = new ArrayList<>();
             for (var aChart : getCharts(allCharts())) {
                 result.addAll(aChart.getPeakListAttributes());
             }
@@ -577,7 +613,6 @@ public class AttributesController implements Initializable {
             hBox.getChildren().addAll(mButton, minField, maxField, label);
             viewGrid.getChildren().add(hBox);
             viewBoxes[iRow - 1] = hBox;
-            // viewGrid.add(axisLabel, 5, iRow);
             axisLabels[iRow - 1] = axisLabel;
             limitFields[iRow - 1][1] = maxField.textProperty();
             iRow++;
@@ -1101,6 +1136,8 @@ public class AttributesController implements Initializable {
             chart = fxmlController.getActiveChart();
             chart.setChartDisabled(true);
             datasetsChanged();
+            peakListsChanged();
+
             setContourSliders();
             setContourColorControls(true);
             setContourColorControls(false);
@@ -1111,17 +1148,9 @@ public class AttributesController implements Initializable {
             setPeakColorControls(false);
             setPeakDisplayComboBoxes();
 
-//            updatePeakListTableView(false);
-            //           clearDimActions();
             bindToChart(chart);
             setLimits();
             setDimControls();
-
-//            updateDatasetView();
-//            updatePeakView();
-//            updateDims();
-//            setupDimActions();
-//            datasetTableView.getSelectionModel().clearSelection();
             chart.setChartDisabled(false);
         }
     }
@@ -1257,7 +1286,7 @@ public class AttributesController implements Initializable {
     }
 
     boolean allCharts() {
-        return datasetChoiceState.getValue() == SelectionChoice.WINDOW;
+        return itemChoiceState.getValue() == SelectionChoice.WINDOW;
     }
 
     List<PolyChart> getCharts(boolean all) {
