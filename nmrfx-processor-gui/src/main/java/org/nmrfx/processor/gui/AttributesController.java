@@ -635,8 +635,8 @@ public class AttributesController implements Initializable {
                 int lowPt = chart.axModes[i].getIndex(dataAttr, i, lower);
                 int upPt = chart.axModes[i].getIndex(dataAttr, i, upper);
 
-                int center = ((lowPt + upPt) / 2);
-                chart.controller.getStatusBar().updatePlaneSpinner(center, i);
+                chart.controller.getStatusBar().updatePlaneSpinner(lowPt, i, 0);
+                chart.controller.getStatusBar().updatePlaneSpinner(upPt, i, 1);
             }
             i++;
         }

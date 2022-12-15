@@ -70,8 +70,8 @@ public class AxisChangeListener implements ChangeListener<Number> {
                     int indexL = chart.axModes[axNum].getIndex(datasetAttributes, axNum, axis.getLowerBound());
                     int indexU = chart.axModes[axNum].getIndex(datasetAttributes, axNum, axis.getUpperBound());
 
-                    int center = (indexL + indexU) / 2;
-                    chart.controller.getStatusBar().updatePlaneSpinner(center, axNum);
+                    chart.controller.getStatusBar().updatePlaneSpinner(indexL, axNum, 0);
+                    chart.controller.getStatusBar().updatePlaneSpinner(indexU, axNum, 1);
                 }
                 if (PolyChart.getNSyncGroups() > 0) {
                     List<String> names = chart.getDimNames();
