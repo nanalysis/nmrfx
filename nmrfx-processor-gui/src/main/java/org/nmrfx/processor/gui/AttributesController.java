@@ -4,7 +4,6 @@ import javafx.animation.PauseTransition;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
-import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -228,8 +227,6 @@ public class AttributesController implements Initializable {
     Boolean accordionIn1D = null;
     PolyChart chart;
     PolyChart boundChart = null;
-
-    Label[] axisLabels;
 
     FXMLController fxmlController;
     Pane pane;
@@ -562,19 +559,6 @@ public class AttributesController implements Initializable {
                 chart.controller.getStatusBar().updatePlaneSpinner(upPt, i, 1);
             }
             i++;
-        }
-    }
-
-    private void dimMenuAction(ActionEvent event, int iAxis) {
-        MenuItem menuItem = (MenuItem) event.getSource();
-        if (menuItem.getText().equals("Full")) {
-            chart.full(iAxis);
-        } else if (menuItem.getText().equals("Center")) {
-            chart.center(iAxis);
-        } else if (menuItem.getText().equals("First")) {
-            chart.firstPlane(iAxis);
-        } else if (menuItem.getText().equals("Last")) {
-            chart.lastPlane(iAxis);
         }
     }
 
@@ -1002,21 +986,6 @@ public class AttributesController implements Initializable {
             accordionIn1D = false;
         }
     }
-
-//    void setAxisControlValues() {
-//        // fix me is this right
-//        int start = 0;
-//        if (!chart.getDatasetAttributes().isEmpty()) {
-//            DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
-//            for (int i = 0; i < chart.getNDim(); i++) {
-//                axisLabels[i].setText(chart.axModes[i].getDatasetLabel(datasetAttr, i));
-//            }
-//            start = chart.getNDim();
-//        }
-//        for (int i = start; i < axisLabels.length; i++) {
-//            axisLabels[i].setText("");
-//        }
-//    }
 
     public void setAttributeControls() {
         if ((chart != null) && isShowing()) {
