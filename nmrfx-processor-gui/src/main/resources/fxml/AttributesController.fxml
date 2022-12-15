@@ -25,7 +25,6 @@
                 <TitledPane text="View">
                     <VBox>
                         <children>
-                            <VBox fx:id="viewGrid"/>
                             <Separator orientation="horizontal" minHeight="20"/>
                             <CheckBox fx:id="aspectCheckBox" text="Constrain aspect ratio"/>
                             <Label text="Aspect ratio:" minWidth="35"/>

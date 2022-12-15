@@ -61,9 +61,6 @@ public class AxisChangeListener implements ChangeListener<Number> {
             double newBound = newValue.doubleValue();
             if (chart == PolyChart.getActiveChart()) {
                 FXMLController fxmlController = chart.getFXMLController();
-                if (fxmlController.isSideBarAttributesShowing()) {
-                    fxmlController.attributesController.setViewBound(axNum, endNum, newBound);
-                }
                 if (axNum >= 2) {
                     DatasetAttributes datasetAttributes = chart.getDatasetAttributes().get(0);
                     NMRAxis axis = chart.axes[axNum];

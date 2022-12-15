@@ -638,6 +638,7 @@ public class SpectrumStatusBar {
     }
 
     public void setMode(int mode) {
+        System.out.println("mode is " + mode);
         currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();

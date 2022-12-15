@@ -1020,7 +1020,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void updateAttrDims() {
         if (attributesController != null) {
-            attributesController.setAxisControlValues();
+          //  attributesController.setAxisControlValues();
         }
     }
 

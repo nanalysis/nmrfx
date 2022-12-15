@@ -1,7 +1,6 @@
 package org.nmrfx.processor.gui;
 
 import javafx.animation.PauseTransition;
-import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
@@ -13,9 +12,7 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.controlsfx.control.RangeSlider;
@@ -32,12 +29,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ResourceBundle;
 
 public class AttributesController implements Initializable {
     private static final Logger log = LoggerFactory.getLogger(AttributesController.class);
     static final DecimalFormat FORMATTER = new DecimalFormat();
-    static final String[] rowNames = {"X", "Y", "Z", "A", "B", "C"};
 
     static {
         FORMATTER.setMaximumFractionDigits(3);
@@ -68,8 +67,6 @@ public class AttributesController implements Initializable {
     @FXML
     TitledPane peakAppearancePane;
     @FXML
-    private VBox viewGrid;
-    @FXML
     private CheckBox integralCheckBox;
     @FXML
     private RangeSlider integralPosSlider;
@@ -85,9 +82,6 @@ public class AttributesController implements Initializable {
     Slider aspectSlider;
     @FXML
     Label aspectRatioValue;
-
-    StringProperty[][] limitFields;
-    Label[] labelFields;
     @FXML
     Slider scaleSlider;
     @FXML
@@ -234,8 +228,6 @@ public class AttributesController implements Initializable {
     Boolean accordionIn1D = null;
     PolyChart chart;
     PolyChart boundChart = null;
-    Label[] dimLabels;
-    HBox[] viewBoxes;
 
     Label[] axisLabels;
 
@@ -378,7 +370,6 @@ public class AttributesController implements Initializable {
         peakAppearancePane.expandedProperty().addListener(e -> peakPaneExpaned());
         peakListChoiceBox.setVisible(false);
         datasetChoiceBox.setVisible(true);
-        createViewGrid();
     }
 
     private void unBindChart(PolyChart polyChart) {
@@ -506,10 +497,6 @@ public class AttributesController implements Initializable {
     }
 
     private void datasetsChanged() {
-        OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
-        if (maxNDim.isPresent()) {
-            setViewDims(Math.max(2, maxNDim.getAsInt()));
-        }
         datasetChoiceBox.setItems(chart.getDatasetAttributes());
         if (!datasetChoiceBox.getItems().isEmpty()) {
             datasetChoiceBox.setValue(datasetChoiceBox.getItems().get(0));
@@ -561,75 +548,11 @@ public class AttributesController implements Initializable {
         return result;
     }
 
-    private void createViewGrid() {
-        limitFields = new StringProperty[rowNames.length][2];
-        labelFields = new Label[rowNames.length];
-        int iRow = 1;
-        axisLabels = new Label[rowNames.length];
-        dimLabels = new Label[rowNames.length];
-        viewBoxes = new HBox[rowNames.length];
-        for (String rowName : rowNames) {
-            int iRow0 = iRow - 1;
-            MenuButton mButton = new MenuButton(rowName);
-            MenuItem menuItem = new MenuItem("Full");
-            mButton.getItems().add(menuItem);
-            menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iRow0));
-            if (iRow > 2) {
-                menuItem = new MenuItem("First");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iRow0));
-                menuItem = new MenuItem("Center");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iRow0));
-                menuItem = new MenuItem("Last");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iRow0));
-            }
-
-            TextField minField = new TextField();
-            minField.setPrefWidth(60.0);
-            limitFields[iRow - 1][0] = minField.textProperty();
-            TextField maxField = new TextField();
-            maxField.setPrefWidth(60.0);
-            Label label = new Label("ppm");
-            labelFields[iRow0] = label;
-            label.setPrefWidth(40);
-            Label axisLabel = new Label("");
-            axisLabel.setPrefWidth(40);
-            HBox hBox = new HBox();
-            hBox.getChildren().addAll(mButton, minField, maxField, label);
-            viewGrid.getChildren().add(hBox);
-            viewBoxes[iRow - 1] = hBox;
-            axisLabels[iRow - 1] = axisLabel;
-            limitFields[iRow - 1][1] = maxField.textProperty();
-            iRow++;
-        }
-    }
-
-    void setViewDims(int nDim) {
-        int currentN = viewGrid.getChildren().size();
-        if (currentN < nDim) {
-            for (int i = currentN; i < nDim; i++) {
-                viewGrid.getChildren().add(viewBoxes[i]);
-            }
-        } else if (currentN > nDim) {
-            viewGrid.getChildren().remove(nDim, currentN);
-        }
-    }
-
-    public void setViewBound(int dim, int minMax, double value) {
-        StringProperty limitProp = limitFields[dim][minMax];
-        limitProp.setValue(FORMATTER.format(value));
-    }
-
     void setLimits() {
         int i = 0;
         for (NMRAxis axis : chart.axes) {
             double lower = axis.getLowerBound();
             double upper = axis.getUpperBound();
-            setViewBound(i, 0, lower);
-            setViewBound(i, 1, upper);
-            labelFields[i].setText(chart.axModes[i].name().toLowerCase());
             if ((i > 1) && !chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 int lowPt = chart.axModes[i].getIndex(dataAttr, i, lower);
@@ -1080,23 +1003,20 @@ public class AttributesController implements Initializable {
         }
     }
 
-    void setAxisControlValues() {
-        // fix me is this right
-        int start = 0;
-        if (!chart.getDatasetAttributes().isEmpty()) {
-            DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
-            for (int i = 0; i < chart.getNDim(); i++) {
-                axisLabels[i].setText(chart.axModes[i].getDatasetLabel(datasetAttr, i));
-            }
-            start = chart.getNDim();
-        }
-        for (int i = start; i < limitFields.length; i++) {
-            limitFields[i][0].set("");
-            limitFields[i][1].set("");
-            axisLabels[i].setText("");
-
-        }
-    }
+//    void setAxisControlValues() {
+//        // fix me is this right
+//        int start = 0;
+//        if (!chart.getDatasetAttributes().isEmpty()) {
+//            DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
+//            for (int i = 0; i < chart.getNDim(); i++) {
+//                axisLabels[i].setText(chart.axModes[i].getDatasetLabel(datasetAttr, i));
+//            }
+//            start = chart.getNDim();
+//        }
+//        for (int i = start; i < axisLabels.length; i++) {
+//            axisLabels[i].setText("");
+//        }
+//    }
 
     public void setAttributeControls() {
         if ((chart != null) && isShowing()) {

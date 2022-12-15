@@ -1906,7 +1906,6 @@ public class PolyChart extends Region implements PeakListener {
 
             datasetFileProp.setValue(null);
         }
-        getFXMLController().attributesController.setAxisControlValues();
 
         crossHairs.hideCrossHairs();
         return datasetAttributes;
