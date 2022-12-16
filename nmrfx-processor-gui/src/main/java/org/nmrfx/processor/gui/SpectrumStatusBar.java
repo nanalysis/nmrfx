@@ -108,14 +108,15 @@ public class SpectrumStatusBar {
     class SpinnerConverter extends IntegerStringConverter {
         final int axNum;
         final int spinNum;
+        boolean valueMode = false;
         SpinnerConverter(int axNum, int spinNum) {
             this.axNum = axNum;
             this.spinNum = spinNum;
         }
         @Override
         public String toString(Integer iValue) {
-            boolean valueMode = valueModeBox[axNum - 2].isSelected();
-            if (valueMode) {
+            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
+            if (showValue) {
                 var doubleOpt = getPlaneValue(axNum, iValue - 1);
                 return doubleOpt.isPresent() ? String.format("%.2f", doubleOpt.get()) : "";
             } else {
@@ -127,8 +128,8 @@ public class SpectrumStatusBar {
         public Integer fromString(String s) {
             int result = 1;
             Spinner<Integer> spinner = planeSpinner[axNum - 2][spinNum];
-            boolean valueMode = valueModeBox[axNum - 2].isSelected();
-            if (valueMode) {
+            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
+            if (showValue) {
                 return spinner.getValueFactory().getValue();
             }
             try {
@@ -155,6 +156,9 @@ public class SpectrumStatusBar {
             return result;
         }
 
+        void setValueMode(boolean mode) {
+            valueMode = mode;
+        }
     }
 
     MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
@@ -623,6 +627,7 @@ public class SpectrumStatusBar {
         PolyChart activeChart = controller.getActiveChart();
         List<Integer> drawList;
         for (int i = 1; i < nDim; i++) {
+            ((SpinnerConverter) planeSpinner[i-1][0].getValueFactory().getConverter()).setValueMode(false);
             drawList = activeChart.getDrawList();
             if (!drawList.isEmpty()) {
                 // Use the current drawlist and update the spinner to the first number
@@ -643,7 +648,6 @@ public class SpectrumStatusBar {
     }
 
     public void setMode(int mode) {
-        System.out.println("mode is " + mode);
         currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();
@@ -685,6 +689,8 @@ public class SpectrumStatusBar {
             nodes.add(dimMenus[i]);
             nodes.add(planeSpinner[i - 2][0]);
             nodes.add(planeSpinner[i - 2][1]);
+            ((SpinnerConverter) planeSpinner[i-1][0].getValueFactory().getConverter()).setValueMode(true);
+            ((SpinnerConverter) planeSpinner[i-1][1].getValueFactory().getConverter()).setValueMode(true);
             nodes.add(valueModeBox[i-2]);
             Pane nodeFiller = new Pane();
             HBox.setHgrow(nodeFiller, Priority.ALWAYS);
@@ -801,7 +807,7 @@ public class SpectrumStatusBar {
             if (!chart.datasetAttributesList.isEmpty()) {
                 DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
                 datasetAttr.setDim(rowName, dimName);
-
+                setPlaneRanges();
                 chart.updateProjections();
                 chart.updateProjectionBorders();
                 chart.updateProjectionScale();
