@@ -609,8 +609,13 @@ public class SpectrumStatusBar {
         HBox.setHgrow(filler2, Priority.ALWAYS);
         nodes.add(filler1);
 
-        for (int i = 0; i < 2; i++) {
-            for (int j = 1; j >= 0; j--) {
+        for (int j = 1; j >= 0; j--) {
+            if (j== 1) {
+                nodes.add(new Label("X:"));
+            } else {
+                nodes.add(new Label("I:"));
+            }
+            for (int i = 0; i < 2; i++) {
                 nodes.add(crossText[i][j]);
             }
         }
@@ -653,12 +658,6 @@ public class SpectrumStatusBar {
         }
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);
-        if (mode > 1) {
-            nodes.add(dimMenus[0]);
-        }
-        if (mode > 2) {
-            nodes.add(dimMenus[1]);
-        }
 
         if (mode == 2) {
             displayModeComboBox.getSelectionModel().select(DisplayMode.CONTOURS);
@@ -666,8 +665,18 @@ public class SpectrumStatusBar {
         }
         nodes.add(filler1);
 
-        for (int i = 0; i < 2; i++) {
-            for (int j = 1; j >= 0; j--) {
+        for (int j = 1; j >= 0; j--) {
+            if ((j == 1) && (mode > 1)) {
+                nodes.add(dimMenus[0]);
+            }
+            if (j == 0) {
+                if (mode > 2) {
+                    nodes.add(dimMenus[1]);
+                } else if (mode == 2) {
+                    nodes.add(new Label("Y:"));
+                }
+            }
+            for (int i = 0; i < 2; i++) {
                 nodes.add(crossText[i][j]);
             }
         }
