@@ -689,9 +689,9 @@ public class SpectrumStatusBar {
             nodes.add(dimMenus[i]);
             nodes.add(planeSpinner[i - 2][0]);
             nodes.add(planeSpinner[i - 2][1]);
-            ((SpinnerConverter) planeSpinner[i-1][0].getValueFactory().getConverter()).setValueMode(true);
-            ((SpinnerConverter) planeSpinner[i-1][1].getValueFactory().getConverter()).setValueMode(true);
-            nodes.add(valueModeBox[i-2]);
+            ((SpinnerConverter) planeSpinner[i - 2][0].getValueFactory().getConverter()).setValueMode(true);
+            ((SpinnerConverter) planeSpinner[i - 2][1].getValueFactory().getConverter()).setValueMode(true);
+            nodes.add(valueModeBox[i - 2]);
             Pane nodeFiller = new Pane();
             HBox.setHgrow(nodeFiller, Priority.ALWAYS);
             nodes.add(nodeFiller);
