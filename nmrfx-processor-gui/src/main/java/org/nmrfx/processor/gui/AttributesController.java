@@ -369,8 +369,6 @@ public class AttributesController implements Initializable {
         peakOnColorPicker.valueProperty().addListener(peakOnColorListener);
         peakOffColorPicker.valueProperty().addListener(peakOffColorListener);
         peakAppearancePane.expandedProperty().addListener(e -> peakPaneExpaned());
-        peakListChoiceBox.setVisible(false);
-        datasetChoiceBox.setVisible(true);
     }
 
     public void updateScrollSize(Pane pane) {
@@ -485,11 +483,15 @@ public class AttributesController implements Initializable {
 
     private void peakPaneExpaned() {
         if (peakAppearancePane.isExpanded()) {
-            peakListChoiceBox.setVisible(true);
-            datasetChoiceBox.setVisible(false);
+            applyVBox.getChildren().remove(datasetChoiceBox);
+            if (!applyVBox.getChildren().contains(peakListChoiceBox)) {
+                applyVBox.getChildren().add(peakListChoiceBox);
+            }
         } else {
-            peakListChoiceBox.setVisible(false);
-            datasetChoiceBox.setVisible(true);
+            applyVBox.getChildren().remove(peakListChoiceBox);
+            if (!applyVBox.getChildren().contains(datasetChoiceBox)) {
+                applyVBox.getChildren().add(datasetChoiceBox);
+            }
         }
     }
 
@@ -502,7 +504,7 @@ public class AttributesController implements Initializable {
     }
 
     private void datasetsChanged() {
-        datasetChoiceBox.setItems(chart.getDatasetAttributes());
+        datasetChoiceBox.setItems(chart.getDatasetAttributes().filtered(d -> !d.isProjection()));
         if (!datasetChoiceBox.getItems().isEmpty()) {
             datasetChoiceBox.setValue(datasetChoiceBox.getItems().get(0));
         }
