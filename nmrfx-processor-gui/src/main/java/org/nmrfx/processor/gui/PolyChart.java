@@ -1136,16 +1136,20 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
+    private void fullAxisLimits() {
+        double[] limits = getRange(0);
+        setXAxis(limits[0], limits[1]);
+        if (disDimProp.get() == DISDIM.TwoD) {
+            limits = getRange(1);
+            setYAxis(limits[0], limits[1]);
+        }
+    }
+
     public void full() {
         ConsoleUtil.runOnFxThread(() -> {
             if (!datasetAttributesList.isEmpty()) {
                 ChartUndoLimits undo = new ChartUndoLimits(this);
-                double[] limits = getRange(0);
-                setXAxis(limits[0], limits[1]);
-                if (disDimProp.get() == DISDIM.TwoD) {
-                    limits = getRange(1);
-                    setYAxis(limits[0], limits[1]);
-                }
+                fullAxisLimits();
                 ChartUndoLimits redo = new ChartUndoLimits(this);
                 controller.undoManager.add("full", undo, redo);
                 layoutPlotChildren();
@@ -1307,6 +1311,7 @@ public class PolyChart extends Region implements PeakListener {
         }
         return nDim;
     }
+
 
     public void autoScale() {
         ChartUndoScale undo = new ChartUndoScale(this);
@@ -2115,9 +2120,9 @@ public class PolyChart extends Region implements PeakListener {
             setAxisState(yAxis, "Intensity");
         }
         if (autoScale) {
-            full();
+            fullAxisLimits();
             if (!datasetAttributes.getHasLevel()) {
-                autoScale();
+                autoScale(datasetAttributes);
             }
         }
     }
