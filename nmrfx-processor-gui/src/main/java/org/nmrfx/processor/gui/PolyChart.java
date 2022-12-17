@@ -2622,7 +2622,9 @@ public class PolyChart extends Region implements PeakListener {
         while (attributesIterator.hasNext()) {
             DatasetAttributes datasetAttributes = attributesIterator.next();
             if (isDatasetAttributesIncompatible(axisNucleusNames, datasetAttributes)) {
-                log.info("Mismatched dimensions. Unable to display dataset: {}", datasetAttributes.getDataset().getName());
+                if (!datasetAttributes.isProjection()) {
+                    log.info("Mismatched dimensions. Unable to display dataset: {}", datasetAttributes.getDataset().getName());
+                }
                 attributesIterator.remove();
             }
         }
