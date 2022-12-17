@@ -7,7 +7,9 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import org.controlsfx.control.ListSelectionView;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -21,6 +23,8 @@ import java.util.List;
 
 public class ContentController {
     private static final Logger log = LoggerFactory.getLogger(ContentController.class);
+    @FXML
+    ScrollPane contentScrollPane;
     @FXML
     Accordion contentAccordion;
     @FXML
@@ -69,6 +73,10 @@ public class ContentController {
         peakView.getTargetItems().addListener(peakTargetListener);
         ProjectBase.getActive().addDatasetListListener(mapChangeListener);
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
+    }
+
+    public void updateScrollSize(Pane pane) {
+        contentScrollPane.setMaxHeight(pane.getHeight() - 10);
     }
 
     private boolean isShowing() {

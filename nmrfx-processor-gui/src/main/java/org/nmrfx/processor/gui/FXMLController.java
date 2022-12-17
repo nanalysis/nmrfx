@@ -1289,9 +1289,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
         cursorProperty.addListener( e -> setCursor());
         attributesPane = new AnchorPane();
         attributesController =  AttributesController.create(this, attributesPane);
+        rightBox.heightProperty().addListener(e -> attributesController.updateScrollSize(rightBox));
 
         contentPane = new AnchorPane();
         contentController =  ContentController.create(this, contentPane);
+        rightBox.heightProperty().addListener(e -> contentController.updateScrollSize(rightBox));
 
     }
 

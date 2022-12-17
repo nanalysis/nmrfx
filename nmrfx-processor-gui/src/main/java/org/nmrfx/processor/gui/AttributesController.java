@@ -12,6 +12,7 @@ import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.controlsfx.control.RangeSlider;
@@ -46,7 +47,10 @@ public class AttributesController implements Initializable {
         CHART,
         WINDOW
     }
-
+    @FXML
+    VBox applyVBox;
+    @FXML
+    ScrollPane attributeScrollPane;
     @FXML
     ChoiceBox<SelectionChoice> itemChoiceState;
     @FXML
@@ -367,6 +371,10 @@ public class AttributesController implements Initializable {
         peakAppearancePane.expandedProperty().addListener(e -> peakPaneExpaned());
         peakListChoiceBox.setVisible(false);
         datasetChoiceBox.setVisible(true);
+    }
+
+    public void updateScrollSize(Pane pane) {
+        attributeScrollPane.setMaxHeight(pane.getHeight()-applyVBox.getHeight() - 10);
     }
 
     private void unBindChart(PolyChart polyChart) {

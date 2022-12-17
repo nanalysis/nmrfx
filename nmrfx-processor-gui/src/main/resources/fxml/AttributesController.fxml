@@ -5,12 +5,12 @@
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.RangeSlider?>
 <?import org.controlsfx.control.ListSelectionView?>
-<VBox xmlns="http://javafx.com/javafx"
+<VBox  xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="org.nmrfx.processor.gui.AttributesController"
 >
     <children>
-        <VBox spacing="5">
+        <VBox fx:id="applyVBox" spacing="5">
             <HBox spacing="5" alignment="CENTER">
                 <children>
                     <Label text="Apply to:"/>
@@ -20,7 +20,8 @@
             <ChoiceBox fx:id="datasetChoiceBox" maxWidth="225"/>
             <ChoiceBox fx:id="peakListChoiceBox" maxWidth="225"/>
         </VBox>
-        <Accordion fx:id="attributesAccordion" maxWidth="225">
+        <ScrollPane fx:id="attributeScrollPane" fitToHeight="true" fitToWidth="true" maxWidth="245">
+        <Accordion fx:id="attributesAccordion">
             <panes>
                 <TitledPane text="View">
                     <VBox>
@@ -418,5 +419,6 @@
                 </TitledPane>
             </panes>
         </Accordion>
+        </ScrollPane>
     </children>
 </VBox>
