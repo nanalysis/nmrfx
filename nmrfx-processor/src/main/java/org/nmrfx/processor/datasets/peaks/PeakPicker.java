@@ -26,16 +26,19 @@ package org.nmrfx.processor.datasets.peaks;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.math.VecBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DimCounter;
+import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -797,4 +800,53 @@ public class PeakPicker {
         return lastPeakPicked;
     }
 
+    public static double calculateThreshold(Dataset dataset) {
+        boolean scaleToLargest = true;
+        int nWin = 32;
+        double maxRatio = 20.0;
+        double sdRatio = 30.0;
+        return calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
+    }
+
+    public static double calculateThreshold(Dataset dataset, boolean scaleToLargest, int nWin, double maxRatio, double sdRatio) {
+        Vec vec;
+        double threshold;
+        try {
+            vec = dataset.readVector(0, 0);
+        } catch (IOException ex) {
+            log.error("Failed to get dataset vector", ex);
+            return 0.0;
+        }
+        int size = vec.getSize();
+        int sdevWin = Math.max(16, size / 64);
+        double sDev = vec.sdev(sdevWin);
+        threshold = 0.0;
+        if (scaleToLargest) {
+            int nIncr = size / nWin;
+            List<Double> maxs = new ArrayList<>();
+            for (int i = 0; i < size; i += nIncr) {
+                int j = i + nIncr - 1;
+                VecBase.IndexValue maxIndexVal = vec.maxIndex(i, j);
+                double max = maxIndexVal.getValue();
+                // Also get the smallest indexes, to account for negative peaks.
+                VecBase.IndexValue minIndexVal = vec.minIndex(i, j);
+                double min = minIndexVal.getValue();
+                maxs.add(Math.max(Math.abs(max), Math.abs(min)));
+            }
+            Collections.sort(maxs);
+            int nMax = maxs.size();
+            double max = maxs.get(nMax - 3);
+
+            double min = maxs.get(0);
+            threshold = max / maxRatio;
+        }
+        if (threshold < sdRatio * sDev) {
+            if (dataset.getNucleus(0) == Nuclei.H1) {
+                threshold = sdRatio * sDev;
+            } else {
+                threshold = sdRatio / 3.0 * sDev;
+            }
+        }
+        return threshold;
+    }
 }

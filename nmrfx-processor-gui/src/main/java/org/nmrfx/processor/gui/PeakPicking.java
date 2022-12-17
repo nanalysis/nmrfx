@@ -5,28 +5,32 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.collections.ObservableList;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.io.PeakWriter;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
+import org.nmrfx.processor.datasets.peaks.PeakPicker;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
-import javafx.collections.ObservableList;
-import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
-import org.nmrfx.processor.datasets.peaks.PeakPicker;
-import org.nmrfx.peaks.io.PeakWriter;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class PeakPicking {
+    private static final Logger log = LoggerFactory.getLogger(PeakPicking.class);
 
     static Consumer singlePickAction = null;
 

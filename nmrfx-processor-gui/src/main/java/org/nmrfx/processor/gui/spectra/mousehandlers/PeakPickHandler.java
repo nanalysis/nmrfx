@@ -3,11 +3,11 @@ package org.nmrfx.processor.gui.spectra.mousehandlers;
 import javafx.scene.input.MouseEvent;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
-import org.nmrfx.processor.math.Vec;
 
 import java.util.List;
 import java.util.Optional;
@@ -128,14 +128,12 @@ public class PeakPickHandler extends MouseHandler {
             tempList = displayList.copy(listName, false, false, true);
         }
         Dataset dataset = (Dataset) chart.getDatasetAttributes().get(0).getDataset();
-        if (dataset.getVec() != null) {
-            if (dataset.getNoiseLevel() == null) {
-                Vec vec = dataset.getVec();
-                double stdDev = vec.sdev(32);
-                dataset.setNoiseLevel(stdDev);
-            }
-            threshold = Math.max(dataset.getNoiseLevel() * 10, threshold);
+        Double datasetThreshold = dataset.getThreshold();
+        if (datasetThreshold == null) {
+            datasetThreshold = PeakPicker.calculateThreshold(dataset);
+            dataset.setThreshold(datasetThreshold);
         }
+        threshold = Math.max(datasetThreshold, threshold);
 
         double[][] region = {{xLim0, xLim1}};
         PeakList peakList = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0), region, false,
