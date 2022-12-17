@@ -3612,8 +3612,9 @@ public class PolyChart extends Region implements PeakListener {
         int nMatch = 0;
         int nShouldMatch = 0;
         boolean[] used = new boolean[nPeakDim];
+        int nAxes = is1D() ? 1 : axes.length;
 
-        for (int i = 0; (i < axes.length) && (i < dim.length); i++) {
+        for (int i = 0; (i < nAxes) && (i < dim.length); i++) {
             dim[i] = -1;
             nShouldMatch++;
             for (int j = 0; j < nPeakDim; j++) {
