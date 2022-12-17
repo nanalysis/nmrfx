@@ -81,7 +81,6 @@ public class PeakPicking {
         DatasetBase datasetBase = dataAttr.getDataset();
         Dataset dataset = (Dataset) datasetBase;
         int nDim = dataset.getNDim();
-
         if (listName == null) {
             listName = getListName(chart, dataAttr);
         }
@@ -102,7 +101,16 @@ public class PeakPicking {
             int jDim = dataAttr.getDim(iDim);
             if (iDim < 2) {
                 if (region != null) {
-                    peakPickPar.limit(jDim, region[iDim][0], region[iDim][1]);
+                    if (region.length > iDim) {
+                        peakPickPar.limit(jDim, region[iDim][0], region[iDim][1]);
+                    } else {
+                        List<Integer> drawList = chart.getDrawList();
+                        int row = 0;
+                        if (!drawList.isEmpty()) {
+                            row = drawList.get(0);
+                        }
+                        peakPickPar.limit(jDim, row, row);
+                    }
                 } else if (useCrossHairs) {
                     int orientation = iDim == 0 ? PolyChart.VERTICAL : PolyChart.HORIZONTAL;
                     peakPickPar.limit(jDim,
