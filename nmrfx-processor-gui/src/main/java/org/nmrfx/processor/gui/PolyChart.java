@@ -3595,10 +3595,12 @@ public class PolyChart extends Region implements PeakListener {
         boolean result = false;
         if (!datasetAttributesList.isEmpty()) {
             DatasetAttributes dataAttr = datasetAttributesList.get(0);
-            int[] peakDim = getPeakDim(dataAttr, peakList, looseMode);
-            if (peakDim[0] != -1) {
-                if ((peakDim.length == 1) || (peakDim[1] != -1)) {
-                    result = true;
+            if (dataAttr.nDim >= peakList.getNDim()) {
+                int[] peakDim = getPeakDim(dataAttr, peakList, looseMode);
+                if (peakDim[0] != -1) {
+                    if ((peakDim.length == 1) || (peakDim[1] != -1)) {
+                        result = true;
+                    }
                 }
             }
         }
