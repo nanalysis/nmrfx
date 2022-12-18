@@ -1446,9 +1446,14 @@ public class Processor {
             dataset.writeHeader(false);
         }
         if (!keepDatasetOpen) {
-            dataset.setNFreqDims(nDimsProcessed);
+            int freqDimsProcessed = 0;
+            for (int i = 0; i< dataset.getNDim(); i++) {
+                if (dataset.getFreqDomain(i)) {
+                    freqDimsProcessed++;
+                }
+            }
+            dataset.setNFreqDims(freqDimsProcessed);
             for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
-                dataset.setFreqDomain(i, false);
                 dataset.setComplex(i, false);
             }
             if (!dataset.isMemoryFile()) {

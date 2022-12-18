@@ -50,6 +50,7 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Instances of this class represent NMR datasets. The class is typically used
@@ -112,21 +113,23 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             layout = headerIO.readHeader(raFile);
         }
         memoryMode = false;
+        //Only automatically set the freqDomains to true if they are all false
+        boolean noFreqDomains = IntStream.range(0, freqDomain.length).allMatch(i -> !freqDomain[i]);
+        // Datasets that were not generated in NMRFx don't
+        // have freqDomain  attribute set so set freq domain
+        // here
+        boolean isFID =  (getNFreqDims() == 0) && (!getFreqDomain(0) && (getComplex(0)));
+        if (!isFID && noFreqDomains) {
+            int nFreq = getNFreqDims() == 0 ? nDim : getNFreqDims();
+            for (int i = 0; i < nFreq; i++) {
+                setFreqDomain(i, true);
+            }
+        }
 
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
         if (layout != null) {
             createDataFile(raFile, writable);
-        }
-        // Datasets that were not generated in NMRFx don't
-        // have freqDomain  attribute set so set freq domain
-        // here
-        boolean isFID =  (getNFreqDims() == 0) && ((!getFreqDomain(0) && (getComplex(0))));
-        if (!isFID && !getFreqDomain(0)) {
-            int nFreq = getNFreqDims() == 0 ? nDim : getNFreqDims();
-            for (int i = 0; i < nFreq; i++) {
-                setFreqDomain(i, true);
-            }
         }
 
         log.info("new dataset {}", fileName);

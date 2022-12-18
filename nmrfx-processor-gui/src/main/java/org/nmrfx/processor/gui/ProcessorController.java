@@ -1107,11 +1107,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 processor.clearDataset();
                 isProcessing.set(false);
                 setProcessingStatus("cancelled", false);
-                //  Processor.getProcessor().closeDataset(false);
             });
             ((Service<Integer>) worker).setOnFailed(event -> {
                 processor.clearDataset();
                 isProcessing.set(false);
+                // Processing is finished if it has ended with errors
+                Processor.getProcessor().setProcessorAvailableStatus(true);
                 final Throwable exception = worker.getException();
                 setProcessingStatus(exception.getMessage(), false, exception);
             });
