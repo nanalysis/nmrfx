@@ -73,6 +73,8 @@ public class GUIProject extends ProjectBase {
         newProject.peakLists.putAll(project.peakLists);
         newProject.peakPaths.putAll(project.peakPaths);
         newProject.compoundMap.putAll(project.compoundMap);
+        newProject.molecules.putAll(project.molecules);
+        newProject.activeMol = project.activeMol;
         return newProject;
     }
 

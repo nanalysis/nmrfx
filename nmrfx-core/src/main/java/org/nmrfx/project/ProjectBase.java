@@ -6,6 +6,7 @@
 package org.nmrfx.project;
 
 import org.nmrfx.chemistry.Compound;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetFactory;
 import org.nmrfx.datasets.DatasetParameterFile;
@@ -53,6 +54,9 @@ public class ProjectBase {
     protected Path projectDir = null;
     protected Map<String, PeakPaths> peakPaths = new HashMap<>();
     protected Map<String, Compound> compoundMap = new HashMap<>();
+    protected  Map<String, MoleculeBase> molecules = new HashMap<>();
+    protected MoleculeBase activeMol = null;
+
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
     protected List<DatasetBase> datasets = new ArrayList<>();
     protected Map<String, PeakList> peakLists = new HashMap<>();
@@ -267,6 +271,50 @@ public class ProjectBase {
     public void clearAllPeakLists() {
         peakLists.clear();
     }
+
+    public  MoleculeBase getActiveMolecule() {
+        return activeMol;
+    }
+
+    public void setActiveMolecule(MoleculeBase molecule) {
+        activeMol = molecule;
+    }
+
+    public void putMolecule(MoleculeBase molecule) {
+        molecules.put(molecule.getName(), molecule);
+    }
+
+    public  MoleculeBase getMolecule(String name) {
+        return molecules.get(name);
+    }
+
+    public  Collection<MoleculeBase> getMolecules() {
+        return molecules.values();
+    }
+
+    public  Collection<String> getMoleculeNames() {
+        return molecules.keySet();
+    }
+
+    public  void setMoleculeMap(Map<String, MoleculeBase> newMap) {
+        molecules = newMap;
+    }
+
+    public  void removeMolecule(String name) {
+        var mol = molecules.get(name);
+        if (mol == activeMol) {
+            activeMol = null;
+        }
+        if (mol != null) {
+            molecules.remove(name);
+        }
+    }
+
+    public  void clearAllMolecules() {
+        activeMol = null;
+        molecules.clear();
+    }
+
 
     public boolean hasDirectory() {
         return projectDir != null;
