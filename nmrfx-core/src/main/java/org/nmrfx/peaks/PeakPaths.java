@@ -36,7 +36,7 @@ public class PeakPaths implements PeakListener {
 
     static Map<String, PeakPaths> peakPaths() {
         ProjectBase project = ProjectBase.getActive();
-        return project.peakPaths;
+        return project.getPeakPaths();
     }
 
     public static void purgePaths(PeakPaths peakPath) {

@@ -71,8 +71,8 @@ public class GUIProject extends ProjectBase {
         project.copySaveFrames(newProject);
         newProject.datasetMap.putAll(project.datasetMap);
         newProject.peakLists.putAll(project.peakLists);
-
-        newProject.peakPaths = project.peakPaths;
+        newProject.peakPaths.putAll(project.peakPaths);
+        newProject.compoundMap.putAll(project.compoundMap);
         return newProject;
     }
 
