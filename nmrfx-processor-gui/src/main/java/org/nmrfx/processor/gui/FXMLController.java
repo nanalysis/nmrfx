@@ -57,6 +57,7 @@ import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
+import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.graphicsio.GraphicsIOException;
@@ -116,23 +117,19 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @FXML
     private StackPane chartPane;
     @FXML
-    private VBox phaserBox;
-    @FXML
     private BorderPane borderPane;
     @FXML
     private BorderPane mainBox;
     @FXML
     private StackPane processorPane;
-    @FXML
-    private GridPane rightBox;
     private Button cancelButton;
     private Button favoriteButton;
     PopOver popOver = null;
     PopOver attributesPopOver = null;
+    private VBox phaserBox = new VBox();
 
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
-    static SpecAttrWindowController specAttrWindowController = null;
     static boolean popOverMode = false;
     static PeakAttrController peakAttrController = null;
     Stage stage = null;
@@ -169,6 +166,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
     boolean[][] crossHairStates = new boolean[2][2];
     private BooleanProperty minBorders;
     Phaser phaser;
+    Pane attributesPane;
+    Pane contentPane;
+    AttributesController attributesController;
+    ContentController contentController;
     Set<ControllerTool> tools = new HashSet<>();
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(Cursor.CROSSHAIR);
@@ -272,20 +273,51 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public boolean isPhaseSliderVisible() {
-        return (rightBox.getChildren().size() > 0);
+        return borderPane.getRight() ==phaserBox;
     }
+
+    public boolean isSideBarAttributesShowing() {
+        return borderPane.getRight() ==attributesPane;
+    }
+
+    public boolean isContentPaneShowing() {
+        return borderPane.getRight() ==contentPane;
+    }
+
+    private void toggleSideBarAttributes(ToggleButton phaserButton, ToggleButton attributesButton, ToggleButton contentButton) {
+        if (phaserButton.isSelected()) {
+            borderPane.setRight(phaserBox);
+            phaser.getPhaseOp();
+            if (chartProcessor == null) {
+                phaser.setPH1Slider(activeChart.getDataPH1());
+                phaser.setPH0Slider(activeChart.getDataPH0());
+            }
+        } else if (attributesButton.isSelected()) {
+            borderPane.setRight(attributesPane);
+            attributesController.setAttributeControls();
+            attributesController.updateScrollSize(borderPane);
+        } else if (contentButton.isSelected()) {
+            borderPane.setRight(contentPane);
+            contentController.update();
+            contentController.updateScrollSize(borderPane);
+        } else {
+            borderPane.setRight(null);
+        }
+    }
+
 
     public void updatePhaser(boolean state) {
         if (state) {
-            rightBox.add(phaserBox, 0, 0);
+            borderPane.setRight(phaserBox);
             phaser.getPhaseOp();
             if (chartProcessor == null) {
                 phaser.setPH1Slider(activeChart.getDataPH1());
                 phaser.setPH0Slider(activeChart.getDataPH0());
             }
         } else {
-            rightBox.getChildren().remove(phaserBox);
-
+            if (borderPane.getRight() == phaserBox) {
+                borderPane.setRight(null);
+            }
         }
     }
 
@@ -317,6 +349,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         }
         updateSpectrumStatusBarOptions(false);
+        if (attributesController != null) {
+            attributesController.setChart(activeChart);
+        }
+        if (contentController != null) {
+            contentController.setChart(activeChart);
+        }
     }
 
     public PolyChart getActiveChart() {
@@ -791,59 +829,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         });
     }
 
-    @FXML
-    public void showSpecAttrAction(ActionEvent event) {
-        if (specAttrWindowController == null) {
-            if (popOverMode) {
-                specAttrWindowController = SpecAttrWindowController.createPane();
-            } else {
-                specAttrWindowController = SpecAttrWindowController.create();
-            }
-        }
-        if (specAttrWindowController != null) {
-            if (popOverMode) {
-                showAttributesPopOver(event);
-            } else {
-                specAttrWindowController.getStage().show();
-                stage.setResizable(true);
-                stage.toFront();
-            }
-        } else {
-            log.warn("Couldn't make controller");
-        }
-    }
-
     public void saveAsFavorite() {
         WindowIO.saveFavorite();
-    }
-
-    void showAttributesPopOver(ActionEvent event) {
-        Pane pane = specAttrWindowController.getPane();
-        if (attributesPopOver == null) {
-            attributesPopOver = new PopOver(pane);
-        }
-        specAttrWindowController.setPopOver(attributesPopOver);
-        attributesPopOver.setDetachable(true);
-        attributesPopOver.setTitle("Spectrum Attributes");
-        attributesPopOver.setHeaderAlwaysVisible(true);
-        attributesPopOver.setArrowLocation(PopOver.ArrowLocation.TOP_CENTER);
-        attributesPopOver.detachedProperty().addListener(e -> popOverDetached());
-        specAttrWindowController.hideToolBar();
-        Object obj = event.getSource();
-        if (obj instanceof Node) {
-            attributesPopOver.show((Node) event.getSource());
-        } else {
-            // fixme attributesPopOver.show(getActiveChart());
-
-        }
-    }
-
-    private void popOverDetached() {
-        if (attributesPopOver.isDetached()) {
-            specAttrWindowController.showToolBar();
-        } else {
-            specAttrWindowController.hideToolBar();
-        }
     }
 
     @FXML
@@ -1033,8 +1020,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void updateAttrDims() {
-        if (specAttrWindowController != null) {
-            specAttrWindowController.updateDims();
+        if (attributesController != null) {
+          //  attributesController.setAxisControlValues();
         }
     }
 
@@ -1154,8 +1141,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void setActiveController() {
         activeController.set(this);
-        if (specAttrWindowController != null) {
-            specAttrWindowController.update();
+        if (attributesController != null) {
+            attributesController.setAttributeControls();
         }
     }
 
@@ -1259,7 +1246,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        rightBox.getChildren().remove(phaserBox);
         borderPane.setLeft(null);
         if (!MainApp.isMac()) {
             MenuBar menuBar = MainApp.getMenuBar();
@@ -1301,6 +1287,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
         phaser = new Phaser(this, phaserBox);
         processorPane.getChildren().addListener(this::updateStageSize);
         cursorProperty.addListener( e -> setCursor());
+        attributesPane = new AnchorPane();
+        attributesController =  AttributesController.create(this, attributesPane);
+        borderPane.heightProperty().addListener(e -> attributesController.updateScrollSize(borderPane));
+
+        contentPane = new AnchorPane();
+        contentController =  ContentController.create(this, contentPane);
+        borderPane.heightProperty().addListener(e -> contentController.updateScrollSize(borderPane));
+
     }
 
     public BorderPane getMainBox() {
@@ -1471,9 +1465,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> showDatasetsAction(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.WRENCH, "Attributes", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(e -> showSpecAttrAction(e));
-        buttons.add(bButton);
         favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         favoriteButton.setOnAction(e -> saveAsFavorite());
         // Set the initial status of the favorite button
@@ -1576,19 +1567,36 @@ public class FXMLController implements  Initializable, PeakNavigable {
         Image imageIcon = new Image("/images/Icon_NVJ_16.png", true);
         ImageView imageView = new ImageView(imageIcon);
 
+        Pane filler = new Pane();
+        HBox.setHgrow(filler, Priority.ALWAYS);
+        filler.setMinWidth(20);
+        buttons.add(filler);
+
+        ToggleButton phaserButton = new ToggleButton("Phasing");
+        ToggleButton attributesButton = new ToggleButton("Attributes");
+        ToggleButton contentButton = new ToggleButton("Content");
+        attributesButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
+        contentButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
+        phaserButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton,contentButton));
+        phaserButton.getStyleClass().add("toolButton");
+        attributesButton.getStyleClass().add("toolButton");
+        contentButton.getStyleClass().add("toolButton");
+        SegmentedButton groupButton = new SegmentedButton(phaserButton, contentButton, attributesButton);
+
+
         for (Node node : buttons) {
             if (node instanceof Button) {
                 node.getStyleClass().add("toolButton");
             }
         }
         toolBar.getItems().addAll(buttons);
+        toolBar.getItems().add(groupButton);
 
         statusBar = new SpectrumStatusBar(this);
         statusBar.buildBar(btoolBar);
         MainApp.getMainApp().addStatusBarTools(statusBar);
 
     }
-
     public void enableFavoriteButton() {
         favoriteButton.setDisable(ProjectBase.getActive().getProjectDir() == null);
     }

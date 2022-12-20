@@ -22,6 +22,7 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.paint.Color;
+import org.nmrfx.processor.gui.PolyChart;
 
 /**
  *
@@ -29,15 +30,28 @@ import javafx.scene.paint.Color;
  */
 public class SliceAttributes {
 
-    public BooleanProperty offsetTracking;
-    public DoubleProperty offsetXValue;
-    public DoubleProperty offsetYValue;
-    public DoubleProperty scaleValue;
+    private BooleanProperty offsetTracking;
+    private DoubleProperty offsetXValue;
+    private DoubleProperty offsetYValue;
+    private DoubleProperty scaleValue;
     private ColorProperty slice1Color;
     private ColorProperty slice2Color;
     private BooleanProperty useDatasetColor;
     private BooleanProperty slice1State;
     private BooleanProperty slice2State;
+
+    public void copyTo(PolyChart destChart) {
+        SliceAttributes destProps = destChart.getSliceAttributes();
+        destProps.setOffsetTracking(getOffsetTracking());
+        destProps.setOffsetXValue(getOffsetXValue());
+        destProps.setOffsetYValue(getOffsetYValue());
+        destProps.setScaleValue(getScaleValue());
+        destProps.setSlice1Color(getSlice1Color());
+        destProps.setSlice2Color(getSlice2Color());
+        destProps.setUseDatasetColor(getUseDatasetColor());
+        destProps.setSlice1State(getSlice1State());
+        destProps.setSlice2State(getSlice2State());
+    }
 
     public BooleanProperty offsetTrackingProperty() {
         if (offsetTracking == null) {
