@@ -300,6 +300,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
             borderPane.setRight(contentPane);
             contentController.update();
             contentController.updateScrollSize(borderPane);
+        } else {
+            borderPane.setRight(null);
         }
     }
 
@@ -313,7 +315,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 phaser.setPH0Slider(activeChart.getDataPH0());
             }
         } else {
-            borderPane.setRight(null);
+            if (borderPane.getRight() == phaserBox) {
+                borderPane.setRight(null);
+            }
         }
     }
 
