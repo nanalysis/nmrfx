@@ -117,19 +117,16 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @FXML
     private StackPane chartPane;
     @FXML
-    private VBox phaserBox;
-    @FXML
     private BorderPane borderPane;
     @FXML
     private BorderPane mainBox;
     @FXML
     private StackPane processorPane;
-    @FXML
-    private GridPane rightBox;
     private Button cancelButton;
     private Button favoriteButton;
     PopOver popOver = null;
     PopOver attributesPopOver = null;
+    private VBox phaserBox = new VBox();
 
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
@@ -276,47 +273,47 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public boolean isPhaseSliderVisible() {
-        return rightBox.getChildren().contains(phaserBox);
+        return borderPane.getRight() ==phaserBox;
     }
 
     public boolean isSideBarAttributesShowing() {
-        return rightBox.getChildren().contains(attributesPane);
+        return borderPane.getRight() ==attributesPane;
     }
 
     public boolean isContentPaneShowing() {
-        return rightBox.getChildren().contains(contentPane);
+        return borderPane.getRight() ==contentPane;
     }
 
     private void toggleSideBarAttributes(ToggleButton phaserButton, ToggleButton attributesButton, ToggleButton contentButton) {
-        rightBox.getChildren().clear();
         if (phaserButton.isSelected()) {
-            rightBox.add(phaserBox, 0, 0);
+            borderPane.setRight(phaserBox);
             phaser.getPhaseOp();
             if (chartProcessor == null) {
                 phaser.setPH1Slider(activeChart.getDataPH1());
                 phaser.setPH0Slider(activeChart.getDataPH0());
             }
         } else if (attributesButton.isSelected()) {
-            rightBox.add(attributesPane, 0, 0);
+            borderPane.setRight(attributesPane);
             attributesController.setAttributeControls();
+            attributesController.updateScrollSize(borderPane);
         } else if (contentButton.isSelected()) {
-            rightBox.add(contentPane, 0, 0);
+            borderPane.setRight(contentPane);
             contentController.update();
+            contentController.updateScrollSize(borderPane);
         }
     }
 
 
     public void updatePhaser(boolean state) {
         if (state) {
-            rightBox.add(phaserBox, 0, 0);
+            borderPane.setRight(phaserBox);
             phaser.getPhaseOp();
             if (chartProcessor == null) {
                 phaser.setPH1Slider(activeChart.getDataPH1());
                 phaser.setPH0Slider(activeChart.getDataPH0());
             }
         } else {
-            rightBox.getChildren().remove(phaserBox);
-
+            borderPane.setRight(null);
         }
     }
 
@@ -1245,7 +1242,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        rightBox.getChildren().remove(phaserBox);
         borderPane.setLeft(null);
         if (!MainApp.isMac()) {
             MenuBar menuBar = MainApp.getMenuBar();
@@ -1289,11 +1285,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
         cursorProperty.addListener( e -> setCursor());
         attributesPane = new AnchorPane();
         attributesController =  AttributesController.create(this, attributesPane);
-        rightBox.heightProperty().addListener(e -> attributesController.updateScrollSize(rightBox));
+        borderPane.heightProperty().addListener(e -> attributesController.updateScrollSize(borderPane));
 
         contentPane = new AnchorPane();
         contentController =  ContentController.create(this, contentPane);
-        rightBox.heightProperty().addListener(e -> contentController.updateScrollSize(rightBox));
+        borderPane.heightProperty().addListener(e -> contentController.updateScrollSize(borderPane));
 
     }
 

@@ -11,6 +11,7 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -371,8 +372,11 @@ public class AttributesController implements Initializable {
         peakAppearancePane.expandedProperty().addListener(e -> peakPaneExpaned());
     }
 
-    public void updateScrollSize(Pane pane) {
-        attributeScrollPane.setMaxHeight(pane.getHeight()-applyVBox.getHeight() - 10);
+    public void updateScrollSize(BorderPane pane) {
+        double otherHeight = applyVBox.getHeight();
+        Node node = pane.getCenter();
+        double height = node.getLayoutBounds().getHeight();
+        attributeScrollPane.setMaxHeight(height - otherHeight - 10);
     }
 
     private void unBindChart(PolyChart polyChart) {

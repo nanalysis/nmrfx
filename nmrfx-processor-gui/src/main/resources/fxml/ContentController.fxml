@@ -16,14 +16,14 @@
                 <TitledPane text="Datasets">
                     <VBox>
                         <children>
-                            <ListSelectionView fx:id="datasetView" orientation="VERTICAL" prefHeight="400"/>
+                            <ListSelectionView fx:id="datasetView" orientation="VERTICAL" minHeight="250" prefHeight="400"/>
                         </children>
                     </VBox>
                 </TitledPane>
                 <TitledPane text="Peaks">
                     <VBox>
                         <children>
-                            <ListSelectionView fx:id="peakView" orientation="VERTICAL" prefHeight="400"/>
+                            <ListSelectionView fx:id="peakView" orientation="VERTICAL" minHeight="250" prefHeight="400"/>
                         </children>
                     </VBox>
                 </TitledPane>

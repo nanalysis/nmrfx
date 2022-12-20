@@ -296,7 +296,7 @@
                                 </columnConstraints>
                                 <children>
                                     <Label text="X Offset" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                                    <Slider fx:id="xOffsetSlider" blockIncrement="0.1" max="1.0" value="0.5"
+                                    <Slider fx:id="xOffsetSlider" blockIncrement="0.1" max="1.0" value="0.5"  minHeight="125"
                                             orientation="VERTICAL"
                                             GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="1"
                                     />
