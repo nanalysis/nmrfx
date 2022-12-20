@@ -139,7 +139,7 @@ public class PreferencesController implements Initializable {
     }
 
     public static PreferencesController create(Stage parent) {
-        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/PreferencesScene.fxml"));
+        FXMLLoader loader = new FXMLLoader(PreferencesController.class.getResource("/fxml/PreferencesScene.fxml"));
         PreferencesController controller = null;
         Stage stage = new Stage(StageStyle.DECORATED);
 

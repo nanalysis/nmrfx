@@ -203,6 +203,7 @@ public class BrukerData implements NMRData {
             dataset.setLabel(i, nucLabel + (i + 1));
             dataset.syncPars(i);
         }
+        dataset.setNFreqDims(dataset.getNDim());
         Integer ncProc = getParInt("NC_proc,1");
         if (ncProc == null) {
             ncProc = 0;

@@ -198,7 +198,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     ProcessingCodeAreaUtil codeAreaUtil;
 
     public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
-        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
+        FXMLLoader loader = new FXMLLoader(ProcessorController.class.getResource("/fxml/ProcessorScene.fxml"));
         final ProcessorController controller;
         try {
             Pane pane = loader.load();
@@ -983,6 +983,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             });
             ((Service<Integer>) worker).setOnFailed(event -> {
                 setProcessingOff();
+                // Processing is finished if it has ended with errors
+                Processor.getProcessor().setProcessorAvailableStatus(true);
                 final Throwable exception = worker.getException();
                 setProcessingStatus(exception.getMessage(), false, exception);
 

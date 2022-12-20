@@ -43,6 +43,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import org.apache.commons.lang3.Range;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
@@ -100,6 +101,7 @@ public class PolyChart extends Region implements PeakListener {
     static {
         CHARTS.addListener((ListChangeListener) (e -> multipleCharts.set(CHARTS.size() > 1)));
     }
+
     private static int lastId = 0;
     static int nSyncGroups = 0;
     public static double overlapScale = 3.0;
@@ -148,9 +150,9 @@ public class PolyChart extends Region implements PeakListener {
     Map<String, Object> popoverMap = new HashMap<>();
 
     int iVec = 0;
-//    Vec vec;
+    //    Vec vec;
     FileProperty datasetFileProp = new FileProperty();
-//    DatasetAttributes datasetAttributes = null;
+    //    DatasetAttributes datasetAttributes = null;
     ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
     ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
     ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
@@ -160,7 +162,7 @@ public class PolyChart extends Region implements PeakListener {
     BooleanProperty sliceStatus = new SimpleBooleanProperty(true);
     BooleanProperty peakStatus = new SimpleBooleanProperty(true);
     double level = 1.0;
-// fixme 15 should be set automatically and correctly
+    // fixme 15 should be set automatically and correctly
     double[][] chartPhases = new double[2][15];
     double[] chartPivots = new double[15];
     int datasetPhaseDim = 0;
@@ -173,7 +175,9 @@ public class PolyChart extends Region implements PeakListener {
 
     public enum DISDIM {
         OneDX, OneDY, TwoD;
-    };
+    }
+
+    ;
     ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(TwoD);
     ChartMenu specMenu;
     ChartMenu peakMenu;
@@ -211,7 +215,6 @@ public class PolyChart extends Region implements PeakListener {
         initChart();
         drawPeaks = new DrawPeaks(this, peakCanvas);
         setVisible(false);
-
     }
 
     /**
@@ -361,7 +364,7 @@ public class PolyChart extends Region implements PeakListener {
         highlightRect.setFill(null);
         highlightRect.visibleProperty().bind(activeChart.isEqualTo(this).and(multipleCharts).or(chartSelected));
         plotContent.getChildren().add(highlightRect);
-        for (var canvasHanndle:canvasHandles) {
+        for (var canvasHanndle : canvasHandles) {
             canvasHanndle.visibleProperty().bind(chartSelected);
         }
         plotContent.getChildren().addAll(canvasHandles);
@@ -440,7 +443,7 @@ public class PolyChart extends Region implements PeakListener {
         }
         highlightRect.visibleProperty().unbind();
         plotContent.getChildren().remove(highlightRect);
-        for (var canvasHandle:canvasHandles) {
+        for (var canvasHandle : canvasHandles) {
             plotContent.getChildren().remove(canvasHandle);
             plotContent.visibleProperty().unbind();
         }
@@ -508,6 +511,10 @@ public class PolyChart extends Region implements PeakListener {
         mouseNode.setOnDragExited((DragEvent event) -> {
             mouseNode.setStyle("-fx-border-color: #C6C6C6;");
         });
+    }
+
+    public SliceAttributes getSliceAttributes() {
+        return sliceAttributes;
     }
 
     public void setActiveChart() {
@@ -587,8 +594,8 @@ public class PolyChart extends Region implements PeakListener {
             }
             annoGC.setStroke(color);
             if (is1D()) {
-                annoGC.strokeLine(x, yPos + topBorder, x, yPos + getHeight()-bottomBorder);
-                annoGC.strokeLine(dragStart[0], yPos + topBorder, dragStart[0], yPos + getHeight()-bottomBorder);
+                annoGC.strokeLine(x, yPos + topBorder, x, yPos + getHeight() - bottomBorder);
+                annoGC.strokeLine(dragStart[0], yPos + topBorder, dragStart[0], yPos + getHeight() - bottomBorder);
             } else {
                 annoGC.strokeRect(startX, startY, dX, dY);
             }
@@ -739,7 +746,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     void remove(DatasetBase dataset) {
-        for (Iterator<DatasetAttributes> iterator = datasetAttributesList.iterator(); iterator.hasNext();) {
+        for (Iterator<DatasetAttributes> iterator = datasetAttributesList.iterator(); iterator.hasNext(); ) {
             DatasetAttributes dataAttr = iterator.next();
             if (dataset == dataAttr.getDataset()) {
                 lastDatasetAttr = (DatasetAttributes) dataAttr.clone();
@@ -768,20 +775,20 @@ public class PolyChart extends Region implements PeakListener {
 
     public void zoom(double factor) {
         ConsoleUtil.runOnFxThread(() -> {
-            DatasetBase dataset = getDataset();
-            if (dataset != null) {
-                ChartUndoLimits undo = new ChartUndoLimits(this);
-                xZoom(factor);
-                if (!is1D()) {
-                    yZoom(factor);
-                }
-                layoutPlotChildren();
-                ChartUndoLimits redo = new ChartUndoLimits(this);
-                String undoName = factor > 1.0 ? "zoomout" : "zoomin";
-                controller.undoManager.add(undoName, undo, redo);
+                    DatasetBase dataset = getDataset();
+                    if (dataset != null) {
+                        ChartUndoLimits undo = new ChartUndoLimits(this);
+                        xZoom(factor);
+                        if (!is1D()) {
+                            yZoom(factor);
+                        }
+                        layoutPlotChildren();
+                        ChartUndoLimits redo = new ChartUndoLimits(this);
+                        String undoName = factor > 1.0 ? "zoomout" : "zoomin";
+                        controller.undoManager.add(undoName, undo, redo);
 
-            }
-        }
+                    }
+                }
         );
     }
 
@@ -856,8 +863,12 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     protected double[] getRange(int axis) {
+        return getRangeFromDatasetAttributesList(datasetAttributesList, axis);
+    }
+
+    private double[] getRangeFromDatasetAttributesList(List<DatasetAttributes> attributes, int axis) {
         double[] limits = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY};
-        for (DatasetAttributes dataAttr : datasetAttributesList) {
+        for (DatasetAttributes dataAttr : attributes) {
             if (!dataAttr.isProjection()) {
                 dataAttr.checkRange(axModes[axis], axis, limits);
             } else {
@@ -873,14 +884,15 @@ public class PolyChart extends Region implements PeakListener {
      * Given a lower and upper bound, gets a valid range and attempts to keep the range between the original lower
      * and upper bounds. The new bounds may have a different range than the originally provided bounds if it is not
      * possible to have a valid range that large.
-     * @param axis The axis to get the range for
+     *
+     * @param axis       The axis to get the range for
      * @param lowerBound The lower bound to try.
      * @param upperBound The upper bound to try.
      * @return A new set of bounds that are within the valid range of the dataset.
      */
     private double[] getRangeMinimalAdjustment(int axis, double lowerBound, double upperBound) {
         double currentRange = Math.abs(upperBound - lowerBound);
-        double [] validLimits = getRange(axis, lowerBound, upperBound);
+        double[] validLimits = getRange(axis, lowerBound, upperBound);
         // if one of the limits has changed, adjust the other limit so the range is still the same.
         if (Double.compare(validLimits[0], lowerBound) != 0) {
             lowerBound = validLimits[0];
@@ -976,6 +988,7 @@ public class PolyChart extends Region implements PeakListener {
     /**
      * Calculates a scaling factor for the y-axis based on a deltaY change. The scaling factor has a range between
      * 0.5 and 2.0
+     *
      * @param deltaY A double value of change in the y direction
      * @return A scaling factor between 0.5 and 2
      */
@@ -1119,16 +1132,20 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
+    private void fullAxisLimits() {
+        double[] limits = getRange(0);
+        setXAxis(limits[0], limits[1]);
+        if (disDimProp.get() == DISDIM.TwoD) {
+            limits = getRange(1);
+            setYAxis(limits[0], limits[1]);
+        }
+    }
+
     public void full() {
         ConsoleUtil.runOnFxThread(() -> {
             if (!datasetAttributesList.isEmpty()) {
                 ChartUndoLimits undo = new ChartUndoLimits(this);
-                double[] limits = getRange(0);
-                setXAxis(limits[0], limits[1]);
-                if (disDimProp.get() == DISDIM.TwoD) {
-                    limits = getRange(1);
-                    setYAxis(limits[0], limits[1]);
-                }
+                fullAxisLimits();
                 ChartUndoLimits redo = new ChartUndoLimits(this);
                 controller.undoManager.add("full", undo, redo);
                 layoutPlotChildren();
@@ -1241,7 +1258,8 @@ public class PolyChart extends Region implements PeakListener {
         if (axes.length > axis) {
             if (!datasetAttributesList.isEmpty()) {
                 double[] limits = getRange(axis);
-                setAxis(axis, limits[0], limits[0]);
+                int iLim = axModes[axis] == AXMODE.PPM ? 1 : 0;
+                setAxis(axis, limits[iLim], limits[iLim]);
             }
         }
     }
@@ -1250,7 +1268,8 @@ public class PolyChart extends Region implements PeakListener {
         if (axes.length > axis) {
             if (!datasetAttributesList.isEmpty()) {
                 double[] limits = getRange(axis);
-                setAxis(axis, limits[1], limits[1]);
+                int iLim = axModes[axis] == AXMODE.PPM ? 0 : 1;
+                setAxis(axis, limits[iLim], limits[iLim]);
             }
         }
     }
@@ -1279,6 +1298,11 @@ public class PolyChart extends Region implements PeakListener {
         return ((dataset != null) && (dataset.getNDim() == 1) || (disDimProp.get() != DISDIM.TwoD));
     }
 
+    public boolean is1DDataset() {
+        DatasetBase dataset = getDataset();
+        return ((dataset != null) && (dataset.getNDim() == 1));
+    }
+
     public int getNDim() {
         int nDim = 0;
         DatasetBase dataset = getDataset();
@@ -1290,6 +1314,7 @@ public class PolyChart extends Region implements PeakListener {
         }
         return nDim;
     }
+
 
     public void autoScale() {
         ChartUndoScale undo = new ChartUndoScale(this);
@@ -1692,18 +1717,78 @@ public class PolyChart extends Region implements PeakListener {
             updated = true;
         }
         if (updated) {
-            if (!newList.isEmpty() && datasetAttrs.isEmpty()) {
-                // if no datsets present already must use addDataset once to set up
-                // various parameters
-                controller.addDataset(newList.get(0).getDataset(), false, false);
-                newList.remove(0);
-                datasetAttrs.addAll(newList);
-            } else {
-                datasetAttrs.clear();
-                datasetAttrs.addAll(newList);
-            }
+            sortDatasetsByDimensions(newList);
             currentDatasetProperty.set(getDataset());
         }
+    }
+
+    /**
+     * If the dimensions are compatible, sets the dimension for each axis for the newAttr to match with the
+     * old attribute. If dimensions are not compatible, the current/default value in newAttr remains unchanged.
+     *
+     * @param originalAttr The attribute to get the current dimensions from.
+     * @param newAttr      The new attribute to update the dimensions from.
+     * @return True if the newAttr dimensions were updated.
+     */
+    private boolean adjustDimensionsIfAttributesDifferent(DatasetAttributes originalAttr, DatasetAttributes newAttr) {
+        if (originalAttr == newAttr) {
+            return false;
+        }
+        List<String> axisNucleusNames = new ArrayList<>();
+        axisNucleusNames.add(originalAttr.getDataset().getNucleus(originalAttr.getDims()[0]).getNumberName());
+        if (originalAttr.getDataset().getNDim() > 1) {
+            axisNucleusNames.add(originalAttr.getDataset().getNucleus(originalAttr.getDims()[1]).getNumberName());
+        }
+        if (!isDatasetAttributesIncompatible(axisNucleusNames, newAttr)) {
+            for (int index = 0; index < axisNucleusNames.size(); index++) {
+                String axisName = axes[index].getOrientation() == Orientation.HORIZONTAL ? "X" : "Y";
+                newAttr.setDim(axisName, axisNucleusNames.get(index));
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Sorts the datasets in descending order based on the number of dimensions, sets the sorted list to dataset
+     * attributes and updates the dimension and axis type. If disDimProp is updated, the chart is full and autoscaled.
+     *
+     * @param newAttributes the DatasetAttributes to sort.
+     */
+    private void sortDatasetsByDimensions(List<DatasetAttributes> newAttributes) {
+        boolean fullChart = false;
+        if (!newAttributes.isEmpty()) {
+            DatasetAttributes originalFirst = newAttributes.get(0);
+            // Sort the datasets by dimension and by datasets
+            newAttributes.sort(Comparator.comparingInt((DatasetAttributes a) -> a.getDataset().getNDim()).reversed());
+            // See what previous dims values were, if compatible, try to keep those dims, otherwise just use the default
+            fullChart = adjustDimensionsIfAttributesDifferent(originalFirst, newAttributes.get(0));
+        }
+        ObservableList<DatasetAttributes> datasetAttrs = getDatasetAttributes();
+
+        if (!newAttributes.isEmpty() && datasetAttrs.isEmpty()) {
+            // if no datsets present already must use addDataset once to set up
+            // various parameters
+            controller.addDataset(newAttributes.get(0).getDataset(), false, false);
+            newAttributes.remove(0);
+            datasetAttrs.addAll(newAttributes);
+        } else {
+            datasetAttrs.clear();
+            datasetAttrs.addAll(newAttributes);
+        }
+        if (!newAttributes.isEmpty()) {
+            FXMLController.getActiveController().updateSpectrumStatusBarOptions(false);
+            DISDIM newDISDIM = newAttributes.get(0).getDataset().getNDim() == 1 ? DISDIM.OneDX : TwoD;
+            // If the display has switched dimensions, full the chart otherwise the axis might be much larger than the current dataset
+            fullChart = fullChart || newDISDIM != disDimProp.get();
+            disDimProp.set(newDISDIM);
+            updateAxisType(false);
+        }
+        if (fullChart) {
+            autoScale();
+            full();
+        }
+
     }
 
     public void updateProjections() {
@@ -1711,6 +1796,8 @@ public class PolyChart extends Region implements PeakListener {
         boolean hasND = false;
         Optional<DatasetAttributes> firstNDAttr = Optional.empty();
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+            // Clear previous projection values
+            datasetAttributes.projection(-1);
             Dataset dataset = (Dataset) datasetAttributes.getDataset();
             if (dataset != null) {
                 if (dataset.getNDim() == 1) {
@@ -1731,7 +1818,7 @@ public class PolyChart extends Region implements PeakListener {
                 datasetAttributes.projection(-1);
             } else {
                 int[] matchDim = datasetAttributes.getMatchDim(firstNDAttr.get(), true);
-                if (matchDim[0] != -1) {
+                if (matchDim[0] != -1 && matchDim[0] < 2) {
                     if (!alreadyMatchedDims.contains(matchDim[0])) {
                         datasetAttributes.projection(matchDim[0]);
                         alreadyMatchedDims.add(matchDim[0]);
@@ -1777,6 +1864,9 @@ public class PolyChart extends Region implements PeakListener {
                     datasetAttributes.setHasLevel(true);
                 }
                 datasetAttributesList.add(datasetAttributes);
+                if (datasetAttributesList.size() > 1) {
+                    sortDatasetsByDimensions(new ArrayList<>(datasetAttributesList));
+                }
             } else {
                 peakListAttributesList.clear();
                 if (datasetAttributesList.isEmpty()) {
@@ -1822,9 +1912,7 @@ public class PolyChart extends Region implements PeakListener {
 
             datasetFileProp.setValue(null);
         }
-        if (FXMLController.specAttrWindowController != null) {
-            FXMLController.specAttrWindowController.updateDims();
-        }
+
         crossHairs.hideCrossHairs();
         return datasetAttributes;
     }
@@ -1876,6 +1964,7 @@ public class PolyChart extends Region implements PeakListener {
     /**
      * Gets the draw list from the first Dataset Attribute. If there is more than one dataset
      * attribute and the draw lists are not the same, a warning is logged.
+     *
      * @return A list of row indices to draw.
      */
     public List<Integer> getDrawList() {
@@ -1883,7 +1972,7 @@ public class PolyChart extends Region implements PeakListener {
             log.info("No draw list present.");
         }
         List<Integer> drawList = datasetAttributesList.get(0).drawList;
-        for (int i = 1; i < datasetAttributesList.size(); i++ ) {
+        for (int i = 1; i < datasetAttributesList.size(); i++) {
             if (!drawList.equals(datasetAttributesList.get(i).drawList)) {
                 log.warn("Dataset draw lists are not equal. Using draw list for: {}", datasetAttributesList.get(0).getFileName());
                 break;
@@ -1983,10 +2072,6 @@ public class PolyChart extends Region implements PeakListener {
             axes = new NMRAxis[nAxes];
             axes[0] = xAxis;
             axes[1] = yAxis;
-            datasetAttributes.dim[0] = 0;
-            if (datasetAttributes.dim.length > 1) {
-                datasetAttributes.dim[1] = 1;
-            }
             axModes = new AXMODE[nAxes];
             axModes[0] = AXMODE.PPM;
             axModes[1] = AXMODE.PPM;
@@ -1994,7 +2079,6 @@ public class PolyChart extends Region implements PeakListener {
                 double[] ppmLimits = datasetAttributes.getMaxLimits(i);
                 double centerPPM = (ppmLimits[0] + ppmLimits[1]) / 2.0;
                 axes[i] = new NMRAxis(Orientation.HORIZONTAL, centerPPM, centerPPM, 0, 1);
-                datasetAttributes.dim[i] = i;
                 if (dataset.getFreqDomain(i)) {
                     axModes[i] = AXMODE.PPM;
                 } else {
@@ -2040,9 +2124,9 @@ public class PolyChart extends Region implements PeakListener {
             setAxisState(yAxis, "Intensity");
         }
         if (autoScale) {
-            full();
+            fullAxisLimits();
             if (!datasetAttributes.getHasLevel()) {
-                autoScale();
+                autoScale(datasetAttributes);
             }
         }
     }
@@ -2288,6 +2372,16 @@ public class PolyChart extends Region implements PeakListener {
 
             }
             gC.setLineWidth(xAxis.getLineWidth());
+
+            // Draw the datasets before the axis since drawing the datasets may adjust the axis range
+            if (!drawDatasets(gC)) {
+                // if we used immediate mode and didn't finish in time try again
+                // useImmediate mode will have been set to false
+                Platform.runLater(this::layoutPlotChildren);
+                gC.restore();
+                return;
+            }
+
             xAxis.draw(gC);
             if (!is1D() || chartProps.getIntensityAxis()) {
                 yAxis.draw(gC);
@@ -2307,19 +2401,10 @@ public class PolyChart extends Region implements PeakListener {
 //            GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
 //            annoGC.clearRect(0, 0, width, height);
 //        }
-
-            if (!drawDatasets(gC)) {
-                // if we used immediate mode and didn't finish in time try again
-                // useImmediate mode will have been set to false
-                Platform.runLater(() -> layoutPlotChildren());
-                gC.restore();
-                return;
-            }
-
+            drawParameters(chartProps.getParameters());
             if (!datasetAttributesList.isEmpty()) {
                 drawPeakLists(true);
             }
-            drawParameters(chartProps.getParameters());
             drawAnnotations(gCPeaks);
             crossHairs.refreshCrossHairs();
             gC.restore();
@@ -2413,14 +2498,18 @@ public class PolyChart extends Region implements PeakListener {
         double yPos = getLayoutY();
         drawSpectrum.setStackWidth(stackWidth);
         drawSpectrum.setStackY(chartProps.getStackY());
+        // Only draw compatible datasets but do not remove incompatible attributes from datasetAttributes as the chart
+        // datasets may only be incompatible in a certain display mode.
+        List<DatasetAttributes> compatibleAttributes = new ArrayList<>(datasetAttributesList);
+        removeIncompatibleDatasetAttributes(compatibleAttributes);
         int n1D = 0;
         if (disDimProp.get() != DISDIM.TwoD) {
-            n1D = datasetAttributesList.stream().filter(d -> (d.projection() == -1) && d.getPos())
+            n1D = compatibleAttributes.stream().filter(d -> (d.projection() == -1) && d.getPos())
                     .mapToInt(d -> d.getLastChunk(0) + 1).sum();
         }
         int i1D = 0;
-        for (int iData = datasetAttributesList.size() - 1; iData >= 0; iData--) {
-            DatasetAttributes datasetAttributes = datasetAttributesList.get(iData);
+        for (int iData = compatibleAttributes.size() - 1; iData >= 0; iData--) {
+            DatasetAttributes datasetAttributes = compatibleAttributes.get(iData);
             try {
                 DatasetAttributes firstAttr = datasetAttributesList.get(0);
                 DatasetBase dataset = datasetAttributes.getDataset();
@@ -2442,7 +2531,6 @@ public class PolyChart extends Region implements PeakListener {
                     }
                     gC.save();
                     double clipExtra = 1;
-
                     drawSpectrum.setClipRect(xPos + leftBorder + clipExtra, yPos + topBorder + clipExtra,
                             xAxis.getWidth() - 2 * clipExtra + stackWidth, yAxis.getHeight() - 2 * clipExtra);
 
@@ -2504,7 +2592,7 @@ public class PolyChart extends Region implements PeakListener {
             return true;
         }
         DatasetAttributes firstAttr = datasetAttributesList.get(0);
-        updateAxisType();
+        updateAxisType(false);
         datasetAttributesList.stream()
                 .filter(d -> (d.getDataset() != null) && (d.projection() == -1) && (d.getDataset().getNDim() > 1))
                 .forEach(d -> {
@@ -2560,6 +2648,82 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
+
+    /**
+     * Check whether the axis of the dataset attributes are compatible with the first element of the provided attributes
+     * list. Incompatible attributes are removed from the list and the range is adjusted based on the remaining
+     * attributes.
+     * @param attributes The attributes list to remove incompatible datasets from.
+     */
+    private void removeIncompatibleDatasetAttributes(List<DatasetAttributes> attributes) {
+        if (attributes.size() < 2) {
+            return;
+        }
+        Iterator<DatasetAttributes> attributesIterator = attributes.iterator();
+        DatasetAttributes firstAttr = attributesIterator.next();
+        List<String> axisNucleusNames = new ArrayList<>();
+        axisNucleusNames.add(getDataset().getNucleus(firstAttr.getDims()[0]).getNumberName());
+        if (firstAttr.getDataset().getNDim() > 1) {
+            axisNucleusNames.add(getDataset().getNucleus(firstAttr.getDims()[1]).getNumberName());
+        }
+        while (attributesIterator.hasNext()) {
+            DatasetAttributes datasetAttributes = attributesIterator.next();
+            if (isDatasetAttributesIncompatible(axisNucleusNames, datasetAttributes)) {
+                if (!datasetAttributes.isProjection()) {
+                    log.info("Mismatched dimensions. Unable to display dataset: {}", datasetAttributes.getDataset().getName());
+                }
+                attributesIterator.remove();
+            }
+        }
+        // No incompatible datasets were found
+        if (attributes.size() == getDatasetAttributes().size()) {
+            return;
+        }
+        double[] limits = getRangeFromDatasetAttributesList(attributes, 0);
+        if (!currentRangeWithinNewRange(limits, 0)) {
+            setXAxis(limits[0], limits[1]);
+        }
+        if (disDimProp.get() == DISDIM.TwoD) {
+            limits = getRangeFromDatasetAttributesList(attributes, 1);
+            if (!currentRangeWithinNewRange(limits, 1)) {
+                setYAxis(limits[0], limits[1]);
+            }
+        }
+    }
+
+
+    /**
+     * Counts the number of matches of the DatasetAttributes nucleus number names to the provided list of nucleus number
+     * names and returns true if they have matching nuclei for all the axis names. Attributes that are projections are
+     * considered to not be incompatible since they will not be displayed in the chart centre and will return false
+     * @param axisNamesToMatch The axis nucleus names for the x and y axis.
+     * @param attributesToMatch The DatasetAttributes to check the compatibility of
+     * @return true if the dataset is incompatible
+     */
+    private boolean isDatasetAttributesIncompatible(List<String> axisNamesToMatch, DatasetAttributes attributesToMatch) {
+        List<String> nucleusNames = new ArrayList<>(axisNamesToMatch);
+        int numberOfMatches = 0;
+        for (int dim: attributesToMatch.getDims()) {
+            String attributeNucleusName = attributesToMatch.getDataset().getNucleus(dim).getNumberName();
+            if (nucleusNames.contains(attributeNucleusName)) {
+                nucleusNames.remove(attributeNucleusName);
+                numberOfMatches++;
+            }
+        }
+        return numberOfMatches < Math.min(attributesToMatch.getDataset().getNDim(), 2) || attributesToMatch.isProjection();
+    }
+
+    /**
+     * Checks the current axis is within provided range.
+     * @param limits The limits of the new range, lower bound at index 0, upper bound at index 1
+     * @param axis The axis to check
+     * @return true if the axis range is within the provided range
+     */
+    private boolean currentRangeWithinNewRange(double[] limits, int axis) {
+        Range<Double> range = Range.between(limits[0], limits[1]);
+        return range.contains(getAxis(axis).getLowerBound()) && range.contains(getAxis(axis).getUpperBound());
+    }
+
     void drawTitle(GraphicsContextInterface gC, DatasetAttributes datasetAttributes,
                    int index, int nTitles) {
         gC.setFill(datasetAttributes.getPosColor());
@@ -2592,12 +2756,10 @@ public class PolyChart extends Region implements PeakListener {
                 String text = ProjectText.genText(dataset);
                 if ((parameterText == null) || (!parameterText.getText().equals(text))) {
                      if (parameterText == null) {
-                        double textY;
-                        double xPos = getLayoutX();
-                        double yPos = getLayoutY();
-                        textY = yPos + topBorder + chartProps.getTicFontSize() * 2;
+                        double xPos = 10;
+                        double yPos =   chartProps.getTicFontSize() * 2;
                         double textWidth = 200;
-                        parameterText = new AnnoText(xPos, textY, textWidth, 200,
+                        parameterText = new AnnoText(xPos, yPos, textWidth, 200,
                                 CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, text);
                         addAnnotation(parameterText);
                     } else {
