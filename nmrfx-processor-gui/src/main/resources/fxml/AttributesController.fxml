@@ -47,7 +47,7 @@
                                     <Slider fx:id="lvlSlider" min="1" max="20" prefWidth="150"
                                             GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2"
                                     />
-                                    <TextField fx:id="lvlField" text="" prefWidth="50"
+                                    <TextField fx:id="lvlField" text="" prefWidth="60"
                                                GridPane.columnIndex="2" GridPane.rowIndex="1"
                                     />
                                     <Label text="Contour Level Multiplier"
@@ -56,7 +56,7 @@
                                     <Slider fx:id="clmSlider" min="1" max="20" prefWidth="150"
                                             GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
                                     />
-                                    <TextField fx:id="clmField" text="" prefWidth="50"
+                                    <TextField fx:id="clmField" text="" prefWidth="60"
                                                GridPane.columnIndex="2" GridPane.rowIndex="3"
                                     />
                                     <Label text="Number of Contour Levels"
@@ -65,7 +65,7 @@
                                     <Slider fx:id="nlvlsSlider" min="1" max="20" prefWidth="150"
                                             GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2"
                                     />
-                                    <TextField fx:id="nlvlsField" text="" prefWidth="50"
+                                    <TextField fx:id="nlvlsField" text="" prefWidth="60"
                                                GridPane.columnIndex="2" GridPane.rowIndex="5"
                                     />
                                 </children>
@@ -93,7 +93,7 @@
                                     <Slider fx:id="lvlSlider1D" min="1" max="20" prefWidth="150"
                                             GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
                                     />
-                                    <TextField fx:id="lvlField1D" text="" prefWidth="50"
+                                    <TextField fx:id="lvlField1D" text="" prefWidth="60"
                                                GridPane.columnIndex="2" GridPane.rowIndex="3"
                                     />
                                     <Label text="Vertical Offset"
@@ -102,7 +102,7 @@
                                     <Slider fx:id="offsetSlider" min="1" max="20" prefWidth="150"
                                             GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2"
                                     />
-                                    <TextField fx:id="offsetField" text="" prefWidth="50"
+                                    <TextField fx:id="offsetField" text="" prefWidth="60"
                                                GridPane.columnIndex="2" GridPane.rowIndex="5"
                                     />
                                     <Label text="Stack X Value"

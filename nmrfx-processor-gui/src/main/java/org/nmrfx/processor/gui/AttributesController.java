@@ -358,7 +358,7 @@ public class AttributesController implements Initializable {
 
         lvlSlider.valueProperty().addListener(lvlSliderListener);
         lvlSlider.setOnMouseReleased(e -> setLvlSlider());
-        GUIUtils.bindSliderField(lvlSlider, lvlField);
+        GUIUtils.bindSliderField(lvlSlider, lvlField, "0.###E0");
         lvlSlider1D.valueProperty().addListener(lvlSliderListener);
         lvlSlider1D.setOnMouseReleased(e -> setLvlSlider());
         GUIUtils.bindSliderField(lvlSlider1D, lvlField1D);
