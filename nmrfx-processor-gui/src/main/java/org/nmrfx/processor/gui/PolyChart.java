@@ -1340,14 +1340,10 @@ public class PolyChart extends Region implements PeakListener {
             double[] regionWidth = new double[nDim];
             pt[0][0] = limits[0];
             pt[0][1] = limits[1];
-            if (nDim > 1) {
-                pt[1][0] = dataAttr.pt[1][0];
-                pt[1][1] = dataAttr.pt[1][1];
-            }
             for (int i = 0; i < nDim; i++) {
                 dim[i] = i;
                 cpt[i] = (pt[i][0] + pt[i][1]) / 2;
-                regionWidth[i] = (double) Math.abs(pt[i][0] - pt[i][1]);
+                regionWidth[i] = Math.abs(pt[i][0] - pt[i][1]);
             }
             RegionData rData;
             try {
