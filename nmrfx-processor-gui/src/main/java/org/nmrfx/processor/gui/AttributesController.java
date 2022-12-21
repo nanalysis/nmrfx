@@ -1277,19 +1277,6 @@ public class AttributesController implements Initializable {
         wait.play();
     }
 
-    void updateStackValues() {
-        List<PolyChart> applyCharts = getCharts(shiftState);
-        for (PolyChart applyChart : applyCharts) {
-            double stackX = stackXSlider.getValue();
-            applyChart.chartProps.setStackX(stackX);
-          //  stackXField.setText(String.format("%.2f", stackX));
-            double stackY = stackYSlider.getValue();
-            applyChart.chartProps.setStackY(stackY);
-         //   stackYField.setText(String.format("%.2f", stackY));
-            applyChart.refresh();
-        }
-    }
-
     private void updateChartsNow() {
         for (var aChart:getCharts(allCharts())) {
             if (aChart != chart) {
