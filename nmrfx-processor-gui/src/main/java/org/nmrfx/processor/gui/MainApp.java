@@ -295,6 +295,8 @@ public class MainApp extends Application {
         }
         // File Menu (items TBD)
         Menu fileMenu = new Menu("File");
+        MenuItem openMenuItem = new MenuItem("Open...");
+        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openAction(e));
         MenuItem addMenuItem = new MenuItem("Open Dataset (No Display) ...");
         addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
         MenuItem newMenuItem = new MenuItem("New Window...");
@@ -343,7 +345,7 @@ public class MainApp extends Application {
 
         projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem);
 
-        fileMenu.getItems().addAll(addMenuItem,
+        fileMenu.getItems().addAll(openMenuItem, addMenuItem,
                 recentFilesMenuItem, newMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, pngMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");

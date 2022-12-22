@@ -14,7 +14,7 @@ public class FileMenuActions extends MenuActions {
 
     @Override
     public void basic() {
-        MenuItem openMenuItem = new MenuItem("Open");
+        MenuItem openMenuItem = new MenuItem("Open...");
         openMenuItem.setOnAction(e -> FXMLController.getActiveController().openAction(e));
 
         Menu recentFilesMenuItem = new Menu("Recent Files");
