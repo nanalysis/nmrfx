@@ -100,7 +100,7 @@ public class IconUtilities {
 
     static {
         // Register a custom default font
-        GlyphFontRegistry.register("icomoon", SpecAttrWindowController.class.getResourceAsStream("/images/icomoon.ttf"), 16);
+        GlyphFontRegistry.register("icomoon", IconUtilities.class.getResourceAsStream("/images/icomoon.ttf"), 16);
     }
     
     private IconUtilities() {}

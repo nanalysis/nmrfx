@@ -260,6 +260,11 @@ public class PeakListAttributes implements PeakListener {
         return peakListNameProperty().get();
     }
 
+    @Override
+    public String toString() {
+        return getPeakListName();
+    }
+
     void updateFoldingLimits(DatasetAttributes dataAttr) {
         int nDataDim = dataAttr.nDim;
         foldLimits = new double[nDataDim][2];

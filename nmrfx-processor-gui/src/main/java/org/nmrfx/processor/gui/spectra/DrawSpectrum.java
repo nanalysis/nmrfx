@@ -97,6 +97,9 @@ public class DrawSpectrum {
     AXMODE[] axModes;
     DISDIM disDim = DISDIM.TwoD;
     double[][] xy = new double[2][];
+    private double stackWidth = 0.0;
+    private double stackY = 0.0;
+
     int nPoints = 0;
     int iChunk = 0;
     int rowIndex = -1;
@@ -874,7 +877,9 @@ public class DrawSpectrum {
         iChunk = dataAttributes.getLastChunk(0);
     }
 
-    public boolean draw1DSpectrum(DatasetAttributes dataAttributes, double firstLvl, double firstOffset, int orientation, AXMODE axMode, double ph0, double ph1, Path bcPath) {
+    public boolean draw1DSpectrum(DatasetAttributes dataAttributes, double firstLvl, double firstOffset,
+                                  int i1D, int n1D, int orientation, AXMODE axMode,
+                                  double ph0, double ph1, Path bcPath) {
         VecBase specVec = new Vec(32);
         boolean drawReal = dataAttributes.getDrawReal();
         boolean offsetMode = true;
@@ -894,11 +899,11 @@ public class DrawSpectrum {
                 return false;
             }
         }
-        double offset = getOffset(dataAttributes, firstOffset);
+        double[] offsets = getOffset(dataAttributes, firstOffset, i1D, n1D);
         double lvlMult = dataAttributes.getLvl() / firstLvl;
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
-                (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> axes[1].getDisplayPosition(intensity / lvlMult) - offset, offsetMode, false);
+                (index, intensity) -> axes[0].getDisplayPosition(index) + offsets[0],
+                (index, intensity) -> axes[1].getDisplayPosition(intensity / lvlMult) - offsets[1], offsetMode, false);
 
         if (iChunk < 0) {
             return false;
@@ -907,12 +912,37 @@ public class DrawSpectrum {
 
     }
 
-    public double getOffset(DatasetAttributes dataAttributes, double firstOffset) {
+    public double getOffsetFraction(DatasetAttributes dataAttributes, int i1D, int n1D) {
+        double height = axes[1].getHeight();
+        int lastChunk = dataAttributes.getLastChunk(0);
+        double fraction = 0.0;
+        if (n1D > 1) {
+            fraction = (n1D - i1D - 1.0) / (n1D -1.0);
+        }
+        return fraction;
+    }
+
+    public void setStackWidth(double value) {
+        stackWidth = value;
+    }
+
+    public void setStackY(double value) {
+        stackY = Math.min(1.00, Math.max(0.0, value));
+    }
+
+    public double[] getOffset(DatasetAttributes dataAttributes, double firstOffset, int i1D, int n1D) {
         double height = axes[1].getHeight();
         double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
         double dataOffset = height * (dataAttributes.getOffset() - firstOffset);
-        double offset = dataOffset + mapOffset;
-        return offset;
+        double fraction = getOffsetFraction(dataAttributes, i1D, n1D);
+        double delta = height * fraction * stackY;
+        if (n1D > 0) {
+            delta *= (1.0 - firstOffset) * (n1D - 1.0) / n1D;
+        }
+        double yOffset = dataOffset + mapOffset + delta;
+        double xOffset = stackWidth * fraction;
+        double[] result = {xOffset, yOffset};
+        return result;
     }
 
     public double[] getRegionAsArray(DatasetBase dataset) {

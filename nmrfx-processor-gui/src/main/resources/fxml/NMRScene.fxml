@@ -36,19 +36,6 @@
                         <StackPane fx:id="chartPane" prefHeight="1000" VBox.vgrow="ALWAYS" />
                     </center>
                     <right>
-                        <GridPane fx:id="rightBox" BorderPane.alignment="CENTER">
-                            <columnConstraints>
-                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
-                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
-                            </columnConstraints>
-                            <rowConstraints>
-                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                            </rowConstraints>
-                            <children>
-                                <VBox fx:id="phaserBox" fillWidth="false" GridPane.columnIndex="0" GridPane.hgrow="NEVER" GridPane.vgrow="ALWAYS">
-                                </VBox>
-                            </children>
-                        </GridPane>
                     </right>
                 </BorderPane>
             </center>
