@@ -2346,7 +2346,7 @@ public class PolyChart extends Region implements PeakListener {
             stackWidth = 0.0;
             double axWidth = width - leftBorder - rightBorder;
             if (disDimProp.get() != DISDIM.TwoD) {
-                int n1D = datasetAttributesList.stream().filter(d -> (d.projection() == -1) && d.getPos())
+                int n1D = datasetAttributesList.stream().filter(d -> !d.isProjection() && d.getPos())
                         .mapToInt(d -> d.getLastChunk(0) + 1).sum();
                 if (n1D > 1) {
                     double fWidth = 0.9 * axWidth / n1D; 
@@ -2507,7 +2507,7 @@ public class PolyChart extends Region implements PeakListener {
         removeIncompatibleDatasetAttributes(compatibleAttributes);
         int n1D = 0;
         if (disDimProp.get() != DISDIM.TwoD) {
-            n1D = compatibleAttributes.stream().filter(d -> (d.projection() == -1) && d.getPos())
+            n1D = compatibleAttributes.stream().filter(d -> !d.isProjection() && d.getPos())
                     .mapToInt(d -> d.getLastChunk(0) + 1).sum();
         }
         int i1D = 0;
@@ -2596,7 +2596,7 @@ public class PolyChart extends Region implements PeakListener {
         DatasetAttributes firstAttr = datasetAttributesList.get(0);
         updateAxisType(false);
         datasetAttributesList.stream()
-                .filter(d -> (d.getDataset() != null) && (d.projection() == -1) && (d.getDataset().getNDim() > 1))
+                .filter(d -> (d.getDataset() != null) && !d.isProjection() && (d.getDataset().getNDim() > 1))
                 .forEach(d -> {
                     if (d != firstAttr) {
                         d.syncDims(firstAttr);
