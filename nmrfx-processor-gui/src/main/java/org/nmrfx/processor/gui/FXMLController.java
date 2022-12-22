@@ -498,19 +498,19 @@ public class FXMLController implements  Initializable, PeakNavigable {
         try {
             setInitialDirectory(selectedFile.getParentFile());
             if (nmrData instanceof NMRViewData nvData) {
-                PreferencesController.saveRecentDatasets(selectedFile.toString());
+                PreferencesController.saveRecentFiles(selectedFile.toString());
                 dataset = nvData.getDataset();
             } else if (nmrData instanceof BrukerData brukerData) {
-                PreferencesController.saveRecentDatasets(selectedFile.toString());
+                PreferencesController.saveRecentFiles(selectedFile.toString());
                 String suggestedName = brukerData.suggestName(new File(brukerData.getFilePath()));
                 String datasetName = GUIUtils.input("Dataset name", suggestedName);
                 dataset = brukerData.toDataset(datasetName);
             } else if (nmrData instanceof  RS2DData rs2dData) {
-                PreferencesController.saveRecentDatasets(selectedFile.toString());
+                PreferencesController.saveRecentFiles(selectedFile.toString());
                 String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
                 dataset = rs2dData.toDataset(suggestedName);
             } else if (nmrData instanceof JCAMPData jcampData) {
-                PreferencesController.saveRecentDatasets(selectedFile.toString());
+                PreferencesController.saveRecentFiles(selectedFile.toString());
                 String suggestedName = jcampData.suggestName(new File (jcampData.getFilePath()));
                 dataset = jcampData.toDataset(suggestedName);
             }
@@ -568,7 +568,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     setInitialDirectory(selectedFile.getParentFile());
                     NMRData nmrData = NMRDataUtil.getFID(selectedFile.toString());
                     if (nmrData instanceof NMRViewData) {
-                        PreferencesController.saveRecentDatasets(selectedFile.toString());
+                        PreferencesController.saveRecentFiles(selectedFile.toString());
                         NMRViewData nvData = (NMRViewData) nmrData;
                         Dataset dataset = nvData.getDataset();
                     }
@@ -634,7 +634,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
         addFID(nmrData, clearOps, reload);
 
-        PreferencesController.saveRecentFIDs(nmrData.getFilePath());
+        PreferencesController.saveRecentFiles(nmrData.getFilePath());
         undoManager.clear();
     }
 

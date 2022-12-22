@@ -298,10 +298,9 @@ public class MainApp extends Application {
         MenuItem addMenuItem = new MenuItem("Open Dataset (No Display) ...");
         addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
         MenuItem newMenuItem = new MenuItem("New Window...");
-        newMenuItem.setOnAction(e -> newGraphics(e));
-        Menu recentFIDMenuItem = new Menu("Recent FIDs");
-        Menu recentDatasetMenuItem = new Menu("Recent Datasets");
-        PreferencesController.setupRecentMenus(recentFIDMenuItem, recentDatasetMenuItem);
+        newMenuItem.setOnAction(this::newGraphics);
+        Menu recentFilesMenuItem = new Menu("Recent Files");
+        PreferencesController.setupRecentMenus(recentFilesMenuItem);
 
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
         pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
@@ -345,7 +344,7 @@ public class MainApp extends Application {
         projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem);
 
         fileMenu.getItems().addAll(addMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, pngMenuItem, loadPeakListMenuItem);
+                recentFilesMenuItem, newMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, pngMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG");
