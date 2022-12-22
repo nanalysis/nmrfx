@@ -651,9 +651,11 @@ public class AttributesController implements Initializable {
     }
 
     void setChartSlider(ChartSliderListener sliderListener, Slider slider, double value) {
-        sliderListener.active = false;
-        slider.setValue(value);
-        sliderListener.active = true;
+        if (!slider.isValueChanging()) {
+            sliderListener.active = false;
+            slider.setValue(value);
+            sliderListener.active = true;
+        }
     }
 
     void setStackXSlider() {
@@ -721,12 +723,14 @@ public class AttributesController implements Initializable {
     }
 
     void setSlider(ParSliderListener sliderListener, Slider slider, double min, double max, double incrValue, double value) {
-        sliderListener.active = false;
-        slider.setMin(min);
-        slider.setMax(max);
-        slider.setBlockIncrement(incrValue);
-        slider.setValue(value);
-        sliderListener.active = true;
+        if (!slider.isValueChanging()) {
+            sliderListener.active = false;
+            slider.setMin(min);
+            slider.setMax(max);
+            slider.setBlockIncrement(incrValue);
+            slider.setValue(value);
+            sliderListener.active = true;
+        }
     }
 
     void setLvlSlider() {
@@ -1069,6 +1073,12 @@ public class AttributesController implements Initializable {
         setPosWidthSlider(false);
     }
 
+    private void setTraceSliders() {
+        setOffsetsSlider();
+        setStackYSlider();
+        setStackXSlider();
+    }
+
     void setDimControls() {
         if (chart.is1D() && (accordionIn1D != Boolean.TRUE)) {
             attributesAccordion.getPanes().removeAll(contourLevelPane, contourAppearancePane, oneDPane, integralsPane);
@@ -1099,14 +1109,18 @@ public class AttributesController implements Initializable {
             chart.setChartDisabled(false);
         }
     }
+
+    public void updateDatasetAttributeControls() {
+        setDatasetControls();
+    }
+
     private void setDatasetControls() {
         setContourSliders();
         setContourColorControls(true);
         setContourColorControls(false);
         setDrawOnControls(true);
         setDrawOnControls(false);
-        setStackXSlider();
-        setStackYSlider();
+        setTraceSliders();
     }
 
     private void setPeakControls() {

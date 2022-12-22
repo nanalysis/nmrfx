@@ -2411,6 +2411,7 @@ public class PolyChart extends Region implements PeakListener {
             crossHairs.refreshCrossHairs();
             gC.restore();
             highlightChart();
+            getFXMLController().updateDatasetAttributeControls();
 
         } catch (GraphicsIOException ioE) {
             log.warn(ioE.getMessage(), ioE);
@@ -2510,77 +2511,76 @@ public class PolyChart extends Region implements PeakListener {
                     .mapToInt(d -> d.getLastChunk(0) + 1).sum();
         }
         int i1D = 0;
+        DatasetAttributes firstAttr = null;
         for (int iData = compatibleAttributes.size() - 1; iData >= 0; iData--) {
             DatasetAttributes datasetAttributes = compatibleAttributes.get(iData);
+            DatasetBase dataset = datasetAttributes.getDataset();
+            if (datasetAttributes.isProjection() || !datasetAttributes.getPos() || (dataset == null)) {
+                continue;
+            }
+            if (firstAttr == null) {
+                firstAttr = datasetAttributes;
+            }
+            datasetAttributes.setDrawReal(true);
+            if (datasetAttributes == firstAttr) {
+                firstLvl = datasetAttributes.getLvl();
+                updateAxisType(false);
+            } else {
+                datasetAttributes.syncDims(firstAttr);
+            }
+            firstOffset = datasetAttributes.getOffset();
             try {
-                DatasetAttributes firstAttr = datasetAttributesList.get(0);
-                DatasetBase dataset = datasetAttributes.getDataset();
-                if (datasetAttributes.isProjection() || (!datasetAttributes.getPos())) {
-                    continue;
+                if (chartProps.getRegions()) {
+                    drawRegions(datasetAttributes, gC);
                 }
-                if (dataset != null) {
-                    datasetAttributes.setDrawReal(true);
-                    if (datasetAttributes != firstAttr) {
-                        datasetAttributes.syncDims(firstAttr);
-                    } else {
-                        firstOffset = datasetAttributes.getOffset();
-                        firstLvl = datasetAttributes.getLvl();
-                        updateAxisType(false);
-                    }
+                gC.save();
+                double clipExtra = 1;
+                drawSpectrum.setClipRect(xPos + leftBorder + clipExtra, yPos + topBorder + clipExtra,
+                        xAxis.getWidth() - 2 * clipExtra + stackWidth, yAxis.getHeight() - 2 * clipExtra);
 
-                    if (chartProps.getRegions()) {
-                        drawRegions(datasetAttributes, gC);
-                    }
-                    gC.save();
-                    double clipExtra = 1;
-                    drawSpectrum.setClipRect(xPos + leftBorder + clipExtra, yPos + topBorder + clipExtra,
-                            xAxis.getWidth() - 2 * clipExtra + stackWidth, yAxis.getHeight() - 2 * clipExtra);
-
-                    drawSpectrum.clip(gC);
-                    try {
-                        for (int iMode = 0; iMode < 2; iMode++) {
-                            if (iMode == 0) {
-                                datasetAttributes.setDrawReal(true);
-                            } else {
-                                if (!controller.getStatusBar().complexStatus.isSelected()) {
-                                    break;
-                                }
-                                datasetAttributes.setDrawReal(false);
+                drawSpectrum.clip(gC);
+                try {
+                    for (int iMode = 0; iMode < 2; iMode++) {
+                        if (iMode == 0) {
+                            datasetAttributes.setDrawReal(true);
+                        } else {
+                            if (!controller.getStatusBar().complexStatus.isSelected()) {
+                                break;
                             }
-                            bcList.clear();
-                            drawSpectrum.setToLastChunk(datasetAttributes);
-                            boolean ok;
-                            do {
-                                bcPath.getElements().clear();
-                                ok = drawSpectrum.draw1DSpectrum(datasetAttributes, firstLvl, firstOffset, i1D, n1D, HORIZONTAL,
-                                        axModes[0], getPh0(), getPh1(), bcPath);
-                                double[][] xy = drawSpectrum.getXY();
-                                int nPoints = drawSpectrum.getNPoints();
-                                int rowIndex = drawSpectrum.getRowIndex();
-                                drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
-                                gC.setFill(datasetAttributes.getPosColor(rowIndex));
-                                if (chartProps.getIntegrals()) {
-                                    draw1DIntegral(datasetAttributes, gC);
-                                }
-                                drawBaseLine(gC, bcPath);
-                                if (iMode == 0) {
-                                    i1D++;
-                                }
-
-                            } while (ok);
+                            datasetAttributes.setDrawReal(false);
                         }
-                        drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
-                        double[][] xy = drawSpectrum.getXY();
-                        int nPoints = drawSpectrum.getNPoints();
-                        drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy);
-                    } finally {
-                        gC.restore();
-                    }
-                    if (chartProps.getTitles()) {
-                        drawTitle(gC, datasetAttributes, iTitle++, nDatasets);
-                    }
-                }
+                        bcList.clear();
+                        drawSpectrum.setToLastChunk(datasetAttributes);
+                        boolean ok;
+                        do {
+                            bcPath.getElements().clear();
+                            ok = drawSpectrum.draw1DSpectrum(datasetAttributes, firstLvl, firstOffset, i1D, n1D, HORIZONTAL,
+                                    axModes[0], getPh0(), getPh1(), bcPath);
+                            double[][] xy = drawSpectrum.getXY();
+                            int nPoints = drawSpectrum.getNPoints();
+                            int rowIndex = drawSpectrum.getRowIndex();
+                            drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
+                            gC.setFill(datasetAttributes.getPosColor(rowIndex));
+                            if (chartProps.getIntegrals()) {
+                                draw1DIntegral(datasetAttributes, gC);
+                            }
+                            drawBaseLine(gC, bcPath);
+                            if (iMode == 0) {
+                                i1D++;
+                            }
 
+                        } while (ok);
+                    }
+                    drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
+                    double[][] xy = drawSpectrum.getXY();
+                    int nPoints = drawSpectrum.getNPoints();
+                    drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy);
+                } finally {
+                    gC.restore();
+                }
+                if (chartProps.getTitles()) {
+                    drawTitle(gC, datasetAttributes, iTitle++, nDatasets);
+                }
             } catch (GraphicsIOException gIO) {
                 log.warn(gIO.getMessage(), gIO);
             }
