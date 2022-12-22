@@ -3,8 +3,6 @@ package org.nmrfx.analyst.gui;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
-import org.nmrfx.analyst.gui.plugin.PluginLoader;
-import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PreferencesController;
 
@@ -16,15 +14,14 @@ public class FileMenuActions extends MenuActions {
 
     @Override
     public void basic() {
-        MenuItem openMenuItem = new MenuItem("Open FID...");
-        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openFIDAction(e));
+        MenuItem openMenuItem = new MenuItem("Open");
+        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openAction(e));
 
-        MenuItem openDatasetMenuItem = new MenuItem("Open Dataset...");
-        openDatasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDatasetAction(e));
-
-        Menu recentFIDMenuItem = new Menu("Recent FIDs");
-        Menu recentDatasetMenuItem = new Menu("Recent Datasets");
-        PreferencesController.setupRecentMenus(recentFIDMenuItem, recentDatasetMenuItem);
+        Menu recentFilesMenuItem = new Menu("Recent Files");
+        menu.setOnShowing(e -> {
+            recentFilesMenuItem.getItems().clear();
+            PreferencesController.setupRecentMenus(recentFilesMenuItem);
+        });
 
         Menu graphicsMenu = new Menu("Export Graphics");
 
@@ -46,8 +43,8 @@ public class FileMenuActions extends MenuActions {
         datasetBrowserMenuItem.setOnAction(e -> showDataBrowser());
 
 
-        menu.getItems().addAll(openMenuItem, openDatasetMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, datasetBrowserMenuItem,
+        menu.getItems().addAll(openMenuItem,
+                recentFilesMenuItem, datasetBrowserMenuItem,
                 graphicsMenu);
     }
 
