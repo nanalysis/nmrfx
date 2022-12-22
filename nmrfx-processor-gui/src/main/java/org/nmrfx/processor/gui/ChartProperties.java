@@ -59,6 +59,8 @@ public class ChartProperties {
     private DoubleProperty integralHighPos;
     private DoubleProperty aspectRatio;
     private BooleanProperty aspect;
+    private DoubleProperty stackX;
+    private DoubleProperty stackY;
     private BooleanProperty titles;
     private BooleanProperty parameters;
 
@@ -93,6 +95,10 @@ public class ChartProperties {
         destProps.setIntegrals(getIntegrals());
         destProps.setTitles(getTitles());
         destProps.setParameters(getParameters());
+        destProps.setAspectRatio(getAspectRatio());
+        destProps.setAspect(getAspect());
+        destProps.setStackX(getStackX());
+        destProps.setStackY(getStackY());
     }
 
     public int getLeftBorderSize() {
@@ -414,6 +420,38 @@ public class ChartProperties {
         return aspectProperty().get();
     }
 
+    public double getStackX() {
+        return stackXProperty().get();
+    }
+
+    public void setStackX(double value) {
+        value = Math.min(1.00, Math.max(0.0, value));
+        stackXProperty().set(value);
+    }
+
+    public DoubleProperty stackXProperty() {
+        if (stackX == null) {
+            stackX = new SimpleDoubleProperty(polyChart, "stackX", 0.0);
+        }
+        return stackX;
+    }
+
+    public double getStackY() {
+        return stackYProperty().get();
+    }
+
+    public void setStackY(double value) {
+        value = Math.min(1.00, Math.max(0.0, value));
+        stackYProperty().set(value);
+    }
+
+    public DoubleProperty stackYProperty() {
+        if (stackY == null) {
+            stackY = new SimpleDoubleProperty(polyChart, "stackY", 0.0);
+        }
+        return stackY;
+    }
+
     public void config(String name, Object value) {
         if (Platform.isFxApplicationThread()) {
             try {
@@ -439,7 +477,8 @@ public class ChartProperties {
             "axesColor", "cross0Color", "cross1Color", "grid", "intensityAxis",
             "leftBorderSize", "rightBorderSize",
             "topBorderSize", "bottomBorderSize", "regions", "integrals",
-            "integralLowPos", "integralHighPos", "titles", "parameters", "aspect", "aspectRatio"};
+            "integralLowPos", "integralHighPos", "titles", "parameters", "aspect", "aspectRatio",
+            "stackX", "stackY"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {

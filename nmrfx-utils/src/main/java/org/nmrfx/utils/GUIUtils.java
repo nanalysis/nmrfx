@@ -283,4 +283,12 @@ public class GUIUtils {
         field.setTextFormatter(formatter);
         slider.valueProperty().bindBidirectional(formatter.valueProperty());
     }
+
+    public static void bindSliderField(Slider slider, TextField field, String pattern) {
+        DecimalFormat numberFormat = new DecimalFormat(pattern);
+        FormatStringConverter<Number> converter = new FormatStringConverter<>(numberFormat);
+        TextFormatter<Number> formatter = new TextFormatter<>(converter, 0);
+        field.setTextFormatter(formatter);
+        slider.valueProperty().bindBidirectional(formatter.valueProperty());
+    }
 }

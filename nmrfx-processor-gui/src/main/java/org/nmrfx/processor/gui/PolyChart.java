@@ -139,6 +139,7 @@ public class PolyChart extends Region implements PeakListener {
     double bottomBorder = 0.0;
     double minLeftBorder = 0.0;
     double minBottomBorder = 0.0;
+    double stackWidth = 0.0;
     String fontFamily = "Liberation Sans";
     Font peakFont = new Font(fontFamily, 12);
     boolean disabled = false;
@@ -1342,7 +1343,7 @@ public class PolyChart extends Region implements PeakListener {
             for (int i = 0; i < nDim; i++) {
                 dim[i] = i;
                 cpt[i] = (pt[i][0] + pt[i][1]) / 2;
-                regionWidth[i] = (double) Math.abs(pt[i][0] - pt[i][1]);
+                regionWidth[i] = Math.abs(pt[i][0] - pt[i][1]);
             }
             RegionData rData;
             try {
@@ -2342,8 +2343,18 @@ public class PolyChart extends Region implements PeakListener {
             rightBorder = borders[1];
             bottomBorder = borders[2];
             topBorder = borders[3];
+            stackWidth = 0.0;
+            double axWidth = width - leftBorder - rightBorder;
+            if (disDimProp.get() != DISDIM.TwoD) {
+                int n1D = datasetAttributesList.stream().filter(d -> !d.isProjection() && d.getPos())
+                        .mapToInt(d -> d.getLastChunk(0) + 1).sum();
+                if (n1D > 1) {
+                    double fWidth = 0.9 * axWidth / n1D; 
+                    stackWidth = (axWidth - fWidth) * chartProps.getStackX();
+                }
+            }
 
-            xAxis.setWidth(width - leftBorder - rightBorder);
+            xAxis.setWidth(axWidth - stackWidth);
             xAxis.setHeight(bottomBorder);
             xAxis.setOrigin(xPos + leftBorder, yPos + getHeight() - bottomBorder);
 
@@ -2400,6 +2411,7 @@ public class PolyChart extends Region implements PeakListener {
             crossHairs.refreshCrossHairs();
             gC.restore();
             highlightChart();
+            getFXMLController().updateDatasetAttributeControls();
 
         } catch (GraphicsIOException ioE) {
             log.warn(ioE.getMessage(), ioE);
@@ -2467,129 +2479,145 @@ public class PolyChart extends Region implements PeakListener {
             drawPeakLists(true, svgGC);
             drawSelectedPeaks(svgGC);
         }
-
     }
 
     boolean drawDatasets(GraphicsContextInterface gC) throws GraphicsIOException {
-        double maxTextOffset = -1.0;
-        ArrayList<DatasetAttributes> draw2DList = new ArrayList<>();
+        boolean finished = true;
         updateDatasetAttributeBounds();
+        if (disDimProp.get() != DISDIM.TwoD) {
+            drawDatasetsTrace(gC);
+        } else {
+            finished = drawDatasetsContours(gC);
+        }
+        return finished;
+    }
+
+    void drawDatasetsTrace(GraphicsContextInterface gC) throws GraphicsIOException {
         int nDatasets = datasetAttributesList.size();
         int iTitle = 0;
         double firstOffset = 0.0;
         double firstLvl = 1.0;
-        updateProjections();
         double xPos = getLayoutX();
         double yPos = getLayoutY();
+        drawSpectrum.setStackWidth(stackWidth);
+        drawSpectrum.setStackY(chartProps.getStackY());
         // Only draw compatible datasets but do not remove incompatible attributes from datasetAttributes as the chart
         // datasets may only be incompatible in a certain display mode.
         List<DatasetAttributes> compatibleAttributes = new ArrayList<>(datasetAttributesList);
         removeIncompatibleDatasetAttributes(compatibleAttributes);
-        for (DatasetAttributes datasetAttributes : compatibleAttributes) {
+        int n1D = 0;
+        if (disDimProp.get() != DISDIM.TwoD) {
+            n1D = compatibleAttributes.stream().filter(d -> !d.isProjection() && d.getPos())
+                    .mapToInt(d -> d.getLastChunk(0) + 1).sum();
+        }
+        int i1D = 0;
+        DatasetAttributes firstAttr = null;
+        for (int iData = compatibleAttributes.size() - 1; iData >= 0; iData--) {
+            DatasetAttributes datasetAttributes = compatibleAttributes.get(iData);
+            DatasetBase dataset = datasetAttributes.getDataset();
+            if (datasetAttributes.isProjection() || !datasetAttributes.getPos() || (dataset == null)) {
+                continue;
+            }
+            if (firstAttr == null) {
+                firstAttr = datasetAttributes;
+            }
+            datasetAttributes.setDrawReal(true);
+            if (datasetAttributes == firstAttr) {
+                firstLvl = datasetAttributes.getLvl();
+                updateAxisType(false);
+            } else {
+                datasetAttributes.syncDims(firstAttr);
+            }
+            firstOffset = datasetAttributes.getOffset();
             try {
-                DatasetAttributes firstAttr = datasetAttributesList.get(0);
-                DatasetBase dataset = datasetAttributes.getDataset();
-                if (datasetAttributes.isProjection()) {
-                    continue;
+                if (chartProps.getRegions()) {
+                    drawRegions(datasetAttributes, gC);
                 }
-                if (dataset != null) {
-//                datasetAttributes.setLvl(level);
-                    datasetAttributes.setDrawReal(true);
-                    if (datasetAttributes != firstAttr) {
-                        datasetAttributes.syncDims(firstAttr);
-                    } else {
-                        firstOffset = datasetAttributes.getOffset();
-                        firstLvl = datasetAttributes.getLvl();
-                        updateAxisType(false);
-                    }
+                gC.save();
+                double clipExtra = 1;
+                drawSpectrum.setClipRect(xPos + leftBorder + clipExtra, yPos + topBorder + clipExtra,
+                        xAxis.getWidth() - 2 * clipExtra + stackWidth, yAxis.getHeight() - 2 * clipExtra);
 
-                    if (disDimProp.get() != DISDIM.TwoD) {
-                        if (chartProps.getRegions()) {
-                            drawRegions(datasetAttributes, gC);
-                        }
-                        if (!datasetAttributes.getPos()) {
-                            continue;
-                        }
-                        gC.save();
-                        double clipExtra = 1;
-                        drawSpectrum.setClipRect(xPos + leftBorder + clipExtra, yPos + topBorder + clipExtra,
-                                xAxis.getWidth() - 2 * clipExtra, yAxis.getHeight() - 2 * clipExtra);
-
-                        drawSpectrum.clip(gC);
-                        try {
-                            for (int iMode = 0; iMode < 2; iMode++) {
-                                if (iMode == 0) {
-                                    datasetAttributes.setDrawReal(true);
-                                } else {
-                                    if (!controller.getStatusBar().complexStatus.isSelected()) {
-                                        break;
-                                    }
-                                    datasetAttributes.setDrawReal(false);
-                                }
-                                bcList.clear();
-                                drawSpectrum.setToLastChunk(datasetAttributes);
-                                boolean ok;
-                                do {
-                                    bcPath.getElements().clear();
-                                    ok = drawSpectrum.draw1DSpectrum(datasetAttributes, firstLvl, firstOffset, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
-                                    double[][] xy = drawSpectrum.getXY();
-                                    int nPoints = drawSpectrum.getNPoints();
-                                    int rowIndex = drawSpectrum.getRowIndex();
-                                    drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
-                                    gC.setFill(datasetAttributes.getPosColor(rowIndex));
-                                    if (chartProps.getIntegrals()) {
-                                        draw1DIntegral(datasetAttributes, gC);
-                                    }
-                                    drawBaseLine(gC, bcPath);
-
-                                } while (ok);
+                drawSpectrum.clip(gC);
+                try {
+                    for (int iMode = 0; iMode < 2; iMode++) {
+                        if (iMode == 0) {
+                            datasetAttributes.setDrawReal(true);
+                        } else {
+                            if (!controller.getStatusBar().complexStatus.isSelected()) {
+                                break;
                             }
-                            drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
+                            datasetAttributes.setDrawReal(false);
+                        }
+                        bcList.clear();
+                        drawSpectrum.setToLastChunk(datasetAttributes);
+                        boolean ok;
+                        do {
+                            bcPath.getElements().clear();
+                            ok = drawSpectrum.draw1DSpectrum(datasetAttributes, firstLvl, firstOffset, i1D, n1D, HORIZONTAL,
+                                    axModes[0], getPh0(), getPh1(), bcPath);
                             double[][] xy = drawSpectrum.getXY();
                             int nPoints = drawSpectrum.getNPoints();
-                            drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy);
-                        } finally {
-                            gC.restore();
-                        }
-                        if (chartProps.getTitles()) {
-                            drawTitle(gC, datasetAttributes, iTitle++, nDatasets);
-                        }
+                            int rowIndex = drawSpectrum.getRowIndex();
+                            drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
+                            gC.setFill(datasetAttributes.getPosColor(rowIndex));
+                            if (chartProps.getIntegrals()) {
+                                draw1DIntegral(datasetAttributes, gC);
+                            }
+                            drawBaseLine(gC, bcPath);
+                            if (iMode == 0) {
+                                i1D++;
+                            }
 
-                    } else {
-                        draw2DList.add(datasetAttributes);
+                        } while (ok);
                     }
+                    drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
+                    double[][] xy = drawSpectrum.getXY();
+                    int nPoints = drawSpectrum.getNPoints();
+                    drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy);
+                } finally {
+                    gC.restore();
                 }
-
+                if (chartProps.getTitles()) {
+                    drawTitle(gC, datasetAttributes, iTitle++, nDatasets);
+                }
             } catch (GraphicsIOException gIO) {
                 log.warn(gIO.getMessage(), gIO);
             }
         }
-        for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-            if (datasetAttributes.isProjection()) {
-                drawProjection(gC, datasetAttributes.projection(), datasetAttributes);
-            }
+    }
+
+    boolean drawDatasetsContours(GraphicsContextInterface gC) throws GraphicsIOException {
+        List<DatasetAttributes> compatibleAttributes = new ArrayList<>(datasetAttributesList);
+        removeIncompatibleDatasetAttributes(compatibleAttributes);
+
+        if (compatibleAttributes.isEmpty()) {
+            return true;
         }
+        updateProjections();
+
+        ArrayList<DatasetAttributes> draw2DList = new ArrayList<>();
+        DatasetAttributes firstAttr = compatibleAttributes.get(0);
+        updateAxisType(false);
+        compatibleAttributes.stream()
+                .filter(d -> (d.getDataset() != null) && !d.isProjection() && (d.getDataset().getNDim() > 1))
+                .forEach(d -> {
+                    if (d != firstAttr) {
+                        d.syncDims(firstAttr);
+                    }
+                    draw2DList.add(d);
+                });
         boolean finished = true;
         if (!draw2DList.isEmpty()) {
+            for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+                if (datasetAttributes.isProjection()) {
+                    drawProjection(gC, datasetAttributes.projection(), datasetAttributes);
+                }
+            }
             if (chartProps.getTitles()) {
-                double fontSize = chartProps.getTicFontSize();
-                gC.setFont(Font.font(fontSize));
-                gC.setTextAlign(TextAlignment.LEFT);
-                double textX = xPos + leftBorder + 10.0;
-                double textY;
-                if (fontSize > (topBorder - 2)) {
-                    gC.setTextBaseline(VPos.TOP);
-                    textY = yPos + topBorder + 2;
-                } else {
-                    gC.setTextBaseline(VPos.BOTTOM);
-                    textY = yPos + topBorder - 2;
-                }
-                for (DatasetAttributes datasetAttributes : draw2DList) {
-                    gC.setFill(datasetAttributes.getPosColor());
-                    String title = datasetAttributes.getDataset().getTitle();
-                    gC.fillText(title, textX, textY);
-                    textX += GUIUtils.getTextWidth(title, gC.getFont()) + 10;
-                }
+                double xPos = getLayoutX();
+                double yPos = getLayoutY();
+                drawTitles(gC, draw2DList, xPos, yPos);
             }
             if (gC instanceof GraphicsContextProxy) {
                 if (useImmediateMode) {
@@ -2603,7 +2631,27 @@ public class PolyChart extends Region implements PeakListener {
             }
         }
         return finished;
+    }
 
+    void drawTitles(GraphicsContextInterface gC, ArrayList<DatasetAttributes> draw2DList, double xPos, double yPos) {
+        double fontSize = chartProps.getTicFontSize();
+        gC.setFont(Font.font(fontSize));
+        gC.setTextAlign(TextAlignment.LEFT);
+        double textX = xPos + leftBorder + 10.0;
+        double textY;
+        if (fontSize > (topBorder - 2)) {
+            gC.setTextBaseline(VPos.TOP);
+            textY = yPos + topBorder + 2;
+        } else {
+            gC.setTextBaseline(VPos.BOTTOM);
+            textY = yPos + topBorder - 2;
+        }
+        for (DatasetAttributes datasetAttributes : draw2DList) {
+            gC.setFill(datasetAttributes.getPosColor());
+            String title = datasetAttributes.getDataset().getTitle();
+            gC.fillText(title, textX, textY);
+            textX += GUIUtils.getTextWidth(title, gC.getFont()) + 10;
+        }
     }
 
 

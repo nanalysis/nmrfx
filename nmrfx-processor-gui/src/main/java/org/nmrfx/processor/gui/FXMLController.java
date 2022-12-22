@@ -277,7 +277,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public boolean isSideBarAttributesShowing() {
-        return borderPane.getRight() ==attributesPane;
+        return (attributesPane != null) && (borderPane.getRight() ==attributesPane);
     }
 
     public boolean isContentPaneShowing() {
@@ -1020,8 +1020,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void updateAttrDims() {
-        if (attributesController != null) {
-          //  attributesController.setAxisControlValues();
+        if (isSideBarAttributesShowing()) {
+            attributesController.setChart(getActiveChart());
+        }
+    }
+
+    public void updateDatasetAttributeControls() {
+        if (isSideBarAttributesShowing()) {
+            attributesController.updateDatasetAttributeControls();
         }
     }
 
