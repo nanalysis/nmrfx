@@ -17,6 +17,7 @@ import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,6 +85,17 @@ public class PeakPicking {
         if (listName == null) {
             listName = getListName(chart, dataAttr);
         }
+        PeakList testList = PeakList.get(listName);
+        if (testList != null) {
+            if (chart.is1D() && (testList.getNDim() != 1)) {
+                GUIUtils.warn("Peak Picking", "Peak list exists and is not 1D");
+                return null;
+            } else if (!chart.is1D() && (testList.getNDim() == 1)) {
+                GUIUtils.warn("Peak Picking", "Peak list exists and is 1D");
+                return null;
+            }
+        }
+
         if (level == null) {
             level = dataAttr.getLvl();
             if (nDim == 1) {
@@ -164,6 +176,17 @@ public class PeakPicking {
         Dataset dataset = (Dataset) datasetBase;
         int nDim = dataset.getNDim();
         String listName = getListName(chart, dataAttr);
+        PeakList testList = PeakList.get(listName);
+        if (testList != null) {
+            if (chart.is1D() && (testList.getNDim() != 1)) {
+                GUIUtils.warn("Peak Picking", "Peak list exists and is not 1D");
+                return null;
+            } else if (!chart.is1D() && (testList.getNDim() == 1)) {
+                GUIUtils.warn("Peak Picking", "Peak list exists and is 1D");
+                return null;
+            }
+        }
+
         double level = dataAttr.getLvl();
         if (nDim == 1) {
             Double threshold = dataset.getNoiseLevel();

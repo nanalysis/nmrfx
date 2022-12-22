@@ -138,8 +138,10 @@ public class PeakPickHandler extends MouseHandler {
         double[][] region = {{xLim0, xLim1}};
         PeakList peakList = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0), region, false,
                 false, threshold, false, listName);
-        if (displayList == null) {
-            displayList = peakList;
+        if (peakList != null) {
+            if (displayList == null) {
+                displayList = peakList;
+            }
         }
         return peakList;
     }
