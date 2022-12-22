@@ -2588,14 +2588,18 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     boolean drawDatasetsContours(GraphicsContextInterface gC) throws GraphicsIOException {
-        ArrayList<DatasetAttributes> draw2DList = new ArrayList<>();
-        updateProjections();
-        if (datasetAttributesList.isEmpty()) {
+        List<DatasetAttributes> compatibleAttributes = new ArrayList<>(datasetAttributesList);
+        removeIncompatibleDatasetAttributes(compatibleAttributes);
+
+        if (compatibleAttributes.isEmpty()) {
             return true;
         }
-        DatasetAttributes firstAttr = datasetAttributesList.get(0);
+        updateProjections();
+
+        ArrayList<DatasetAttributes> draw2DList = new ArrayList<>();
+        DatasetAttributes firstAttr = compatibleAttributes.get(0);
         updateAxisType(false);
-        datasetAttributesList.stream()
+        compatibleAttributes.stream()
                 .filter(d -> (d.getDataset() != null) && !d.isProjection() && (d.getDataset().getNDim() > 1))
                 .forEach(d -> {
                     if (d != firstAttr) {
@@ -2603,13 +2607,13 @@ public class PolyChart extends Region implements PeakListener {
                     }
                     draw2DList.add(d);
                 });
-        for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-            if (datasetAttributes.isProjection()) {
-                drawProjection(gC, datasetAttributes.projection(), datasetAttributes);
-            }
-        }
         boolean finished = true;
         if (!draw2DList.isEmpty()) {
+            for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+                if (datasetAttributes.isProjection()) {
+                    drawProjection(gC, datasetAttributes.projection(), datasetAttributes);
+                }
+            }
             if (chartProps.getTitles()) {
                 double xPos = getLayoutX();
                 double yPos = getLayoutY();
