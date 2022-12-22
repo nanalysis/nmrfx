@@ -481,14 +481,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
             GUIUtils.warn("Open Dataset", ex.getMessage());
         }
         if (dataset != null) {
-            if (addDatasetToChart) {
-                addDataset(dataset, append, false);
-            }
             ProcessorController processorController = getActiveChart().getProcessorController(false);
             if (processorController != null && (!dataset.getFile().equals(chartProcessor.datasetFile))) {
                 processorPane.getChildren().clear();
                 getActiveChart().processorController = null;
                 processorController.cleanUp();
+            }
+            if (addDatasetToChart) {
+                addDataset(dataset, append, false);
             }
         } else {
             log.info("Unable to find a dataset format for: {}", selectedFile);

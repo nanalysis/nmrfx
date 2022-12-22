@@ -149,7 +149,7 @@ public final class NMRDataUtil {
             if (NMRViewData.findFID(bpath)) {
                 return new NMRViewData(bpath.toString());
             } else if (RS2DData.findFID(bpath)) {
-                return new RS2DData(bpath.toString(), null, true);
+                return new RS2DData(bpath.toString(), null);
             } else if (BrukerData.findData(bpath)) {
                 return new BrukerData(bpath.toString());
             } else if (VarianData.findFID(bpath)) {
