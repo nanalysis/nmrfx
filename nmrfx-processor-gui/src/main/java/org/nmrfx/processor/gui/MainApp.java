@@ -387,13 +387,10 @@ public class MainApp extends Application {
         MenuItem consoleMenuItem = new MenuItem("Show Console");
         consoleMenuItem.setOnAction(e -> showConsole(e));
 
-        MenuItem attrMenuItem = new MenuItem("Show Attributes");
-        attrMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpecAttrAction(e));
-
         MenuItem procMenuItem = new MenuItem("Show Processor");
         procMenuItem.setOnAction(e -> FXMLController.getActiveController().showProcessorAction(e));
 
-        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem);
+        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, procMenuItem);
 
         Menu peakMenu = new Menu("Peaks");
 
