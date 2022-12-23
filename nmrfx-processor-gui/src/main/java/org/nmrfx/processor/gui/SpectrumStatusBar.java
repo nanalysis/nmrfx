@@ -629,6 +629,7 @@ public class SpectrumStatusBar {
         nodes.add(filler1);
 
         nodes.add(new Label("Cursor:"));
+        cursorButtons.getButtons().get(3).setDisable(false);
         nodes.add(cursorButtons);
         for (int j = 1; j >= 0; j--) {
             if (j== 1) {
@@ -677,8 +678,10 @@ public class SpectrumStatusBar {
         }
         if (mode == 1) {
             nodes2.addAll(specialButtons);
+            cursorButtons.getButtons().get(3).setDisable(false);
         } else if (mode > 1) {
             nodes2.add(peakPickButton);
+            cursorButtons.getButtons().get(3).setDisable(true);
         }
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);
