@@ -852,9 +852,6 @@ public class SpectrumStatusBar {
                 chart.updateProjectionBorders();
                 chart.updateProjectionScale();
                 for (int i = 0; i < chart.getNDim(); i++) {
-                    chart.updateProjections();
-                    chart.updateProjectionBorders();
-                    chart.updateProjectionScale();
                     // fixme  should be able to swap existing limits, not go to full
                     chart.full(i);
                 }

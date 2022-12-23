@@ -2723,8 +2723,8 @@ public class PolyChart extends Region implements PeakListener {
     private boolean isDatasetAttributesIncompatible(List<String> axisNamesToMatch, DatasetAttributes attributesToMatch) {
         List<String> nucleusNames = new ArrayList<>(axisNamesToMatch);
         int numberOfMatches = 0;
-        for (int what: attributesToMatch.getDims()) {
-            String attributeNucleusName = attributesToMatch.getDataset().getNucleus(what).getNumberName();
+        for (int dim: attributesToMatch.getDims()) {
+            String attributeNucleusName = attributesToMatch.getDataset().getNucleus(dim).getNumberName();
             if (nucleusNames.contains(attributeNucleusName)) {
                 nucleusNames.remove(attributeNucleusName);
                 numberOfMatches++;
