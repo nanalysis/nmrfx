@@ -232,7 +232,6 @@ public class DatasetLayout {
      * @param blockPoints the size of the block
      */
     public void setBlockSize(int blockPoints) {
-        System.out.println("set block size " + blockPoints);
         this.blockPoints = blockPoints;
         long npoints;
         int blksize;

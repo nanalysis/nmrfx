@@ -184,8 +184,12 @@ public class MatrixTypeService {
                     if (i > 0) {
                         int[] idNVectors = processor.getIndirectSizes();
                         testSize = testSize < idNVectors[i - 1] ? idNVectors[i - 1] : (int) Math.ceil(testSize / 16.0) * 16;
+                        int doubleSize = dataset.getFileDimSize(dim[i]) * 2;
+                        testSize = Math.max(doubleSize, testSize);
                     } else {
+                        int doubleSize = dataset.getFileDimSize(dim[i]) * 2;
                         testSize = (int) Math.ceil(testSize / 16.0) * 16;
+                        testSize = Math.max(doubleSize, testSize);
                     }
                     dataset.resizeDim(dim[i], testSize);
                 }

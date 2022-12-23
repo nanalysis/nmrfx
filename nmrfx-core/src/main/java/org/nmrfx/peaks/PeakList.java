@@ -565,7 +565,8 @@ public class PeakList {
     /**
      * Copies an existing peak list.
      *
-     * @param name a string with the name of an existing peak list.
+     * @param name a string with the name of the new peak list.  If merge is true
+     *             then this must be an existing peak list that will be merged.
      * @param allLinks a boolean specifying whether or not to link peak
      * dimensions.
      * @param merge a boolean specifying whether or not to merge peak labels.

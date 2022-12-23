@@ -38,10 +38,6 @@ public class SpectrumMenu extends ChartMenu {
 
     public void makeChartMenu() {
         chartMenu = new ContextMenu();
-        MenuItem attrItem = new MenuItem("Attributes");
-        attrItem.setOnAction((ActionEvent e) -> {
-            chart.getController().showSpecAttrAction(e);
-        });
         Menu viewMenu = new Menu("View");
         MenuItem expandItem = new MenuItem("Expand");
         expandItem.setOnAction((ActionEvent e) -> chart.expand());
@@ -222,7 +218,6 @@ public class SpectrumMenu extends ChartMenu {
         linkMenu.getItems().addAll(linkColumnMenuItem, linkRowMenuItem,
                 unlinkSelectedMenuItem, unlinkSelectedColumnMenuItem, unlinkSelectedRowMenuItem);
 
-        chartMenu.getItems().add(attrItem);
         chartMenu.getItems().add(viewMenu);
         chartMenu.getItems().add(peakMenu);
         chartMenu.getItems().add(refMenu);

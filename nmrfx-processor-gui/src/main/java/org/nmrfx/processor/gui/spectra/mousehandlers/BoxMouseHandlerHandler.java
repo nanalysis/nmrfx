@@ -1,6 +1,7 @@
 package org.nmrfx.processor.gui.spectra.mousehandlers;
 
 import javafx.scene.input.MouseEvent;
+import org.nmrfx.processor.gui.CanvasCursor;
 
 import java.util.Optional;
 
@@ -18,7 +19,10 @@ public class BoxMouseHandlerHandler extends MouseHandler {
 
     @Override
     public void mousePressed(MouseEvent mouseEvent) {
-        if (mouseEvent.isAltDown() || mouseEvent.isControlDown()) {
+        var cursor = mouseBindings.chart.getCanvasCursor();
+        if (mouseEvent.isMetaDown() && (CanvasCursor.isPeak(cursor) || CanvasCursor.isRegion(cursor) || CanvasCursor.isCrosshair(cursor))) {
+            mouseAction = MouseBindings.MOUSE_ACTION.DRAG_EXPAND;
+        } else if (mouseEvent.isAltDown() || mouseEvent.isControlDown() || CanvasCursor.isRegion(mouseBindings.chart.getCanvasCursor())) {
             mouseAction = MouseBindings.MOUSE_ACTION.DRAG_ADDREGION;
         } else if (mouseBindings.getMouseEvent().isShiftDown()) {
             mouseAction = MouseBindings.MOUSE_ACTION.DRAG_SELECTION;

@@ -488,7 +488,7 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public void measure(DatasetBase dataset) throws IOException {
-        int[] pt = new int[1];
+        int[] pt = new int[dataset.getNDim()];
         double start = getRegionStart(0);
         double end = getRegionEnd(0);
         int istart = dataset.ppmToPoint(0, start);

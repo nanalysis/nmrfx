@@ -134,6 +134,12 @@ public class ProjectBase {
         return result;
     }
 
+    public boolean removeDataset(String datasetName, DatasetBase dataset) {
+        boolean result = datasetMap.remove(datasetName, dataset);
+        refreshDatasetList();
+        return result;
+    }
+
     public Map<String, DatasetBase> getDatasetMap() {
         return datasetMap;
     }
@@ -198,6 +204,12 @@ public class ProjectBase {
     public void addDataset(DatasetBase dataset, String datasetName) {
         datasetMap.put(datasetName, dataset);
         refreshDatasetList();
+    }
+
+    public void renameDataset(DatasetBase dataset, String newName) {
+        datasetMap.remove(dataset.getFileName(), dataset);
+        dataset.setFileName(newName);
+        addDataset(dataset, newName);
     }
 
     public boolean isDatasetPresent(File file) {
