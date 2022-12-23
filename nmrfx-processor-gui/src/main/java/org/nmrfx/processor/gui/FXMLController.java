@@ -669,9 +669,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         // Only create a new processor controller, if the active chart does not have one already created.
         ProcessorController processorController = getActiveChart().getProcessorController(true);
         if (processorController != null) {
+            processorController.setAutoProcess(false);
             chartProcessor.setData(nmrData, clearOps);
             processorController.viewingDataset(false);
-            processorController.setAutoProcess(false);
             processorController.updateFileButton();
             processorController.show();
             processorController.clearOperationList();
