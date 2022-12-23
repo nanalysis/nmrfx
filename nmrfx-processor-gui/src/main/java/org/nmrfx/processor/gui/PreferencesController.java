@@ -139,7 +139,7 @@ public class PreferencesController implements Initializable {
     }
 
     public static PreferencesController create(Stage parent) {
-        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/PreferencesScene.fxml"));
+        FXMLLoader loader = new FXMLLoader(PreferencesController.class.getResource("/fxml/PreferencesScene.fxml"));
         PreferencesController controller = null;
         Stage stage = new Stage(StageStyle.DECORATED);
 
@@ -284,55 +284,23 @@ public class PreferencesController implements Initializable {
 
     }
 
-    public static void setupRecentMenus(Menu recentFIDMenuItem, Menu recentDatasetMenuItem) {
-        List<Path> recentFIDs = PreferencesController.getRecentFIDs();
-        List<Path> recentDatasets = PreferencesController.getRecentDatasets();
-        Set<Path> fidSet = new LinkedHashSet<>();
-        for (Path path : recentFIDs) {
-            fidSet.add(path);
-        }
-        Set<Path> datasetSet = new LinkedHashSet<>();
-        for (Path path : recentDatasets) {
-            if (path.endsWith("fid") || path.endsWith("ser")) {
-                fidSet.add(path);
-            } else {
-                datasetSet.add(path);
-            }
-        }
-        for (Path path : fidSet) {
+    public static void setupRecentMenus(Menu recentFileMenuItem) {
+        List<Path> recentFiles = PreferencesController.getRecentFiles();
+        Set<Path> filesSet = new LinkedHashSet<>();
+        filesSet.addAll(recentFiles);
+        for (Path path : filesSet) {
             int count = path.getNameCount();
             int first = count - 3;
-            first = first >= 0 ? first : 0;
+            first = Math.max(first, 0);
             Path subPath = path.subpath(first, count);
             MenuItem datasetMenuItem = new MenuItem(subPath.toString());
             datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openFile(path.toString(), false, false));
-            recentFIDMenuItem.getItems().add(datasetMenuItem);
-        }
-        for (Path path : datasetSet) {
-            int count = path.getNameCount();
-            int first = count - 3;
-            first = first >= 0 ? first : 0;
-            Path subPath = path.subpath(first, count);
-            // special check to put existing (from previous version of code)
-            // FID files  in FID menu
-            MenuItem datasetMenuItem = new MenuItem(subPath.toString());
-            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDataset(path.toFile(), false, true));
-            recentDatasetMenuItem.getItems().add(datasetMenuItem);
-
+            recentFileMenuItem.getItems().add(datasetMenuItem);
         }
     }
 
-    /**
-     * Saves recently opened datasets. The path is persisted in the OS specific
-     * registry.
-     *
-     */
-    public static List<Path> getRecentDatasets() {
-        return getRecentFileItem("RECENT-DATASETS");
-    }
-
-    public static List<Path> getRecentFIDs() {
-        return getRecentFileItem("RECENT-FIDS");
+    public static List<Path> getRecentFiles() {
+        return getRecentFileItem("RECENT-FILES");
     }
 
     public static List<Path> getRecentProjects() {
@@ -343,12 +311,8 @@ public class PreferencesController implements Initializable {
         saveRecentFileItems(fileName, "RECENT-PROJECTS");
     }
 
-    public static void saveRecentDatasets(String fileName) {
-        saveRecentFileItems(fileName, "RECENT-DATASETS");
-    }
-
-    public static void saveRecentFIDs(String fileName) {
-        saveRecentFileItems(fileName, "RECENT-FIDS");
+    public static void saveRecentFiles(String fileName) {
+        saveRecentFileItems(fileName, "RECENT-FILES");
     }
 
     public static void saveRecentFileItems(String fileName, String mode) {

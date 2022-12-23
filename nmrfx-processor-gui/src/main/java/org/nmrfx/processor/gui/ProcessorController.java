@@ -227,7 +227,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
 
     public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
-        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
+        FXMLLoader loader = new FXMLLoader(ProcessorController.class.getResource("/fxml/ProcessorScene.fxml"));
         final ProcessorController controller;
         try {
             Pane pane = loader.load();

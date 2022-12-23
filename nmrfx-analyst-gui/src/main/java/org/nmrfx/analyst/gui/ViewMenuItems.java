@@ -33,14 +33,11 @@ public class ViewMenuItems extends MenuActions {
         MenuItem logConsoleMenuItem = new MenuItem("Show Log Console");
         logConsoleMenuItem.setOnAction(e -> showLogConsole());
 
-        MenuItem attrMenuItem = new MenuItem("Show Attributes");
-        attrMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpecAttrAction(e));
-
 
         MenuItem integralTableItem = new MenuItem("Show Regions Table");
         integralTableItem.setOnAction(e -> showRegionsTable());
 
-        menu.getItems().addAll(consoleMenuItem, logConsoleMenuItem, dataMenuItem, attrMenuItem, integralTableItem, procMenuItem);
+        menu.getItems().addAll(consoleMenuItem, logConsoleMenuItem, dataMenuItem,  integralTableItem, procMenuItem);
         menu.onShowingProperty().set(e -> verifyMenuItems());
     }
 
