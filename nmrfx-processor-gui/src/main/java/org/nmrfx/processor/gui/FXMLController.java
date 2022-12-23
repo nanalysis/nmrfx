@@ -111,7 +111,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @FXML
     private ToolBar toolBar;
     @FXML
-    private ToolBar btoolBar;
+    private VBox btoolVBox;
     @FXML
     private VBox bottomBox;
     @FXML
@@ -172,7 +172,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     ContentController contentController;
     Set<ControllerTool> tools = new HashSet<>();
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
-    SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(Cursor.CROSSHAIR);
+    SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
 
     private BooleanProperty minBordersProperty() {
         if (minBorders == null) {
@@ -1306,12 +1306,13 @@ public class FXMLController implements  Initializable, PeakNavigable {
         Cursor cursor = cursorProperty.getValue();
         canvas.setCursor(cursor);
         for (PolyChart chart : charts) {
-            if (cursor.toString().equals("CROSSHAIR")) {
+            if (CanvasCursor.isCrosshair(cursor)) {
                 chart.getCrossHairs().setCrossHairState(true);
             } else {
                 chart.getCrossHairs().setCrossHairState(false);
             }
         }
+        statusBar.updateCursorBox();
     }
 
     public void resizeCanvases(double width, double height) {
@@ -1579,7 +1580,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
         toolBar.getItems().add(groupButton);
 
         statusBar = new SpectrumStatusBar(this);
-        statusBar.buildBar(btoolBar);
+        ToolBar btoolBar = new ToolBar();
+        ToolBar btoolBar2 = new ToolBar();
+        btoolVBox.getChildren().addAll(btoolBar, btoolBar2);
+        statusBar.buildBar(btoolBar, btoolBar2);
         MainApp.getMainApp().addStatusBarTools(statusBar);
 
     }

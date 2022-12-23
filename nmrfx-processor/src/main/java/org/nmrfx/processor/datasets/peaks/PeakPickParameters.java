@@ -217,10 +217,7 @@ public class PeakPickParameters {
                 cpt[i] = (pt[i][0] + pt[i][1]) / 2.0;
             }
 
-            log.info("{} {} {} {} {}", i, dim[i], pt[i][0], pt[i][1], cpt[i]);
         }
-
-        log.info("posneg {} fixed {} nPeakDim {}", posNeg, fixedPick, nPeakDim);
     }
 
     private class DimSizes implements Comparable {
