@@ -2223,9 +2223,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             newDataset.setNFreqDims(getNFreqDims());
             newDataset.setSolvent(getSolvent());
             newDataset.setTitle(getTitle());
-            if (sourceFID().isPresent()) {
-                newDataset.sourceFID(sourceFID().get());
-            }
+            newDataset.sourceFID(sourceFID().orElse(null));
             newDataset.writeHeader(false);
             newDataset.writeParFile();
         } finally {

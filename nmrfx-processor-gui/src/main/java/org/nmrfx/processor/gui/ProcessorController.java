@@ -967,8 +967,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     void finishOnPlatform(Dataset dataset) {
-        String oldName = dataset.getFile().toString();
-        String newName = oldName;
+        String newName = dataset.getFile().toString();
         Dataset currentDataset = (Dataset) chart.getDataset();
         if (currentDataset != null) {
             chart.clearDrawlist();
@@ -977,7 +976,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         try {
             dataset.setFile(new File(newName));
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e.getMessage(),e);
         }
         setSaveState(dataset);
         viewDatasetInApp(dataset);
@@ -996,8 +995,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                         GUIUtils.warn("Write Script Error", ex.getMessage());
                     }
                 }
-                // dataset.close();
-                // viewDatasetFileInApp(new File(path));
             } catch (IOException | DatasetException e) {
                 log.error("Couldn't save dataset", e);
             }
@@ -1097,7 +1094,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     }
                     ConsoleUtil.runOnFxThread(() -> viewDatasetInApp(processedDataset));
                 }
-                processor.getNMRData();
                 isProcessing.set(false);
                 if (doProcessWhenDone.get()) {
                     processIfIdle();
