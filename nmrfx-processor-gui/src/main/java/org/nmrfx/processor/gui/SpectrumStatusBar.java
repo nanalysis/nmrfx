@@ -40,13 +40,13 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
-import javafx.util.Callback;
 import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.lang3.SystemUtils;
+import org.controlsfx.control.SegmentedButton;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
+import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,6 +89,7 @@ public class SpectrumStatusBar {
     FXMLController controller;
     CheckBox complexStatus = new CheckBox("Complex");
     MenuButton toolButton = new MenuButton("Tools");
+    SegmentedButton cursorButtons;
     List<ButtonBase> specialButtons = new ArrayList<>();
     Button peakPickButton;
 
@@ -105,6 +106,10 @@ public class SpectrumStatusBar {
             displayModeComboBox.setValue(DisplayMode.CONTOURS);
         }
     });
+    MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
+    ChangeListener<Integer>[][] planeListeners = new ChangeListener[MAX_SPINNERS][2];
+    ToolBar btoolBar1;
+    ToolBar btoolBar2;
 
     class SpinnerConverter extends IntegerStringConverter {
         final int axNum;
@@ -162,9 +167,6 @@ public class SpectrumStatusBar {
         }
     }
 
-    MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
-    ChangeListener<Integer>[][] planeListeners = new ChangeListener[MAX_SPINNERS][2];
-    ToolBar btoolBar;
     StackPane[][] crossTextIcons = new StackPane[2][2];
     StackPane[][] limitTextIcons = new StackPane[2][2];
     boolean[][] iconStates = new boolean[2][2];
@@ -172,7 +174,6 @@ public class SpectrumStatusBar {
     Pane filler2 = new Pane();
     static String[] dimNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
     static String[] rowNames = {"X", "Row", "Plane", "A", "B", "C", "D", "E"};
-    ComboBox<Cursor> cursorChoiceBox = new ComboBox<>();
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
     boolean arrayMode = false;
@@ -186,11 +187,12 @@ public class SpectrumStatusBar {
         return controller;
     }
 
-    public void buildBar(ToolBar btoolBar) {
-        this.btoolBar = btoolBar;
+    public void buildBar(ToolBar btoolBar, ToolBar btoolBar2) {
+        this.btoolBar1 = btoolBar;
+        this.btoolBar2 = btoolBar2;
         peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
         peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
-
+        buildCursorBar();
         setupTools();
 
         for (int i = 0; i < 2; i++) {
@@ -304,44 +306,52 @@ public class SpectrumStatusBar {
         btoolBar.getItems().add(filler);
         btoolBar.getItems().add(complexStatus);
         complexStatus.setOnAction(this::complexStatus);
-        cursorChoiceBox.getItems().addAll(Cursor.CROSSHAIR, SEL_CURSOR);
-        cursorChoiceBox.setValue(Cursor.CROSSHAIR);
 
-        Callback<ListView<Cursor>, ListCell<Cursor>> cellFactory = new Callback<>() {
-            @Override
-            public ListCell<Cursor> call(ListView<Cursor> p) {
-                return new ListCell<>() {
-                    Text icon;
-
-                    {
-                        icon = new Text();
-                        setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-                    }
-
-                    @Override
-                    protected void updateItem(Cursor item, boolean empty) {
-                        super.updateItem(item, empty);
-
-                        if (item == null || empty) {
-                            setGraphic(null);
-                        } else {
-                            if (item.toString().equals("MOVE")) {
-                                icon = GlyphsDude.createIcon(FontAwesomeIcon.MOUSE_POINTER, "16");
-                            } else {
-                                icon = GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "16");
-
-                            }
-                            setGraphic(icon);
-                        }
-                    }
-                };
-            }
-        };
-        cursorChoiceBox.setButtonCell(cellFactory.call(null));
-        cursorChoiceBox.setCellFactory(cellFactory);
-        cursorChoiceBox.valueProperty().bindBidirectional(controller.getCursorProperty());
         controller.getActiveChart().disDimProp.addListener(displayedDimensionsListener);
         PolyChart.getActiveChartProperty().addListener(this::setChart);
+    }
+
+    private void buildCursorBar() {
+        List<ToggleButton> buttons = new ArrayList<>();
+        ToggleButton crosshairButton = GlyphsDude.createIconToggleButton(CanvasCursor.CROSSHAIR.getIcon(),"Crosshair",
+                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+        crosshairButton.setUserData(CanvasCursor.CROSSHAIR);
+        ToggleButton selectorButton = GlyphsDude.createIconToggleButton(CanvasCursor.SELECTOR.getIcon(),"Selector",
+                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+        selectorButton.setUserData(CanvasCursor.SELECTOR);
+        ToggleButton peakButton = GlyphsDude.createIconToggleButton(CanvasCursor.PEAK.getIcon(),"Peak",
+                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+        peakButton.setUserData(CanvasCursor.PEAK);
+        ToggleButton regionButton = GlyphsDude.createIconToggleButton(CanvasCursor.REGION.getIcon(),"Region",
+                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+        regionButton.setUserData(CanvasCursor.REGION);
+        buttons.add(selectorButton);
+        buttons.add(crosshairButton);
+        buttons.add(peakButton);
+        buttons.add(regionButton);
+        for (ButtonBase button : buttons) {
+            button.setMinWidth(50);
+        }
+        cursorButtons = new SegmentedButton();
+        cursorButtons.getButtons().addAll(buttons);
+        selectorButton.setSelected(true);
+        cursorButtons.getToggleGroup().selectedToggleProperty().addListener((ChangeListener<? super Toggle>) (a,b,c) -> toggleChanged(c));
+    }
+
+    public void updateCursorBox() {
+        for (var button: cursorButtons.getButtons()) {
+            if (((CanvasCursor) button.getUserData()).getCursor() == controller.getCurrentCursor()) {
+                button.setSelected(true);
+                break;
+            }
+        }
+    }
+
+    private void toggleChanged(Toggle toggle) {
+        if (toggle != null) {
+            CanvasCursor canvasCursor = (CanvasCursor) toggle.getUserData();
+            controller.setCursor(canvasCursor.getCursor());
+        }
     }
 
     public void addToolBarButtons(ButtonBase... buttons) {
@@ -605,8 +615,8 @@ public class SpectrumStatusBar {
         arrayMode = true;
         setPlaneRanges(2, nRows);
         List<Node> nodes = new ArrayList<>();
-        nodes.add(cursorChoiceBox);
-        nodes.add(toolButton);
+        List<Node> nodes2 = new ArrayList<>();
+        nodes2.add(toolButton);
         if (isStacked()) {
             displayModeComboBox.getSelectionModel().select(DisplayMode.STACKPLOT);
         } else {
@@ -618,6 +628,9 @@ public class SpectrumStatusBar {
         HBox.setHgrow(filler2, Priority.ALWAYS);
         nodes.add(filler1);
 
+        nodes.add(new Label("Cursor:"));
+        cursorButtons.getButtons().get(3).setDisable(false);
+        nodes.add(cursorButtons);
         for (int j = 1; j >= 0; j--) {
             if (j== 1) {
                 nodes.add(new Label("X:"));
@@ -644,8 +657,10 @@ public class SpectrumStatusBar {
             HBox.setHgrow(nodeFiller, Priority.ALWAYS);
             nodes.add(nodeFiller);
         }
-        btoolBar.getItems().clear();
-        btoolBar.getItems().addAll(nodes);
+        btoolBar1.getItems().clear();
+        btoolBar1.getItems().addAll(nodes);
+        btoolBar2.getItems().clear();
+        btoolBar2.getItems().addAll(nodes2);
     }
 
     public int getMode() {
@@ -656,14 +671,17 @@ public class SpectrumStatusBar {
         currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();
-        nodes.add(cursorChoiceBox);
+        List<Node> nodes2 = new ArrayList<>();
         if (mode != 0) {
-            nodes.add(toolButton);
+            nodes2.add(toolButton);
+            nodes2.add(ToolBarUtils.makeFiller(10));
         }
         if (mode == 1) {
-            nodes.addAll(specialButtons);
+            nodes2.addAll(specialButtons);
+            cursorButtons.getButtons().get(3).setDisable(false);
         } else if (mode > 1) {
-            nodes.add(peakPickButton);
+            nodes2.add(peakPickButton);
+            cursorButtons.getButtons().get(3).setDisable(true);
         }
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);
@@ -673,6 +691,9 @@ public class SpectrumStatusBar {
             nodes.add(displayModeComboBox);
         }
         nodes.add(filler1);
+
+        nodes.add(new Label("Cursor:"));
+        nodes.add(cursorButtons);
 
         for (int j = 1; j >= 0; j--) {
             if ((j == 1) && (mode > 1)) {
@@ -704,9 +725,11 @@ public class SpectrumStatusBar {
         if (mode == 0) {
             nodes.add(complexStatus);
         }
-        btoolBar.getItems().clear();
-
-        btoolBar.getItems().addAll(nodes);
+        nodes2.add(ToolBarUtils.makeFiller(10));
+        btoolBar1.getItems().clear();
+        btoolBar1.getItems().addAll(nodes);
+        btoolBar2.getItems().clear();
+        btoolBar2.getItems().addAll(nodes2);
         setPlaneRanges();
     }
 

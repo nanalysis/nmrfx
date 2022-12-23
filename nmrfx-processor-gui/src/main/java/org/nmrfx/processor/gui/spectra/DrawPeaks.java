@@ -245,7 +245,7 @@ public class DrawPeaks {
         }
 
 //        if ((disDim != 0) && (nPeakDim > 1)) {
-        if (nPeakDim > 1) {
+        if ((nPeakDim > 1) && !peakAttr.chart.is1D()) {
             draw2DPeak(peakAttr, g2, dim, peak, false, selected);
         } else {
             draw1DPeak(peakAttr, g2, dim, peak, colorMode, selected);

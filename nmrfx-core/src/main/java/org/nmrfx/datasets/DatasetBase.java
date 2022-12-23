@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class DatasetBase {
     private static final Logger log = LoggerFactory.getLogger(DatasetBase.class);
@@ -68,6 +69,7 @@ public class DatasetBase {
     protected double scale = 1.0;
     protected int rdims;
     protected Double noiseLevel = null;
+    protected Double threshold = null;
     protected double[][] values;
     List<DatasetRegion> regions;
     // Listeners for changes in the list of regions
@@ -1765,6 +1767,26 @@ public class DatasetBase {
         }
     }
 
+    /**
+     * Get the stored threshold level for this dataset
+     *
+     * @return noise level
+     */
+    public Double getThreshold() {
+        return threshold == null ? null : threshold / scale;
+    }
+
+    /**
+     * Store a threshold level for dataset
+     *
+     * @param level noise level
+     */
+    public void setThreshold(Double level) {
+        if (level != null) {
+            threshold = level * scale;
+        }
+    }
+
     public void setFreqDims(int n) {
         rdims = n;
     }
@@ -2128,7 +2150,8 @@ public class DatasetBase {
     }
 
     public DatasetRegion addRegion(double min, double max) {
-        List<DatasetRegion> sortedRegions = regions.stream().sorted().toList();
+        // don't use Stream.toList as that will give an imutableList
+        List<DatasetRegion> sortedRegions = regions.stream().sorted().collect(Collectors.toList());
         boolean firstRegion = sortedRegions.isEmpty();
 
         DatasetRegion newRegion = new DatasetRegion(min, max);
