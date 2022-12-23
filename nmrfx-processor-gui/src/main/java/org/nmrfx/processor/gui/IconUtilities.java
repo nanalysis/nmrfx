@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.scene.ImageCursor;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import org.controlsfx.glyphfont.Glyph;
@@ -99,7 +100,7 @@ public class IconUtilities {
 
     static {
         // Register a custom default font
-        GlyphFontRegistry.register("icomoon", SpecAttrWindowController.class.getResourceAsStream("/images/icomoon.ttf"), 16);
+        GlyphFontRegistry.register("icomoon", IconUtilities.class.getResourceAsStream("/images/icomoon.ttf"), 16);
     }
     
     private IconUtilities() {}
@@ -109,7 +110,7 @@ public class IconUtilities {
     }
 
     public static ImageView getIcon(String name) {
-        Image imageIcon = new Image("/images/" + name + ".png", true);
+        Image imageIcon = new Image("/images/" + name + ".png", false);
         ImageView imageView = new ImageView(imageIcon);
         try {
             double size = Double.parseDouble(MainApp.ICON_SIZE_STR.replaceAll("[^\\d.]", ""));
@@ -120,5 +121,8 @@ public class IconUtilities {
         }
         return imageView;
     }
-
+    public static ImageCursor getCursor(String name, int x, int y) {
+        Image image = new Image("/images/" + name + ".png", false);
+        return new ImageCursor(image, x, y);
+    }
 }
