@@ -19,7 +19,6 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -55,13 +54,16 @@ import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
@@ -74,12 +76,33 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
     private static final String[] basicOps = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] commonOps = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
+
+    private enum DisplayMode {
+        FID("FID"),
+        FID_OPS("FID w/ OPs"),
+        SPECTRUM("Spectrum");
+        private final String strValue;
+
+        DisplayMode(String strValue) {
+            this.strValue = strValue;
+        }
+
+        @Override
+        public String toString() {
+            return this.strValue;
+        }
+    }
 
     Pane processorPane;
     Pane pane;
@@ -158,7 +181,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     private ChoiceBox<String> realImagChoiceBox;
     @FXML
-    private ChoiceBox<String> viewMode;
+    private ChoiceBox<DisplayMode> viewMode;
     @FXML
     private Button datasetFileButton;
     @FXML
@@ -183,9 +206,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
     PolyChart chart;
-    private boolean isProcessing = false;
-    private boolean doProcessWhenDone = false;
-    private boolean processable = false;
+    private AtomicBoolean idleMode = new AtomicBoolean(false);
+    private AtomicBoolean isProcessing = new AtomicBoolean(false);
+    private AtomicBoolean doProcessWhenDone = new AtomicBoolean(false);
     private final ProcessDataset processDataset = new ProcessDataset();
     ListChangeListener<String> opListListener = null;
 
@@ -196,6 +219,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     String currentText = "";
 
     ProcessingCodeAreaUtil codeAreaUtil;
+    private ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
+    static AtomicBoolean aListUpdated = new AtomicBoolean(false);
+    private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
+    private AtomicReference<Dataset> saveObject = new AtomicReference<>();
+    ScheduledFuture futureUpdate = null;
+
 
     public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
         FXMLLoader loader = new FXMLLoader(ProcessorController.class.getResource("/fxml/ProcessorScene.fxml"));
@@ -273,20 +302,38 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         return chartProcessor;
     }
 
-    public void updateProgress(double f) {
-        if (Platform.isFxApplicationThread()) {
-            statusBar.setProgress(f);
-        } else {
-            Platform.runLater(() -> statusBar.setProgress(f));
+    class UpdateTask implements Runnable {
+        @Override
+        public void run() {
+            if (aListUpdated.get()) {
+                needToFireEvent.set(true);
+                aListUpdated.set(false);
+                startTimer();
+            } else if (needToFireEvent.get()) {
+                needToFireEvent.set(false);
+                ConsoleUtil.runOnFxThread(() -> saveDataset(saveObject.getAndSet(null)));
+                if (aListUpdated.get()) {
+                    startTimer();
+                }
+            }
         }
     }
 
-    public void updateStatus(String s) {
-        if (Platform.isFxApplicationThread()) {
-            setProcessingStatus(s, true);
-        } else {
-            Platform.runLater(() -> setProcessingStatus(s, true));
+    synchronized void startTimer() {
+        if (schedExecutor != null) {
+            if (needToFireEvent.get() || (futureUpdate == null) || futureUpdate.isDone()) {
+                UpdateTask updateTask = new UpdateTask();
+                futureUpdate = schedExecutor.schedule(updateTask, 1000, TimeUnit.MILLISECONDS);
+            }
         }
+    }
+
+    public void updateProgress(double f) {
+        ConsoleUtil.runOnFxThread(() -> statusBar.setProgress(f));
+    }
+
+    public void updateStatus(String s) {
+        ConsoleUtil.runOnFxThread(() -> setProcessingStatus(s, true));
     }
 
     void updateFileButton() {
@@ -421,24 +468,30 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     void viewMode() {
-        if (viewMode.getSelectionModel().getSelectedIndex() == 1) {
+        if (viewMode.getValue() == DisplayMode.SPECTRUM) {
             if (chart.controller.isFIDActive()) {
                 viewDatasetInApp(null);
             }
-        } else if (!chart.controller.isFIDActive()) {
+        } else if (viewMode.getValue() == DisplayMode.FID_OPS) {
             viewFID();
+        } else if (viewMode.getValue() == DisplayMode.FID) {
+            viewRawFID();
         }
     }
 
     @FXML
     public void viewDatasetInApp(Dataset dataset) {
         if (dataset != null) {
+            Dataset currentDataset = (Dataset) chart.getDataset();
             chart.controller.addDataset(dataset, false, false);
+            if ((currentDataset != null) && (currentDataset != dataset)) {
+                currentDataset.close();
+            }
         } else {
             if (chartProcessor.datasetFile != null) {
                 boolean viewingDataset = isViewingDataset();
                 chart.controller.openDataset(chartProcessor.datasetFile, false, true);
-                viewMode.getSelectionModel().select(1);
+                viewMode.setValue(DisplayMode.SPECTRUM);
                 if (!viewingDataset) {
                     chart.full();
                     chart.autoScale();
@@ -447,23 +500,54 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
+    void viewDatasetFileInApp(File file) {
+        boolean viewingDataset = isViewingDataset();
+        Dataset currentDataset = (Dataset) chart.getDataset();
+        Dataset datasetByName = Dataset.getDataset(file.getName());
+        if (datasetByName != null) {
+            datasetByName.close();
+        }
+        Dataset dataset = chart.controller.openDataset(file, false, true);
+        if ((currentDataset != null) && (currentDataset != dataset)) {
+            currentDataset.close();
+        }
+        viewMode.setValue(DisplayMode.SPECTRUM);
+        if (!viewingDataset) {
+            chart.full();
+            chart.autoScale();
+        }
+    }
+
     void viewingDataset(boolean state) {
         if (state) {
-            viewMode.getSelectionModel().select(1);
+            viewMode.setValue(DisplayMode.SPECTRUM);
         } else {
-            viewMode.getSelectionModel().select(0);
+            viewMode.setValue(DisplayMode.FID_OPS);
         }
     }
 
     public boolean isViewingDataset() {
-        return viewMode.getSelectionModel().getSelectedIndex() == 1;
+        return viewMode.getValue() == DisplayMode.SPECTRUM;
+    }
+
+    public boolean isViewingFID() {
+        return viewMode.getValue() == DisplayMode.FID_OPS;
     }
 
     @FXML
     void viewFID() {
         dimChoice.getSelectionModel().select(0);
         chartProcessor.setVecDim("D1");
-        viewMode.setValue("FID");
+        viewMode.setValue(DisplayMode.FID_OPS);
+        chart.controller.undoManager.clear();
+        chart.controller.updateSpectrumStatusBarOptions(false);
+    }
+
+    @FXML
+    void viewRawFID() {
+        dimChoice.getSelectionModel().select(0);
+        chartProcessor.setVecDim("D1");
+        viewMode.setValue(DisplayMode.FID);
         chart.controller.undoManager.clear();
         chart.controller.updateSpectrumStatusBarOptions(false);
     }
@@ -878,47 +962,70 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         return textArea.getText();
     }
 
-    synchronized void setProcessingOn() {
-        isProcessing = true;
-        doProcessWhenDone = false;
-    }
-
-    synchronized void setProcessingOff() {
-        isProcessing = false;
-    }
-
-    boolean isProcessing() {
-        return isProcessing;
-    }
-
-    void doProcessWhenDone() {
-        doProcessWhenDone = true;
-    }
-
     void finishProcessing(Dataset dataset) {
-        Platform.runLater(() -> viewDatasetInApp(dataset));
+        ConsoleUtil.runOnFxThread(() -> finishOnPlatform(dataset));
+    }
+
+    void finishOnPlatform(Dataset dataset) {
+        String newName = dataset.getFile().toString();
+        Dataset currentDataset = (Dataset) chart.getDataset();
+        if (currentDataset != null) {
+            chart.clearDrawlist();
+            currentDataset.close();
+        }
+        try {
+            dataset.setFile(new File(newName));
+        } catch (IOException e) {
+            log.error(e.getMessage(),e);
+        }
+        setSaveState(dataset);
+        viewDatasetInApp(dataset);
+    }
+
+    public void saveDataset(Dataset dataset) {
+        if ((dataset != null) && (dataset.isMemoryFile())) {
+            try {
+                File file = dataset.getFile();
+                String path = dataset.saveMemoryFile();
+                String script = dataset.script();
+                if (!script.isBlank()) {
+                    try {
+                        writeScript(script);
+                    } catch (IOException ex) {
+                        GUIUtils.warn("Write Script Error", ex.getMessage());
+                    }
+                }
+            } catch (IOException | DatasetException e) {
+                log.error("Couldn't save dataset", e);
+            }
+        }
+    }
+
+    public void setAutoProcess(boolean state) {
+        autoProcess.setSelected(state);
     }
 
     void processIfIdle() {
-        if (autoProcess.isSelected() && processable) {
-            if (isProcessing()) {
-                doProcessWhenDone();
+        if (autoProcess.isSelected()) {
+            if (isProcessing.get()) {
+                doProcessWhenDone.set(true);
             } else {
-                doProcessWhenDone = false;
-                processDataset();
+                doProcessWhenDone.set(false);
+                processDataset(true);
             }
         }
     }
 
     @FXML
     private void processDatasetAction() {
-        processDataset();
+        processDataset(false);
     }
 
-    private void processDataset() {
+    public void processDataset(boolean idleModeValue) {
         Dataset.useCacheFile(SystemUtils.IS_OS_WINDOWS);
-        setProcessingOn();
-        processable = false;
+        doProcessWhenDone.set(false);
+        isProcessing.set(true);
+        idleMode.set(idleModeValue);
         statusBar.setProgress(0.0);
         Processor.setUpdater(this);
         if (!chartProcessor.isScriptValid()) {
@@ -935,6 +1042,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         Processor.getProcessor().setProcessorError();
     }
 
+    private void setSaveState(Dataset dataset) {
+        aListUpdated.set(true);
+        saveObject.set(dataset);
+        startTimer();
+    }
+
     private class ProcessDataset {
         Processor processor;
         String script;
@@ -946,13 +1059,16 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 protected Task createTask() {
                     return new Task() {
                         protected Object call() {
+                            doProcessWhenDone.set(false);
+                            isProcessing.set(true);
                             script = textArea.getText();
                             try (PythonInterpreter processInterp = new PythonInterpreter()) {
                                 updateStatus("Start processing");
                                 updateTitle("Start Processing");
                                 processInterp.exec("from pyproc import *");
                                 processor = Processor.getProcessor();
-                                processor.keepDatasetOpen(false);
+                                processor.keepDatasetOpen(idleMode.get());
+                                processor.setTempFileMode(idleMode.get());
                                 processor.clearDataset();
                                 processInterp.exec("useProcessor(inNMRFx=True)");
                                 processInterp.exec(script);
@@ -964,30 +1080,37 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             };
 
             ((Service<Integer>) worker).setOnSucceeded(event -> {
-                processable = true;
-                finishProcessing(processor.getDataset());
-                try {
-                    writeScript(script);
-                } catch (IOException ex) {
-                    GUIUtils.warn("Write Script Error", ex.getMessage());
+                Dataset processedDataset;
+                if (idleMode.get()) {
+                    Dataset dataset = processor.releaseDataset(null);
+                    dataset.script(script);
+                    finishProcessing(dataset);
+                } else {
+                    processedDataset = processor.getDataset();
+                    try {
+                        writeScript(script);
+                    } catch (IOException ex) {
+                        GUIUtils.warn("Write Script Error", ex.getMessage());
+                    }
+                    ConsoleUtil.runOnFxThread(() -> viewDatasetInApp(processedDataset));
                 }
-                setProcessingOff();
-                if (doProcessWhenDone) {
+                isProcessing.set(false);
+                if (doProcessWhenDone.get()) {
                     processIfIdle();
                 }
             });
             ((Service<Integer>) worker).setOnCancelled(event -> {
-                setProcessingOff();
+                processor.clearDataset();
+                isProcessing.set(false);
                 setProcessingStatus("cancelled", false);
-                Processor.getProcessor().closeDataset(false);
             });
             ((Service<Integer>) worker).setOnFailed(event -> {
-                setProcessingOff();
+                processor.clearDataset();
+                isProcessing.set(false);
                 // Processing is finished if it has ended with errors
                 Processor.getProcessor().setProcessorAvailableStatus(true);
                 final Throwable exception = worker.getException();
                 setProcessingStatus(exception.getMessage(), false, exception);
-
             });
 
         }
@@ -1002,6 +1125,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void setProcessingStatus(String s, boolean ok, Throwable throwable) {
+        ConsoleUtil.runOnFxThread(() -> updateProcessingStatus(s, ok, throwable));
+    }
+
+    private void updateProcessingStatus(String s, boolean ok, Throwable throwable) {
         statusBar.setText(Objects.requireNonNullElse(s, ""));
         if (ok) {
             statusCircle.setFill(Color.GREEN);
@@ -1015,8 +1142,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void clearProcessingTextLabel() {
-        statusBar.setText("");
-        statusCircle.setFill(Color.GREEN);
+        setProcessingStatus("", true);
     }
 
     /**
@@ -1067,6 +1193,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         scanRatio.setValue(3.0);
         scanMaxN.getItems().addAll(5, 10, 20, 50, 100, 200);
         scanMaxN.setValue(50);
+        viewMode.getItems().addAll(DisplayMode.values());
 
         initTable();
         setupListeners();
@@ -1552,6 +1679,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
         return result;
     }
+
     public ObservableList<DatasetGroupIndex> getSkipList() {
         ObservableList<DatasetGroupIndex> groupList = FXCollections.observableArrayList();
         NMRData nmrData = getNMRData();

@@ -67,6 +67,7 @@ public class Processor {
     private static final Logger log = LoggerFactory.getLogger(Processor.class);
     private static long MEMORY_MODE_LIMIT = 536870912L;
     private static boolean TEST_CORRUPTION_MODE = false;
+    private static int iDataNum = 0;
 
 
     private String fileName;
@@ -231,6 +232,7 @@ public class Processor {
 
     private final List<ProcessorAvailableStatusListener> listeners = new ArrayList<>();
     private final AtomicBoolean processorAvailable = new AtomicBoolean(true);
+    private boolean tempFileMode = false;
 
     private void resetVecReadCount() {
         vecReadCount.set(0);
@@ -411,6 +413,10 @@ public class Processor {
         }
 
         return false;
+    }
+
+    public void setTempFileMode(boolean value) {
+        tempFileMode = value;
     }
 
     public void adjustSizes() {
@@ -869,15 +875,20 @@ public class Processor {
             nDimToUse += sz > 1 ? 1 : 0;
         }
         this.acqSizesToUse = useSizes;
+        File file = new File(outputFile);
+        String key = file.getName();
         try {
             if (inMemory) {
+                if (tempFileMode) {
+                    key += ".tmp." + iDataNum++;
+                }
                 this.dataset = new Dataset(outputFile, nDimToUse);
             } else {
                 int[] idSizes = getIndirectSizes();
                 for (int i=0;i<idSizes.length;i++) {
                     useSizes[i +1] = idSizes[i];
                 }
-                this.dataset = Dataset.createDataset(outputFile, outputFile, useSizes, false, false);
+                this.dataset = Dataset.createDataset(outputFile, key, outputFile, useSizes, false, false);
             }
         } catch (DatasetException ex) {
             log.error(ex.getMessage(), ex);
@@ -1445,6 +1456,9 @@ public class Processor {
             for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
                 dataset.setComplex(i, false);
             }
+            if (getNMRData() != null) {
+                dataset.sourceFID(new File(getNMRData().getFilePath()));
+            }
             if (!dataset.isMemoryFile()) {
                 dataset.writeParFile();
             }
@@ -1472,6 +1486,15 @@ public class Processor {
             dataset.close();
             dataset = null;
         }
+    }
+
+    public Dataset releaseDataset(String newName) {
+        Dataset releasedDataset = dataset;
+        if (newName != null) {
+            releasedDataset.rename(newName);
+        }
+        dataset = null;
+        return releasedDataset;
     }
 
     public void closeDataset(boolean saveDataset) {
@@ -1514,7 +1537,6 @@ public class Processor {
      * @param p
      */
     public void run(ProcessOps p) {
-        System.out.println("run " + p.getDim());
         if (processor.getProcessorError()) {
             setProcessorAvailableStatus(true);
             return;

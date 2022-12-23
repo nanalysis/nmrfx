@@ -1307,7 +1307,7 @@ public class RS2DData implements NMRData {
     }
 
     public Path saveDataset(Dataset dataset) throws IOException {
-        File file = new File(dataset.getFileName());
+        File file =dataset.getFile();
         try {
             setHeaderMatrixDimensions(dataset);
             setHeaderState(dataset);
