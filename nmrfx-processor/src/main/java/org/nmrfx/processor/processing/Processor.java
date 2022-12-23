@@ -1456,6 +1456,9 @@ public class Processor {
             for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
                 dataset.setComplex(i, false);
             }
+            if (getNMRData() != null) {
+                dataset.sourceFID(new File(getNMRData().getFilePath()));
+            }
             if (!dataset.isMemoryFile()) {
                 dataset.writeParFile();
             }

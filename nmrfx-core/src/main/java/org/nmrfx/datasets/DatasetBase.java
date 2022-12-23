@@ -82,6 +82,7 @@ public class DatasetBase {
     private String posColor = "black";
     private String negColor = "red";
     private boolean littleEndian = false;
+    private File fidFile = null;
 
     public DatasetBase() {
 
@@ -2049,6 +2050,14 @@ public class DatasetBase {
                 this.values[iDim][i] = values.get(i);
             }
         }
+    }
+
+    public void sourceFID(File sourceFID) {
+        this.fidFile = sourceFID;
+    }
+
+    public Optional<File> sourceFID() {
+        return Optional.ofNullable(fidFile);
     }
 
     /**
