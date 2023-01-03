@@ -19,9 +19,11 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.util.converter.FormatStringConverter;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -273,4 +275,20 @@ public class GUIUtils {
         javax.imageio.ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
     }
 
+    public static void bindSliderField(Slider slider, TextField field) {
+        DecimalFormat numberFormat = new DecimalFormat();
+        numberFormat.setMaximumFractionDigits(2);
+        FormatStringConverter<Number> converter = new FormatStringConverter<>(numberFormat);
+        TextFormatter<Number> formatter = new TextFormatter<>(converter, 0);
+        field.setTextFormatter(formatter);
+        slider.valueProperty().bindBidirectional(formatter.valueProperty());
+    }
+
+    public static void bindSliderField(Slider slider, TextField field, String pattern) {
+        DecimalFormat numberFormat = new DecimalFormat(pattern);
+        FormatStringConverter<Number> converter = new FormatStringConverter<>(numberFormat);
+        TextFormatter<Number> formatter = new TextFormatter<>(converter, 0);
+        field.setTextFormatter(formatter);
+        slider.valueProperty().bindBidirectional(formatter.valueProperty());
+    }
 }

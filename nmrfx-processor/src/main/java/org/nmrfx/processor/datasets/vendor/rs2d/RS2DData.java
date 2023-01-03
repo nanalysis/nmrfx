@@ -121,16 +121,12 @@ public class RS2DData implements NMRData {
     double tempK = 298.15;
 
     public RS2DData(String path, File nusFile) throws IOException {
-        this(path, nusFile, false);
-    }
-
-    public RS2DData(String path, File nusFile, boolean processed) throws IOException {
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.length() - 1);
         }
         this.fpath = path;
         this.nusFile = nusFile;
-        openParFile(path, processed);
+        openParFile(path);
         openDataFile(path);
 
     }
@@ -252,7 +248,7 @@ public class RS2DData implements NMRData {
         return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
-    private void openParFile(String parpath, boolean processed) throws IOException {
+    private void openParFile(String parpath) throws IOException {
         log.info("Opening RS2D file: {}", parpath);
 
         Path headerPath = Paths.get(parpath, HEADER_FILE_NAME);
@@ -280,7 +276,7 @@ public class RS2DData implements NMRData {
                     break;
                 }
             }
-            if (processed) {
+            if (!isFID()) {
                 List<String> dataModes = header.get(DATA_REPRESENTATION).stringListValue();
                 if (!dataModes.isEmpty()) {
                     for (int i = 0; i < MAXDIM; i++) {
@@ -291,7 +287,7 @@ public class RS2DData implements NMRData {
 
             for (int i = 0; i < MAXDIM; i++) {
                 int dimSize;
-                if (processed) {
+                if (!isFID()) {
                     dimSize = header.get(DIMENSION_PARAMS.get(i)).intValue();
                 } else {
                     dimSize = header.get(ACQUISITION_DIMENSION_PARAMS.get(i)).intValue();
@@ -318,7 +314,7 @@ public class RS2DData implements NMRData {
             }
             setZonedDateTime();
 
-            if (!processed) {
+            if (isFID()) {
                 setFTParams();
             }
         } catch (ParserConfigurationException | SAXException | NullPointerException ex) {
@@ -1311,7 +1307,7 @@ public class RS2DData implements NMRData {
     }
 
     public Path saveDataset(Dataset dataset) throws IOException {
-        File file = new File(dataset.getFileName());
+        File file =dataset.getFile();
         try {
             setHeaderMatrixDimensions(dataset);
             setHeaderState(dataset);
