@@ -770,12 +770,10 @@ class refine:
             linkLens = [linkLen]*(nLinks+3)
             valAngles = [valAngle]*(nLinks+3)
 
-            linkLens[-3] = 1.52
-            linkLens[-2] = 1.41
-            linkLens[-1] = 1.60
-            valAngles[-3] = 116.47
-            valAngles[-2] = 112.21
-            valAngles[-1] = 120.58
+            linkLens[-2] = 1.52
+            linkLens[-1] = 1.41
+            valAngles[-2] = 116.47
+            valAngles[-1] = 112.21
             for i in range(nLinks):
                 linkNames[i] = "X"+str(i+1)
             linkNames[-3] = "XC4'"
