@@ -731,6 +731,13 @@ public class BrukerData implements NMRData {
     }
 
     @Override
+    public boolean arePhasesSet(int dim) {
+        Double ph0 = getParDouble("PHC0," + (dim + 1));
+        Double ph1 = getParDouble("PHC1," + (dim + 1));
+        return (ph0 != null && Math.abs(ph0) > 1.0e-9) || (ph1 != null && Math.abs(ph1) > 1.0e-9);
+    }
+
+    @Override
     public double getPH0(int iDim) {
         double ph0 = 0.0;
         Double dpar;

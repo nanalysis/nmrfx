@@ -55,6 +55,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -104,6 +105,7 @@ public class RS2DData implements NMRData {
     private final String[] f1coefS = new String[MAXDIM];
     private final String[] fttype = new String[MAXDIM];
     private final String[] sfNames = new String[MAXDIM];
+    private final double[][] phases = new double[MAXDIM][2];
     private double groupDelay = 0.0;
     private SampleSchedule sampleSchedule = null;
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
@@ -320,6 +322,34 @@ public class RS2DData implements NMRData {
         } catch (ParserConfigurationException | SAXException | NullPointerException ex) {
             throw new IOException(ex.getMessage());
         }
+
+        // try to read the zero and first order phases from the processed datase.
+        File pdataFile = new File(parpath).toPath().resolve(PROC_DIR).toFile();
+        if (pdataFile.exists()) {
+            Path bdir = pdataFile.toPath();
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(bdir, "[0-9]")) {
+                for (Path entry: stream) {
+                    Path p = entry.resolve(HEADER_FILE_NAME);
+                    if (!p.toFile().exists()) {
+                        return;
+                    }
+                    try (InputStream input = Files.newInputStream(p)) {
+                        Header procHeader = new HeaderParser().parse(input);
+                        List<Double> phase0s = procHeader.get(Parameter.PHASE_0).doubleListValue();
+                        List<Double> phase1s = procHeader.get(Parameter.PHASE_1).doubleListValue();
+                        for (int i = 0; i < getNDim(); i++) {
+                            phases[i][0] = phase0s.get(i);
+                            phases[i][1] = phase1s.get(i);
+                        }
+                        // Only get the phases from the first processed dataset, then return
+                        return;
+                    } catch (ParserConfigurationException | SAXException | NullPointerException ex) {
+                        throw new IOException(ex.getMessage());
+                    }
+                }
+            }
+        }
+
     }
 
     private void setZonedDateTime() {
@@ -762,13 +792,26 @@ public class RS2DData implements NMRData {
     }
 
     @Override
+    public boolean arePhasesSet(int dim) {
+        double ph0 = phases[dim][0];
+        double ph1 = phases[dim][1];
+        return Math.abs(ph0) > 1.0e-9 || Math.abs(ph1) > 1.0e-9;
+    }
+
+    @Override
     public double getPH0(int dim) {
-        return 0.0;
+        double ph0 = phases[dim][0];
+        if (dim == 0) {
+            ph0 -= 90; // empirical
+        }
+        // phase is reversed between RS2D and NMRfx
+        return -ph0;
     }
 
     @Override
     public double getPH1(int dim) {
-        return 0.0;
+        // phase is reversed between RS2D and NMRfx
+        return -phases[dim][1];
     }
 
     @Override

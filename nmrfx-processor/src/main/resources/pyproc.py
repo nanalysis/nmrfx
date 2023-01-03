@@ -178,7 +178,7 @@ class FIDInfo:
     acqOrder = []
     acqArray = []
     fidObj = None
-    
+
     def checkParDim(self,pars):
         nd = self.fidObj.getNDim()
         if (len(pars) > nd):
@@ -207,7 +207,7 @@ class FIDInfo:
 
     def setFixDSP(self,value):
         self.fidObj.setFixDSP(value)
-        
+
     def setSW(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
@@ -371,7 +371,7 @@ def fixdsp(value):
     ''' Set whether to fix dsp charge-up when reading FID.  Only used for Bruker data.
     '''
     fidInfo.setFixDSP(value)
- 
+
 def sw(*pars):
     ''' Sweep width values to set for each dimension.<br>
     Values can be either a numeric value (2000.0) or the name of a vendor specific parameter (in quotes). 
@@ -450,7 +450,7 @@ def acqOrder(*order):
     fidInfo.acqOrder = []
     for par in order:
         fidInfo.acqOrder.append(par)
-    fidInfo.fidObj.resetAcqOrder() 
+    fidInfo.fidObj.resetAcqOrder()
     fidInfo.fidObj.setAcqOrder(order)
     processor.setAcqOrder(fidInfo.fidObj.getAcqOrder())
 
@@ -578,7 +578,7 @@ def acqsize(*pars):
     fidInfo.useSize = list(size)
     dataInfo.size = list(size)
     dataInfo.msize = initMSize(fidInfo, size)
-            
+
 # set fid size limits 
 def tdsize(*size):
     ''' Set time domain size that should actually be used.  Normally set to a value less than or equal to the acqsize value. 
@@ -767,7 +767,7 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
     fidInfo.size = list(tdSize)
     fidInfo.useSize = list(tdSize)
 
-    fidInfo.fidObj = fidObj 
+    fidInfo.fidObj = fidObj
 
     fidInfo.solvent = fidObj.getSolvent()
     fidInfo.nd = fidObj.getNDim()
@@ -864,7 +864,7 @@ def createDataset(nvFileName=None):
             useSize.append(1)
     if dataInfo.extra != 0:
         useSize.append(dataInfo.extra)
-        
+
     if not processor.isDatasetOpen():
         try:
             os.remove(nvFileName)
@@ -1117,7 +1117,7 @@ def BCMED(frac=0.1,wrap=False, disabled=False, vector=None, process=None):
     else:
         process.addOperation(op)
     return op
-    
+
 
 def REGIONS(regions = None,type='frac', signal=False, disabled=False, vector=None, process=None):
     '''Baseline correction using a polynomial fit.
@@ -1189,7 +1189,7 @@ def BC(ratio=10.0, disabled=False, vector=None, process=None):
         min : 1.0
         max : 100.0
         Ratio relative to noise used in determining if region is signal or baseline, or percent baseline in cwtdf mode.
-    ''' 
+    '''
     if disabled:
         return None
     process = process or getCurrentProcess()
@@ -1218,12 +1218,12 @@ def BCPOLY(order=2, winSize=16, disabled=False, vector=None, process=None):
     if disabled:
         return None
     process = process or getCurrentProcess()
-            
+
     op = BcPoly(order, winSize)
     if (vector != None):
         op.eval(vector)
     else:
-        process.addOperation(op)   
+        process.addOperation(op)
     return op
 
 def BCSINE(order=1, winSize=16,  disabled=False, vector=None, process=None):
@@ -1381,7 +1381,7 @@ def TDCOMB(dim=2,coef=None, numInVec=0, numOutVec=0, inVec=None, outVec=None, di
         nCoef = len(coef)
         numInVec = int(math.log(nCoef/2)/math.log(2))
         numOutVec=numInVec
-         
+
     op = TDCombine(dim-1,numInVec, numOutVec, coef)
     if (inVec != None): #and outVec != None):
         arrList = TDCombine.getArrayList()
@@ -1537,8 +1537,8 @@ def SCHEDULE(fraction=0.05, endOnly=False, fileName="", disabled=False, vector =
     return op
 
 
-def LP(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0, 
-    threshold=5, backward=True, forward=True, mirror=None,disabled=False,vector=None, 
+def LP(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
+    threshold=5, backward=True, forward=True, mirror=None,disabled=False,vector=None,
     process=None):
     '''Extend the vector using Linear Prediction.
     Forward or backward linear prediction can be done.  If both are specified
@@ -1588,7 +1588,7 @@ def LP(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
     mirrorInt = 0
     if mirror:
        if mirror == "even":
-           mirrorInt = 2 
+           mirrorInt = 2
        elif mirror == "odd":
            mirrorInt = 1
        elif mirror == "ps90-180":
@@ -2175,7 +2175,7 @@ def GMB(gb=0.0, lb=0.0, fPoint=1.0, inverse=False, disabled=False, vector=None, 
     else:
         process.addOperation(op)
     return op
-    
+
 def APODIZE(lbOn=False,lb=0.5, gmOn=False, gm=1.0, sbOn=False, sbSqOn=False, sbOffset=0.5, fPoint=1.0, apodSize=0, inverse=False, disabled=False, vector=None, process=None):
     '''Lorentz-to-Gauss.
     Parameters
@@ -2286,7 +2286,7 @@ def SAMPLE_SCHEDULE(filename="/tmp/sample_schedule.txt", mode='read', dims=[], d
     fraction : real
         Fraction of total points that are sampled (create mode only).
     '''
-    
+
     global fidInfo
     fidObj = fidInfo.fidObj
     if (mode == 'create'):      # for 2D NUS
@@ -2339,7 +2339,7 @@ def ISTMATRIX(threshold=0.90, iterations=500, alg='std', phase=None, timeDomain=
     process.addOperation(op)
     return op
 
-def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph1=None, 
+def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph1=None,
     adjustThreshold=False, all=False, disabled=False, vector=None, process=None):
     '''Iterative Soft Threshold.
     Parameters
@@ -3066,7 +3066,7 @@ def PHASE(ph0=0.0, ph1=0.0, dimag=False, disabled=False, vector=None, process=No
     global fidInfo
     process = process or getCurrentProcess()
     if (ph0 == None):
-        
+
         try:
             gph0, gph1 = fidInfo.getPhases(dataInfo.curDim)
         except:
@@ -3133,7 +3133,7 @@ def RAND(disabled=False, vector=None, process=None):
         return None
     op = Rand()
     return op
-    
+
 
 @generic_operation
 def RANGE(value=0 + 0j, first=0, last=-1,  max=False, min=False, disabled=False, process=None, vector=None):
@@ -3176,7 +3176,7 @@ def MERGE(disabled=False, process=None, vector=None):
     else:
         process.addOperation(op)
     return op
-    
+
 def REAL(disabled=False, process=None, vector=None):
     '''Make the vector real, discarding the imaginary part'''
     if disabled:
@@ -3464,7 +3464,7 @@ def TDPOLY(order=4, winSize=32, start=0, disabled=False, vector=None, process=No
         return None
     op = TDPoly(order, winSize, start)
     return op
-    
+
 
 def TM(pt1=0, pt2=-1, inverse=False, disabled=False, vector=None, process=None):
     '''Trapezoid Multiply.
@@ -3683,7 +3683,7 @@ def list_vectors(process=None):
     return process.getVectorString()
 
 def status(process=None):
-    '''Return status of a process''' 
+    '''Return status of a process'''
     process = process or getCurrentProcess()
     return process.getStatus()
 
@@ -3758,7 +3758,7 @@ def convertUnitStringToObject(unitString):
     num = filter(lambda x: x != '', re.findall('[\d.\-]*', unitString))
     if len(num) != 1:
         raise Exception("Poorly formatted Unit String.  Cannot convert %s.  Unit must be supplied as a number followed by f, h, p, or s." % unitString)
-    
+
     if (len(token)):
         token = token[0]
     else:
@@ -3768,7 +3768,7 @@ def convertUnitStringToObject(unitString):
 
     if token == 'f':
         unit = Fraction(num)
-    
+
     elif token == 'h':
         unit = Frequency(num)
 
@@ -3800,7 +3800,7 @@ def genScript(arrayed=False):
         trim = fidInfo.fidObj.getTrim()
         if trim > 1.0e-3:
             script += 'TRIM(ftrim=' + str(trim) +')\n'
-        phases = NMRDataUtil.autoPhase(fidInfo.fidObj);
+        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0)
         script += 'PHASE(ph0='+str(round(phases[0],1))+',ph1='+str(round(phases[1]))+')\n'
     else:
         script += psspecial.scriptMods(fidInfo, 0)
@@ -3822,7 +3822,8 @@ def genScript(arrayed=False):
         script += 'SB()\n'
         script += 'ZF()\n'
         script += 'FT()\n'
-        script += 'PHASE(ph0=0.0,ph1=0.0)\n'
+        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0)
+        script += 'PHASE(ph0='+str(round(phases[0],1))+',ph1='+str(round(phases[1]))+')\n'
         fCoef = fidInfo.getSymbolicCoefs(1)
         if fCoef != None and fCoef == 'sep' and not arrayed:
             script += "COMB(coef='sep')\n"
@@ -3869,7 +3870,8 @@ def genScript(arrayed=False):
         if fCoef != None and fCoef == 'sep':
             script += "MAG()\n"
         else:
-            script += 'PHASE(ph0=0.0,ph1=0.0)\n'
+            phases = NMRDataUtil.getPhases(fidInfo.fidObj, iDim - 1);
+            script += 'PHASE(ph0='+str(round(phases[0],1))+',ph1='+str(round(phases[1]))+')\n'
     script += 'run()'
     return script
 
@@ -3885,7 +3887,7 @@ def ddoc(op,opList):
    else:
        nDefaults = len(defaults)
    inPar = False
-   s=op.__doc__.split('\n') 
+   s=op.__doc__.split('\n')
    iArg = -1
    opDesc = ''
    opMap = HashMap()
@@ -3913,7 +3915,7 @@ def ddoc(op,opList):
    for line in s:
        n4space = line.count('    ')
        line = line.strip()
-       
+
        if line.startswith('----'):
            continue
        if line == '':
@@ -3967,7 +3969,7 @@ def ddoc(op,opList):
                         parMap.put('listTypes', listTypeList)
                    else:
                         parTypeList.add(pars[1].strip())
-                          
+
                    #parOptional = parOptional.strip()=='optional'
                    parOptional = hasDefault;
                    #print 'parName ',parName,'type ',parType,'optional ', parOptional
@@ -4011,7 +4013,7 @@ def getOperationList():
     #add to the list as well.)
     exclude_operations = []
     exclude_operations += ['ISTCL',] #currently broken
-    
+
     #return all operations that are not excluded
     opList = filter(lambda op: op not in exclude_operations, operation_list)
     opList.sort()
