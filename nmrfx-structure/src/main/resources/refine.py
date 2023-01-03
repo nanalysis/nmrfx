@@ -285,7 +285,7 @@ class StrictDict(dict):
         """Based on type (param or forces) specified into createStrictDict, a list of valid parameters will be initialized.
         If user specifies a key to update in input dictionary which is not in this list, an error will be raised.
 
-	# Parameters:
+        # Parameters:
 
         allowedKeys (list); list to identify allowed keys based on input specification
         for the type of parameters/keys to update.
@@ -354,7 +354,7 @@ class dynOptions(StrictDict):
         'dfreeSteps'    :  0,
         'dfreeAlg'      : 'cmaes',
         'kinEScale'     : 200.0,
-	'irpWeight'     : 0.0
+        'irpWeight'     : 0.0
     }
     def __init__(self,initDict={}):
         if initDict is None:
@@ -388,13 +388,13 @@ def createStrictDict(initDict, type):
 
 class refine:
     def __init__(self):
-	self.NEFfile = ''
+        self.NEFfile = ''
         self.energyLists = None
         self.dihedral = None
         self.cyanaAngleFiles = []
         self.xplorAngleFiles = []
         self.nvAngleFiles = []
-	self.cyanaDistanceFiles = {}
+        self.cyanaDistanceFiles = {}
         self.xplorDistanceFiles = {}
         self.cyanaRDCFiles = {}
         self.xplorRDCFiles = {}
@@ -473,9 +473,9 @@ class refine:
         * ranfact (_);
         * mode (bool); Describes whether or not to use random initial angles.
 
-	# Returns:
+        # Returns:
 
-	_ (None);
+        _ (None);
 
         See also: `putInitialAngles(...)` in Dihedrals.java
         """
@@ -624,7 +624,7 @@ class refine:
                 startEntity, startAtom = entity1, atom1
                 endEntity, endAtom = entity2, atom2
 
-	    # n is the number of rotational points within a link established between any 2 entities.
+            # n is the number of rotational points within a link established between any 2 entities.
             # default is 6.
             nLinks = linkerDict['n'] if 'n' in linkerDict else 6
             linkLen = linkerDict['length'] if 'length' in linkerDict else 5.0
@@ -1146,7 +1146,7 @@ class refine:
 
     def getAtom(self, atomTuple):
         """
-	Gets atom from a tuple that contains entity and atom name.
+        Gets atom from a tuple that contains entity and atom name.
 
         # Parameters:
 
@@ -1229,30 +1229,30 @@ class refine:
         """
 
         molData = {}
-	residues = None
+        residues = None
         rnaLinkerDict = None
 
         if fileName != '':
             if fileName.endswith('.pdb'):
                 molio.readPDB(fileName)
             elif fileName.endswith('.nef'):
-		self.NEFReader(fileName)
+                self.NEFReader(fileName)
             else:
                 raise ValueError("Filename must end in .pdb or .nef")
         else:
-	    # Checks if NEF file is specified to process it.
-	    # Even if NEF file is specified, this control flow
-	    # still checks whether 'molecule' data block is specified
+            # Checks if NEF file is specified to process it.
+            # Even if NEF file is specified, this control flow
+            # still checks whether 'molecule' data block is specified
             # in the YAML file.
-	    if 'nef' in data:
-		fileName = data['nef']
-		self.NEFReader(fileName)
+            if 'nef' in data:
+                fileName = data['nef']
+                self.NEFReader(fileName)
 
-	    # Checks if 'molecule' data block is specified.
+            # Checks if 'molecule' data block is specified.
             if 'molecule' in data:
                 molData = data['molecule']
-		# Checks if a residue library is included in 'molecule' code block
-		# for information about different entities.
+                # Checks if a residue library is included in 'molecule' code block
+                # for information about different entities.
                 self.reslib = molData['reslib'] if 'reslib' in molData else None
                 if self.reslib:
                     PDBFile.setLocalResLibDir(self.reslib)
@@ -1260,8 +1260,8 @@ class refine:
                     if 'links' in data['rna']:
                         rnaLinkerDict = data['rna']['links']
 
-		# Different entities can be specified. Via sequence files
-		# or input residues.
+                # Different entities can be specified. Via sequence files
+                # or input residues.
                 if not 'link' in molData and not rnaLinkerDict:
                     seqReader = Sequence()
                 else:
@@ -1328,7 +1328,7 @@ class refine:
             self.measureTree()
         else:
             if nEntities > 1:
-	        if not 'nef' in data:
+                if not 'nef' in data:
                     self.molecule.invalidateAtomTree()
                     self.molecule.setupGenCoords()
                     self.molecule.genCoords(False)
@@ -1447,7 +1447,6 @@ class refine:
             print 'Not locking angles after setting based on double helix information'
 
 
-		
         # Set angles based on double helix information
         polymers = self.molecule.getPolymers()
         for poly in polymers:
@@ -1499,13 +1498,11 @@ class refine:
                             RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock)
                             print 'Residue: ' + str(res) + ' set with angles: ' + str(anglesToSet)
 
-						
     def setAnglesLoop(self,data,doLock):
         if(doLock):
             print 'Locking angles based on loop information after setting'
         else:
             print 'Not locking angles after setting based on loop information'
-			
         # Set angles based on loop information
         polymers = self.molecule.getPolymers()
         loopResDone = 0
@@ -1528,7 +1525,7 @@ class refine:
                         aaType = res.getName()
                         anglesToSet = angleDict['tetra'+':'+str(loopResDone+1)+':'+aaType].copy()
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock)
-                        print 'Residue: ' + str(res) + ' set with angles: ' + str(anglesToSet)						
+                        print 'Residue: ' + str(res) + ' set with angles: ' + str(anglesToSet)
                         loopResDone = loopResDone + 1
                         if(loopResDone == len(loopIndices)):
                             return
@@ -1553,7 +1550,7 @@ class refine:
                     isStem = ss
                     break
         return isStem
-		
+
     def setAnglesVienna(self, data):
         doLock = data['restrain']
         lockFirst = data['lockfirst']
@@ -1751,18 +1748,18 @@ class refine:
         if 'planarity' in rnaDict:
             self.addPlanarity = rnaDict['planarity']
         if 'bp' in rnaDict:
-	    polymers = self.molecule.getPolymers()
+            polymers = self.molecule.getPolymers()
             bps = rnaDict['bp']
             for bp in bps:
-		res1, res2 = bp['res1'].split(":"), bp['res2'].split(":")
-		resNum1, resNum2 = res1[1], res2[1]
-		polymer1, polymer2 = self.molecule.getEntity(res1[0]), self.molecule.getEntity(res2[0])
-		residue1, residue2 = polymer1.getResidue(str(resNum1)), polymer2.getResidue(str(resNum2))
-		types = bp['type']
-		if len(types) == 1:
-		    self.addBasePair(residue1, residue2, types[0])
-		else:
-		    self.addBasePairs(residue1, residue2, types)
+                res1, res2 = bp['res1'].split(":"), bp['res2'].split(":")
+                resNum1, resNum2 = res1[1], res2[1]
+                polymer1, polymer2 = self.molecule.getEntity(res1[0]), self.molecule.getEntity(res2[0])
+                residue1, residue2 = polymer1.getResidue(str(resNum1)), polymer2.getResidue(str(resNum2))
+                types = bp['type']
+                if len(types) == 1:
+                    self.addBasePair(residue1, residue2, types[0])
+                else:
+                    self.addBasePairs(residue1, residue2, types)
 
     def readAnnealDict(self, annealDict):
         dynDict = annealDict.get('dynOptions')
@@ -1883,23 +1880,23 @@ class refine:
         self.energyLists.makeCompoundList(molecule)
 
     def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
-	"""
-	# Parameters:
+        """
+        # Parameters:
 
-	* fileName (string); the name of the distance constraint file that'll be passed to reader function
-	* keepSettings (None);
+        * fileName (string); the name of the distance constraint file that'll be passed to reader function
+        * keepSettings (None);
 
-	# Returns:
+        # Returns:
 
-	_ (None); processes the constraint dictionary provided by nmrfxDistReader and add distance constraints
+        _ (None); processes the constraint dictionary provided by nmrfxDistReader and add distance constraints
 
-	See also: `nmrfxDistReader(...)` and `Constraints.addBound(...)`
-	"""
-	# constList is a list of dictionaries w/ keys: 'lower', 'upper', and 'atomPairs'
-	constList = self.nmrfxDistReader(fileName)
-	for groupID in constList:
+        See also: `nmrfxDistReader(...)` and `Constraints.addBound(...)`
+        """
+        # constList is a list of dictionaries w/ keys: 'lower', 'upper', and 'atomPairs'
+        constList = self.nmrfxDistReader(fileName)
+        for groupID in constList:
             constraint = constList[groupID]
-	    lower = constraint['lower']
+            lower = constraint['lower']
             upper = constraint['upper']
             atomPairs = constraint['atomPairs']
             firstAtomPair = atomPairs[0]
@@ -1915,36 +1912,36 @@ class refine:
                 self.constraints[firstAtomPair].addBound(upper, 'upper');
 
     def nmrfxDistReader(self, fileName):
-	"""Reads the distance constraint from an input file and assembles a dictionary with contraint information.
+        """Reads the distance constraint from an input file and assembles a dictionary with contraint information.
 
-	# Parameters:
+        # Parameters:
 
-	fileName (string); the name of a distance constraint file with the nmrfx format
+        fileName (string); the name of a distance constraint file with the nmrfx format
 
-	# Returns:
+        # Returns:
 
-	constraintDicts (dict); dictionary containing atom pairs, lower and upper bounds of each constraint
-	"""
+        constraintDicts (dict); dictionary containing atom pairs, lower and upper bounds of each constraint
+        """
         constraintDicts = []
-	checker = {}
+        checker = {}
 
-	with open(fileName, 'r') as fInput:
+        with open(fileName, 'r') as fInput:
             fRead = fInput.readlines()
             for line in fRead:
                 splitList = line.split("\t")
                 group = splitList[1]
                 atomPair = tuple(splitList[2:4])
-		atomPair = ' '.join(atomPair) if atomPair[0] < atomPair[1] else ' '.join([atomPair[1], atomPair[0]])
+                atomPair = ' '.join(atomPair) if atomPair[0] < atomPair[1] else ' '.join([atomPair[1], atomPair[0]])
 
-		if group in checker:
-		    checker[group]['atomPairs'].append(atomPair)
-		    continue
+                if group in checker:
+                    checker[group]['atomPairs'].append(atomPair)
+                    continue
 
-		lower, upper = tuple(map(float, splitList[4:6]))
-		# checks lower and upper bound to make sure they are positive values
-		constraints = {'atomPairs': [],'lower': lower,'upper': upper}
-		constraints['atomPairs'].append(atomPair)
-		checker[group] = constraints
+                lower, upper = tuple(map(float, splitList[4:6]))
+                # checks lower and upper bound to make sure they are positive values
+                constraints = {'atomPairs': [],'lower': lower,'upper': upper}
+                constraints['atomPairs'].append(atomPair)
+                checker[group] = constraints
         return checker
 
 #set dc [list 283.n3 698.h1 1.8 2.0]
@@ -2144,7 +2141,7 @@ class refine:
                    atom = split_atom[1]
                else:
                    dRes = 0
-	       molName = 'A' #Teddy
+               molName = 'A' #Teddy
                fullAtom = molName + ':' + str(res + dRes) + '.' + atom
                fullAtom = fullAtom.replace('"',"''")
                fullAtoms.append(fullAtom)
@@ -2157,27 +2154,27 @@ class refine:
            if (lower < -180.0) and (upper < 0.0):
                 lower += 360.0
                 upper += 360.0
-	   try:
+           try:
                self.addAngleConstraintAtomNames(fullAtoms, lower, upper, scale)
-	   except IllegalArgumentException as IAE:
+           except IllegalArgumentException as IAE:
                atoms = ' -> '.join(map(lambda x: x.split(':')[-1], fullAtoms))
-	       err = IAE.getMessage()
+               err = IAE.getMessage()
                errMsg = "\nPlease evaluate dihedral constraints for the following boundary information [file -> '%s']" % (fIn.name)
                errMsg += "\n\tLine : (%d) '%s'" % (lineNum+1, line)
-	       errMsg += "\n\tAtoms : %s\n\t(Note : 'x.y' == x: residue num, y: residue name.)" % (atoms)
-	       errMsg += "\n\nJava Error Msg : %s" % (err)
-	       raise ValueError(errMsg)
-	   except NullPointerException:
+               errMsg += "\n\tAtoms : %s\n\t(Note : 'x.y' == x: residue num, y: residue name.)" % (atoms)
+               errMsg += "\n\nJava Error Msg : %s" % (err)
+               raise ValueError(errMsg)
+           except NullPointerException:
                atoms = ' -> '.join(map(lambda x: x.split(':')[-1], fullAtoms))
                errMsg = "\nPlease evaluate the dihedral constraints for the following boundary information [{0}]:".format(fileName)
-	       errMsg += "\n\t- resNum.resName: {}".format(atoms)
-	       errMsg += "\n\nHere's a list of things that could've gone wrong:\n"
-	       errMsg += "\t1) Atoms provided do not have required format to properly calculate dihedral angle(s).\n"
-	       errMsg += "\t2) Information in the constraint file does not match the information in the sequence file or the NMRFxStructure residue library."
+               errMsg += "\n\t- resNum.resName: {}".format(atoms)
+               errMsg += "\n\nHere's a list of things that could've gone wrong:\n"
+               errMsg += "\t1) Atoms provided do not have required format to properly calculate dihedral angle(s).\n"
+               errMsg += "\t2) Information in the constraint file does not match the information in the sequence file or the NMRFxStructure residue library."
                raise ValueError(errMsg)
-	   except:
-	       print("Internal Java Error: Need to evaluate addBoundary(...) method in Dihedral.java\n")
-	       raise
+           except:
+               print("Internal Java Error: Need to evaluate addBoundary(...) method in Dihedral.java\n")
+               raise
         fIn.close()
 
     def addSuiteAngles(self, fileName):
@@ -2382,7 +2379,7 @@ class refine:
                     atomNameI = self.getAtomName(res1,"P")
                     atomNameJ5 = self.getAtomName(res4,"P")
                     self.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
-					
+
     def restart(self):
         print 'restart'
         self.energyLists = None
@@ -2441,14 +2438,14 @@ class refine:
         useDegrees=False
         diagOnly = int(round(nsteps*diagOnly))
         cmaes.refineCMAESWithLinkedAtoms(nsteps,stopFitness,radius,lambdaMul,diagOnly,useDegrees,dev1,dev2)
-	
+
     def addBasePair(self, residueI, residueJ, type=1):
         resNameI = residueI.getName()
         resNameJ = residueJ.getName()
         resNumI = residueI.getNumber()
         resNumJ = residueJ.getNumber()
-	basePairs = AllBasePairs.getBasePair(type, resNameI, resNameJ)
-	for bp in basePairs.getBPConstraints():
+        basePairs = AllBasePairs.getBasePair(type, resNameI, resNameJ)
+        for bp in basePairs.getBPConstraints():
             lowAtomAtomDis = bp.getLower()
             atomAtomDis = bp.getUpper()
             lowAtomParentDis = bp.getLowerHeavy()
@@ -2463,15 +2460,15 @@ class refine:
                 atom2Names.append(atom2Name)
             atomI = allAtomNames[0][0]
             atomJ = allAtomNames[0][1]
-	    if atomI.startswith("H"):
-	        parentAtom = residueI.getAtom(atomI).parent.getName()
+            if atomI.startswith("H"):
+                parentAtom = residueI.getAtom(atomI).parent.getName()
                 parentAtomName = self.getAtomName(residueI,parentAtom)
-		self.addDistanceConstraint(parentAtomName, atom2Names[0] ,lowAtomParentDis,atomParentDis)
-	    elif atomJ.startswith("H"):
-	        parentAtom = residueJ.getAtom(atomJ).parent.getName()
+                self.addDistanceConstraint(parentAtomName, atom2Names[0] ,lowAtomParentDis,atomParentDis)
+            elif atomJ.startswith("H"):
+                parentAtom = residueJ.getAtom(atomJ).parent.getName()
                 parentAtomName = self.getAtomName(residueJ,parentAtom)
-		self.addDistanceConstraint(parentAtomName, atom1Names[0] ,lowAtomParentDis,atomParentDis)
-	    self.addDistanceConstraint(atom1Names, atom2Names ,lowAtomAtomDis,atomAtomDis)
+                self.addDistanceConstraint(parentAtomName, atom1Names[0] ,lowAtomParentDis,atomParentDis)
+            self.addDistanceConstraint(atom1Names, atom2Names ,lowAtomAtomDis,atomAtomDis)
         if type == 1:
             atomPI = residueI.getAtom("P")
             atomPJ = residueJ.getAtom("P")
@@ -2491,21 +2488,21 @@ class refine:
 
 
     def atomListGen(self, atomPair, restraints, residueI, residueJ):
-	atom1 = atomPair[0].split("/")[0]
-	atom2 = atomPair[1].split("/")[0]
-	atom1Name = self.getAtomName(residueI, atom1)
-	atom2Name = self.getAtomName(residueJ, atom2)
-	atomList1 = []
-	atomList2 = []
-	parentAtomList1 = []
-	parentAtomList2 = []
-	disRestraints = []
-	parentAtomDisRestraints = []
-	disRestraints.append(float(restraints[0]))
-	disRestraints.append(float(restraints[1]))
-	parentAtomDisRestraints.append(float(restraints[2]))
-	parentAtomDisRestraints.append(float(restraints[3]))
-	if atom1.startswith("H"):
+        atom1 = atomPair[0].split("/")[0]
+        atom2 = atomPair[1].split("/")[0]
+        atom1Name = self.getAtomName(residueI, atom1)
+        atom2Name = self.getAtomName(residueJ, atom2)
+        atomList1 = []
+        atomList2 = []
+        parentAtomList1 = []
+        parentAtomList2 = []
+        disRestraints = []
+        parentAtomDisRestraints = []
+        disRestraints.append(float(restraints[0]))
+        disRestraints.append(float(restraints[1]))
+        parentAtomDisRestraints.append(float(restraints[2]))
+        parentAtomDisRestraints.append(float(restraints[3]))
+        if atom1.startswith("H"):
             parentAtom = residueI.getAtom(atom1).parent.getName()
             parentAtomName = self.getAtomName(residueI,parentAtom)
             parentAtomList1.append(parentAtomName)
@@ -2515,66 +2512,66 @@ class refine:
             parentAtomName = self.getAtomName(residueJ,parentAtom)
             parentAtomList1.append(atom1Name)
             parentAtomList2.append(parentAtomName)
-	atomList1.append(atom1Name)
-	atomList2.append(atom2Name)
-	return atomList1, atomList2, parentAtomList1, parentAtomList2, disRestraints, parentAtomDisRestraints
+        atomList1.append(atom1Name)
+        atomList2.append(atom2Name)
+        return atomList1, atomList2, parentAtomList1, parentAtomList2, disRestraints, parentAtomDisRestraints
 
     def addBasePairs(self, residueI, residueJ, types):
         resNameI = residueI.getName()
         resNameJ = residueJ.getName()
-	typeAtomPairs = [AllBasePairs.getBasePair(int(typee), residueI.getName(), residueJ.getName()).atomPairs for typee in types]
-	restraints =  [AllBasePairs.getBasePair(int(typee), residueI.getName(), residueJ.getName()).distances for typee in types]
-	typeAtomPairs.sort(key = lambda x:len(x), reverse = True)
-	restraints.sort(key = lambda x:len(x), reverse = True)
-	atomPairNum = len(max(typeAtomPairs, key=lambda item: len(item)))
-	pairTypesNum = len(typeAtomPairs)
-	atoms = []
-	disRes = []
+        typeAtomPairs = [AllBasePairs.getBasePair(int(typee), residueI.getName(), residueJ.getName()).atomPairs for typee in types]
+        restraints =  [AllBasePairs.getBasePair(int(typee), residueI.getName(), residueJ.getName()).distances for typee in types]
+        typeAtomPairs.sort(key = lambda x:len(x), reverse = True)
+        restraints.sort(key = lambda x:len(x), reverse = True)
+        atomPairNum = len(max(typeAtomPairs, key=lambda item: len(item)))
+        pairTypesNum = len(typeAtomPairs)
+        atoms = []
+        disRes = []
         for iPair in range(atomPairNum):
-	    pairs = []
-	    dis = []
-	    for iType in range(pairTypesNum):
-	        try:
-		    dis.append(restraints[iType][iPair])
-	            pairs.append(typeAtomPairs[iType][iPair])
-		except:
-		    continue
-	    atoms.append(pairs)
-	    disRes.append(dis)
-	for i in range(atomPairNum):
+            pairs = []
+            dis = []
+            for iType in range(pairTypesNum):
+                try:
+                    dis.append(restraints[iType][iPair])
+                    pairs.append(typeAtomPairs[iType][iPair])
+                except:
+                    continue
+            atoms.append(pairs)
+            disRes.append(dis)
+        for i in range(atomPairNum):
             atomList1 = []
             atomList2 = []
-	    parentAtomList1 = []
-	    parentAtomList2 = []
-	    distances = []
-	    parentDistances = []
+            parentAtomList1 = []
+            parentAtomList2 = []
+            distances = []
+            parentDistances = []
             for j in range(pairTypesNum):
-		try:
-		    atomPair = atoms[i][j].split(":")
-		    disRestraints = disRes[i][j].split(":")
-		    atomLists = self.atomListGen(atomPair, disRestraints, residueI, residueJ)
-		    atomList1.extend(atomLists[0])
-		    atomList2.extend(atomLists[1])
-		    parentAtomList1.extend(atomLists[2])
-		    parentAtomList2.extend(atomLists[3])
-		    distances.extend(atomLists[4])
-		    parentDistances.extend(atomLists[5])
-		except:
-		    continue
-	    if len(atomList1) != 1:
+                try:
+                    atomPair = atoms[i][j].split(":")
+                    disRestraints = disRes[i][j].split(":")
+                    atomLists = self.atomListGen(atomPair, disRestraints, residueI, residueJ)
+                    atomList1.extend(atomLists[0])
+                    atomList2.extend(atomLists[1])
+                    parentAtomList1.extend(atomLists[2])
+                    parentAtomList2.extend(atomLists[3])
+                    distances.extend(atomLists[4])
+                    parentDistances.extend(atomLists[5])
+                except:
+                    continue
+            if len(atomList1) != 1:
                 self.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
-	        self.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))
-	    else:
-		atomPair = typeAtomPairs[0][0]
-		disRestraint = restraints[0][0]
-	        atomLists = self.atomListGen(atomPair, disRestraint, residueI, residueJ)
-		atomList1.extend(atomLists[0])
-		atomList2.extend(atomLists[1])
-		parentAtomList1.extend(atomLists[2])
+                self.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))
+            else:
+                atomPair = typeAtomPairs[0][0]
+                disRestraint = restraints[0][0]
+                atomLists = self.atomListGen(atomPair, disRestraint, residueI, residueJ)
+                atomList1.extend(atomLists[0])
+                atomList2.extend(atomLists[1])
+                parentAtomList1.extend(atomLists[2])
                 parentAtomList2.extend(atomLists[3])
-		distances.extend(atomLists[4])
-		parentDistances.extend(atomLists[5])
-		self.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
+                distances.extend(atomLists[4])
+                parentDistances.extend(atomLists[5])
+                self.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
                 self.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))
 
     def addStackPair(self, resI, resJ):
@@ -2740,8 +2737,8 @@ class refine:
             self.cyanaDistanceFiles[file] = keep
         elif mode == 'xplor':
             self.xplorDistanceFiles[file] = keep
-	elif mode == 'nmrfx':
-	    self.nmrfxDistanceFiles[file] = keep
+        elif mode == 'nmrfx':
+            self.nmrfxDistanceFiles[file] = keep
         else:
             self.nvDistanceFiles[file] = keep
 
@@ -2767,8 +2764,8 @@ class refine:
             upperFileName = file+'.upl'
             self.readCYANADistances([lowerFileName, upperFileName],self.molName, keepSetting=self.cyanaDistanceFiles[file])
 
-	for file in self.nmrfxDistanceFiles.keys():
-	    self.readNMRFxDistanceConstraints(file, keepSetting = self.nmrfxDistanceFiles[file])
+        for file in self.nmrfxDistanceFiles.keys():
+            self.readNMRFxDistanceConstraints(file, keepSetting = self.nmrfxDistanceFiles[file])
 
         for file in self.nvDistanceFiles.keys():
             self.loadDistancesFromFile(file, keepSetting=self.nvDistanceFiles[file])
@@ -2809,15 +2806,15 @@ class refine:
                 atomName1, atomName2 = pair.split()
                 atomNames1.add(atomName1)
                 atomNames2.add(atomName2)
-	    if (lower < 0.0 and upper <= 0.0):
-	        newAtomStr = map(lambda x: "(residue number: '{0}' and residue name: '{1}')".format(x.split('.')[0], x.split('.')[-1]), [atomName1, atomName2])
-	        strAtomNames = ', '.join(newAtomStr)
-	        errMsg = "\nPlease evaluate bound(s) at atom pair:\n\t- {0}".format(strAtomNames)
-	        errMsg += "\n\nNote:"
-	        errMsg += " The lower bound ({0}) and the upper bound ({1}) should be nonnegative.".format(lower, upper)
-	        errMsg += " The upper bound should be greater than zero."
-	        errMsg += " These values were calculate from the constraints provided in the constraint file"
-	        errMsg += " for the atom pair seen above."
+            if (lower < 0.0 and upper <= 0.0):
+                newAtomStr = map(lambda x: "(residue number: '{0}' and residue name: '{1}')".format(x.split('.')[0], x.split('.')[-1]), [atomName1, atomName2])
+                strAtomNames = ', '.join(newAtomStr)
+                errMsg = "\nPlease evaluate bound(s) at atom pair:\n\t- {0}".format(strAtomNames)
+                errMsg += "\n\nNote:"
+                errMsg += " The lower bound ({0}) and the upper bound ({1}) should be nonnegative.".format(lower, upper)
+                errMsg += " The upper bound should be greater than zero."
+                errMsg += " These values were calculate from the constraints provided in the constraint file"
+                errMsg += " for the atom pair seen above."
                 raise AssertionError(errMsg)
             try:
                 self.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
@@ -3006,7 +3003,7 @@ class refine:
             self.gmin(nsteps=steps,tolerance=1.0e-6)
         if self.eFileRoot != None and self.reportDump:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
-	#exit()
+        #exit()
 
     def init(self,dOpt=None):
         from anneal import runStage
@@ -3226,9 +3223,9 @@ class refine:
         * fileName (string); name of angles file
         * delta (int);
 
-	# Returns:
+        # Returns:
 
-	_ (None);
+        _ (None);
         """
 
         molecule = self.molecule
@@ -3265,7 +3262,7 @@ class refine:
 
         # Returns:
 
-	_ (None);
+        _ (None);
         """
 
         molecule = self.molecule
