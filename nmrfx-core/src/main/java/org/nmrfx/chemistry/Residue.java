@@ -238,6 +238,10 @@ public class Residue extends Compound {
         return next;
     }
 
+    public SecondaryStructure getSecondaryStructure() {
+        return secStruct;
+    }
+
     @Override
     public int getIDNum() {
         return iRes + 1;
