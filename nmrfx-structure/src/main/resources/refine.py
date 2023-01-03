@@ -70,6 +70,54 @@ rnaBPPlanarity = {
 gnraHBonds = [["N2","N7",2.4,2.8],["N3","N6",2.7,5.0],["N2","OP1",2.4,2.9]]
 
 addPlanarity = False
+def getRNAResType(ss, residues, residue):
+    ssType = ss.getName()
+    res = int(residue.getNumber())
+    subType = 'c'
+    rName = residue.getName()
+    nextRes = residue.getNext()
+    prevRes = residue.getPrevious()
+    pairRes = residue.pairedTo
+    ssNextName = ""
+    ssPrevName = ""
+    if nextRes != None:
+       ssNextName = nextRes.getSecondaryStructure().getName()
+    if prevRes != None:
+       ssPrevName = prevRes.getSecondaryStructure().getName()
+       if ssNextName == "Loop":
+           subType = "hL"
+    if ssType == "Helix":
+        subType = 'h'
+        if prevRes == None:
+            subType = "h5"
+        elif ssNextName == "Loop":
+            subType = "hL"
+        elif ssPrevName == "Loop":
+            subType = "hl"
+        elif ssPrevName == "Bulge":
+            subType = "hB"
+        elif pairRes.getPrevious():
+            if pairRes.getPrevious().getSecondaryStructure().getName() == "Bulge":
+                subType = "hb"
+
+    elif ssType == "Loop":
+        subType = 'T'
+    elif ssType == "Bulge":
+        subType = 'B'+str(len(residues))
+    if pairRes:
+        rName2 = pairRes.getName()
+        rName += rName2
+        if pairRes.getAtom('X1') != None:
+            if pairRes == residues[0]:
+                subType = subType+'xb'
+            else:
+                subType = subType+'xe'
+    if residue.getAtom('X1') != None:
+        if residue == residues[0]:
+            subType = subType+'Xb'
+        else:
+            subType = subType+'Xe'
+    return subType
 
 
 def getHelix(pairs,vie):
@@ -792,6 +840,7 @@ class refine:
     def breakBond(self, atom1, atom2):
         atom1.removeBondTo(atom2)
         atom2.removeBondTo(atom1)
+        atom1.daughterAtom = None
         atom1.rotActive = False
         atom1.rotUnit = -1
         atom1.rotGroup = None
@@ -1223,6 +1272,14 @@ class refine:
                     for molDict in molList:
                         residues = ",".join(molDict['residues'].split()) if 'residues' in molDict else None
                         self.readMoleculeDict(seqReader, molDict)
+                    self.molecule = MoleculeFactory.getActive()
+                    if 'rna' in data:
+                        self.findRNAHelices(data['rna'])
+                        if not 'link' in molData:
+                            if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
+                                rnaLinks,rnaBonds = self.findSSLinks()
+                                molData['link'] = rnaLinks
+                                data['bonds'] = rnaBonds
                 else:
                     #Only one entity in the molecule
                     residues = ",".join(molData['residues'].split()) if 'residues' in molData else None
@@ -1262,12 +1319,12 @@ class refine:
         if 'tree' in data:
             if len(self.molecule.getEntities()) > 1:
                 linkerList = self.validateLinkerList(linkerList, treeDict, rnaLinkerDict)
-            else:
-                if linkerList:
-                    linkerList = [linkerList]
+            #else:
+            #    if linkerList:
+            #        linkerList = [linkerList]
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
-            if 'bonds' in data:
-                self.processBonds(data['bonds'], 'break')
+            #if 'bonds' in data:
+            #    self.processBonds(data['bonds'], 'break')
             self.measureTree()
         else:
             if nEntities > 1:
@@ -1347,14 +1404,15 @@ class refine:
             if 'vienna' in data:
                 print 'Setting angles based on Vienna sequence'
                 self.setAnglesVienna(data['vienna'])
-            elif 'doublehelix' in data:
+            if 'doublehelix' in data:
                 print 'Setting angles based on double helix information'
                 self.setAnglesDoubleHelix(data,data['doublehelix'][0]['restrain'] )
-            else:
-                print 'Neither auto locking to Vienna sequence nor double helix specified'
             if 'loop' in data:
                 print 'Setting angles based on loop zone information'
                 self.setAnglesLoop(data,data['loop'][0]['restrain'] )
+            if 'file' in data:
+                print 'Setting angles based from file '
+                self.readAngles(data['file'])
             self.restart()
         self.molecule.genCoords()
         #self.output()
@@ -1369,16 +1427,18 @@ class refine:
         for line in filetext:
             fields = line.strip().split()
             if headerAtoms == None:
-                headerAtoms = fields[3:]
+                headerAtoms = fields[5:]
             else:
-                ssType = fields[0]
-                posType = fields[1]
-                aaType = fields[2]
+                id = fields[0]
+                ssType = fields[1]
+                posType = fields[2]
+                aaType = fields[3]
+                subType = fields[4]
                 d = {}
-                for field,headerAtom in zip(fields[3:], headerAtoms):
+                for field,headerAtom in zip(fields[5:], headerAtoms):
                     if field != '-':
                         d[headerAtom] = float(field)
-                angleDict[ssType+':'+posType+':'+aaType] = d
+                angleDict[ssType+':'+posType+':'+aaType+':'+subType] = d
                 
     def setAnglesDoubleHelix(self,data,doLock):
         if(doLock):
@@ -1407,9 +1467,9 @@ class refine:
                         print 'Unexpected format for residue name: ' + str(isplit) + '... Using previous residue name'
                     if inHelix:
                         if resLett in ['G', 'A']:
-                            aaType = 'GA'
+                            aaType = 'GC'
                         else:
-                            aaType = 'UC'
+                            aaType = 'UA'
                         anglesToSet = angleDict['helix'+':0:'+aaType].copy()
 #                        if res.getAtom("X1") == None:
 #                            try:
@@ -1476,52 +1536,101 @@ class refine:
                         print 'Loop zone end found at residue: ' + str(res)
                         inLoop = False
 
+    def isStemLoop(self, ssGroups, helix):
+        residues = helix.getResidues()
+        strandI = residues[0::2]
+        strandJ = residues[1::2]
+        iLast = strandI[-1]
+        jLast = strandJ[-1]
+        print(strandI)
+        print(strandJ)
+        isStem = None
+        for ss in ssGroups:
+            if ss.getName() == "Loop":
+                residues = ss.getResidues()
+                if residues[0].getPrevious() == iLast and residues[-1].getNext() == jLast:
+                    print('isstem')
+                    isStem = ss
+                    break
+        return isStem
 		
     def setAnglesVienna(self, data):
         doLock = data['restrain']
         lockFirst = data['lockfirst']
         lockLast = data['locklast']
+        if 'lockbulge' in data:
+            lockBulge = data['lockbulge']
+        else:
+            lockBulge = doLock
+        if 'lockloop' in data:
+            lockLoop = data['lockloop']
+        else:
+            lockLoop = doLock
         polymers = self.molecule.getPolymers()
         allResidues = []
         for polymer in polymers:
             allResidues += polymer.getResidues()
         ssGen = SSGen(self.molecule, self.vienna)
         ssGen.secondaryStructGen()
+        subType='0'
+        for ss in ssGen.structures:
+            residues = ss.getResidues()
+        stemLoops = []
         for ss in ssGen.structures:
             residues = ss.getResidues()
             if ss.getName() == "Helix":
+                stemLoop = self.isStemLoop(ssGen.structures, ss)
+                if stemLoop:
+                    stemLoops.append(stemLoop)
                 strandI = residues[0::2]
                 strandJ = residues[1::2]
                 for res in residues:
+                    subType = getRNAResType(ss, residues, res)
+                    firstResI = res == strandI[0]
+                    firstResJ = res == strandJ[0]
+                    lastResI = res == strandI[-1]
+                    lastResJ = res == strandJ[-1]
+                    firstRes = firstResI or firstResJ
+                    lastRes = lastResI or lastResJ
                     resLett = res.getName()
-                    if resLett in ['G', 'A']:
-                        aaType = 'GA'
+                    pairLett = res.pairedTo.getName()
+                    aaType = resLett
+                    if aaType == 'A' or aaType == 'G':
+                        aaType = "P"
                     else:
-                        aaType = 'UC'
-                    anglesToSet = angleDict['helix'+':0:'+aaType].copy()
-                    firstRes =  res == strandI[0] or res == strandJ[0]
-                    lastRes =  res == strandI[-1] or res == strandJ[-1]
-                    lock = doLock
-                    if firstRes and not lockFirst:
-                        lock = False
-                    if lastRes and not lockLast:
-                        lock = False
-                    RNARotamer.setDihedrals(res,anglesToSet, 0.0, lock)
-            if ss.getName() == "Loop":
-                if len(residues) == 4:
-                    res = residues[0].getPrevious()
-                    anglesToSet = angleDict['tetra-link'+':0:'+'U'].copy()
-                    RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock)
-                    res = residues[-1].getNext()
-                    anglesToSet = angleDict['tetra-endlink'+':5:'+'A'].copy()
-                    RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock)
+                        aaType = "p"
+                    key = 'Helix'+':0:'+aaType+':'+subType
+                    if key in angleDict:
+                        anglesToSet = angleDict[key].copy()
+                        lock = doLock
+                        if firstRes and not lockFirst:
+                            lock = False
+                        if lastRes and not lockLast:
+                            lock = False
+                        RNARotamer.setDihedrals(res,anglesToSet, 0.0, lock)
+            elif ss.getName() == "Loop":
                 for iLoop,res in enumerate(residues):
-                    loopIndices = ['tetraloop1','tetraloop2','tetraloop3','tetraloop4']
+                    subType = getRNAResType(ss, residues, res)
                     aaType = res.getName()
-                    anglesToSet = angleDict['tetra'+':'+str(iLoop+1)+':'+aaType].copy()
-                    RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock)
+                    if aaType == 'A' or aaType == 'G':
+                        aaType = "P"
+                    else:
+                        aaType = "p"
+                    anglesToSet = angleDict['Loop'+':'+str(iLoop)+':'+aaType+':'+subType].copy()
+                    RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockLoop)
+            elif ss.getName() == "Bulge":
+                for iLoop,res in enumerate(residues):
+                    subType = getRNAResType(ss, residues, res)
+                    aaType = res.getName()
+                    if aaType == 'A' or aaType == 'G':
+                        aaType = "P"
+                    else:
+                        aaType = "p"
+                    key = 'Bulge'+':'+str(iLoop)+':'+aaType+':'+subType
+                    if key in angleDict:
+                        anglesToSet = angleDict[key].copy()
+                        RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockBulge)
  
-		
     def readMolEditDict(self,seqReader, editDict):
         for entry in editDict:
             if 'remove' in entry:
@@ -1626,6 +1735,11 @@ class refine:
             self.addAngleFile(file,mode=type)
         return wt
 
+    def findRNAHelices(self, rnaDict):
+        if 'vienna' in rnaDict:
+            self.findHelices(rnaDict['vienna'])
+            self.vienna = rnaDict['vienna']
+
     def readRNADict(self, rnaDict):
         if 'ribose' in rnaDict:
             if rnaDict['ribose'] == "Constrain":
@@ -1634,9 +1748,6 @@ class refine:
                     self.addRiboseRestraints(polymer)
         if 'suite' in rnaDict:
             self.addSuiteAngles(rnaDict['suite'])
-        if 'vienna' in rnaDict:
-            self.findHelices(rnaDict['vienna'])
-            self.vienna = rnaDict['vienna']
         if 'planarity' in rnaDict:
             self.addPlanarity = rnaDict['planarity']
         if 'bp' in rnaDict:
@@ -2194,14 +2305,45 @@ class refine:
                     atomNameJ5 = self.getAtomName(resJ5,"P")
                     self.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
 
+    def findSSLinks(self):
+        links = []
+        bonds = []
+        for ss in self.ssGen.structures:
+            if ss.getName() == "Helix":
+                residues = ss.getResidues()
+                strandI = residues[0::2]
+                strandJ = residues[1::2]
+
+                resI = strandI[0]
+                resJ = strandJ[0]
+                if resI.getPrevious():
+                    atomI = resI.getAtom("H3'")
+                    atomJ = resJ.getAtom("P")
+                    link = {'atoms':[atomI.getShortName(), atomJ.getShortName()],'rna':''}
+                    links.append(link)
+                    
+                    bond = {'atoms':[atomJ.getParent().getShortName(), atomJ.getShortName()],'mode':'float'}
+                    bonds.append(bond)
+
+                resI = strandI[-1]
+                resJ = strandJ[-1]
+                atomI = resI.getAtom("H3'")
+                atomJ = resJ.getAtom("P")
+                link = {'atoms':[atomI.getShortName(), atomJ.getShortName()],'rna':''}
+                links.append(link)
+                bond = {'atoms':[atomJ.getParent().getShortName(), atomJ.getShortName()],'mode':'float'}
+                bonds.append(bond)
+        return links, bonds
+       
+
     def findHelices(self,vienna):
         polymers = self.molecule.getPolymers()
         allResidues = []
         for polymer in polymers:
             allResidues += polymer.getResidues()
-        ssGen = SSGen(self.molecule, vienna)
-        ssGen.secondaryStructGen()
-        for ss in ssGen.structures:
+        self.ssGen = SSGen(self.molecule, vienna)
+        self.ssGen.secondaryStructGen()
+        for ss in self.ssGen.structures:
             if ss.getName() == "Helix":
                 residues = ss.getResidues()
                 self.addHelix(residues)
@@ -2865,6 +3007,20 @@ class refine:
         if self.eFileRoot != None and self.reportDump:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 	#exit()
+
+    def init(self,dOpt=None):
+        from anneal import runStage
+        from anneal import getAnnealStages
+        dOpt = dOpt if dOpt else dynOptions()
+        self.mode = 'refine'
+
+        self.rDyn = self.rinertia()
+        self.rDyn.setKinEScale(dOpt['kinEScale'])
+        energy = self.energy()
+        print 'start energy is', energy
+
+        self.prepAngles()
+        self.output()
 
     def refine(self,dOpt=None):
         from anneal import runStage
