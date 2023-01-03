@@ -801,11 +801,23 @@ public class RS2DData implements NMRData {
     @Override
     public double getPH0(int dim) {
         double ph0 = phases[dim][0];
-        if (dim == 0) {
-            ph0 -= 90; // empirical
-        }
         // phase is reversed between RS2D and NMRfx
-        return -ph0;
+        return convertRS2DPhase0ToNMRFx(ph0, dim);
+    }
+
+    private double convertNMRFxPhase0ToRS2D(double phase, int dim) {
+        phase = -phase;
+        if (dim == 0) {
+            phase += 90;
+        }
+        return phase;
+    }
+
+    private double convertRS2DPhase0ToNMRFx(double phase, int dim) {
+        if (dim == 0) {
+            phase -= 90; // empirical
+        }
+        return -phase;
     }
 
     @Override
@@ -1316,8 +1328,8 @@ public class RS2DData implements NMRData {
         List<Number> phase0Values = new ArrayList<>();
         List<Number> phase1Values = new ArrayList<>();
         for (int i = 0; i < dataset.getNDim(); i++) {
-            phase0Values.add(dataset.getPh0(i));
-            phase1Values.add(dataset.getPh1(i));
+            phase0Values.add(convertNMRFxPhase0ToRS2D(dataset.getPh0(i), i));
+            phase1Values.add(-dataset.getPh1(i));
         }
 
         header.<ListNumberValue>get(PHASE_0).setValue(phase0Values);
