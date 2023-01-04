@@ -1230,6 +1230,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @Override
     public void refreshPeakListView(PeakList peakList) {
     }
+    SideBar sb;
+    SideBar sb2;
+
+    private void stageHeightListener(ObservableValue<? extends Number> observableValue, Number oldValue, Number newValue) {
+        double newHeight = ((Region)borderPane.getCenter()).getHeight() - (oldValue.doubleValue() - newValue.doubleValue()) - bottomBox.getHeight();
+        sb.setMaxHeight(newHeight);
+        sb2.setMaxHeight(newHeight);
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -1278,13 +1286,13 @@ public class FXMLController implements  Initializable, PeakNavigable {
         map.put("Data Info", new Button("Button One"));
         map.put("Molecule", new Button("Button Two"));
         map.put("sdag", new Button("Button three"));
-        SideBar sb = new SideBar(SideBar.SideBarOrientation.LEFT, map, 200);
+        sb = new SideBar(SideBar.SideBarOrientation.LEFT, map, 200);
         mainBox.setLeft(sb);
         LinkedHashMap<String, Node> map2 = new LinkedHashMap<>();
         map2.put("Peak Pick", new Button("Button One"));
         map2.put("Integral", new Button("Button Two"));
         map2.put("Multiplets", new Button("Button Three"));
-        SideBar sb2 = new SideBar(SideBar.SideBarOrientation.RIGHT, map2, 200);
+        sb2 = new SideBar(SideBar.SideBarOrientation.RIGHT, map2, 200);
         mainBox.setRight(sb2);
         LinkedHashMap<String, Node> map3 = new LinkedHashMap<>();
         map3.put("Analyzer Bar", new Button("Button One"));
@@ -1292,10 +1300,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
         borderPane.setBottom(sb3);
         sb3.addSideBarContent("Added After", new Button("LALALA"));
 
-        LinkedHashMap<String, Node> map4 = new LinkedHashMap<>();
-        map4.put("WhatWhat Bar", new Button("Button One"));
-        SideBar sb4 = new SideBar(SideBar.SideBarOrientation.TOP, map4, 200);
-        borderPane.setTop(sb4);
+        ((Region) borderPane.getCenter()).heightProperty().addListener((o, old, n) -> {
+            sb.setMaxHeight(borderPane.getHeight());
+            sb2.setMaxHeight(borderPane.getHeight());
+        });
+
 
         attributesPane = new AnchorPane();
         attributesController =  AttributesController.create(this, attributesPane);
@@ -1378,6 +1387,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             controller.setActiveController();
             MainApp.registerStage(stage, controller);
             stage.show();
+            stage.heightProperty().addListener(controller::stageHeightListener);
         } catch (IOException ioE) {
             throw new IllegalStateException("Unable to create controller", ioE);
         }

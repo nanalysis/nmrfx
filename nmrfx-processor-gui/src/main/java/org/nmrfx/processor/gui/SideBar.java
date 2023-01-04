@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui;
 
+import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
@@ -14,8 +15,10 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.nd4j.linalg.api.ops.impl.reduce.same.Min;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,7 +62,9 @@ public class SideBar extends HBox {
         HBox.setHgrow(splitPane, Priority.ALWAYS);
         this.getChildren().add(splitPane);
         splitPane.getStyleClass().add("side-bar-split-pane");
-        toolbar.setRotate(orientation.rotate);
+        StackPane sp = new StackPane(toolbar);
+        sp.setRotate(orientation.rotate);
+        sp.maxWidthProperty().bind(Bindings.createDoubleBinding(() -> this.getMaxHeight() - 2, this.maxHeightProperty()));
         Pane spacer = new Pane();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         addAllContentsToSidePanel(contents);
@@ -68,7 +73,7 @@ public class SideBar extends HBox {
         toolbar.getItems().add(spacerIndex, spacer);
         if (isVertical()) {
             Group group = new Group();
-            group.getChildren().add(toolbar);
+            group.getChildren().add(sp);
             splitPane.getItems().add(group);
         } else {
             splitPane.getItems().add(toolbar);
@@ -83,7 +88,7 @@ public class SideBar extends HBox {
         contentSplitPane.getItems().addListener(this::contentSplitPaneItemListener);
         splitPane.getItems().add(orientation.contentIndex, contentSplitPane);
         if (isVertical()) {
-            splitPane.heightProperty().addListener((observable, oldValue, newValue) -> toolbar.setMinWidth(newValue.doubleValue() - 2));
+            splitPane.heightProperty().addListener((observable, oldValue, newValue) -> toolbar.setPrefWidth(newValue.doubleValue() - 2));
         }
         mouseDragBindings = new MouseDragBindings(this);
     }
