@@ -2,7 +2,6 @@ package org.nmrfx.processor.gui;
 
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
@@ -146,6 +145,17 @@ public class SideBar extends HBox {
             }
         });
         contents.put(key, newContent);
+    }
+
+    public void addSideBarContent(String name, Node nodeContent) {
+        // remove the spacer,
+        int currentSpacerIndex = orientation.spacerIndex == -1 ? toolbar.getItems().size() - 1 : orientation.spacerIndex;
+        Node spacer = toolbar.getItems().remove(currentSpacerIndex);
+        //add the sidebar content
+        addContentToSidePanel(name, nodeContent);
+        // readd the spacer, adjust spacer
+        int newSpacerIndex = orientation.spacerIndex == -1 ? toolbar.getItems().size() : orientation.spacerIndex;
+        toolbar.getItems().add(newSpacerIndex, spacer);
     }
 
     private void mouseButtonClickedHandler(MouseEvent event) {

@@ -1290,6 +1290,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         map3.put("Analyzer Bar", new Button("Button One"));
         SideBar sb3 = new SideBar(SideBar.SideBarOrientation.BOTTOM, map3, 200);
         borderPane.setBottom(sb3);
+        sb3.addSideBarContent("Added After", new Button("LALALA"));
 
         LinkedHashMap<String, Node> map4 = new LinkedHashMap<>();
         map4.put("WhatWhat Bar", new Button("Button One"));
