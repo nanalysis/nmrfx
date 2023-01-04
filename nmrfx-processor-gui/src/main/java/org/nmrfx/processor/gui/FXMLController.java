@@ -595,7 +595,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
             ExceptionDialog eDialog = new ExceptionDialog(ioE);
             eDialog.showAndWait();
         }
-        nmrData.isFID();
         return nmrData;
     }
 

@@ -345,7 +345,7 @@ public class RS2DData implements NMRData {
                 }
                 try (InputStream input = Files.newInputStream(p)) {
                     Header procHeader = new HeaderParser().parse(input);
-                    if (!header.contains(PHASE_0) || !header.contains(PHASE_1)) {
+                    if (!procHeader.contains(PHASE_0) || !procHeader.contains(PHASE_1)) {
                         return;
                     }
                     List<Double> phase0s = procHeader.get(Parameter.PHASE_0).doubleListValue();
