@@ -32,6 +32,8 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -135,6 +137,7 @@ public class ScanTable {
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("Date"));
 
         tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn);
+        HBox.setHgrow(tableView, Priority.ALWAYS);
         setDragHandlers(tableView);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         selectionListener = c -> selectionChanged();

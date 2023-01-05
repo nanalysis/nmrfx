@@ -100,6 +100,7 @@ public class ScannerTool implements ControllerTool {
 
         tableView = new TableView<>();
         tableView.setPrefHeight(250.0);
+        tableView.minWidthProperty().bind(borderPane.widthProperty());
         borderPane.setCenter(tableView);
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeProcessMenu());

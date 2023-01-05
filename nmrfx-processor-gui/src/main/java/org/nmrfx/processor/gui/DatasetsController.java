@@ -73,6 +73,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
 
     private static final Logger log = LoggerFactory.getLogger(DatasetsController.class);
     private static final Map<String, double[]> savedValues = new HashMap<>();
+    public BorderPane attrBorderPane;
     private Stage stage;
     @FXML
     private ToolBar toolBar;
@@ -112,7 +113,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             controller.stage = stage;
             ProjectBase.addPropertyChangeListener(controller);
             stage.setTitle("Datasets");
-            stage.show();
+//            stage.show();
         } catch (IOException ioE) {
             log.warn(ioE.getMessage(), ioE);
         }

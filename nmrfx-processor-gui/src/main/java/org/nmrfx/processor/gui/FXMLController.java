@@ -94,12 +94,16 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class FXMLController implements  Initializable, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
@@ -1282,29 +1286,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         phaser = new Phaser(this, phaserBox);
         processorPane.getChildren().addListener(this::updateStageSize);
         cursorProperty.addListener( e -> setCursor());
-        LinkedHashMap<String, Node> map = new LinkedHashMap<>();
-        map.put("Data Info", new Button("Button One"));
-        map.put("Molecule", new Button("Button Two"));
-        map.put("sdag", new Button("Button three"));
-        sb = new SideBar(SideBar.SideBarOrientation.LEFT, map, 200);
-        mainBox.setLeft(sb);
-        LinkedHashMap<String, Node> map2 = new LinkedHashMap<>();
-        map2.put("Peak Pick", new Button("Button One"));
-        map2.put("Integral", new Button("Button Two"));
-        map2.put("Multiplets", new Button("Button Three"));
-        sb2 = new SideBar(SideBar.SideBarOrientation.RIGHT, map2, 200);
-        mainBox.setRight(sb2);
-        LinkedHashMap<String, Node> map3 = new LinkedHashMap<>();
-        map3.put("Analyzer Bar", new Button("Button One"));
-        SideBar sb3 = new SideBar(SideBar.SideBarOrientation.BOTTOM, map3, 200);
-        borderPane.setBottom(sb3);
-        sb3.addSideBarContent("Added After", new Button("LALALA"));
-
-        ((Region) borderPane.getCenter()).heightProperty().addListener((o, old, n) -> {
-            sb.setMaxHeight(borderPane.getHeight());
-            sb2.setMaxHeight(borderPane.getHeight());
-        });
-
 
         attributesPane = new AnchorPane();
         attributesController =  AttributesController.create(this, attributesPane);
@@ -1313,6 +1294,69 @@ public class FXMLController implements  Initializable, PeakNavigable {
         contentPane = new AnchorPane();
         contentController =  ContentController.create(this, contentPane);
         borderPane.heightProperty().addListener(e -> contentController.updateScrollSize(borderPane));
+
+        LinkedHashMap<String, Node> map = new LinkedHashMap<>();
+        map.put("Data Info", DatasetsController.create().attrBorderPane);
+        try {
+            Class<?> c = Class.forName("org.nmrfx.analyst.gui.molecule3D.MolSceneController");
+            Class[] parameterTypes = {String.class};
+            Method m = c.getDeclaredMethod("create");
+            Object result = m.invoke(null);
+            Field classField = c.getField("attrBorderPane");
+            map.put("Molecule", (Node) classField.get(result));
+            System.out.println("WHAT");
+        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+//        MolSceneController molController = MolSceneController.create();
+        sb = new SideBar(SideBar.SideBarOrientation.LEFT, map, 200);
+        mainBox.setLeft(sb);
+        LinkedHashMap<String, Node> map2 = new LinkedHashMap<>();
+        map2.put("Peak Pick", PeakAttrController.create().attrBorderPane);
+        try {
+            Class<?> c = Class.forName("org.nmrfx.analyst.gui.regions.RegionsTableController");
+            Class[] parameterTypes = {String.class};
+            Method m = c.getDeclaredMethod("create");
+            Object result = m.invoke(null);
+            Field classField = c.getField("regionsBorderPane");
+            map2.put("Integral", (Node) classField.get(result));
+            System.out.println("WHAT");
+        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+        sb2 = new SideBar(SideBar.SideBarOrientation.RIGHT, map2, 200);
+        mainBox.setRight(sb2);
+        LinkedHashMap<String, Node> map3 = new LinkedHashMap<>();
+
+        BorderPane bp = new BorderPane();
+        HBox h = new HBox(bp);
+        h.setStyle("-fx-background-color: red;");
+        bp.setStyle("-fx-background-color: blue;");
+        HBox.setHgrow(h, Priority.ALWAYS);
+        HBox.setHgrow(bp, Priority.ALWAYS);
+        try {
+            Class<?> c = Class.forName("org.nmrfx.analyst.gui.tools.ScannerTool");
+            Class[] parameterTypes = {FXMLController.class, Consumer.class};
+            Constructor constructor = c.getDeclaredConstructor(parameterTypes);
+            Object ct = constructor.newInstance(this, null);
+            Method m = c.getDeclaredMethod("initialize", BorderPane.class);
+            m.invoke(ct, bp);
+            map3.put("Analyzer", h);
+            System.out.println("WHAT");
+        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        }
+        SideBar sb3 = new SideBar(SideBar.SideBarOrientation.BOTTOM, map3, 200);
+        bp.minWidthProperty().bind(sb3.widthProperty());
+        borderPane.setBottom(sb3);
+
+        ((Region) borderPane.getCenter()).heightProperty().addListener((o, old, n) -> {
+            sb.setMaxHeight(borderPane.getHeight());
+            sb2.setMaxHeight(borderPane.getHeight());
+        });
 
     }
 

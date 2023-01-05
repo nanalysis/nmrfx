@@ -52,6 +52,8 @@ import java.util.*;
 
 public class MolSceneController implements Initializable, MolSelectionListener, FreezeListener, ProgressUpdater {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
+    @FXML
+    public BorderPane attrBorderPane;
 
     private Stage stage;
     SSViewer ssViewer;
@@ -184,7 +186,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             controller = loader.<MolSceneController>getController();
             controller.stage = stage;
             stage.setTitle("Molecular Viewer");
-            stage.show();
+//            stage.show();
         } catch (IOException ioE) {
             log.warn(ioE.getMessage(), ioE);
         }

@@ -78,6 +78,8 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     static final DecimalFormat formatter = new DecimalFormat();
     static PeakListTypes peakListTypes = null;
+    @FXML
+    public BorderPane attrBorderPane;
     private Stage stage;
     @FXML
     private TabPane tabPane;
@@ -321,7 +323,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             controller = loader.<PeakAttrController>getController();
             controller.stage = stage;
             stage.setTitle("Peak Attributes");
-            stage.show();
+//            stage.show();
         } catch (IOException ioE) {
             log.warn(ioE.getMessage(), ioE);
         }

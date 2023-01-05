@@ -27,6 +27,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.nmrfx.datasets.DatasetBase;
@@ -55,6 +57,8 @@ public class AnalyzerBar {
 
     public void buildBar(VBox vBox) {
         this.vBox = vBox;
+        VBox.setVgrow(vBox, Priority.ALWAYS);
+        HBox.setHgrow(vBox, Priority.ALWAYS);
         gridPane = new GridPane();
         gridPane.setVgap(5);
         gridPane.setHgap(5);

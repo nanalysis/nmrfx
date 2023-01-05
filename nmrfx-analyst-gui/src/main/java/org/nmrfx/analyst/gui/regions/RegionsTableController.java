@@ -13,6 +13,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -45,7 +47,7 @@ public class RegionsTableController implements Initializable {
     private PolyChart chart;
     private Stage stage;
     @FXML
-    private BorderPane regionsBorderPane;
+    public BorderPane regionsBorderPane;
     @FXML
     private MenuButton fileMenuButton;
     @FXML
@@ -93,6 +95,7 @@ public class RegionsTableController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle rb) {
+        HBox.setHgrow(regionsBorderPane, Priority.ALWAYS);
         regionsTable = new RegionsTable();
         regionsBorderPane.setCenter(regionsTable);
         chart = PolyChart.getActiveChart();
