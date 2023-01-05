@@ -166,6 +166,9 @@ public class SideBar extends HBox {
     private void mouseButtonClickedHandler(MouseEvent event) {
         ToggleButton button = (ToggleButton) event.getSource();
         SideBarContent content = contents.get(button.getText());
+        // The button focus affects the sizing of the toolbar, so must remove the focus from the buttons before
+        // proceeding
+        toolbar.requestFocus();
         if (event.getButton() == MouseButton.PRIMARY) {
             if (contentSplitPane.getItems().contains(content)) {
                 contentSplitPane.getItems().remove(content);
