@@ -1397,8 +1397,8 @@ class refine:
         self.setSeed(self.seed)
         self.randomizeAngles()
         data = self.initializeData
-        self.readInitAngles()
         if data != None:
+            self.readInitAngles()
             if 'vienna' in data:
                 print 'Setting angles based on Vienna sequence'
                 self.setAnglesVienna(data['vienna'])
@@ -1611,8 +1611,10 @@ class refine:
                         aaType = "P"
                     else:
                         aaType = "p"
-                    anglesToSet = angleDict['Loop'+':'+str(iLoop)+':'+aaType+':'+subType].copy()
-                    RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockLoop)
+                    key = 'Loop'+':'+str(iLoop)+':'+aaType+':'+subType
+                    if key in angleDict:
+                        anglesToSet = angleDict[key].copy()
+                        RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockLoop)
             elif ss.getName() == "Bulge":
                 for iLoop,res in enumerate(residues):
                     subType = getRNAResType(ss, residues, res)
