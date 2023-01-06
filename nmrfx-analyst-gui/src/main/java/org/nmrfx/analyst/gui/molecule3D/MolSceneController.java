@@ -113,15 +113,15 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         SubScene subScene = molViewer.initScene(500, 500);
         stackPane.getChildren().addAll(molViewer, twoDPane);
         molBorderPane.setCenter(stackPane);
-        ssViewer.drawNumbersProp.bind(numbersCheckBox.selectedProperty());
-        ssViewer.showActiveProp.bind(activeCheckBox.selectedProperty());
+        ssViewer.getDrawNumbersProp().bind(numbersCheckBox.selectedProperty());
+        ssViewer.getShowActiveProp().bind(activeCheckBox.selectedProperty());
         dotBracketField.setEditable(true);
         dotBracketField.textProperty().addListener(e -> {
             dotBracketFieldChanged();
         });
         constraintTypeChoiceBox.getItems().addAll("All", "Intraresidue", "Interresidue");
         constraintTypeChoiceBox.setValue("All");
-        ssViewer.constraintTypeProp.bind(constraintTypeChoiceBox.valueProperty());
+        ssViewer.getConstraintTypeProp().bind(constraintTypeChoiceBox.valueProperty());
 
         molBorderPane.widthProperty().addListener(ss -> molViewer.layoutChildren());
         molBorderPane.heightProperty().addListener(ss -> molViewer.layoutChildren());
@@ -154,7 +154,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         hydrogenMenuItem.setSelected(true);
         carbonMenuItem.setSelected(false);
         predictionMenu.getItems().addAll(hydrogenMenuItem, carbonMenuItem);
-        hydrogenMenuItem.selectedProperty().bindBidirectional(ssViewer.hydrogenPredictionProp);
+        hydrogenMenuItem.selectedProperty().bindBidirectional(ssViewer.getHydrogenPredictionProp());
 
         frozenCheckBox.selectedProperty().addListener(e -> updatePeaks());
         selectField.setOnKeyReleased(e -> {
