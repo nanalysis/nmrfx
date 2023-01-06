@@ -588,8 +588,9 @@ class MolPeakGen:
         if scheme == "" and dataset != None:
             if not isinstance(dataset,DatasetBase):
                 dataset = DatasetBase.getDataset(dataset)
-            self.setLabelScheme(dataset.getProperty("labelScheme"))
-            scheme = dataset.getProperty("editScheme")
+            if (dataset != None):
+                self.setLabelScheme(dataset.getProperty("labelScheme"))
+                scheme = dataset.getProperty("editScheme")
         if scheme == "":
             scheme = "aa"
              
