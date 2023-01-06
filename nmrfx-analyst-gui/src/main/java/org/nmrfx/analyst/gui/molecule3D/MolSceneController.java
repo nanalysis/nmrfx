@@ -1,6 +1,7 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
@@ -67,7 +68,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     @FXML
     BorderPane ligandBorderPane;
     @FXML
-    ChoiceBox<Integer> nAtomsChoiceBox;
+    MenuButton atomMenu;
     @FXML
     TextField dotBracketField;
     @FXML
@@ -86,11 +87,14 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     CheckMenuItem frozenCheckBox = new CheckMenuItem("Frozen");
     CheckMenuItem activeCheckBox = new CheckMenuItem("Active");
     CheckMenuItem numbersCheckBox = new CheckMenuItem("Numbers");
+    ToggleGroup predictionTypeGroup = new ToggleGroup();
 
     @FXML
     private StatusBar statusBar;
     private Circle statusCircle = new Circle(10.0, Color.GREEN);
     Throwable processingThrowable;
+
+    List<CheckMenuItem> atomCheckItems = new ArrayList<>();
 
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
@@ -111,9 +115,6 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         molBorderPane.setCenter(stackPane);
         ssViewer.drawNumbersProp.bind(numbersCheckBox.selectedProperty());
         ssViewer.showActiveProp.bind(activeCheckBox.selectedProperty());
-        nAtomsChoiceBox.getItems().addAll(0, 1, 2, 3, 4, 5, 6, 7);
-        nAtomsChoiceBox.setValue(0);
-        ssViewer.nAtomsProp.bind(nAtomsChoiceBox.valueProperty());
         dotBracketField.setEditable(true);
         dotBracketField.textProperty().addListener(e -> {
             dotBracketFieldChanged();
@@ -144,6 +145,16 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         modeMenuButton.getItems().add(numbersCheckBox);
         modeMenuButton.getItems().add(activeCheckBox);
         modeMenuButton.getItems().add(frozenCheckBox);
+        Menu predictionMenu = new Menu("Predictions");
+        modeMenuButton.getItems().add(predictionMenu);
+        RadioMenuItem hydrogenMenuItem = new RadioMenuItem("Show H-predictions");
+        RadioMenuItem carbonMenuItem = new RadioMenuItem("Show C-predictions");
+        hydrogenMenuItem.setToggleGroup(predictionTypeGroup);
+        carbonMenuItem.setToggleGroup(predictionTypeGroup);
+        hydrogenMenuItem.setSelected(true);
+        carbonMenuItem.setSelected(false);
+        predictionMenu.getItems().addAll(hydrogenMenuItem, carbonMenuItem);
+        hydrogenMenuItem.selectedProperty().bindBidirectional(ssViewer.hydrogenPredictionProp);
 
         frozenCheckBox.selectedProperty().addListener(e -> updatePeaks());
         selectField.setOnKeyReleased(e -> {
@@ -165,7 +176,46 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                 dialog.showAndWait();
             }
         });
+        String[] atomMenuNames = {"Ribose", "Base", "Exchangeable"};
+        String[] riboseAtoms = {"H1'", "H2'", "H3'", "H4'", "H5'"};
+        for (String name : atomMenuNames) {
+            CheckMenuItem menuItem = new CheckMenuItem(name);
+            atomCheckItems.add(menuItem);
+            atomMenu.getItems().add(menuItem);
+            menuItem.selectedProperty().addListener(
+                    (ChangeListener<Boolean>) (a,b,c) -> updateAtoms(name, c.booleanValue()));
+        }
+        Menu riboseMenu = new Menu("Ribose Atoms");
+        atomMenu.getItems().add(riboseMenu);
+        for (String name : riboseAtoms) {
+            CheckMenuItem menuItem = new CheckMenuItem(name);
+            atomCheckItems.add(menuItem);
+            riboseMenu.getItems().add(menuItem);
+            menuItem.selectedProperty().addListener(
+                    (ChangeListener<Boolean>) (a,b,c) -> updateAtoms());
+        }
+    }
 
+    private void updateAtoms(String name, boolean selected) {
+        if (name.equals("Ribose")) {
+            for (var menuItem : atomCheckItems) {
+                if (menuItem.getText().endsWith("'")) {
+                    menuItem.setSelected(selected);
+                }
+            }
+        } else {
+            updateAtoms();
+        }
+    }
+
+    private void updateAtoms() {
+        List<String> atomNames = new ArrayList<>();
+        for (var menuItem: atomCheckItems) {
+            if (menuItem.isSelected()) {
+                atomNames.add(menuItem.getText());
+            }
+        }
+        ssViewer.updateAtoms(atomNames);
     }
 
     public Stage getStage() {

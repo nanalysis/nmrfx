@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui.molecule;
 
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.paint.Color;
@@ -35,17 +36,8 @@ public class SSViewer extends Pane {
 
     private static final Logger log = LoggerFactory.getLogger(SSViewer.class);
 
-    class AtomCoord {
+    record AtomCoord(double x, double y) {}
 
-        final double x;
-        final double y;
-
-        AtomCoord(double x, double y) {
-            this.x = x;
-            this.y = y;
-        }
-
-    }
 //    Group root;
     Group drawingGroup;
     Group infoGroup;
@@ -69,6 +61,9 @@ public class SSViewer extends Pane {
     public SimpleBooleanProperty showActiveProp = new SimpleBooleanProperty(true);
     public SimpleIntegerProperty nAtomsProp = new SimpleIntegerProperty(7);
     public SimpleStringProperty constraintTypeProp = new SimpleStringProperty("All");
+    public SimpleObjectProperty<List<String>> atomTypes = new SimpleObjectProperty<>();
+    public List<String> displayAtomTypes = new ArrayList<>();
+    public SimpleBooleanProperty hydrogenPredictionProp = new SimpleBooleanProperty(true);
 
     double centerX;
     double centerY;
@@ -89,6 +84,12 @@ public class SSViewer extends Pane {
         pane.setPrefHeight(this.getHeight());
         super.layoutChildren();
         drawSS();
+    }
+
+    public void updateAtoms(List<String> atomNames) {
+        displayAtomTypes.clear();
+        displayAtomTypes.addAll(atomNames);
+        layoutChildren();
     }
 
     public final void initScene() {
@@ -291,7 +292,8 @@ public class SSViewer extends Pane {
     }
 
     void showInfo(MouseEvent e, String resNum, String aName) {
-        String atomSpec = resNum + ".H" + aName;
+        String aType = hydrogenPredictionProp.get()  ? ".H" : ".C";
+        String atomSpec = resNum + aType + aName;
         Node node = (Node) e.getSource();
         double x = node.getBoundsInParent().getMinX();
         double y = node.getBoundsInParent().getMinY();
@@ -623,16 +625,31 @@ public class SSViewer extends Pane {
             AtomCoord aCoord = deltaCoords[iRes];
 //            Line line = new Line(x1, y1, x1 + aCoord.x * scale, y1 + aCoord.y * scale);
 //            group.getChildren().add(line);
-            int nAtoms = nAtomsProp.get();
-            for (int j = -2; j < nAtoms; j++) {
+            int nAtoms = 7;
+            int startAtom = -2;
+            int iDrawn = 0;
+            for (int j = startAtom; j < nAtoms; j++) {
                 if ((j == -2) && (resChar != 'G')) {
                     continue;
                 }
                 double x;
                 double y;
+                if ((j < 0) && !displayAtomTypes.contains("Exchangeable")) {
+                    continue;
+                }
+                if ((j >= 0) && (j< 2) && !displayAtomTypes.contains("Base")) {
+                    continue;
+                }
+                if (j > 1) {
+                    String text = "H" + (j - 1) + "'";
+                    if (!displayAtomTypes.contains(text)) {
+                        continue;
+                    }
+                }
                 if (j >= 0) {
-                    x = x1 + aCoord.x / 5 * (j + 1.5);
-                    y = y1 - aCoord.y / 5 * (j + 1.5);
+                    x = x1 + aCoord.x / 5 * (iDrawn + 1.5);
+                    y = y1 - aCoord.y / 5 * (iDrawn + 1.5);
+                    iDrawn++;
                 } else {
                     x = x1 + (aCoord.y / 5.0 * (j + 1.5)) + aCoord.x / 5 * (-1 - 0.5);
                     y = y1 + (aCoord.x / 5.0 * (j + 1.5)) - aCoord.y / 5 * (-1 - 0.5);
@@ -714,6 +731,7 @@ public class SSViewer extends Pane {
             return;
         }
         updateScale();
+        atomMap.clear();
         if (basePairState) {
             addLines(group, basePairs);
         }
