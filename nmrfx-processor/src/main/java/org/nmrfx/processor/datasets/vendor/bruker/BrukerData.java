@@ -1788,7 +1788,7 @@ public class BrukerData implements NMRData {
     @Override
     public List<Double> getValues(int dim) {
         List<Double> result;
-        if (dim == (getNDim() - 1)) {
+        if (dim == getMinDim()) {
             result = arrayValues;
         } else {
             result = new ArrayList<>();
