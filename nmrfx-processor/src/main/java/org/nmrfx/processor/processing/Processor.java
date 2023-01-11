@@ -431,6 +431,8 @@ public class Processor {
             if (arraySize != 0) {
                 nArray++;
             }
+            int fidDim = mapToFID != null  && mapToFID.length > i ? mapToFID(i) : i;
+            complex[i] = nmrData.isComplex(fidDim);
         }
 
         if (nArray > 0) {
@@ -498,6 +500,18 @@ public class Processor {
                 tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, acqOrderToUse, dataset.getNDim());
             } else if (acqSizesToUse.length <= adjustedTDSizes.length) {
                 log.info("useSizes <= than newTDSizes {}", acqSizesToUse.length);
+                for (var sz:adjustedTDSizes) {
+                    System.out.println("adjtd " + sz);
+                }
+                for (var sz:acqSizesToUse) {
+                    System.out.println("acqtous " + sz);
+                }
+                for (var b:newComplex) {
+                    System.out.println("cmplx " + b);
+                }
+                for (var aq:acqOrderToUse) {
+                    System.out.println("cmplx " + aq);
+                }
                 tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, acqOrderToUse, dataset.getNDim());
             } else {
                 //String[] acqOrder = {"p2", "d2", "p1", "d1"};
@@ -823,6 +837,18 @@ public class Processor {
         }
     }
 
+    // used from python
+    public void setMapToDataset(int[] mapToDataset) {
+        this.mapToDataset = mapToDataset.clone();
+        mapToFID = new int[mapToDataset.length];
+        for (int i = 0; i < mapToDataset.length; i++) {
+            if (mapToDataset[i] != -1) {
+                mapToFID[mapToDataset[i]] = i;
+            }
+            System.out.println("map " + i + " " +  mapToFID[i] + " " + mapToDataset[i]);
+        }
+    }
+
     private int mapToDataset(int i) {
         return mapToDataset[i];
     }
@@ -854,6 +880,12 @@ public class Processor {
         return true;
     }
 
+    public boolean createNV(String outputFile, int[] useSizes, int[] mapToDataset) {
+        boolean memoryMode = useMemoryMode(useSizes);
+        createNV(outputFile, useSizes,  mapToDataset, memoryMode);
+        return true;
+    }
+
     public boolean createNV(String outputFile, int[] useSizes, Map flags) {
         boolean memoryMode = useMemoryMode(useSizes);
         createNV(outputFile, useSizes, memoryMode);
@@ -866,7 +898,16 @@ public class Processor {
         return true;
     }
 
+    public boolean createNVInMemory(String outputFile, int[] useSizes, int[] mapToDataset) {
+        createNV(outputFile, useSizes, true);
+        return true;
+    }
+
     public boolean createNV(String outputFile, int[] useSizes, boolean inMemory) {
+        return createNV(outputFile, useSizes,  null, inMemory);
+    }
+
+    public boolean createNV(String outputFile, int[] useSizes, int[] mapToDataset, boolean inMemory) {
         if (progressUpdater != null) {
             progressUpdater.updateStatus("Create output dataset");
         }
@@ -899,16 +940,23 @@ public class Processor {
         if (!nmrDataSets.isEmpty()) {
             NMRData nmrData = nmrDataSets.get(0);
             mapToFID = new int[dataset.getNDim()];
-            mapToDataset = new int[nmrData.getNDim()];
-            int j = 0;
-            for (int i = 0; i < mapToDataset.length; i++) {
-                mapToDataset[i] = -1;
-                if (useSizes[i] > 1) {
-                    mapToDataset[i] = j;
-                    mapToFID[j] = i;
-                    j++;
+            if (mapToDataset == null) {
+                mapToDataset = new int[nmrData.getNDim()];
+                int j = 0;
+                for (int i = 0; i < mapToDataset.length; i++) {
+                    mapToDataset[i] = -1;
+                    if (useSizes[i] > 1) {
+                        mapToDataset[i] = j;
+                        j++;
+                    }
                 }
             }
+            for (int i = 0; i < mapToDataset.length; i++) {
+                if (mapToDataset[i] != -1) {
+                    mapToFID[mapToDataset[i]] = i;
+                }
+            }
+            this.mapToDataset = mapToDataset.clone();
             for (int i = 0; i < dataset.getNDim(); i++) {
                 dataset.setLabel(i, nmrData.getTN(mapToFID(i)));
                 dataset.setSf(i, nmrData.getSF(mapToFID(i)));
@@ -916,7 +964,7 @@ public class Processor {
                 dataset.setRefValue(i, nmrData.getRef(mapToFID(i)));
                 dataset.setRefPt(i, nmrData.getRefPoint(mapToFID(i)));
                 dataset.setTDSize(i, useSizes[mapToFID(i)]);
-                dataset.setValues(i, nmrData.getValues(i));
+                dataset.setValues(i, nmrData.getValues(mapToFID(i)));
                 dataset.setComplex(i, nmrData.isComplex(mapToFID(i)));
             }
             dataset.setSolvent(nmrData.getSolvent());
@@ -1081,6 +1129,8 @@ public class Processor {
             while (true) {
                 if (datasetWriter.finished()) {
                     return Collections.EMPTY_LIST;
+                } else if (datasetWriter.hasError()) {
+                    throw new ProcessingException("Error processing");
                 } else {
                     List<MatrixType> matrixTypes = datasetWriter.getItemsFromUnprocessedList(100);
                     if (matrixTypes != null) {
@@ -1090,7 +1140,6 @@ public class Processor {
                             vecs.add((Vec) mat);
                         }
                         return vecs;
-                    } else {
                     }
                 }
             }
@@ -1104,6 +1153,8 @@ public class Processor {
             while (true) {
                 if (datasetWriter.finished()) {
                     return null;
+                } else if (datasetWriter.hasError()) {
+                    throw new ProcessingException("Error processing");
                 } else {
                     List<MatrixType> matrixTypes = datasetWriter.getItemsFromUnprocessedList(100);
                     if (matrixTypes != null) {
@@ -1182,7 +1233,14 @@ public class Processor {
                     setEndOfFile();
                     break;
                 }
-                VecIndex vecIndex = getNextGroup(vecGroup);
+                VecIndex vecIndex = null;
+                try {
+                    vecIndex = getNextGroup(vecGroup);
+                } catch (Exception pEx) {
+                    pEx.printStackTrace();
+                    throw pEx;
+                }
+
                 if (vecIndex != null) {
                     iStep++;
                     for (int j = 0; j < vectorsPerGroup; j++) {
@@ -1206,6 +1264,9 @@ public class Processor {
                         }
                         vecReadCount.incrementAndGet();
                     }
+                } else {
+//                    setProcessorAvailableStatus(true);
+//                    throw new ProcessingException("Null vecIndex");
                 }
             }
         }
