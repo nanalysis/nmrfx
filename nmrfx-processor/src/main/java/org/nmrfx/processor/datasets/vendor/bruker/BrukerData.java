@@ -919,9 +919,6 @@ public class BrukerData implements NMRData {
             }
             tdsize[0] = np / 2 - shiftAmount; // tcl line 348, lines 448-459
         }
-        arrayValues = getArrayValues();
-        setFTpars();
-        String tdpar = "TD,";
         boolean gotSchedule = false;
         if (nusFile == null) {
             nusFile = new File(fpath + File.separator + "nuslist");
@@ -934,6 +931,26 @@ public class BrukerData implements NMRData {
                 gotSchedule = true;
             }
         }
+        arrayValues = getArrayValues();
+        getTDSizes(gotSchedule);
+        setFTpars();
+        if (!gotSchedule) {
+            adjustTDForComplex();
+        }
+        if ((arrayValues != null) && !arrayValues.isEmpty()) {
+            arrayValues = fixArraySize(arrayValues, getMinDim());
+        }
+
+        if ((ipar = getParInt("BYTORDA,1")) != null) {
+            if (ipar == 0) {
+                setSwapBitsOn();
+            }
+        }
+    }
+
+    private void getTDSizes(boolean gotSchedule) {
+        String tdpar = "TD,";
+        Integer ipar;
         if (gotSchedule) {
             int[] dims = sampleSchedule.getDims();
             for (int i = 0; i < dims.length; i++) {
@@ -955,14 +972,14 @@ public class BrukerData implements NMRData {
             }
             maxSize[j] = tdsize[j];
         }
-        if ((arrayValues != null) && !arrayValues.isEmpty()) {
-            arrayValues = fixArraySize(arrayValues, getMinDim());
-        }
+    }
 
-        if ((ipar = getParInt("BYTORDA,1")) != null) {
-            if (ipar == 0) {
-                setSwapBitsOn();
+    private void adjustTDForComplex() {
+        for (int j = 1; j < tdsize.length; j++) {
+            if (isComplex(j)) {
+                tdsize[j] /= 2;
             }
+            maxSize[j] = tdsize[j];
         }
     }
 
