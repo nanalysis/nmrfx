@@ -125,6 +125,9 @@ public class MultiVecCounter {
         int iSize = 1;
         int iPhase = 1;
         groupSize = 1;
+        for (int ii=0;ii<tdSizes.length;ii++) {
+            System.out.println(ii + " tdddd " + tdSizes[ii] + " " + outSizes[ii] + " " + complex[ii]);
+        }
 
         for (String mode : modes) {
             // dim is the indirect dimension index running from 1 (for indirect dim 1, 2nd dim) up
@@ -133,9 +136,11 @@ public class MultiVecCounter {
             // so for a 3D file it would be 3,2,1,0
 
             int argIndex = 2 * nIDim - 1 - iArg;
+            int iDim = iArg / 2;
             if (mode.charAt(0) == 'd') {
                 inPoints[dim - 1] = argIndex;
                 isizes[argIndex] = tdSizes[dim];
+               // isizes[argIndex] = tdSizes[iDim + 1];
             } else if (mode.charAt(0) == 'p') {
                 inPhases[dim - 1] = argIndex;
                 isizes[argIndex] = complex[dim] ? 2 : 1;
@@ -181,7 +186,7 @@ public class MultiVecCounter {
         if (log.isDebugEnabled()) {
             var sBuilder = new StringBuilder();
 
-            sBuilder.append("  MultiVecCounter: ");
+            sBuilder.append("  MultiVecCounter: \n");
             for (int i = 0; i < outPhases.length; i++) {
                 sBuilder.append("ouPh[").append(i).append("]=").append(outPhases[i]).append(" ");
             }
@@ -298,30 +303,30 @@ public class MultiVecCounter {
         int[] inVecs = new int[groupSize];
         int[][][] outVecs = new int[groupSize][datasetNDim][2]; // output 4 vecs per group, 3 dimensions, pt
 
-        for (int i = 0; i < groupSize; i++) {
-            int[] counts;
-            try {
+        try {
+            for (int i = 0; i < groupSize; i++) {
+                int[] counts;
                 counts = outCounter.getCounts(groupSize * vecNum + i);
-            } catch (Exception ex) {
-                return null;
-            }
-            int[] iCounts = outToInCounter(counts);
-            inVecs[i] = inCounter.getCount(iCounts);
-            int[] offsets = getOffsets(counts);
-            int jDim = 1;
-            for (int iDim = 1; iDim < nDim; iDim++) {
-                if ((datasetNDim < nDim) && (osizes[nDim - iDim - 1] < 2)) {
-                    if (offsets[iDim - 1] > 0) {
-                        outVecs[i][datasetNDim - 1][0] = -1;
-                        outVecs[i][datasetNDim - 1][1] = -1;
-                        break;
+                int[] iCounts = outToInCounter(counts);
+                inVecs[i] = inCounter.getCount(iCounts);
+                int[] offsets = getOffsets(counts);
+                int jDim = 1;
+                for (int iDim = 1; iDim < nDim; iDim++) {
+                    if ((datasetNDim < nDim) && (osizes[nDim - iDim - 1] < 2)) {
+                        if (offsets[iDim - 1] > 0) {
+                            outVecs[i][datasetNDim - 1][0] = -1;
+                            outVecs[i][datasetNDim - 1][1] = -1;
+                            break;
+                        }
+                        continue;
                     }
-                    continue;
+                    outVecs[i][jDim][0] = offsets[iDim - 1];
+                    outVecs[i][jDim][1] = offsets[iDim - 1];
+                    jDim++;
                 }
-                outVecs[i][jDim][0] = offsets[iDim - 1];
-                outVecs[i][jDim][1] = offsets[iDim - 1];
-                jDim++;
             }
+        } catch (Exception ex) {
+            throw ex;
         }
         return new VecIndex(inVecs, outVecs);
     }
