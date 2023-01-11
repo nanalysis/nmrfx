@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -47,6 +48,7 @@ public class MatrixTypeService {
     AtomicInteger nWritten = new AtomicInteger(0);
     AtomicInteger nRead = new AtomicInteger(0);
     AtomicInteger processedQueueLimit;
+    AtomicBoolean errorWhileReadWrite = new AtomicBoolean(false);
     int itemsToWrite;
     int itemsToRead;
 
@@ -78,6 +80,10 @@ public class MatrixTypeService {
         } catch (InterruptedException ex) {
             log.warn(ex.getMessage(), ex);
         }
+    }
+
+    public boolean hasError() {
+        return errorWhileReadWrite.get();
     }
 
     public boolean finished() {
@@ -254,8 +260,9 @@ public class MatrixTypeService {
                         return true;
                     }
                 }
-            } catch (InterruptedException ex) {
+            } catch (Exception ex) {
                 log.error(ex.getMessage(), ex);
+                errorWhileReadWrite.set(true);
                 return false;
             }
         }
