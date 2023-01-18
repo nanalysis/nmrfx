@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -240,7 +240,7 @@ public class Processor {
 
     private void printVecReadCount() {
         if (dim[0] < 1) {
-           log.warn("read FID vector count: {}", vecReadCount.get());
+            log.warn("read FID vector count: {}", vecReadCount.get());
         }
     }
 
@@ -381,7 +381,7 @@ public class Processor {
      * If pt is null, read whole file.
      *
      * @param fileName
-     * @param pt Points to read from, or null to read whole file
+     * @param pt        Points to read from, or null to read whole file
      * @param writeable
      * @return True if the file is opened
      */
@@ -431,8 +431,8 @@ public class Processor {
             if (arraySize != 0) {
                 nArray++;
             }
-            int fidDim = mapToFID != null  && mapToFID.length > i ? mapToFID(i) : i;
-            complex[i] = nmrData.isComplex(fidDim);
+            int fidDim = mapToFID != null && mapToFID.length > i ? mapToFID(i) : i;
+            complex[i] = nmrData.isComplex(i);
         }
 
         if (nArray > 0) {
@@ -497,24 +497,41 @@ public class Processor {
             } else if (adjustedTDSizes == null) {
                 log.info("call adjustSizes {} new acqorder {}", acqSizesToUse.length, acqOrderToUse.length);
                 adjustSizes();
-                tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, acqOrderToUse, dataset.getNDim());
+                tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, newComplex, acqOrderToUse, null, dataset.getNDim());
             } else if (acqSizesToUse.length <= adjustedTDSizes.length) {
                 log.info("useSizes <= than newTDSizes {}", acqSizesToUse.length);
-                for (var sz:adjustedTDSizes) {
-                    System.out.println("adjtd " + sz);
+                int[] xOutSizes = acqSizesToUse.clone();
+                boolean[] oComplex = newComplex.clone();
+                int[] swapIn = new int[acqSizesToUse.length];
+                boolean gotNeg = false;
+                for (int i = 0; i < mapToDataset.length; i++) {
+                    if (mapToDataset[i] == -1) {
+                        gotNeg = true;
+                    }
                 }
-                for (var sz:acqSizesToUse) {
-                    System.out.println("acqtous " + sz);
+                if (gotNeg) {
+                    for (int i = 0; i < swapIn.length; i++) {
+                        swapIn[i] = i;
+                    }
+                } else {
+                    for (int i = 0; i < swapIn.length; i++) {
+                        swapIn[i] = mapToDataset(i);
+                    }
                 }
-                for (var b:newComplex) {
-                    System.out.println("cmplx " + b);
+                for (int i = 0; i < acqSizesToUse.length; i++) {
+                    int iMap = i;
+                    if (i < mapToDataset.length) {
+                        iMap = mapToDataset(i);
+                    }
+                    if (iMap == -1) {
+                        xOutSizes[i] = 1;
+                    } else {
+                        xOutSizes[i] = acqSizesToUse[swapIn[i]];
+                        oComplex[i] = newComplex[swapIn[i]];
+                    }
                 }
-                for (var aq:acqOrderToUse) {
-                    System.out.println("cmplx " + aq);
-                }
-                tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, acqOrderToUse, dataset.getNDim());
+                tmult = new MultiVecCounter(adjustedTDSizes, xOutSizes, newComplex, oComplex, acqOrderToUse, swapIn, dataset.getNDim());
             } else {
-                //String[] acqOrder = {"p2", "d2", "p1", "d1"};
                 log.info("use newTDSize with useSize length {}", acqSizesToUse.length);
                 tmult = new MultiVecCounter(adjustedTDSizes, newComplex, acqOrderToUse, acqSizesToUse.length);
             }
@@ -522,6 +539,10 @@ public class Processor {
             if (acqSizesToUse != null) {
                 totalVecs = 1;
                 itemsToWrite = 1;
+                int[] osizes = tmult.getOutSizes();
+                for (var sz : osizes) {
+                    totalVecs *= sz;
+                }
                 for (int i = 1; i < acqSizesToUse.length; i++) {
                     if ((i >= mapToDataset.length) || (mapToDataset[i] != -1)) {
                         if ((i < newComplex.length) && newComplex[i]) {
@@ -529,11 +550,6 @@ public class Processor {
                         } else {
                             itemsToWrite *= acqSizesToUse[i];
                         }
-                    }
-                    if ((i < newComplex.length) && newComplex[i]) {
-                        totalVecs *= acqSizesToUse[i] * 2;
-                    } else {
-                        totalVecs *= acqSizesToUse[i];
                     }
                 }
                 itemsToRead = totalVecs;
@@ -570,7 +586,7 @@ public class Processor {
      * Set dataset dimension for already opened file
      *
      * @param iDim Dimensions corresponding to points, or null to read whole
-     * file
+     *             file
      * @return True if the file is opened
      */
     public boolean setDim(int iDim) {
@@ -581,8 +597,8 @@ public class Processor {
      * Set dataset dimension for already opened file.
      *
      * @param newPt Points to read from, or null to read whole file
-     * @param iDim Dimensions corresponding to points, or null to read whole
-     * file
+     * @param iDim  Dimensions corresponding to points, or null to read whole
+     *              file
      * @return True if the file is opened
      */
     public boolean setDim(int[][] newPt, int iDim) {
@@ -734,7 +750,7 @@ public class Processor {
      * Open a FID file.
      *
      * @param filename
-     * @param tdSizes - time domain sizes
+     * @param tdSizes  - time domain sizes
      * @return
      */
     public NMRData openfid(String filename, String nusFileName, int tdSizes[]) {
@@ -807,7 +823,6 @@ public class Processor {
             dim[i] = i;
         }
         nvDataset = false;  // openfid() must first process FID vectors
-
         vectorSize = nmrData.getNPoints(); //complex
         this.acquiredTDSizes = tdSizes;
 
@@ -845,7 +860,6 @@ public class Processor {
             if (mapToDataset[i] != -1) {
                 mapToFID[mapToDataset[i]] = i;
             }
-            System.out.println("map " + i + " " +  mapToFID[i] + " " + mapToDataset[i]);
         }
     }
 
@@ -866,7 +880,7 @@ public class Processor {
     }
 
     public static boolean useMemoryMode(long size) {
-        return size <=  MEMORY_MODE_LIMIT;
+        return size <= MEMORY_MODE_LIMIT;
     }
 
     // used from Python for testing
@@ -882,7 +896,7 @@ public class Processor {
 
     public boolean createNV(String outputFile, int[] useSizes, int[] mapToDataset) {
         boolean memoryMode = useMemoryMode(useSizes);
-        createNV(outputFile, useSizes,  mapToDataset, memoryMode);
+        createNV(outputFile, useSizes, mapToDataset, memoryMode);
         return true;
     }
 
@@ -904,7 +918,7 @@ public class Processor {
     }
 
     public boolean createNV(String outputFile, int[] useSizes, boolean inMemory) {
-        return createNV(outputFile, useSizes,  null, inMemory);
+        return createNV(outputFile, useSizes, null, inMemory);
     }
 
     public boolean createNV(String outputFile, int[] useSizes, int[] mapToDataset, boolean inMemory) {
@@ -912,9 +926,12 @@ public class Processor {
             progressUpdater.updateStatus("Create output dataset");
         }
         int nDimToUse = 0;
-        for (var sz : useSizes) {
-            nDimToUse += sz > 1 ? 1 : 0;
+        for (var map : mapToDataset) {
+            if (map != -1) {
+                nDimToUse++;
+            }
         }
+
         this.acqSizesToUse = useSizes;
         File file = new File(outputFile);
         String key = file.getName();
@@ -926,8 +943,8 @@ public class Processor {
                 this.dataset = new Dataset(outputFile, nDimToUse);
             } else {
                 int[] idSizes = getIndirectSizes();
-                for (int i=0;i<idSizes.length;i++) {
-                    useSizes[i +1] = idSizes[i];
+                for (int i = 0; i < idSizes.length; i++) {
+                    useSizes[i + 1] = idSizes[i];
                 }
                 this.dataset = Dataset.createDataset(outputFile, key, outputFile, useSizes, false, false);
             }
@@ -975,7 +992,7 @@ public class Processor {
     }
 
     public void setupSim(double[] minWidths, double[] maxWidths, int[] nWidths, int[] nPoints,
-            int nFrac, String datasetName) {
+                         int nFrac, String datasetName) {
         double[][] simWidths = new double[minWidths.length][2];
         for (int i = 0; i < minWidths.length; i++) {
             simWidths[i][0] = minWidths[i];
@@ -1227,7 +1244,7 @@ public class Processor {
                 vectorsPerGroup = tmult.getGroupSize();
             }
             int nSteps = vectorsPerProcess / vectorsPerGroup;
-            for (int iStep = 0; iStep < nSteps;) {
+            for (int iStep = 0; iStep < nSteps; ) {
                 int vecGroup = incrementVecGroupsRead();
                 if (vecGroup > getTotalVecGroups() - 1) {
                     setEndOfFile();
@@ -1508,7 +1525,7 @@ public class Processor {
         }
         if (!keepDatasetOpen) {
             int freqDimsProcessed = 0;
-            for (int i = 0; i< dataset.getNDim(); i++) {
+            for (int i = 0; i < dataset.getNDim(); i++) {
                 if (dataset.getFreqDomain(i)) {
                     freqDimsProcessed++;
                 }

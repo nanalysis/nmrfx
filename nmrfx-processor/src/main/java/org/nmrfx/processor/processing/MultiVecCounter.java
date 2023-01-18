@@ -41,6 +41,7 @@ public class MultiVecCounter {
     int[] inPoints;
     int[] outPhases;
     int[] outPoints;
+    int[] swap;
     int groupSize = 1;
     int nDim;
     int datasetNDim;
@@ -72,7 +73,7 @@ public class MultiVecCounter {
         osizes = new int[(nDim - 1) * 2];
         isizes = new int[(nDim - 1) * 2];
         this.datasetNDim = datasetNDim;
-        init(tdSizes, tdSizes, complex, modes);
+        init(tdSizes, tdSizes, complex,complex, modes, null);
     }
 
     /**
@@ -95,15 +96,15 @@ public class MultiVecCounter {
      * @param datasetNDim number of dimensions in final dataset, could be
      * smaller than original data dimensions.
      */
-    public MultiVecCounter(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes, int datasetNDim) {
+    public MultiVecCounter(int[] tdSizes, int[] outSizes, boolean[] complex, boolean[] oComplex,  String[] modes, int[] swapIn, int datasetNDim) {
         nDim = tdSizes.length;
         osizes = new int[(nDim - 1) * 2];
         isizes = new int[(nDim - 1) * 2];
         this.datasetNDim = datasetNDim;
-        init(tdSizes, outSizes, complex, modes);
+        init(tdSizes, outSizes, complex,oComplex,  modes, swapIn);
     }
 
-    void init(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes) {
+    void init(int[] tdSizes, int[] outSizes, boolean[] complex, boolean[] oComplex, String[] modes, int[] swapIn) {
         int nIDim = tdSizes.length - 1;  // number of indirect dimensions
 
         // the index of the values in the multi-dimensional counter that references the phase increment
@@ -120,14 +121,17 @@ public class MultiVecCounter {
         //  of the output data
         outPoints = new int[nIDim];
         boolean matchIn = false;
-
         int iArg = 0;
         int iSize = 1;
         int iPhase = 1;
         groupSize = 1;
-        for (int ii=0;ii<tdSizes.length;ii++) {
-            System.out.println(ii + " tdddd " + tdSizes[ii] + " " + outSizes[ii] + " " + complex[ii]);
+        if (swapIn == null) {
+            swapIn = new int[nIDim + 1];
+            for (int i = 0;i<nIDim + 1;i++) {
+                swapIn[i] = i;
+            }
         }
+        swap = swapIn.clone();
 
         for (String mode : modes) {
             // dim is the indirect dimension index running from 1 (for indirect dim 1, 2nd dim) up
@@ -136,11 +140,9 @@ public class MultiVecCounter {
             // so for a 3D file it would be 3,2,1,0
 
             int argIndex = 2 * nIDim - 1 - iArg;
-            int iDim = iArg / 2;
             if (mode.charAt(0) == 'd') {
                 inPoints[dim - 1] = argIndex;
                 isizes[argIndex] = tdSizes[dim];
-               // isizes[argIndex] = tdSizes[iDim + 1];
             } else if (mode.charAt(0) == 'p') {
                 inPhases[dim - 1] = argIndex;
                 isizes[argIndex] = complex[dim] ? 2 : 1;
@@ -175,7 +177,7 @@ public class MultiVecCounter {
             }
             groupSize = 1;
             for (int i = 0; i < nIDim; i++) {
-                if (complex[i + 1]) {
+                if (oComplex[i + 1]) {
                     groupSize *= 2;
                     osizes[2 * nIDim - 1 - i] = 2;
                 } else {
@@ -183,6 +185,7 @@ public class MultiVecCounter {
                 }
             }
         }
+
         if (log.isDebugEnabled()) {
             var sBuilder = new StringBuilder();
 
@@ -264,8 +267,8 @@ public class MultiVecCounter {
     public int[] outToInCounter(int[] counts) {
         int[] icounts = new int[counts.length];
         for (int i = 0; i < inPhases.length; i++) {
-            icounts[inPhases[i]] = counts[outPhases[i]];
-            icounts[inPoints[i]] = counts[outPoints[i]];
+            icounts[inPhases[swap[i + 1] - 1]] = counts[outPhases[i]];
+            icounts[inPoints[swap[i + 1] - 1]] = counts[outPoints[i]];
         }
         return icounts;
     }
