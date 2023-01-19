@@ -64,9 +64,7 @@ public class Analyzer {
     double regionExtend = 9.0;
 
     double artifactRatio = 50;
-    double sDev = 0.0;
     double threshold = 0.0;
-    double filter = 0.0;
     Double positionRestraint = null;
     Optional<Double> manThreshold = Optional.empty();
     Solvents solvents;
@@ -135,43 +133,7 @@ public class Analyzer {
     }
 
     public void calculateThreshold() {
-        Vec vec;
-        try {
-            vec = dataset.readVector(0, 0);
-        } catch (IOException ex) {
-            log.error("Failed to get dataset vector", ex);
-            return;
-        }
-        int size = vec.getSize();
-        int sdevWin = Math.max(16, size / 64);
-        sDev = vec.sdev(sdevWin);
-        if (scaleToLargest) {
-            int nIncr = size / nWin;
-            List<Double> maxs = new ArrayList<>();
-            for (int i = 0; i < size; i += nIncr) {
-                int j = i + nIncr - 1;
-                IndexValue maxIndexVal = vec.maxIndex(i, j);
-                double max = maxIndexVal.getValue();
-                // Also get the smallest indexes, to account for negative peaks.
-                IndexValue minIndexVal = vec.minIndex(i, j);
-                double min = minIndexVal.getValue();
-                maxs.add(Math.max(Math.abs(max), Math.abs(min)));
-            }
-            Collections.sort(maxs);
-            int nMax = maxs.size();
-            double max = maxs.get(nMax - 3);
-
-            double min = maxs.get(0);
-            threshold = max / maxRatio;
-            filter = sDev / max * 2400.0;
-        }
-        if (threshold < sdRatio * sDev) {
-            if (dataset.getNucleus(0) == Nuclei.H1) {
-                threshold = sdRatio * sDev;
-            } else {
-                threshold = sdRatio / 3.0 * sDev;
-            }
-        }
+        threshold = PeakPicker.calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
     }
 
     public PeakList peakPick() {

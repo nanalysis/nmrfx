@@ -32,10 +32,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
-import org.nmrfx.processor.gui.KeyMonitor;
-import org.nmrfx.processor.gui.PeakPicking;
-import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.SpectrumStatusBar;
+import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 
 /**
@@ -204,11 +201,19 @@ public class KeyBindings {
                 keyMonitor.clear();
                 break;
             case "cc":
-                chart.getController().setCursor(Cursor.CROSSHAIR);
+                chart.getController().setCursor(CanvasCursor.CROSSHAIR.getCursor());
                 keyMonitor.clear();
                 break;
             case "cs":
-                chart.getController().setCursor(SpectrumStatusBar.SEL_CURSOR);
+                chart.getController().setCursor(CanvasCursor.SELECTOR.getCursor());
+                keyMonitor.clear();
+                break;
+            case "ca":
+                chart.getController().setCursor(CanvasCursor.PEAK.getCursor());
+                keyMonitor.clear();
+                break;
+            case "cr":
+                chart.getController().setCursor(CanvasCursor.REGION.getCursor());
                 keyMonitor.clear();
                 break;
             case "p":
