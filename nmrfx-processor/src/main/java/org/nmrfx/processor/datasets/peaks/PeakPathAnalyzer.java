@@ -17,11 +17,13 @@ import java.util.*;
 
 public class PeakPathAnalyzer {
 
+    private PeakPathAnalyzer() {
+
+    }
+
     public static double[] quadFitter(OptFunction optFunction, double[] xValues, double[] pValues, double[] yValues) {
 
         VecID[] params = optFunction.getAllParamNames();
-        VecID[] vars;
-        vars = optFunction.getAllVarNames();
         for (VecID v : params) {
             optFunction.updateParamPendingStatus(v, true);
         }
@@ -129,7 +131,6 @@ public class PeakPathAnalyzer {
                 }
             }
         }
-        peakPaths.dumpPaths();
     }
 
     public static void extendPath(PeakPaths peakPaths, Peak peak, double radius, double tol) {
@@ -149,7 +150,6 @@ public class PeakPathAnalyzer {
         for (Peak peak : firstList.peaks()) {
             extendPath(peakPath, peak, radius, tol);
         }
-        peakPath.dumpPaths();
     }
 
     public static double checkPath(PeakPaths peakPaths, List<PeakDistance> path) {
@@ -278,7 +278,6 @@ public class PeakPathAnalyzer {
     public static PeakPath extendPath(PeakPaths peakPaths, List<List<PeakDistance>> filteredLists, double tol) {
         double[][] indVars = peakPaths.getXValues();
         double[] tols = peakPaths.getTols();
-        double[] weights = peakPaths.getWeights();
         int[] peakDims = peakPaths.getPeakDims();
 
         int[] indices = new int[peakPaths.getXValues()[0].length];
@@ -301,7 +300,6 @@ public class PeakPathAnalyzer {
                     nUseLevel++;
                 }
             }
-            System.out.println("level " + jLevel + " " + nUseLevel);
             for (int iDim : peakDims) {
                 double[] yValues = new double[nUseLevel];
                 double[][] xValues = new double[nUseLevel][1];
@@ -335,14 +333,12 @@ public class PeakPathAnalyzer {
                         sumSq += deltaDelta * deltaDelta;
                     }
                     double delta = Math.sqrt(sumSq);
-                    System.out.println(jLevel + " " + peakDist.getPeak().getName() + " " + delta);
                     if ((delta < tol) && (delta < minDis)) {
                         minDis = delta;
                         indices[jLevel] = j;
                     }
                     j++;
                 }
-                System.out.println("best " + indices[jLevel]);
             }
         }
         List<PeakDistance> path = new ArrayList<>();
@@ -621,7 +617,6 @@ public class PeakPathAnalyzer {
         double[] yValues = new double[disList.size()];
         double[] weightValues = new double[yValues.length];
         double dTol = startPeak.getPeakDim(0).getLineWidthValue();
-        // Variogram vGram = new GaussianVariogram(400.0, 10.0, 10.0);
         for (int i = 0; i < yValues.length; i++) {
             yValues[i] = disList.get(i)[0];
             xValues[i][0] = concList.get(i);
@@ -631,15 +626,12 @@ public class PeakPathAnalyzer {
         var gRegr = GaussianProcessRegression.fit(xValues, yValues, mKernel, 0.001);
         Variogram vGram = new PowerVariogram(xValues, yValues);
         KrigingInterpolation krig = new KrigingInterpolation(xValues, yValues, vGram, weightValues);
-        //    KrigingInterpolation krig = new KrigingInterpolation(xValues, yValues);
         for (int i = 0; i < yValues.length; i++) {
             double v = krig.interpolate(xValues[i][0]);
-            System.out.println(i + " " + xValues[i][0] + " " + yValues[i] + " " + v + " " + gRegr.predict(xValues[i]));
         }
         for (int i = 0; i < 10; i++) {
             double x0 = i * 150.0;
             double[] xx = {i * 150.0};
-            System.out.println(" " + x0 + " " + krig.interpolate(x0) + " " + gRegr.predict(xx));
 
         }
 
@@ -647,7 +639,6 @@ public class PeakPathAnalyzer {
     }
 
     static double[] fitPoly(double[] x, double[] y, int order) {
-        System.out.println(x.length + " " + y.length);
         if (x.length == 1) {
             double[] coef = new double[1];
             coef[0] = y[0] / x[0];
@@ -661,7 +652,6 @@ public class PeakPathAnalyzer {
         }
         Matrix.SVD svd = mat.svd();
         double[] s = svd.s;
-        System.out.println(s.length + " " + svd.V.nrows());
         return svd.solve(y);
     }
 

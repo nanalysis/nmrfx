@@ -33,6 +33,22 @@ public class PeakPaths implements PeakListener {
     private static final String[] PRESSURE_NAMES = {"Ha", "Hb", "Hc", "Xa", "Xb", "Xc"};
     private static final String[] TITRATION_NAMES = {"K", "C"};
 
+    boolean fit0 = false;
+    ArrayList<PeakList> peakLists;
+    String name;
+    String details = "";
+    final PeakList firstList;
+    final double[][] indVars;
+    int[] peakDims = {0, 1};
+    final double[] weights;
+    final double[] tols;
+    final double dTol;
+    PATHMODE pathMode;
+    String[] parNames;
+    List<String> datasetNames;
+    Comparator<Peak> peakComparator = Comparator.comparingInt(Peak::getIdNum);
+    Map<Peak, PeakPath> paths = new TreeMap<>(peakComparator);
+
     static Map<String, PeakPaths> peakPaths() {
         ProjectBase project = ProjectBase.getActive();
         return project.peakPaths;
@@ -87,23 +103,6 @@ public class PeakPaths implements PeakListener {
             return yAxisLabel;
         }
     }
-
-    Comparator<Peak> peakComparator = Comparator.comparingInt(Peak::getIdNum);
-
-    boolean fit0 = false;
-    ArrayList<PeakList> peakLists;
-    String name;
-    String details = "";
-    Map<Peak, PeakPath> paths = new TreeMap<>(peakComparator);
-    final PeakList firstList;
-    final double[][] indVars;
-    int[] peakDims = {0, 1};
-    final double[] weights;
-    final double[] tols;
-    final double dTol;
-    PATHMODE pathMode;
-    String[] parNames;
-    List<String> datasetNames;
 
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
@@ -186,7 +185,6 @@ public class PeakPaths implements PeakListener {
                                          List<Double> x0List, List<Double> x1List, String peakPathName) {
         double[] x0 = new double[x0List.size()];
         double[] x1 = new double[x0List.size()];
-        PeakPaths peakPath;
         List<PeakList> peakLists = new ArrayList<>();
 
         for (int i = 0; i < datasetNames.size(); i++) {
@@ -211,11 +209,15 @@ public class PeakPaths implements PeakListener {
                 x1[i] = 100.0;
             }
         }
-        double[] weights = {1.0, 5.0};  // fixme  need to figure out from nuclei
+        double[] weights = {1.0, 1.0};
+        if (peakLists.get(0).getSpectralDim(1).getNucleus().contains("N")) {
+            weights[1] = 5.0;
+        }
+
         if (peakPathName.contains(".")) {
             peakPathName = peakPathName.substring(0, peakPathName.indexOf("."));
         }
-        peakPath = new PeakPaths(peakPathName, peakLists, x0, x1, weights, pathMode);
+        PeakPaths peakPath = new PeakPaths(peakPathName, peakLists, x0, x1, weights, pathMode);
         peakPath.store();
         peakPath.initPaths();
         peakPath.datasetNames = datasetNames;
@@ -525,21 +527,6 @@ public class PeakPaths implements PeakListener {
                 }
             }
         }
-    }
-
-    public void dumpFiltered(List<List<PeakDistance>> filteredLists) {
-        int iList = 0;
-        for (List<PeakDistance> peakDists : filteredLists) {
-            System.out.println(iList);
-            for (PeakDistance peakDist : peakDists) {
-                System.out.print("  " + peakDist.peak.getName() + " " + peakDist.distance);
-            }
-            System.out.println();
-        }
-    }
-
-    public void dumpPaths() {
-        paths.values().stream().sorted().forEach(path -> System.out.println(path.toString()));
     }
 
     public void refreshPaths() {
