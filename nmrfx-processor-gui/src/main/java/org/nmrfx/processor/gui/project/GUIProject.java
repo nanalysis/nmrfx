@@ -71,8 +71,10 @@ public class GUIProject extends ProjectBase {
         project.copySaveFrames(newProject);
         newProject.datasetMap.putAll(project.datasetMap);
         newProject.peakLists.putAll(project.peakLists);
-
-        newProject.peakPaths = project.peakPaths;
+        newProject.peakPaths.putAll(project.peakPaths);
+        newProject.compoundMap.putAll(project.compoundMap);
+        newProject.molecules.putAll(project.molecules);
+        newProject.activeMol = project.activeMol;
         return newProject;
     }
 
@@ -132,9 +134,6 @@ public class GUIProject extends ProjectBase {
         boolean hasDatasets =  project != null && !project.getDatasets().isEmpty();
         boolean hasPeakLists = project != null && !project.getPeakLists().isEmpty();
         return hasMolecules || hasDatasets || hasPeakLists;
-    }
-    public void clearAllMolecules() {
-        MoleculeFactory.clearAllMolecules();
     }
 
     public void loadGUIProject(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {
