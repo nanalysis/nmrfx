@@ -782,7 +782,7 @@ public class RNARotamer {
                 Atom atom = applyResidue.getAtom(aName);
                 if (atom != null) {
                     double angle = rotamer.angles[j];
-                    if (sdev != 0.0) {
+                    if (sdev > 1.0e-5) {
                         angle += CmaesRefinement.DEFAULT_RANDOMGENERATOR.nextGaussian() * sdev;
                     }
                     System.out.println(atom.getFullName() + " " + Math.toDegrees(angle));
@@ -876,7 +876,6 @@ public class RNARotamer {
      */
     public static void setDihedrals(Residue residue, Map<String, Double> angleMap, double sdev, boolean doFreeze) {
         int j = 0;
-        sdev = Math.toRadians(sdev);
         for (String atomKey : angleMap.keySet()) {
             String atomName = atomKey;
             int colonPos = atomName.indexOf(':');
@@ -893,11 +892,11 @@ public class RNARotamer {
                     Atom daughterAtom = atom.daughterAtom;
                     if (daughterAtom != null) {
                         if (angleMap.containsKey(atomKey)) {
-                            double angle = Math.toRadians(angleMap.get(atomKey)); // Converted to radians
-                            if (sdev != 0.0) {
-                                angle += CmaesRefinement.DEFAULT_RANDOMGENERATOR.nextGaussian() * sdev;
+                            double angleDeg = angleMap.get(atomKey);
+                            if (sdev > 1.0e-5) {
+                                angleDeg += CmaesRefinement.DEFAULT_RANDOMGENERATOR.nextGaussian() * sdev;
                             }
-                            daughterAtom.setDihedral(Math.toDegrees(angle));
+                            daughterAtom.setDihedral(angleDeg);
                             if (doFreeze) {
                                 atom.setRotActive(false);
                             }
