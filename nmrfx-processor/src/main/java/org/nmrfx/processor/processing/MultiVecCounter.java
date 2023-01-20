@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 public class MultiVecCounter {
     private static final Logger log = LoggerFactory.getLogger(MultiVecCounter.class);
 
-    public static boolean showDebugInfo = false;
     int[] osizes;
     int[] isizes;
     int[] inPhases;
@@ -86,6 +85,8 @@ public class MultiVecCounter {
      * dataset in each dimension
      * @param complex an array of booleans representing whether the input FID is
      * complex in each dimension.
+     * @param oComplex an array of booleans representing whether the output dataset is
+     * complex in each dimension.
      * @param modes an array of string values representing the order in which
      * data was acquired. The first character of each mode is either a 'p',
      * representing phase information, or 'd' representing time delay. The
@@ -93,6 +94,7 @@ public class MultiVecCounter {
      * first indirect dimension. For example, "p1","p2","d1","d2" represents a
      * typical Agilent 3D dataset with array value = "phase2,phase" and
      * "p1","d1","p2","d2" would represent a typical Bruker 3D dataset.
+     * @param swapIn an array of integers indicating input dimensions to swap to output dimensions
      * @param datasetNDim number of dimensions in final dataset, could be
      * smaller than original data dimensions.
      */
