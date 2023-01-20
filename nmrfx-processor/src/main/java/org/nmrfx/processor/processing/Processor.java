@@ -887,18 +887,14 @@ public class Processor {
         MEMORY_MODE_LIMIT = size;
     }
 
-    public boolean createNV(String outputFile, int[] useSizes) {
-        boolean memoryMode = useMemoryMode(useSizes);
-        createNV(outputFile, useSizes, memoryMode);
-        return true;
-    }
-
+    // called from Python
     public boolean createNV(String outputFile, int[] useSizes, int[] mapToDataset) {
         boolean memoryMode = useMemoryMode(useSizes);
         createNV(outputFile, useSizes, mapToDataset, memoryMode);
         return true;
     }
 
+    // called from Python
     public boolean createNV(String outputFile, int[] useSizes, Map flags) {
         boolean memoryMode = useMemoryMode(useSizes);
         createNV(outputFile, useSizes, memoryMode);
@@ -906,13 +902,9 @@ public class Processor {
         return true;
     }
 
-    public boolean createNVInMemory(String outputFile, int[] useSizes) {
-        createNV(outputFile, useSizes, true);
-        return true;
-    }
-
+    // called from Python
     public boolean createNVInMemory(String outputFile, int[] useSizes, int[] mapToDataset) {
-        createNV(outputFile, useSizes, true);
+        createNV(outputFile, useSizes, mapToDataset, true);
         return true;
     }
 
