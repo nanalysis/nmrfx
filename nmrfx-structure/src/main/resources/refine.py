@@ -226,6 +226,16 @@ def prioritizePolymers(molList):
     returnList += smallMoleculeList
     return returnList
 
+def loadFile(fileName):
+    if os.path.exists(fileName):
+        with open(fileName, 'r') as f1:
+            lines = f1.read().split('\n')
+    else:
+        resourceName = "data/" + fileName
+        content = molio.loadResource(resourceName)
+        lines = content.split('\n')
+    return lines
+
 class Constraint:
     def __init__(self, pair, distance, mode, setting = None):
         Constraint.lastViewed = self
@@ -1416,13 +1426,15 @@ class refine:
         #self.output()
         #exit(0)
 
+
+
     def readInitAngles(self):
         global angleDict
         helixDictFileName = 'angles.txt'
-        filetext = open(helixDictFileName, 'r')
+        lines = loadFile('angles.txt')
         headerAtoms = None
         angleDict = {}
-        for line in filetext:
+        for line in lines:
             fields = line.strip().split()
             if headerAtoms == None:
                 headerAtoms = fields[5:]
