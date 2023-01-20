@@ -34,13 +34,13 @@ import org.slf4j.LoggerFactory;
 public class MultiVecCounter {
     private static final Logger log = LoggerFactory.getLogger(MultiVecCounter.class);
 
-    public static boolean showDebugInfo = false;
     int[] osizes;
     int[] isizes;
     int[] inPhases;
     int[] inPoints;
     int[] outPhases;
     int[] outPoints;
+    int[] swap;
     int groupSize = 1;
     int nDim;
     int datasetNDim;
@@ -72,7 +72,7 @@ public class MultiVecCounter {
         osizes = new int[(nDim - 1) * 2];
         isizes = new int[(nDim - 1) * 2];
         this.datasetNDim = datasetNDim;
-        init(tdSizes, tdSizes, complex, modes);
+        init(tdSizes, tdSizes, complex,complex, modes, null);
     }
 
     /**
@@ -85,6 +85,8 @@ public class MultiVecCounter {
      * dataset in each dimension
      * @param complex an array of booleans representing whether the input FID is
      * complex in each dimension.
+     * @param oComplex an array of booleans representing whether the output dataset is
+     * complex in each dimension.
      * @param modes an array of string values representing the order in which
      * data was acquired. The first character of each mode is either a 'p',
      * representing phase information, or 'd' representing time delay. The
@@ -92,18 +94,19 @@ public class MultiVecCounter {
      * first indirect dimension. For example, "p1","p2","d1","d2" represents a
      * typical Agilent 3D dataset with array value = "phase2,phase" and
      * "p1","d1","p2","d2" would represent a typical Bruker 3D dataset.
+     * @param swapIn an array of integers indicating input dimensions to swap to output dimensions
      * @param datasetNDim number of dimensions in final dataset, could be
      * smaller than original data dimensions.
      */
-    public MultiVecCounter(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes, int datasetNDim) {
+    public MultiVecCounter(int[] tdSizes, int[] outSizes, boolean[] complex, boolean[] oComplex,  String[] modes, int[] swapIn, int datasetNDim) {
         nDim = tdSizes.length;
         osizes = new int[(nDim - 1) * 2];
         isizes = new int[(nDim - 1) * 2];
         this.datasetNDim = datasetNDim;
-        init(tdSizes, outSizes, complex, modes);
+        init(tdSizes, outSizes, complex,oComplex,  modes, swapIn);
     }
 
-    void init(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes) {
+    void init(int[] tdSizes, int[] outSizes, boolean[] complex, boolean[] oComplex, String[] modes, int[] swapIn) {
         int nIDim = tdSizes.length - 1;  // number of indirect dimensions
 
         // the index of the values in the multi-dimensional counter that references the phase increment
@@ -120,11 +123,17 @@ public class MultiVecCounter {
         //  of the output data
         outPoints = new int[nIDim];
         boolean matchIn = false;
-
         int iArg = 0;
         int iSize = 1;
         int iPhase = 1;
         groupSize = 1;
+        if (swapIn == null) {
+            swapIn = new int[nIDim + 1];
+            for (int i = 0;i<nIDim + 1;i++) {
+                swapIn[i] = i;
+            }
+        }
+        swap = swapIn.clone();
 
         for (String mode : modes) {
             // dim is the indirect dimension index running from 1 (for indirect dim 1, 2nd dim) up
@@ -170,7 +179,7 @@ public class MultiVecCounter {
             }
             groupSize = 1;
             for (int i = 0; i < nIDim; i++) {
-                if (complex[i + 1]) {
+                if (oComplex[i + 1]) {
                     groupSize *= 2;
                     osizes[2 * nIDim - 1 - i] = 2;
                 } else {
@@ -178,10 +187,11 @@ public class MultiVecCounter {
                 }
             }
         }
+
         if (log.isDebugEnabled()) {
             var sBuilder = new StringBuilder();
 
-            sBuilder.append("  MultiVecCounter: ");
+            sBuilder.append("  MultiVecCounter: \n");
             for (int i = 0; i < outPhases.length; i++) {
                 sBuilder.append("ouPh[").append(i).append("]=").append(outPhases[i]).append(" ");
             }
@@ -259,8 +269,8 @@ public class MultiVecCounter {
     public int[] outToInCounter(int[] counts) {
         int[] icounts = new int[counts.length];
         for (int i = 0; i < inPhases.length; i++) {
-            icounts[inPhases[i]] = counts[outPhases[i]];
-            icounts[inPoints[i]] = counts[outPoints[i]];
+            icounts[inPhases[swap[i + 1] - 1]] = counts[outPhases[i]];
+            icounts[inPoints[swap[i + 1] - 1]] = counts[outPoints[i]];
         }
         return icounts;
     }
@@ -298,30 +308,30 @@ public class MultiVecCounter {
         int[] inVecs = new int[groupSize];
         int[][][] outVecs = new int[groupSize][datasetNDim][2]; // output 4 vecs per group, 3 dimensions, pt
 
-        for (int i = 0; i < groupSize; i++) {
-            int[] counts;
-            try {
+        try {
+            for (int i = 0; i < groupSize; i++) {
+                int[] counts;
                 counts = outCounter.getCounts(groupSize * vecNum + i);
-            } catch (Exception ex) {
-                return null;
-            }
-            int[] iCounts = outToInCounter(counts);
-            inVecs[i] = inCounter.getCount(iCounts);
-            int[] offsets = getOffsets(counts);
-            int jDim = 1;
-            for (int iDim = 1; iDim < nDim; iDim++) {
-                if ((datasetNDim < nDim) && (osizes[nDim - iDim - 1] < 2)) {
-                    if (offsets[iDim - 1] > 0) {
-                        outVecs[i][datasetNDim - 1][0] = -1;
-                        outVecs[i][datasetNDim - 1][1] = -1;
-                        break;
+                int[] iCounts = outToInCounter(counts);
+                inVecs[i] = inCounter.getCount(iCounts);
+                int[] offsets = getOffsets(counts);
+                int jDim = 1;
+                for (int iDim = 1; iDim < nDim; iDim++) {
+                    if ((datasetNDim < nDim) && (osizes[nDim - iDim - 1] < 2)) {
+                        if (offsets[iDim - 1] > 0) {
+                            outVecs[i][datasetNDim - 1][0] = -1;
+                            outVecs[i][datasetNDim - 1][1] = -1;
+                            break;
+                        }
+                        continue;
                     }
-                    continue;
+                    outVecs[i][jDim][0] = offsets[iDim - 1];
+                    outVecs[i][jDim][1] = offsets[iDim - 1];
+                    jDim++;
                 }
-                outVecs[i][jDim][0] = offsets[iDim - 1];
-                outVecs[i][jDim][1] = offsets[iDim - 1];
-                jDim++;
             }
+        } catch (Exception ex) {
+            throw ex;
         }
         return new VecIndex(inVecs, outVecs);
     }

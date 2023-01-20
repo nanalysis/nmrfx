@@ -48,6 +48,7 @@ import javafx.stage.FileChooser;
 import javafx.util.Callback;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
@@ -63,7 +64,6 @@ import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
-import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
@@ -1551,25 +1551,20 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         realImagChoiceBox.getItems().clear();
         int nDim = complex.length;
         if (nDim > 1) {
-            int nVectors = 1;
+            int[] sizes = new int[nDim - 1];
             for (int iDim = 1; iDim < nDim; iDim++) {
-                nVectors *= complex[iDim] ? 2 : 1;
+                sizes[iDim - 1] = complex[iDim] ? 2 : 1;
             }
             realImagChoiceBox.valueProperty().removeListener(vecNumListener);
             StringBuilder sBuilder = new StringBuilder();
-            for (int i = 0; i < nVectors; i++) {
+            MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
+            var iterator = counter.iterator();
+            while (iterator.hasNext()) {
+                iterator.next();
+                int[] counts = iterator.getCounts();
                 sBuilder.setLength(0);
-                for (int j = nDim - 2; j >= 0; j--) {
-                    if (complex[j + 1]) {
-                        int k = (int) Math.pow(2, j);
-                        int kk = (i / k) % 2;
-                        sBuilder.append(chars[kk]);
-                    } else {
-                        sBuilder.append("R");
-                    }
-                }
-                if (log.isInfoEnabled()) {
-                    log.info("{} {} {}", i, nVectors, sBuilder);
+                for (int i : counts) {
+                    sBuilder.append(chars[i]);
                 }
                 realImagChoiceBox.getItems().add(sBuilder.toString());
                 realImagChoices.add(sBuilder.toString());

@@ -270,8 +270,9 @@ class FIDInfo:
                     if doubleValue == None:
                         raise Exception("Cannot convert par "+par)
                     self.ref[i] = doubleValue;
-            delRef = (self.size[i]/2) * self.sw[i] / self.sf[i] / self.size[i];
-            self.fidObj.setRef(i,self.ref[i])
+            if self.size[i] != 0:
+                delRef = (self.size[i]/2) * self.sw[i] / self.sf[i] / self.size[i];
+                self.fidObj.setRef(i,self.ref[i])
 
     def setLabel(self,pars):
         self.checkParDim(pars)
@@ -349,6 +350,12 @@ class FIDInfo:
 
     def setFIDMap(self,values):
         self.mapToFIDList = list(values)
+        processor.adjustSizes();
+
+    def setDatasetMap(self,values):
+        self.mapToDatasetList = list(values)
+        processor.setMapToDataset(self.mapToDatasetList)
+        processor.adjustSizes();
 
     def mapToFID0(self, iDim):
         if iDim < len(self.mapToFIDList):
@@ -857,14 +864,13 @@ def createDataset(nvFileName=None):
     useSize = []
     j=0
     for i,sz in enumerate(dataInfo.msize):
-        if (fidInfo.mapToDatasetList[i] >= 0) and (sz > 1):
-            useSize.append(fidInfo.useSize[i])
-            j += 1
-        else:
-            useSize.append(1)
+        fidDim = fidInfo.mapToFID0(i)
+        useSize.append(fidInfo.useSize[i])
+
     if dataInfo.extra != 0:
         useSize.append(dataInfo.extra)
-        
+        fidInfo.mapToDatasetList.append(len(useSize) - 1)
+
     if not processor.isDatasetOpen():
         try:
             os.remove(nvFileName)
@@ -877,11 +883,11 @@ def createDataset(nvFileName=None):
         except OSError:
             pass
         if dataInfo.inMemory:
-            processor.createNVInMemory(nvFileName, useSize)
+            processor.createNVInMemory(nvFileName, useSize, fidInfo.mapToDatasetList)
         elif (fidInfo and fidInfo.flags):
             processor.createNV(nvFileName, useSize, fidInfo.flags)
         else:
-            processor.createNV(nvFileName, useSize)
+            processor.createNV(nvFileName, useSize, fidInfo.mapToDatasetList)
 
         dataset = processor.getDataset()
         psspecial.datasetMods(dataset, fidInfo)
