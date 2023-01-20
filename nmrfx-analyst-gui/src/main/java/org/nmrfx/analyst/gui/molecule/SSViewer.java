@@ -29,7 +29,7 @@ import java.util.*;
 public class SSViewer extends Pane {
 
     private static final Logger log = LoggerFactory.getLogger(SSViewer.class);
-
+    private static final int N_ATOMS = 7;
 
     record AtomCoord(double x, double y) {}
 
@@ -147,8 +147,7 @@ public class SSViewer extends Pane {
         double scaleX = paneWidth / widthX;
         double scaleY = paneHeight / widthY;
         scale = Math.min(scaleX, scaleY);
-        int nAtoms = 7;
-        scale *= (0.85 - nAtoms * 0.02);
+        scale *= (0.85 - N_ATOMS * 0.02);
     }
 
     Node drawLabelledCircle(double width, String text, int fontSize, Color color, double x, double y) {
@@ -515,10 +514,9 @@ public class SSViewer extends Pane {
             double x1 = point.getX();
             double y1 = point.getY();
             AtomCoord aCoord = deltaCoords[iRes];
-            int nAtoms = 7;
             int startAtom = -2;
             int iDrawn = 0;
-            for (int j = startAtom; j < nAtoms; j++) {
+            for (int j = startAtom; j < N_ATOMS; j++) {
                 if ((j == -2) && (resChar != 'G')) {
                     continue;
                 }
@@ -712,8 +710,7 @@ public class SSViewer extends Pane {
         }
         String aName1 = getAtomName(a1);
         String aName2 = getAtomName(a2);
-        int nAtoms = 7;
-        if ((getAtomIndex(aName1) >= nAtoms) || (getAtomIndex(aName2) >= nAtoms)) {
+        if ((getAtomIndex(aName1) >= N_ATOMS) || (getAtomIndex(aName2) >= N_ATOMS)) {
             return;
         }
         if ((r1Num > r2Num) || (a1.compareTo(a2) > 0)) {
