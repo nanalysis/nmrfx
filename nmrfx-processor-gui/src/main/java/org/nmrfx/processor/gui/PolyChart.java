@@ -2082,6 +2082,7 @@ public class PolyChart extends Region implements PeakListener {
         if (is1D()) {
             nAxes = 2;
         }
+        int[] dims = datasetAttributes.getDims();
         if (alwaysUpdate || (axes.length != nAxes)) {
             axes = new NMRAxis[nAxes];
             axes[0] = xAxis;
@@ -2093,7 +2094,7 @@ public class PolyChart extends Region implements PeakListener {
                 double[] ppmLimits = datasetAttributes.getMaxLimits(i);
                 double centerPPM = (ppmLimits[0] + ppmLimits[1]) / 2.0;
                 axes[i] = new NMRAxis(Orientation.HORIZONTAL, centerPPM, centerPPM, 0, 1);
-                if (dataset.getFreqDomain(i)) {
+                if (dataset.getFreqDomain(dims[i])) {
                     axModes[i] = AXMODE.PPM;
                 } else {
                     axModes[i] = AXMODE.PTS;
@@ -2105,7 +2106,7 @@ public class PolyChart extends Region implements PeakListener {
             drawSpectrum.setAxes(axes);
             drawSpectrum.setDisDim(disDimProp.getValue());
         }
-        if (dataset.getFreqDomain(0)) {
+        if (dataset.getFreqDomain(dims[0])) {
             axModes[0] = AXMODE.PPM;
         } else {
             axModes[0] = AXMODE.TIME;
@@ -2119,7 +2120,7 @@ public class PolyChart extends Region implements PeakListener {
         String xLabel = axModes[0].getLabel(datasetAttributes, 0);
         setAxisState(xAxis, xLabel);
         if (!is1D()) {
-            if (dataset.getFreqDomain(1)) {
+            if (dataset.getFreqDomain(dims[1])) {
                 axModes[1] = AXMODE.PPM;
             } else {
                 axModes[1] = AXMODE.PTS;
