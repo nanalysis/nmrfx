@@ -258,6 +258,11 @@ public class Sequence {
                         daughterAtom.addBond(bond);
                         daughterAtom.parent = refAtom;
                     }
+                    if (!connector && ringClosure) {
+                        bond = new Bond(daughterAtom, refAtom);
+                        bond.setRingClosure(true);
+                        daughterAtom.addBond(bond);
+                    }
                     if (!connector) {
                         bond = new Bond(refAtom, daughterAtom, order);
                         bond.setRingClosure(ringClosure);
