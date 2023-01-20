@@ -28,10 +28,7 @@ public class PeakPath implements Comparable<PeakPath> {
             return false;
         }
         final PeakPath other = (PeakPath) obj;
-        if (!Objects.equals(this.firstPeak, other.firstPeak)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.firstPeak, other.firstPeak);
     }
 
     Peak firstPeak;
@@ -134,11 +131,9 @@ public class PeakPath implements Comparable<PeakPath> {
     public boolean isFree() {
         boolean free = true;
         for (PeakDistance peakDis : peakDists) {
-            if (peakDis != null) {
-                if (peakDis.peak.getStatus() != 0) {
-                    free = false;
-                    break;
-                }
+            if ((peakDis != null) && (peakDis.peak.getStatus() != 0)) {
+                free = false;
+                break;
             }
         }
         return free;
