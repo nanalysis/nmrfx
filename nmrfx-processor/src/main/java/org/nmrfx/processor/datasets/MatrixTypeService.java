@@ -235,7 +235,7 @@ public class MatrixTypeService {
     /**
      * Writes all of the items from the processedItemQueue to file.
      */
-    public final boolean readWriteItems() {
+    public final boolean readWriteItems() throws InterruptedException {
         List<MatrixType> temp = null;
         while (true) {
             try {
@@ -260,6 +260,9 @@ public class MatrixTypeService {
                         return true;
                     }
                 }
+            } catch (InterruptedException ex) {
+                log.error(ex.getMessage(), ex);
+                throw(ex);
             } catch (Exception ex) {
                 log.error(ex.getMessage(), ex);
                 errorWhileReadWrite.set(true);

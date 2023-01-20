@@ -431,7 +431,6 @@ public class Processor {
             if (arraySize != 0) {
                 nArray++;
             }
-            int fidDim = mapToFID != null && mapToFID.length > i ? mapToFID(i) : i;
             complex[i] = nmrData.isComplex(i);
         }
 
@@ -1236,9 +1235,6 @@ public class Processor {
                 }
             }
         } else {  // direct dimension, read FIDs
-            if (tmult == null) {
-                //setupDirectDim();
-            }
             int vectorsPerGroup = 1;
             if (tmult != null) {
                 vectorsPerGroup = tmult.getGroupSize();
@@ -1254,7 +1250,6 @@ public class Processor {
                 try {
                     vecIndex = getNextGroup(vecGroup);
                 } catch (Exception pEx) {
-                    pEx.printStackTrace();
                     throw pEx;
                 }
 
@@ -1281,9 +1276,6 @@ public class Processor {
                         }
                         vecReadCount.incrementAndGet();
                     }
-                } else {
-//                    setProcessorAvailableStatus(true);
-//                    throw new ProcessingException("Null vecIndex");
                 }
             }
         }

@@ -1559,7 +1559,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             StringBuilder sBuilder = new StringBuilder();
             MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
             var iterator = counter.iterator();
-            List<String> choices = new ArrayList<>();
             while (iterator.hasNext()) {
                 iterator.next();
                 int[] counts = iterator.getCounts();
