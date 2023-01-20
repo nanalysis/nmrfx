@@ -135,9 +135,6 @@ public class GUIProject extends ProjectBase {
         boolean hasPeakLists = project != null && !project.getPeakLists().isEmpty();
         return hasMolecules || hasDatasets || hasPeakLists;
     }
-    public void clearAllMolecules() {
-        MoleculeFactory.clearAllMolecules();
-    }
 
     public void loadGUIProject(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {
         ProjectBase currentProject = getActive();
