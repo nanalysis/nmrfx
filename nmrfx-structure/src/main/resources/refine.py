@@ -370,7 +370,6 @@ class dynOptions(StrictDict):
         if initDict is None:
             initDict = {}
         StrictDict.__init__(self,defaultErr="dynamics", defaultDict=dynOptions.defaults)
-        #self.update(dynOptions.defaults)
         self.strictUpdate(initDict)
 
 def createStrictDict(initDict, type):
@@ -1008,9 +1007,6 @@ class refine:
                     sigma.append(float(values[i+1]))
                     height.append(float(values[i+2]))
                     i+=3
-                #bound = AngleBoundary(atomName,lower,upper,scale,center,sigma,height)
-                #self.dihedral.addBoundary(atomName,bound)
-                #self.addAngleConstraintAtoms(atoms, lower, upper, scale)
 
     def loadDistancesFromFile(self,fileName, keepSetting=None):
        file = open(fileName,"r")
@@ -1201,8 +1197,6 @@ class refine:
                 linkerList.append(newLinker)
                 for i,atom in enumerate(linkPair):
                     entName = atom.getTopEntity().getName()
-#                    if i == 1:
-#                        self.entityEntryDict[atom.getTopEntity()] = atom
                     if entName in unusedEntities:
                         unusedEntities.remove(entName)
         elif linkerList:
@@ -1219,14 +1213,10 @@ class refine:
                 linkerList = ArrayList()
         for entityName in unusedEntities:
             entity = self.molecule.getEntity(entityName)
-            #print entityName + " had no defined linker."
             startAtom = firstEntity.getLastAtom().getFullName()
             endAtom = self.getEntityTreeStartAtom(entity).getFullName()
             newLinker = {'atoms': [startAtom, endAtom]}
-#            newLinker = {'atoms': ["A:20.H3'", "B:1.O5'"]}
-#            print 'make new linker', newLinker
             linkerList.append(newLinker)
-            #print "linker added between " + startAtom + " and " + endAtom
         return linkerList
 
     def loadFromYaml(self,data, seed, fileName=""):
@@ -1327,12 +1317,7 @@ class refine:
         if 'tree' in data:
             if len(self.molecule.getEntities()) > 1:
                 linkerList = self.validateLinkerList(linkerList, treeDict, rnaLinkerDict)
-            #else:
-            #    if linkerList:
-            #        linkerList = [linkerList]
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
-            #if 'bonds' in data:
-            #    self.processBonds(data['bonds'], 'break')
             self.measureTree()
         else:
             if nEntities > 1:
@@ -1423,10 +1408,6 @@ class refine:
                 self.readAngles(data['file'])
             self.restart()
         self.molecule.genCoords()
-        #self.output()
-        #exit(0)
-
-
 
     def readInitAngles(self):
         global angleDict
@@ -1480,11 +1461,6 @@ class refine:
                         else:
                             aaType = 'UA'
                         anglesToSet = angleDict['helix'+':0:'+aaType].copy()
-#                        if res.getAtom("X1") == None:
-#                            try:
-#                                del anglesToSet["O3'"]
-#                            except:
-#                                print "Error deleting O3' on residue: " + str(res)
                         if (str(res) == entry['first'][1]):
                             print 'Helix segment end found at residue: ' + str(res)
                             anglesToSet = angleDict['tetra-link'+':0:'+'U'].copy()
@@ -2869,8 +2845,6 @@ class refine:
                     spSet2 = atom2.getSpatialSet()
                     rdcObj = RDCConstraint(rdcSet, spSet1, spSet2, rdc, err)
                     rdcSet.add(rdcObj)
-        #for constraint in rdcSet.get():
-        #    print constraint.getSpSets()[0].getFullName(), constraint.getSpSets()[1].getFullName(), constraint.getValue(), constraint.getErr()
 
     def predictRNAShifts(self, typeRCDist="dist"):
         #XXX: Need to complete docstring
@@ -2997,8 +2971,6 @@ class refine:
     def annealPrep(self,dOpt, steps=100):
         ranfact=20.0
         self.setSeed(self.seed)
-        #self.putPseudo(18.0,45.0)
-        #raise ValueError()
         self.randomizeAngles() # Angles randomized here
         energy = self.energy()
         forceDict = self.settings.get('force')
@@ -3015,7 +2987,6 @@ class refine:
             self.gmin(nsteps=steps,tolerance=1.0e-6)
         if self.eFileRoot != None and self.reportDump:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
-        #exit()
 
     def init(self,dOpt=None):
         from anneal import runStage
