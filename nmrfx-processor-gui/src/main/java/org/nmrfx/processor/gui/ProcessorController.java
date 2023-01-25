@@ -481,14 +481,17 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     public void viewDatasetInApp(Dataset dataset) {
+        Dataset currentDataset = (Dataset) chart.getDataset();
         if (dataset != null) {
-            Dataset currentDataset = (Dataset) chart.getDataset();
             chart.controller.addDataset(dataset, false, false);
             if ((currentDataset != null) && (currentDataset != dataset)) {
                 currentDataset.close();
             }
         } else {
             if (chartProcessor.datasetFile != null) {
+                if (currentDataset != null) {
+                    currentDataset.close();
+                }
                 boolean viewingDataset = isViewingDataset();
                 chart.controller.openDataset(chartProcessor.datasetFile, false, true);
                 viewMode.setValue(DisplayMode.SPECTRUM);
@@ -967,19 +970,21 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     void finishOnPlatform(Dataset dataset) {
-        String newName = dataset.getFile().toString();
-        Dataset currentDataset = (Dataset) chart.getDataset();
-        if (currentDataset != null) {
-            chart.clearDrawlist();
-            currentDataset.close();
+        if (dataset != null) {
+            String newName = dataset.getFile().toString();
+            Dataset currentDataset = (Dataset) chart.getDataset();
+            if (currentDataset != null) {
+                chart.clearDrawlist();
+                currentDataset.close();
+            }
+            try {
+                dataset.setFile(new File(newName));
+            } catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
+            setSaveState(dataset);
+            viewDatasetInApp(dataset);
         }
-        try {
-            dataset.setFile(new File(newName));
-        } catch (IOException e) {
-            log.error(e.getMessage(),e);
-        }
-        setSaveState(dataset);
-        viewDatasetInApp(dataset);
     }
 
     public void saveDataset(Dataset dataset) {
