@@ -725,9 +725,9 @@ public class PeakReader {
                                 sw = 4000.0;
                                 peakList.getSpectralDim(i).setDimName("13C");
                             }
+                            peakList.getSpectralDim(i).setSf(sf);
+                            peakList.getSpectralDim(i).setSw(sw);
                         }
-                        peakList.getSpectralDim(i).setSf(sf);
-                        peakList.getSpectralDim(i).setSw(sw);
                         peakDim.setLineWidthHz(widthHz);
                         peakDim.setBoundsHz(widthHz * 3.0f);
                     }
