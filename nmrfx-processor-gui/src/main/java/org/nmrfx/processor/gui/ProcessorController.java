@@ -64,6 +64,7 @@ import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
@@ -1037,6 +1038,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             updateScriptDisplay();
         }
         if (fixDatasetName()) {
+            if (chartProcessor.datasetFile != null) {
+                ProjectBase.getActive().getDatasetsWithFile(chartProcessor.datasetFile).stream().forEach(d -> d.close());
+            }
             ((Service) processDataset.worker).restart();
         }
     }
