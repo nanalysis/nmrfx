@@ -11,11 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -100,7 +100,7 @@ public class StorageCache {
     public StorageCache() {
         TrackingLRUMap lruMap = new TrackingLRUMap(1024);
 
-        buffers = Collections.synchronizedMap(lruMap);
+        buffers = new ConcurrentHashMap<DatasetKey, ByteBuffer>(lruMap);
 
     }
 

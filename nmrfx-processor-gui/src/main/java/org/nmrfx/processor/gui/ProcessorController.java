@@ -54,12 +54,15 @@ import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
+import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
@@ -75,6 +78,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
@@ -991,8 +995,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public void saveDataset(Dataset dataset) {
         if ((dataset != null) && (dataset.isMemoryFile()) && dataset.hasDataFile()) {
             try {
-                File file = dataset.getFile();
-                String path = dataset.saveMemoryFile();
+                if (dataset.getFileName().endsWith(RS2DData.DATA_FILE_NAME) && (Processor.getProcessor().getNMRData() instanceof RS2DData rs2DData)) {
+                    Path procNumPath = rs2DData.saveDataset(dataset);
+                    EventBus.getDefault().post(new DatasetSavedEvent(RS2DData.DATASET_TYPE, procNumPath));
+                } else {
+                    dataset.saveMemoryFile();
+                }
                 String script = dataset.script();
                 if (!script.isBlank()) {
                     try {
