@@ -989,7 +989,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void saveDataset(Dataset dataset) {
-        if ((dataset != null) && (dataset.isMemoryFile())) {
+        if ((dataset != null) && (dataset.isMemoryFile()) && dataset.hasDataFile()) {
             try {
                 File file = dataset.getFile();
                 String path = dataset.saveMemoryFile();
@@ -1001,7 +1001,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                         GUIUtils.warn("Write Script Error", ex.getMessage());
                     }
                 }
-            } catch (IOException | DatasetException e) {
+            } catch (IOException | DatasetException | NullPointerException e) {
                 log.error("Couldn't save dataset", e);
             }
         }
