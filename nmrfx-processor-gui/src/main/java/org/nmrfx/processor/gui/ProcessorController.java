@@ -54,16 +54,20 @@ import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
+import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
@@ -74,6 +78,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
@@ -481,14 +486,17 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     public void viewDatasetInApp(Dataset dataset) {
+        Dataset currentDataset = (Dataset) chart.getDataset();
         if (dataset != null) {
-            Dataset currentDataset = (Dataset) chart.getDataset();
             chart.controller.addDataset(dataset, false, false);
             if ((currentDataset != null) && (currentDataset != dataset)) {
                 currentDataset.close();
             }
         } else {
             if (chartProcessor.datasetFile != null) {
+                if (currentDataset != null) {
+                    currentDataset.close();
+                }
                 boolean viewingDataset = isViewingDataset();
                 chart.controller.openDataset(chartProcessor.datasetFile, false, true);
                 viewMode.setValue(DisplayMode.SPECTRUM);
@@ -967,26 +975,32 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     void finishOnPlatform(Dataset dataset) {
-        String newName = dataset.getFile().toString();
-        Dataset currentDataset = (Dataset) chart.getDataset();
-        if (currentDataset != null) {
-            chart.clearDrawlist();
-            currentDataset.close();
+        if (dataset != null) {
+            String newName = dataset.getFile().toString();
+            Dataset currentDataset = (Dataset) chart.getDataset();
+            if (currentDataset != null) {
+                chart.clearDrawlist();
+                currentDataset.close();
+            }
+            try {
+                dataset.setFile(new File(newName));
+            } catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
+            setSaveState(dataset);
+            viewDatasetInApp(dataset);
         }
-        try {
-            dataset.setFile(new File(newName));
-        } catch (IOException e) {
-            log.error(e.getMessage(),e);
-        }
-        setSaveState(dataset);
-        viewDatasetInApp(dataset);
     }
 
     public void saveDataset(Dataset dataset) {
-        if ((dataset != null) && (dataset.isMemoryFile())) {
+        if ((dataset != null) && (dataset.isMemoryFile()) && dataset.hasDataFile()) {
             try {
-                File file = dataset.getFile();
-                String path = dataset.saveMemoryFile();
+                if (dataset.getFileName().endsWith(RS2DData.DATA_FILE_NAME) && (Processor.getProcessor().getNMRData() instanceof RS2DData rs2DData)) {
+                    Path procNumPath = rs2DData.saveDataset(dataset);
+                    EventBus.getDefault().post(new DatasetSavedEvent(RS2DData.DATASET_TYPE, procNumPath));
+                } else {
+                    dataset.saveMemoryFile();
+                }
                 String script = dataset.script();
                 if (!script.isBlank()) {
                     try {
@@ -995,7 +1009,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                         GUIUtils.warn("Write Script Error", ex.getMessage());
                     }
                 }
-            } catch (IOException | DatasetException e) {
+            } catch (IOException | DatasetException | NullPointerException e) {
                 log.error("Couldn't save dataset", e);
             }
         }
@@ -1032,6 +1046,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             updateScriptDisplay();
         }
         if (fixDatasetName()) {
+            if (chartProcessor.datasetFile != null) {
+                ProjectBase.getActive().getDatasetsWithFile(chartProcessor.datasetFile).stream().forEach(d -> d.close());
+            }
             ((Service) processDataset.worker).restart();
         }
     }
