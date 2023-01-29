@@ -19,6 +19,7 @@ package org.nmrfx.processor.processing;
 
 import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.DatasetParameterFile;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.Dataset;
@@ -912,7 +913,7 @@ public class Processor {
         return createNV(outputFile, useSizes, null, inMemory);
     }
 
-    public boolean createNV(String outputFile, int[] useSizes, int[] mapToDataset, boolean inMemory) {
+    public boolean createNV(String outputFileName, int[] useSizes, int[] mapToDataset, boolean inMemory) {
         if (progressUpdater != null) {
             progressUpdater.updateStatus("Create output dataset");
         }
@@ -924,21 +925,31 @@ public class Processor {
         }
 
         this.acqSizesToUse = useSizes;
-        File file = new File(outputFile);
+        File file = new File(outputFileName);
         String key = file.getName();
         try {
             if (inMemory) {
                 if (tempFileMode) {
                     key += ".tmp." + iDataNum++;
                 }
-                this.dataset = new Dataset(outputFile, nDimToUse);
+                long ms = System.currentTimeMillis();
+                outputFileName = outputFileName.replace(".nv", ".tmp." + ms + ".nv");
+                file = new File(outputFileName);
+                file.delete();
+
+                this.dataset = new Dataset(outputFileName, nDimToUse);
             } else {
                 int[] idSizes = getIndirectSizes();
                 for (int i = 0; i < idSizes.length; i++) {
                     useSizes[i + 1] = idSizes[i];
                 }
-                this.dataset = Dataset.createDataset(outputFile, key, outputFile, useSizes, false, false);
+                file.delete();
+                this.dataset = Dataset.createDataset(outputFileName, key, outputFileName, useSizes, false, false);
             }
+            this.fileName = outputFileName;
+            String parFileName = DatasetParameterFile.getParameterFileName(outputFileName);
+            File parFile = new File(parFileName);
+            parFile.delete();
         } catch (DatasetException ex) {
             log.error(ex.getMessage(), ex);
             return false;

@@ -494,35 +494,52 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             }
         } else {
             if (chartProcessor.datasetFile != null) {
-                if (currentDataset != null) {
-                    currentDataset.close();
-                }
-                boolean viewingDataset = isViewingDataset();
-                chart.controller.openDataset(chartProcessor.datasetFile, false, true);
-                viewMode.setValue(DisplayMode.SPECTRUM);
-                if (!viewingDataset) {
-                    chart.full();
-                    chart.autoScale();
-                }
+                viewDatasetFileInApp(chartProcessor.datasetFile);
             }
         }
     }
 
+    File renameFile(File file, String ext) {
+        String currentName;
+        if (ext.equals("nv")) {
+            ProjectBase.getActive().getDatasetsWithFile(file).stream().forEach(d -> d.close());
+            currentName = file.toString();
+        } else {
+            currentName = file.toString().replace(".nv", "." + ext);
+            file = new File(currentName);
+        }
+        String newName = currentName.replaceAll("\\.tmp\\.[0-9]*\\." + ext, "." + ext);
+        File newFile = new File(newName);
+        try {
+            if (file.exists()) {
+                if (newFile.exists()) {
+                    System.out.println("delete " + newFile);
+                    newFile.delete();
+                }
+                Files.move(file.toPath(), newFile.toPath());
+            }
+        } catch (IOException e) {
+            log.error("Can't rename file", e);
+            newFile = file;
+        }
+        return newFile;
+    }
+
     void viewDatasetFileInApp(File file) {
-        boolean viewingDataset = isViewingDataset();
         Dataset currentDataset = (Dataset) chart.getDataset();
-        Dataset datasetByName = Dataset.getDataset(file.getName());
-        if (datasetByName != null) {
-            datasetByName.close();
-        }
-        Dataset dataset = chart.controller.openDataset(file, false, true);
-        if ((currentDataset != null) && (currentDataset != dataset)) {
-            currentDataset.close();
-        }
-        viewMode.setValue(DisplayMode.SPECTRUM);
-        if (!viewingDataset) {
-            chart.full();
-            chart.autoScale();
+        if (file != null) {
+            if (currentDataset != null) {
+                currentDataset.close();
+            }
+            boolean viewingDataset = isViewingDataset();
+            renameFile(file, "par");
+            file = renameFile(file, "nv");
+            chart.controller.openDataset(file, false, true);
+            viewMode.setValue(DisplayMode.SPECTRUM);
+            if (!viewingDataset) {
+                chart.full();
+                chart.autoScale();
+            }
         }
     }
 
@@ -999,7 +1016,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     Path procNumPath = rs2DData.saveDataset(dataset);
                     EventBus.getDefault().post(new DatasetSavedEvent(RS2DData.DATASET_TYPE, procNumPath));
                 } else {
-                    dataset.saveMemoryFile();
+                    String newFileName = dataset.saveMemoryFile();
+                    viewDatasetFileInApp(new File(newFileName));
                 }
                 String script = dataset.script();
                 if (!script.isBlank()) {
@@ -1109,7 +1127,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     } catch (IOException ex) {
                         GUIUtils.warn("Write Script Error", ex.getMessage());
                     }
-                    ConsoleUtil.runOnFxThread(() -> viewDatasetInApp(processedDataset));
+                    if (processedDataset == null) {
+                        ConsoleUtil.runOnFxThread(() -> viewDatasetFileInApp(new File(processor.getFileName())));
+                    } else {
+                        ConsoleUtil.runOnFxThread(() -> viewDatasetInApp(processedDataset));
+                    }
                 }
                 isProcessing.set(false);
                 if (doProcessWhenDone.get()) {

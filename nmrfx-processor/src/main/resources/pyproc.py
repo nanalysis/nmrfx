@@ -872,16 +872,6 @@ def createDataset(nvFileName=None):
         fidInfo.mapToDatasetList.append(len(useSize) - 1)
 
     if not processor.isDatasetOpen():
-        try:
-            os.remove(nvFileName)
-        except OSError:
-            pass
-
-        parFileName = os.path.splitext(nvFileName)[0]+'.par'
-        try:
-            os.remove(parFileName)
-        except OSError:
-            pass
         if dataInfo.inMemory:
             processor.createNVInMemory(nvFileName, useSize, fidInfo.mapToDatasetList)
         elif (fidInfo and fidInfo.flags):

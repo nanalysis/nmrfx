@@ -287,6 +287,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         this.file = file;
         canonicalName = file.getCanonicalPath();
         fileName = file.getName().replace(' ', '_');
+        fileName =  fileName.replaceAll("\\.tmp\\.[0-9]*\\.nv", ".nv");
         ProjectBase.getActive().addDataset(this, fileName);
     }
 
@@ -356,7 +357,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         setNDim(nDim);
 
         layout = null;
-        this.fileName = file.getName();
+        fileName = file.getName().replaceAll("\\.tmp\\.[0-9]*\\.nv", ".nv");
         this.title = this.fileName;
         newHeader();
         dataFile = null;
