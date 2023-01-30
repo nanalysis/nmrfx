@@ -1690,6 +1690,10 @@ public class PolyChart extends Region implements PeakListener {
         refresh();
     }
 
+    public void stopDrawing() {
+        drawSpectrum.clearThreads();
+    }
+
     public void updateDatasets(List<String> targets) {
         ObservableList<DatasetAttributes> datasetAttrs = getDatasetAttributes();
         List<DatasetAttributes> newList = new ArrayList<>();
