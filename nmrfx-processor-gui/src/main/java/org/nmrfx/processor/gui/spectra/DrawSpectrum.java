@@ -190,8 +190,9 @@ public class DrawSpectrum {
     public void clearThreads() {
         Service makeService = ((Service) makeContours.worker);
         Service drawService = ((Service) drawContours.worker);
-        makeService.cancel();
+        cancelled = true;
         drawService.cancel();
+        makeService.cancel();
     }
 
     public boolean drawSpectrumImmediate(GraphicsContextInterface g2I, ArrayList<DatasetAttributes> dataGenerators, AXMODE[] axModes) {
