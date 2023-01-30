@@ -644,12 +644,13 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         removeFile(fileName);
         try {
             if (dataFile != null) {
-                if (dataFile.isWritable()) {
-                    dataFile.force();
+                DatasetStorageInterface oldFile = dataFile;
+                dataFile = null;
+                if (oldFile.isWritable()) {
+                    oldFile.force();
                 }
-                dataFile.close();
+                oldFile.close();
             }
-            dataFile = null;
         } catch (IOException e) {
             //LOGGER.warn(e.getMessage());
         }
