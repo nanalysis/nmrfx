@@ -46,6 +46,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.math3.util.MultidimensionalCounter;
@@ -488,6 +489,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public void viewDatasetInApp(Dataset dataset) {
         Dataset currentDataset = (Dataset) chart.getDataset();
         if (dataset != null) {
+            chart.stopDrawing();
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException ie) {
+
+            }
             chart.controller.addDataset(dataset, false, false);
             if ((currentDataset != null) && (currentDataset != dataset)) {
                 currentDataset.close();
@@ -502,7 +509,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     File renameFile(File file, String ext) {
         String currentName;
         if (ext.equals("nv")) {
-            ProjectBase.getActive().getDatasetsWithFile(file).stream().forEach(d -> d.close());
             currentName = file.toString();
         } else {
             currentName = file.toString().replace(".nv", "." + ext);
@@ -513,7 +519,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         try {
             if (file.exists()) {
                 if (newFile.exists()) {
-                    System.out.println("delete " + newFile);
                     newFile.delete();
                 }
                 Files.move(file.toPath(), newFile.toPath());
@@ -525,15 +530,52 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         return newFile;
     }
 
+    File renameDir(File file) {
+        File parent = file.getParentFile();
+        String procNumStr = parent.getName();
+        File newFile = file;
+        if (StringUtils.isNumeric(procNumStr)) {
+            long procNum = Long.parseLong(procNumStr);
+            if (procNum > 1000) {
+                procNum = procNum - ((procNum / 1000) * 1000);
+                File newParent = parent.getParentFile().toPath().resolve(String.valueOf(procNum)).toFile();
+                try {
+                    if (file.exists()) {
+                        if (newParent.exists()) {
+                            FileUtils.deleteDirectory(newParent);
+                        }
+                        Files.move(parent.toPath(), newParent.toPath());
+                    }
+                } catch (IOException e) {
+                    log.error("Can't rename file", e);
+                    newParent = file;
+                }
+                newFile = newParent.toPath().resolve(RS2DData.DATA_FILE_NAME).toFile();
+            }
+        }
+        return newFile;
+    }
+
     void viewDatasetFileInApp(File file) {
         Dataset currentDataset = (Dataset) chart.getDataset();
         if (file != null) {
+            chart.stopDrawing();
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException ie) {
+
+            }
             if (currentDataset != null) {
                 currentDataset.close();
             }
+
             boolean viewingDataset = isViewingDataset();
-            renameFile(file, "par");
-            file = renameFile(file, "nv");
+            if (file.getName().equals(RS2DData.DATA_FILE_NAME)) {
+                file = renameDir(file);
+            } else {
+                renameFile(file, "par");
+                file = renameFile(file, "nv");
+            }
             chart.controller.openDataset(file, false, true);
             viewMode.setValue(DisplayMode.SPECTRUM);
             if (!viewingDataset) {
@@ -996,6 +1038,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             String newName = dataset.getFile().toString();
             Dataset currentDataset = (Dataset) chart.getDataset();
             if (currentDataset != null) {
+                chart.stopDrawing();
                 chart.clearDrawlist();
                 currentDataset.close();
             }
@@ -1043,7 +1086,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 doProcessWhenDone.set(true);
             } else {
                 doProcessWhenDone.set(false);
-                processDataset(true);
+                ConsoleUtil.runOnFxThread(() -> processDataset(true));
             }
         }
     }
@@ -1064,9 +1107,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             updateScriptDisplay();
         }
         if (fixDatasetName()) {
-            if (chartProcessor.datasetFile != null) {
-                ProjectBase.getActive().getDatasetsWithFile(chartProcessor.datasetFile).stream().forEach(d -> d.close());
-            }
             ((Service) processDataset.worker).restart();
         }
     }
@@ -1103,7 +1143,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                                 processInterp.exec("from pyproc import *");
                                 processor = Processor.getProcessor();
                                 processor.keepDatasetOpen(idleMode.get());
-                                processor.setTempFileMode(idleMode.get());
+                                processor.setTempFileMode(true);
                                 processor.clearDataset();
                                 processInterp.exec("useProcessor(inNMRFx=True)");
                                 processInterp.exec(script);
