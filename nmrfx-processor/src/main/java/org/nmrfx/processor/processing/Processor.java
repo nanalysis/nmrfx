@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.processing;
 
+import org.apache.commons.lang3.StringUtils;
 import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetParameterFile;
@@ -930,10 +931,19 @@ public class Processor {
         try {
             if (inMemory) {
                 if (tempFileMode) {
-                    key += ".tmp." + iDataNum++;
+                    long ms = System.currentTimeMillis();
+                    if (outputFileName.endsWith(RS2DData.DATA_FILE_NAME)) {
+                        String procNumStr = file.getParentFile().getName();
+                        if (StringUtils.isNumeric(procNumStr)) {
+                            long procNum = Long.parseLong(procNumStr);
+                            iDataNum++;
+                            procNum += iDataNum * 1000;
+                            outputFileName = file.getParentFile().getParentFile().toPath().resolve(String.valueOf(procNum)).resolve(RS2DData.DATA_FILE_NAME).toString();
+                        }
+                    } else {
+                        outputFileName = outputFileName.replace(".nv", ".tmp." + ms + ".nv");
+                    }
                 }
-                long ms = System.currentTimeMillis();
-                outputFileName = outputFileName.replace(".nv", ".tmp." + ms + ".nv");
                 file = new File(outputFileName);
                 file.delete();
 
