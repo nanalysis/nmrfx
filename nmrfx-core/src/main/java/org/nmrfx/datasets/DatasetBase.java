@@ -298,7 +298,6 @@ public class DatasetBase {
             i = pt[0];
             return vecMat.getReal(i) / scale;
         }
-
         for (i = 0; i < nDim; i++) {
             if (pt[i] < 0) {
                 throw new IllegalArgumentException("point < 0 " + i + " " + pt[i]);
@@ -306,8 +305,10 @@ public class DatasetBase {
                 throw new IllegalArgumentException("point >= size " + i + " " + pt[i] + " " + getSizeTotal(i));
             }
         }
+        if (dataFile == null) {
+            return 0.0;
+        }
         return dataFile.getFloat(pt) / scale;
-
     }
 
     /**
