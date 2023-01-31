@@ -207,8 +207,17 @@ public class AnalystApp extends MainApp {
         return preferencesController;
     }
 
+    private void saveDatasets() {
+        for (var controller: FXMLController.getControllers()) {
+            var chartProcessor = controller.getChartProcessor();
+            var processorController = chartProcessor.getProcessorController();
+            processorController.saveOnClose();
+        }
+    }
+
     public void quit() {
         System.out.println("quit");
+        saveDatasets();
         waitForCommit();
         Platform.exit();
         System.exit(0);
