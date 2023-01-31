@@ -243,9 +243,21 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return cursorProperty.get();
     }
 
+    public void saveDatasets() {
+        var chartProcessor = getChartProcessor();
+        if (chartProcessor != null) {
+            var processorController = chartProcessor.getProcessorController();
+            if (processorController != null) {
+                processorController.saveOnClose();
+            }
+        }
+    }
+
+
     void close() {
         // need to make copy of charts as the call to chart.close will remove the chart from charts
         // resulting in a java.util.ConcurrentModificationException
+        saveDatasets();
         List<PolyChart> tempCharts = new ArrayList<>();
         tempCharts.addAll(charts);
         for (PolyChart chart : tempCharts) {

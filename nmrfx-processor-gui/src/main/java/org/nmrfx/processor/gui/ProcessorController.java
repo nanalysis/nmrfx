@@ -1059,6 +1059,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         Processor.getProcessor().setProcessorError();
     }
 
+    public void saveOnClose() {
+        ConsoleUtil.runOnFxThread(() -> saveDataset(saveObject.getAndSet(null)));
+    }
+
     private void setSaveState(Dataset dataset) {
         aListUpdated.set(true);
         saveObject.set(dataset);
