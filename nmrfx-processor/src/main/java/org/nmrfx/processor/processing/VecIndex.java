@@ -37,21 +37,24 @@ public class VecIndex {
         return outVecs[i];
     }
 
-    public void printMe(int vecGroup, int nSteps) {  // for debugging
+
+    public String toString(int vecGroup, int nSteps) {  // for debugging
+        StringBuilder sBuilder = new StringBuilder();
         if ((vecGroup + 1) % nSteps == 1 || (vecGroup + 1) % nSteps == 0) {
-            System.out.printf("group %6d in ", vecGroup);
+            sBuilder.append(String.format("group %6d in ", vecGroup));
             for (int k : inVecs) {
-                System.out.printf(" %4d", k);
+                sBuilder.append(String.format(" %4d", k));
             }
-            System.out.print(" out ");
+            sBuilder.append(" out ");
             for (int ix = 0; ix < outVecs.length; ix++) {
                 for (int jx = 1; jx < outVecs[0].length; jx++) {
-                    System.out.printf(" %4d", outVecs[ix][jx][0]);
+                    sBuilder.append(String.format(" %4d", outVecs[ix][jx][0]));
                 }
-                System.out.print("      ");
+                sBuilder.append("      ");
             }
-            System.out.println("");
+            sBuilder.append("");
         }
+        return sBuilder.toString();
     }
 
     @Override

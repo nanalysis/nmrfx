@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui;
 
+import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
@@ -91,11 +92,13 @@ public class ContentController {
 
     public void update() {
         if (isShowing()) {
-            chart = fxmlController.getActiveChart();
-            chart.setChartDisabled(true);
-            datasetViewController.updateDatasetView();
-            updatePeakView();
-            chart.setChartDisabled(false);
+            Platform.runLater(() -> {
+                        chart = fxmlController.getActiveChart();
+                        chart.setChartDisabled(true);
+                        datasetViewController.updateDatasetView();
+                        updatePeakView();
+                        chart.setChartDisabled(false);
+            });
         }
     }
 

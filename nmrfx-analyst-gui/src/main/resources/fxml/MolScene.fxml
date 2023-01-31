@@ -107,7 +107,7 @@
                                             <buttons>
                                                 <Button mnemonicParsing="false" onAction="#layoutSS" prefHeight="27.0" prefWidth="87.0" text="Draw" />
                                                 <Button mnemonicParsing="false" onAction="#ssFrom3D" prefHeight="27.0" prefWidth="87.0" text="From3D" />
-                                                <ChoiceBox fx:id="nAtomsChoiceBox"/>
+                                                <MenuButton fx:id="atomMenu" text="Atoms"/>
                                                 <MenuButton fx:id="peakListMenuButton" text="PeakList"/>
                                                 <MenuButton fx:id="modeMenuButton" text="Modes"/>
                                                 <ChoiceBox fx:id="constraintTypeChoiceBox"/>

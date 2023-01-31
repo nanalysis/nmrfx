@@ -537,6 +537,7 @@ public class Molecule extends MoleculeBase {
         atomTree = aTree;
     }
 
+    // used from python
     public void genMeasuredTree(Atom startAtom) {
         updateAtomArray();
         if (startAtom == null) {
@@ -548,6 +549,13 @@ public class Molecule extends MoleculeBase {
         aTreeGen.measureAtomTree(this, atomTree, true, false);
         setRingClosures(aTreeGen.getRingClosures());
         setupGenCoords();
+    }
+
+    // used from python
+    public void clearBondRingClosures() {
+        for (Bond bond : getBondList()) {
+            bond.setRingClosure(false);
+        }
     }
 
     public void setupEnergy(EnergyLists energyLists) {

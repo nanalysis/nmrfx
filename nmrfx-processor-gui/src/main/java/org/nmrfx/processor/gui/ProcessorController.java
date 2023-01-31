@@ -48,17 +48,21 @@ import javafx.stage.FileChooser;
 import javafx.util.Callback;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
+import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
@@ -74,6 +78,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
@@ -481,14 +486,17 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     public void viewDatasetInApp(Dataset dataset) {
+        Dataset currentDataset = (Dataset) chart.getDataset();
         if (dataset != null) {
-            Dataset currentDataset = (Dataset) chart.getDataset();
             chart.controller.addDataset(dataset, false, false);
             if ((currentDataset != null) && (currentDataset != dataset)) {
                 currentDataset.close();
             }
         } else {
             if (chartProcessor.datasetFile != null) {
+                if (currentDataset != null) {
+                    currentDataset.close();
+                }
                 boolean viewingDataset = isViewingDataset();
                 chart.controller.openDataset(chartProcessor.datasetFile, false, true);
                 viewMode.setValue(DisplayMode.SPECTRUM);
@@ -967,26 +975,32 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     void finishOnPlatform(Dataset dataset) {
-        String newName = dataset.getFile().toString();
-        Dataset currentDataset = (Dataset) chart.getDataset();
-        if (currentDataset != null) {
-            chart.clearDrawlist();
-            currentDataset.close();
+        if (dataset != null) {
+            String newName = dataset.getFile().toString();
+            Dataset currentDataset = (Dataset) chart.getDataset();
+            if (currentDataset != null) {
+                chart.clearDrawlist();
+                currentDataset.close();
+            }
+            try {
+                dataset.setFile(new File(newName));
+            } catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
+            setSaveState(dataset);
+            viewDatasetInApp(dataset);
         }
-        try {
-            dataset.setFile(new File(newName));
-        } catch (IOException e) {
-            log.error(e.getMessage(),e);
-        }
-        setSaveState(dataset);
-        viewDatasetInApp(dataset);
     }
 
     public void saveDataset(Dataset dataset) {
-        if ((dataset != null) && (dataset.isMemoryFile())) {
+        if ((dataset != null) && (dataset.isMemoryFile()) && dataset.hasDataFile()) {
             try {
-                File file = dataset.getFile();
-                String path = dataset.saveMemoryFile();
+                if (dataset.getFileName().endsWith(RS2DData.DATA_FILE_NAME) && (Processor.getProcessor().getNMRData() instanceof RS2DData rs2DData)) {
+                    Path procNumPath = rs2DData.saveDataset(dataset);
+                    EventBus.getDefault().post(new DatasetSavedEvent(RS2DData.DATASET_TYPE, procNumPath));
+                } else {
+                    dataset.saveMemoryFile();
+                }
                 String script = dataset.script();
                 if (!script.isBlank()) {
                     try {
@@ -995,7 +1009,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                         GUIUtils.warn("Write Script Error", ex.getMessage());
                     }
                 }
-            } catch (IOException | DatasetException e) {
+            } catch (IOException | DatasetException | NullPointerException e) {
                 log.error("Couldn't save dataset", e);
             }
         }
@@ -1032,6 +1046,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             updateScriptDisplay();
         }
         if (fixDatasetName()) {
+            if (chartProcessor.datasetFile != null) {
+                ProjectBase.getActive().getDatasetsWithFile(chartProcessor.datasetFile).stream().forEach(d -> d.close());
+            }
             ((Service) processDataset.worker).restart();
         }
     }
@@ -1551,25 +1568,20 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         realImagChoiceBox.getItems().clear();
         int nDim = complex.length;
         if (nDim > 1) {
-            int nVectors = 1;
+            int[] sizes = new int[nDim - 1];
             for (int iDim = 1; iDim < nDim; iDim++) {
-                nVectors *= complex[iDim] ? 2 : 1;
+                sizes[iDim - 1] = complex[iDim] ? 2 : 1;
             }
             realImagChoiceBox.valueProperty().removeListener(vecNumListener);
             StringBuilder sBuilder = new StringBuilder();
-            for (int i = 0; i < nVectors; i++) {
+            MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
+            var iterator = counter.iterator();
+            while (iterator.hasNext()) {
+                iterator.next();
+                int[] counts = iterator.getCounts();
                 sBuilder.setLength(0);
-                for (int j = nDim - 2; j >= 0; j--) {
-                    if (complex[j + 1]) {
-                        int k = (int) Math.pow(2, j);
-                        int kk = (i / k) % 2;
-                        sBuilder.append(chars[kk]);
-                    } else {
-                        sBuilder.append("R");
-                    }
-                }
-                if (log.isInfoEnabled()) {
-                    log.info("{} {} {}", i, nVectors, sBuilder);
+                for (int i : counts) {
+                    sBuilder.append(chars[i]);
                 }
                 realImagChoiceBox.getItems().add(sBuilder.toString());
                 realImagChoices.add(sBuilder.toString());

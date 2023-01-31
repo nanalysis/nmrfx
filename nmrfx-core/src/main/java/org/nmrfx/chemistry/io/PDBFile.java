@@ -93,6 +93,10 @@ public class PDBFile {
         }
     }
 
+    public MoleculeBase read(String fileName) throws MoleculeIOException {
+        return read(fileName, false);
+    }
+
     public MoleculeBase read(String fileName, boolean strictMode)
             throws MoleculeIOException {
         String string;

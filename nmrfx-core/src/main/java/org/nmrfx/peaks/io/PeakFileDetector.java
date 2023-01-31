@@ -34,7 +34,7 @@ public class PeakFileDetector extends FileTypeDetector {
         } else if (fileName.endsWith(".csv")) {
             type = "csv";
         } else {
-            String firstLine = firstLine(path);
+            String firstLine = firstLine(path).strip();
             if (firstLine.startsWith("Assignment")) {
                 type = "sparky_assign";
             } else if (firstLine.contains(",")) {

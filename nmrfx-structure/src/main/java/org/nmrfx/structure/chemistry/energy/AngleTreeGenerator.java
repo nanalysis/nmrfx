@@ -108,9 +108,6 @@ public class AngleTreeGenerator {
         for (Atom atom : atoms) {
             atom.parent = null;
         }
-        for (Bond bond : itree.getBondList()) {
-            bond.setRingClosure(false);
-        }
 
         if (startAtom == null) {
             startAtom = findStartAtom(itree);
