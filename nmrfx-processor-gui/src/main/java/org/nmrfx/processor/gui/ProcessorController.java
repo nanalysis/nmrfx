@@ -988,8 +988,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 log.error(e.getMessage(), e);
             }
             setSaveState(dataset);
-            viewDatasetInApp(dataset);
         }
+        viewDatasetInApp(dataset);
     }
 
     public void saveDataset(Dataset dataset) {
@@ -1103,7 +1103,15 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             ((Service<Integer>) worker).setOnSucceeded(event -> {
                 Dataset processedDataset;
                 Dataset dataset = processor.releaseDataset(null);
-                dataset.script(script);
+                if (dataset != null) {
+                    dataset.script(script);
+                } else {
+                    try {
+                        writeScript(script);
+                    } catch (IOException ioE) {
+                        log.error(ioE.getMessage(), ioE);
+                    }
+                }
                 finishProcessing(dataset);
                 isProcessing.set(false);
                 if (doProcessWhenDone.get()) {
