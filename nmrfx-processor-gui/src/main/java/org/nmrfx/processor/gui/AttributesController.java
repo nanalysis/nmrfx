@@ -266,6 +266,7 @@ public class AttributesController implements Initializable {
                     .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
             controller.setChart(fxmlController.getActiveChart());
             controller.datasetChoiceBox.valueProperty().addListener(e -> controller.datasetChoiceChanged());
+            controller.peakListChoiceBox.valueProperty().addListener(e -> controller.peakListChoiceChanged());
 
             return controller;
         } catch (IOException ioE) {
@@ -556,6 +557,10 @@ public class AttributesController implements Initializable {
 
     private void datasetChoiceChanged() {
         updateDatasetAttributeControls();
+    }
+
+    private void peakListChoiceChanged() {
+        setPeakControls();
     }
 
     private void refreshCharts() {
