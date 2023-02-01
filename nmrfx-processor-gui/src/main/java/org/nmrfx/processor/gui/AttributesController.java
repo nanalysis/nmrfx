@@ -265,6 +265,7 @@ public class AttributesController implements Initializable {
             controller.peakListChoiceBox.disableProperty()
                     .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
             controller.setChart(fxmlController.getActiveChart());
+            controller.datasetChoiceBox.valueProperty().addListener(e -> controller.datasetChoiceChanged());
 
             return controller;
         } catch (IOException ioE) {
@@ -553,6 +554,10 @@ public class AttributesController implements Initializable {
         setDatasetControls();
     }
 
+    private void datasetChoiceChanged() {
+        updateDatasetAttributeControls();
+    }
+
     private void refreshCharts() {
         if (itemChoiceState.getValue() == SelectionChoice.WINDOW) {
             for (var controllerChart : fxmlController.getCharts()) {
@@ -734,7 +739,7 @@ public class AttributesController implements Initializable {
     }
 
     void setLvlSlider() {
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double value = dataAttr.getLvl();
@@ -747,7 +752,7 @@ public class AttributesController implements Initializable {
     }
 
     void setClmSliderValue() {
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 1.01;
@@ -759,7 +764,7 @@ public class AttributesController implements Initializable {
     }
 
     void setOffsetsSlider() {
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 0.0;
@@ -771,7 +776,7 @@ public class AttributesController implements Initializable {
     }
 
     void setNlvlSlider() {
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 1.0;
@@ -785,7 +790,7 @@ public class AttributesController implements Initializable {
     }
 
     void setPosWidthSlider(boolean posMode) {
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double value = posMode ? dataAttr.getPosWidth() : dataAttr.getNegWidth();
@@ -833,7 +838,7 @@ public class AttributesController implements Initializable {
     void setContourColorControls(boolean posMode) {
         posColorListener.active = false;
         negColorListener.active = false;
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             if (posMode) {
@@ -882,7 +887,7 @@ public class AttributesController implements Initializable {
     void setDrawOnControls(boolean posMode) {
         posDrawOnListener.active = false;
         negDrawOnListener.active = false;
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             if (posMode) {
@@ -1207,7 +1212,7 @@ public class AttributesController implements Initializable {
         // so it is visible.
         if (bgColorCheckBox.isSelected()) {
             Color color = bgColorPicker.getValue();
-            if (!chart.getDatasetAttributes().isEmpty()) {
+            if (!getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = getDatasetAttributes().get(0);
                 Color posColor = dataAttr.getPosColor();
                 if ((posColor != null) && (color != null)) {
