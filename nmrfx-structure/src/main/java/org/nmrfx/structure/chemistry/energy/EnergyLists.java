@@ -381,7 +381,7 @@ public class EnergyLists {
         // initialize energy types for atoms
         List<Atom> atoms = molecule.getAtomArray();
         for (Atom atom : atoms) {
-            atom.atomEnergyProp = AtomEnergyProp.get(atom.getType());
+            atom.setAtomEnergyProp(AtomEnergyProp.get(atom.getType()));
         }
 
         //initializes firstResidue to null
@@ -426,7 +426,7 @@ public class EnergyLists {
                 //CompoundSphere cSphere = new CompoundSphere(compound, centerAtom, radius, new ArrayList<>());
                 //compoundList.add(cSphere);
                 for (Atom atom : compound) {
-                    if (atom.atomEnergyProp == null) {
+                    if (atom.getAtomEnergyProp() == null) {
                         continue;
                     }
                     if ((atom.getAtomicNumber() == 1) && !includeH) {
