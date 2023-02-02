@@ -36,9 +36,17 @@ public class Atom implements IAtom, Comparable<Atom> {
 
     private static final Logger log = LoggerFactory.getLogger(Atom.class);
     private static final String POINT_NULL_MSG_PREFIX = "Point null: ";
-    public String type = "";
-    public AtomEnergyProp atomEnergyProp = null;
+    private String type = "";
+    private AtomEnergyProp atomEnergyProp = null;
     AtomProperty atomProperty = null;
+
+    public AtomEnergyProp getAtomEnergyProp() {
+        return atomEnergyProp;
+    }
+
+    public void setAtomEnergyProp(AtomEnergyProp atomEnergyProp) {
+        this.atomEnergyProp = atomEnergyProp;
+    }
 
     public enum ATOMFLAGS {
         VISITED(0),
@@ -63,18 +71,18 @@ public class Atom implements IAtom, Comparable<Atom> {
         }
     }
 
-    static final public int SELECT = 0;
-    static final public int DISPLAY = 1;
-    static final public int SUPER = 2;
-    static final public int LABEL = 2;
-    static final public int VISITED = ATOMFLAGS.VISITED.index;
-    static final public int AROMATIC = ATOMFLAGS.AROMATIC.index;
-    static final public int RESONANT = ATOMFLAGS.RESONANT.index;
-    static final public int AMIDE = ATOMFLAGS.AMIDE.index;
-    static final public int RING = ATOMFLAGS.RING.index;
-    static final public int RNABASE = ATOMFLAGS.RNABASE.index;
+    public static final int SELECT = 0;
+    public static final int DISPLAY = 1;
+    public static final int SUPER = 2;
+    public static final int LABEL = 2;
+    public static final int VISITED = ATOMFLAGS.VISITED.index;
+    public static final int AROMATIC = ATOMFLAGS.AROMATIC.index;
+    public static final int RESONANT = ATOMFLAGS.RESONANT.index;
+    public static final int AMIDE = ATOMFLAGS.AMIDE.index;
+    public static final int RING = ATOMFLAGS.RING.index;
+    public static final int RNABASE = ATOMFLAGS.RNABASE.index;
     static final public double NULL_PPM = -9990.0;
-    static protected int lastAtom = 0;
+    protected static int lastAtom = 0;
     public int iAtom = 1;
     public int eAtom = -1;
     public int aAtom = 1;
@@ -765,7 +773,7 @@ public class Atom implements IAtom, Comparable<Atom> {
 
     public PPMv getPPM(int i) {
         PPMv ppmV = null;
-        if ((spatialSet != null) && !isMethyl()) {
+        if (spatialSet != null) {
             ppmV = spatialSet.getPPM(i);
         }
 

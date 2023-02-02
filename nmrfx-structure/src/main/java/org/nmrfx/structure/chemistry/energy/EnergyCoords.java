@@ -291,7 +291,7 @@ public class EnergyCoords {
         }
         for (int i = 0; i < nAtoms; i++) {
             Atom atom1 = atoms[i];
-            AtomEnergyProp iProp = (AtomEnergyProp) atom1.atomEnergyProp;
+            AtomEnergyProp iProp = (AtomEnergyProp) atom1.getAtomEnergyProp();
             if (iProp == null) {
                 contactRadii[i] = 0.0;
             } else if (atom1.getType().endsWith("g")) { // coarseGrain

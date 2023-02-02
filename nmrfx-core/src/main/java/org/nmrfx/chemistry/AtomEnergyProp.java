@@ -34,12 +34,7 @@ import org.slf4j.LoggerFactory;
 public class AtomEnergyProp {
     private static final Logger log = LoggerFactory.getLogger(AtomEnergyProp.class);
 
-    // regexp patterns for parsing Amber parameter files
-    static final Pattern atomPattern = Pattern.compile("(^\\S\\S?)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s*(.*)");
-    static final Pattern bondPattern = Pattern.compile("(^\\S.)-(\\S.)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s*(.*)");
-    static final Pattern angPattern = Pattern.compile("(^\\S.)-(\\S.)-(\\S.)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s*(.*)");
-    static final Pattern dihPattern = Pattern.compile("(^\\S.)-(\\S.)-(\\S.)-(\\S.)\\s+([\\d]+)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s*(.*)");
-    static final Pattern imprPattern = Pattern.compile("(^\\S.)-(\\S.)-(\\S.)-(\\S.)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s*(.*)");
+    static final Pattern dihPattern = Pattern.compile("(^\\S.)-(\\S.)-(\\S.)-(\\S.)\\s+([\\d]+)\\s+([-.0-9]+)\\s+([-.0-9]+)\\s+([-.0-9]+)\\s*(.*)");
     public static double[][][] irpTable;
 
     private static boolean FILE_LOADED = false;
@@ -64,11 +59,11 @@ public class AtomEnergyProp {
     // hbond donor (1), acceptor (-1)
     private final int hbondMode;
     //scaling factor
-    private final static double rscale = 0.68;
+    private static final double rscale = 0.68;
     private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
-    private final static double hbondDelta = 0.30;
+    private static final double hbondDelta = 0.30;
     private static final Map<Integer, AtomEnergyProp> DEFAULT_MAP = new HashMap<>();
-    public static Map<String, Integer> torsionMap = new HashMap<>();
+    protected static Map<String, Integer> torsionMap = new HashMap<>();
 
     public AtomEnergyProp(final String name, int aNum, final double a, final double b, final double r, final double rh, final double e, final double c, final double mass, final int hbondMode) {
         this.name = name;
@@ -83,7 +78,7 @@ public class AtomEnergyProp {
         this.hbondMode = hbondMode;
     }
 
-    public static void readPropFile() throws FileNotFoundException, IOException {
+    public static void readPropFile() throws IOException {
         if (!FILE_LOADED) {
             readPropFile("reslib_iu/params.txt");
         }
@@ -103,7 +98,7 @@ public class AtomEnergyProp {
             reader = new FileReader(fileName);
         }
 
-        AtomicReference<List<String>> headerS = new AtomicReference<>(Arrays.asList());
+        AtomicReference<List<String>> headerS = new AtomicReference<>(List.of());
         //AtomType        HardRadius      RMin    E       Mass    HBondType
         try (BufferedReader bufReader = new BufferedReader(reader)) {
             bufReader.lines().forEach(line -> {
@@ -147,7 +142,7 @@ public class AtomEnergyProp {
 
     }
 
-    public static void makeIrpMap() throws FileNotFoundException, IOException {
+    public static void makeIrpMap() throws IOException {
         if (!PARM_FILE_LOADED) {
             makeIrpMap("reslib_iu/parm15ipq_10.3.dat");
         }
@@ -228,8 +223,6 @@ public class AtomEnergyProp {
         // 012345678
         boolean[][] generics = {{false, false}, {true, false}, {false, true}, {true, true}};
         StringBuilder sBuilder = new StringBuilder();
-        int firstDash = torsionType.indexOf('-');
-        int lastDash = torsionType.lastIndexOf('-');
         String[] torsionFields = torsionType.split("-");
         for (boolean[] generic : generics) {
             sBuilder.setLength(0);
@@ -325,24 +318,24 @@ public class AtomEnergyProp {
     /**
      * computes interaction between two molecules based on table values
      * <p>
-     * This method calculates the interation between 2 molecules. It retrieves
+     * This method calculates the interation between 2 atoms. It retrieves
      * the ideal energy values from the table for both atoms It then calculates
      * the radius or distance between both atoms. The rh value is calculating by
      * simply adding both the radius. Hydrogen may be removed and substited by a
      * certain number of Angstrom's indicated by AtomEnergyProp
      *
-     * @param AtomEnergy iProp Properties of atom 1
-     * @param AtomEnergy jProp properties of atom 2
-     * @param boolean hardSphere determines if you want to calculate rh w/out
-     * hydrogen
-     * @param double hardSphere determines the value you want to add in
-     * substitution for hydrogen
+     * @param  atom1 the first atom
+     * @param  atom2 the second atom
+     * @param  hardSphere determines the value you want to add to atom radius
+     * @param  usehardSphere determines if you want to calculate rh
+     * @param  shrinkValue reduce the radius of non-hydrogen atoms by this amount
+     * @param  shrinkHValue reduce the radius of hydrogen atoms by this amount
      */
     public static EnergyPair getInteraction(final Atom atom1, final Atom atom2, double hardSphere,
             boolean usehardSphere, double shrinkValue, double shrinkHValue) {
 
-        AtomEnergyProp iProp = (AtomEnergyProp) atom1.atomEnergyProp;
-        AtomEnergyProp jProp = (AtomEnergyProp) atom2.atomEnergyProp;
+        AtomEnergyProp iProp = atom1.getAtomEnergyProp();
+        AtomEnergyProp jProp = atom2.getAtomEnergyProp();
 
         double a1 = iProp.getA() * jProp.getA();
         double b1 = iProp.getB() * jProp.getB();
@@ -385,9 +378,6 @@ public class AtomEnergyProp {
                     } else if (rotGroup1 == parent2) {
                         rh1 -= 0.1;
                         rh2 -= 0.1;
-                    } else if (parent1 == testAtom2.parent) {
-                        rh1 -= 0.1;
-                        rh2 -= 0.1;
                     } else if (parent2 == testAtom1.parent) {
                         rh1 -= 0.1;
                         rh2 -= 0.1;
@@ -425,21 +415,14 @@ public class AtomEnergyProp {
         }
         double rh = rh1 + rh2;
 
-        EnergyPair ePair = new EnergyPair(a1, b1, c1, r, r2, rh, ea);
-        return ePair;
+        return new EnergyPair(a1, b1, c1, r, r2, rh, ea);
     }
 
     public static boolean interact(final Atom atom1, final Atom atom2) {
-        final boolean value;
-        AtomEnergyProp prop1 = (AtomEnergyProp) atom1.atomEnergyProp;
-        AtomEnergyProp prop2 = (AtomEnergyProp) atom2.atomEnergyProp;
+        AtomEnergyProp prop1 = atom1.getAtomEnergyProp();
+        AtomEnergyProp prop2 = atom2.getAtomEnergyProp();
 // fixme  only appropriate for rh mode of repel function
-        if ((prop2 != null) && (prop1 != null) && (prop1.rh > 1.0e-6) && (prop2.rh > 1.0e-6)) {
-            value = true;
-        } else {
-            value = false;
-        }
-        return value;
+        return (prop2 != null) && (prop1 != null) && (prop1.rh > 1.0e-6) && (prop2.rh > 1.0e-6);
     }
 
 }
