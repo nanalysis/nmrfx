@@ -734,6 +734,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void addDataset(DatasetBase dataset, boolean appendFile, boolean reload) {
         isFID = false;
+        if (dataset.getFile() != null) {
+            PreferencesController.saveRecentFiles(dataset.getFile().toString());
+        }
+
         //dataset.setScale(1.0);
         int nDim = dataset.getNDim();
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
