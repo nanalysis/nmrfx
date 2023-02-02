@@ -1036,6 +1036,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void processDataset(boolean idleModeValue) {
+        if (!Processor.getProcessor().isProcessorAvailable()){
+            return;
+        }
+        Processor.getProcessor().setProcessorAvailableStatus(false);
         Dataset.useCacheFile(SystemUtils.IS_OS_WINDOWS);
         doProcessWhenDone.set(false);
         isProcessing.set(true);
@@ -1050,6 +1054,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 saveObject.set(null);
             }
             ((Service) processDataset.worker).restart();
+        } else {
+            Processor.getProcessor().setProcessorAvailableStatus(true);
         }
     }
 
@@ -1082,6 +1088,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                         protected Object call() {
                             doProcessWhenDone.set(false);
                             isProcessing.set(true);
+                            Processor.getProcessor().setProcessorAvailableStatus(false);
                             script = textArea.getText();
                             try (PythonInterpreter processInterp = new PythonInterpreter()) {
                                 updateStatus("Start processing");
