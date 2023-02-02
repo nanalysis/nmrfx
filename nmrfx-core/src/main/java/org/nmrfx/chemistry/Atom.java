@@ -765,7 +765,7 @@ public class Atom implements IAtom, Comparable<Atom> {
 
     public PPMv getPPM(int i) {
         PPMv ppmV = null;
-        if ((spatialSet != null) && !isMethyl()) {
+        if (spatialSet != null) {
             ppmV = spatialSet.getPPM(i);
         }
 
