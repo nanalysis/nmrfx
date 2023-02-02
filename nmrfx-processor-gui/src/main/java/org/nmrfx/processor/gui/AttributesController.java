@@ -576,7 +576,7 @@ public class AttributesController implements Initializable {
     private List<DatasetAttributes> getDatasetAttributes() {
         List<DatasetAttributes> result;
         if (itemChoiceState.getValue() == SelectionChoice.ITEM) {
-            if (datasetChoiceBox.getItems().isEmpty()) {
+            if (datasetChoiceBox.getItems().isEmpty() || (datasetChoiceBox.getValue() == null)) {
                 result = Collections.emptyList();
             } else {
                 result = List.of(datasetChoiceBox.getValue());
@@ -593,7 +593,7 @@ public class AttributesController implements Initializable {
     private List<PeakListAttributes> getPeakListAttributes() {
         List<PeakListAttributes> result;
         if (itemChoiceState.getValue() == SelectionChoice.ITEM) {
-            if (peakListChoiceBox.getItems().isEmpty()) {
+            if (peakListChoiceBox.getItems().isEmpty() ||(peakListChoiceBox.getValue() == null)) {
                 result = Collections.emptyList();
             } else {
                 result = List.of(peakListChoiceBox.getValue());
