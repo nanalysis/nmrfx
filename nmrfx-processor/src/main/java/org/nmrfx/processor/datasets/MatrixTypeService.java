@@ -24,6 +24,7 @@ import org.nmrfx.processor.processing.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -147,17 +148,12 @@ public class MatrixTypeService {
         }
     }
 
-    private boolean writeItems(List<MatrixType> temp) {
+    private boolean writeItems(List<MatrixType> temp) throws DatasetException, IOException {
         for (MatrixType vector : temp) {
-            try {
-                Dataset dataset = processor.getDataset();
-                checkDataset(dataset, vector);
-                processor.getDataset().writeMatrixType(vector);
-                nWritten.incrementAndGet();
-            } catch (Exception ex) {
-                log.error(ex.getMessage(), ex);
-                return false;
-            }
+            Dataset dataset = processor.getDataset();
+            checkDataset(dataset, vector);
+            processor.getDataset().writeMatrixType(vector);
+            nWritten.incrementAndGet();
         }
         return true;
     }
@@ -251,10 +247,7 @@ public class MatrixTypeService {
 
                 temp = processedItemQueue.poll(100, TimeUnit.MILLISECONDS);
                 if (temp != null) {
-                    boolean ok = writeItems(temp);
-                    if (!ok) {
-                        return false;
-                    }
+                    writeItems(temp);
                 } else {
                     if (nWritten.get() >= itemsToWrite) {
                         return true;
