@@ -19,6 +19,7 @@ public class ResonanceSource implements Comparable<ResonanceSource> {
     final Peak peak;
     final Atom[] atoms;
     final String atomKey;
+    private boolean deleted = false;
 
     public ResonanceSource(Peak peak, Atom[] atoms) {
         this.atoms = atoms;
@@ -115,5 +116,13 @@ public class ResonanceSource implements Comparable<ResonanceSource> {
             }
         }
         return result;
+    }
+
+    public boolean deleted() {
+        return deleted;
+    }
+
+    public void deleted(boolean state) {
+        deleted = state;
     }
 }
