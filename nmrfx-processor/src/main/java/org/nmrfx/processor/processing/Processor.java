@@ -1507,7 +1507,7 @@ public class Processor {
         if (dataset.fFormat == DatasetBase.FFORMAT.UCSF) {
             dataset.writeHeader(false);
         }
-        if (!keepDatasetOpen) {
+        if (!keepDatasetOpen || !dataset.isMemoryFile()) {
             int freqDimsProcessed = 0;
             for (int i = 0; i < dataset.getNDim(); i++) {
                 if (dataset.getFreqDomain(i)) {

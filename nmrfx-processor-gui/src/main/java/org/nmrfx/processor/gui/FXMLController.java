@@ -243,9 +243,21 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return cursorProperty.get();
     }
 
+    public void saveDatasets() {
+        var chartProcessor = getChartProcessor();
+        if (chartProcessor != null) {
+            var processorController = chartProcessor.getProcessorController();
+            if (processorController != null) {
+                processorController.saveOnClose();
+            }
+        }
+    }
+
+
     void close() {
         // need to make copy of charts as the call to chart.close will remove the chart from charts
         // resulting in a java.util.ConcurrentModificationException
+        saveDatasets();
         List<PolyChart> tempCharts = new ArrayList<>();
         tempCharts.addAll(charts);
         for (PolyChart chart : tempCharts) {
@@ -722,6 +734,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void addDataset(DatasetBase dataset, boolean appendFile, boolean reload) {
         isFID = false;
+        if (dataset.getFile() != null) {
+            PreferencesController.saveRecentFiles(dataset.getFile().toString());
+        }
+
         //dataset.setScale(1.0);
         int nDim = dataset.getNDim();
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);

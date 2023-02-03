@@ -306,8 +306,11 @@ public class DatasetBase {
                 throw new IllegalArgumentException("point >= size " + i + " " + pt[i] + " " + getSizeTotal(i));
             }
         }
-        return dataFile.getFloat(pt) / scale;
-
+        if (dataFile == null) {
+            return 0.0;
+        } else {
+            return dataFile.getFloat(pt) / scale;
+        }
     }
 
     /**

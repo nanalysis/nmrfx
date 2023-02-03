@@ -328,7 +328,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (schedExecutor != null) {
             if (needToFireEvent.get() || (futureUpdate == null) || futureUpdate.isDone()) {
                 UpdateTask updateTask = new UpdateTask();
-                futureUpdate = schedExecutor.schedule(updateTask, 1000, TimeUnit.MILLISECONDS);
+                futureUpdate = schedExecutor.schedule(updateTask, 2000, TimeUnit.MILLISECONDS);
             }
         }
     }
@@ -988,8 +988,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 log.error(e.getMessage(), e);
             }
             setSaveState(dataset);
-            viewDatasetInApp(dataset);
         }
+        viewDatasetInApp(dataset);
     }
 
     public void saveDataset(Dataset dataset) {
@@ -1036,6 +1036,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void processDataset(boolean idleModeValue) {
+        if (!Processor.getProcessor().isProcessorAvailable()){
+            return;
+        }
+        Processor.getProcessor().setProcessorAvailableStatus(false);
         Dataset.useCacheFile(SystemUtils.IS_OS_WINDOWS);
         doProcessWhenDone.set(false);
         isProcessing.set(true);
@@ -1046,10 +1050,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             updateScriptDisplay();
         }
         if (fixDatasetName()) {
-            if (chartProcessor.datasetFile != null) {
-                ProjectBase.getActive().getDatasetsWithFile(chartProcessor.datasetFile).stream().forEach(d -> d.close());
+            if (!idleModeValue) {
+                saveObject.set(null);
             }
             ((Service) processDataset.worker).restart();
+        } else {
+            Processor.getProcessor().setProcessorAvailableStatus(true);
         }
     }
 
@@ -1057,6 +1063,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private void haltProcessAction() {
         processDataset.worker.cancel();
         Processor.getProcessor().setProcessorError();
+    }
+
+    public void saveOnClose() {
+        ConsoleUtil.runOnFxThread(() -> saveDataset(saveObject.getAndSet(null)));
     }
 
     private void setSaveState(Dataset dataset) {
@@ -1078,13 +1088,14 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                         protected Object call() {
                             doProcessWhenDone.set(false);
                             isProcessing.set(true);
+                            Processor.getProcessor().setProcessorAvailableStatus(false);
                             script = textArea.getText();
                             try (PythonInterpreter processInterp = new PythonInterpreter()) {
                                 updateStatus("Start processing");
                                 updateTitle("Start Processing");
                                 processInterp.exec("from pyproc import *");
                                 processor = Processor.getProcessor();
-                                processor.keepDatasetOpen(idleMode.get());
+                                processor.keepDatasetOpen(true);
                                 processor.setTempFileMode(idleMode.get());
                                 processor.clearDataset();
                                 processInterp.exec("useProcessor(inNMRFx=True)");
@@ -1098,19 +1109,17 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
             ((Service<Integer>) worker).setOnSucceeded(event -> {
                 Dataset processedDataset;
-                if (idleMode.get()) {
-                    Dataset dataset = processor.releaseDataset(null);
+                Dataset dataset = processor.releaseDataset(null);
+                if (dataset != null) {
                     dataset.script(script);
-                    finishProcessing(dataset);
                 } else {
-                    processedDataset = processor.getDataset();
                     try {
                         writeScript(script);
-                    } catch (IOException ex) {
-                        GUIUtils.warn("Write Script Error", ex.getMessage());
+                    } catch (IOException ioE) {
+                        log.error(ioE.getMessage(), ioE);
                     }
-                    ConsoleUtil.runOnFxThread(() -> viewDatasetInApp(processedDataset));
                 }
+                finishProcessing(dataset);
                 isProcessing.set(false);
                 if (doProcessWhenDone.get()) {
                     processIfIdle();

@@ -82,8 +82,8 @@ public class AtomPair {
     public AtomPair(final Atom atom1, final Atom atom2, double hardSphere, boolean includeH, double shrinkValue, double shrinkHValue, double weight) {
         this.spSet1 = atom1.getSpatialSet();
         this.spSet2 = atom2.getSpatialSet();
-        AtomEnergyProp prop1 = (AtomEnergyProp) atom1.atomEnergyProp;
-        AtomEnergyProp prop2 = (AtomEnergyProp) atom2.atomEnergyProp;
+        AtomEnergyProp prop1 = (AtomEnergyProp) atom1.getAtomEnergyProp();
+        AtomEnergyProp prop2 = (AtomEnergyProp) atom2.getAtomEnergyProp();
 
         if ((prop2 != null) && (prop1 != null)) {
             // determines interaction between spSet1 and spSet2
