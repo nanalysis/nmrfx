@@ -751,11 +751,11 @@ def FID(fidFileName, tdSize=None, nusFileName=None, **keywords):
     keywords : keywords
         Optional list of arguments describing data
     '''
-
+    fidFileNameDecoded = fidFileName.decode("utf-8")
     if (tdSize):
-        fidObj = processor.openfid(fidFileName, nusFileName, tdSize)
+        fidObj = processor.openfid(fidFileNameDecoded, nusFileName, tdSize)
     else:
-        fidObj = processor.openfid(fidFileName, nusFileName)
+        fidObj = processor.openfid(fidFileNameDecoded, nusFileName)
 
     fidInfo = makeFIDInfo(fidObj,tdSize)
     if (keywords):  # may use keywords for flags
@@ -882,12 +882,13 @@ def createDataset(nvFileName=None):
             os.remove(parFileName)
         except OSError:
             pass
+        nvFileNameDecoded = nvFileName.decode("utf-8")
         if dataInfo.inMemory:
-            processor.createNVInMemory(nvFileName, useSize, fidInfo.mapToDatasetList)
+            processor.createNVInMemory(nvFileNameDecoded, useSize, fidInfo.mapToDatasetList)
         elif (fidInfo and fidInfo.flags):
-            processor.createNV(nvFileName, useSize, fidInfo.flags)
+            processor.createNV(nvFileNameDecoded, useSize, fidInfo.flags)
         else:
-            processor.createNV(nvFileName, useSize, fidInfo.mapToDatasetList)
+            processor.createNV(nvFileNameDecoded, useSize, fidInfo.mapToDatasetList)
 
         dataset = processor.getDataset()
         psspecial.datasetMods(dataset, fidInfo)
