@@ -2395,7 +2395,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * @return position in PPM
      */
     public double pointToPPM(double pt) {
-        return (-(pt - size/ 2.0) * ((pt / (centerFreq * dwellTime * size)) + refValue));
+        return (-(pt - size / 2.0)) / (centerFreq * dwellTime * size) + refValue;
     }
 
     /**
