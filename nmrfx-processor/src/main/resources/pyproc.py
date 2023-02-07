@@ -929,7 +929,7 @@ def getAcqOrder():
 def OPEN(nvFileName, resize=False):
     global fidInfo
     global dataInfo
-    processor.openNV(nvFileName)
+    processor.openNV(nvFileName.decode('utf-8'))
     dataset = processor.getDataset()
     fidInfo = FIDInfo()
     fidInfo.size = dataset.getSizes()

@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -44,6 +46,8 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import static org.nmrfx.utils.GUIUtils.affirm;
+
+import org.python.core.Py;
 import org.python.util.InteractiveInterpreter;
 
 /**
@@ -56,6 +60,8 @@ public class ConsoleController extends OutputStream implements Initializable {
 
     private static ConsoleController consoleController;
     private static InteractiveInterpreter interpreter;
+    // Store streamed bytes until flush is called, and all characters are written (required for utf-8 multibyte characters)
+    private List<Byte> bytes = new ArrayList<>();
 
     protected ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
 
@@ -179,21 +185,25 @@ public class ConsoleController extends OutputStream implements Initializable {
 
     @Override
     public void write(int b) throws IOException {
-        // redirects data to the text area
-        if (Platform.isFxApplicationThread()) {
-            textArea.appendText(String.valueOf((char) b));
-            // scrolls the text area to the end of data
-            //textArea.positionCaret(String.valueOf((char)b).length());
-            textArea.appendText("");
-        } else {
-            Platform.runLater(() -> {
-                textArea.appendText(String.valueOf((char) b));
-                // scrolls the text area to the end of data
-                //textArea.positionCaret(String.valueOf((char)b).length());
-                textArea.appendText("");
-            });
-        }
+        bytes.add((byte) b);
         startTimer();
+    }
+
+    @Override
+    public void flush() throws IOException {
+        byte[] byteArray = new byte[bytes.size()];
+        int i = 0;
+        for (Byte b: bytes) {
+            byteArray[i] = b;
+            i++;
+        }
+        bytes.clear();
+        String newText = new String(byteArray, StandardCharsets.UTF_8);
+        super.flush();
+        Platform.runLater(() -> {
+            textArea.appendText(newText);
+            textArea.appendText("");
+        });
     }
 
     public void clearConsole() {
@@ -213,7 +223,7 @@ public class ConsoleController extends OutputStream implements Initializable {
 
     public void cd(String path) {
         try {
-            interpreter.exec("os.chdir('" + path + "')");
+            interpreter.exec(Py.newUnicode("os.chdir('" + path + "')").encode("UTF-8"));
         } catch (Exception e) {
             textArea.appendText("\n" + e.getMessage());
         }
@@ -294,7 +304,7 @@ public class ConsoleController extends OutputStream implements Initializable {
                 if (history.size() == 1 || prevKey == KeyCode.UP || prevKey == KeyCode.DOWN) {
                     textArea.appendText("\n");
                 }
-                interpreter.runsource(typed);
+                interpreter.exec(Py.newUnicode(typed).encode("UTF-8"));
             }
         }
         textArea.appendText("> ");
