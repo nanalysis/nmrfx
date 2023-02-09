@@ -68,6 +68,7 @@ import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
 import org.nmrfx.utilities.ProgressUpdater;
+import org.nmrfx.utils.FormatUtils;
 import org.nmrfx.utils.GUIUtils;
 import org.python.core.Py;
 import org.python.util.PythonInterpreter;
@@ -1099,7 +1100,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                                 processor.setTempFileMode(idleMode.get());
                                 processor.clearDataset();
                                 processInterp.exec("useProcessor(inNMRFx=True)");
-                                processInterp.exec((Py.newUnicode(script)).encode("UTF-8"));                            }
+                                processInterp.exec(FormatUtils.formatStringForPythonInterpreter(script));                            }
                             return 0;
                         }
                     };

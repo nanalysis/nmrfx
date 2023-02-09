@@ -47,6 +47,7 @@ import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import static org.nmrfx.utils.GUIUtils.affirm;
 
+import org.nmrfx.utils.FormatUtils;
 import org.python.core.Py;
 import org.python.util.InteractiveInterpreter;
 
@@ -305,7 +306,7 @@ public class ConsoleController extends OutputStream implements Initializable {
                 if (history.size() == 1 || prevKey == KeyCode.UP || prevKey == KeyCode.DOWN) {
                     textArea.appendText("\n");
                 }
-                interpreter.exec(Py.newUnicode(typed).encode("UTF-8"));
+                interpreter.exec(FormatUtils.formatStringForPythonInterpreter(typed));
             }
         }
         textArea.appendText("> ");

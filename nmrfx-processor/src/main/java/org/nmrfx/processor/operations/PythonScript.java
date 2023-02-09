@@ -25,10 +25,13 @@ package org.nmrfx.processor.operations;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
+import org.nmrfx.utils.FormatUtils;
 import org.python.core.Py;
 import org.python.core.PyObject;
 import org.python.core.PyJavaType;
 import org.python.util.PythonInterpreter;
+
+import static org.nmrfx.utils.FormatUtils.formatStringForPythonInterpreter;
 
 /**
  *
@@ -76,10 +79,10 @@ public class PythonScript extends MatrixOperation {
         if (!this.encapsulate) {
             interpreter = new PythonInterpreter();
             if (execFileName.length() != 0) {
-                interpreter.execfile(Py.newUnicode(execFileName).encode("UTF-8"));
+                interpreter.execfile(formatStringForPythonInterpreter(execFileName));
             }
             if (initialScript.length() != 0) {
-                interpreter.exec(Py.newUnicode(initialScript).encode("UTF-8"));
+                interpreter.exec(formatStringForPythonInterpreter(initialScript));
             }
         }
     }
@@ -93,17 +96,17 @@ public class PythonScript extends MatrixOperation {
         if (encapsulate) {
             interpreter = new PythonInterpreter();
             if (execFileName.length() != 0) {
-                interpreter.execfile(Py.newUnicode(execFileName).encode("UTF-8"));
+                interpreter.execfile(formatStringForPythonInterpreter(execFileName));
             }
             if (initialScript.length() != 0) {
-                interpreter.exec(Py.newUnicode(initialScript).encode("UTF-8"));
+                interpreter.exec(formatStringForPythonInterpreter(initialScript));
             }
         }
         PyObject pyObject = PyJavaType.wrapJavaObject(vector);
         try {
             interpreter.set("vec", pyObject);
             interpreter.set("vecmat", pyObject);
-            interpreter.exec(Py.newUnicode(script).encode("UTF-8"));
+            interpreter.exec(formatStringForPythonInterpreter(script));
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());
         }
@@ -119,13 +122,13 @@ public class PythonScript extends MatrixOperation {
          */
         if (encapsulate) {
             interpreter = new PythonInterpreter();
-            interpreter.exec(Py.newUnicode(initialScript).encode("UTF-8"));
+            interpreter.exec(formatStringForPythonInterpreter(initialScript));
         }
         PyObject pyObject = PyJavaType.wrapJavaObject(matrix);
         try {
             interpreter.set("matrix", pyObject);
             interpreter.set("vecmat", pyObject);
-            interpreter.exec(Py.newUnicode(script).encode("UTF-8"));
+            interpreter.exec(formatStringForPythonInterpreter(script));
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());
         }

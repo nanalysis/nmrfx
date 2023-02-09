@@ -5,6 +5,7 @@ import re
 import os.path
 import sys
 import subprocess
+from scriptutils import formatStringForJava
 from org.nmrfx.math.units import Fraction
 from org.nmrfx.math.units import Frequency
 from org.nmrfx.math.units import Index
@@ -751,11 +752,10 @@ def FID(fidFileName, tdSize=None, nusFileName=None, **keywords):
     keywords : keywords
         Optional list of arguments describing data
     '''
-    fidFileNameDecoded = fidFileName.decode("utf-8")
     if (tdSize):
-        fidObj = processor.openfid(fidFileNameDecoded, nusFileName, tdSize)
+        fidObj = processor.openfid(formatStringForJava(fidFileName), nusFileName, tdSize)
     else:
-        fidObj = processor.openfid(fidFileNameDecoded, nusFileName)
+        fidObj = processor.openfid(formatStringForJava(fidFileName), nusFileName)
 
     fidInfo = makeFIDInfo(fidObj,tdSize)
     if (keywords):  # may use keywords for flags
@@ -882,13 +882,12 @@ def createDataset(nvFileName=None):
             os.remove(parFileName)
         except OSError:
             pass
-        nvFileNameDecoded = nvFileName.decode("utf-8")
         if dataInfo.inMemory:
-            processor.createNVInMemory(nvFileNameDecoded, useSize, fidInfo.mapToDatasetList)
+            processor.createNVInMemory(formatStringForJava(nvFileName), useSize, fidInfo.mapToDatasetList)
         elif (fidInfo and fidInfo.flags):
-            processor.createNV(nvFileNameDecoded, useSize, fidInfo.flags)
+            processor.createNV(formatStringForJava(nvFileName), useSize, fidInfo.flags)
         else:
-            processor.createNV(nvFileNameDecoded, useSize, fidInfo.mapToDatasetList)
+            processor.createNV(formatStringForJava(nvFileName), useSize, fidInfo.mapToDatasetList)
 
         dataset = processor.getDataset()
         psspecial.datasetMods(dataset, fidInfo)
@@ -929,7 +928,7 @@ def getAcqOrder():
 def OPEN(nvFileName, resize=False):
     global fidInfo
     global dataInfo
-    processor.openNV(nvFileName.decode('utf-8'))
+    processor.openNV(formatStringForJava(nvFileName))
     dataset = processor.getDataset()
     fidInfo = FIDInfo()
     fidInfo.size = dataset.getSizes()
@@ -1536,7 +1535,7 @@ def SCHEDULE(fraction=0.05, endOnly=False, fileName="", disabled=False, vector =
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = Schedule(fraction, endOnly, fileName.decode("utf-8"))
+    op = Schedule(fraction, endOnly, formatStringForJava(fileName))
     if (vector != None):
         op.eval(vector)
     else:
@@ -2296,14 +2295,13 @@ def SAMPLE_SCHEDULE(filename="/tmp/sample_schedule.txt", mode='read', dims=[], d
     
     global fidInfo
     fidObj = fidInfo.fidObj
-    filenameDecoded = filename.decode('utf-8')
     if (mode == 'create'):      # for 2D NUS
         size = fidInfo.size[1]  # too small unless demo
         if (len(dims) > 0):
             size = dims[0]
-        schedule = fidObj.createSampleSchedule(size, fraction, filenameDecoded, demo, fidObj)
+        schedule = fidObj.createSampleSchedule(size, fraction, formatStringForJava(filename), demo, fidObj)
     else:   # mode='read'
-        schedule = fidObj.readSampleSchedule(filenameDecoded, demo, fidObj)
+        schedule = fidObj.readSampleSchedule(formatStringForJava(filename), demo, fidObj)
     if (len(dims) > 0):
         schedule.setDims(dims)
 
@@ -3443,7 +3441,7 @@ def SCRIPT(script="", initialScript="", execFileName="", encapsulate=False, disa
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op=PythonScript(script, initialScript.decode("utf-8"), execFileName.decode("utf-8"), encapsulate)
+    op=PythonScript(script, formatStringForJava(initialScript), formatStringForJava(execFileName), encapsulate)
     if (vector != None):
         op.eval(vector)
     else:

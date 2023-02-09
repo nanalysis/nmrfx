@@ -3,6 +3,8 @@ from org.yaml.snakeyaml import Yaml
 from java.io import FileInputStream
 import gscript
 import gscript_adv
+from scriptutils import formatStringForJava
+
 
 def dumpYamlWin(fileName=None):
     if fileName != None:
@@ -100,7 +102,7 @@ def processYamlData(yamlFile, inputData, createNewStage):
         for dataset in datasets:
             print dataset
             name = dataset['name']
-            datasetValues.append(name.decode("utf-8"))
+            datasetValues.append(formatStringForJava(name))
         print 'dv',datasetValues
         nw.cmd.datasets(datasetValues)
         if 'lim' in v:
@@ -121,7 +123,7 @@ def processYamlData(yamlFile, inputData, createNewStage):
             for peakList in peakLists:
                 print peakList
                 name = peakList['name']
-                peakListValues.append(name.decode("utf-8"))
+                peakListValues.append(formatStringForJava(name))
             print 'dv',peakListValues
             nw.cmd.peakLists(peakListValues)
             for peakList in peakLists:
