@@ -21,6 +21,7 @@ import javafx.event.Event;
 import javafx.scene.input.RotateEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.ZoomEvent;
+import org.apache.commons.lang3.SystemUtils;
 import org.nmrfx.processor.gui.PolyChart;
 
 /**
@@ -74,15 +75,17 @@ public class GestureBindings {
         ChartBorder border = chart.hitBorder(x, y);
         double dx = event.getDeltaX();
         double dy = event.getDeltaY();
-        if (event.isControlDown() && border == ChartBorder.NONE) {
-            chart.scaleY(dy);
-        } else if (border == ChartBorder.RIGHT || border == ChartBorder.TOP) {
-            chart.updateProjectionScale(border, dy);
+        int scrollDirectionFactor = SystemUtils.IS_OS_MAC  ? 1 : -1;
+        if (border == ChartBorder.LEFT && chart.getNDim() < 2){
+            chart.scroll(dx, scrollDirectionFactor * dy);
+        }
+        else if (border == ChartBorder.RIGHT || border == ChartBorder.TOP) {
+            chart.updateProjectionScale(border, scrollDirectionFactor * dy);
             chart.refresh();
         } else if ((border == ChartBorder.LEFT || border == ChartBorder.BOTTOM) || (event.isAltDown() && border == ChartBorder.NONE)) {
-            chart.zoom(-dy / 50.0 + 1.0);
+            chart.zoom(scrollDirectionFactor * -dy / 50.0 + 1.0);
         } else {
-            chart.scroll(dx, dy);
+            chart.scaleY(scrollDirectionFactor * dy);
         }
     }
 
