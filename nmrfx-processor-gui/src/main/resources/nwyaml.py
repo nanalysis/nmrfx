@@ -11,7 +11,7 @@ def dumpYamlWin(fileName=None):
         yamlFile = yamlFileName
     yamlDump = genYamlData()
     with open(yamlFile,'w') as fOut:
-        fOut.write(yamlDump)
+        fOut.write(yamlDump.encode("utf-8"))
     
 def genYamlData():
     yaml=Yaml()
@@ -100,7 +100,7 @@ def processYamlData(yamlFile, inputData, createNewStage):
         for dataset in datasets:
             print dataset
             name = dataset['name']
-            datasetValues.append(name)
+            datasetValues.append(name.decode("utf-8"))
         print 'dv',datasetValues
         nw.cmd.datasets(datasetValues)
         if 'lim' in v:
@@ -121,7 +121,7 @@ def processYamlData(yamlFile, inputData, createNewStage):
             for peakList in peakLists:
                 print peakList
                 name = peakList['name']
-                peakListValues.append(name)
+                peakListValues.append(name.decode("utf-8"))
             print 'dv',peakListValues
             nw.cmd.peakLists(peakListValues)
             for peakList in peakLists:

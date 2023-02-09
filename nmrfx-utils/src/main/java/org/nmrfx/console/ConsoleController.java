@@ -223,7 +223,8 @@ public class ConsoleController extends OutputStream implements Initializable {
 
     public void cd(String path) {
         try {
-            interpreter.exec(Py.newUnicode("os.chdir('" + path + "')").encode("UTF-8"));
+            interpreter.set("cdPath", path);
+            interpreter.exec("os.chdir(cdPath)");
         } catch (Exception e) {
             textArea.appendText("\n" + e.getMessage());
         }
@@ -234,9 +235,9 @@ public class ConsoleController extends OutputStream implements Initializable {
         if (filter.isBlank()) {
             filter = "*";
         }
-        String script = "for f in glob.glob('" + filter + "'):\n  print f\n";
         try {
-            interpreter.exec(script);
+            interpreter.set("filterText", filter);
+            interpreter.exec("for f in glob.glob(filterText.encode('utf-8')):\n  print f\n");
         } catch (Exception e) {
             textArea.appendText("\n" + e.getMessage());
         }

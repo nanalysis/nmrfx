@@ -625,8 +625,9 @@ public class PeakReader {
             String rdString;
             interpreter.set("pMap", pMap);
             interpreter.exec("sparky.pMap=pMap");
-            rdString = String.format("sparky.loadSaveFile('%s','%s')", fileName, listName);
-            interpreter.exec(rdString);
+            interpreter.set("sparkyFileName", fileName);
+            interpreter.set("sparkyListName", listName);
+            interpreter.exec("sparky.loadSaveFile(sparkyFileName, sparkyListName)");
         }
         return PeakList.get(listName);
     }

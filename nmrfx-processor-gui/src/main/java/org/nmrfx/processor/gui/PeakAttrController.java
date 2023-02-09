@@ -1102,30 +1102,30 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             listName = newPeakList.getName();
             String script = null;
             if (type.equals("Protein")) {
-                script = String.format("molGen.genProteinPeaks(\"%s\", \"%s\", listName=\"%s\")", mode, datasetName, listName);
+                script = String.format("molGen.genProteinPeaks(\"%s\", datasetName, listName=listName)", mode);
             } else {
                 switch (mode) {
                     case "NOESY":
                         double range = distanceSlider.getValue();
-                        script = String.format("molGen.genDistancePeaks(\"%s\", listName=\"%s\", tol=%f)", datasetName, listName, range);
+                        script = String.format("molGen.genDistancePeaks(datasetName, listName=listName, tol=%f)", range);
                         break;
                     case "TOCSY":
                         int limit = Integer.parseInt(transferLimitChoice.getValue().toString());
-                        script = String.format("molGen.genTOCSYPeaks(\"%s\", listName=\"%s\", transfers=%d)", datasetName, listName, limit);
+                        script = String.format("molGen.genTOCSYPeaks(datasetName, listName=listName, transfers=%d)", limit);
                         break;
                     case "HMBC":
                         int hmbcLimit = Integer.parseInt(transferLimitChoice.getValue().toString());
-                        script = String.format("molGen.genHMBCPeaks(\"%s\", listName=\"%s\", transfers=%d)", datasetName, listName, hmbcLimit);
+                        script = String.format("molGen.genHMBCPeaks(datasetName, listName=listName, transfers=%d)", hmbcLimit);
                         break;
                     case "HSQC-13C":
-                        script = String.format("molGen.genHSQCPeaks(\"%s\", \"%s\", listName=\"%s\")", "C", datasetName, listName);
+                        script = String.format("molGen.genHSQCPeaks(\"%s\", datasetName, listName=listName)", "C");
                         break;
                     case "HSQC-15N":
-                        script = String.format("molGen.genHSQCPeaks(\"%s\", \"%s\", listName=\"%s\")", "N", datasetName, listName);
+                        script = String.format("molGen.genHSQCPeaks(\"%s\", datasetName, listName=listName)", "N");
                         break;
                     case "RNA-NOESY-2nd-str":
                         int useN = useNCheckBox.isSelected() ? 1 : 0;
-                        script = String.format("molGen.genRNASecStrPeaks(\"%s\", listName=\"%s\", useN=%d)", datasetName, listName, useN);
+                        script = String.format("molGen.genRNASecStrPeaks(datasetName, listName=listName, useN=%d)", useN);
                         break;
                     default:
                 }
@@ -1134,6 +1134,8 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                 PythonInterpreter interp = MainApp.getInterpreter();
                 interp.exec("import molpeakgen");
                 interp.exec("molGen=molpeakgen.MolPeakGen()");
+                interp.set("datasetName", datasetName);
+                interp.set("listName", listName);
                 interp.exec(script);
             }
         }

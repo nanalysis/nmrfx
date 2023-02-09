@@ -193,11 +193,10 @@ public class ProjectMenuActions extends MenuActions {
         if (sparkyFile != null) {
             try (PythonInterpreter interpreter = new PythonInterpreter()) {
                 interpreter.exec("import sparky");
-                String rdString;
                 interpreter.set("pMap", pMap);
                 interpreter.exec("sparky.pMap=pMap");
-                rdString = String.format("sparky.loadProjectFile('%s')", sparkyFile);
-                interpreter.exec(rdString);
+                interpreter.set("sparkyFile", sparkyFile.toString());
+                interpreter.exec("sparky.loadProjectFile(sparkyFile)");
             }
         }
     }

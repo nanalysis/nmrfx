@@ -25,6 +25,7 @@ package org.nmrfx.processor.operations;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
+import org.python.core.Py;
 import org.python.core.PyObject;
 import org.python.core.PyJavaType;
 import org.python.util.PythonInterpreter;
@@ -75,10 +76,10 @@ public class PythonScript extends MatrixOperation {
         if (!this.encapsulate) {
             interpreter = new PythonInterpreter();
             if (execFileName.length() != 0) {
-                interpreter.execfile(execFileName);
+                interpreter.execfile(Py.newUnicode(execFileName).encode("UTF-8"));
             }
             if (initialScript.length() != 0) {
-                interpreter.exec(initialScript);
+                interpreter.exec(Py.newUnicode(initialScript).encode("UTF-8"));
             }
         }
     }
@@ -92,17 +93,17 @@ public class PythonScript extends MatrixOperation {
         if (encapsulate) {
             interpreter = new PythonInterpreter();
             if (execFileName.length() != 0) {
-                interpreter.execfile(execFileName);
+                interpreter.execfile(Py.newUnicode(execFileName).encode("UTF-8"));
             }
             if (initialScript.length() != 0) {
-                interpreter.exec(initialScript);
+                interpreter.exec(Py.newUnicode(initialScript).encode("UTF-8"));
             }
         }
         PyObject pyObject = PyJavaType.wrapJavaObject(vector);
         try {
             interpreter.set("vec", pyObject);
             interpreter.set("vecmat", pyObject);
-            interpreter.exec(script);
+            interpreter.exec(Py.newUnicode(script).encode("UTF-8"));
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());
         }
@@ -118,13 +119,13 @@ public class PythonScript extends MatrixOperation {
          */
         if (encapsulate) {
             interpreter = new PythonInterpreter();
-            interpreter.exec(initialScript);
+            interpreter.exec(Py.newUnicode(initialScript).encode("UTF-8"));
         }
         PyObject pyObject = PyJavaType.wrapJavaObject(matrix);
         try {
             interpreter.set("matrix", pyObject);
             interpreter.set("vecmat", pyObject);
-            interpreter.exec(script);
+            interpreter.exec(Py.newUnicode(script).encode("UTF-8"));
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());
         }

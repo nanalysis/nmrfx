@@ -17,7 +17,7 @@ from org.nmrfx.processor.processing import ProcessingLib
 from org.nmrfx.processor.datasets.vendor import NMRDataUtil
 
 def getLibraryScript(fidFileName, nvFileName, args):
-    nmrData = NMRDataUtil.getFID(fidFileName)
+    nmrData = NMRDataUtil.getFID(fidFileName.decode("utf-8"))
     sequence = nmrData.getSequence()
     nDim = nmrData.getNDim()
     vendor = nmrData.getVendor()

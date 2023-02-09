@@ -56,6 +56,7 @@ import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.utils.GUIUtils;
+import org.python.core.Py;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -397,7 +398,7 @@ public class ScanTable {
                 File datasetFile = new File(scanOutputDir, fileRoot + rowNum + ".nv");
                 String datasetFilePath = datasetFile.getAbsolutePath();
                 String fileScript = ChartProcessor.buildFileScriptPart(fidFilePath, datasetFilePath);
-                processInterp.exec(fileScript);
+                processInterp.exec((Py.newUnicode(fileScript)).encode("UTF-8"));
                 processInterp.exec(processScript);
                 fileNames.add(datasetFilePath);
                 fileTableItem.setRow(rowNum++);

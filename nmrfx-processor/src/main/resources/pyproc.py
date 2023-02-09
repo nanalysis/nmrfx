@@ -1536,7 +1536,7 @@ def SCHEDULE(fraction=0.05, endOnly=False, fileName="", disabled=False, vector =
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = Schedule(fraction, endOnly, fileName)
+    op = Schedule(fraction, endOnly, fileName.decode("utf-8"))
     if (vector != None):
         op.eval(vector)
     else:
@@ -2296,13 +2296,14 @@ def SAMPLE_SCHEDULE(filename="/tmp/sample_schedule.txt", mode='read', dims=[], d
     
     global fidInfo
     fidObj = fidInfo.fidObj
+    filenameDecoded = filename.decode('utf-8')
     if (mode == 'create'):      # for 2D NUS
         size = fidInfo.size[1]  # too small unless demo
         if (len(dims) > 0):
             size = dims[0]
-        schedule = fidObj.createSampleSchedule(size, fraction, filename, demo, fidObj)
+        schedule = fidObj.createSampleSchedule(size, fraction, filenameDecoded, demo, fidObj)
     else:   # mode='read'
-        schedule = fidObj.readSampleSchedule(filename, demo, fidObj)
+        schedule = fidObj.readSampleSchedule(filenameDecoded, demo, fidObj)
     if (len(dims) > 0):
         schedule.setDims(dims)
 
@@ -3442,7 +3443,7 @@ def SCRIPT(script="", initialScript="", execFileName="", encapsulate=False, disa
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op=PythonScript(script, initialScript, execFileName, encapsulate)
+    op=PythonScript(script, initialScript.decode("utf-8"), execFileName.decode("utf-8"), encapsulate)
     if (vector != None):
         op.eval(vector)
     else:
