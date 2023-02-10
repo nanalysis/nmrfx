@@ -48,7 +48,7 @@ import javafx.stage.WindowEvent;
 import static org.nmrfx.utils.GUIUtils.affirm;
 
 import org.nmrfx.utils.FormatUtils;
-import org.python.core.Py;
+
 import org.python.util.InteractiveInterpreter;
 
 /**
@@ -62,7 +62,7 @@ public class ConsoleController extends OutputStream implements Initializable {
     private static ConsoleController consoleController;
     private static InteractiveInterpreter interpreter;
     // Store streamed bytes until flush is called, and all characters are written (required for utf-8 multibyte characters)
-    private List<Byte> bytes = new ArrayList<>();
+    private final List<Byte> bytes = new ArrayList<>();
 
     protected ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
 

@@ -57,7 +57,6 @@ import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.utils.FormatUtils;
 import org.nmrfx.utils.GUIUtils;
-import org.python.core.Py;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

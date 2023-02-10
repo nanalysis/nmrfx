@@ -622,7 +622,6 @@ public class PeakReader {
         String listName = fileTail;
         try (PythonInterpreter interpreter = new PythonInterpreter()) {
             interpreter.exec("import sparky");
-            String rdString;
             interpreter.set("pMap", pMap);
             interpreter.exec("sparky.pMap=pMap");
             interpreter.set("sparkyFileName", fileName);

@@ -25,8 +25,6 @@ package org.nmrfx.processor.operations;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import org.nmrfx.utils.FormatUtils;
-import org.python.core.Py;
 import org.python.core.PyObject;
 import org.python.core.PyJavaType;
 import org.python.util.PythonInterpreter;
