@@ -234,7 +234,6 @@ public class RegionsTableController implements Initializable {
      * Get the regions from the active chart and update the regions table.
      */
     public void updateActiveChartRegions() {
-
         List<DatasetAttributes> datasetAttributes = chart.getDatasetAttributes();
         List<DatasetRegion> regions;
         if (!datasetAttributes.isEmpty()) {
