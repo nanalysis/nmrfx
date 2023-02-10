@@ -59,10 +59,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.time.format.DateTimeParseException;
-import java.util.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -78,6 +78,7 @@ public class RS2DData implements NMRData {
     public static final String DATA_FILE_NAME = "data.dat";
     public static final String HEADER_FILE_NAME = "header.xml";
     public static final String SERIES_FILE_NAME = "Serie.xml";
+    public static final String NUS_SCHEDULE_FILENAME = "nus-schedule.txt";
     public static final String PROC_DIR = "Proc";
 
     private static final int MAXDIM = 4;
@@ -126,9 +127,9 @@ public class RS2DData implements NMRData {
         }
         this.fpath = path;
         this.nusFile = nusFile;
+        openNusFile();
         openParFile(path);
         openDataFile(path);
-
     }
 
     public Dataset toDataset(String datasetName) throws IOException {
@@ -248,9 +249,20 @@ public class RS2DData implements NMRData {
         return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
+    private void openNusFile() throws IOException {
+        if (nusFile == null) {
+            nusFile = new File(fpath + File.separator + NUS_SCHEDULE_FILENAME);
+        }
+        if (!nusFile.exists()) {
+            return;
+        }
+
+        log.info("Opening NUS file: {}", nusFile.getPath());
+        readSampleSchedule(nusFile.getPath(), false);
+    }
+
     private void openParFile(String parpath) throws IOException {
         log.info("Opening RS2D file: {}", parpath);
-
         Path headerPath = Paths.get(parpath, HEADER_FILE_NAME);
         Path seriesPath = Paths.get(parpath, SERIES_FILE_NAME);
         try (InputStream input = Files.newInputStream(headerPath)) {
