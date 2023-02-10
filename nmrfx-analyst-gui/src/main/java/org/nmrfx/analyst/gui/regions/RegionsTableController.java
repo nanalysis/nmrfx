@@ -139,6 +139,9 @@ public class RegionsTableController implements Initializable {
             }
             chart = newValue;
             updateButtonBindings();
+            if (chart == null) {
+                return;
+            }
             updateActiveChartRegions();
             chart.addRegionListener(activeDatasetRegionListener);
             if (chart.getDataset() != null) {
@@ -231,6 +234,7 @@ public class RegionsTableController implements Initializable {
      * Get the regions from the active chart and update the regions table.
      */
     public void updateActiveChartRegions() {
+
         List<DatasetAttributes> datasetAttributes = chart.getDatasetAttributes();
         List<DatasetRegion> regions;
         if (!datasetAttributes.isEmpty()) {
