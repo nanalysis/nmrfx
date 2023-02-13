@@ -131,30 +131,40 @@ public class RegionsTableController implements Initializable {
                 peakRegionTool.clearAnalysis(false);
             }
         });
-
-        PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> {
-            chart.removeRegionListener(activeDatasetRegionListener);
-            if (chart.getDataset() != null) {
-                chart.getDataset().removeDatasetRegionsListListener(datasetRegionsListListener);
-            }
-            chart = newValue;
-            updateButtonBindings();
-            if (chart == null) {
-                return;
-            }
-            updateActiveChartRegions();
-            chart.addRegionListener(activeDatasetRegionListener);
-            if (chart.getDataset() != null) {
-                chart.getDataset().addDatasetRegionsListListener(datasetRegionsListListener);
-            }
-            if (chart.getActiveRegion().isPresent()) {
-                regionsTable.selectRegion(chart.getActiveRegion().get());
-            }
-        });
+        PolyChart.getActiveChartProperty().addListener(this::activeChartUpdatedListener);
         updateActiveChartRegions();
         selectedRowRegionsTableListener = this:: setSelectedRowRegionsTableListener;
         regionsTable.getSelectionModel().selectedItemProperty().addListener(selectedRowRegionsTableListener);
         updateButtonBindings();
+    }
+
+    /**
+     * Listener for PolyChart active chart property. Updates chart, button bindings, and regions. Adds and removes
+     * listeners
+     * @param observableValue The active chart property.
+     * @param oldChart The previously set PolyChart.
+     * @param newChart The newly set PolyChart.
+     */
+    private void activeChartUpdatedListener(ObservableValue<? extends PolyChart> observableValue, PolyChart oldChart, PolyChart newChart) {
+        if (chart != null) {
+            chart.removeRegionListener(activeDatasetRegionListener);
+            if (chart.getDataset() != null) {
+                chart.getDataset().removeDatasetRegionsListListener(datasetRegionsListListener);
+            }
+        }
+        chart = newChart;
+        updateButtonBindings();
+        if (chart == null) {
+            return;
+        }
+        updateActiveChartRegions();
+        chart.addRegionListener(activeDatasetRegionListener);
+        if (chart.getDataset() != null) {
+            chart.getDataset().addDatasetRegionsListListener(datasetRegionsListListener);
+        }
+        if (chart.getActiveRegion().isPresent()) {
+            regionsTable.selectRegion(chart.getActiveRegion().get());
+        }
     }
 
     /**
