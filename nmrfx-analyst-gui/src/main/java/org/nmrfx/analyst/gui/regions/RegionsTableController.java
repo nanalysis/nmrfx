@@ -162,9 +162,7 @@ public class RegionsTableController implements Initializable {
         if (chart.getDataset() != null) {
             chart.getDataset().addDatasetRegionsListListener(datasetRegionsListListener);
         }
-        if (chart.getActiveRegion().isPresent()) {
-            regionsTable.selectRegion(chart.getActiveRegion().get());
-        }
+        chart.getActiveRegion().ifPresent(activeRegion -> regionsTable.selectRegion(activeRegion));
     }
 
     /**
