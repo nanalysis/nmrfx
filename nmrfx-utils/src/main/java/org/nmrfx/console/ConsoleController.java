@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -44,6 +46,9 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import static org.nmrfx.utils.GUIUtils.affirm;
+
+import org.nmrfx.utils.FormatUtils;
+
 import org.python.util.InteractiveInterpreter;
 
 /**
@@ -56,6 +61,8 @@ public class ConsoleController extends OutputStream implements Initializable {
 
     private static ConsoleController consoleController;
     private static InteractiveInterpreter interpreter;
+    // Store streamed bytes until flush is called, and all characters are written (required for utf-8 multibyte characters)
+    private final List<Byte> bytes = new ArrayList<>();
 
     protected ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
 
@@ -179,17 +186,26 @@ public class ConsoleController extends OutputStream implements Initializable {
 
     @Override
     public void write(int b) throws IOException {
-        // redirects data to the text area
+        bytes.add((byte) b);
+    }
+
+    @Override
+    public void flush() throws IOException {
+        byte[] byteArray = new byte[bytes.size()];
+        int i = 0;
+        for (Byte b: bytes) {
+            byteArray[i] = b;
+            i++;
+        }
+        bytes.clear();
+        String newText = new String(byteArray, StandardCharsets.UTF_8);
+        super.flush();
         if (Platform.isFxApplicationThread()) {
-            textArea.appendText(String.valueOf((char) b));
-            // scrolls the text area to the end of data
-            //textArea.positionCaret(String.valueOf((char)b).length());
+            textArea.appendText(newText);
             textArea.appendText("");
         } else {
             Platform.runLater(() -> {
-                textArea.appendText(String.valueOf((char) b));
-                // scrolls the text area to the end of data
-                //textArea.positionCaret(String.valueOf((char)b).length());
+                textArea.appendText(newText);
                 textArea.appendText("");
             });
         }
@@ -213,7 +229,8 @@ public class ConsoleController extends OutputStream implements Initializable {
 
     public void cd(String path) {
         try {
-            interpreter.exec("os.chdir('" + path + "')");
+            interpreter.set("cdPath", path);
+            interpreter.exec("os.chdir(cdPath)");
         } catch (Exception e) {
             textArea.appendText("\n" + e.getMessage());
         }
@@ -224,9 +241,9 @@ public class ConsoleController extends OutputStream implements Initializable {
         if (filter.isBlank()) {
             filter = "*";
         }
-        String script = "for f in glob.glob('" + filter + "'):\n  print f\n";
         try {
-            interpreter.exec(script);
+            interpreter.set("filterText", filter);
+            interpreter.exec("for f in glob.glob(filterText.encode('utf-8')):\n  print f\n");
         } catch (Exception e) {
             textArea.appendText("\n" + e.getMessage());
         }
@@ -294,7 +311,7 @@ public class ConsoleController extends OutputStream implements Initializable {
                 if (history.size() == 1 || prevKey == KeyCode.UP || prevKey == KeyCode.DOWN) {
                     textArea.appendText("\n");
                 }
-                interpreter.runsource(typed);
+                interpreter.runsource(FormatUtils.formatStringForPythonInterpreter(typed));
             }
         }
         textArea.appendText("> ");

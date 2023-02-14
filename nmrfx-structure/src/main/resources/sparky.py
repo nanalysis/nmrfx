@@ -316,7 +316,7 @@ def loadSaveFile(fileName,listName,aDataset=None):
         if not isinstance(dataset,Dataset):
             dataset = Dataset.getDataset(dataset)
             print 'dd3',dataset
-    print fileName, listName
+    print fileName.encode("utf-8"), listName
     peakListName = listName
     with open(fileName,'r') as f1:
         for line in f1:

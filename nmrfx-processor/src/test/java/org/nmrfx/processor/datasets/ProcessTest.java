@@ -4,13 +4,17 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.nmrfx.utils.FormatUtils;
 import org.python.util.PythonInterpreter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -97,6 +101,23 @@ public class ProcessTest {
     public long runAndCompare(String fileName) throws IOException {
         long[] detailedResult = runAndCompareDetailed(fileName);
         return detailedResult[0];
+    }
+    @Test(expected = Test.None.class)
+    public void openFilesWithSpecialCharacters() throws IOException {
+        List<String> directoryNames = List.of(new String[]{"Qualité", "你好世界"});
+        try (PythonInterpreter interp = new PythonInterpreter()) {
+            interp.exec("from pyproc import *");
+            interp.exec("useProcessor()");  // necessary to reset between processing multiple files
+            for (String directoryName: directoryNames) {
+                new File(tmpHome  + directoryName).mkdir();
+                new File(tmpHome + directoryName + "/jcamp").mkdir();
+                Path fidOriginal = Paths.get(fidHome + "jcamp/TESTFID.DX");
+                Path fidCopy = Paths.get(tmpHome).resolve(directoryName).resolve("jcamp/TESTFID.DX");
+                Files.copy(fidOriginal, fidCopy);
+                String script = String.format("FID('%s%s/jcamp/TESTFID.DX')\nCREATE('%s%s/jcamp/TESTFID.DX')", tmpHome, directoryName, tmpHome, directoryName);
+                interp.exec(FormatUtils.formatStringForPythonInterpreter(script));
+            }
+        }
     }
 
     @Test
