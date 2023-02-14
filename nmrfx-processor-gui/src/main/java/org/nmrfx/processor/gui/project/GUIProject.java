@@ -14,6 +14,7 @@ import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.util.FS;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -78,6 +79,15 @@ public class GUIProject extends ProjectBase {
         return newProject;
     }
 
+    public Git createAndInitializeGitObject(File gitDirectory) {
+        try {
+            return Git.init().setDirectory(gitDirectory).call();
+        } catch (GitAPIException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        return null;
+    }
+
     public void createProject(Path projectDir) throws IOException {
         if (Files.exists(projectDir)) {
             throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
@@ -89,15 +99,48 @@ public class GUIProject extends ProjectBase {
             Files.createDirectory(subDirectory);
         }
         setProjectDir(projectDir);
-        try {
-            PreferencesController.saveRecentProjects(projectDir.toString());
-            git = Git.init().setDirectory(projectDir.toFile()).call();
-        } catch (GitAPIException ex) {
-            log.error(ex.getMessage(), ex);
-        }
+        PreferencesController.saveRecentProjects(projectDir.toString());
+        checkUserHomePath();
+        git = createAndInitializeGitObject(projectDir.toFile());
         if (git != null) {
             writeIgnore();
         }
+    }
+
+    /***
+     * Checks if the user home path that will be used by git exists and will be writable. jgit checks for the user
+     * home path in the preference of XDG_CONFIG_HOME, HOME, HOMEDRIVE, HOMEPATH. If XDG_CONGIG_HOME is set, then that
+     * path is used regardless of whether its writable. Otherwise the first environment variable that is set is checked
+     * for existence and writability. If it fails the check, the userHome variable of jgit FS is set to the 'user.home'
+     * property.
+     */
+    private void checkUserHomePath() {
+        if (getEnvironmentVariable("XDG_CONFIG_HOME") != null) {
+            return;
+        }
+        List<String> userHomeEnvs = List.of("HOME", "HOMEDRIVE", "HOMEPATH");
+        String value;
+        boolean setUserHome = false;
+        for (String userHomeEnv: userHomeEnvs) {
+            value = getEnvironmentVariable(userHomeEnv);
+            if (value != null) {
+                File userHome = new File(value);
+                if (!userHome.exists() || (userHome.exists() && !userHome.canWrite())) {
+                    setUserHome = true;
+                }
+                break;
+            }
+
+        }
+        if (setUserHome) {
+            File userHome = new File(System.getProperty("user.home"));
+            FS.DETECTED.setUserHome(userHome);
+            log.info("Setting jgit config file path to: {}", userHome);
+        }
+    }
+
+    public String getEnvironmentVariable(String name) {
+        return System.getenv(name);
     }
 
     public static GUIProject getActive() {
@@ -406,15 +449,19 @@ public class GUIProject extends ProjectBase {
     boolean gitCommit() {
         boolean didSomething = false;
         commitActive = true;
-        try {
-            if (git == null) {
-                try {
-                    git = Git.open(projectDir.toFile());
-                } catch (IOException ioE) {
-                    git = Git.init().setDirectory(projectDir.toFile()).call();
-                    writeIgnore();
+        if (git == null) {
+            try {
+                git = Git.open(projectDir.toFile());
+            } catch (IOException ioE) {
+                checkUserHomePath();
+                git = createAndInitializeGitObject(projectDir.toFile());
+                if (git == null) {
+                    return didSomething;
                 }
+                writeIgnore();
             }
+        }
+        try {
 
             DirCache index = git.add().addFilepattern(".").call();
             Status status = git.status().call();
