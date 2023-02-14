@@ -29,8 +29,6 @@ public class GUIProjectTest {
 
     @Test
     public void testCreateProjectInvalidFolder() throws IOException {
-        Mockito.doReturn(null).when(testProject).getEnvironmentVariable("HOME");
-        Mockito.doReturn(tmpFolder.getRoot().toPath().resolve("non-existent-folder").toString()).when(testProject).getEnvironmentVariable("HOME");
         Mockito.doReturn(tmpFolder.getRoot().toPath().resolve("non-existent-folder").toString()).when(testProject).getEnvironmentVariable("HOME");
         testProject.createProject(tmpFolder.getRoot().toPath().resolve("new_proj_dir_invalid"));
         assertEquals(System.getProperty("user.home"), FS.DETECTED.userHome().toString());
