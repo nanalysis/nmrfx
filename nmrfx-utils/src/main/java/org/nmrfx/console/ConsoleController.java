@@ -187,7 +187,6 @@ public class ConsoleController extends OutputStream implements Initializable {
     @Override
     public void write(int b) throws IOException {
         bytes.add((byte) b);
-        startTimer();
     }
 
     @Override
@@ -201,10 +200,16 @@ public class ConsoleController extends OutputStream implements Initializable {
         bytes.clear();
         String newText = new String(byteArray, StandardCharsets.UTF_8);
         super.flush();
-        Platform.runLater(() -> {
+        if (Platform.isFxApplicationThread()) {
             textArea.appendText(newText);
             textArea.appendText("");
-        });
+        } else {
+            Platform.runLater(() -> {
+                textArea.appendText(newText);
+                textArea.appendText("");
+            });
+        }
+        startTimer();
     }
 
     public void clearConsole() {
@@ -306,7 +311,7 @@ public class ConsoleController extends OutputStream implements Initializable {
                 if (history.size() == 1 || prevKey == KeyCode.UP || prevKey == KeyCode.DOWN) {
                     textArea.appendText("\n");
                 }
-                interpreter.exec(FormatUtils.formatStringForPythonInterpreter(typed));
+                interpreter.runsource(FormatUtils.formatStringForPythonInterpreter(typed));
             }
         }
         textArea.appendText("> ");
