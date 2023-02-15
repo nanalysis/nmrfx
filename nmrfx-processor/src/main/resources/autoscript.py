@@ -7,6 +7,7 @@ import os.path
 import argparse
 import psspecial
 from pyproc import *
+from scriptutils import formatStringForJava
 from string import Template
 
 from java.lang import Runtime
@@ -17,7 +18,7 @@ from org.nmrfx.processor.processing import ProcessingLib
 from org.nmrfx.processor.datasets.vendor import NMRDataUtil
 
 def getLibraryScript(fidFileName, nvFileName, args):
-    nmrData = NMRDataUtil.getFID(fidFileName)
+    nmrData = NMRDataUtil.getFID(formatStringForJava(fidFileName)
     sequence = nmrData.getSequence()
     nDim = nmrData.getNDim()
     vendor = nmrData.getVendor()
