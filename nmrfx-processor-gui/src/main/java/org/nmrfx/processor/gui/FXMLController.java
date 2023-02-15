@@ -55,6 +55,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Callback;
+import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.SegmentedButton;
@@ -100,6 +101,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.IntStream;
 
 public class FXMLController implements  Initializable, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
@@ -173,6 +175,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
     Set<ControllerTool> tools = new HashSet<>();
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
+    public record GridDimensions(Integer rows, Integer cols) {}
+    private static final String GRID_DIM_VALID_INTEGER = "([1-9]|1[0-9]|20)";
+
 
     private BooleanProperty minBordersProperty() {
         if (minBorders == null) {
@@ -1351,7 +1356,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public static FXMLController create() {
         return create(null);
     }
-    
+
     public static FXMLController create(Stage stage) {
         FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
         FXMLController controller = null;
@@ -1984,19 +1989,62 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void addGrid() {
-        String rows = GUIUtils.input("nRows");
-        try {
-            if ((rows != null) && !rows.isBlank()) {
-                String columns = GUIUtils.input("nColumns");
-                if ((columns != null) && !columns.isBlank()) {
-                    int nRows = Integer.parseInt(rows);
-                    int nColumns = Integer.parseInt(columns);
-                    addCharts(nRows, nColumns);
-                }
-            }
-        } catch (NumberFormatException nfe) {
-            GUIUtils.warn("Grid Values", "Entry not an integer");
+        GridDimensions gdims = getGridDimensionInput();
+        if (gdims == null) {
+            return;
         }
+        addCharts(gdims.rows(), gdims.cols());
+    }
+
+    public GridDimensions getGridDimensionInput() {
+        Dialog<GridDimensions> dialog = new Dialog<>();
+        dialog.setTitle("Grid");
+        dialog.setHeaderText("Enter grid dimensions:");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+        dialog.getDialogPane().setContent(grid);
+        int comboBoxWidth = 60;
+        ComboBox<Integer> comboBoxRows = new ComboBox<>(FXCollections.observableArrayList(IntStream.rangeClosed(1, 5).boxed().toList()));
+        comboBoxRows.setValue(1);
+        comboBoxRows.setMinWidth(comboBoxWidth);
+        comboBoxRows.setMaxWidth(comboBoxWidth);
+        comboBoxRows.setEditable(true);
+        comboBoxRows.getEditor().setTextFormatter(new TextFormatter<>(this::gridDimFilter));
+        comboBoxRows.setConverter(new IntegerStringConverter());
+        grid.add(new Label("Number of rows"), 0, 0);
+        grid.add(comboBoxRows, 1, 0);
+
+        ComboBox<Integer> comboBoxCols = new ComboBox<>(FXCollections.observableArrayList(IntStream.rangeClosed(1, 5).boxed().toList()));
+        comboBoxCols.setValue(1);
+        comboBoxCols.setMinWidth(comboBoxWidth);
+        comboBoxCols.setMaxWidth(comboBoxWidth);
+        comboBoxCols.setEditable(true);
+        comboBoxCols.getEditor().setTextFormatter(new TextFormatter<>(this::gridDimFilter));
+        comboBoxCols.setConverter(new IntegerStringConverter());
+        grid.add(new Label("Number of columns"), 0, 1);
+        grid.add(comboBoxCols, 1, 1);
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                return new GridDimensions(comboBoxRows.getValue(), comboBoxCols.getValue());
+            }
+            return null;
+        });
+
+        GridDimensions gd = null;
+        Optional<GridDimensions> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            gd = result.get();
+        }
+        return gd;
+    }
+
+    private TextFormatter.Change gridDimFilter(TextFormatter.Change change) {
+        if (!change.getControlNewText().matches(GRID_DIM_VALID_INTEGER)) {
+            change.setText("");
+        }
+        return change;
     }
 
     public void addCharts(int nRows, int nColumns) {
