@@ -663,11 +663,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return dataFile != null;
     }
 
-    /**
-     * Return whether dataset is a memory file.
-     *
-     * @return true if this dataset has a data file associated with it.
-     */
+    @Override
     public boolean isMemoryFile() {
         return memoryMode;
     }

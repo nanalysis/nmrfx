@@ -86,14 +86,16 @@ public class DatasetParameterFile {
         File parFile = new File(parFileName);
         try (PrintStream pStream = new PrintStream(parFile)) {
             int nDim = dataset.getNDim();
-            pStream.printf("dim %d", nDim);
-            for (int i = 0; i < nDim; i++) {
-                pStream.printf(" %d", dataset.getSizeTotal(i));
+            if (!dataset.isMemoryFile()) {
+                pStream.printf("dim %d", nDim);
+                for (int i = 0; i < nDim; i++) {
+                    pStream.printf(" %d", dataset.getSizeTotal(i));
+                }
+                for (int i = 0; i < nDim; i++) {
+                    pStream.printf(" %d", layout.getBlockSize(i));
+                }
+                pStream.print("\n");
             }
-            for (int i = 0; i < nDim; i++) {
-                pStream.printf(" %d", layout.getBlockSize(i));
-            }
-            pStream.print("\n");
             for (int i = 0; i < nDim; i++) {
                 pStream.printf("sw %d %.2f\n", (i + 1), dataset.getSw(i));
                 pStream.printf("sf %d %.8f\n", (i + 1), dataset.getSf(i));
