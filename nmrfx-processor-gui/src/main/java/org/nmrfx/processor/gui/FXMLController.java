@@ -1996,6 +1996,13 @@ public class FXMLController implements  Initializable, PeakNavigable {
         addCharts(gdims.rows(), gdims.cols());
     }
 
+    public void removeSelectedChart() {
+        if (charts.size() > 1) {
+            getActiveChart().close();
+            arrange(chartGroup.getOrientation());
+        }
+    }
+
     public void addCharts(int nRows, int nColumns) {
         setChartDisable(true);
         int nCharts = nRows * nColumns;
@@ -2017,6 +2024,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void arrange(int nRows) {
         chartGroup.setRows(nRows);
+        chartGroup.calculateAndSetOrientation();
     }
 
     public void alignCenters() {

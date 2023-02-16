@@ -57,6 +57,7 @@ public class GridPaneCanvas extends GridPane {
     FXMLController controller;
     final Canvas canvas;
     int nRows = 1;
+    private ORIENTATION orientation;
 
     public GridPaneCanvas(FXMLController controller, Canvas canvas) {
         this.controller = controller;
@@ -69,7 +70,7 @@ public class GridPaneCanvas extends GridPane {
         });
     }
 
-    public static ORIENTATION getOrientation(String name) {
+    public static ORIENTATION parseOrientationFromString(String name) {
         name = name.toUpperCase();
         if ("HORIZONTAL".startsWith(name)) {
             return ORIENTATION.HORIZONTAL;
@@ -137,6 +138,7 @@ public class GridPaneCanvas extends GridPane {
     }
 
     public boolean setOrientation(ORIENTATION orient, boolean force) {
+        orientation = orient;
         int nChildren = getChildren().size();
         int newRows;
         if (orient == ORIENTATION.VERTICAL) {
@@ -161,6 +163,10 @@ public class GridPaneCanvas extends GridPane {
         } else {
             return false;
         }
+    }
+
+    public ORIENTATION getOrientation() {
+        return orientation;
     }
 
     public void setRows(int nRows) {
@@ -224,7 +230,16 @@ public class GridPaneCanvas extends GridPane {
         getChildren().clear();
         getChildren().addAll(charts);
         setRows(nRows);
-        updateGrid();
+    }
+
+    public void calculateAndSetOrientation() {
+        if (nRows == 1) {
+            orientation = ORIENTATION.HORIZONTAL;
+        } else if (getColumns() == 1) {
+            orientation = ORIENTATION.VERTICAL;
+        } else {
+            orientation = ORIENTATION.GRID;
+        }
     }
 
     public void addChart(PolyChart chart, int chartColumn, int chartRow, int columnSpan, int rowSpan) {
