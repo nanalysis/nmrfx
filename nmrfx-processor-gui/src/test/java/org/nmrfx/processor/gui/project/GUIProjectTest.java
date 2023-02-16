@@ -9,6 +9,8 @@ import org.mockito.Mockito;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,18 +30,22 @@ public class GUIProjectTest {
     }
 
     @Test
-    public void testCreateProjectInvalidFolder() throws IOException {
+    public void testCreateProjectInvalidConfigFolder() throws IOException {
         Mockito.doReturn(tmpFolder.getRoot().toPath().resolve("non-existent-folder").toString()).when(testProject).getEnvironmentVariable("HOME");
         testProject.createProject(tmpFolder.getRoot().toPath().resolve("new_proj_dir_invalid"));
         assertEquals(System.getProperty("user.home"), FS.DETECTED.userHome().toString());
     }
 
     @Test
-    public void testCreateProjectValidFolder() throws IOException {
+    public void testCreateProjectValidConfigFolder() throws IOException {
         Mockito.doReturn(null).when(testProject).getEnvironmentVariable("HOME");
         Mockito.doReturn(tmpFolder.getRoot().toPath().toString()).when(testProject).getEnvironmentVariable("HOMEDRIVE");
-        String initialUserHome = FS.DETECTED.userHome().toString();
+        Mockito.doReturn("valid_config_directory").when(testProject).getEnvironmentVariable("HOMEPATH");
+        Files.createDirectories(tmpFolder.getRoot().toPath().resolve("valid_config_directory"));
+        // set the user home and make sure it hasn't been overwritten in the assertion
+        String path = "\\path\\to\\not\\be\\overwritten";
+        FS.DETECTED.setUserHome(new File(path));
         testProject.createProject(tmpFolder.getRoot().toPath().resolve("new_proj_dir_valid"));
-        assertEquals(initialUserHome, FS.DETECTED.userHome().toString());
+        assertEquals(path, FS.DETECTED.userHome().toString());
     }
 }

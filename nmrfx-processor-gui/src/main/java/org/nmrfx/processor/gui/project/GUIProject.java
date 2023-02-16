@@ -88,7 +88,7 @@ public class GUIProject extends ProjectBase {
         return null;
     }
 
-    public void createProject(Path projectDir) throws IOException {
+    public void createProject(Path projectDir) throws IOException{
         if (Files.exists(projectDir)) {
             throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
         }
@@ -109,7 +109,7 @@ public class GUIProject extends ProjectBase {
 
     /***
      * Checks if the user home path that will be used by git exists and will be writable. jgit checks for the user
-     * home path in the preference of XDG_CONFIG_HOME, HOME, HOMEDRIVE, HOMEPATH. If XDG_CONGIG_HOME is set, then that
+     * home path in the preference of XDG_CONFIG_HOME, HOME, (HOMEDRIVE, HOMEPATH) and HOMESHARE. If XDG_CONGIG_HOME is set, then that
      * path is used regardless of whether its writable. Otherwise the first environment variable that is set is checked
      * for existence and writability. If it fails the check, the userHome variable of jgit FS is set to the 'user.home'
      * property.
@@ -118,25 +118,33 @@ public class GUIProject extends ProjectBase {
         if (getEnvironmentVariable("XDG_CONFIG_HOME") != null) {
             return;
         }
-        List<String> userHomeEnvs = List.of("HOME", "HOMEDRIVE", "HOMEPATH");
-        String value;
         boolean setUserHome = false;
-        for (String userHomeEnv: userHomeEnvs) {
-            value = getEnvironmentVariable(userHomeEnv);
-            if (value != null) {
-                File userHome = new File(value);
-                if (!userHome.exists() || (userHome.exists() && !userHome.canWrite())) {
+        String home = getEnvironmentVariable("HOME");
+        if (home != null) {
+            setUserHome = isFileWritable(new File(home));
+        } else {
+            String homeDrive = getEnvironmentVariable("HOMEDRIVE");
+            String homePath = getEnvironmentVariable("HOMEPATH");
+            if (homeDrive != null && homePath != null) {
+                setUserHome = isFileWritable(new File(homeDrive, homePath));
+            }  else {
+                String homeShare = getEnvironmentVariable("HOMESHARE");
+                if (homeShare != null) {
+                    setUserHome = isFileWritable(new File(homeShare));
+                } else {
                     setUserHome = true;
                 }
-                break;
             }
-
         }
         if (setUserHome) {
             File userHome = new File(System.getProperty("user.home"));
             FS.DETECTED.setUserHome(userHome);
             log.info("Setting jgit config file path to: {}", userHome);
         }
+    }
+
+    private boolean isFileWritable(File file) {
+        return !file.exists() || (file.exists() && !file.canWrite());
     }
 
     public String getEnvironmentVariable(String name) {
