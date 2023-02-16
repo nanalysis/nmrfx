@@ -489,7 +489,8 @@ public class Axis {
                         gC.fillText(ticString, x, y2 + gap1);
                     }
                     if (gridLength > 0) {
-                        gC.setLineWidth(0.5);
+                        gC.setLineWidth(1.0);
+                        gC.setLineDashes(1);
                         gC.strokeLine(x, y1, x, y1 - gridLength);
                         gC.setLineWidth(lineWidth);
 
@@ -498,6 +499,13 @@ public class Axis {
                 } else {
                     double y2 = yOrigin + ticSize / 2;
                     gC.strokeLine(x, y1, x, y2);
+                    if (gridLength > 0) {
+                        gC.setLineWidth(0.5);
+                        gC.setLineDashes(1);
+                        gC.strokeLine(x, y1, x, y1 - gridLength);
+                        gC.setLineWidth(lineWidth);
+
+                    }
                 }
                 if (tInfo.centerMode) {
                     break;
@@ -548,13 +556,20 @@ public class Axis {
                         gC.fillText(ticString, x2 - gap1, y);
                     }
                     if (gridLength > 0) {
-                        gC.setLineWidth(0.5);
+                        gC.setLineWidth(1.0);
+                        gC.setLineDashes(1);
                         gC.strokeLine(x1, y, x1 + gridLength, y);
                         gC.setLineWidth(lineWidth);
                     }
                 } else {
                     double x2 = x1 - ticSize / 2;
                     gC.strokeLine(x1, y, x2, y);
+                    if (gridLength > 0) {
+                        gC.setLineWidth(0.5);
+                        gC.setLineDashes(1);
+                        gC.strokeLine(x1, y, x1 + gridLength, y);
+                        gC.setLineWidth(lineWidth);
+                    }
                 }
                 if (tInfo.centerMode) {
                     break;
