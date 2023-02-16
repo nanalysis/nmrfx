@@ -772,6 +772,16 @@ public class DatasetBase {
     }
 
     /**
+     * Return whether dataset is a memory file.
+     *
+     * @return true if this dataset doesn't have a data file associated with it.
+     */
+    public boolean isMemoryFile() {
+        return false;
+    }
+
+
+    /**
      * Get the File object corresponding to the data file for this Dataset
      *
      * @return File object, null if data stored in Vec
