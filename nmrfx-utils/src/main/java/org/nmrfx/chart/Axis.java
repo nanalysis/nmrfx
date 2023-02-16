@@ -496,7 +496,7 @@ public class Axis {
                         gC.setLineDashes(GRID_DASHES);
                         gC.strokeLine(x, y1, x, y1 - gridLength);
                         gC.setLineWidth(lineWidth);
-
+                        gC.setLineDashes();
                     }
 
                 } else {
@@ -507,6 +507,7 @@ public class Axis {
                         gC.setLineDashes(GRID_DASHES);
                         gC.strokeLine(x, y1, x, y1 - gridLength);
                         gC.setLineWidth(lineWidth);
+                        gC.setLineDashes();
 
                     }
                 }
@@ -563,6 +564,7 @@ public class Axis {
                         gC.setLineDashes(GRID_DASHES);
                         gC.strokeLine(x1, y, x1 + gridLength, y);
                         gC.setLineWidth(lineWidth);
+                        gC.setLineDashes();
                     }
                 } else {
                     double x2 = x1 - ticSize / 2;
@@ -572,6 +574,7 @@ public class Axis {
                         gC.setLineDashes(GRID_DASHES);
                         gC.strokeLine(x1, y, x1 + gridLength, y);
                         gC.setLineWidth(lineWidth);
+                        gC.setLineDashes();
                     }
                 }
                 if (tInfo.centerMode) {
