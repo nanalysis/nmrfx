@@ -18,20 +18,29 @@
 package org.nmrfx.processor.gui.controls;
 
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Transform;
+import javafx.util.converter.IntegerStringConverter;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.IntStream;
 
 /**
  * @author Bruce Johnson
@@ -43,7 +52,8 @@ public class GridPaneCanvas extends GridPane {
         HORIZONTAL,
         GRID
     }
-
+    private static final String GRID_DIM_VALID_INTEGER = "([1-9]|1[0-9]|20)";
+    public record GridDimensions(Integer rows, Integer cols) {}
     FXMLController controller;
     final Canvas canvas;
     int nRows = 1;
@@ -277,6 +287,60 @@ public class GridPaneCanvas extends GridPane {
         for (var chart : nodes) {
             chart.setChartDisabled(state);
         }
+    }
+
+    public static GridDimensions getGridDimensionInput() {
+        Dialog<GridDimensions> dialog = new Dialog<>();
+        dialog.setTitle("Grid");
+        dialog.setHeaderText("Enter grid dimensions:");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+        dialog.getDialogPane().setContent(grid);
+        int comboBoxWidth = 60;
+        ComboBox<Integer> comboBoxRows = new ComboBox<>(FXCollections.observableArrayList(IntStream.rangeClosed(1, 5).boxed().toList()));
+        comboBoxRows.setValue(1);
+        comboBoxRows.setMinWidth(comboBoxWidth);
+        comboBoxRows.setMaxWidth(comboBoxWidth);
+        comboBoxRows.setEditable(true);
+        comboBoxRows.getEditor().setTextFormatter(new TextFormatter<>(GridPaneCanvas::gridDimFilter));
+        comboBoxRows.setConverter(new IntegerStringConverter());
+        grid.add(new Label("Number of rows"), 0, 0);
+        grid.add(comboBoxRows, 1, 0);
+
+        ComboBox<Integer> comboBoxCols = new ComboBox<>(FXCollections.observableArrayList(IntStream.rangeClosed(1, 5).boxed().toList()));
+        comboBoxCols.setValue(1);
+        comboBoxCols.setMinWidth(comboBoxWidth);
+        comboBoxCols.setMaxWidth(comboBoxWidth);
+        comboBoxCols.setEditable(true);
+        comboBoxCols.getEditor().setTextFormatter(new TextFormatter<>(GridPaneCanvas::gridDimFilter));
+        comboBoxCols.setConverter(new IntegerStringConverter());
+        grid.add(new Label("Number of columns"), 0, 1);
+        grid.add(comboBoxCols, 1, 1);
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                // The value set in the formatter may not have been set yet so commit the value before retrieving
+                comboBoxRows.commitValue();
+                comboBoxCols.commitValue();
+                return new GridDimensions(comboBoxRows.getValue(), comboBoxCols.getValue());
+            }
+            return null;
+        });
+
+        GridDimensions gd = null;
+        Optional<GridDimensions> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            gd = result.get();
+        }
+        return gd;
+    }
+
+    private static TextFormatter.Change gridDimFilter(TextFormatter.Change change) {
+        if (!change.getControlNewText().matches(GRID_DIM_VALID_INTEGER)) {
+            change.setText("");
+        }
+        return change;
     }
 
 }
