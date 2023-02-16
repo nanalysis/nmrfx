@@ -37,6 +37,9 @@ import org.nmrfx.graphicsio.StyledCanvasText;
  * @author brucejohnson
  */
 public class Axis {
+    private static final double GRID_MINOR_LINE_WIDTH = 0.5;
+    private static final double GRID_MAJOR_LINE_WIDTH = 1.0;
+    private static final double GRID_DASHES = 1;
 
     Orientation orientation;
     double ticSize = 10.0;
@@ -489,8 +492,8 @@ public class Axis {
                         gC.fillText(ticString, x, y2 + gap1);
                     }
                     if (gridLength > 0) {
-                        gC.setLineWidth(1.0);
-                        gC.setLineDashes(1);
+                        gC.setLineWidth(GRID_MAJOR_LINE_WIDTH);
+                        gC.setLineDashes(GRID_DASHES);
                         gC.strokeLine(x, y1, x, y1 - gridLength);
                         gC.setLineWidth(lineWidth);
 
@@ -500,8 +503,8 @@ public class Axis {
                     double y2 = yOrigin + ticSize / 2;
                     gC.strokeLine(x, y1, x, y2);
                     if (gridLength > 0) {
-                        gC.setLineWidth(0.5);
-                        gC.setLineDashes(1);
+                        gC.setLineWidth(GRID_MINOR_LINE_WIDTH);
+                        gC.setLineDashes(GRID_DASHES);
                         gC.strokeLine(x, y1, x, y1 - gridLength);
                         gC.setLineWidth(lineWidth);
 
@@ -556,8 +559,8 @@ public class Axis {
                         gC.fillText(ticString, x2 - gap1, y);
                     }
                     if (gridLength > 0) {
-                        gC.setLineWidth(1.0);
-                        gC.setLineDashes(1);
+                        gC.setLineWidth(GRID_MAJOR_LINE_WIDTH);
+                        gC.setLineDashes(GRID_DASHES);
                         gC.strokeLine(x1, y, x1 + gridLength, y);
                         gC.setLineWidth(lineWidth);
                     }
@@ -565,8 +568,8 @@ public class Axis {
                     double x2 = x1 - ticSize / 2;
                     gC.strokeLine(x1, y, x2, y);
                     if (gridLength > 0) {
-                        gC.setLineWidth(0.5);
-                        gC.setLineDashes(1);
+                        gC.setLineWidth(GRID_MINOR_LINE_WIDTH);
+                        gC.setLineDashes(GRID_DASHES);
                         gC.strokeLine(x1, y, x1 + gridLength, y);
                         gC.setLineWidth(lineWidth);
                     }
