@@ -31,6 +31,7 @@ public class GUIProjectTest {
 
     @Test
     public void testCreateProjectInvalidConfigFolder() throws IOException {
+        Mockito.doReturn(null).when(testProject).getEnvironmentVariable("XDG_CONFIG_HOME");
         Mockito.doReturn(tmpFolder.getRoot().toPath().resolve("non-existent-folder").toString()).when(testProject).getEnvironmentVariable("HOME");
         FS.DETECTED.setUserHome(tmpFolder.getRoot().toPath().resolve("non-existent-folder").toFile());
         testProject.createProject(tmpFolder.getRoot().toPath().resolve("new_proj_dir_invalid"));
@@ -39,6 +40,7 @@ public class GUIProjectTest {
 
     @Test
     public void testCreateProjectValidConfigFolder() throws IOException {
+        Mockito.doReturn(null).when(testProject).getEnvironmentVariable("XDG_CONFIG_HOME");
         Mockito.doReturn(null).when(testProject).getEnvironmentVariable("HOME");
         Mockito.doReturn(tmpFolder.getRoot().toPath().toString()).when(testProject).getEnvironmentVariable("HOMEDRIVE");
         Mockito.doReturn("valid_config_directory").when(testProject).getEnvironmentVariable("HOMEPATH");
