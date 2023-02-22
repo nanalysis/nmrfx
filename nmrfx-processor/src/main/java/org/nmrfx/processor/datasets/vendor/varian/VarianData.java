@@ -297,6 +297,9 @@ public class VarianData implements NMRData {
                 case "1 0 1 0 1 0 1 0":
                     coefs = "ge";
                     break;
+                case "1 0 0 1":
+                    coefs = "sep";
+                    break;
                 default:
                     coefs = s;
             }
@@ -647,16 +650,12 @@ public class VarianData implements NMRData {
                     sizes[i] = np / 2;
                 } else {
                     // see vnmr.tcl lines 773-779, use here or new method getNarray?
-                    Integer ipar;
-                    int td = 0;
-                    String name = "ni";
-                    if (i > 1) {
-                        name = "ni" + i;
-                    }
-                    if ((ipar = getParInt(name)) != null) {
-                        // use isComplex(dim) to look at phase
-                        // e.g. hnco3d.fid arraydim=6400; ni=40, phase=0,2; ni2=40, phase2=0,2
-                        td = ipar;
+                    int td = getNI(i);
+                    if (isComplex(i)) {
+                        String symbolicCoefs = getSymbolicCoefs(i);
+                        if (symbolicCoefs.equals("sep")) {
+                            td /= 2;
+                        }
                     }
                     sizes[i] = td;
                 }
@@ -664,6 +663,19 @@ public class VarianData implements NMRData {
             }
         }
         return sizes[iDim];
+    }
+
+    private int getNI(int i) {
+        Integer ipar;
+        int td = 0;
+        String name = "ni";
+        if (i > 1) {
+            name = "ni" + i;
+        }
+        if ((ipar = getParInt(name)) != null) {
+            td = ipar;
+        }
+        return td;
     }
 
     @Override
@@ -696,20 +708,24 @@ public class VarianData implements NMRData {
     @Override
     public boolean isComplex(int iDim) {
         if (iDim == 0) {
-//            return isComplex;
             String s = getPar("proc");
             return !(s != null && s.equals("rft")); // proc="ft" or "lp"
         } else {
-            String ext = "";
-            if (iDim > 1) {
-                ext += iDim;
-            }
-            String s = getPar("phase" + ext);
+            String ext = String.valueOf(iDim);
+            String s = getPar("proc"+ext);
+            boolean notRFT =  !(s != null && s.equals("rft")); 
+
+            s = getPar("phase" + ext);
             if (s != null) {
                 String[] f = s.split("\n");
                 return (f.length > 1);
             } else {
-                return false;
+                int td = getNI(iDim);
+                boolean isComplex = false; 
+                if ((td > 1) && notRFT) {
+                    isComplex = true;
+                }
+                return isComplex;
             }
         }
     }
