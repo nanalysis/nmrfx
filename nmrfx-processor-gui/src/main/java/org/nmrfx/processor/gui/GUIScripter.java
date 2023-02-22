@@ -514,7 +514,7 @@ public class GUIScripter {
     }
 
     public void grid(String orientName) {
-        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.getOrientation(orientName);
+        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.parseOrientationFromString(orientName);
         ConsoleUtil.runOnFxThread(() -> {
             controller.arrange(orient);
             controller.draw();
@@ -523,7 +523,7 @@ public class GUIScripter {
 
     public void grid(int rows, int columns) {
         int nCharts = rows * columns;
-        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.getOrientation("grid");
+        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.parseOrientationFromString("grid");
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController controller = getActiveController();
             PolyChart chart = controller.getActiveChart();
@@ -539,7 +539,7 @@ public class GUIScripter {
     }
 
     public void grid(int nCharts, String orientName) {
-        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.getOrientation(orientName);
+        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.parseOrientationFromString(orientName);
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController controller = getActiveController();
             PolyChart chart = controller.getActiveChart();
@@ -554,7 +554,7 @@ public class GUIScripter {
     }
 
     public void grid(List<String> datasetNames, String orientName) {
-        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.getOrientation(orientName);
+        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.parseOrientationFromString(orientName);
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController controller = getActiveController();
             PolyChart chart = controller.getActiveChart();

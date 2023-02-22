@@ -35,7 +35,7 @@ public class SpectrumMenuActions extends MenuActions {
 
 
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
-        deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().removeSelected());
+        deleteItem.setOnAction(e -> FXMLController.getActiveController().removeSelectedChart());
         MenuItem syncMenuItem = new MenuItem("Sync Axes");
         syncMenuItem.setOnAction(e -> PolyChart.getActiveChart().syncSceneMates());
 
