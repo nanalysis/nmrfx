@@ -598,6 +598,10 @@ public class TestBasePoints implements MultivariateFunction {
             sBuf.append(region2.meanI);
             sBuf.append(" ");
             sBuf.append(max);
+            sBuf.append(" ");
+            sBuf.append(centerR);
+            sBuf.append(" ");
+            sBuf.append(centerI);
             return sBuf.toString();
         }
     }
@@ -1103,7 +1107,7 @@ public class TestBasePoints implements MultivariateFunction {
         }
     }
 
-    public int getSign(double p0, double p1) {
+    public int getSignOld(double p0, double p1) {
         double tol = 0.0001;
         double dDelta = p1 / (vector.getSize() - 1);
         double sumPlus = 0;
@@ -1112,28 +1116,35 @@ public class TestBasePoints implements MultivariateFunction {
             double real = regData.centerR;
             double imag = regData.centerI;
             double center = regData.centerPos;
-            double value;
+            double realValue;
+            double imagValue;
             if (Math.abs(p1) < tol) {
                 if (Math.abs(p0) > tol) {
                     double re = Math.cos(p0 * DEGTORAD);
                     double im = -Math.sin(p0 * DEGTORAD);
-                    value = (real * re) - (imag * im);
+                    realValue = (real * re) - (imag * im);
+                    imagValue = (imag * re) - (real * im);
                 } else {
-                    value = real;
+                    realValue = real;
+                    imagValue = imag;
                 }
             } else {
                 double p = p0 + center * dDelta;
                 double re = Math.cos(p * DEGTORAD);
                 double im = -Math.sin(p * DEGTORAD);
-                value = (real * re) - (imag * im);
+                realValue = (real * re) - (imag * im);
+                imagValue = (imag * re) - (real * im);
             }
             // use sqrt to lower impact of super strong peaks (like h2o, which could be antiphase to rest of signals)
+            double value = realValue - imagValue;
             if (value > 0.0) {
                 sumPlus += FastMath.sqrt(value);
             } else if (value < 0.0) {
                 sumMinus += FastMath.sqrt(-value);
             }
+            System.out.println(regData + " " + realValue + " " + imagValue + " " + value);
         }
+        System.out.println(sumMinus + " " + sumPlus);
         if (sumMinus > sumPlus) {
             return -1;
         } else {
@@ -1141,4 +1152,52 @@ public class TestBasePoints implements MultivariateFunction {
         }
 
     }
+
+    private double regionSum(int first, int last, double p0, double p1) {
+        double tol = 0.0001;
+        double dDelta = p1 / (vector.getSize() - 1);
+        double realValue;
+        double imagValue;
+        double sum = 0.0;
+        for (int i = first; i <= last; i++) {
+            double real = vector.getReal(i);
+            double imag = vector.getImag(i);
+            double re;
+            double im;
+            if (Math.abs(p1) < tol) {
+                re = Math.cos(p0 * DEGTORAD);
+                im = -Math.sin(p0 * DEGTORAD);
+            } else {
+                double p = p0 + i * dDelta;
+                re = Math.cos(p * DEGTORAD);
+                im = -Math.sin(p * DEGTORAD);
+            }
+            sum += (real * re) - (imag * im);
+        }
+        return sum;
+    }
+
+    public int getSign(double p0, double p1) {
+        double sum = 0.0;
+        for (RegionPositions regData : bList) {
+            double r1 = regionSum(regData.base1, regData.base2, p0, p1);
+            double r2 = regionSum(regData.base3, regData.base4, p0, p1);
+            double m1 = r1 / (regData.base2 - regData.base1 + 1);
+            double m2 = r2 / (regData.base4 - regData.base3 + 1);
+            double c = regionSum(regData.sig1, regData.sig2,  p0, p1);
+            double mean = (m1 + m2) / 2;
+            double c2 = c - mean * (regData.sig2 - regData.sig1 + 1);
+           // System.out.printf("%d %d %d %d %d %d %7.3f %7.3f %7.3f\n", regData.base1, regData.base2, regData.sig1, regData.sig2, regData.base3, regData.base4, mean, c, c2);
+            sum += c2;
+        }
+
+       // System.out.println(sum);
+        if (sum < 0.0) {
+            return -1;
+        } else {
+            return 1;
+        }
+
+    }
+
 }
