@@ -766,8 +766,8 @@ public class TestBasePoints implements MultivariateFunction {
         double dDelta = p1 / (vector.getSize() - 1);
         double sum = 0.0;
         for (int i = first; i <= last; i++) {
-            double real = vector.getReal(i);
-            double imag = vector.getImag(i);
+            double real = rvec[i];
+            double imag = ivec[i];
             double re;
             double im;
             if (Math.abs(p1) < tol) {
@@ -793,6 +793,11 @@ public class TestBasePoints implements MultivariateFunction {
             double c = regionSum(regData.sig1, regData.sig2,  p0, p1);
             double mean = (m1 + m2) / 2;
             double c2 = c - mean * (regData.sig2 - regData.sig1 + 1);
+            if (c2 < 0.0) {
+                c2 = -Math.sqrt(-c2);
+            } else {
+                c2 = Math.sqrt(c2);
+            }
             sum += c2;
         }
         if (sum < 0.0) {
