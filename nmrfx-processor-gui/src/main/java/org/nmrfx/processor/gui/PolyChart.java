@@ -1455,19 +1455,30 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     protected void autoPhaseFlat(boolean doFirst) {
-        DatasetBase dataset = getDataset();
-
-        if ((dataset == null) || (dataset.getVec() == null)) {
+        Dataset dataset = (Dataset) getDataset();
+        VecBase vecBase;
+        if (dataset == null) {
             return;
+        } else {
+            if (dataset.getVec() != null) {
+                vecBase = dataset.getVec();
+            } else {
+                try {
+                    vecBase = dataset.readVector(0, 0);
+                } catch (IOException ioE) {
+                    log.error("Can't read vector", ioE);
+                    return;
+                }
+            }
         }
-        VecBase vecBase = dataset.getVec();
+
         Vec vec;
         if (vecBase instanceof Vec) {
             vec = (Vec) vecBase;
         } else {
             return;
         }
-        double[] phases = vec.autoPhase(doFirst, 0, 0, 0, 45.0, 1.0);
+        double[] phases = vec.autoPhase(doFirst, 0, 0, 2, 180.0, 1.0);
         setPh0(phases[0]);
         setPh1(0.0);
         if (phases.length == 2) {
@@ -1485,13 +1496,24 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     protected void autoPhaseMax() {
-        DatasetBase dataset = getDataset();
+        Dataset dataset = (Dataset) getDataset();
 
-        if ((dataset == null) || (dataset.getVec() == null)) {
+        VecBase vecBase;
+        if (dataset == null) {
             return;
+        } else {
+            if (dataset.getVec() != null) {
+                vecBase = dataset.getVec();
+            } else {
+                try {
+                    vecBase = dataset.readVector(0, 0);
+                } catch (IOException ioE) {
+                    log.error("Can't read vector", ioE);
+                    return;
+                }
+            }
         }
 
-        VecBase vecBase = dataset.getVec();
         Vec vec;
         if (vecBase instanceof Vec) {
             vec = (Vec) vecBase;
