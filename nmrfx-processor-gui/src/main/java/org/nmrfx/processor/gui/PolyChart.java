@@ -1454,61 +1454,47 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    protected void autoPhaseFlat(boolean doFirst) {
-        DatasetBase dataset = getDataset();
-
-        if ((dataset == null) || (dataset.getVec() == null)) {
-            return;
+    private Optional<Vec> getFirstVec() {
+        Dataset dataset = (Dataset) getDataset();
+        Vec vec = null;
+        if (dataset != null) {
+            if (dataset.getVec() != null) {
+                vec = dataset.getVec();
+            } else {
+                try {
+                    vec = dataset.readVector(0, 0);
+                } catch (IOException ioE) {
+                    log.error("Can't read vector", ioE);
+                }
+            }
         }
-        VecBase vecBase = dataset.getVec();
-        Vec vec;
-        if (vecBase instanceof Vec) {
-            vec = (Vec) vecBase;
-        } else {
-            return;
-        }
-        double[] phases = vec.autoPhase(doFirst, 0, 0, 0, 45.0, 1.0);
-        setPh0(phases[0]);
-        setPh1(0.0);
-        if (phases.length == 2) {
-            setPh1(phases[1]);
-        }
-        log.info("ph0 {} ph1 {}", getPh0(), getPh1());
-
-        double sliderPH0 = getPh0();
-        sliderPH0 = getPh0() + vec.getPH0();
-        double sliderPH1 = getPh1();
-        sliderPH1 = getPh1() + vec.getPH1();
-        controller.getPhaser().handlePh1Reset(sliderPH1);
-        controller.getPhaser().handlePh0Reset(sliderPH0);
-        layoutPlotChildren();
+        return Optional.ofNullable(vec);
     }
 
-    protected void autoPhaseMax() {
-        DatasetBase dataset = getDataset();
-
-        if ((dataset == null) || (dataset.getVec() == null)) {
+    protected void autoPhase(boolean doMax, boolean doFirst) {
+        if (!is1D()) {
             return;
         }
+        getFirstVec().ifPresent(vec -> {
+            if (doMax) {
+                setPh0(vec.autoPhaseByMax());
+            } else {
+                double[] phases = vec.autoPhase(doFirst, 0, 0, 2, 180.0, 1.0);
+                setPh0(phases[0]);
+                setPh1(0.0);
+                if (phases.length == 2) {
+                    setPh1(phases[1]);
+                }
+            }
 
-        VecBase vecBase = dataset.getVec();
-        Vec vec;
-        if (vecBase instanceof Vec) {
-            vec = (Vec) vecBase;
-        } else {
-            return;
-        }
-        setPh0(vec.autoPhaseByMax());
-        double sliderPH0 = getPh0();
-        sliderPH0 = getPh0() + vec.getPH0();
-        double sliderPH1 = getPh1();
-        if (vec != null) {
+            double sliderPH0 = getPh0();
+            sliderPH0 = getPh0() + vec.getPH0();
+            double sliderPH1 = getPh1();
             sliderPH1 = getPh1() + vec.getPH1();
-        }
-        controller.getPhaser().handlePh1Reset(sliderPH1);
-        controller.getPhaser().handlePh0Reset(sliderPH0);
-
-        layoutPlotChildren();
+            controller.getPhaser().handlePh1Reset(sliderPH1);
+            controller.getPhaser().handlePh0Reset(sliderPH0);
+            layoutPlotChildren();
+        });
     }
 
     protected void expand(int cNum) {
