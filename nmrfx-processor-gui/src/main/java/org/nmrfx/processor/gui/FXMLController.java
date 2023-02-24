@@ -55,6 +55,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Callback;
+import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.SegmentedButton;
@@ -100,6 +101,9 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.IntStream;
+
+import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionInput;
 
 public class FXMLController implements  Initializable, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
@@ -173,6 +177,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     Set<ControllerTool> tools = new HashSet<>();
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
+
 
     private BooleanProperty minBordersProperty() {
         if (minBorders == null) {
@@ -1351,7 +1356,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public static FXMLController create() {
         return create(null);
     }
-    
+
     public static FXMLController create(Stage stage) {
         FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
         FXMLController controller = null;
@@ -1984,18 +1989,17 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void addGrid() {
-        String rows = GUIUtils.input("nRows");
-        try {
-            if ((rows != null) && !rows.isBlank()) {
-                String columns = GUIUtils.input("nColumns");
-                if ((columns != null) && !columns.isBlank()) {
-                    int nRows = Integer.parseInt(rows);
-                    int nColumns = Integer.parseInt(columns);
-                    addCharts(nRows, nColumns);
-                }
-            }
-        } catch (NumberFormatException nfe) {
-            GUIUtils.warn("Grid Values", "Entry not an integer");
+        GridPaneCanvas.GridDimensions gdims = getGridDimensionInput();
+        if (gdims == null) {
+            return;
+        }
+        addCharts(gdims.rows(), gdims.cols());
+    }
+
+    public void removeSelectedChart() {
+        if (charts.size() > 1) {
+            getActiveChart().close();
+            arrange(chartGroup.getOrientation());
         }
     }
 
@@ -2020,6 +2024,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void arrange(int nRows) {
         chartGroup.setRows(nRows);
+        chartGroup.calculateAndSetOrientation();
     }
 
     public void alignCenters() {
