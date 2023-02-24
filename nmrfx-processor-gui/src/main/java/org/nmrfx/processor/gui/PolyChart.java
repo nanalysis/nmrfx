@@ -1460,6 +1460,9 @@ public class PolyChart extends Region implements PeakListener {
         if (dataset == null) {
             return;
         } else {
+            if (!is1D()) {
+                return;
+            }
             if (dataset.getVec() != null) {
                 vecBase = dataset.getVec();
             } else {
@@ -1502,6 +1505,9 @@ public class PolyChart extends Region implements PeakListener {
         if (dataset == null) {
             return;
         } else {
+            if (!is1D()) {
+                return;
+            }
             if (dataset.getVec() != null) {
                 vecBase = dataset.getVec();
             } else {
