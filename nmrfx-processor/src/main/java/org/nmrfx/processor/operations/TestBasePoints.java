@@ -58,6 +58,7 @@ public class TestBasePoints implements MultivariateFunction {
     double p1PenaltyWeight = 0.02;
     static double DEGTORAD = Math.PI / 180.0;
     int mode = 0;
+    boolean useRegionSign = false;
 
     // list of start and end of baseline regions
     ArrayList<RegionPositions> bList = new ArrayList<>();
@@ -73,6 +74,7 @@ public class TestBasePoints implements MultivariateFunction {
 
     public TestBasePoints(int winSize) {
         this.winSize = winSize;
+        useRegionSign = true;
     }
 
     public static TestBasePoints get(String name) {
@@ -784,6 +786,14 @@ public class TestBasePoints implements MultivariateFunction {
     }
 
     private int getSign(double p0, double p1) {
+        if (useRegionSign) {
+            return getRegionSign(p0, p1);
+        } else {
+            return getVectorSign(p0, p1);
+        }
+    }
+
+    private int getVectorSign(double p0, double p1) {
         double sum = 0.0;
         for (RegionPositions regData : bList) {
             double r1 = regionSum(regData.base1, regData.base2, p0, p1);
@@ -806,4 +816,43 @@ public class TestBasePoints implements MultivariateFunction {
             return 1;
         }
     }
+
+    public int getRegionSign(double p0, double p1) {
+        double tol = 0.0001;
+        double dDelta = p1 / (vector.getSize() - 1);
+        double sumPlus = 0;
+        double sumMinus = 0;
+        for (BRegionData regData : b2List) {
+            double real = regData.centerR;
+            double imag = regData.centerI;
+            double center = regData.centerPos;
+            double value;
+            if (Math.abs(p1) < tol) {
+                if (Math.abs(p0) > tol) {
+                    double re = Math.cos(p0 * DEGTORAD);
+                    double im = -Math.sin(p0 * DEGTORAD);
+                    value = (real * re) - (imag * im);
+                } else {
+                    value = real;
+                }
+            } else {
+                double p = p0 + center * dDelta;
+                double re = Math.cos(p * DEGTORAD);
+                double im = -Math.sin(p * DEGTORAD);
+                value = (real * re) - (imag * im);
+            }
+            // use sqrt to lower impact of super strong peaks (like h2o, which could be antiphase to rest of signals)
+            if (value > 0.0) {
+                sumPlus += FastMath.sqrt(value);
+            } else if (value < 0.0) {
+                sumMinus += FastMath.sqrt(-value);
+            }
+        }
+        if (sumMinus > sumPlus) {
+            return -1;
+        } else {
+            return 1;
+        }
+    }
+
 }
