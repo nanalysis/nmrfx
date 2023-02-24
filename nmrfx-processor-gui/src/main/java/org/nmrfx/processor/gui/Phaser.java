@@ -116,11 +116,11 @@ public class Phaser {
         MenuItem setPhase90_180Item = new MenuItem("-90,180");
         setPhase90_180Item.setOnAction(e -> setPhase_minus90_180());
 
-        MenuItem autoPhaseFlat0Item = new MenuItem("AutoPhase 0");
-        autoPhaseFlat0Item.setOnAction(e -> autoPhaseFlat0());
+        MenuItem autoPhase0Item = new MenuItem("AutoPhase 0");
+        autoPhase0Item.setOnAction(e -> autoPhase0());
 
-        MenuItem autoPhaseFlat01Item = new MenuItem("AutoPhase 0+1");
-        autoPhaseFlat01Item.setOnAction(e -> autoPhaseFlat01());
+        MenuItem autoPhase01Item = new MenuItem("AutoPhase 0+1");
+        autoPhase01Item.setOnAction(e -> autoPhase01());
 
         MenuItem autoPhaseMaxItem = new MenuItem("AutoPhase MaxMode");
         autoPhaseMaxItem.setOnAction(e -> autoPhaseMax());
@@ -128,21 +128,21 @@ public class Phaser {
         MenuItem applyPhaseItem = new MenuItem("Apply Phase");
         applyPhaseItem.setOnAction(e -> applyPhase());
 
-        MenuItem autoPhase0Item = new MenuItem("Auto Phase 0");
-        autoPhase0Item.setOnAction(e -> autoPhase0());
+        MenuItem autoPhaseDataset0Item = new MenuItem("Auto Phase 0");
+        autoPhaseDataset0Item.setOnAction(e -> autoPhaseDataset0());
 
-        MenuItem autoPhase1Item = new MenuItem("Auto Phase 0/1");
-        autoPhase1Item.setOnAction(e -> autoPhase01());
+        MenuItem autoPhaseDataset01Item = new MenuItem("Auto Phase 0/1");
+        autoPhaseDataset01Item.setOnAction(e -> autoPhaseDataset01());
 
         MenuItem resetPhaseItem = new MenuItem("Reset Phases");
         resetPhaseItem.setOnAction(e -> resetPhases());
 
         Collections.addAll(processorMenuItems, setPhaseItem, getPhaseItem, setPivotItem,
                 setPhase0_0Item, setPhase180_0Item, setPhase90_180Item,
-                autoPhaseFlat0Item, autoPhaseFlat01Item, autoPhaseMaxItem);
+                autoPhase0Item, autoPhase01Item, autoPhaseMaxItem);
 
         Collections.addAll(datasetMenuItems, setPivotItem, applyPhaseItem,
-                autoPhase0Item, autoPhase1Item, resetPhaseItem);
+                autoPhaseDataset0Item, autoPhaseDataset01Item, resetPhaseItem);
 
         phaseMenuButton.getItems().addAll(datasetMenuItems);
 
@@ -446,16 +446,16 @@ public class Phaser {
         controller.getActiveChart().drawSlices();
     }
 
-    private void autoPhaseFlat0() {
-        controller.getActiveChart().autoPhaseFlat(false);
+    private void autoPhase0() {
+        controller.getActiveChart().autoPhase(false, false);
     }
 
-    private void autoPhaseFlat01() {
-        controller.getActiveChart().autoPhaseFlat(true);
+    private void autoPhase01() {
+        controller.getActiveChart().autoPhase(false,true);
     }
 
     private void autoPhaseMax() {
-        controller.getActiveChart().autoPhaseMax();
+        controller.getActiveChart().autoPhase(true, false);
     }
 
     private void applyPhase() {
@@ -476,15 +476,15 @@ public class Phaser {
         }
     }
 
-    private void autoPhase0() {
-        autoPhase(false);
+    private void autoPhaseDataset0() {
+        autoPhaseDataset(false);
     }
 
-    private void autoPhase01() {
-        autoPhase(true);
+    private void autoPhaseDataset01() {
+        autoPhaseDataset(true);
     }
 
-    private void autoPhase(boolean firstOrder) {
+    private void autoPhaseDataset(boolean firstOrder) {
         PolyChart chart = controller.getActiveChart();
         DatasetBase datasetBase = chart.getDataset();
         if (!(datasetBase instanceof Dataset)) {
@@ -493,10 +493,6 @@ public class Phaser {
         Dataset dataset = (Dataset) datasetBase;
         double ratio = 25.0;
         IDBaseline2.ThreshMode threshMode = IDBaseline2.ThreshMode.SDEV;
-//        if (dataset.getNDim() > 1) {
-//            ratio = chart.getDatasetAttributes().get(0).getLvl();
-//            threshMode = IDBaseline2.ThreshMode.ABS;
-//        }
 
         int iDim = chart.datasetPhaseDim;
         int winSize = 2;
