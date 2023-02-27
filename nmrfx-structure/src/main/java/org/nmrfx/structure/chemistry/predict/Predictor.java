@@ -157,6 +157,49 @@ public class Predictor {
     private static double intraScale = 5.0;
     static Map<String, Set<String>> rnaFixedMap = new HashMap<>();
 
+    void clearRefPPMs(int iRef) {
+        Molecule mol = Molecule.getActive();
+        if (mol != null) {
+            List<Atom> molAtoms = mol.getAtoms();
+            for (Atom atom : molAtoms) {
+                PPMv ppmV;
+                if (iRef < 0) {
+                    ppmV = atom.getRefPPM(-iRef - 1);
+                } else {
+                    ppmV = atom.getPPM(iRef);
+                }
+                if (ppmV != null) {
+                    ppmV.setValid(false, atom);
+                }
+            }
+        }
+    }
+
+    // used from Python
+    public void setToBMRBValues(int iRef) {
+        clearRefPPMs(iRef);
+        BMRBStats.loadAllIfEmpty();
+        Molecule mol = Molecule.getActive();
+        if (mol != null) {
+            List<Atom> molAtoms = mol.getAtoms();
+            for (Atom atom : molAtoms) {
+                String aName = atom.getName();
+                String resName = atom.getEntity().getName();
+                Optional<PPMv> ppmVOpt = BMRBStats.getValue(resName, aName);
+                if (ppmVOpt.isPresent()) {
+                    PPMv ppmV = ppmVOpt.get();
+                    if (iRef < 0) {
+                        atom.setRefPPM(-iRef - 1, ppmV.getValue());
+                        atom.setRefError(-iRef - 1, ppmV.getError());
+                    } else {
+                        atom.setPPM(iRef, ppmV.getValue());
+                        atom.setPPMError(iRef, ppmV.getError());
+                    }
+                }
+            }
+        }
+    }
+
     private boolean isRNA(Polymer polymer) {
         boolean rna = false;
         for (Residue residue : polymer.getResidues()) {
@@ -416,7 +459,6 @@ public class Predictor {
     }
 
     public void predictWithShells(Entity aC, int iRef) {
-        HosePrediction hosePred = HosePrediction.getDefaultPredictor();
         PathIterator pI = new PathIterator(aC);
         if (nodeValidator == null) {
             nodeValidator = NodeEvaluatorFactory.getDefault();
@@ -425,35 +467,52 @@ public class Predictor {
         pI.processPatterns();
         pI.setProperties("ar", "AROMATIC");
         pI.setHybridization();
+        predictWithShells(aC, iRef, 6);
+        predictWithShells(aC, iRef, 7);
+    }
+
+    public void predictWithShells(Entity aC, int iRef, int aNum) {
+        HosePrediction hosePred = aNum == 6 ? HosePrediction.getDefaultPredictor() : HosePrediction.getDefaultPredictorN();
         HoseCodeGenerator hoseGen = new HoseCodeGenerator();
-        Map<Integer, String> result = hoseGen.genHOSECodes(aC, 5);
+        Map<Integer, String> result = hoseGen.genHOSECodes(aC, 5, aNum);
         for (Atom atom : aC.getAtoms()) {
             String predAtomType = "";
             Atom hoseAtom = null;
             double roundScale = 1.0;
+            if (atom.getAtomicNumber() == 1) {
+                if (atom.getParent().getAtomicNumber() != aNum) {
+                    continue;
+                }
+            } else if (atom.getAtomicNumber() != aNum) {
+                continue;
+            }
 
-            if (atom.getAtomicNumber() == 6) {
+            if (atom.getAtomicNumber() == aNum) {
                 hoseAtom = atom;
-                predAtomType = "13C";
+                predAtomType = aNum == 6 ? "13C" : "15N";
                 roundScale = 10.0;
             } else if (atom.getAtomicNumber() == 1) {
                 hoseAtom = atom.parent;
                 predAtomType = "1H";
                 roundScale = 100.0;
             }
-            if ((hoseAtom != null) && (hoseAtom.getAtomicNumber() == 6)) {
+            if ((hoseAtom != null) && (hoseAtom.getAtomicNumber() == aNum)) {
                 String hoseCode = (String) hoseAtom.getProperty("hose");
                 if (hoseCode != null) {
                     PredictResult predResult;
                     HosePrediction.HOSEPPM hosePPM = new HosePrediction.HOSEPPM(hoseCode);
                     predResult = hosePred.predict(hosePPM, predAtomType);
                     HOSEStat hoseStat = predResult.getStat(predAtomType);
-                    double shift = hoseStat.dStat.getPercentile(50);
-                    shift = Math.round(shift * roundScale) / roundScale;
-                    if (iRef < 0) {
-                        atom.setRefPPM(-iRef - 1, shift);
+                    if (hoseStat != null) {
+                        double shift = hoseStat.dStat.getPercentile(50);
+                        shift = Math.round(shift * roundScale) / roundScale;
+                        if (iRef < 0) {
+                            atom.setRefPPM(-iRef - 1, shift);
+                        } else {
+                            atom.setPPM(iRef, shift);
+                        }
                     } else {
-                        atom.setPPM(iRef, shift);
+                        log.warn("no hose prediction for " + hoseAtom.getFullName() + " " + hoseCode);
                     }
                 }
             }
