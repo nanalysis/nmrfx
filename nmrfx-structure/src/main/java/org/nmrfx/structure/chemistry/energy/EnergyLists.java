@@ -258,12 +258,8 @@ public class EnergyLists {
             predictor = new Predictor();
         }
         for (Polymer polymer : molecule.getPolymers()) {
-            try {
-                predictor.predictRNAWithDistances(polymer, 0, 0, true);
-                // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
-            } catch (InvalidMoleculeException imE) {
-                log.warn(imE.getMessage(), imE);
-            }
+            predictor.predictRNAWithDistances(polymer, 0, 0, true);
+            // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
         }
     }
 
