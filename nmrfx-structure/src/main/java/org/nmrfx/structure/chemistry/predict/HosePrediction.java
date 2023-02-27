@@ -695,12 +695,10 @@ public class HosePrediction {
             log.warn(ioE.getMessage(), ioE);
         }
     }
-
-    public static void sortData(String fileName) {
-        BufferedReader reader;
+    // used from Python to sort hose code file
+    public static void sortData(String fileName) throws IOException {
         List<String[]> lines = new ArrayList<>();
-        try {
-            reader = new BufferedReader(new FileReader(fileName));
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
             String line = reader.readLine();
             while (line != null) {
                 String[] fields = line.split(" ");
@@ -708,15 +706,14 @@ public class HosePrediction {
                 line = reader.readLine();
             }
             reader.close();
-            lines.stream().sorted((a,b) -> a[3].compareTo(b[3])).forEach( fields -> {
+            lines.stream().sorted((a, b) -> a[3].compareTo(b[3])).forEach(fields -> {
                 StringBuilder stringBuilder = new StringBuilder();
                 for (String field : fields) {
                     stringBuilder.append(field).append(" ");
                 }
+                // used to print out sorted data to stdout
                 System.out.println(stringBuilder.toString().trim());
             });
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
