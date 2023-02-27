@@ -882,13 +882,12 @@ public class DrawSpectrum {
                                   double ph0, double ph1, Path bcPath) {
         VecBase specVec = new Vec(32);
         boolean drawReal = dataAttributes.getDrawReal();
-        boolean offsetMode = true;
+        boolean offsetMode = axMode == AXMODE.TIME;
         DatasetBase dataset = dataAttributes.getDataset();
         if (dataset.getVec() != null) {
             specVec = dataset.getVec();
             iChunk = -1;
         } else {
-            offsetMode = false;
             try {
                 int iDim = 0;
                 rowIndex = dataAttributes.getRowIndex(iDim, iChunk);
