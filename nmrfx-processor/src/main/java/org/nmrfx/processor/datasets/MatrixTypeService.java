@@ -151,8 +151,11 @@ public class MatrixTypeService {
     private boolean writeItems(List<MatrixType> temp) throws DatasetException, IOException {
         for (MatrixType vector : temp) {
             Dataset dataset = processor.getDataset();
+            if (dataset == null) {
+                throw new DatasetException("Dataset is null.");
+            }
             checkDataset(dataset, vector);
-            processor.getDataset().writeMatrixType(vector);
+            dataset.writeMatrixType(vector);
             nWritten.incrementAndGet();
         }
         return true;
@@ -164,9 +167,6 @@ public class MatrixTypeService {
         } else {
             MatrixND matrix = (MatrixND) matrixType;
             checkMatrix(dataset, matrix);
-        }
-        for (int i = 0; i < dataset.getNDim(); i++) {
-
         }
     }
 

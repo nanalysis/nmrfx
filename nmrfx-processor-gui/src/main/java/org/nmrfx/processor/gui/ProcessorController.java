@@ -621,6 +621,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     chartProcessor.datasetFileTemp = null;
                     viewingDataset(false);
                     ProjectBase.getActive().removeDataset(currentDatasetName);
+                    chart.refresh();
                 }
             } else {
                 int currentIndex = scriptView.getSelectionModel().getSelectedIndex();
