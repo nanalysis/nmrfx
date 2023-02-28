@@ -1637,15 +1637,16 @@ public class Processor {
                 }
             }
             doneWriting.set(true);
+            boolean doneFlushed = true;
             if (useIOController && !p.isDataset()) {
-                boolean doneFlushed = datasetWriter.isDone(10000);
+                doneFlushed = datasetWriter.isDone(10000);
                 log.info("done flushed {}", doneFlushed);
             }
-            if (!getProcessorError()) {
+            if (!getProcessorError() && doneFlushed) {
                 if (p.isMatrix()) {
-                    log.warn("Processed dimensions {}, {} with {} threads.", (dim[0] + 1), (dim[1] + 1), numProcessors);
+                    log.info("Processed dimensions {}, {} with {} threads.", (dim[0] + 1), (dim[1] + 1), numProcessors);
                 } else {
-                    log.warn("Processed dimension {} with {} threads.", (dim[0] + 1), numProcessors);
+                    log.info("Processed dimension {} with {} threads.", (dim[0] + 1), numProcessors);
                 }
                 for (int i = 0; i < dataset.getNDim(); ++i) {
                     dataset.syncPars(i);
