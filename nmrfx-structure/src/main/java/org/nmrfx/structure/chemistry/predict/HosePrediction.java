@@ -682,7 +682,11 @@ public class HosePrediction {
                 int nRead;
                 byte[] data = new byte[16384];
                 while ((nRead = iStream.read(data, 0, data.length)) != -1) {
-                    byteBuffer.write(data, 0, nRead);
+                    for (int i=0;i<nRead;i++) {
+                        if (data[i] != '\r') {
+                            byteBuffer.write(data[i]);
+                        }
+                    }
                 }
                 byteBuffer.flush();
                 buffer = byteBuffer.toByteArray();
