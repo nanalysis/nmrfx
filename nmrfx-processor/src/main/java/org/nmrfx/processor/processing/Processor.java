@@ -1507,20 +1507,21 @@ public class Processor {
         if (dataset.fFormat == DatasetBase.FFORMAT.UCSF) {
             dataset.writeHeader(false);
         }
+
+        int freqDimsProcessed = 0;
+        for (int i = 0; i < dataset.getNDim(); i++) {
+            if (dataset.getFreqDomain(i)) {
+                freqDimsProcessed++;
+            }
+        }
+        dataset.setNFreqDims(freqDimsProcessed);
+        for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
+            dataset.setComplex(i, false);
+        }
+        if (getNMRData() != null) {
+            dataset.sourceFID(new File(getNMRData().getFilePath()));
+        }
         if (!keepDatasetOpen || !dataset.isMemoryFile()) {
-            int freqDimsProcessed = 0;
-            for (int i = 0; i < dataset.getNDim(); i++) {
-                if (dataset.getFreqDomain(i)) {
-                    freqDimsProcessed++;
-                }
-            }
-            dataset.setNFreqDims(freqDimsProcessed);
-            for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
-                dataset.setComplex(i, false);
-            }
-            if (getNMRData() != null) {
-                dataset.sourceFID(new File(getNMRData().getFilePath()));
-            }
             if (!dataset.isMemoryFile()) {
                 dataset.writeParFile();
             }

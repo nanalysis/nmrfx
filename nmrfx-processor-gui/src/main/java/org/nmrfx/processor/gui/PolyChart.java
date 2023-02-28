@@ -1845,13 +1845,6 @@ public class PolyChart extends Region implements PeakListener {
         SpectrumStatusBar statusBar = controller.getStatusBar();
         DatasetAttributes datasetAttributes = null;
         if (dataset != null) {
-            if ((dataset.getNDim() == 1) || (dataset.getNFreqDims() == 1)) {
-                disDimProp.set(DISDIM.OneDX);
-                //statusBar.sliceStatus.setSelected(false);
-                setSliceStatus(false);
-            } else {
-                disDimProp.set(DISDIM.TwoD);
-            }
             if (append) {
                 datasetAttributes = new DatasetAttributes(dataset);
                 if (datasetAttributes.getDataset().isLvlSet()) {
@@ -1891,6 +1884,14 @@ public class PolyChart extends Region implements PeakListener {
                     }
                 }
                 datasetAttributesList.setAll(datasetAttributes);
+            }
+            // Set disDimProp after updating datasetAttributesList as it can trigger listeners
+            // that get the dataset from this chart
+            if ((dataset.getNDim() == 1) || (dataset.getNFreqDims() == 1)) {
+                disDimProp.set(DISDIM.OneDX);
+                setSliceStatus(false);
+            } else {
+                disDimProp.set(DISDIM.TwoD);
             }
             // fixme should we do this
             for (int i = 0; i < datasetAttributes.dim.length; i++) {

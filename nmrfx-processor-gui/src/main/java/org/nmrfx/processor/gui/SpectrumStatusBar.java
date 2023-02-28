@@ -101,7 +101,11 @@ public class SpectrumStatusBar {
     ComboBox<DisplayMode> displayModeComboBox = null;
     ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = ((observable, oldValue, newValue) -> {
         if (newValue == PolyChart.DISDIM.OneDX) {
-            displayModeComboBox.setValue(DisplayMode.TRACES);
+            if (PolyChart.getActiveChart().getDataset().getNDim() < 2) {
+                displayModeComboBox.setValue(DisplayMode.STACKPLOT);
+            } else {
+                displayModeComboBox.setValue(DisplayMode.TRACES);
+            }
         } else {
             displayModeComboBox.setValue(DisplayMode.CONTOURS);
         }
