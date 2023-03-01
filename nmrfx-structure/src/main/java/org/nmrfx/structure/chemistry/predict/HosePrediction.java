@@ -280,7 +280,6 @@ public class HosePrediction {
                 start = i + 1;
             }
         }
-//        Collections.sort(hoseList, (Comparator) new HOSEComparator());
     }
 
     public int count() {
@@ -520,7 +519,7 @@ public class HosePrediction {
         return predResult;
     }
 
-    void validate(String validate) {
+    public void validate(String validate) {
         ArrayList<Double> cPPMs = new ArrayList<>();
         ArrayList<Double> hPPMs = new ArrayList<>();
         double[] deltaSums = new double[2];
@@ -619,7 +618,7 @@ public class HosePrediction {
         return getHoseAtPosition(index);
     }
 
-    HOSEPPM getHoseAtPosition(int position) {
+     HOSEPPM getHoseAtPosition(int position) {
         StringBuilder hoseCode = new StringBuilder();
         if (position >= buffer.length) {
             return null;
@@ -683,7 +682,11 @@ public class HosePrediction {
                 int nRead;
                 byte[] data = new byte[16384];
                 while ((nRead = iStream.read(data, 0, data.length)) != -1) {
-                    byteBuffer.write(data, 0, nRead);
+                    for (int i=0;i<nRead;i++) {
+                        if (data[i] != '\r') {
+                            byteBuffer.write(data[i]);
+                        }
+                    }
                 }
                 byteBuffer.flush();
                 buffer = byteBuffer.toByteArray();
@@ -696,10 +699,32 @@ public class HosePrediction {
             log.warn(ioE.getMessage(), ioE);
         }
     }
+    // used from Python to sort hose code file
+    public static void sortData(String fileName) throws IOException {
+        List<String[]> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            String line = reader.readLine();
+            while (line != null) {
+                String[] fields = line.split(" ");
+                lines.add(fields);
+                line = reader.readLine();
+            }
+            reader.close();
+            lines.stream().sorted((a, b) -> a[3].compareTo(b[3])).forEach(fields -> {
+                StringBuilder stringBuilder = new StringBuilder();
+                for (String field : fields) {
+                    stringBuilder.append(field).append(" ");
+                }
+                // used to print out sorted data to stdout
+                System.out.println(stringBuilder.toString().trim());
+            });
+        }
+    }
+
 
     public static HosePrediction getPredictor() {
         HosePrediction hosePredictor = new HosePrediction();
-        hosePredictor.openData("data/hosecodes.txt", true);
+        hosePredictor.openData("data/hosecodesC.txt", true);
         hosePredictor.genIndex();
         return hosePredictor;
     }
@@ -726,23 +751,46 @@ public class HosePrediction {
     }
 
     public void dump() {
-        if (log.isDebugEnabled()) {
+        int i = 0;
+        for (Integer j : hoseList) {
             StringBuilder hoseStr = new StringBuilder();
-            int i = 0;
-            for (Integer j : hoseList) {
-                hoseStr.append(i).append(" ").append(j).append(" ").append(codeStarts.get(j)).append(" ").append(getHose(j));
-                i++;
-            }
-            log.debug(hoseStr.toString());
+            hoseStr.append(i).append(" ").append(j).append(" ").append(codeStarts.get(j)).append(" ").append(getHose(j));
+            System.out.println(hoseStr);
+            i++;
         }
     }
 
+    public static void test(String hoseString) {
+        HosePrediction hosePredictor;
+        if (hoseString.charAt(0) == 'C') {
+            hosePredictor = getPredictor();
+        } else {
+            hosePredictor = getPredictorN();
+        }
+        HOSEPPM hosePPM = new HOSEPPM(hoseString);
+
+        int pos = hosePredictor.find(hosePPM);
+        System.out.println("position (hose) " + pos);
+        pos = hosePredictor.find(hoseString);
+        System.out.println("position (string)   " + pos);
+        HOSEPPM closestHOSE = hosePredictor.getHose(pos);
+        System.out.println("input arg " + hoseString);
+        System.out.println("hose ppm  " + hosePPM);
+        if (pos > 0) {
+            System.out.println("closest-1 " + hosePredictor.getHose(pos - 1));
+        }
+        System.out.println("closest   " + closestHOSE);
+        if (pos < hosePredictor.hoseList.size() - 1) {
+            System.out.println("closest+1 " + hosePredictor.getHose(pos + 1));
+        }
+        System.out.println("shell " + hosePPM.shellEquals(closestHOSE));
+
+        System.out.println("predict");
+        PredictResult pResult = hosePredictor.predict(hosePPM, "13C");
+        System.out.println(pResult.cStat.nValues + " " + pResult.cStat.range + " " + pResult.cStat.dStat.getPercentile(50.0));
+    }
+
     public static void main(String[] args) {
-        //HosePrediction hosePredictor = new HosePrediction();
-        //hosePredictor.openData("hose.bin", false);
-        //hosePredictor.readFragmentFiles("hoseidx", false);
-        //hosePredictor.genIndex();
-        //hosePredictor.count();
         if (args.length < 1) {
             System.out.println("No args");
         } else {
