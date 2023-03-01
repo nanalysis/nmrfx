@@ -882,11 +882,13 @@ public class DrawSpectrum {
                                   double ph0, double ph1, Path bcPath) {
         VecBase specVec = new Vec(32);
         boolean drawReal = dataAttributes.getDrawReal();
+        boolean offsetMode = true;
         DatasetBase dataset = dataAttributes.getDataset();
         if (dataset.getVec() != null) {
             specVec = dataset.getVec();
             iChunk = -1;
         } else {
+            offsetMode = false;
             try {
                 int iDim = 0;
                 rowIndex = dataAttributes.getRowIndex(iDim, iChunk);
@@ -897,7 +899,6 @@ public class DrawSpectrum {
                 return false;
             }
         }
-        boolean offsetMode = axMode == AXMODE.TIME;
         double[] offsets = getOffset(dataAttributes, firstOffset, i1D, n1D);
         double lvlMult = dataAttributes.getLvl() / firstLvl;
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
@@ -1030,11 +1031,16 @@ public class DrawSpectrum {
             vecStartPoint = axMode.getIndex(vec, indexAxis.getLowerBound());
             vecEndPoint = axMode.getIndex(vec, indexAxis.getUpperBound());
             indexAxisDelta = axMode.getIncrement(vec, indexAxis.getLowerBound(), indexAxis.getUpperBound());
-        } else {
+        } else if (indexAxis.getReverse()) {
             vecStartPoint = vec.getSize() - 1;
             vecEndPoint = 0;
             dataOffset = 0;
             indexAxisDelta = (indexAxis.getLowerBound() - indexAxis.getUpperBound()) / vecStartPoint;
+        } else {
+            vecStartPoint = 0;
+            vecEndPoint = vec.getSize() - 1;
+            dataOffset = 0;
+            indexAxisDelta = (indexAxis.getUpperBound() - indexAxis.getLowerBound()) / vecEndPoint;
         }
         double dValue = indexAxis.getLowerBound();
 
