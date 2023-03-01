@@ -1028,7 +1028,6 @@ public class ChartProcessor {
 
     Optional<String> fixDatasetName(String script) {
         final Optional<String> emptyResult = Optional.empty();
-        final Optional<String> result;
 
         if (!scriptHasDataset(script)) {
             String datasetName = suggestDatasetName();
@@ -1039,12 +1038,6 @@ public class ChartProcessor {
             if (getDatasetType()== DatasetType.SPINit) {
                 Path datasetDir = directory.toPath();
                 Path newProcPath = RS2DProcUtil.findNextProcPath(datasetDir);
-                try {
-                    Files.createDirectories(newProcPath);
-                } catch (IOException e) {
-                    GUIUtils.warn("Dataset creation", "Unable to create new dataset directory");
-                    return emptyResult;
-                }
                 file = newProcPath.toFile();
             } else {
                 FileChooser fileChooser = new FileChooser();
@@ -1055,37 +1048,44 @@ public class ChartProcessor {
                     return emptyResult;
                 }
                 Optional<DatasetType> fileTypeOpt = DatasetType.typeFromFile(file);
-                if (fileTypeOpt.isPresent()) {
-                    DatasetType fileType = fileTypeOpt.get();
-                    if (fileType != getDatasetType()) {
-                        GUIUtils.warn("Dataset creation", "File extension not consistent with dataset type");
-                        return emptyResult;
-                    }
-                }
-            }
-
-            file = getDatasetType().addExtension(file);
-            if (file.exists() && !file.canWrite()) {
-                GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
-                return emptyResult;
-            }
-            if (!file.exists()) {
-                File parentFile = file.getParentFile();
-                if (!parentFile.canWrite()) {
-                    GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
+                if (fileTypeOpt.isPresent() && fileTypeOpt.get() != getDatasetType()) {
+                    GUIUtils.warn("Dataset creation", "File extension not consistent with dataset type");
                     return emptyResult;
                 }
+            }
+            file = getDatasetType().addExtension(file);
+            if (!datasetFileOkay(file)) {
+                return emptyResult;
             }
             datasetFile = file;
             String fileString = file.getAbsoluteFile().toString();
             datasetFileTemp = new File(fileString + ".tmp");
             fileString = fileString.replace("\\", "/");
             script = script.replace("_DATASET_", "'" + fileString + "'");
-            result = Optional.of(script);
-        } else {
-            result = Optional.of(script);
         }
-        return result;
+        return Optional.of(script);
+    }
+
+    private boolean datasetFileOkay(File datasetFileToCheck) {
+        if (datasetFileToCheck.exists() && !datasetFileToCheck.canWrite()) {
+            GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
+            return false;
+        }
+        if (!datasetFileToCheck.exists()) {
+            File parentFile = datasetFileToCheck.getParentFile();
+            boolean canWrite = parentFile.canWrite();
+            // For SPINit files check if either of the above 2 parent directories are writable (Proc and the fid data directory)
+            if (getDatasetType()== DatasetType.SPINit) {
+                File procParent = parentFile.getParentFile();
+                File fidParent = procParent.getParentFile();
+                canWrite = (!procParent.exists() || procParent.canWrite()) && fidParent.canWrite();
+            }
+            if (!canWrite) {
+                GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
+                return false;
+            }
+        }
+        return true;
     }
 
     private String suggestDatasetName() {
