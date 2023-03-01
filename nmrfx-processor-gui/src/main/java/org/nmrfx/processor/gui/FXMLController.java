@@ -744,7 +744,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
 
         //dataset.setScale(1.0);
-        int nDim = dataset.getNDim();
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
         getActiveChart().setCrossHairState(true, true, true, true);
         getActiveChart().clearAnnotations();
