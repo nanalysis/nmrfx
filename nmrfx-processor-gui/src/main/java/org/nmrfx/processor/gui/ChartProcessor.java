@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.FileChooser;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -60,12 +61,18 @@ public class ChartProcessor {
     private boolean lastWasFreqDomain = false;
 
     private SimpleObjectProperty<NMRData> nmrDataObj;
+    private final SimpleBooleanProperty areOperationListsValid = new SimpleBooleanProperty(false);
+
 
     public SimpleObjectProperty<NMRData> nmrDataProperty() {
         if (nmrDataObj == null) {
             nmrDataObj = new SimpleObjectProperty<>(null);
         }
         return nmrDataObj;
+    }
+
+    public SimpleBooleanProperty getAreOperationListsValidProperty() {
+        return areOperationListsValid;
     }
 
     public void setNMRData(NMRData value) {
@@ -706,9 +713,13 @@ public class ChartProcessor {
             return;
         }
         scriptValid = false;
-        List<String> oldList = new ArrayList<>();
-        oldList.addAll(processorController.getOperationList());
-        mapOpLists.put(vecDimName, oldList);
+        List<String> newList = new ArrayList<>(processorController.getOperationList());
+        boolean clearedOperations = false;
+        if (newList.isEmpty() && vecDimName.equals("D1")) {
+            clearedOperations = true;
+        }
+        areOperationListsValid.set(!clearedOperations);
+        mapOpLists.put(vecDimName, newList);
         ProcessorController pController = processorController;
         if (pController.isViewingDataset() && pController.autoProcess.isSelected()) {
             processorController.processIfIdle();

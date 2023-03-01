@@ -55,11 +55,11 @@ public class PathIterator implements Iterator<List<Integer>> {
                 Integer iAtom0 = atomMap.get(atom0);
                 Integer iAtom1 = atomMap.get(atom1);
                 if (iAtom0 == null) {
-                    log.error("no atom0 " + atom0 + " " + atom1);
+                    log.debug("no atom0 " + atom0 + " " + atom1);
                     continue;
                 }
                 if (iAtom1 == null) {
-                    log.error("no atom1 " + atom0 + " " + atom1);
+                    log.debug("no atom1 " + atom0 + " " + atom1);
                     continue;
                 }
                 String key01 = iAtom0 + " " + iAtom1;
@@ -251,7 +251,7 @@ public class PathIterator implements Iterator<List<Integer>> {
     int getBondIndex(List<Integer> aList, int i) {
         int iBond = aList.get(i);
         if (iBond == -1) {
-            log.error(aList + " " + i);
+            log.debug(aList + " " + i);
         }
 
         return iBond;
@@ -296,7 +296,7 @@ public class PathIterator implements Iterator<List<Integer>> {
                 }
                 return dfIterate();
             } else {
-                log.error("initial atom failed");
+                log.debug("initial atom failed");
                 return false;
             }
         }
