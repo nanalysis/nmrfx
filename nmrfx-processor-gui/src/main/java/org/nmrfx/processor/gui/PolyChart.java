@@ -1845,13 +1845,6 @@ public class PolyChart extends Region implements PeakListener {
         SpectrumStatusBar statusBar = controller.getStatusBar();
         DatasetAttributes datasetAttributes = null;
         if (dataset != null) {
-            if ((dataset.getNDim() == 1) || (dataset.getNFreqDims() == 1)) {
-                disDimProp.set(DISDIM.OneDX);
-                //statusBar.sliceStatus.setSelected(false);
-                setSliceStatus(false);
-            } else {
-                disDimProp.set(DISDIM.TwoD);
-            }
             if (append) {
                 datasetAttributes = new DatasetAttributes(dataset);
                 if (datasetAttributes.getDataset().isLvlSet()) {
@@ -1882,21 +1875,26 @@ public class PolyChart extends Region implements PeakListener {
                     datasetAttributes = datasetAttributesList.get(0);
                     DatasetBase existingDataset = datasetAttributes.getDataset();
                     double oldLevel = datasetAttributes.getLvl();
+                    int[] oldDims = datasetAttributes.getDims();
                     datasetAttributes.setDataset(dataset);
                     if ((existingDataset == null) || (!keepLevel && !existingDataset.getName().equals(dataset.getName()))) {
                         datasetAttributes.setLvl(dataset.getLvl());
                     } else if ((existingDataset != null) && existingDataset.getName().equals(dataset.getName())) {
                         datasetAttributes.setLvl(oldLevel);
                         datasetAttributes.setHasLevel(true);
+                        datasetAttributes.setDims(oldDims);
                     }
                 }
                 datasetAttributesList.setAll(datasetAttributes);
             }
-            // fixme should we do this
-            for (int i = 0; i < datasetAttributes.dim.length; i++) {
-                datasetAttributes.dim[i] = i;
+            // Set disDimProp after updating datasetAttributesList as it can trigger listeners
+            // that get the dataset from this chart
+            if ((dataset.getNDim() == 1) || (dataset.getNFreqDims() == 1)) {
+                disDimProp.set(DISDIM.OneDX);
+                setSliceStatus(false);
+            } else {
+                disDimProp.set(DISDIM.TwoD);
             }
-
             updateAxisType(true);
             datasetFileProp.set(dataset.getFile());
             datasetAttributes.drawList.clear();

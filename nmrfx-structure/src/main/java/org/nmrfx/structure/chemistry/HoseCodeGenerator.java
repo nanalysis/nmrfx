@@ -116,13 +116,9 @@ public class HoseCodeGenerator {
         mNode.setValue(value);
     }
 
-    public Map<Integer, String> genHOSECodes(Entity entity, int nShells) {
-        int targetElement = 6;
+    public Map<Integer, String> genHOSECodes(Entity entity, int nShells, int targetElement) {
         Set<Integer> targetSet = new HashSet<>();
-        targetSet.add(6);
-//        targetSet.add(7);
-//        targetSet.add(9);
-//        targetSet.add(15);
+        targetSet.add(targetElement);
         MTree mTree = new MTree();
         HashMap<Atom, Integer> hash = new HashMap<>();
         List<Atom> eAtomList = new ArrayList<>();
@@ -232,7 +228,11 @@ public class HoseCodeGenerator {
             hyb = 3;
         }
         if (atom.getFlag(Atom.AROMATIC)) {
-            hyb = hyb + 4;
+            if (hyb == 3) {
+                hyb = 6;
+            } else {
+                hyb = hyb + 4;
+            }
         }
         result.append(hyb);
         return result.toString();

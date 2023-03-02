@@ -1519,20 +1519,21 @@ public class Processor {
         if (dataset.fFormat == DatasetBase.FFORMAT.UCSF) {
             dataset.writeHeader(false);
         }
+
+        int freqDimsProcessed = 0;
+        for (int i = 0; i < dataset.getNDim(); i++) {
+            if (dataset.getFreqDomain(i)) {
+                freqDimsProcessed++;
+            }
+        }
+        dataset.setNFreqDims(freqDimsProcessed);
+        for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
+            dataset.setComplex(i, false);
+        }
+        if (getNMRData() != null) {
+            dataset.sourceFID(new File(getNMRData().getFilePath()));
+        }
         if (!keepDatasetOpen || !dataset.isMemoryFile()) {
-            int freqDimsProcessed = 0;
-            for (int i = 0; i < dataset.getNDim(); i++) {
-                if (dataset.getFreqDomain(i)) {
-                    freqDimsProcessed++;
-                }
-            }
-            dataset.setNFreqDims(freqDimsProcessed);
-            for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
-                dataset.setComplex(i, false);
-            }
-            if (getNMRData() != null) {
-                dataset.sourceFID(new File(getNMRData().getFilePath()));
-            }
             if (!dataset.isMemoryFile()) {
                 dataset.writeParFile();
             }
@@ -1649,15 +1650,16 @@ public class Processor {
                 }
             }
             doneWriting.set(true);
+            boolean doneFlushed = true;
             if (useIOController && !p.isDataset()) {
-                boolean doneFlushed = datasetWriter.isDone(10000);
+                doneFlushed = datasetWriter.isDone(10000);
                 log.info("done flushed {}", doneFlushed);
             }
-            if (!getProcessorError()) {
+            if (!getProcessorError() && doneFlushed) {
                 if (p.isMatrix()) {
-                    log.warn("Processed dimensions {}, {} with {} threads.", (dim[0] + 1), (dim[1] + 1), numProcessors);
+                    log.info("Processed dimensions {}, {} with {} threads.", (dim[0] + 1), (dim[1] + 1), numProcessors);
                 } else {
-                    log.warn("Processed dimension {} with {} threads.", (dim[0] + 1), numProcessors);
+                    log.info("Processed dimension {} with {} threads.", (dim[0] + 1), numProcessors);
                 }
                 for (int i = 0; i < dataset.getNDim(); ++i) {
                     dataset.syncPars(i);
