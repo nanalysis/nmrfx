@@ -1031,11 +1031,16 @@ public class DrawSpectrum {
             vecStartPoint = axMode.getIndex(vec, indexAxis.getLowerBound());
             vecEndPoint = axMode.getIndex(vec, indexAxis.getUpperBound());
             indexAxisDelta = axMode.getIncrement(vec, indexAxis.getLowerBound(), indexAxis.getUpperBound());
-        } else {
+        } else if (indexAxis.getReverse()) {
             vecStartPoint = vec.getSize() - 1;
             vecEndPoint = 0;
             dataOffset = 0;
             indexAxisDelta = (indexAxis.getLowerBound() - indexAxis.getUpperBound()) / vecStartPoint;
+        } else {
+            vecStartPoint = 0;
+            vecEndPoint = vec.getSize() - 1;
+            dataOffset = 0;
+            indexAxisDelta = (indexAxis.getUpperBound() - indexAxis.getLowerBound()) / vecEndPoint;
         }
         double dValue = indexAxis.getLowerBound();
 

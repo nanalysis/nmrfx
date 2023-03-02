@@ -255,7 +255,7 @@ public final class NMRDataUtil {
      */
     public static ArrayList guessNucleusFromFreq(final double freq) {
         final double[] Hfreqs = {1000.0, 950.0, 900.0, 800.0, 750.0,
-            700.0, 600.0, 500.0, 400.0, 300.0};
+            700.0, 600.0, 500.0, 400.0, 300.0, 100.0, 60.0};
         HashMap<String, Double> ratio = new LinkedHashMap<>(4);
         ratio.put("1H", 1.0);
         ratio.put("13C", 0.25145004);
