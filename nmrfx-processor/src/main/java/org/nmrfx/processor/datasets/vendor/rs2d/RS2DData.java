@@ -350,7 +350,7 @@ public class RS2DData implements NMRData {
                     }
                     List<Double> phase0s = procHeader.get(Parameter.PHASE_0).doubleListValue();
                     List<Double> phase1s = procHeader.get(Parameter.PHASE_1).doubleListValue();
-                    for (int i = 0; i < getNDim(); i++) {
+                    for (int i = 0; i < phase0s.size(); i++) {
                         phases[i][0] = phase0s.get(i);
                         phases[i][1] = phase1s.get(i);
                     }
