@@ -669,7 +669,16 @@ public class Processor {
     }
 
     public int[] getIndirectSizes() {
-        return tmult != null ? tmult.getIndirectSizes() : new int[0];
+        if (tmult == null) {
+            if (itemsToWrite > 1) {
+                int[] idSizes = {itemsToWrite};
+                return idSizes;
+            } else {
+                return new int[0];
+            }
+        } else {
+            return tmult.getIndirectSizes();
+        }
     }
 
     public boolean setMatDims(int[] dims) {
@@ -966,14 +975,17 @@ public class Processor {
             }
             this.mapToDataset = mapToDataset.clone();
             for (int i = 0; i < dataset.getNDim(); i++) {
-                dataset.setLabel(i, nmrData.getTN(mapToFID(i)));
-                dataset.setSf(i, nmrData.getSF(mapToFID(i)));
-                dataset.setSw(i, nmrData.getSW(mapToFID(i)));
-                dataset.setRefValue(i, nmrData.getRef(mapToFID(i)));
-                dataset.setRefPt(i, nmrData.getRefPoint(mapToFID(i)));
-                dataset.setTDSize(i, useSizes[mapToFID(i)]);
+                int fidDim = mapToFID(i);
+                if (fidDim < nmrData.getNDim()) {
+                    dataset.setLabel(i, nmrData.getTN(mapToFID(i)));
+                    dataset.setSf(i, nmrData.getSF(mapToFID(i)));
+                    dataset.setSw(i, nmrData.getSW(mapToFID(i)));
+                    dataset.setRefValue(i, nmrData.getRef(mapToFID(i)));
+                    dataset.setRefPt(i, nmrData.getRefPoint(mapToFID(i)));
+                    dataset.setComplex(i, nmrData.isComplex(mapToFID(i)));
+                }
                 dataset.setValues(i, nmrData.getValues(mapToFID(i)));
-                dataset.setComplex(i, nmrData.isComplex(mapToFID(i)));
+                dataset.setTDSize(i, useSizes[mapToFID(i)]);
             }
             dataset.setSolvent(nmrData.getSolvent());
             dataset.setTempK(nmrData.getTempK());

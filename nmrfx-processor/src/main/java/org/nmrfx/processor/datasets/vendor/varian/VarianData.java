@@ -694,6 +694,33 @@ public class VarianData implements NMRData {
     }
 
     @Override
+    public List<Double> getValues(int dim) {
+        List<Double> result;
+        if (dim >= getNDim()) {
+            result = arrayValues;
+        } else {
+            if ((dim != 0) && (dim == getMinDim())) {
+                result = arrayValues;
+            } else {
+                result = new ArrayList<>();
+            }
+        }
+        return result;
+    }
+
+    int getMinDim() {
+        int minSize = getSize(0);
+        int minDim = 0;
+        for (int i = 1; i < getNDim(); i++) {
+            if (getSize(i) < minSize) {
+                minSize = getSize(i);
+                minDim = i;
+            }
+        }
+        return minDim;
+    }
+
+    @Override
     public boolean isComplex(int iDim) {
         if (iDim == 0) {
 //            return isComplex;

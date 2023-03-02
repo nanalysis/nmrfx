@@ -545,6 +545,8 @@ def acqarray(*pars):
     '''
     global fidInfo
     global dataInfo
+    if dataInfo.extra != 0:
+        return
     size = list(fidInfo.maxSize)
     fidInfo.acqArray = []
     for i,par in enumerate(pars):
@@ -840,9 +842,13 @@ def CREATE(nvFileName, dSize=None, extra=0):
         dataInfo.msize = initMSize(fidInfo, dSize)
         createDataset()
 
-    dataInfo.extra = extra
-    if dataInfo.extra != 0:
-        processor.keepDatasetOpen(True)
+    aSize = fidInfo.fidObj.getArraySize(0)
+    if aSize != 0:
+        dataInfo.extra = aSize
+    else:
+        dataInfo.extra = extra
+        if dataInfo.extra != 0:
+            processor.keepDatasetOpen(True)
     DIM(1)  # default start dim
 
 def initMSize(fidInfo, size):
