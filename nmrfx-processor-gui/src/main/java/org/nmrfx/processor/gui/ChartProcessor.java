@@ -1078,7 +1078,7 @@ public class ChartProcessor {
             if (getDatasetType()== DatasetType.SPINit) {
                 File procParent = parentFile.getParentFile();
                 File fidParent = procParent.getParentFile();
-                canWrite = (!procParent.exists() || procParent.canWrite()) && fidParent.canWrite();
+                canWrite = (!procParent.exists() && fidParent.canWrite()) || procParent.canWrite();
             }
             if (!canWrite) {
                 GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
