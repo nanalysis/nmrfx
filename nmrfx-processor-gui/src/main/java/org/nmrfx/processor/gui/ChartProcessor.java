@@ -564,7 +564,9 @@ public class ChartProcessor {
         }
         Vec vec = vectors.get(iVec);
         vec.setName("vec" + iVec);
-        chart.setDataset(new Dataset(vec), false, true);
+        Dataset d = new Dataset(vec);
+        d.setNucleus(0, nmrData.getTN(vecDim));
+        chart.setDataset(d, false, true);
         return fileIndices;
     }
 
