@@ -665,12 +665,17 @@ public class VarianData implements NMRData {
         return sizes[iDim];
     }
 
-    private int getNI(int i) {
+    /**
+     * Get the number of increments in the specified dimension
+     * @param iDim the dimension (1 is the first indirect dimension)
+     * @return the number of increments
+     */
+    private int getNI(int iDim) {
         Integer ipar;
         int td = 0;
         String name = "ni";
-        if (i > 1) {
-            name = "ni" + i;
+        if (iDim > 1) {
+            name = "ni" + iDim;
         }
         if ((ipar = getParInt(name)) != null) {
             td = ipar;
