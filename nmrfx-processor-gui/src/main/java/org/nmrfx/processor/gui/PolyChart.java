@@ -1875,12 +1875,14 @@ public class PolyChart extends Region implements PeakListener {
                     datasetAttributes = datasetAttributesList.get(0);
                     DatasetBase existingDataset = datasetAttributes.getDataset();
                     double oldLevel = datasetAttributes.getLvl();
+                    int[] oldDims = datasetAttributes.getDims();
                     datasetAttributes.setDataset(dataset);
                     if ((existingDataset == null) || (!keepLevel && !existingDataset.getName().equals(dataset.getName()))) {
                         datasetAttributes.setLvl(dataset.getLvl());
                     } else if ((existingDataset != null) && existingDataset.getName().equals(dataset.getName())) {
                         datasetAttributes.setLvl(oldLevel);
                         datasetAttributes.setHasLevel(true);
+                        datasetAttributes.setDims(oldDims);
                     }
                 }
                 datasetAttributesList.setAll(datasetAttributes);
@@ -1893,11 +1895,6 @@ public class PolyChart extends Region implements PeakListener {
             } else {
                 disDimProp.set(DISDIM.TwoD);
             }
-            // fixme should we do this
-            for (int i = 0; i < datasetAttributes.dim.length; i++) {
-                datasetAttributes.dim[i] = i;
-            }
-
             updateAxisType(true);
             datasetFileProp.set(dataset.getFile());
             datasetAttributes.drawList.clear();
