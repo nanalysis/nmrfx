@@ -34,7 +34,6 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-processor-gui</artifactId>
-            <version>11.3.2</version>
             <version>11.3.3-SNAPSHOT</version>
         </dependency>
         <dependency>
