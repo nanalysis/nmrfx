@@ -12,9 +12,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.project.ProjectBase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Comparator;
 
 
@@ -22,7 +19,6 @@ import java.util.Comparator;
  * A tableview for displaying PeakLists
  */
 public class PeakListsTable extends TableView<PeakList> implements PeakListener {
-    private static final Logger log = LoggerFactory.getLogger(PeakListsTable.class);
     private static final String PEAKLIST_COLUMN_NAME = "PeakList";
     private static final String DATASET_COLUMN_NAME = "Dataset";
     private static final String LABELS_COLUMN_NAME = "Labels";

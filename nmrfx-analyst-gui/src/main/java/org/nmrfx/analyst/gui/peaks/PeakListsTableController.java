@@ -1,7 +1,5 @@
 package org.nmrfx.analyst.gui.peaks;
 
-
-import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -13,8 +11,6 @@ import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -25,7 +21,6 @@ import java.util.ResourceBundle;
  * Controller for the PeakLists Table
  */
 public class PeakListsTableController implements Initializable {
-    private static final Logger log = LoggerFactory.getLogger(PeakListsTableController.class);
     private static PeakListsTableController peakListsTableController = null;
     private PeakListsTable peakListsTable;
     private Stage stage;
@@ -40,15 +35,13 @@ public class PeakListsTableController implements Initializable {
     @FXML
     private Button tableButton;
 
-    private ChangeListener<PeakList> selectedRowPeakListsTableListener;
-
     private PeakListsTableController() {}
 
     public static PeakListsTableController create() {
         FXMLLoader loader = new FXMLLoader(PeakListsTableController.class.getResource("/fxml/PeakListsScene.fxml"));
         loader.setControllerFactory(controller -> new PeakListsTableController());
 
-        PeakListsTableController controller = null;
+        PeakListsTableController controller;
         Stage stage = new Stage(StageStyle.DECORATED);
         try {
             Scene scene = new Scene(loader.load());
