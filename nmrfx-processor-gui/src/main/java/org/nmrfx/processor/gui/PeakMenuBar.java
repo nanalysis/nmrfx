@@ -166,6 +166,10 @@ public class PeakMenuBar {
         menuTarget.refreshPeakView();
     }
 
+    void refreshChangedListView() {
+        menuTarget.refreshChangedListView();
+    }
+
     public static void addExtra(String name, Consumer<PeakList> function) {
         extras.put(name, function);
     }
@@ -302,7 +306,7 @@ public class PeakMenuBar {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Permanently remove deleted peaks");
             alert.showAndWait().ifPresent(response -> {
                 getPeakList().compress();
-                refreshPeakView();
+                refreshChangedListView();
             });
         }
     }
@@ -312,7 +316,7 @@ public class PeakMenuBar {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Renumber peak list (permanent!)");
             alert.showAndWait().ifPresent(response -> {
                 getPeakList().reNumber();
-                refreshPeakView();
+                refreshChangedListView();
             });
         }
     }
@@ -323,7 +327,7 @@ public class PeakMenuBar {
             alert.showAndWait().ifPresent(response -> {
                 getPeakList().compress();
                 getPeakList().reNumber();
-                refreshPeakView();
+                refreshChangedListView();
             });
         }
     }

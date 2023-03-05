@@ -13,5 +13,6 @@ public interface PeakMenuTarget {
     public void setPeakList(PeakList peakList);
     public PeakList getPeakList();
     public void refreshPeakView();
-    
+    public void refreshChangedListView();
+
 }
