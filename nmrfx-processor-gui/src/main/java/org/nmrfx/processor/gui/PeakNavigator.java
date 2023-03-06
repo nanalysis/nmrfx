@@ -11,14 +11,7 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
-import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
@@ -67,6 +60,7 @@ public class PeakNavigator implements PeakListener {
     Label atomXLabel;
     Label atomYLabel;
     Label intensityLabel;
+    ChoiceBox<String> assignModeChoice = new ChoiceBox();
 
     private PeakNavigator(PeakNavigable peakNavigable) {
         this.peakNavigable = peakNavigable;
@@ -156,6 +150,11 @@ public class PeakNavigator implements PeakListener {
         } else {
             parentNavigator.peakIdField.textProperty().bindBidirectional(peakIdField.textProperty());
         }
+
+        assignModeChoice.getItems().addAll("all", "ok", "deleted", "assigned", "partial", "unassigned", "ambiguous", "invalid");
+        assignModeChoice.setValue("all");
+        assignModeChoice.valueProperty().addListener(e -> firstPeak(null));
+        toolBar.getItems().add(assignModeChoice);
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(peakIdField);
         toolBar.getItems().add(deleteButton);
@@ -352,44 +351,146 @@ public class PeakNavigator implements PeakListener {
 
     }
 
+    private boolean filtered() {
+        return !assignModeChoice.getValue().equals("all");
+    }
+
+    private boolean filterMatches(Peak peak) {
+        boolean matches = peak == null ? false : Peak.AssignmentLevel.match(peak.getAssignmentLevel(), assignModeChoice.getValue());
+        return matches;
+    }
+
     public void previousPeak(ActionEvent event) {
+        if (filtered()) {
+            previousPeakFiltered();
+        } else {
+
+            if (currentPeak != null) {
+                int peakIndex = currentPeak.getIndex();
+                peakIndex--;
+                if (peakIndex < 0) {
+                    peakIndex = 0;
+                }
+                Peak peak = peakList.getPeak(peakIndex);
+                setPeak(peak);
+            }
+        }
+    }
+    void previousPeakFiltered() {
         if (currentPeak != null) {
             int peakIndex = currentPeak.getIndex();
-            peakIndex--;
-            if (peakIndex < 0) {
-                peakIndex = 0;
-            }
-            Peak peak = peakList.getPeak(peakIndex);
-            setPeak(peak);
+            previousPeakFiltered(peakIndex);
         }
     }
 
+    void previousPeakFiltered(int peakIndex) {
+        peakIndex--;
+        Peak peak = null;
+        boolean gotPeak = false;
+        while (peakIndex >= 0) {
+            peak = peakList.getPeak(peakIndex);
+            if (filterMatches(peak)) {
+                gotPeak = true;
+                break;
+            }
+            peakIndex--;
+        }
+        if (gotPeak) {
+            setPeak(peak);
+        } else if (!filterMatches(currentPeak)) {
+            setPeak(null);
+        }
+    }
+
+
     public void firstPeak(ActionEvent event) {
+        if (filtered()) {
+            firstPeakFiltered();
+        } else {
+            if (peakList != null) {
+                Peak peak = peakList.getPeak(0);
+                setPeak(peak);
+            }
+        }
+    }
+
+    public void firstPeakFiltered() {
         if (peakList != null) {
             Peak peak = peakList.getPeak(0);
-            setPeak(peak);
+            if (!filterMatches(peak)) {
+                nextPeakFiltered(0);
+            } else {
+                setPeak(peak);
+            }
         }
     }
 
     public void nextPeak(ActionEvent event) {
-        if (currentPeak != null) {
-            int peakIndex = currentPeak.getIndex();
-            peakIndex++;
-            if (peakIndex >= peakList.size()) {
-                peakIndex = peakList.size() - 1;
+        if (filtered()) {
+            nextPeakFiltered();
+        } else {
+            if (currentPeak != null) {
+                int peakIndex = currentPeak.getIndex();
+                peakIndex++;
+                if (peakIndex >= peakList.size()) {
+                    peakIndex = peakList.size() - 1;
+                }
+                Peak peak = peakList.getPeak(peakIndex);
+                setPeak(peak);
             }
-            Peak peak = peakList.getPeak(peakIndex);
-            setPeak(peak);
         }
     }
 
-    public void lastPeak(ActionEvent event) {
-        if (peakList != null) {
-            int peakIndex = peakList.size() - 1;
-            Peak peak = peakList.getPeak(peakIndex);
-            setPeak(peak);
+    void nextPeakFiltered() {
+        if (currentPeak != null) {
+            int peakIndex = currentPeak.getIndex();
+            nextPeakFiltered(peakIndex);
         }
     }
+    void nextPeakFiltered(int peakIndex) {
+        peakIndex++;
+        Peak peak = null;
+        boolean gotPeak = false;
+        while (peakIndex < peakList.size()) {
+            peak = peakList.getPeak(peakIndex);
+            if (filterMatches(peak)) {
+                gotPeak = true;
+                break;
+            }
+            peakIndex++;
+        }
+        if (gotPeak) {
+            setPeak(peak);
+        } else if (!filterMatches(currentPeak)) {
+            setPeak(null);
+        }
+    }
+
+
+
+    public void lastPeak(ActionEvent event) {
+        if (filtered()) {
+            lastPeakFiltered();
+        } else {
+            if (peakList != null) {
+                int peakIndex = peakList.size() - 1;
+                Peak peak = peakList.getPeak(peakIndex);
+                setPeak(peak);
+            }
+        }
+    }
+
+    public void lastPeakFiltered() {
+        if (peakList != null) {
+            Peak peak = peakList.getPeak(peakList.size() - 1);
+            if (!filterMatches(peak)) {
+                previousPeakFiltered(peakList.size() - 1);
+            } else {
+                setPeak(peak);
+            }
+        }
+    }
+
 
     public List<Peak> matchPeaks(String pattern) {
         List<Peak> result;

@@ -1793,21 +1793,39 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public enum AssignmentLevel {
-        del("Deleted"),
-        none("None assigned"),
-        avm("All Assigned, Valid, Ambiguous"),
-        avu("All Assigned, Valid, Unambiguous"),
-        aim("All Assigned, Invalid, Ambiguous"),
-        aiu("All Assigned, Invalid, Unambiguous"),
-        svm("Some Assigned, Valid, Ambiguous"),
-        svu("Some Assigned, Valid, Unambiguous"),
-        sim("Some Assigned, Invalid, Ambiguous"),
-        siu("Some Assigned, Invalid, Unambiguous");
+        DELETED("Deleted"),
+        UNASSIGNED("None assigned"),
+        AVM("All Assigned, Valid, Ambiguous"),
+        AVU("All Assigned, Valid, Unambiguous"),
+        AIM("All Assigned, Invalid, Ambiguous"),
+        AIU("All Assigned, Invalid, Unambiguous"),
+        SVM("Some Assigned, Valid, Ambiguous"),
+        SVU("Some Assigned, Valid, Unambiguous"),
+        SIM("Some Assigned, Invalid, Ambiguous"),
+        SIU("Some Assigned, Invalid, Unambiguous");
 
         String description;
 
         AssignmentLevel(String description) {
             this.description = description;
+        }
+
+        public String toString() {
+            return description;
+        }
+
+        public static boolean match(AssignmentLevel level, String mode) {
+            return  switch (mode) {
+                case "all" ->  true;
+                case "ok" ->  level != DELETED;
+                case "deleted" ->  level == DELETED;
+                case "assigned" ->  level == AVU || level == AVM;
+                case "partial" ->  level == SVM || level == SVU;
+                case "unassigned" ->  level == UNASSIGNED;
+                case "ambiguous" ->  level == AVM || level == SVM;
+                case "invalid" -> level == AIM || level == AIU || level == SIM || level == SIU;
+                default -> true;
+            };
         }
     }
 
@@ -1818,7 +1836,7 @@ public class Peak implements Comparable, PeakOrMulti {
         boolean ambiguous = false;
         MoleculeBase molecule = MoleculeFactory.getActive();
         if (isDeleted()) {
-            return AssignmentLevel.del;
+            return AssignmentLevel.DELETED;
         }
         for (var peakDim : peakDims) {
             String labels = peakDim.getLabel();
@@ -1843,23 +1861,23 @@ public class Peak implements Comparable, PeakOrMulti {
         }
         AssignmentLevel result;
         if (!someAssigned) {
-            result = AssignmentLevel.none;
+            result = AssignmentLevel.UNASSIGNED;
         } else if (assigned && !invalid && ambiguous) {
-            result = AssignmentLevel.avm;
+            result = AssignmentLevel.AVM;
         } else if (assigned && !invalid && !ambiguous) {
-            result = AssignmentLevel.avu;
+            result = AssignmentLevel.AVU;
         } else if (assigned && invalid && ambiguous) {
-            result = AssignmentLevel.aim;
+            result = AssignmentLevel.AIM;
         } else if (assigned && invalid && !ambiguous) {
-            result = AssignmentLevel.aiu;
+            result = AssignmentLevel.AIU;
         } else if (someAssigned && !invalid && ambiguous) {
-            result = AssignmentLevel.svm;
+            result = AssignmentLevel.SVM;
         } else if (someAssigned && !invalid && !ambiguous) {
-            result = AssignmentLevel.svu;
+            result = AssignmentLevel.SVU;
         } else if (someAssigned && invalid && ambiguous) {
-            result = AssignmentLevel.sim;
+            result = AssignmentLevel.SIM;
         } else {
-            result = AssignmentLevel.siu;
+            result = AssignmentLevel.SIU;
         }
         return result;
     }

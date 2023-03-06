@@ -2237,14 +2237,14 @@ public class PeakList {
     }
 
     public int getNumberAssigned() {
-        return assignmentMap.get(Peak.AssignmentLevel.avu) + assignmentMap.get(Peak.AssignmentLevel.avm);
+        return getAssignmentStatus().get(Peak.AssignmentLevel.AVU) + getAssignmentStatus().get(Peak.AssignmentLevel.AVM);
     }
 
     public int getNumberPartialAssigned() {
-        return assignmentMap.get(Peak.AssignmentLevel.svu) + assignmentMap.get(Peak.AssignmentLevel.svm);
+        return getAssignmentStatus().get(Peak.AssignmentLevel.SVU) + getAssignmentStatus().get(Peak.AssignmentLevel.SVM);
     }
 
     public int getNumberUnAssigned() {
-        return assignmentMap.get(Peak.AssignmentLevel.none);
+        return getAssignmentStatus().get(Peak.AssignmentLevel.UNASSIGNED);
     }
 }
