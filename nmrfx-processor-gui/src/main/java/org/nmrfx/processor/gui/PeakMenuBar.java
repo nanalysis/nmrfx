@@ -27,7 +27,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
 
@@ -70,6 +69,10 @@ public class PeakMenuBar {
         menuBar.getItems().add(fileMenu);
 
         MenuButton editMenu = new MenuButton("Edit");
+
+        MenuItem copyMenu = new MenuItem("Copy");
+        copyMenu.setOnAction(e -> menuTarget.copyPeakTableView());
+        editMenu.getItems().add(copyMenu);
 
         MenuItem compressMenuItem = new MenuItem("Compress");
         compressMenuItem.setOnAction(e -> compressPeakList());

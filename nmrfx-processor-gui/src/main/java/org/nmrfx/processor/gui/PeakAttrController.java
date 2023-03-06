@@ -58,6 +58,7 @@ import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.TableUtils;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -333,6 +334,11 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     public void selectTab(String tabName) {
         var tabOpt = tabPane.getTabs().stream().filter(t -> t.getText().equals(tabName)).findFirst();
         tabOpt.ifPresent(t -> tabPane.getSelectionModel().select(t));
+    }
+
+    @Override
+    public void copyPeakTableView() {
+        TableUtils.copyTableToClipboard(peakTableView, true);
     }
 
     public void refreshPeakView() {
