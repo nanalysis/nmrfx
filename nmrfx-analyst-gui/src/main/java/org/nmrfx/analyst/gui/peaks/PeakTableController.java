@@ -140,10 +140,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         updatePeakListMenu();
         peakMenuBar = new PeakMenuBar(this);
         peakMenuBar.initMenuBar(toolBar, false);
-        Button copyTableButton = new Button("Copy Table");
-        copyTableButton.getStyleClass().add("toolButton");
-        copyTableButton.setOnAction(event -> TableUtils.copyTableToClipboard(tableView, true));
-        toolBar.getItems().add(copyTableButton);
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             updatePeakListMenu();
         };
@@ -161,6 +157,11 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             });
             peakListMenuButton.getItems().add(menuItem);
         }
+    }
+
+    @Override
+    public void copyPeakTableView() {
+        TableUtils.copyTableToClipboard(tableView, true);
     }
 
     @Override
