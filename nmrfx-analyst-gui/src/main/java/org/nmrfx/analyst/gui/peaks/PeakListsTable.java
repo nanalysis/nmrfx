@@ -2,7 +2,9 @@ package org.nmrfx.analyst.gui.peaks;
 
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableList;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
@@ -87,11 +89,25 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
      * Clears the current peakLists and updates the list with the new values.
      */
     public void updatePeakLists() {
-        getItems().clear();
+        ObservableList<PeakList> peakArrayList = FXCollections.observableArrayList();
         ProjectBase.getActive().getPeakLists().stream().sorted(Comparator.comparing(PeakList::getName)).forEach(peakList -> {
             peakList.registerPeakChangeListener(this);
-            getItems().add(peakList);
+           peakArrayList.add(peakList);
         });
+        var currentLists = getItems();
+        boolean ok = peakArrayList.size() == currentLists.size();
+        if (ok) {
+            for (var peakList : peakArrayList) {
+                if (!currentLists.contains(peakList)) {
+                    ok = false;
+                    break;
+                }
+            }
+        }
+        if (!ok) {
+            setItems(peakArrayList);
+        }
+        refresh();
     }
 
     @Override
