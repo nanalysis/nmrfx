@@ -36,6 +36,10 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -69,6 +73,7 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakMenuBar;
 import org.nmrfx.processor.gui.PeakMenuTarget;
 import org.nmrfx.processor.project.Project;
+import org.nmrfx.utils.TableUtils;
 
 /**
  *
@@ -93,6 +98,8 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     Button saveParButton;
     Button closeButton;
     MenuButton peakListMenuButton;
+    private final KeyCodeCombination copyKeyCodeCombination = new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN);
+
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -133,6 +140,10 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         updatePeakListMenu();
         peakMenuBar = new PeakMenuBar(this);
         peakMenuBar.initMenuBar(toolBar, false);
+        Button copyTableButton = new Button("Copy Table");
+        copyTableButton.getStyleClass().add("toolButton");
+        copyTableButton.setOnAction(event -> TableUtils.copyTableToClipboard(tableView, true));
+        toolBar.getItems().add(copyTableButton);
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             updatePeakListMenu();
         };
@@ -238,6 +249,22 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 }
             }
         });
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tableView.setOnKeyPressed(this::keyPressed);
+    }
+
+    public void keyPressed(KeyEvent keyEvent) {
+        KeyCode code = keyEvent.getCode();
+        if (code == null) {
+            return;
+        }
+        if (code == KeyCode.C) {
+            // Paste command is shortcut + V, so make sure the KeyEvent matches that combination
+            if (copyKeyCodeCombination.match(keyEvent)) {
+                TableUtils.copyTableToClipboard(tableView, false);
+            }
+            keyEvent.consume();
+        }
     }
 
     void updateColumns(int nDim) {
