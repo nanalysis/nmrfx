@@ -14,5 +14,7 @@ public interface PeakMenuTarget {
     public PeakList getPeakList();
     public void refreshPeakView();
     public void copyPeakTableView();
+    public void deletePeaks();
+    public void restorePeaks();
     
 }

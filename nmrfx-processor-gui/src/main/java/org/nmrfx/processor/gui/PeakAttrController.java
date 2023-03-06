@@ -341,6 +341,16 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         TableUtils.copyTableToClipboard(peakTableView, true);
     }
 
+    @Override
+    public void deletePeaks() {
+
+    }
+
+    @Override
+    public void restorePeaks() {
+        
+    }
+
     public void refreshPeakView() {
         refreshPeakView(currentPeak);
     }
