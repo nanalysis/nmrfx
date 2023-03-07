@@ -128,7 +128,7 @@ public class PeakListsTableController implements Initializable {
 
     void compressPeakList() {
         if (getPeakList() != null) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Permanently remove deleted peaks");
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Remove deleted peaks (permanent!)");
             alert.showAndWait().ifPresent(response -> {
                 getPeakList().compress();
                 peakListsTable.updatePeakLists();

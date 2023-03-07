@@ -24,11 +24,11 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
     private static final String PEAKLIST_COLUMN_NAME = "PeakList";
     private static final String DATASET_COLUMN_NAME = "Dataset";
     private static final String LABELS_COLUMN_NAME = "Labels";
-    private static final String NUMBER_PEAKS_COLUMN_NAME = "#Peaks";
-    private static final String NUMBER_DELETED_COLUMN_NAME = "#Deleted";
-    private static final String NUMBER_ASSIGNED_COLUMN_NAME = "#Assigned";
-    private static final String NUMBER_PARTIAL_COLUMN_NAME = "#Partial";
-    private static final String NUMBER_UNASSIGNED_COLUMN_NAME = "#Unassigned";
+    private static final String NUMBER_PEAKS_COLUMN_NAME = "Total Peaks";
+    private static final String NUMBER_DELETED_COLUMN_NAME = "Deleted";
+    private static final String NUMBER_ASSIGNED_COLUMN_NAME = "Assigned";
+    private static final String NUMBER_PARTIAL_COLUMN_NAME = "Partial";
+    private static final String NUMBER_UNASSIGNED_COLUMN_NAME = "Unassigned";
     MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakLists();
 
     private String getPeakListLabels(PeakList peakList) {
