@@ -260,7 +260,8 @@ public class PeakNavigator implements PeakListener {
     public void setPeakList(PeakList newPeakList) {
         peakList = newPeakList;
         if (peakList != null) {
-            currentPeak = peakList.getPeak(0);
+            assignModeChoice.setValue("all");
+            firstPeak(null);
             setPeakIdField();
             peakList.registerPeakChangeListener(this);
         } else {
@@ -279,6 +280,9 @@ public class PeakNavigator implements PeakListener {
         setPeakIdField();
         peakNavigable.refreshPeakView(peak);
         if (peak != null) {
+            if (!filterMatches(peak)) {
+                assignModeChoice.setValue("all");
+            }
             if (peakList != peak.getPeakList()) {
                 peakList = peak.getPeakList();
                 peakList.registerPeakChangeListener(this);
