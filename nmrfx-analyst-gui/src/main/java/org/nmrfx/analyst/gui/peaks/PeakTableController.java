@@ -187,6 +187,11 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     }
 
     @Override
+    public void refreshChangedListView() {
+        tableView.refresh();
+    }
+
+    @Override
     public PeakList getPeakList() {
         return peakList;
     }

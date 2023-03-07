@@ -1,5 +1,7 @@
 package org.nmrfx.peaks;
 
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
 import org.nmrfx.utilities.ColorUtil;
@@ -1788,6 +1790,78 @@ public class Peak implements Comparable, PeakOrMulti {
         }
 
         return matchDim;
+    }
+
+    public enum AssignmentLevel {
+        del("Deleted"),
+        none("None assigned"),
+        avm("All Assigned, Valid, Ambiguous"),
+        avu("All Assigned, Valid, Unambiguous"),
+        aim("All Assigned, Invalid, Ambiguous"),
+        aiu("All Assigned, Invalid, Unambiguous"),
+        svm("Some Assigned, Valid, Ambiguous"),
+        svu("Some Assigned, Valid, Unambiguous"),
+        sim("Some Assigned, Invalid, Ambiguous"),
+        siu("Some Assigned, Invalid, Unambiguous");
+
+        String description;
+
+        AssignmentLevel(String description) {
+            this.description = description;
+        }
+    }
+
+    public AssignmentLevel getAssignmentLevel() {
+        boolean assigned = true;
+        boolean someAssigned = false;
+        boolean invalid = false;
+        boolean ambiguous = false;
+        MoleculeBase molecule = MoleculeFactory.getActive();
+        if (isDeleted()) {
+            return AssignmentLevel.del;
+        }
+        for (var peakDim : peakDims) {
+            String labels = peakDim.getLabel();
+            if (labels.isBlank()) {
+                assigned = false;
+            } else {
+                String[] fields = labels.split(" ");
+                if (fields.length > 1) {
+                    ambiguous = true;
+                }
+                for (String label : fields) {
+                    if (label.isBlank()) {
+                        assigned = false;
+                    } else {
+                        if ((molecule != null) && (molecule.findAtom(label) == null)) {
+                            invalid = true;
+                        }
+                        someAssigned = true;
+                    }
+                }
+            }
+        }
+        AssignmentLevel result;
+        if (!someAssigned) {
+            result = AssignmentLevel.none;
+        } else if (assigned && !invalid && ambiguous) {
+            result = AssignmentLevel.avm;
+        } else if (assigned && !invalid && !ambiguous) {
+            result = AssignmentLevel.avu;
+        } else if (assigned && invalid && ambiguous) {
+            result = AssignmentLevel.aim;
+        } else if (assigned && invalid && !ambiguous) {
+            result = AssignmentLevel.aiu;
+        } else if (someAssigned && !invalid && ambiguous) {
+            result = AssignmentLevel.svm;
+        } else if (someAssigned && !invalid && !ambiguous) {
+            result = AssignmentLevel.svu;
+        } else if (someAssigned && invalid && ambiguous) {
+            result = AssignmentLevel.sim;
+        } else {
+            result = AssignmentLevel.siu;
+        }
+        return result;
     }
 
     class CouplingUpdate {
