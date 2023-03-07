@@ -268,6 +268,7 @@ public class PeakNavigator implements PeakListener {
         }
         peakNavigable.refreshPeakView(currentPeak);
         peakNavigable.refreshPeakListView(peakList);
+        updateDeleteStatus();
     }
 
     public Peak getPeak() {
@@ -492,9 +493,11 @@ public class PeakNavigator implements PeakListener {
             if (sourceList == peakList) {
                 if (Platform.isFxApplicationThread()) {
                     peakNavigable.refreshPeakView();
+                    updateDeleteStatus();
                 } else {
                     Platform.runLater(() -> {
                                 peakNavigable.refreshPeakView();
+                                updateDeleteStatus();
                             }
                     );
                 }
