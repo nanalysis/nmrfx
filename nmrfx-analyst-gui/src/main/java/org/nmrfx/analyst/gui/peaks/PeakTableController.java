@@ -169,12 +169,16 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
     @Override
     public void deletePeaks() {
-
+        deleteSelectedPeaks();
     }
 
     @Override
     public void restorePeaks() {
-
+        List<Peak> selectedPeaks = tableView.getSelectionModel().getSelectedItems();
+        for(Peak peak: selectedPeaks) {
+            peak.setStatus(0);
+        }
+        tableView.getSelectionModel().clearSelection();
     }
 
     @Override
@@ -286,12 +290,16 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             }
             keyEvent.consume();
         } else if (code.equals(KeyCode.DELETE)) {
-            List<Peak> selectedPeaks = new ArrayList<>(tableView.getSelectionModel().getSelectedItems());
-            for (Peak peak: selectedPeaks) {
-                peak.delete();
-            }
-            tableView.getSelectionModel().clearSelection();
+            deleteSelectedPeaks();
         }
+    }
+
+    private void deleteSelectedPeaks() {
+        List<Peak> selectedPeaks = new ArrayList<>(tableView.getSelectionModel().getSelectedItems());
+        for (Peak peak: selectedPeaks) {
+            peak.delete();
+        }
+        tableView.getSelectionModel().clearSelection();
     }
 
     void updateColumns(int nDim) {

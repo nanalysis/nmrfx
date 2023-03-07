@@ -343,12 +343,12 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     @Override
     public void deletePeaks() {
-
+        peakNavigator.getPeak().delete();
     }
 
     @Override
     public void restorePeaks() {
-        
+        peakNavigator.getPeak().setStatus(0);
     }
 
     public void refreshPeakView() {
