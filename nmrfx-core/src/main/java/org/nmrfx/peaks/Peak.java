@@ -1810,6 +1810,7 @@ public class Peak implements Comparable, PeakOrMulti {
             this.description = description;
         }
 
+        @Override
         public String toString() {
             return description;
         }

@@ -60,7 +60,7 @@ public class PeakNavigator implements PeakListener {
     Label atomXLabel;
     Label atomYLabel;
     Label intensityLabel;
-    ChoiceBox<String> assignModeChoice = new ChoiceBox();
+    ChoiceBox<String> assignModeChoice = new ChoiceBox<>();
 
     private PeakNavigator(PeakNavigable peakNavigable) {
         this.peakNavigable = peakNavigable;
@@ -356,8 +356,7 @@ public class PeakNavigator implements PeakListener {
     }
 
     private boolean filterMatches(Peak peak) {
-        boolean matches = peak == null ? false : Peak.AssignmentLevel.match(peak.getAssignmentLevel(), assignModeChoice.getValue());
-        return matches;
+        return peak != null && Peak.AssignmentLevel.match(peak.getAssignmentLevel(), assignModeChoice.getValue());
     }
 
     public void previousPeak(ActionEvent event) {
