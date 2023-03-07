@@ -294,7 +294,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 TableUtils.copyTableToClipboard(tableView, false);
             }
             keyEvent.consume();
-        } else if (code.equals(KeyCode.DELETE)) {
+        } else if (code == KeyCode.DELETE) {
             deleteSelectedPeaks();
         }
     }
