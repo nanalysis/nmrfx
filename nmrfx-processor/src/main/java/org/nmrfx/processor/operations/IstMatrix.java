@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.datasets.MatrixType;
@@ -28,9 +29,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
- *
  * @author bfetler
  */
 public class IstMatrix extends MatrixOperation {
@@ -132,6 +133,7 @@ public class IstMatrix extends MatrixOperation {
     public Operation evalMatrix(MatrixType matrix) {
         if (matrix instanceof MatrixND) {
             MatrixND matrixND = (MatrixND) matrix;
+            matrixND.ensurePowerOf2();
             for (int i = 0; i < matrixND.getNDim(); i++) {
                 matrixND.setVSizes(matrixND.getSizes());
             }
@@ -149,15 +151,15 @@ public class IstMatrix extends MatrixOperation {
     /**
      * Create calculation for Matrix Iterative Soft Threshold.
      *
-     * @param threshold cutoff threshold as a fraction of maximum height
-     * @param loops number of loops to iterate over
-     * @param schedule sample schedule
-     * @param alg alternate cutoff algorithm
+     * @param threshold  cutoff threshold as a fraction of maximum height
+     * @param loops      number of loops to iterate over
+     * @param schedule   sample schedule
+     * @param alg        alternate cutoff algorithm
      * @param timeDomain result is in timeDomain
      * @throws ProcessingException
      */
     public IstMatrix(double threshold, int loops, SampleSchedule schedule, String alg,
-            boolean timeDomain) throws ProcessingException {
+                     boolean timeDomain) throws ProcessingException {
         if (threshold <= 0.0 || threshold >= 1.0) {
             log.warn("IST Warning: threshold {} out of bounds, reset to 0.9", threshold);
             threshold = 0.9;
@@ -176,16 +178,16 @@ public class IstMatrix extends MatrixOperation {
     /**
      * Create calculation for Matrix Iterative Soft Threshold.
      *
-     * @param threshold cutoff threshold as a fraction of maximum height
-     * @param loops number of loops to iterate over
-     * @param schedule sample schedule
-     * @param alg alternate cutoff algorithm
+     * @param threshold  cutoff threshold as a fraction of maximum height
+     * @param loops      number of loops to iterate over
+     * @param schedule   sample schedule
+     * @param alg        alternate cutoff algorithm
      * @param timeDomain result is in timeDomain
-     * @param ph phase array : row p0, row p1, column p0, column p1
+     * @param ph         phase array : row p0, row p1, column p0, column p1
      * @throws ProcessingException
      */
     public IstMatrix(double threshold, int loops, SampleSchedule schedule, String alg,
-            boolean timeDomain, ArrayList phaseList) throws ProcessingException {
+                     boolean timeDomain, ArrayList phaseList) throws ProcessingException {
         this(threshold, loops, schedule, alg, timeDomain);
         if (phaseList.size() != 0) {
             this.phase = new double[phaseList.size()];
@@ -295,6 +297,91 @@ public class IstMatrix extends MatrixOperation {
             }
         }
         return srcTargetMap;
+    }
+    public static int[] genZFSrcTargetMap(MatrixND matrixND, int[] origSizes, boolean constrainEdges) {
+        int nOrig = 1;
+        for (int sz: origSizes) {
+            nOrig *= sz;
+        }
+        int[] srcTargetMap = new int[nOrig];
+
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(origSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        int i = 0;
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            int offset = matrixND.getOffset(counts);
+            srcTargetMap[i++] = offset;
+        }
+        return srcTargetMap;
+    }
+
+    static boolean isInSkipList(List<int[]> skipList, int[] counts) {
+       for (int[] skip:skipList) {
+           boolean inList = true;
+           for (int i=0;i<counts.length;i++) {
+               if (skip[i] < 0)  {
+                   continue;
+               }
+               if (skip[i] != counts[i]) {
+                   inList = false;
+                   break;
+               }
+           }
+           if (inList) {
+               return true;
+           }
+       }
+       return false;
+    }
+
+    public static int[] genZFList(MatrixND matrixND, int[] origSizes, boolean constrainEdges, List<int[]> skipList) {
+        int nElems = matrixND.getNElems();
+        boolean[] validPositions = new boolean[nElems];
+
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(origSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            if (skipList.isEmpty() || !isInSkipList(skipList, counts)) {
+                int offset = matrixND.getOffset(counts);
+                validPositions[offset] = true;
+            }
+        }
+        if (constrainEdges) {
+            int[] edge = new int[matrixND.getNDim()];
+            if (edge.length == 1) {
+                int offset = matrixND.getOffset(edge);
+                validPositions[offset] = true;
+            } else {
+                for (int i = 0; i < matrixND.getNDim(); i++) {
+                    for (int j = 0; j < matrixND.getNDim(); j++) {
+                        if (i != j) {
+                            edge[j] = matrixND.getSize(j) - 1;
+                        }
+                    }
+                    for (int k = 0; k < matrixND.getSize(i); k++) {
+                        edge[i] = k;
+                        int offset = matrixND.getOffset(edge);
+                        validPositions[offset] = true;
+                    }
+                }
+            }
+        }
+
+        List<Integer> zeroList = new ArrayList<>();
+        int i = 0;
+        for (var valid : validPositions) {
+            if (!valid) {
+                zeroList.add(i);
+            }
+            i++;
+        }
+        int[] zeroArray = zeroList.stream().mapToInt(zv -> zv).toArray();
+
+        return zeroArray;
     }
 
     public static int[] genZeroList(SampleSchedule sampleSchedule, MatrixND matrix) {
@@ -426,10 +513,10 @@ public class IstMatrix extends MatrixOperation {
      * <i>addbuf</i> buffer, with the remainder of <i>inbuf</i> set equal to the
      * threshold. The method chooses between different algorithms using the
      * <i>alg</i> parameter.
-     *
+     * <p>
      * Current implementations for hyper-complex data only.
      *
-     * @param inbuf input buffer
+     * @param inbuf  input buffer
      * @param addbuf add buffer
      * @see #alg
      */

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -37,8 +37,10 @@ import org.nmrfx.processor.datasets.Measure.OffsetTypes;
 import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.FileTableItem;
+import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,10 +92,8 @@ public class ScannerTool implements ControllerTool {
 
     public void initialize(BorderPane borderPane) {
         this.borderPane = borderPane;
-        String iconSize = "12px";
-        String fontSize = "7pt";
         scannerBar = new ToolBar();
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
         scannerBar.getItems().add(closeButton);
         borderPane.setTop(scannerBar);
@@ -135,8 +135,10 @@ public class ScannerTool implements ControllerTool {
         purgeInactiveItem.setOnAction(e -> purgeInactive());
         MenuItem loadFromDatasetItem = new MenuItem("Load From Dataset");
         loadFromDatasetItem.setOnAction(e -> loadFromDataset());
+        MenuItem loadColumnMenuItem = new MenuItem("Load Column");
+        loadColumnMenuItem.setOnAction(e -> loadColumn());
         menu.getItems().addAll(scanMenuItem, openTableItem, saveTableItem,
-                purgeInactiveItem, loadFromDatasetItem);
+                purgeInactiveItem, loadFromDatasetItem, loadColumnMenuItem);
         return menu;
     }
 
@@ -490,7 +492,7 @@ public class ScannerTool implements ControllerTool {
     void showRegions() {
         DatasetBase dataset = chart.getDataset();
         List<String> headers = scanTable.getHeaders();
-        TreeSet<DatasetRegion> regions = new TreeSet<>();
+        List<DatasetRegion> regions = new ArrayList<>();
 
         for (String header : headers) {
             Optional<Measure> measureOpt = matchHeader(header);
@@ -508,24 +510,45 @@ public class ScannerTool implements ControllerTool {
 
     void clearRegions() {
         DatasetBase dataset = chart.getDataset();
-        TreeSet<DatasetRegion> regions = new TreeSet<>();
+        List<DatasetRegion> regions = new ArrayList<>();
 
         dataset.setRegions(regions);
         chart.chartProps.setRegions(false);
         chart.refresh();
     }
 
+    /**
+     * Prompts the user for a region file and tries to load the contents of that file as regions in the scanner table.
+     */
     void loadRegions() {
         FileChooser chooser = new FileChooser();
         File file = chooser.showOpenDialog(null);
         if (file != null) {
+            try {
+                boolean isLongRegionsFile = DatasetRegion.isLongRegionFile(file);
+                if (isLongRegionsFile) {
+                    loadRegionsLong(file);
+                } else {
+                    loadRegionsShort(file);
+                }
+            } catch (IOException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("Couldn't read file");
+                alert.showAndWait();
+            }
+        }
+    }
+
+    /**
+     * Loads the short version of the regions file into the scanner table.
+     * @param file The file to load
+     * @throws IOException
+     */
+    private void loadRegionsShort(File file) throws IOException {
             try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
-                while (true) {
-                    String s = reader.readLine();
-                    if (s == null) {
-                        break;
-                    }
-                    String[] fields = s.split(" +");
+                String s;
+                while ((s = reader.readLine()) != null) {
+                    String[] fields = s.split("\\s+");
                     if (fields.length > 2) {
                         String name = fields[0];
                         StringBuilder sBuilder = new StringBuilder();
@@ -546,12 +569,21 @@ public class ScannerTool implements ControllerTool {
                         scanTable.addTableColumn(sBuilder.toString(), "D");
                     }
                 }
-            } catch (IOException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("Couldn't read file");
-                alert.showAndWait();
             }
+    }
 
+    /**
+     * Loads the long version of the regions file into the Scanner table. The long version regions are assumed to
+     * have a Measure Type of volume and an Offset Type of none.
+     * @param file The file to load
+     * @throws IOException
+     */
+    private void loadRegionsLong(File file) throws IOException {
+        List<DatasetRegion> regions = new ArrayList<>(DatasetRegion.loadRegions(file));
+        for (int index = 0; index < regions.size(); index++) {
+            DatasetRegion region = regions.get(index);
+            String colName = String.format("region%d:%.4f_%.4f_%s%s", (index + 1), region.getRegionStart(0), region.getRegionEnd(0), Measure.MeasureTypes.V.getSymbol(), OffsetTypes.N.getSymbol());
+            scanTable.addTableColumn(colName, "D");
         }
     }
 
@@ -560,6 +592,7 @@ public class ScannerTool implements ControllerTool {
         File file = chooser.showSaveDialog(null);
         if (file != null) {
             try {
+                file = FileUtils.addFileExtensionIfMissing(file, "txt");
                 if (!file.exists()) {
                     boolean created = file.createNewFile();
                     if (!created) {
@@ -584,6 +617,89 @@ public class ScannerTool implements ControllerTool {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("Couldn't save file");
                 alert.showAndWait();
+            }
+        }
+    }
+
+    List<Double> toDoubleList(List<String> values) {
+        List<Double> doubleValues = new ArrayList<>();
+        for (var s:values) {
+            try {
+                double dValue = Double.parseDouble(s);
+                doubleValues.add(dValue);
+            } catch (NumberFormatException nfE) {
+                doubleValues.clear();
+                break;
+            }
+        }
+        return doubleValues;
+    }
+
+    List<Integer> toIntegerList(List<String> values) {
+        List<Integer> intValues = new ArrayList<>();
+        for (var s:values) {
+            try {
+                int iValue = Integer.parseInt(s);
+                intValues.add(iValue);
+            } catch (NumberFormatException nfE) {
+                intValues.clear();
+                break;
+            }
+        }
+        return intValues;
+    }
+
+    private void loadColumn() {
+        FileChooser chooser = new FileChooser();
+        File file = chooser.showOpenDialog(null);
+        if (file != null) {
+            String newColumnName = file.getName();
+            int dot = newColumnName.indexOf(".");
+            if (dot != -1) {
+                newColumnName = newColumnName.substring(0, dot);
+            }
+            newColumnName = GUIUtils.input("New column name", newColumnName);
+            if (newColumnName == null) {
+                return;
+            }
+            List<String> values = new ArrayList<>();
+            try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+                while (true) {
+                    String s = reader.readLine();
+                    if (s == null) {
+                        break;
+                    }
+                    s = s.trim();
+                    if (s.startsWith("#")) {
+                        continue;
+                    }
+                    values.add(s);
+                }
+            } catch (IOException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("Couldn't read file");
+                alert.showAndWait();
+                return;
+            }
+            List<FileTableItem> items = scanTable.getItems();
+            if (items.size() == values.size()) {
+                List<Double> dValues = toDoubleList(values);
+                List<Integer> iValues = toIntegerList(values);
+                int i = 0;
+                String type = "S";
+                for (FileTableItem item : items) {
+                    if (!dValues.isEmpty()) {
+                        item.setExtra(newColumnName, dValues.get(i++));
+                        type = "D";
+                    } else if (!iValues.isEmpty()) {
+                        item.setExtra(newColumnName, iValues.get(i++));
+                        type = "I";
+                    } else {
+                        item.setExtra(newColumnName, values.get(i++));
+                    }
+                }
+                scanTable.addTableColumn(newColumnName, type);
+                scanTable.refresh();
             }
         }
     }

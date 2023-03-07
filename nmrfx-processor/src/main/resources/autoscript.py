@@ -7,6 +7,7 @@ import os.path
 import argparse
 import psspecial
 from pyproc import *
+from scriptutils import formatStringForJava
 from string import Template
 
 from java.lang import Runtime
@@ -17,7 +18,7 @@ from org.nmrfx.processor.processing import ProcessingLib
 from org.nmrfx.processor.datasets.vendor import NMRDataUtil
 
 def getLibraryScript(fidFileName, nvFileName, args):
-    nmrData = NMRDataUtil.getFID(fidFileName)
+    nmrData = NMRDataUtil.getFID(formatStringForJava(fidFileName)
     sequence = nmrData.getSequence()
     nDim = nmrData.getNDim()
     vendor = nmrData.getVendor()
@@ -161,10 +162,9 @@ def autoGenScript(fidInfo, args=None):
     script = ''
     if fidInfo.nd < 2:
         script += 'DIM(1)\n'
-        script += 'EXPD(lb=0.5)\n'
+        script += 'APODIZE(lbOn=True, lb=0.5)\n'
         script += 'ZF()\n'
         script += 'FT()\n'
-        script += 'AUTOPHASE(firstOrder=True)\n'
     else:
         script += psspecial.scriptMods(fidInfo, 0)
         script += 'DIM(1)\n'

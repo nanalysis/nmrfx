@@ -19,7 +19,8 @@ set LOG_CONFIG=-Dlogback.configurationFile=config/logback.xml
 set dir=%~dp0
 
 set javaexe=java
-set cp="%dir%nmrfx-analyst-gui-%nvjver%.jar;%dir%lib/Manifest.jar;%dir%plugins/*"
+set cp="%dir%/lib/nmrfx-analyst-gui-%nvjver%.jar;%dir%lib/*;%dir%plugins/*"
+set JAVA_OPTS="--add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED"
 
 set testjava="%dir%jre\bin\java.exe"
 

@@ -260,6 +260,11 @@ public class PeakListAttributes implements PeakListener {
         return peakListNameProperty().get();
     }
 
+    @Override
+    public String toString() {
+        return getPeakListName();
+    }
+
     void updateFoldingLimits(DatasetAttributes dataAttr) {
         int nDataDim = dataAttr.nDim;
         foldLimits = new double[nDataDim][2];
@@ -434,7 +439,7 @@ public class PeakListAttributes implements PeakListener {
             int[] peakDim = getPeakDim();
             xAxis = (NMRAxis) chart.getXAxis();
             yAxis = (NMRAxis) chart.getYAxis();
-            if (peakList.nDim > 1) {
+            if ((peakList.nDim > 1) && !chart.is1D()) {
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY)).findFirst();
             } else {
@@ -444,8 +449,19 @@ public class PeakListAttributes implements PeakListener {
         }
         return hit;
     }
-
     public Optional<MultipletSelection> hitMultiplet(DrawPeaks drawPeaks, double pickX, double pickY) {
+        if (peakList.getNDim() > 1) {
+            return Optional.empty();
+        }
+        Optional<MultipletSelection> hit =  drawPeaks.hitMultipletLabel(pickX, pickY);
+        if (hit.isPresent()) {
+            return hit;
+        } else {
+            return hitMultipletLine(drawPeaks, pickX, pickY);
+        }
+    }
+
+    public Optional<MultipletSelection> hitMultipletLine(DrawPeaks drawPeaks, double pickX, double pickY) {
         Optional<MultipletSelection> hit = Optional.empty();
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
@@ -454,7 +470,7 @@ public class PeakListAttributes implements PeakListener {
             if (peakList.nDim == 1) {
                 var pickResult = peaksInRegion.get().stream().filter(peak -> peak.getStatus() >= 0).
                         map(peak -> peak.getPeakDim(0).getMultiplet())
-                        .map((multiplet) -> drawPeaks.pick1DMultiplet(this, peakDim, multiplet, pickX, pickY)).findFirst();
+                        .map((multiplet) -> drawPeaks.pick1DMultiplet(this, peakDim, multiplet, pickX, pickY)).filter(hitMulti -> hitMulti.isPresent()).findFirst();
                 if (pickResult.isPresent()) {
                     hit = pickResult.get();
                 }
@@ -469,7 +485,7 @@ public class PeakListAttributes implements PeakListener {
             int[] peakDim = getPeakDim();
             xAxis = (NMRAxis) chart.getXAxis();
             yAxis = (NMRAxis) chart.getYAxis();
-            if (peakList.nDim > 1) {
+            if ((peakList.nDim > 1) && !chart.is1D()){
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY)).findFirst();
                 if (hit.isPresent()) {
@@ -530,7 +546,7 @@ public class PeakListAttributes implements PeakListener {
             if (!append) {
                 selectedPeaks.clear();
             }
-            if (peakList.nDim > 1) {
+            if ((peakList.nDim > 1) && !chart.is1D()){
                 List<Peak> peaks = peaksInRegion.get().stream().parallel()
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY))
                         .filter((peak) -> !selectedPeaks.contains(peak))
@@ -552,30 +568,34 @@ public class PeakListAttributes implements PeakListener {
         int[] peakDims = getPeakDim();
         int nDim = Math.min(peakDims.length, oldValue.length);
         for (int i = 0; i < nDim; i++) {
-            PeakDim peakDim = peak.peakDims[peakDims[i]];
-            if (!peakDim.isFrozen()) {
-                double oldAxisValue = getAxisValue(i, oldValue[i]);
-                double newAxisValue = getAxisValue(i, newValue[i]);
-                double delta = newAxisValue - oldAxisValue;
-                double shift = peakDim.getChemShiftValue();
-                peakDim.setChemShiftValue((float) (shift + delta));
+            if (peakDims[i] >= 0) {
+                PeakDim peakDim = peak.peakDims[peakDims[i]];
+                if (!peakDim.isFrozen()) {
+                    double oldAxisValue = getAxisValue(i, oldValue[i]);
+                    double newAxisValue = getAxisValue(i, newValue[i]);
+                    double delta = newAxisValue - oldAxisValue;
+                    double shift = peakDim.getChemShiftValue();
+                    peakDim.setChemShiftValue((float) (shift + delta));
+                }
             }
         }
     }
 
     public void resizePeak(Peak peak, double[] oldValue, double[] newValue) {
-        int[] peakDim = getPeakDim();
-        int nDim = Math.min(peakDim.length, oldValue.length);
+        int[] peakDims = getPeakDim();
+        int nDim = Math.min(peakDims.length, oldValue.length);
         for (int i = 0; i < nDim; i++) {
-            double newAxisValue = getAxisValue(i, newValue[i]);
-            double bound = peak.peakDims[peakDim[i]].getBoundsValue();
-            double shift = peak.peakDims[peakDim[i]].getChemShiftValue();
-            double newWidth = 2 * Math.abs(newAxisValue - shift);
+            if (peakDims[i] >= 0) {
+                double newAxisValue = getAxisValue(i, newValue[i]);
+                double bound = peak.peakDims[peakDims[i]].getBoundsValue();
+                double shift = peak.peakDims[peakDims[i]].getChemShiftValue();
+                double newWidth = 2 * Math.abs(newAxisValue - shift);
 
-            peak.peakDims[peakDim[i]].setBoundsValue((float) newWidth);
-            double scale = newWidth / bound;
-            double width = peak.peakDims[peakDim[i]].getLineWidthValue();
-            peak.peakDims[peakDim[i]].setLineWidthValue((float) (width * scale));
+                peak.peakDims[peakDims[i]].setBoundsValue((float) newWidth);
+                double scale = newWidth / bound;
+                double width = peak.peakDims[peakDims[i]].getLineWidthValue();
+                peak.peakDims[peakDims[i]].setLineWidthValue((float) (width * scale));
+            }
         }
     }
 
@@ -585,6 +605,9 @@ public class PeakListAttributes implements PeakListener {
         Multiplet multiplet = mSel.getMultiplet();
         int iDim = 0;
         int mLine = mSel.getLine();
+        if (mLine < 0) {
+            return;
+        }
         double oldAxisValue = getAxisValue(iDim, oldValue[iDim]);
         double newAxisValue = getAxisValue(iDim, newValue[iDim]);
         double delta = newAxisValue - oldAxisValue;

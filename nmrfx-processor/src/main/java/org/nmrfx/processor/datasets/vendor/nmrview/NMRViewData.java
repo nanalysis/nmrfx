@@ -20,6 +20,7 @@ package org.nmrfx.processor.datasets.vendor.nmrview;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -46,6 +47,7 @@ public class NMRViewData implements NMRData {
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     /**
      * open NMRView parameter and data files
@@ -242,6 +244,11 @@ public class NMRViewData implements NMRData {
     }
 
     @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
+    }
+
+    @Override
     public void setSampleSchedule(SampleSchedule sampleSchedule) {
         this.sampleSchedule = sampleSchedule;
     }
@@ -372,7 +379,10 @@ public class NMRViewData implements NMRData {
 
     @Override
     public boolean isFID() {
-        return !dataset.getFreqDomain(0);
+        // freqDomain parameter might not be set in older
+        // datasets so do somewhat complex check here to
+        // decide if the file is FIDs
+        return (dataset.getNFreqDims() == 0) && (!dataset.getFreqDomain(0) && dataset.getComplex(0));
     }
 
     @Override

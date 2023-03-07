@@ -69,6 +69,7 @@ def parseArgs():
     parser.add_option("-v", "--viol", action="store_true",dest="report",default=False, help="Report violations during calculations in energy dump file ")
     parser.add_option("-y", "--yaml", dest="dumpYamlMode",default="", help="Dump stages to .yaml file")
     parser.add_option("-r", "--refine", dest="refineFile",default="", help="Name of file to refine ")
+    parser.add_option("-i", "--init", action="store_true", dest="init", default=False, help="Only initialize structure (False)")
     parser.add_option("-f", "--file", dest="sourceFile",default="", help="Name of file to load ")
     parser.add_option("-n", "--nef", dest="nefOutFile",default="", help="Name of nef file to write ")
 
@@ -121,6 +122,10 @@ def parseArgs():
         if options.nefOutFile != '':
             NMRNEFWriter.writeAll(options.nefOutFile)
             exit(0)
+        if options.init:
+            refiner.init()
+            exit(0)
+
         if 'anneal' in data:
             if refineFile != '':
                 if refineDir == '':

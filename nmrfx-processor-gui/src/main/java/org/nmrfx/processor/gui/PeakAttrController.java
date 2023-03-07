@@ -58,6 +58,7 @@ import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.TableUtils;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -335,8 +336,24 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         tabOpt.ifPresent(t -> tabPane.getSelectionModel().select(t));
     }
 
+    @Override
+    public void copyPeakTableView() {
+        TableUtils.copyTableToClipboard(peakTableView, true);
+    }
+
     public void refreshPeakView() {
         refreshPeakView(currentPeak);
+    }
+
+    @Override
+    public void refreshChangedListView() {
+        int index = currentPeak.getIndex();
+        if (index >= peakList.size()) {
+            index = peakList.size() - 1;
+        }
+        Peak peak = peakList.getPeak(index);
+        peakNavigator.setPeak(peak);
+        refreshPeakView(peak);
     }
 
     public void refreshPeakView(Peak peak) {
@@ -1102,30 +1119,30 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             listName = newPeakList.getName();
             String script = null;
             if (type.equals("Protein")) {
-                script = String.format("molGen.genProteinPeaks(\"%s\", \"%s\", listName=\"%s\")", mode, datasetName, listName);
+                script = String.format("molGen.genProteinPeaks(\"%s\", datasetName, listName=listName)", mode);
             } else {
                 switch (mode) {
                     case "NOESY":
                         double range = distanceSlider.getValue();
-                        script = String.format("molGen.genDistancePeaks(\"%s\", listName=\"%s\", tol=%f)", datasetName, listName, range);
+                        script = String.format("molGen.genDistancePeaks(datasetName, listName=listName, tol=%f)", range);
                         break;
                     case "TOCSY":
                         int limit = Integer.parseInt(transferLimitChoice.getValue().toString());
-                        script = String.format("molGen.genTOCSYPeaks(\"%s\", listName=\"%s\", transfers=%d)", datasetName, listName, limit);
+                        script = String.format("molGen.genTOCSYPeaks(datasetName, listName=listName, transfers=%d)", limit);
                         break;
                     case "HMBC":
                         int hmbcLimit = Integer.parseInt(transferLimitChoice.getValue().toString());
-                        script = String.format("molGen.genHMBCPeaks(\"%s\", listName=\"%s\", transfers=%d)", datasetName, listName, hmbcLimit);
+                        script = String.format("molGen.genHMBCPeaks(datasetName, listName=listName, transfers=%d)", hmbcLimit);
                         break;
                     case "HSQC-13C":
-                        script = String.format("molGen.genHSQCPeaks(\"%s\", \"%s\", listName=\"%s\")", "C", datasetName, listName);
+                        script = String.format("molGen.genHSQCPeaks(\"%s\", datasetName, listName=listName)", "C");
                         break;
                     case "HSQC-15N":
-                        script = String.format("molGen.genHSQCPeaks(\"%s\", \"%s\", listName=\"%s\")", "N", datasetName, listName);
+                        script = String.format("molGen.genHSQCPeaks(\"%s\", datasetName, listName=listName)", "N");
                         break;
                     case "RNA-NOESY-2nd-str":
                         int useN = useNCheckBox.isSelected() ? 1 : 0;
-                        script = String.format("molGen.genRNASecStrPeaks(\"%s\", listName=\"%s\", useN=%d)", datasetName, listName, useN);
+                        script = String.format("molGen.genRNASecStrPeaks(datasetName, listName=listName, useN=%d)", useN);
                         break;
                     default:
                 }
@@ -1134,6 +1151,8 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                 PythonInterpreter interp = MainApp.getInterpreter();
                 interp.exec("import molpeakgen");
                 interp.exec("molGen=molpeakgen.MolPeakGen()");
+                interp.set("datasetName", datasetName);
+                interp.set("listName", listName);
                 interp.exec(script);
             }
         }

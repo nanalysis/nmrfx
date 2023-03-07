@@ -3,8 +3,10 @@ package org.nmrfx.processor.gui.tools;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+
 import javafx.scene.control.Button;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContentDisplay;
@@ -16,8 +18,10 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,31 +62,24 @@ public class SpectrumComparator {
         this.vBox = vBox;
         vBox.getChildren().addAll(toolBar1, toolBar2);
 
-        String iconSize = "16px";
-        String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close(this));
-        buttons.add(closeButton);
-
-        buttons.forEach((button) -> {
-            button.getStyleClass().add("toolButton");
-        });
 
         ArrayList<Button> dataset1Buttons = new ArrayList<>();
         ArrayList<Button> dataset2Buttons = new ArrayList<>();
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> firstDataset(0));
         dataset1Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> previousDataset(0));
         dataset1Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> nextDataset(0));
         dataset1Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> lastDataset(0));
         dataset1Buttons.add(bButton);
 
@@ -101,36 +98,37 @@ public class SpectrumComparator {
             datasetColorPickers[i].valueProperty().addListener(c -> setDatasetState());
         }
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> firstDataset(1));
         dataset2Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> previousDataset(1));
         dataset2Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> nextDataset(1));
         dataset2Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> lastDataset(1));
         dataset2Buttons.add(bButton);
 
         Pane filler1a = new Pane();
         HBox.setHgrow(filler1a, Priority.ALWAYS);
 
+        toolBar1.getItems().add(closeButton);
         toolBar1.getItems().addAll(buttons);
-        toolBar1.getItems().add(filler1a);
         toolBar1.getItems().add(datasetColorPickers[0]);
         toolBar1.getItems().addAll(dataset1Buttons);
         toolBar1.getItems().addAll(datasetFields[0]);
         toolBar1.getItems().addAll(sampleFields[0]);
 
         Pane filler2 = new Pane();
-        filler2.setMinWidth(30);
+        // filler2 is placeholder width for close button in toolbar2, bind to width so color pickers in
+        // both toolbars align
+        filler2.minWidthProperty().bind(closeButton.widthProperty());
         Pane filler1b = new Pane();
         HBox.setHgrow(filler1b, Priority.ALWAYS);
 
         toolBar2.getItems().add(filler2);
-        toolBar2.getItems().add(filler1b);
         toolBar2.getItems().add(datasetColorPickers[1]);
         toolBar2.getItems().addAll(dataset2Buttons);
         toolBar2.getItems().addAll(datasetFields[1]);
@@ -144,6 +142,7 @@ public class SpectrumComparator {
 
         toolBar1.getItems().add(filler5a);
         toolBar2.getItems().add(filler5b);
+        toolBar1.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(Arrays.asList(toolBar1, toolBar2)));
     }
 
     void setDatasetState() {

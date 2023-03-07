@@ -248,13 +248,13 @@ public class Dihedral {
         if (includePseudo) {
             ArrayList<Atom> pseudoAngleAtoms = molecule.setupPseudoAngles();
             for (Atom atom : pseudoAngleAtoms) {
-                fileOut.format("%s %.6f\n", atom.getFullName(), atom.dihedralAngle * toDeg);
+                fileOut.format("%s %.10f\n", atom.getFullName(), Math.toDegrees(Util.reduceAngle(atom.dihedralAngle)));
             }
         }
         List<Atom> angleAtoms = molecule.getAllAngleAtoms();
         for (Atom atom : angleAtoms) {
             int rotatable = atom.rotActive ? 1 : 0;
-            fileOut.format("%s %.6f %d\n", atom.getFullName(), Math.toDegrees(atom.daughterAtom.dihedralAngle), rotatable);
+            fileOut.format("%s %.10f %d\n", atom.getFullName(), Math.toDegrees(Util.reduceAngle(atom.daughterAtom.dihedralAngle)), rotatable);
         }
         fileOut.close();
     }

@@ -147,6 +147,7 @@ public class MoleculeMenuActions extends MenuActions {
     public void readMolecule(String type) {
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
+        var currentMol = MoleculeFactory.getActive();
         if (file != null) {
             try {
                 switch (type) {
@@ -189,11 +190,17 @@ public class MoleculeMenuActions extends MenuActions {
                         break;
                 }
                 showMols();
-            } catch (MoleculeIOException ioE) {
-                ExceptionDialog dialog = new ExceptionDialog(ioE);
+            } catch (Exception ex) {
+                var mol = MoleculeFactory.getActive();
+                if (mol != null) {
+                    if (mol != currentMol) {
+                        MoleculeFactory.removeMolecule(mol.getName());
+                        MoleculeFactory.setActive(currentMol);
+                    }
+                }
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.setTitle("Error reading molecule file");
                 dialog.showAndWait();
-            } catch (org.nmrfx.star.ParseException ex) {
-                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
             }
             resetAtomController();
         }

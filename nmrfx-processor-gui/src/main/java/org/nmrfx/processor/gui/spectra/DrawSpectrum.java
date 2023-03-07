@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -98,6 +97,9 @@ public class DrawSpectrum {
     AXMODE[] axModes;
     DISDIM disDim = DISDIM.TwoD;
     double[][] xy = new double[2][];
+    private double stackWidth = 0.0;
+    private double stackY = 0.0;
+
     int nPoints = 0;
     int iChunk = 0;
     int rowIndex = -1;
@@ -801,28 +803,26 @@ public class DrawSpectrum {
         }
     }
 
-    public void drawProjection(Dataset dataset, DatasetAttributes datasetAttr, SliceAttributes sliceAttr, int orientation, Bounds bounds) {
+    public void drawProjection(DatasetAttributes projectionDatasetAttributes, DatasetAttributes datasetAttr, int orientation, Bounds bounds) {
         int sliceDim = orientation;
         Vec sliceVec = new Vec(32, false);
         boolean drawReal = datasetAttr.getDrawReal();
         try {
-            datasetAttr.getProjection(dataset, sliceVec, sliceDim);
-            double level = datasetAttr.lvlProperty().get();
-            double scale = -sliceAttr.getScaleValue() / level;
+            datasetAttr.getProjection((Dataset) projectionDatasetAttributes.getDataset(), sliceVec, sliceDim);
+            double lvlMult = projectionDatasetAttributes.getLvl();
             if (sliceDim == 0) {
                 double offset = axes[0].getYOrigin() - axes[1].getHeight() * 1.005;
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, 0.0, 0.0, null,
                         (index, intensity) -> axes[0].getDisplayPosition(index),
-                        (index, intensity) -> intensity * scale + offset, false, false);
+                        (index, intensity) -> -intensity / lvlMult + offset, false, false);
             } else {
                 double offset = axes[0].getXOrigin() + axes[0].getWidth() * 1.005;
-
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, 0.0, 0.0, null,
-                        (index, intensity) -> -intensity * scale + offset,
+                        (index, intensity) -> intensity / lvlMult + offset,
                         (index, intensity) -> axes[1].getDisplayPosition(index), false, false);
             }
         } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 
@@ -877,7 +877,9 @@ public class DrawSpectrum {
         iChunk = dataAttributes.getLastChunk(0);
     }
 
-    public boolean draw1DSpectrum(DatasetAttributes dataAttributes, double firstLvl, double firstOffset, int orientation, AXMODE axMode, double ph0, double ph1, Path bcPath) {
+    public boolean draw1DSpectrum(DatasetAttributes dataAttributes, double firstLvl, double firstOffset,
+                                  int i1D, int n1D, int orientation, AXMODE axMode,
+                                  double ph0, double ph1, Path bcPath) {
         VecBase specVec = new Vec(32);
         boolean drawReal = dataAttributes.getDrawReal();
         boolean offsetMode = true;
@@ -897,11 +899,11 @@ public class DrawSpectrum {
                 return false;
             }
         }
-        double offset = getOffset(dataAttributes, firstOffset);
+        double[] offsets = getOffset(dataAttributes, firstOffset, i1D, n1D);
         double lvlMult = dataAttributes.getLvl() / firstLvl;
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
-                (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> axes[1].getDisplayPosition(intensity / lvlMult) - offset, offsetMode, false);
+                (index, intensity) -> axes[0].getDisplayPosition(index) + offsets[0],
+                (index, intensity) -> axes[1].getDisplayPosition(intensity / lvlMult) - offsets[1], offsetMode, false);
 
         if (iChunk < 0) {
             return false;
@@ -910,16 +912,41 @@ public class DrawSpectrum {
 
     }
 
-    public double getOffset(DatasetAttributes dataAttributes, double firstOffset) {
+    public double getOffsetFraction(DatasetAttributes dataAttributes, int i1D, int n1D) {
+        double height = axes[1].getHeight();
+        int lastChunk = dataAttributes.getLastChunk(0);
+        double fraction = 0.0;
+        if (n1D > 1) {
+            fraction = (n1D - i1D - 1.0) / (n1D -1.0);
+        }
+        return fraction;
+    }
+
+    public void setStackWidth(double value) {
+        stackWidth = value;
+    }
+
+    public void setStackY(double value) {
+        stackY = Math.min(1.00, Math.max(0.0, value));
+    }
+
+    public double[] getOffset(DatasetAttributes dataAttributes, double firstOffset, int i1D, int n1D) {
         double height = axes[1].getHeight();
         double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
         double dataOffset = height * (dataAttributes.getOffset() - firstOffset);
-        double offset = dataOffset + mapOffset;
-        return offset;
+        double fraction = getOffsetFraction(dataAttributes, i1D, n1D);
+        double delta = height * fraction * stackY;
+        if (n1D > 0) {
+            delta *= (1.0 - firstOffset) * (n1D - 1.0) / n1D;
+        }
+        double yOffset = dataOffset + mapOffset + delta;
+        double xOffset = stackWidth * fraction;
+        double[] result = {xOffset, yOffset};
+        return result;
     }
 
     public double[] getRegionAsArray(DatasetBase dataset) {
-        Set<DatasetRegion> regions = dataset.getRegions();
+        List<DatasetRegion> regions = dataset.getReadOnlyRegions();
         double[] ppms = null;
         if (regions != null) {
             ppms = new double[regions.size() * 2];
@@ -934,7 +961,7 @@ public class DrawSpectrum {
     }
 
     public double[] getOffsetsAsArray(DatasetBase dataset) {
-        Set<DatasetRegion> regions = dataset.getRegions();
+        List<DatasetRegion> regions = dataset.getReadOnlyRegions();
         double[] offsets = null;
         if (regions != null) {
             offsets = new double[regions.size() * 2];
@@ -1004,11 +1031,16 @@ public class DrawSpectrum {
             vecStartPoint = axMode.getIndex(vec, indexAxis.getLowerBound());
             vecEndPoint = axMode.getIndex(vec, indexAxis.getUpperBound());
             indexAxisDelta = axMode.getIncrement(vec, indexAxis.getLowerBound(), indexAxis.getUpperBound());
-        } else {
+        } else if (indexAxis.getReverse()) {
             vecStartPoint = vec.getSize() - 1;
             vecEndPoint = 0;
             dataOffset = 0;
             indexAxisDelta = (indexAxis.getLowerBound() - indexAxis.getUpperBound()) / vecStartPoint;
+        } else {
+            vecStartPoint = 0;
+            vecEndPoint = vec.getSize() - 1;
+            dataOffset = 0;
+            indexAxisDelta = (indexAxis.getUpperBound() - indexAxis.getLowerBound()) / vecEndPoint;
         }
         double dValue = indexAxis.getLowerBound();
 
@@ -1219,10 +1251,6 @@ public class DrawSpectrum {
 
     public void drawRegion(DatasetAttributes dataAttributes, int orientation, AXMODE axMode) {
         DatasetBase dataset = dataAttributes.getDataset();
-        Set<DatasetRegion> regions = dataset.getRegions();
-        for (DatasetRegion region : regions) {
-
-        }
         if (dataset.getVec() != null) {
             VecBase vec = dataset.getVec();
             NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];

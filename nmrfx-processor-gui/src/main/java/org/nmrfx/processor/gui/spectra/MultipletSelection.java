@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import javafx.geometry.Bounds;
 import org.nmrfx.peaks.Multiplet;
 
 
@@ -30,18 +31,35 @@ public class MultipletSelection {
     final double center;
     final double edge;
     final int line;
+    final Bounds bounds;
+
+    MultipletSelection(Multiplet multiplet, Bounds bounds) {
+        this.multiplet = multiplet;
+        this.line = -1;
+        this.center = 0;
+        this.edge = 0;
+        this.bounds = bounds;
+    }
 
     MultipletSelection(Multiplet multiplet, double center, double edge, int line) {
         this.multiplet = multiplet;
         this.line = line;
         this.center = center;
         this.edge = edge;
+        this.bounds = null;
     }
 
     public Multiplet getMultiplet() {
         return multiplet;
     }
 
+    public Bounds getBounds() {
+        return bounds;
+    }
+
+    public boolean isLine() {
+        return line >= 0;
+    }
     public int getLine() {
         return line;
     }

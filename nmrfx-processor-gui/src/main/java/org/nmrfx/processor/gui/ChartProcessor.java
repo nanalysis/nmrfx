@@ -17,8 +17,10 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.FileChooser;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
@@ -56,14 +58,21 @@ public class ChartProcessor {
     private static final Logger log = LoggerFactory.getLogger(ChartProcessor.class);
 
     public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
+    private boolean lastWasFreqDomain = false;
 
-    private SimpleObjectProperty nmrDataObj;
+    private SimpleObjectProperty<NMRData> nmrDataObj;
+    private final SimpleBooleanProperty areOperationListsValid = new SimpleBooleanProperty(false);
 
-    public SimpleObjectProperty nmrDataProperty() {
+
+    public SimpleObjectProperty<NMRData> nmrDataProperty() {
         if (nmrDataObj == null) {
-            nmrDataObj = new SimpleObjectProperty(null);
+            nmrDataObj = new SimpleObjectProperty<>(null);
         }
         return nmrDataObj;
+    }
+
+    public SimpleBooleanProperty getAreOperationListsValidProperty() {
+        return areOperationListsValid;
     }
 
     public void setNMRData(NMRData value) {
@@ -71,7 +80,7 @@ public class ChartProcessor {
     }
 
     public NMRData getNMRData() {
-        return (NMRData) nmrDataProperty().get();
+        return nmrDataProperty().get();
     }
 
     File datasetFile;
@@ -402,6 +411,95 @@ public class ChartProcessor {
         return loadVectors(1, rows);
     }
 
+    public VecIndex getNextIndex(NMRData nmrData, int[] rows) {
+        int index = 0;
+        if (rows.length > 0) {
+            index = rows[0];
+        }
+        VecIndex vecIndex = null;
+        if (vecDim == 0) {
+            int nVectors = vectorsPerGroup;
+            if (multiVecCounter != null) {
+                if (rows.length == 1) {
+
+                    vecIndex = multiVecCounter.getNextGroup(index);
+                } else {
+                    index = multiVecCounter.findOutGroup(rows);
+                    vecIndex = multiVecCounter.getNextGroup(index);
+                }
+                if (nmrData.getSampleSchedule() != null) {
+                    vecIndex = nmrData.getSampleSchedule().convertToNUSGroup(vecIndex, index);
+                    if (vecIndex == null) {
+                        log.info("No vec");
+                    }
+
+                }
+            }
+        }
+        return vecIndex;
+    }
+
+    record VecIndexScore(VecIndex vecIndex, int maxIndex, double score) implements  Comparable {
+
+        @Override
+        public int compareTo(Object o) {
+            if (o == null) {
+                return 1;
+            } else if (!(o instanceof VecIndexScore)) {
+                return 1;
+            } else {
+                int compare = Double.compare(score, ((VecIndexScore) o).score());
+                if (compare == 0) {
+                    compare = Integer.compare(maxIndex, ((VecIndexScore) o).maxIndex());
+                }
+                return compare;
+            }
+        }
+    }
+
+    public List<VecIndexScore> scanForCorruption(double ratio, int maxN) {
+        int iGroup = 0;
+        NMRData nmrData = getNMRData();
+        int nPoints = nmrData.getNPoints();
+        Vec newVec = new Vec(nPoints, nmrData.isComplex(0));
+        var stats = new DescriptiveStatistics();
+        List<VecIndexScore> vecIndices = new ArrayList<>();
+        while( true) {
+            VecIndex vecIndex = multiVecCounter.getNextGroup(iGroup++);
+            if (vecIndex == null) {
+                break;
+            }
+            double groupMax = Double.NEGATIVE_INFINITY;
+            int maxIndex = -1;
+            for (int j = 0; j < vectorsPerGroup; j++) {
+                newVec.resize(nPoints);
+                nmrData.readVector(vecIndex.getInVec(j), newVec);
+                double max = newVec.maxIndex().getValue();
+                if (max > groupMax) {
+                    groupMax = max;
+                    maxIndex = j;
+                }
+            }
+            var vecIndexScore = new VecIndexScore(vecIndex, maxIndex, groupMax);
+            stats.addValue(groupMax );
+            vecIndices.add(vecIndexScore);
+        }
+
+        double mean = stats.getMean();
+        double sdev = stats.getStandardDeviation();
+        double threshold= mean + ratio * sdev;
+        List<VecIndexScore> result = new ArrayList<>();
+        Collections.sort(vecIndices, Collections.reverseOrder());
+        int n = Math.min(vecIndices.size(), maxN);
+        for (int i=0;i<n;i++) {
+            var vecIndexScore = vecIndices.get(i);
+            if (vecIndexScore.score() > threshold) {
+                result.add(vecIndexScore);
+            }
+         }
+        return result;
+    }
+
     public int[] loadVectors(int iDim, int[] rows) {
         //setFlags();
         NMRData nmrData = getNMRData();
@@ -416,33 +514,8 @@ public class ChartProcessor {
         process.clearVectors();
         vectors.clear();
         saveVectors.clear();
-        int nVectors = 1;
-        VecIndex vecIndex = null;
-        int index = 0;
-        if (rows.length > 0) {
-            index = rows[0];
-        }
-        if (vecDim == 0) {
-            nVectors = vectorsPerGroup;
-            if (multiVecCounter != null) {
-                if (rows.length == 1) {
-
-                    vecIndex = multiVecCounter.getNextGroup(index);
-                } else {
-                    index = multiVecCounter.findOutGroup(rows);
-                    vecIndex = multiVecCounter.getNextGroup(index);
-                }
-                if (nmrData.getSampleSchedule() != null) {
-                    vecIndex = nmrData.getSampleSchedule().convertToNUSGroup(vecIndex, index);
-                    if (vecIndex != null) {
-                        vecIndex.printMe(index, 1);
-                    } else {
-                        log.info("No vec");
-                    }
-
-                }
-            }
-        }
+        VecIndex vecIndex = getNextIndex(nmrData, rows);
+        int nVectors = vecDim == 0 ? vectorsPerGroup : 1;
         int[] fileIndices = new int[nVectors];
         for (int j = 0; j < nVectors; j++) {
             Vec newVec = new Vec(nPoints, nmrData.isComplex(vecDim));
@@ -460,6 +533,10 @@ public class ChartProcessor {
                     nmrData.readVector(vecIndex.getInVec(j), newVec);
                 }
             } else {
+                int index = 0;
+                if (rows.length > 0) {
+                    index = rows[0];
+                }
                 fileIndices[j] = index + j;
                 nmrData.readVector(vecDim, index + j, newVec);
                 if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho")) {
@@ -487,7 +564,9 @@ public class ChartProcessor {
         }
         Vec vec = vectors.get(iVec);
         vec.setName("vec" + iVec);
-        chart.setDataset(new Dataset(vec), false, true);
+        Dataset d = new Dataset(vec);
+        d.setNucleus(0, nmrData.getTN(vecDim));
+        chart.setDataset(d, false, true);
         return fileIndices;
     }
 
@@ -519,22 +598,8 @@ public class ChartProcessor {
         chart.setDataset(new Dataset(vec));
     }
 
-    public void vecRow(int iDim, int i) {
+    public void vecRow(int[] rows) {
         if (getNMRData() != null) {
-            int nDim = getNMRData().getNDim();
-            int size = 1;
-            if (nDim > 1) {
-                size = getNMRData().getSize(iDim);
-            }
-
-            if (i >= size) {
-                i = size - 1;
-            }
-            if (i < 0) {
-                i = 0;
-            }
-            processorController.setRowLabel(i + 1, size);
-            int[] rows = processorController.getRows();
             int[] fileIndices = loadVectors(1, rows);
             processorController.setFileIndex(fileIndices);
             try {
@@ -543,7 +608,6 @@ public class ChartProcessor {
             } catch (IncompleteProcessException ipe) {
                 log.warn(ipe.getMessage(), ipe);
             }
-
             chart.layoutPlotChildren();
         }
     }
@@ -651,9 +715,13 @@ public class ChartProcessor {
             return;
         }
         scriptValid = false;
-        List<String> oldList = new ArrayList<>();
-        oldList.addAll(processorController.getOperationList());
-        mapOpLists.put(vecDimName, oldList);
+        List<String> newList = new ArrayList<>(processorController.getOperationList());
+        boolean clearedOperations = false;
+        if (newList.isEmpty() && vecDimName.equals("D1")) {
+            clearedOperations = true;
+        }
+        areOperationListsValid.set(!clearedOperations);
+        mapOpLists.put(vecDimName, newList);
         ProcessorController pController = processorController;
         if (pController.isViewingDataset() && pController.autoProcess.isSelected()) {
             processorController.processIfIdle();
@@ -962,7 +1030,6 @@ public class ChartProcessor {
 
     Optional<String> fixDatasetName(String script) {
         final Optional<String> emptyResult = Optional.empty();
-        final Optional<String> result;
 
         if (!scriptHasDataset(script)) {
             String datasetName = suggestDatasetName();
@@ -973,12 +1040,6 @@ public class ChartProcessor {
             if (getDatasetType()== DatasetType.SPINit) {
                 Path datasetDir = directory.toPath();
                 Path newProcPath = RS2DProcUtil.findNextProcPath(datasetDir);
-                try {
-                    Files.createDirectories(newProcPath);
-                } catch (IOException e) {
-                    GUIUtils.warn("Dataset creation", "Unable to create new dataset directory");
-                    return emptyResult;
-                }
                 file = newProcPath.toFile();
             } else {
                 FileChooser fileChooser = new FileChooser();
@@ -989,37 +1050,44 @@ public class ChartProcessor {
                     return emptyResult;
                 }
                 Optional<DatasetType> fileTypeOpt = DatasetType.typeFromFile(file);
-                if (fileTypeOpt.isPresent()) {
-                    DatasetType fileType = fileTypeOpt.get();
-                    if (fileType != getDatasetType()) {
-                        GUIUtils.warn("Dataset creation", "File extension not consistent with dataset type");
-                        return emptyResult;
-                    }
-                }
-            }
-
-            file = getDatasetType().addExtension(file);
-            if (file.exists() && !file.canWrite()) {
-                GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
-                return emptyResult;
-            }
-            if (!file.exists()) {
-                File parentFile = file.getParentFile();
-                if (!parentFile.canWrite()) {
-                    GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
+                if (fileTypeOpt.isPresent() && fileTypeOpt.get() != getDatasetType()) {
+                    GUIUtils.warn("Dataset creation", "File extension not consistent with dataset type");
                     return emptyResult;
                 }
+            }
+            file = getDatasetType().addExtension(file);
+            if (!datasetFileOkay(file)) {
+                return emptyResult;
             }
             datasetFile = file;
             String fileString = file.getAbsoluteFile().toString();
             datasetFileTemp = new File(fileString + ".tmp");
             fileString = fileString.replace("\\", "/");
             script = script.replace("_DATASET_", "'" + fileString + "'");
-            result = Optional.of(script);
-        } else {
-            result = Optional.of(script);
         }
-        return result;
+        return Optional.of(script);
+    }
+
+    private boolean datasetFileOkay(File datasetFileToCheck) {
+        if (datasetFileToCheck.exists() && !datasetFileToCheck.canWrite()) {
+            GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
+            return false;
+        }
+        if (!datasetFileToCheck.exists()) {
+            File parentFile = datasetFileToCheck.getParentFile();
+            boolean canWrite = parentFile.canWrite();
+            // For SPINit files check if either of the above 2 parent directories are writable (Proc and the fid data directory)
+            if (getDatasetType()== DatasetType.SPINit) {
+                File procParent = parentFile.getParentFile();
+                File fidParent = procParent.getParentFile();
+                canWrite = (!procParent.exists() && fidParent.canWrite()) || procParent.canWrite();
+            }
+            if (!canWrite) {
+                GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
+                return false;
+            }
+        }
+        return true;
     }
 
     private String suggestDatasetName() {
@@ -1110,14 +1178,17 @@ public class ChartProcessor {
                 String parDim = entry.getKey().substring(1);
                 if (dimMode.equals("D")) {
                     int dimNum = -1;
-                    try {
-                        dimNum = Integer.parseInt(parDim) - 1;
-                        if (dimNum >= nDim) {
-                            break;
+                    boolean parseInt = !parDim.isEmpty() && !parDim.contains(",") && !parDim.contains("_ALL");
+                    if (parseInt) {
+                        try {
+                            dimNum = Integer.parseInt(parDim) - 1;
+                            if (dimNum >= nDim) {
+                                break;
+                            }
+                            mapToDataset[dimNum] = -1;
+                        } catch (NumberFormatException nFE) {
+                            log.warn("Unable to parse dimension number.", nFE);
                         }
-                        mapToDataset[dimNum] = -1;
-                    } catch (NumberFormatException nFE) {
-                        log.warn("Unable to parse dimension number.", nFE);
                     }
                     if (!processorController.refManager.getSkip(parDim)) {
                         if (dimMode.equals("D") && (dimNum != -1)) {
@@ -1252,9 +1323,9 @@ public class ChartProcessor {
             complex[iDim] = data.isComplex(iDim);
         }
         processorController.updateDimChoice(complex);
-        reloadData();
         processorController.refManager.resetData();
         processorController.refManager.setupItems(0);
+        reloadData();
         processorController.updateParTable(data);
         if (!clearOps) {
             setScripts(saveHeaderList, listOfScripts);
@@ -1264,10 +1335,14 @@ public class ChartProcessor {
     }
 
     public void reloadData() {
+        NMRData nmrData = getNMRData();
+        if (nmrData == null) {
+            log.info("NMRData is null, unable to reload.");
+            return;
+        }
         chart.setPh0(0);
         chart.setPh1(0);
         chart.setPivot(null);
-        NMRData nmrData = getNMRData();
         int nDim = nmrData.getNDim();
         iVec = 0;
         execScript("", false, false);
@@ -1351,7 +1426,9 @@ public class ChartProcessor {
             if (reloadData) {
                 loadVectors(0);
             }
-            interpreter.exec(script);
+            if (processorController.isViewingFID()) {
+                interpreter.exec(script);
+            }
         } catch (Exception pE) {
             if (pE instanceof IncompleteProcessException) {
                 OperationListCell.failedOperation(((IncompleteProcessException) pE).index);
@@ -1412,9 +1489,14 @@ public class ChartProcessor {
                 }
             }
             if (!processorController.isViewingDataset()) {
-                chart.layoutPlotChildren();
+                Vec loadVec = vectors.get(0);
+                if (loadVec.getFreqDomain() != lastWasFreqDomain) {
+                    chart.autoScale();
+                } else {
+                    chart.refresh();
+                }
+                lastWasFreqDomain = loadVec.getFreqDomain();
             }
-
         }
     }
 

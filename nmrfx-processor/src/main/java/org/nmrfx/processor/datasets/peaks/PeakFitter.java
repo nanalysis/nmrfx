@@ -25,6 +25,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.nmrfx.peaks.*;
+import org.nmrfx.processor.DatasetUtils;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.optimization.Fitter;
@@ -436,10 +437,11 @@ public class PeakFitter {
         if (size <= 0) {
             throw new IllegalArgumentException("Invalid point range in jfit");
         }
-
+        // The indices must be converted to raw indices to read the file, the real/complex indices are used later in
+        // the function so p2 should not be modified.
         Vec fitVec = new Vec(size);
         try {
-            theFile.readVectorFromDatasetFile(p2, pdim, fitVec);
+            theFile.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(p2, theFile.getComplex(pdim[0])), pdim, fitVec);
         } catch (IOException ioE) {
             throw new IllegalArgumentException(ioE.getMessage());
         }
@@ -769,8 +771,6 @@ public class PeakFitter {
         int[] cpt = new int[dataDim];
         double[] width = new double[dataDim];
         double result;
-
-        //double guesses[] = new double[3*nPeaks];
         int nPeaks = peaks.length;
 
         if (i0 > i1) {
@@ -884,7 +884,10 @@ public class PeakFitter {
 
         int size = pt[0][1] - pt[0][0] + 1;
         Vec fitVec = new Vec(size);
-        theFile.readVectorFromDatasetFile(pt, fitDim, fitVec);
+
+        // The indices must be converted to raw indices to read the file, the real/complex indices are used later in
+        // the function so pt should not be modified.
+        theFile.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(pt, theFile.getComplex(pdim[0])), fitDim, fitVec);
 
         //LmdifTest_f77  lmdifTest = new LmdifTest_f77();
         Lmder_f77 lmdifTest = new Lmder_f77();

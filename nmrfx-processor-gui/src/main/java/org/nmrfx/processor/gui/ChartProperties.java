@@ -36,16 +36,18 @@ import java.util.Map;
  */
 public class ChartProperties {
     private static final Logger log = LoggerFactory.getLogger(ChartProperties.class);
+    public static final int PROJECTION_BORDER_DEFAULT_SIZE = 150;
+    public static final int EMPTY_BORDER_DEFAULT_SIZE = 5;
 
-    final private PolyChart polyChart;
+    private final PolyChart polyChart;
 
     private IntegerProperty leftBorderSize;
     private IntegerProperty rightBorderSize;
     private IntegerProperty topBorderSize;
     private IntegerProperty bottomBorderSize;
     private BooleanProperty intensityAxis;
-    private DoubleProperty labelFontSize;
-    private DoubleProperty ticFontSize;
+    private IntegerProperty labelFontSize;
+    private IntegerProperty ticFontSize;
     private ColorProperty cross0Color;
     private ColorProperty cross1Color;
     private ColorProperty axesColor;
@@ -57,10 +59,17 @@ public class ChartProperties {
     private DoubleProperty integralHighPos;
     private DoubleProperty aspectRatio;
     private BooleanProperty aspect;
+    private DoubleProperty stackX;
+    private DoubleProperty stackY;
     private BooleanProperty titles;
+    private BooleanProperty parameters;
 
     public ChartProperties(PolyChart chart) {
         this.polyChart = chart;
+    }
+
+    private void refresh() {
+        polyChart.refresh();
     }
 
     public void copyTo(PolyChart destChart) {
@@ -85,6 +94,11 @@ public class ChartProperties {
         destProps.setIntegralHighPos(getIntegralHighPos());
         destProps.setIntegrals(getIntegrals());
         destProps.setTitles(getTitles());
+        destProps.setParameters(getParameters());
+        destProps.setAspectRatio(getAspectRatio());
+        destProps.setAspect(getAspect());
+        destProps.setStackX(getStackX());
+        destProps.setStackY(getStackY());
     }
 
     public int getLeftBorderSize() {
@@ -98,6 +112,7 @@ public class ChartProperties {
     public IntegerProperty leftBorderSizeProperty() {
         if (leftBorderSize == null) {
             leftBorderSize = new SimpleIntegerProperty(polyChart, "leftBorderSize", 0);
+            leftBorderSize.addListener(e -> refresh());
         }
         return leftBorderSize;
     }
@@ -112,7 +127,8 @@ public class ChartProperties {
 
     public IntegerProperty rightBorderSizeProperty() {
         if (rightBorderSize == null) {
-            rightBorderSize = new SimpleIntegerProperty(polyChart, "rightBorderSize", 7);
+            rightBorderSize = new SimpleIntegerProperty(polyChart, "rightBorderSize", EMPTY_BORDER_DEFAULT_SIZE);
+            rightBorderSize.addListener(e ->refresh());
         }
         return rightBorderSize;
     }
@@ -127,7 +143,8 @@ public class ChartProperties {
 
     public IntegerProperty topBorderSizeProperty() {
         if (topBorderSize == null) {
-            topBorderSize = new SimpleIntegerProperty(polyChart, "topBorderSize", 7);
+            topBorderSize = new SimpleIntegerProperty(polyChart, "topBorderSize", EMPTY_BORDER_DEFAULT_SIZE);
+            topBorderSize.addListener(e -> refresh());
         }
         return topBorderSize;
     }
@@ -143,6 +160,7 @@ public class ChartProperties {
     public IntegerProperty bottomBorderSizeProperty() {
         if (bottomBorderSize == null) {
             bottomBorderSize = new SimpleIntegerProperty(polyChart, "bottomBorderSize", 0);
+            bottomBorderSize.addListener(e ->refresh());
         }
         return bottomBorderSize;
     }
@@ -150,6 +168,7 @@ public class ChartProperties {
     public BooleanProperty intensityAxisProperty() {
         if (intensityAxis == null) {
             intensityAxis = new SimpleBooleanProperty(polyChart, "onedAxis", false);
+            intensityAxis.addListener(e -> refresh());
         }
         return intensityAxis;
     }
@@ -166,12 +185,13 @@ public class ChartProperties {
     }
 
     public void setLabelFontSize(double value) {
-        labelFontSizeProperty().set(value);
+        labelFontSizeProperty().set((int) value);
     }
 
-    public DoubleProperty labelFontSizeProperty() {
+    public IntegerProperty labelFontSizeProperty() {
         if (labelFontSize == null) {
-            labelFontSize = new SimpleDoubleProperty(polyChart, "labelFontSize", PreferencesController.getLabelFontSize());
+            labelFontSize = new SimpleIntegerProperty(polyChart, "labelFontSize", PreferencesController.getLabelFontSize());
+            labelFontSize.addListener(e ->refresh());
         }
         return labelFontSize;
     }
@@ -181,12 +201,13 @@ public class ChartProperties {
     }
 
     public void setTicFontSize(double value) {
-        ticFontSizeProperty().set(value);
+        ticFontSizeProperty().set((int) value);
     }
 
-    public DoubleProperty ticFontSizeProperty() {
+    public IntegerProperty ticFontSizeProperty() {
         if (ticFontSize == null) {
-            ticFontSize = new SimpleDoubleProperty(polyChart, "ticFontSize", PreferencesController.getTickFontSize());
+            ticFontSize = new SimpleIntegerProperty(polyChart, "ticFontSize", PreferencesController.getTickFontSize());
+            ticFontSize.addListener(e -> refresh());
         }
         return ticFontSize;
     }
@@ -206,6 +227,7 @@ public class ChartProperties {
     public ColorProperty cross1ColorProperty() {
         if (cross1Color == null) {
             cross1Color = new ColorProperty(polyChart, "cross1Color", null);
+            cross1Color.addListener(e -> refresh());
         }
         return cross1Color;
     }
@@ -213,6 +235,7 @@ public class ChartProperties {
     public ColorProperty bgColorProperty() {
         if (bgColor == null) {
             bgColor = new ColorProperty(polyChart, "bgColor", null);
+            bgColor.addListener(e ->refresh());
         }
         return bgColor;
     }
@@ -220,6 +243,7 @@ public class ChartProperties {
     public ColorProperty axesColorProperty() {
         if (axesColor == null) {
             axesColor = new ColorProperty(polyChart, "axesColor", null);
+            axesColor.addListener(e ->refresh());
         }
         return axesColor;
     }
@@ -235,6 +259,7 @@ public class ChartProperties {
     public ColorProperty cross0ColorProperty() {
         if (cross0Color == null) {
             cross0Color = new ColorProperty(polyChart, "cross0Color", null);
+            cross0Color.addListener(e ->refresh());
         }
         return cross0Color;
     }
@@ -254,6 +279,7 @@ public class ChartProperties {
     public BooleanProperty gridProperty() {
         if (grid == null) {
             grid = new SimpleBooleanProperty(polyChart, "grid", false);
+            grid.addListener(e -> refresh());
         }
         return grid;
     }
@@ -269,6 +295,7 @@ public class ChartProperties {
     public BooleanProperty regionsProperty() {
         if (regions == null) {
             regions = new SimpleBooleanProperty(polyChart, "regions", false);
+            regions.addListener(e ->refresh());
         }
         return regions;
     }
@@ -284,6 +311,7 @@ public class ChartProperties {
     public BooleanProperty integralsProperty() {
         if (integrals == null) {
             integrals = new SimpleBooleanProperty(polyChart, "integrals", false);
+            integrals.addListener(e -> refresh());
         }
         return integrals;
     }
@@ -307,6 +335,7 @@ public class ChartProperties {
     public DoubleProperty integralLowPosProperty() {
         if (integralLowPos == null) {
             integralLowPos = new SimpleDoubleProperty(polyChart, "integralLowPos", 0.8);
+            integralLowPos.addListener(e ->refresh());
         }
         return integralLowPos;
     }
@@ -322,6 +351,7 @@ public class ChartProperties {
     public DoubleProperty integralHighPosProperty() {
         if (integralHighPos == null) {
             integralHighPos = new SimpleDoubleProperty(polyChart, "integralHighPos", 0.95);
+            integralHighPos.addListener(e ->refresh());
         }
         return integralHighPos;
     }
@@ -329,6 +359,7 @@ public class ChartProperties {
     public BooleanProperty titlesProperty() {
         if (titles == null) {
             titles = new SimpleBooleanProperty(polyChart, "titles", false);
+            titles.addListener(e ->refresh());
         }
         return titles;
     }
@@ -339,6 +370,22 @@ public class ChartProperties {
 
     public boolean getTitles() {
         return titlesProperty().get();
+    }
+
+    public BooleanProperty parametersProperty() {
+        if (parameters == null) {
+            parameters = new SimpleBooleanProperty(polyChart, "parameters", false);
+            parameters.addListener(e ->refresh());
+        }
+        return parameters;
+    }
+
+    public void setParameters(boolean value) {
+        parametersProperty().set(value);
+    }
+
+    public boolean getParameters() {
+        return parametersProperty().get();
     }
 
     public double getAspectRatio() {
@@ -352,6 +399,7 @@ public class ChartProperties {
     public DoubleProperty aspectRatioProperty() {
         if (aspectRatio == null) {
             aspectRatio = new SimpleDoubleProperty(polyChart, "aspectRatio", 1.0);
+            aspectRatio.addListener(e ->refresh());
         }
         return aspectRatio;
     }
@@ -359,6 +407,7 @@ public class ChartProperties {
     public BooleanProperty aspectProperty() {
         if (aspect == null) {
             aspect = new SimpleBooleanProperty(polyChart, "aspect", false);
+            aspect.addListener(e ->refresh());
         }
         return aspect;
     }
@@ -369,6 +418,38 @@ public class ChartProperties {
 
     public boolean getAspect() {
         return aspectProperty().get();
+    }
+
+    public double getStackX() {
+        return stackXProperty().get();
+    }
+
+    public void setStackX(double value) {
+        value = Math.min(1.00, Math.max(0.0, value));
+        stackXProperty().set(value);
+    }
+
+    public DoubleProperty stackXProperty() {
+        if (stackX == null) {
+            stackX = new SimpleDoubleProperty(polyChart, "stackX", 0.0);
+        }
+        return stackX;
+    }
+
+    public double getStackY() {
+        return stackYProperty().get();
+    }
+
+    public void setStackY(double value) {
+        value = Math.min(1.00, Math.max(0.0, value));
+        stackYProperty().set(value);
+    }
+
+    public DoubleProperty stackYProperty() {
+        if (stackY == null) {
+            stackY = new SimpleDoubleProperty(polyChart, "stackY", 0.0);
+        }
+        return stackY;
     }
 
     public void config(String name, Object value) {
@@ -396,13 +477,14 @@ public class ChartProperties {
             "axesColor", "cross0Color", "cross1Color", "grid", "intensityAxis",
             "leftBorderSize", "rightBorderSize",
             "topBorderSize", "bottomBorderSize", "regions", "integrals",
-            "integralLowPos", "integralHighPos", "titles", "aspect", "aspectRatio"};
+            "integralLowPos", "integralHighPos", "titles", "parameters", "aspect", "aspectRatio",
+            "stackX", "stackY"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {
                     Object colObj = PropertyUtils.getSimpleProperty(this, beanName);
-                    if (colObj instanceof Color) {
-                        String colorName = GUIScripter.toRGBCode((Color) colObj);
+                    if (colObj instanceof Color color) {
+                        String colorName = GUIScripter.toRGBCode(color);
                         data.put(beanName, colorName);
                     }
                 } else {

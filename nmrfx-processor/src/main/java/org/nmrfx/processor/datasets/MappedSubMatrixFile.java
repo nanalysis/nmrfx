@@ -75,7 +75,7 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
         log.info(dataset.getFileName());
         log.info("header size {}", layout.getFileHeaderSize());
         for (int i = 0; i < dataset.getNDim(); i++) {
-            log.info("map sub {} {} {} {}", i, layout.blockSize[i], layout.nBlocks[i], dataset.getSizeTotal(i));
+            log.info("map sub {} {} {} {}", i, layout.blockSize[i], layout.nBlocks[i], layout.getSize(i));
             matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
         }
         totalSize = matSize / BYTES;
@@ -92,6 +92,10 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
             this.raFile.close();
             throw e;
         }
+    }
+
+    public DatasetLayout getLayout() {
+        return layout;
     }
 
     @Override
@@ -202,7 +206,7 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
     public double sumFast() {
         double sum = 0.0;
         for (int i = 0; i < totalSize; i++) {
-            sum += mappedBuffer.getFloat(i);
+            sum += mappedBuffer.getFloat(i * Float.BYTES);
         }
         return sum;
     }
@@ -211,9 +215,9 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
     public void zero() {
         for (int i = 0; i < totalSize; i++) {
             if (dataType == 0) {
-                mappedBuffer.putFloat(i, 0.0f);
+                mappedBuffer.putFloat(i * Float.BYTES, 0.0f);
             } else {
-                mappedBuffer.putInt(i, 0);
+                mappedBuffer.putInt(i * Integer.BYTES, 0);
             }
         }
     }

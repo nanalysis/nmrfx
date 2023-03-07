@@ -17,13 +17,21 @@
  */
 package org.nmrfx.processor.gui.spectra.mousehandlers;
 
+import javafx.animation.PauseTransition;
 import javafx.event.Event;
+import javafx.geometry.Bounds;
+import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
+import javafx.util.Duration;
 import org.nmrfx.datasets.DatasetRegion;
-import org.nmrfx.processor.gui.MainApp;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.annotations.AnnoText;
+import org.nmrfx.processor.gui.spectra.ChartBorder;
+import org.nmrfx.processor.gui.spectra.IntegralHit;
+import org.nmrfx.processor.gui.spectra.MultipletSelection;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Bruce Johnson
@@ -43,6 +51,7 @@ public class MouseBindings {
         DRAG_REGION,
         DRAG_ADDREGION,
         DRAG_ANNO,
+        DRAG_PEAKPICK,
         CROSSHAIR
     }
 
@@ -56,6 +65,10 @@ public class MouseBindings {
     double mouseY;
     double mousePressX;
     double mousePressY;
+    AtomicBoolean waitingForPopover = new AtomicBoolean(false);
+    PauseTransition pause = null;
+    Object currentSelection;
+    Bounds currentBounds;
 
     public MouseBindings(PolyChart chart) {
         this.chart = chart;
@@ -116,20 +129,121 @@ public class MouseBindings {
         if ((deltaX > tol) || (deltaY > tol)) {
             moved = true;
         }
-        if (!isPopupTrigger(mouseEvent)) {
-            if (handler != null) {
-                handler.mouseDragged(mouseEvent);
-            }
+        if (!isPopupTrigger(mouseEvent) && (handler != null)) {
+            handler.mouseDragged(mouseEvent);
         }
+    }
+
+    private void showPopOver() {
+        if (waitingForPopover.get()) {
+            Bounds objectBounds = chart.getCanvas().localToScreen(currentBounds);
+            MainApp.getMainApp().showPopover(chart, objectBounds, currentSelection);
+        }
+    }
+
+    private void hidePopOver(boolean always) {
+        MainApp.getMainApp().hidePopover(always);
+    }
+
+    private void showAfterDelay() {
+        if (pause == null) {
+            pause = new PauseTransition(Duration.millis(1000));
+            pause.setOnFinished(
+                    e -> showPopOver());
+        }
+        pause.playFromStart();
     }
 
     public void mouseMoved(MouseEvent mouseEvent) {
         mouseX = mouseEvent.getX();
         mouseY = mouseEvent.getY();
+        Optional<MultipletSelection> hit = PeakMouseHandlerHandler.handlerOverMultiplet(this);
+        ChartBorder border = chart.hitBorder(mouseX, mouseY);
+        if (border == ChartBorder.LEFT ) {
+            setCursor(Cursor.CLOSED_HAND);
+            return;
+        } else if (border == ChartBorder.BOTTOM) {
+            setCursor(Cursor.CLOSED_HAND);
+            return;
+        } else {
+            unsetCursor();
+        }
+
+        if (hit.isPresent()) {
+            if (handler == null) {
+                handler = new PeakMouseHandlerHandler(this);
+            }
+            if (!hit.get().isLine()) {
+                MultipletSelection multipletSelection = hit.get();
+                Bounds bounds = multipletSelection.getBounds();
+                if ((bounds != null) && !waitingForPopover.get()) {
+                    currentBounds = bounds;
+                    currentSelection = multipletSelection;
+                    waitingForPopover.set(true);
+                    showAfterDelay();
+                }
+            }
+            setCursor(Cursor.HAND);
+        } else {
+            Optional<CanvasAnnotation> annoOpt = chart.hitAnnotation(mouseX, mouseY, false);
+            if (annoOpt.isPresent()) {
+                var annotation = annoOpt.get();
+                if (handler == null) {
+                    handler = new AnnotationMouseHandlerHandler(this, annotation);
+                }
+                if (!waitingForPopover.get() && (annotation instanceof AnnoText)) {
+                    var annoText = (AnnoText) annotation;
+                    currentBounds = annoText.getBounds();
+                    waitingForPopover.set(true);
+                    currentSelection = annotation;
+                    showAfterDelay();
+                }
+                setCursor(Cursor.HAND);
+            } else {
+                Optional<IntegralHit> hitIntegral = IntegralMouseHandlerHandler.handlerOverIntegral(this);
+                if (hitIntegral.isPresent() && (hitIntegral.get().getBounds() != null)) {
+                    IntegralHit integralHit = hitIntegral.get();
+                    if (handler == null) {
+                        handler = new IntegralMouseHandlerHandler(this, integralHit);
+                    }
+                    if (!waitingForPopover.get()) {
+                        currentBounds = integralHit.getBounds();
+                        currentSelection = integralHit;
+                        waitingForPopover.set(true);
+                        showAfterDelay();
+                    }
+                    setCursor(Cursor.HAND);
+
+                } else {
+                    handler = null;
+                    waitingForPopover.set(false);
+                    if (pause != null) {
+                        pause.stop();
+                    }
+                    unsetCursor();
+                }
+            }
+        }
+
         if (handler != null) {
             handler.mouseMoved(mouseEvent);
         }
     }
+
+    private void setCursor(Cursor cursor) {
+        FXMLController controller = chart.getController();
+        if (controller.getCurrentCursor() != cursor) {
+            controller.setCurrentCursor(cursor);
+        }
+    }
+
+    private void unsetCursor() {
+        FXMLController controller = chart.getController();
+        if (controller.getCurrentCursor() != controller.getCursor()) {
+            controller.setCurrentCursor(controller.getCursor());
+        }
+    }
+
 
     private void setHandler(MouseHandler handler) {
         this.handler = handler;
@@ -145,25 +259,35 @@ public class MouseBindings {
         moved = false;
         int clickCount = mouseEvent.getClickCount();
         handler = null;
+        waitingForPopover.set(false);
+        hidePopOver(false);
 
         boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());
-        int border = chart.hitBorder(mouseX, mouseY);
         if (chart.isSelected()) {
             Optional<Integer> hitCorner = hitChartCorner(mouseX, mouseY, 10);
-            if (hitCorner.isPresent()) {
-            }
             return;
         }
 
         if (!isPopupTrigger(mouseEvent)) {
-            if (!(altShift || (border != 0)) && (mouseEvent.isMetaDown() || chart.getCanvasCursor().toString().equals("CROSSHAIR"))) {
-                if (!chart.getCanvasCursor().toString().equals("CROSSHAIR")) {
-                    chart.getCrossHairs().setCrossHairState(true);
+            ChartBorder border = chart.hitBorder(mouseX, mouseY);
+            if (!(altShift || (border == ChartBorder.LEFT || border == ChartBorder.BOTTOM)) && (mouseEvent.isMetaDown() || CanvasCursor.isCrosshair(chart.getCanvasCursor()))) {
+                if (mouseEvent.isMetaDown() && !CanvasCursor.isSelector(chart.getCanvasCursor())) {
+                    BoxMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
+                } else {
+                    if (CanvasCursor.isCrosshair(chart.getCanvasCursor()) || mouseEvent.isMetaDown()) {
+                        chart.getCrossHairs().setCrossHairState(true);
+                    }
+                    CrossHairMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
                 }
-                CrossHairMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
                 handler.mousePressed(mouseEvent);
             } else {
                 if (mouseEvent.isPrimaryButtonDown()) {
+                    if (CanvasCursor.isPeak(chart.getCanvasCursor())) {
+                        PeakPickHandler.handler(this).ifPresent(this::setHandler);
+                    }
+                    if (CanvasCursor.isRegion(chart.getCanvasCursor())) {
+                        RegionMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
+                    }
                     boolean hadRegion = chart.hasActiveRegion();
                     Optional<DatasetRegion> previousRegion = chart.getActiveRegion();
                     boolean selectedRegion = false;
@@ -174,23 +298,22 @@ public class MouseBindings {
                     if (handler == null) {
                         PeakMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
                         if (handler != null) {
-                            PeakMouseHandlerHandler.handlePeaks(this).ifPresent(this::setHandler);
+                            PeakMouseHandlerHandler.handlePeaks(this, mouseEvent.isShiftDown()).ifPresent(this::setHandler);
                         }
                     }
                     if (handler == null) {
                         PeakMouseHandlerHandler.handlerHitMultiplet(this).ifPresent(this::setHandler);
                         if (handler != null) {
-                            PeakMouseHandlerHandler.handlePeaks(this).ifPresent(this::setHandler);
+                            PeakMouseHandlerHandler.handlePeaks(this, mouseEvent.isShiftDown()).ifPresent(this::setHandler);
                         }
                     }
                     if (handler == null) {
                         if (hadRegion) {
                             RegionMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
-                         }
+                        }
                         if (handler == null) {
                             IntegralMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
                         }
-                        //selectedRegion = chart.selectIntegral(x, y);
                     }
                     if (handler == null) {
                         chart.selectPeaks(mouseX, mouseY, false);
@@ -228,10 +351,8 @@ public class MouseBindings {
         mouseDown = false;
         MouseEvent mouseEvent = (MouseEvent) event;
         boolean menuShowing = chart.getSpectrumMenu().chartMenu.isShowing();
-        if (!menuShowing && !mouseEvent.isPopupTrigger()) {
-            if (handler != null) {
-                handler.mouseReleased(mouseEvent);
-            }
+        if (!menuShowing && !mouseEvent.isPopupTrigger() && (handler != null)) {
+            handler.mouseReleased(mouseEvent);
         }
         handler = null;
     }

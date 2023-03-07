@@ -48,8 +48,6 @@ import org.slf4j.LoggerFactory;
 public class StructureProject extends ProjectBase {
 
     private static final Logger log = LoggerFactory.getLogger(StructureProject.class);
-    public final Map<String, Molecule> molecules = new HashMap<>();
-    public Molecule activeMol;
     static StructureProject activeProject = null;
 
     public StructureProject(String name) {
@@ -64,13 +62,9 @@ public class StructureProject extends ProjectBase {
         }
         return activeProject;
     }
-
-    public Collection<Molecule> getMolecules() {
-        return molecules.values();
-    }
-
+    
     public Molecule getMolecule(String name) {
-        return molecules.get(name);
+        return (Molecule) molecules.get(name);
     }
 
     public void putMolecule(Molecule molecule) {
@@ -139,7 +133,7 @@ public class StructureProject extends ProjectBase {
 
             }
         }
-        this.projectDir = projectDir;
+        setProjectDir(projectDir);
         currentProject.setActive();
     }
 

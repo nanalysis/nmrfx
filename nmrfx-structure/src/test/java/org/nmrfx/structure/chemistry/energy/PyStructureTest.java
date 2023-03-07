@@ -26,6 +26,10 @@ public class PyStructureTest {
         int nFailures = executeScript("teststruct.py");
         Assert.assertEquals(0,  nFailures);
     }
+
+    @Test
+    public void testrnalinks() {
+        int nFailures = executeScript("testrnalinks.py");
+        Assert.assertEquals(0,  nFailures);
+    }
 }
-
-

@@ -37,6 +37,7 @@ public class DatasetHeaderIO {
         this.d = d;
     }
 
+
     public final synchronized DatasetLayout readHeader(RandomAccessFile raFile) {
         int i;
         int nDim;
@@ -121,10 +122,8 @@ public class DatasetHeaderIO {
             lay.offsetPoints[0] = 1;
 
             lay.offsetBlocks[0] = 1;
-
             for (i = 0; i < nDim; i++) {
                 lay.setSize(i, DataUtilities.readSwapInt(dis, checkSwap));
-                d.setFileDimSize(i, lay.getSize(i));
                 lay.blockSize[i] = DataUtilities.readSwapInt(dis, checkSwap);
                 lay.nBlocks[i] = DataUtilities.readSwapInt(dis, checkSwap);
                 lay.nBlocks[i] = lay.getSize(i) / lay.blockSize[i];
@@ -271,7 +270,6 @@ public class DatasetHeaderIO {
                 d.setLabel(iDim, labelBuffer.toString());
 
                 lay.setSize(iDim, DataUtilities.readSwapInt(dis, checkSwap));
-                d.setFileDimSize(iDim, lay.getSize(iDim));
                 // skip empty entry
                 DataUtilities.readSwapInt(dis, checkSwap);
                 lay.blockSize[iDim] = DataUtilities.readSwapInt(dis, checkSwap);

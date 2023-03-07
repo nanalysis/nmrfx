@@ -38,6 +38,7 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -51,12 +52,13 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
-import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Callback;
+import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
+import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.graphicsio.GraphicsIOException;
@@ -66,6 +68,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
@@ -73,12 +76,15 @@ import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
 import org.nmrfx.processor.datasets.vendor.*;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
+import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
+import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyObject;
@@ -91,42 +97,43 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.IntStream;
+
+import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionInput;
 
 public class FXMLController implements  Initializable, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
     private static final int PSEUDO_2D_SIZE_THRESHOLD = 100;
+    public static final int MAX_INITIAL_TRACES = 32;
 
     @FXML
     private VBox topBar;
     @FXML
     private ToolBar toolBar;
     @FXML
-    private ToolBar btoolBar;
+    private VBox btoolVBox;
     @FXML
     private VBox bottomBox;
     @FXML
     private StackPane chartPane;
-    @FXML
-    private VBox phaserBox;
     @FXML
     private BorderPane borderPane;
     @FXML
     private BorderPane mainBox;
     @FXML
     private StackPane processorPane;
-    @FXML
-    private GridPane rightBox;
     private Button cancelButton;
+    private Button favoriteButton;
     PopOver popOver = null;
     PopOver attributesPopOver = null;
+    private VBox phaserBox = new VBox();
 
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
-    static SpecAttrWindowController specAttrWindowController = null;
     static boolean popOverMode = false;
     static PeakAttrController peakAttrController = null;
     Stage stage = null;
@@ -163,9 +170,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
     boolean[][] crossHairStates = new boolean[2][2];
     private BooleanProperty minBorders;
     Phaser phaser;
+    Pane attributesPane;
+    Pane contentPane;
+    AttributesController attributesController;
+    ContentController contentController;
     Set<ControllerTool> tools = new HashSet<>();
-
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
+    SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
+
 
     private BooleanProperty minBordersProperty() {
         if (minBorders == null) {
@@ -228,9 +240,29 @@ public class FXMLController implements  Initializable, PeakNavigable {
         initialDir = file;
     }
 
+    public SimpleObjectProperty<Cursor> getCursorProperty() {
+        return cursorProperty;
+    }
+
+    public Cursor getCursor() {
+        return cursorProperty.get();
+    }
+
+    public void saveDatasets() {
+        var chartProcessor = getChartProcessor();
+        if (chartProcessor != null) {
+            var processorController = chartProcessor.getProcessorController();
+            if (processorController != null) {
+                processorController.saveOnClose();
+            }
+        }
+    }
+
+
     void close() {
         // need to make copy of charts as the call to chart.close will remove the chart from charts
         // resulting in a java.util.ConcurrentModificationException
+        saveDatasets();
         List<PolyChart> tempCharts = new ArrayList<>();
         tempCharts.addAll(charts);
         for (PolyChart chart : tempCharts) {
@@ -253,23 +285,56 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void processorCreated(Pane pane) {
         processControllerVisible.bind(pane.parentProperty().isNotNull());
+        isFID = !getActiveChart().getProcessorController(true).isViewingDataset();
+        updateSpectrumStatusBarOptions(true);
     }
 
     public boolean isPhaseSliderVisible() {
-        return (rightBox.getChildren().size() > 0);
+        return borderPane.getRight() ==phaserBox;
     }
+
+    public boolean isSideBarAttributesShowing() {
+        return (attributesPane != null) && (borderPane.getRight() ==attributesPane);
+    }
+
+    public boolean isContentPaneShowing() {
+        return borderPane.getRight() ==contentPane;
+    }
+
+    private void toggleSideBarAttributes(ToggleButton phaserButton, ToggleButton attributesButton, ToggleButton contentButton) {
+        if (phaserButton.isSelected()) {
+            borderPane.setRight(phaserBox);
+            phaser.getPhaseOp();
+            if (chartProcessor == null) {
+                phaser.setPH1Slider(activeChart.getDataPH1());
+                phaser.setPH0Slider(activeChart.getDataPH0());
+            }
+        } else if (attributesButton.isSelected()) {
+            borderPane.setRight(attributesPane);
+            attributesController.setAttributeControls();
+            attributesController.updateScrollSize(borderPane);
+        } else if (contentButton.isSelected()) {
+            borderPane.setRight(contentPane);
+            contentController.update();
+            contentController.updateScrollSize(borderPane);
+        } else {
+            borderPane.setRight(null);
+        }
+    }
+
 
     public void updatePhaser(boolean state) {
         if (state) {
-            rightBox.add(phaserBox, 0, 0);
+            borderPane.setRight(phaserBox);
             phaser.getPhaseOp();
             if (chartProcessor == null) {
                 phaser.setPH1Slider(activeChart.getDataPH1());
                 phaser.setPH0Slider(activeChart.getDataPH0());
             }
         } else {
-            rightBox.getChildren().remove(phaserBox);
-
+            if (borderPane.getRight() == phaserBox) {
+                borderPane.setRight(null);
+            }
         }
     }
 
@@ -282,9 +347,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void setActiveChart(PolyChart chart) {
-        if (activeChart != chart) {
-            deselectCharts();
+        if (activeChart == chart) {
+            return;
         }
+
+        deselectCharts();
         isFID = false;
         activeChart = chart;
         PolyChart.activeChart.set(chart);
@@ -298,12 +365,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 processorController.show();
             }
         }
-        updateSpectrumStatusBarOptions();
-        if (specAttrWindowController != null) {
-            specAttrWindowController.setChart(activeChart);
+        updateSpectrumStatusBarOptions(false);
+        if (attributesController != null) {
+            attributesController.setChart(activeChart);
         }
-        if (statusBar != null) {
-            statusBar.setChart(activeChart);
+        if (contentController != null) {
+            contentController.setChart(activeChart);
         }
     }
 
@@ -399,13 +466,13 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     @FXML
-    public void openFIDAction(ActionEvent event) {
+    public void openAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(getInitialDirectory());
-        fileChooser.setTitle("Open NMR FID");
+        fileChooser.setTitle("Open NMR File");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx", "*.jdf", "*.dat"),
-                new ExtensionFilter("Any File", "*.*")
+                FileExtensionFilterType.NMR_FILES.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
         );
         File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
@@ -415,54 +482,74 @@ public class FXMLController implements  Initializable, PeakNavigable {
         stage.setResizable(true);
     }
 
-    @FXML
-    public void openDatasetAction(ActionEvent event) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setInitialDirectory(getInitialDirectory());
-        fileChooser.setTitle("Open NMR Dataset");
-        fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr", RS2DData.DATA_FILE_NAME),
-                new ExtensionFilter("Any File", "*.*")
-        );
-        File selectedFile = fileChooser.showOpenDialog(null);
-        openDataset(selectedFile, false);
+    /**
+     * Opens the dataset from the selected file.
+     * @param selectedFile The file containing the dataset.
+     * @param append Whether to append the new dataset.
+     * @param addDatasetToChart Whether to add the opened dataset to the chart.
+     * @return The newly opened dataset or null if no dataset was opened.
+     */
+    public Dataset openDataset(File selectedFile, boolean append, boolean addDatasetToChart) {
+        if (selectedFile == null) {
+            return null;
+        }
+        NMRData nmrData = getNMRData(selectedFile.toString());
+        if (nmrData == null) {
+            return null;
+        }
+        return openDataset(nmrData, append, addDatasetToChart);
     }
 
-    public void openDataset(File selectedFile, boolean append) {
-        if (selectedFile != null) {
-            try {
-                setInitialDirectory(selectedFile.getParentFile());
-                NMRData nmrData = NMRDataUtil.getNMRData(selectedFile.toString());
-                ProcessorController processorController = getActiveChart().getProcessorController(false);
-                if (processorController != null && (!selectedFile.equals(chartProcessor.datasetFile))) {
-                    processorPane.getChildren().clear();
-                    getActiveChart().processorController = null;
-                    processorController.cleanUp();
-                }
-                if (nmrData instanceof NMRViewData) {
-                    PreferencesController.saveRecentDatasets(selectedFile.toString());
-                    NMRViewData nvData = (NMRViewData) nmrData;
-                    Dataset dataset = nvData.getDataset();
-                    addDataset(dataset, append, false);
-                } else if (nmrData instanceof BrukerData) {
-                    PreferencesController.saveRecentDatasets(selectedFile.toString());
-                    BrukerData brukerData = (BrukerData) nmrData;
-                    String suggestedName = brukerData.suggestName(new File(brukerData.getFilePath()));
-                    String datasetName = GUIUtils.input("Dataset name", suggestedName);
-                    Dataset dataset = brukerData.toDataset(datasetName);
-                    addDataset(dataset, append, false);
-                } else if (nmrData instanceof RS2DData) {
-                    PreferencesController.saveRecentDatasets(selectedFile.toString());
-                    RS2DData rs2dData = (RS2DData) nmrData;
-                    String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
-                    Dataset dataset = rs2dData.toDataset(suggestedName);
-                    addDataset(dataset, append, false);
-                }
-            } catch (IOException ex) {
-                GUIUtils.warn("Open Dataset", ex.getMessage());
+    /**
+     * Gets the dataset from the provided NMRData. The dataset is added to the chart if addDatasetToChart is true. If
+     * append is false, the chart is cleared of any datasets before adding the new dataset, if true, the dataset is
+     * added to the chart in addition to any datasets already present.
+     * @param nmrData The NMRData object containing the dataset.
+     * @param append Whether to append the new dataset.
+     * @param addDatasetToChart Whether to add the opened dataset to the chart.
+     * @return The newly opened dataset or null if no dataset was opened.
+     */
+    public Dataset openDataset(NMRData nmrData, boolean append, boolean addDatasetToChart) {
+        File selectedFile = new File(nmrData.getFilePath());
+        Dataset dataset = null;
+        try {
+            setInitialDirectory(selectedFile.getParentFile());
+            if (nmrData instanceof NMRViewData nvData) {
+                PreferencesController.saveRecentFiles(selectedFile.toString());
+                dataset = nvData.getDataset();
+            } else if (nmrData instanceof BrukerData brukerData) {
+                PreferencesController.saveRecentFiles(selectedFile.toString());
+                String suggestedName = brukerData.suggestName(new File(brukerData.getFilePath()));
+                String datasetName = GUIUtils.input("Dataset name", suggestedName);
+                dataset = brukerData.toDataset(datasetName);
+            } else if (nmrData instanceof  RS2DData rs2dData) {
+                PreferencesController.saveRecentFiles(selectedFile.toString());
+                String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
+                dataset = rs2dData.toDataset(suggestedName);
+            } else if (nmrData instanceof JCAMPData jcampData) {
+                PreferencesController.saveRecentFiles(selectedFile.toString());
+                String suggestedName = jcampData.suggestName(new File (jcampData.getFilePath()));
+                dataset = jcampData.toDataset(suggestedName);
             }
+        } catch (IOException | DatasetException ex) {
+            log.warn(ex.getMessage(), ex);
+            GUIUtils.warn("Open Dataset", ex.getMessage());
+        }
+        if (dataset != null) {
+            ProcessorController processorController = getActiveChart().getProcessorController(false);
+            if (processorController != null && (!dataset.getFile().equals(chartProcessor.datasetFile))) {
+                processorPane.getChildren().clear();
+                getActiveChart().processorController = null;
+                processorController.cleanUp();
+            }
+            if (addDatasetToChart) {
+                addDataset(dataset, append, false);
+            }
+        } else {
+            log.info("Unable to find a dataset format for: {}", selectedFile);
         }
         stage.setResizable(true);
+        return dataset;
     }
 
     @FXML
@@ -471,8 +558,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Add NMR FID/Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx"),
-                new ExtensionFilter("Any File", "*.*")
+                FileExtensionFilterType.NMR_FID.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
         );
         File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
@@ -488,8 +575,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Add NMR Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf"),
-                new ExtensionFilter("Any File", "*.*")
+                FileExtensionFilterType.NMR_DATASET.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
         );
         List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
         if (selectedFiles != null) {
@@ -498,7 +585,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     setInitialDirectory(selectedFile.getParentFile());
                     NMRData nmrData = NMRDataUtil.getFID(selectedFile.toString());
                     if (nmrData instanceof NMRViewData) {
-                        PreferencesController.saveRecentDatasets(selectedFile.toString());
+                        PreferencesController.saveRecentFiles(selectedFile.toString());
                         NMRViewData nvData = (NMRViewData) nmrData;
                         Dataset dataset = nvData.getDataset();
                     }
@@ -511,63 +598,60 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
     }
 
+    /**
+     * Gets a NMRData object from the filepath.
+     * @param filePath The filepath to load the NMRData from.
+     * @return An NMRData object or null if there was a problem loading.
+     */
+    private NMRData getNMRData(String filePath) {
+        NMRData nmrData = null;
+        try {
+            nmrData = NMRDataUtil.loadNMRData(filePath, null);
+        } catch (IOException ioE) {
+            log.error("Unable to load NMR file: {}", filePath, ioE);
+            ExceptionDialog eDialog = new ExceptionDialog(ioE);
+            eDialog.showAndWait();
+        }
+        return nmrData;
+    }
+
     public void openFile(String filePath, boolean clearOps, boolean appendFile) {
         openFile(filePath, clearOps, appendFile, null);
     }
 
     public void openFile(String filePath, boolean clearOps, boolean appendFile, DatasetType datasetType) {
-        boolean reload = false;
-        try {
-            File newFile = new File(filePath);
-            if (!appendFile) {
-                if (chartProcessor != null) {
-                    NMRData oldData = chartProcessor.getNMRData();
-                    if (oldData != null) {
-                        if (oldData instanceof NMRViewData) {
-                            NMRViewData nvData = (NMRViewData) oldData;
-                            // nvData.getDataset().close();
-                        }
-                    }
-                }
-            }
-            File oldFile = getActiveChart().getDatasetFile();
-            if (!appendFile && (oldFile != null)) {
-                try {
-                    if (oldFile.getCanonicalPath().equals(newFile.getCanonicalPath())) {
-                        reload = true;
-                    }
-                } catch (java.io.IOException ioE) {
-                    reload = false;
-                }
-                //chart.closeDataset();
-            }
-            NMRData nmrData = null;
-            try {
-                nmrData = NMRDataUtil.getFID(filePath);
-            } catch (IllegalArgumentException iaE) {
-                ExceptionDialog eDialog = new ExceptionDialog(iaE);
-                eDialog.showAndWait();
-                return;
-
-            }
-            if (nmrData != null) {
-                if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
-                    Alert alert = new Alert(Alert.AlertType.WARNING, "Use \"Open Dataset\" to open non-fid file");
-                    alert.showAndWait();
-                    return;
-                } else {
-                    if (datasetType != null) {
-                        nmrData.setPreferredDatasetType(datasetType);
-                    }
-                    addFID(nmrData, clearOps, reload);
-                }
-            }
-            PreferencesController.saveRecentFIDs(filePath);
-        } catch (IOException ioE) {
-            ExceptionDialog eDialog = new ExceptionDialog(ioE);
-            eDialog.showAndWait();
+        NMRData nmrData = getNMRData(filePath);
+        if (nmrData == null) {
             return;
         }
+        if (nmrData.isFID()) {
+            openFile(nmrData, clearOps, appendFile, datasetType);
+        } else {
+            openDataset(nmrData, appendFile, true);
+        }
+    }
+
+    public void openFile(NMRData nmrData, boolean clearOps, boolean appendFile, DatasetType datasetType) {
+        boolean reload = false;
+        File newFile = new File(nmrData.getFilePath());
+
+        File oldFile = getActiveChart().getDatasetFile();
+        if (!appendFile && (oldFile != null)) {
+            try {
+                if (oldFile.getCanonicalPath().equals(newFile.getCanonicalPath())) {
+                    reload = true;
+                }
+            } catch (java.io.IOException ioE) {
+                reload = false;
+            }
+        }
+
+        if (datasetType != null) {
+            nmrData.setPreferredDatasetType(datasetType);
+        }
+        addFID(nmrData, clearOps, reload);
+
+        PreferencesController.saveRecentFiles(nmrData.getFilePath());
         undoManager.clear();
     }
 
@@ -602,6 +686,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         // Only create a new processor controller, if the active chart does not have one already created.
         ProcessorController processorController = getActiveChart().getProcessorController(true);
         if (processorController != null) {
+            processorController.setAutoProcess(false);
             chartProcessor.setData(nmrData, clearOps);
             processorController.viewingDataset(false);
             processorController.updateFileButton();
@@ -614,6 +699,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 getActiveChart().autoScale();
                 generateScriptAndParse(nmrData, processorController);
             }
+            getActiveChart().clearAnnotations();
+            getActiveChart().removeProjections();
             getActiveChart().layoutPlotChildren();
             statusBar.setMode(0);
         } else {
@@ -628,15 +715,21 @@ public class FXMLController implements  Initializable, PeakNavigable {
      * @param processorController The ProcessorController to parse the script with.
      */
     private void generateScriptAndParse(NMRData nmrData, ProcessorController processorController) {
+        processorController.setAutoProcess(false);
         int nDim = nmrData.getNDim();
-        if (isFIDActive() && chartProcessor != null && !chartProcessor.loadDefaultScriptIfPresent()) {
+        if (isFIDActive() && chartProcessor != null) {
+            boolean loadedScript = chartProcessor.loadDefaultScriptIfPresent();
             if (nDim == 1 || nDim == 2) {
-                // TODO NMR-5184 update here if there is better way to determine if pseudo2D
-                // This is an estimate of whether the 2D data is pseudo2D, some pseudo2Ds may still be processed as 2Ds
-                boolean isPseudo2D = nmrData.getNVectors() < PSEUDO_2D_SIZE_THRESHOLD && nDim == 2;
-                String script = chartProcessor.getGenScript(isPseudo2D);
-                processorController.parseScript(script);
-                log.info("Autogenerated processing script.");
+                if (!loadedScript) {
+                    // TODO NMR-5184 update here if there is better way to determine if pseudo2D
+                    // This is an estimate of whether the 2D data is pseudo2D, some pseudo2Ds may still be processed as 2Ds
+                    boolean isPseudo2D = nmrData.getNVectors() < PSEUDO_2D_SIZE_THRESHOLD && nDim == 2;
+                    String script = chartProcessor.getGenScript(isPseudo2D);
+                    processorController.parseScript(script);
+                    log.info("Autogenerated processing script.");
+                }
+                processorController.processDataset(false);
+                processorController.setAutoProcess(true);
             }
             else if (nDim > 2) {
                 log.info("Script was not autogenerated because number of dimensions is greater than 2.");
@@ -646,25 +739,23 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void addDataset(DatasetBase dataset, boolean appendFile, boolean reload) {
         isFID = false;
+        if (dataset.getFile() != null) {
+            PreferencesController.saveRecentFiles(dataset.getFile().toString());
+        }
+
         //dataset.setScale(1.0);
-        int nDim = dataset.getNDim();
-        // fixme kluge as not all datasets that are freq domain have attribute set
-        for (int i = 0; ((i < nDim) && (i < 2)); i++) {
-            dataset.setFreqDomain(i, true);
-        }
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
-        datasetAttributes.dim[0] = 0;
-        if (nDim > 1) {
-            datasetAttributes.dim[1] = 1;
-        }
         getActiveChart().setCrossHairState(true, true, true, true);
+        getActiveChart().clearAnnotations();
+        getActiveChart().clearPopoverTools();
+        getActiveChart().removeProjections();
         ProcessorController processorController = getActiveChart().processorController;
         if (processorController != null) {
             processorController.viewingDataset(true);
         }
         borderPane.setLeft(null);
         borderPane.setBottom(null);
-        updateSpectrumStatusBarOptions();
+        updateSpectrumStatusBarOptions(true);
 
         phaser.getPhaseOp();
         if (!reload) {
@@ -679,13 +770,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         }
         getActiveChart().layoutPlotChildren();
+        undoManager.clear();
     }
 
     /**
-     * Updates the SpectrumStatusBar menu options based on whether FID mood is on, and the dimensions
+     * Updates the SpectrumStatusBar menu options based on whether FID mode is on, and the dimensions
      * of the dataset.
      */
-    private void updateSpectrumStatusBarOptions() {
+    public void updateSpectrumStatusBarOptions(boolean initDataset) {
         if (isFIDActive()) {
             statusBar.setMode(0);
         } else {
@@ -695,6 +787,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 if (getActiveChart().is1D() && (maxNDim.getAsInt() > 1)) {
                     OptionalInt maxRows = datasetAttrList.stream().
                             mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
+                    if (initDataset && maxRows.isPresent() && (maxRows.getAsInt() > MAX_INITIAL_TRACES)) {
+                        getActiveChart().setDrawlist(0);
+                    }
                     statusBar.set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
                 } else {
                     statusBar.setMode(maxNDim.getAsInt());
@@ -733,59 +828,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         });
     }
 
-    @FXML
-    public void showSpecAttrAction(ActionEvent event) {
-        if (specAttrWindowController == null) {
-            if (popOverMode) {
-                specAttrWindowController = SpecAttrWindowController.createPane();
-            } else {
-                specAttrWindowController = SpecAttrWindowController.create();
-            }
-        }
-        if (specAttrWindowController != null) {
-            if (popOverMode) {
-                showAttributesPopOver(event);
-            } else {
-                specAttrWindowController.getStage().show();
-                stage.setResizable(true);
-                stage.toFront();
-            }
-        } else {
-            log.warn("Couldn't make controller");
-        }
-    }
-
     public void saveAsFavorite() {
         WindowIO.saveFavorite();
-    }
-
-    void showAttributesPopOver(ActionEvent event) {
-        Pane pane = specAttrWindowController.getPane();
-        if (attributesPopOver == null) {
-            attributesPopOver = new PopOver(pane);
-        }
-        specAttrWindowController.setPopOver(attributesPopOver);
-        attributesPopOver.setDetachable(true);
-        attributesPopOver.setTitle("Spectrum Attributes");
-        attributesPopOver.setHeaderAlwaysVisible(true);
-        attributesPopOver.setArrowLocation(PopOver.ArrowLocation.TOP_CENTER);
-        attributesPopOver.detachedProperty().addListener(e -> popOverDetached());
-        specAttrWindowController.hideToolBar();
-        Object obj = event.getSource();
-        if (obj instanceof Node) {
-            attributesPopOver.show((Node) event.getSource());
-        } else {
-            // fixme attributesPopOver.show(getActiveChart());
-
-        }
-    }
-
-    private void popOverDetached() {
-        if (attributesPopOver.isDetached()) {
-            specAttrWindowController.showToolBar();
-        } else {
-            specAttrWindowController.hideToolBar();
-        }
     }
 
     @FXML
@@ -809,12 +853,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     @FXML
     public void showProcessorAction(ActionEvent event) {
-        ProcessorController processorController = getActiveChart().getProcessorController(false);
-        if (processorController != null) {
-            processorController.show();
-        } else {
-            log.warn("No controller to show.");
-        }
+        ProcessorController processorController = getActiveChart().getProcessorController(true);
+        processorController.show();
     }
 
     @FXML
@@ -853,12 +893,19 @@ public class FXMLController implements  Initializable, PeakNavigable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PNG");
         fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.getExtensionFilters().addAll(
+                FileExtensionFilterType.PNG.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
+        );
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
-                GUIUtils.snapNode(chartGroup, selectedFile);
+                plotContent.setVisible(false);
+                GUIUtils.snapNode(chartPane, selectedFile);
             } catch (IOException ex) {
                 GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
+            } finally {
+                plotContent.setVisible(true);
             }
         }
     }
@@ -868,8 +915,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PDF");
         fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.getExtensionFilters().addAll(
+                FileExtensionFilterType.PDF.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
+        );
         File selectedFile = fileChooser.showSaveDialog(null);
-        exportPDF(selectedFile);
+        if (selectedFile != null) {
+            exportPDF(selectedFile);
+        }
     }
 
     public void exportPDF(File file) {
@@ -897,8 +950,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to SVG");
         fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.getExtensionFilters().addAll(
+                FileExtensionFilterType.SVG.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
+        );
         File selectedFile = fileChooser.showSaveDialog(null);
-        exportSVG(selectedFile);
+        if (selectedFile != null) {
+            exportSVG(selectedFile);
+        }
     }
 
     public void exportSVG(File file) {
@@ -938,7 +997,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             if (svgFormat == null) {
                 svgFormat = new DataFormat("image/svg+xml");
             }
-            content.put(svgFormat, stream.toString().getBytes(StandardCharsets.UTF_8));
+            content.put(svgFormat, ByteBuffer.wrap(stream.toByteArray()));
             content.put(DataFormat.PLAIN_TEXT, stream.toString());
             clipboard.setContent(content);
         } catch (GraphicsIOException ex) {
@@ -960,8 +1019,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void updateAttrDims() {
-        if (specAttrWindowController != null) {
-            specAttrWindowController.updateDims();
+        if (isSideBarAttributesShowing()) {
+            attributesController.setChart(getActiveChart());
+        }
+    }
+
+    public void updateDatasetAttributeControls() {
+        if (isSideBarAttributesShowing()) {
+            attributesController.updateDatasetAttributeControls();
         }
     }
 
@@ -1081,8 +1146,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void setActiveController() {
         activeController.set(this);
-        if (specAttrWindowController != null) {
-            specAttrWindowController.update();
+        if (attributesController != null) {
+            attributesController.setAttributeControls();
         }
     }
 
@@ -1186,7 +1251,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        rightBox.getChildren().remove(phaserBox);
         borderPane.setLeft(null);
         if (!MainApp.isMac()) {
             MenuBar menuBar = MainApp.getMenuBar();
@@ -1227,6 +1291,44 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
         phaser = new Phaser(this, phaserBox);
         processorPane.getChildren().addListener(this::updateStageSize);
+        cursorProperty.addListener( e -> setCursor());
+        attributesPane = new AnchorPane();
+        attributesController =  AttributesController.create(this, attributesPane);
+        borderPane.heightProperty().addListener(e -> attributesController.updateScrollSize(borderPane));
+
+        contentPane = new AnchorPane();
+        contentController =  ContentController.create(this, contentPane);
+        borderPane.heightProperty().addListener(e -> contentController.updateScrollSize(borderPane));
+
+    }
+
+    public BorderPane getMainBox() {
+        return mainBox;
+    }
+
+    public void setCursor(Cursor cursor) {
+        cursorProperty.set(cursor);
+    }
+
+    public void setCurrentCursor(Cursor cursor) {
+        canvas.setCursor(cursor);
+    }
+
+    public Cursor getCurrentCursor() {
+        return canvas.getCursor();
+    }
+
+    public void setCursor() {
+        Cursor cursor = cursorProperty.getValue();
+        canvas.setCursor(cursor);
+        for (PolyChart chart : charts) {
+            if (CanvasCursor.isCrosshair(cursor)) {
+                chart.getCrossHairs().setCrossHairState(true);
+            } else {
+                chart.getCrossHairs().setCrossHairState(false);
+            }
+        }
+        statusBar.updateCursorBox();
     }
 
     public void resizeCanvases(double width, double height) {
@@ -1249,7 +1351,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public static FXMLController create() {
         return create(null);
     }
-    
+
     public static FXMLController create(Stage stage) {
         FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
         FXMLController controller = null;
@@ -1262,7 +1364,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             Scene scene = new Scene((Pane) parent);
             stage.setScene(scene);
             scene.getStylesheets().add("/styles/Styles.css");
-
+            MainApp.setStageFontSize(stage, MainApp.REG_FONT_SIZE_STR);
             controller = loader.<FXMLController>getController();
             controller.stage = stage;
             //controllers.add(controller);
@@ -1360,23 +1462,17 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     void initToolBar(ToolBar toolBar) {
-        String iconSize = "16px";
-        String fontSize = "7pt";
         ArrayList<Node> buttons = new ArrayList<>();
 
         ButtonBase bButton;
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN, "Open", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> openFIDAction(e));
-        // buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> showDatasetsAction(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.WRENCH, "Attributes", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> showSpecAttrAction(e));
-        buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> saveAsFavorite());
-        buttons.add(bButton);
+        favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        favoriteButton.setOnAction(e -> saveAsFavorite());
+        // Set the initial status of the favorite button
+        enableFavoriteButton();
+        buttons.add(favoriteButton);
         buttons.add(new Separator(Orientation.VERTICAL));
         // bButton.disableProperty().bind(Project.getActive());
 
@@ -1385,32 +1481,31 @@ public class FXMLController implements  Initializable, PeakNavigable {
         bButton.setOnAction(e -> printAction(e));
         buttons.add(bButton);
          */
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> getActiveChart().refresh());
         buttons.add(bButton);
-        cancelButton = GlyphsDude.createIconButton(FontAwesomeIcon.STOP, "Halt", iconSize, fontSize, ContentDisplay.TOP);
+        cancelButton = GlyphsDude.createIconButton(FontAwesomeIcon.STOP, "Halt", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         buttons.add(cancelButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> undoManager.undo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.undoable.not());
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REPEAT, "Redo", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REPEAT, "Redo", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> undoManager.redo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.redoable.not());
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doFull(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doExpand(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "In", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "In", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doZoom(e, 1.2));
         bButton.setOnScroll((ScrollEvent event) -> {
-            double x = event.getDeltaX();
             double y = event.getDeltaY();
             if (y < 0.0) {
                 getActiveChart().zoom(1.1);
@@ -1420,10 +1515,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         });
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "Out", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "Out", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doZoom(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
-            double x = event.getDeltaX();
             double y = event.getDeltaY();
             if (y < 0.0) {
                 getActiveChart().zoom(1.1);
@@ -1435,10 +1529,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
         buttons.add(bButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doScale(e, 0.0));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doScale(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
             double x = event.getDeltaX();
@@ -1452,7 +1546,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         });
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doScale(e, 1.2));
 
         bButton.setOnScroll((ScrollEvent event) -> {
@@ -1476,17 +1570,41 @@ public class FXMLController implements  Initializable, PeakNavigable {
         Image imageIcon = new Image("/images/Icon_NVJ_16.png", true);
         ImageView imageView = new ImageView(imageIcon);
 
+        Pane filler = new Pane();
+        HBox.setHgrow(filler, Priority.ALWAYS);
+        filler.setMinWidth(20);
+        buttons.add(filler);
+
+        ToggleButton phaserButton = new ToggleButton("Phasing");
+        ToggleButton attributesButton = new ToggleButton("Attributes");
+        ToggleButton contentButton = new ToggleButton("Content");
+        attributesButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
+        contentButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
+        phaserButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton,contentButton));
+        phaserButton.getStyleClass().add("toolButton");
+        attributesButton.getStyleClass().add("toolButton");
+        contentButton.getStyleClass().add("toolButton");
+        SegmentedButton groupButton = new SegmentedButton(phaserButton, contentButton, attributesButton);
+
+
         for (Node node : buttons) {
             if (node instanceof Button) {
                 node.getStyleClass().add("toolButton");
             }
         }
         toolBar.getItems().addAll(buttons);
+        toolBar.getItems().add(groupButton);
 
         statusBar = new SpectrumStatusBar(this);
-        statusBar.buildBar(btoolBar);
+        ToolBar btoolBar = new ToolBar();
+        ToolBar btoolBar2 = new ToolBar();
+        btoolVBox.getChildren().addAll(btoolBar, btoolBar2);
+        statusBar.buildBar(btoolBar, btoolBar2);
         MainApp.getMainApp().addStatusBarTools(statusBar);
 
+    }
+    public void enableFavoriteButton() {
+        favoriteButton.setDisable(ProjectBase.getActive().getProjectDir() == null);
     }
 
     List<PolyChart> getCharts(boolean all) {
@@ -1588,10 +1706,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void showSpectrumMeasureBar() {
         if (measureBar == null) {
-            GridPane navBar = new GridPane();
+            VBox vBox = new VBox();
             measureBar = new SpectrumMeasureBar(this, this::removeSpectrumMeasureBar);
-            measureBar.buildBar(navBar);
-            bottomBox.getChildren().add(navBar);
+            measureBar.buildBar(vBox);
+            bottomBox.getChildren().add(vBox);
         }
     }
 
@@ -1609,10 +1727,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void showAnalyzerBar() {
         if (analyzerBar == null) {
-            GridPane navBar = new GridPane();
+            VBox vBox = new VBox();
             analyzerBar = new AnalyzerBar(this, this::removeAnalyzerBar);
-            analyzerBar.buildBar(navBar);
-            bottomBox.getChildren().add(navBar);
+            analyzerBar.buildBar(vBox);
+            bottomBox.getChildren().add(vBox);
         }
     }
 
@@ -1866,18 +1984,17 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void addGrid() {
-        String rows = GUIUtils.input("nRows");
-        try {
-            if ((rows != null) && !rows.isBlank()) {
-                String columns = GUIUtils.input("nColumns");
-                if ((columns != null) && !columns.isBlank()) {
-                    int nRows = Integer.parseInt(rows);
-                    int nColumns = Integer.parseInt(columns);
-                    addCharts(nRows, nColumns);
-                }
-            }
-        } catch (NumberFormatException nfe) {
-            GUIUtils.warn("Grid Values", "Entry not an integer");
+        GridPaneCanvas.GridDimensions gdims = getGridDimensionInput();
+        if (gdims == null) {
+            return;
+        }
+        addCharts(gdims.rows(), gdims.cols());
+    }
+
+    public void removeSelectedChart() {
+        if (charts.size() > 1) {
+            getActiveChart().close();
+            arrange(chartGroup.getOrientation());
         }
     }
 
@@ -1902,6 +2019,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void arrange(int nRows) {
         chartGroup.setRows(nRows);
+        chartGroup.calculateAndSetOrientation();
     }
 
     public void alignCenters() {
@@ -2116,11 +2234,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     /**
-     * Checks if the active chart has a processorController instances.
+     * Checks if the active chart has a processorController instances or if the chart is empty.
      * @return True if active chart has ProcessorController else returns false.
      */
     public boolean isProcessorControllerAvailable() {
-        return getActiveChart().getProcessorController(false) != null;
+        return getActiveChart().getProcessorController(false) != null || getActiveChart().getDataset() == null;
     }
-
 }

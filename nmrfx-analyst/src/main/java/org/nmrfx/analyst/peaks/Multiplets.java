@@ -29,13 +29,15 @@ import org.nmrfx.peaks.Singlet;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
 import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class Multiplets {
-
+    private static final Logger log = LoggerFactory.getLogger(Multiplets.class);
     public static double DOUBLETRATIO = 3.0;
 
     public static PeakDim getMultipletRoot(Multiplet multiplet) throws IllegalArgumentException {
@@ -144,25 +146,6 @@ public class Multiplets {
         peakList.reNumber();
     }
 
-    public static Optional<Multiplet> extractMultiplet(List<RelMultipletComponent> relComps) {
-        Optional<Multiplet> result = Optional.empty();
-        if (!relComps.isEmpty()) {
-            Multiplet multiplet = relComps.get(0).getMultiplet();
-            Peak peak = multiplet.getOrigin();
-            PeakList peakList = peak.getPeakList();
-            Peak newPeak = peakList.getNewPeak();
-            PeakDim newPeakDim = newPeak.getPeakDim(0);
-            Multiplet newMultiplet = newPeakDim.getMultiplet();
-            newMultiplet.moveCouplings(relComps);
-
-            peakList.compress();
-            peakList.sortPeaks(0, true);
-            peakList.reNumber();
-            result = Optional.of(newMultiplet);
-        }
-        return result;
-    }
-
     public static Optional<Multiplet> mergePeaks(List<Peak> peaks) {
         Optional<Multiplet> result = Optional.empty();
         if (!peaks.isEmpty()) {
@@ -258,6 +241,33 @@ public class Multiplets {
         } else {
             throw new IllegalArgumentException("Multiplet is null. Unable to add peaks.");
         }
+    }
+
+    public static Optional<Double> findMultipletMidpoint(Multiplet multiplet) {
+        List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
+        Double offset = null;
+        if (comps.size() > 1) {
+            double sumVolume = 0.0;
+            for (var comp : comps) {
+                sumVolume += comp.getVolume();
+            }
+            double halfVolume = 0.0;
+            double minDelta = Double.MAX_VALUE;
+            int iMin = 0;
+            for (int i = 0; i < comps.size(); i++) {
+                var comp = comps.get(i);
+                halfVolume += comp.getVolume();
+                double delta = Math.abs(halfVolume - (sumVolume / 2.0));
+                if (delta < minDelta) {
+                    iMin = i;
+                    minDelta = delta;
+                }
+            }
+            if (iMin < comps.size() -1 ) {
+                offset = (comps.get(iMin).getOffset() + comps.get(iMin + 1).getOffset()) / 2.0;
+            }
+        }
+        return Optional.ofNullable(offset);
     }
 
     public static void addOuterCoupling(int addNumber, Multiplet multiplet) {
@@ -508,7 +518,7 @@ public class Multiplets {
         Optional<Double> result = Optional.empty();
 
         if (dataset != null) {
-            double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, refPeak.peakDims[0].getChemShift());
+            double[] bounds = Analyzer.getRegionBounds(dataset.getReadOnlyRegions(), 0, refPeak.peakDims[0].getChemShift());
             PeakFitting peakFitting = new PeakFitting(dataset);
             try {
                 double rms = peakFitting.fitPeakDims(peakDims, "jfit", bounds, mode);
@@ -538,7 +548,7 @@ public class Multiplets {
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
         Optional<Double> result = Optional.empty();
         if (dataset != null) {
-            double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, refPeak.peakDims[0].getChemShift());
+            double[] bounds = Analyzer.getRegionBounds(dataset.getReadOnlyRegions(), 0, refPeak.peakDims[0].getChemShift());
             for (PeakDim apeakDim : peakDims) {
                 apeakDim.getPeak().setFlag(4, false);
             }
@@ -975,8 +985,23 @@ public class Multiplets {
             min = Math.min(min, tPPM);
 
         }
-        double[] result = {min, max};
-        return result;
+        return new double[]{min, max};
+    }
+
+    public static double[] getBoundsOfMultiplet(Multiplet multiplet, double trimRatio) {
+        List<AbsMultipletComponent> absComps = multiplet.getAbsComponentList();
+        double min = Double.MAX_VALUE;
+        double max = Double.NEGATIVE_INFINITY;
+
+        for (AbsMultipletComponent absComp : absComps) {
+            double ppm = absComp.getOffset();
+            double width = Math.abs(absComp.getLineWidth());
+            double tppm = ppm + trimRatio * width;
+            max = Math.max(tppm, max);
+            tppm = ppm - trimRatio * width;
+            min = Math.min(tppm, min);
+        }
+        return new double[]{min, max};
     }
 
     public static void removeSplittingInMultiplet(Multiplet multiplet, String couplingSymbol) {
@@ -1073,7 +1098,7 @@ public class Multiplets {
         return newRegion;
     }
 
-    public static void splitRegionsByPeakSep(Set<DatasetRegion> regions, PeakList peakList, Vec vec) {
+    public static void splitRegionsByPeakSep(Iterable<DatasetRegion> regions, PeakList peakList, Vec vec) {
         int[] dim = new int[peakList.nDim];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
@@ -1095,9 +1120,7 @@ public class Multiplets {
             }
         }
 
-        if (!newRegions.isEmpty()) {
-            regions.addAll(newRegions);
-        }
+        newRegions.forEach(dataset::addRegion);
     }
 
     public static void splitRegionsByPeakCount(Set<DatasetRegion> regions, PeakList peakList, Vec vec, int maxPeaks) {
@@ -1107,20 +1130,14 @@ public class Multiplets {
         }
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
         double[][] limits = new double[1][2];
-        Set<DatasetRegion> newRegions = new TreeSet<>();
+        List<DatasetRegion> newRegions = new ArrayList<>();
         while (true) {
-            regions.stream().forEach(region -> {
+            regions.forEach(region -> {
                 limits[0][0] = region.getRegionStart(0);
                 limits[0][1] = region.getRegionEnd(0);
-                DatasetRegion newRegion = null;
                 List<Peak> peaks = locatePeaks(peakList, limits, dim);
                 if (peaks.size() > maxPeaks) {
-                    List<PeakDim> peakDims = new ArrayList<>();
-                    peaks.forEach((peak) -> {
-                        peakDims.add(peak.peakDims[0]);
-                    });
                     int nSplits = peaks.size() / maxPeaks;
-                    peakDims.sort(comparing(PeakDim::getChemShiftValue));
                     double ppm0 = limits[0][0];
                     double ppm1 = limits[0][1];
                     double splitIncr = Math.abs(ppm0 - ppm1) / (nSplits + 1);
@@ -1130,33 +1147,35 @@ public class Multiplets {
                     int pt1 = dataset.ppmToPoint(0, r1);
                     IndexValue indexValue = vec.minIndex(Math.min(pt0, pt1), Math.max(pt0, pt1));
                     int minPt = indexValue.getIndex();
-
-                    double minPPM0 = dataset.pointToPPM(0, minPt - 1);
-                    double minPPM1 = dataset.pointToPPM(0, minPt + 1);
-                    newRegion = region.split(minPPM0, minPPM1);
-                }
-                if (newRegion != null) {
-                    newRegions.add(newRegion);
+                    double minPPM0 = dataset.pointToPPM(0, minPt - 1.0);
+                    double minPPM1 = dataset.pointToPPM(0, minPt + 1.0);
+                    newRegions.add(region.split(minPPM0, minPPM1));
                 }
             });
             if (!newRegions.isEmpty()) {
-                regions.addAll(newRegions);
+                newRegions.forEach(dataset::addRegion);
             } else {
                 break;
             }
         }
     }
 
-    public static void linkPeaksInRegions(PeakList peakList, Set<DatasetRegion> regions) {
+    public static void linkPeaksInRegions(PeakList peakList, Collection<DatasetRegion> regions) {
         regions.stream().forEach(region -> {
             List<PeakDim> peakDims = findPeaksInRegion(peakList, region);
-            Multiplet.groupPeakDims(peakDims);
+            if (!peakDims.isEmpty()) {
+                Multiplet.groupPeakDims(peakDims);
+            }
         });
     }
 
     public static Multiplet linkPeaksInRegion(PeakList peakList, DatasetRegion region) {
         List<PeakDim> peakDims = findPeaksInRegion(peakList, region);
-        return Multiplet.groupPeakDims(peakDims);
+        if (!peakDims.isEmpty()) {
+            Multiplet multiplet = Multiplet.groupPeakDims(peakDims);
+            return multiplet;
+        }
+        return null;
     }
 
     public static List<PeakDim> findPeaksInRegion(PeakList peakList, DatasetRegion region) {
@@ -1192,14 +1211,18 @@ public class Multiplets {
         }
     }
 
-    public static void groupPeaks(PeakList peakList, Set<DatasetRegion> regions) throws IOException {
+    public static void groupPeaks(PeakList peakList, List<DatasetRegion> regions) throws IOException {
         if (peakList.size() == 0) {
             return;
         }
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
-        Vec vec = new Vec(dataset.getSizeTotal(0));
-        dataset.readVector(vec, 0, 0);
-
+        Vec vec;
+        try {
+            vec = dataset.readVector(0, 0);
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+            return;
+        }
         splitRegionsByPeakSep(regions, peakList, vec);
         //splitRegionsByPeakCount(regions, peakList, vec, 24);
         peakList.unLinkPeaks();

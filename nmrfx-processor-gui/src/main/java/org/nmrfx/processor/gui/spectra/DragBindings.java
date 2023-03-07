@@ -18,25 +18,31 @@
 package org.nmrfx.processor.gui.spectra;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
-import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.chemistry.io.SDFile;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.events.DataFormatEventHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class DragBindings {
+    private static final Logger log = LoggerFactory.getLogger(DragBindings.class);
+    private static final Map<DataFormat, DataFormatEventHandler> dataFormatHandlers = new HashMap<>();
 
     final FXMLController controller;
     final Canvas canvas;
@@ -44,6 +50,15 @@ public class DragBindings {
     public DragBindings(FXMLController controller, Canvas canvas) {
         this.canvas = canvas;
         this.controller = controller;
+    }
+
+    /**
+     * Adds the provided DataFormat event handler to the dataFormatHandler map.
+     * @param dataFormat The DataFormat.
+     * @param handler The DataFormat handler.
+     */
+    public static void registerCanvasDataFormatHandler(DataFormat dataFormat, DataFormatEventHandler handler) {
+        dataFormatHandlers.put(dataFormat, handler);
     }
 
     public void mouseDragDropped(final DragEvent e) {
@@ -57,50 +72,19 @@ public class DragBindings {
         final Dragboard db = e.getDragboard();
         boolean success = false;
         if (db.hasFiles()) {
-            success = true;
-            // Only get the first file from the list
             final List<File> files = db.getFiles();
-            Platform.runLater(() -> {
-                chart.setActiveChart();
-                try {
-                    boolean isDataset = NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) != null;
-                    if (isDataset) {
-                        boolean appendFile = true;
+            if (dataFormatHandlers.containsKey(DataFormat.FILES)) {
+                success = dataFormatHandlers.get(DataFormat.FILES).handlePaste(files, chart);
+            }
 
-                        for (File file : files) {
-                            chart.getController().openDataset(file, appendFile);
-                            appendFile = true;
-                        }
-                    } else {
-                        chart.getController().openFile(files.get(0).getAbsolutePath(), true, false);
-                    }
-
-                } catch (IOException e1) {
-                    ExceptionDialog dialog = new ExceptionDialog(e1);
-                    dialog.showAndWait();
-                }
-            });
         } else if (db.hasString()) {
             String contentString = db.getString();
-            String[] items = contentString.split("\n");
-            if (items.length > 0) {
-                Dataset dataset = Dataset.getDataset(items[0]);
-                if (dataset != null) {
-                    success = true;
-                    Platform.runLater(() -> {
-                        chart.setActiveChart();
-                        for (String item : items) {
-                            Dataset dataset1 = Dataset.getDataset(item);
-                            if (dataset1 != null) {
-                                chart.getController().addDataset(dataset1, true, false);
-                            }
-                        }
-
-                    });
-                }
+            if (dataFormatHandlers.containsKey(DataFormat.PLAIN_TEXT)) {
+                success = dataFormatHandlers.get(DataFormat.PLAIN_TEXT).handlePaste(contentString, chart);
             }
+
         } else {
-            System.out.println("no files");
+            log.info("No compatible files dragged.");
         }
         e.setDropCompleted(success);
         e.consume();
@@ -108,40 +92,22 @@ public class DragBindings {
 
     public void mouseDragOver(final DragEvent e) {
         final Dragboard db = e.getDragboard();
-
         List<File> files = db.getFiles();
+        boolean isAccepted = false;
         if (db.hasFiles()) {
-            if (files.size() > 0) {
-                boolean isAccepted;
-                try {
-                    isAccepted = NMRDataUtil.isFIDDir(files.get(0).getAbsolutePath()) != null;
-                    if (!isAccepted) {
-                        isAccepted = NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) != null;
-                    }
-                } catch (IOException ex) {
-                    isAccepted = false;
-                }
-                if (isAccepted) {
-                    // fixme
-//                    chart.setStyle("-fx-border-color: green;"
-//                            + "-fx-border-width: 1;");
-                    e.acceptTransferModes(TransferMode.COPY);
-                }
+            if (!files.isEmpty()) {
+                isAccepted = NMRDataUtil.isFIDDir(files.get(0).getAbsolutePath()) != null
+                        ||  NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) != null
+                        || SDFile.isSDFFile(files.get(0).getName());
             }
         } else if (db.hasString()) {
             String contentString = db.getString();
-            String[] items = contentString.split("\n");
-            if (items.length > 0) {
-                Dataset dataset = Dataset.getDataset(items[0]);
-                if (dataset != null) {
-                    // fixme
-//                    chart.setStyle("-fx-border-color: green;"
-//                            + "-fx-border-width: 1;");
-                    e.acceptTransferModes(TransferMode.COPY);
-                }
-            }
+            isAccepted = SDFile.inMolFileFormat(contentString) || Dataset.getDataset(contentString.split("\n")[0]) != null;
         } else {
             e.consume();
+        }
+        if (isAccepted) {
+            e.acceptTransferModes(TransferMode.COPY);
         }
     }
 }

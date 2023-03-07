@@ -18,6 +18,8 @@
 package org.nmrfx.processor.processing;
 
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -30,16 +32,17 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  * the indirect dimensions.
  */
 public class MultiVecCounter {
+    private static final Logger log = LoggerFactory.getLogger(MultiVecCounter.class);
 
-    public static boolean showDebugInfo = false;
     int[] osizes;
     int[] isizes;
     int[] inPhases;
     int[] inPoints;
     int[] outPhases;
     int[] outPoints;
+    int[] swap;
     int groupSize = 1;
-    int nDim = 1;
+    int nDim;
     int datasetNDim;
     MultidimensionalCounter outCounter;
     MultidimensionalCounter inCounter;
@@ -69,7 +72,7 @@ public class MultiVecCounter {
         osizes = new int[(nDim - 1) * 2];
         isizes = new int[(nDim - 1) * 2];
         this.datasetNDim = datasetNDim;
-        init(tdSizes, tdSizes, complex, modes);
+        init(tdSizes, tdSizes, complex,complex, modes, null);
     }
 
     /**
@@ -82,6 +85,8 @@ public class MultiVecCounter {
      * dataset in each dimension
      * @param complex an array of booleans representing whether the input FID is
      * complex in each dimension.
+     * @param oComplex an array of booleans representing whether the output dataset is
+     * complex in each dimension.
      * @param modes an array of string values representing the order in which
      * data was acquired. The first character of each mode is either a 'p',
      * representing phase information, or 'd' representing time delay. The
@@ -89,18 +94,19 @@ public class MultiVecCounter {
      * first indirect dimension. For example, "p1","p2","d1","d2" represents a
      * typical Agilent 3D dataset with array value = "phase2,phase" and
      * "p1","d1","p2","d2" would represent a typical Bruker 3D dataset.
+     * @param swapIn an array of integers indicating input dimensions to swap to output dimensions
      * @param datasetNDim number of dimensions in final dataset, could be
      * smaller than original data dimensions.
      */
-    public MultiVecCounter(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes, int datasetNDim) {
+    public MultiVecCounter(int[] tdSizes, int[] outSizes, boolean[] complex, boolean[] oComplex,  String[] modes, int[] swapIn, int datasetNDim) {
         nDim = tdSizes.length;
         osizes = new int[(nDim - 1) * 2];
         isizes = new int[(nDim - 1) * 2];
         this.datasetNDim = datasetNDim;
-        init(tdSizes, outSizes, complex, modes);
+        init(tdSizes, outSizes, complex,oComplex,  modes, swapIn);
     }
 
-    void init(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes) {
+    void init(int[] tdSizes, int[] outSizes, boolean[] complex, boolean[] oComplex, String[] modes, int[] swapIn) {
         int nIDim = tdSizes.length - 1;  // number of indirect dimensions
 
         // the index of the values in the multi-dimensional counter that references the phase increment
@@ -117,11 +123,17 @@ public class MultiVecCounter {
         //  of the output data
         outPoints = new int[nIDim];
         boolean matchIn = false;
-
         int iArg = 0;
         int iSize = 1;
         int iPhase = 1;
         groupSize = 1;
+        if (swapIn == null) {
+            swapIn = new int[nIDim + 1];
+            for (int i = 0;i<nIDim + 1;i++) {
+                swapIn[i] = i;
+            }
+        }
+        swap = swapIn.clone();
 
         for (String mode : modes) {
             // dim is the indirect dimension index running from 1 (for indirect dim 1, 2nd dim) up
@@ -143,7 +155,6 @@ public class MultiVecCounter {
                     inPoints[dim - 1] = argIndex - 1;
                     isizes[argIndex] = 1;
                     isizes[argIndex - 1] = tdSizes[dim];
-                    groupSize *= 1;
                     iArg++;
                 }
             } else {
@@ -157,8 +168,8 @@ public class MultiVecCounter {
                 outPhases[i] = inPhases[i];
                 outPoints[i] = inPoints[i];
             }
-            for (int i = 0; i < isizes.length; i++) {
-                osizes[i] = isizes[i];
+            if (isizes.length > 0) {
+                System.arraycopy(isizes, 0, osizes, 0, isizes.length);
             }
         } else {
             for (int i = 0; i < nIDim; i++) {
@@ -168,7 +179,7 @@ public class MultiVecCounter {
             }
             groupSize = 1;
             for (int i = 0; i < nIDim; i++) {
-                if (complex[i + 1]) {
+                if (oComplex[i + 1]) {
                     groupSize *= 2;
                     osizes[2 * nIDim - 1 - i] = 2;
                 } else {
@@ -176,37 +187,42 @@ public class MultiVecCounter {
                 }
             }
         }
-        if (showDebugInfo) {
-            System.out.println("  MultiVecCounter: ");
+
+        if (log.isDebugEnabled()) {
+            var sBuilder = new StringBuilder();
+
+            sBuilder.append("  MultiVecCounter: \n");
             for (int i = 0; i < outPhases.length; i++) {
-                System.out.print("ouPh[" + i + "]=" + outPhases[i] + " ");
+                sBuilder.append("ouPh[").append(i).append("]=").append(outPhases[i]).append(" ");
             }
-            System.out.println("");
+            sBuilder.append('\n');
+
 
             for (int i = 0; i < outPoints.length; i++) {
-                System.out.print("ouPt[" + i + "]=" + outPoints[i] + " ");
+                sBuilder.append("ouPt[").append(i).append("]=").append(outPoints[i]).append(" ");
             }
-            System.out.println("");
+            sBuilder.append('\n');
 
             for (int i = 0; i < inPhases.length; i++) {
-                System.out.print("inPh[" + i + "]=" + inPhases[i] + " ");
+                sBuilder.append("inPh[").append(i).append("]=").append(inPhases[i]).append(" ");
             }
-            System.out.println("");
+            sBuilder.append('\n');
 
             for (int i = 0; i < inPoints.length; i++) {
-                System.out.print("inPt[" + i + "]=" + inPoints[i] + " ");
+                sBuilder.append("inPt[").append(i).append("]=").append(inPoints[i]).append(" ");
             }
-            System.out.println("");
+            sBuilder.append('\n');
 
             for (int i = 0; i < isizes.length; i++) {
-                System.out.print(" inSz[" + i + "]=" + isizes[i]);
+                sBuilder.append("inSz[").append(i).append("]=").append(isizes[i]).append(" ");
             }
-            System.out.println("");
+            sBuilder.append('\n');
             for (int i = 0; i < osizes.length; i++) {
-                System.out.print(" ouSz[" + i + "]=" + osizes[i]);
+                sBuilder.append("ouSz[").append(i).append("]=").append(osizes[i]).append(" ");
             }
-            System.out.println("");
-            System.out.println("groupsize " + groupSize);
+            sBuilder.append('\n');
+            sBuilder.append("groupsize ").append(groupSize);
+            log.debug(sBuilder.toString());
         }
         outCounter = new MultidimensionalCounter(osizes);
         inCounter = new MultidimensionalCounter(isizes);
@@ -221,6 +237,14 @@ public class MultiVecCounter {
      */
     public int[] getOutSizes() {
         return osizes;
+    }
+
+    public int[] getIndirectSizes() {
+        int[] dimSizes = new int[outPoints.length];
+        for (int i =0;i<outPoints.length;i++) {
+            dimSizes[i] = osizes[outPoints[i]] * osizes[outPhases[i]];
+        }
+        return dimSizes;
     }
 
     /**
@@ -245,8 +269,8 @@ public class MultiVecCounter {
     public int[] outToInCounter(int[] counts) {
         int[] icounts = new int[counts.length];
         for (int i = 0; i < inPhases.length; i++) {
-            icounts[inPhases[i]] = counts[outPhases[i]];
-            icounts[inPoints[i]] = counts[outPoints[i]];
+            icounts[inPhases[swap[i + 1] - 1]] = counts[outPhases[i]];
+            icounts[inPoints[swap[i + 1] - 1]] = counts[outPoints[i]];
         }
         return icounts;
     }
@@ -277,32 +301,37 @@ public class MultiVecCounter {
      * group. A group represents all the vectors that have the same time value
      * in the indirect dimensions.
      *
-     * @param vecNum
+     * @param vecNum index of the group to be returned
      * @return VecIndex with positions corresponding to specified group number.
      */
     public VecIndex getNextGroup(final int vecNum) {
         int[] inVecs = new int[groupSize];
         int[][][] outVecs = new int[groupSize][datasetNDim][2]; // output 4 vecs per group, 3 dimensions, pt
 
-        for (int i = 0; i < groupSize; i++) {
-            int[] counts = outCounter.getCounts(groupSize * vecNum + i);
-            int[] iCounts = outToInCounter(counts);
-            inVecs[i] = inCounter.getCount(iCounts);
-            int[] offsets = getOffsets(counts);
-            int jDim = 1;
-            for (int iDim = 1; iDim < nDim; iDim++) {
-                if ((datasetNDim < nDim) && (osizes[nDim - iDim - 1] < 2)) {
-                    if (offsets[iDim - 1] > 0) {
-                        outVecs[i][datasetNDim - 1][0] = -1;
-                        outVecs[i][datasetNDim - 1][1] = -1;
-                        break;
+        try {
+            for (int i = 0; i < groupSize; i++) {
+                int[] counts;
+                counts = outCounter.getCounts(groupSize * vecNum + i);
+                int[] iCounts = outToInCounter(counts);
+                inVecs[i] = inCounter.getCount(iCounts);
+                int[] offsets = getOffsets(counts);
+                int jDim = 1;
+                for (int iDim = 1; iDim < nDim; iDim++) {
+                    if ((datasetNDim < nDim) && (osizes[nDim - iDim - 1] < 2)) {
+                        if (offsets[iDim - 1] > 0) {
+                            outVecs[i][datasetNDim - 1][0] = -1;
+                            outVecs[i][datasetNDim - 1][1] = -1;
+                            break;
+                        }
+                        continue;
                     }
-                    continue;
+                    outVecs[i][jDim][0] = offsets[iDim - 1];
+                    outVecs[i][jDim][1] = offsets[iDim - 1];
+                    jDim++;
                 }
-                outVecs[i][jDim][0] = offsets[iDim - 1];
-                outVecs[i][jDim][1] = offsets[iDim - 1];
-                jDim++;
             }
+        } catch (Exception ex) {
+            throw ex;
         }
         return new VecIndex(inVecs, outVecs);
     }
@@ -313,7 +342,7 @@ public class MultiVecCounter {
      * group. A group represents all the vectors that have the same time value
      * in the indirect dimensions.
      *
-     * @param vecNum
+     * @param counts indices of positions in output
      * @return VecIndex with positions corresponding to specified group number.
      */
     public VecIndex getNextGroup(final int[] counts) {
@@ -371,35 +400,8 @@ public class MultiVecCounter {
     }
 
     /**
-     * Unused
      *
-     */
-    public void getNextGroup() {
-        int i = 0;
-        while (iterator.hasNext()) {
-            iterator.next();
-            int[] counts = iterator.getCounts();
-            int j = 0;
-            for (int value : counts) {
-                System.out.print(" " + value);
-            }
-            System.out.println("");
-            int[] iCounts = outToInCounter(counts);
-            int iCount = outCounter.getCount(counts);
-            for (int value : iCounts) {
-                System.out.print(" " + value);
-            }
-            System.out.println("");
-            int inVec = inCounter.getCount(iCounts);
-            System.out.println(" i " + i + " " + inVec);
-            getOffsets(counts);
-            i++;
-        }
-    }
-
-    /**
-     *
-     * @param args
+     * @param args optional command line arguments
      */
     public static void main(String[] args) {
         int[] sizes = {64, 3, 4};

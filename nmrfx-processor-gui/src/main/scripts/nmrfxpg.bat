@@ -18,14 +18,14 @@ set nvjpmain=org.nmrfx.processor.gui.NMRApp
 set dir=%~dp0
 
 set javaexe=java
-set cp="%dir%nmrfx-processor-gui-%nvjver%.jar;%dir%lib/Manifest.jar"
-
+set cp="%dir%lib/nmrfx-processor-gui-%nvjver%.jar;%dir%lib/*"
+set JAVA_OPTS="--add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED"
 
 set testjava="%dir%jre\bin\java.exe"
 
 if exist %testjava% (
     set javaexe=%testjava%
-    set cp="%dir%lib/nmrfx-processor-gui-%nvjver%.jar;%dir%lib/%Manifest.jar"
+    set cp="%dir%lib/nmrfx-processor-gui-%nvjver%.jar;%dir%lib/*"
 )
 
 

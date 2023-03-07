@@ -38,10 +38,6 @@ public class SpectrumMenu extends ChartMenu {
 
     public void makeChartMenu() {
         chartMenu = new ContextMenu();
-        MenuItem attrItem = new MenuItem("Attributes");
-        attrItem.setOnAction((ActionEvent e) -> {
-            chart.getController().showSpecAttrAction(e);
-        });
         Menu viewMenu = new Menu("View");
         MenuItem expandItem = new MenuItem("Expand");
         expandItem.setOnAction((ActionEvent e) -> chart.expand());
@@ -179,6 +175,9 @@ public class SpectrumMenu extends ChartMenu {
         projectMenuItem.setOnAction((ActionEvent e) -> {
             chart.projectDataset();
         });
+        MenuItem removeProjectionsItem = new MenuItem("Remove Projections");
+        removeProjectionsItem.visibleProperty().bind(chart.getDisDimProperty().isEqualTo(PolyChart.DISDIM.TwoD));
+        removeProjectionsItem.setOnAction((ActionEvent e) -> chart.removeProjections());
         MenuItem extractXMenuItem = new MenuItem("Extract-X");
         extractXMenuItem.setOnAction((ActionEvent e) -> {
             chart.extractSlice(0);
@@ -191,7 +190,7 @@ public class SpectrumMenu extends ChartMenu {
         extractZMenuItem.setOnAction((ActionEvent e) -> {
             chart.extractSlice(2);
         });
-        extractMenu.getItems().addAll(projectMenuItem, extractXMenuItem, extractYMenuItem, extractZMenuItem);
+        extractMenu.getItems().addAll(projectMenuItem, removeProjectionsItem, extractXMenuItem, extractYMenuItem, extractZMenuItem);
 
         Menu linkMenu = new Menu("Peak Linking");
         MenuItem linkColumnMenuItem = new MenuItem("Link Selected Column");
@@ -219,7 +218,6 @@ public class SpectrumMenu extends ChartMenu {
         linkMenu.getItems().addAll(linkColumnMenuItem, linkRowMenuItem,
                 unlinkSelectedMenuItem, unlinkSelectedColumnMenuItem, unlinkSelectedRowMenuItem);
 
-        chartMenu.getItems().add(attrItem);
         chartMenu.getItems().add(viewMenu);
         chartMenu.getItems().add(peakMenu);
         chartMenu.getItems().add(refMenu);

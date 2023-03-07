@@ -103,6 +103,10 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
         }
     }
 
+    public DatasetLayout getLayout() {
+        return layout;
+    }
+
     /**
      * Set the mapping size which determines how many map segments are used.
      *

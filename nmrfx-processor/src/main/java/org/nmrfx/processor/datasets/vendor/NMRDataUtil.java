@@ -149,7 +149,7 @@ public final class NMRDataUtil {
             if (NMRViewData.findFID(bpath)) {
                 return new NMRViewData(bpath.toString());
             } else if (RS2DData.findFID(bpath)) {
-                return new RS2DData(bpath.toString(), null, true);
+                return new RS2DData(bpath.toString(), null);
             } else if (BrukerData.findData(bpath)) {
                 return new BrukerData(bpath.toString());
             } else if (VarianData.findFID(bpath)) {
@@ -165,20 +165,60 @@ public final class NMRDataUtil {
     } // end getFID
 
     /**
+     * Load an NMRData object from the fpath. The NMRData will be loaded as either a dataset or an FID, depending on
+     * the fpath.
+     * @param fpath absolute file path
+     * @param nusFile
+     * @return An NMRData object
+     * @throws IOException
+     */
+    public static NMRData loadNMRData(String fpath, File nusFile) throws IOException {
+        StringBuilder bpath = new StringBuilder(fpath);
+        try {
+            if (NMRViewData.findFID(bpath)) {
+                return new NMRViewData(bpath.toString());
+            } else if (RS2DData.findFID(bpath)) {
+                return new RS2DData(bpath.toString(), nusFile);
+            // Most processed Bruker files would also have the fid present and pass the findFID check,
+                // so must check if it's a dataset before checking for FID
+            } else if (BrukerData.findData(bpath)) {
+                return new BrukerData(bpath.toString());
+            } else if (BrukerData.findFID(bpath)) {
+                return new BrukerData(bpath.toString(), nusFile);
+            } else if (VarianData.findFID(bpath)) {
+                return new VarianData(bpath.toString());
+            } else if (JCAMPData.findFID(bpath) || JCAMPData.findData(bpath)) {
+                return new JCAMPData(bpath.toString());
+            } else if (NMRPipeData.findFID(bpath)) {
+                return new NMRPipeData(bpath.toString(), nusFile);
+            } else if (JeolDelta.findFID(bpath)) {
+                return new JeolDelta(bpath.toString());
+            } else {
+                throw new IOException("File could not be read: " + fpath);
+            }
+        } catch (NullPointerException nullE) {
+            throw new IOException("Null pointer when reading " + fpath + " " + nullE.getMessage());
+        }
+    }
+
+    /**
      * Check if specified path represents an NMR data file
      *
      * @param fpath absolute file path
      * @return a standardized file path
-     * @throws IOException if an I/O error occurs
      * @see NMRData
      */
-    public static String isFIDDir(String fpath) throws IOException {
+    public static String isFIDDir(String fpath) {
         StringBuilder bpath = new StringBuilder(fpath);
         if (BrukerData.findFID(bpath)) {
             return bpath.toString();
         } else if (VarianData.findFID(bpath)) {
             return bpath.toString();
+        } else if (RS2DData.findFID(bpath)) {
+            return bpath.toString();
         } else if (JCAMPData.findFID(bpath)) {
+            return bpath.toString();
+        } else if (JeolDelta.findFID(bpath)) {
             return bpath.toString();
         } else {
             return null;
@@ -190,12 +230,12 @@ public final class NMRDataUtil {
      *
      * @param fpath absolute file path
      * @return a standardized file path
-     * @throws IOException if an I/O error occurs
      * @see NMRData
      */
-    public static String isDatasetFile(String fpath) throws IOException {
+    public static String isDatasetFile(String fpath) {
         StringBuilder bpath = new StringBuilder(fpath);
-        if (NMRViewData.findFID(bpath)) {
+        if (NMRViewData.findFID(bpath) || RS2DData.findFID(bpath) || BrukerData.findData(bpath)
+                || VarianData.findFID(bpath) || JCAMPData.findData(bpath)) {
             return bpath.toString();
         } else {
             return null;
@@ -215,7 +255,7 @@ public final class NMRDataUtil {
      */
     public static ArrayList guessNucleusFromFreq(final double freq) {
         final double[] Hfreqs = {1000.0, 950.0, 900.0, 800.0, 750.0,
-            700.0, 600.0, 500.0, 400.0, 300.0};
+            700.0, 600.0, 500.0, 400.0, 300.0, 100.0, 60.0};
         HashMap<String, Double> ratio = new LinkedHashMap<>(4);
         ratio.put("1H", 1.0);
         ratio.put("13C", 0.25145004);
@@ -258,14 +298,10 @@ public final class NMRDataUtil {
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
-            if (attr.isRegularFile() && (file.endsWith("fid") || (file.endsWith("ser")) || file.toString().endsWith(".jdx") || file.toString().endsWith(".dx"))) {
-                try {
-                    String fidPath = NMRDataUtil.isFIDDir(file.toString());
-                    if (fidPath != null) {
-                        fileList.add(fidPath);
-                    }
-                } catch (IOException ex) {
-                    log.warn(ex.getMessage(), ex);
+            if (attr.isRegularFile() && (file.endsWith("fid") || (file.endsWith("ser")) || file.toString().endsWith(".jdx") || file.toString().endsWith(".dx") || file.toString().endsWith(RS2DData.DATA_FILE_NAME))) {
+                String fidPath = NMRDataUtil.isFIDDir(file.toString());
+                if (fidPath != null) {
+                    fileList.add(fidPath);
                 }
             }
             return FileVisitResult.CONTINUE;
@@ -383,7 +419,7 @@ public final class NMRDataUtil {
                         rData.setProcessed(getProcessedDataset(path2.toFile()));
                         items.add(rData);
                     }
-                } catch (IOException ex) {
+                } catch (IOException | IllegalArgumentException ex) {
                     log.warn(ex.getMessage(), ex);
                 }
             }

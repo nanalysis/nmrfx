@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -42,6 +43,8 @@ public class DatasetParameterFile {
 
     final DatasetBase dataset;
     final DatasetLayout layout;
+    String relativeFIDPath = "";
+    String absoluteFIDPath = "";
     final static Pattern DLABEL_PAT = Pattern.compile("dlabel +[0-9]+ (.*)");
 
     public DatasetParameterFile(DatasetBase dataset, DatasetLayout layout) {
@@ -55,18 +58,10 @@ public class DatasetParameterFile {
     }
 
     public static String getParameterFileName(String fileName) {
-        int len = fileName.length();
-        String parFileName;
-        int extLen = 0;
-        if (fileName.endsWith(".nv")) {
-            extLen = 3;
-        } else if (fileName.endsWith(".ucsf")) {
-            extLen = 5;
-        } else if (fileName.endsWith(".nvlnk")) {
-            extLen = 6;
-        }
-        parFileName = fileName.substring(0, len - extLen) + ".par";
-        return parFileName;
+        Pattern pattern = Pattern.compile("\\.(nv|ucsf|nvlnk)$");
+        Matcher matcher = pattern.matcher(fileName);
+        int endIndex = matcher.find() ? matcher.start() : fileName.length();
+        return fileName.substring(0, endIndex) + ".par";
     }
 
     public final boolean remove() {
@@ -83,7 +78,6 @@ public class DatasetParameterFile {
 
     public final void writeFile() {
         String parFileName = getParameterFileName();
-        System.out.println("write " + parFileName);
         writeFile(parFileName);
 
     }
@@ -92,14 +86,16 @@ public class DatasetParameterFile {
         File parFile = new File(parFileName);
         try (PrintStream pStream = new PrintStream(parFile)) {
             int nDim = dataset.getNDim();
-            pStream.printf("dim %d", nDim);
-            for (int i = 0; i < nDim; i++) {
-                pStream.printf(" %d", dataset.getSizeTotal(i));
+            if (!dataset.isMemoryFile()) {
+                pStream.printf("dim %d", nDim);
+                for (int i = 0; i < nDim; i++) {
+                    pStream.printf(" %d", dataset.getSizeTotal(i));
+                }
+                for (int i = 0; i < nDim; i++) {
+                    pStream.printf(" %d", layout.getBlockSize(i));
+                }
+                pStream.print("\n");
             }
-            for (int i = 0; i < nDim; i++) {
-                pStream.printf(" %d", layout.getBlockSize(i));
-            }
-            pStream.print("\n");
             for (int i = 0; i < nDim; i++) {
                 pStream.printf("sw %d %.2f\n", (i + 1), dataset.getSw(i));
                 pStream.printf("sf %d %.8f\n", (i + 1), dataset.getSf(i));
@@ -136,6 +132,13 @@ public class DatasetParameterFile {
                 Entry entry = (Entry) obj;
                 pStream.printf("%s %s %s\n", "property", entry.getKey(), entry.getValue());
             }
+            Path dFile = dataset.getFile().toPath();
+            dataset.sourceFID().ifPresent(fidFile -> {
+                Path fPath = fidFile.toPath();
+                Path rPath = dFile.relativize(fPath);
+                pStream.printf("%s %s\n", "fid_rel", rPath);
+                pStream.printf("%s %s\n", "fid_abs", fidFile);
+            });
         } catch (IOException ioE) {
             System.out.println("error " + ioE.getMessage());
 
@@ -166,6 +169,20 @@ public class DatasetParameterFile {
                 }
             } catch (IOException ioE) {
                 System.out.println(" error in par file " + ioE.getMessage());
+            }
+            if (!absoluteFIDPath.isBlank()) {
+                File testFile = new File(absoluteFIDPath);
+                if (testFile.exists()) {
+                    dataset.sourceFID(testFile);
+                }
+            }
+            if (dataset.sourceFID().isEmpty()) {
+                if (!relativeFIDPath.isBlank()) {
+                    File testFile = dataset.getFile().toPath().resolve(Path.of(relativeFIDPath)).toFile();
+                    if (testFile.exists()) {
+                        dataset.sourceFID(testFile);
+                    }
+                }
             }
         }
     }
@@ -329,6 +346,20 @@ public class DatasetParameterFile {
                     int index = line.indexOf(propName) + propName.length();
                     String propValue = line.substring(index).trim();
                     dataset.addProperty(propName, propValue);
+                }
+                break;
+            }
+            case "fid_rel": {
+                int spacePos = line.indexOf(" ");
+                if (spacePos != -1) {
+                    relativeFIDPath = line.substring(spacePos).trim();
+                }
+                break;
+            }
+            case "fid_abs": {
+                int spacePos = line.indexOf(" ");
+                if (spacePos != -1) {
+                    absoluteFIDPath = line.substring(spacePos).trim();
                 }
                 break;
             }

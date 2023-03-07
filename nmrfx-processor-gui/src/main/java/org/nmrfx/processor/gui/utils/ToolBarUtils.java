@@ -21,6 +21,7 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 
 /**
  *
@@ -36,4 +37,14 @@ public class ToolBarUtils {
         toolBar.getItems().add(filler);
     }
 
+    public static Pane makeFiller(double min) {
+        return makeFiller(min, Region.USE_COMPUTED_SIZE);
+    }
+
+    public static Pane makeFiller(double min, double max) {
+        Pane filler = new Pane();
+        HBox.setHgrow(filler, Priority.ALWAYS);
+        filler.setMinWidth(min);
+        return filler;
+    }
 }

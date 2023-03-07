@@ -4,6 +4,7 @@ import javafx.scene.input.MouseEvent;
 
 public abstract class MouseHandler {
     MouseBindings mouseBindings;
+
     public MouseHandler(MouseBindings mouseBindings) {
         this.mouseBindings = mouseBindings;
     }
