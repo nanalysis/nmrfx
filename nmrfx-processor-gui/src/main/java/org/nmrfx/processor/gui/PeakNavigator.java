@@ -326,7 +326,7 @@ public class PeakNavigator implements PeakListener {
         if (defaultBackground == null) {
             defaultBackground = peakIdField.getBackground();
         }
-        if (currentPeak.getStatus() < 0) {
+        if ((currentPeak != null) && (currentPeak.getStatus() < 0)) {
             deleteButton.setSelected(true);
             peakIdField.setBackground(deleteBackground);
         } else {
