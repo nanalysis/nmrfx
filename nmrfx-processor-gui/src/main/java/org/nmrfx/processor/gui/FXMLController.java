@@ -1186,58 +1186,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @Override
     public void refreshPeakView(Peak peak) {
         if (peak != null) {
-            Set<String> dimsUsed = new HashSet<>();
-            PeakList peakList = peak.getPeakList();
-            int nDim = peakList.getNDim();
-            for (int i = 0; i < nDim; i++) {
-                String peakLabel = peakList.getSpectralDim(i).getDimName();
-                boolean ok1 = true;
-                for (PolyChart chart : charts) {
-                    if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
-                        DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
-                        int aDim = dataAttr.nDim;
-                        boolean ok2 = false;
-                        for (int j = 0; j < aDim; j++) {
-                            if (dataAttr.getLabel(j).equals(peakLabel)) {
-                                ok2 = true;
-                                break;
-                            }
-                        }
-                        if (!ok2) {
-                            ok1 = false;
-                            break;
-                        }
-                    }
-                }
-                if (ok1) {
-                    dimsUsed.add(peakLabel);
-                }
-            }
-            for (PolyChart chart : charts) {
-                if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
-                    DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
-                    int cDim = chart.getNDim();
-                    int aDim = dataAttr.nDim;
-                    Double[] ppms = new Double[cDim];
-                    Double[] widths = new Double[cDim];
-                    for (int i = 0; i < aDim; i++) {
-                        if (!dimsUsed.contains(dataAttr.getLabel(i))) {
-                            continue;
-                        }
-                        PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
-                        if (peakDim != null) {
-                            double peakWidth = peakDim.getSpectralDimObj().getMeanWidthPPM();
-                            ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
-                            widths[i] = widthScale * peakWidth;
-                        }
-                    }
-                    if (widthScale > 0.0) {
-                        chart.moveTo(ppms, widths);
-                    } else {
-                        chart.moveTo(ppms);
-                    }
-                }
-            }
+            PeakDisplayTool.gotoPeak(peak, charts, widthScale);
         }
     }
 

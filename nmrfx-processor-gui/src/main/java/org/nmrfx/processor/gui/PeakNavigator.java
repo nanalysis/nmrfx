@@ -32,6 +32,7 @@ import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.PeakDisplayTool;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
@@ -61,6 +62,7 @@ public class PeakNavigator implements PeakListener {
     int matchIndex = 0;
     Consumer closeAction = null;
     boolean showAtoms = false;
+    boolean addShowPeakButton = false;
     Label atomXFieldLabel;
     Label atomYFieldLabel;
     Label intensityFieldLabel;
@@ -88,6 +90,11 @@ public class PeakNavigator implements PeakListener {
 
     public PeakNavigator showAtoms() {
         this.showAtoms = true;
+        return this;
+    }
+
+    public PeakNavigator addShowPeakButton() {
+        this.addShowPeakButton = true;
         return this;
     }
 
@@ -159,6 +166,12 @@ public class PeakNavigator implements PeakListener {
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(peakIdField);
         toolBar.getItems().add(deleteButton);
+
+        if (addShowPeakButton) {
+            Button showPeakButton = new Button("Goto");
+            showPeakButton.setOnAction(e -> PeakDisplayTool.gotoPeak(currentPeak));
+            toolBar.getItems().add(showPeakButton);
+        }
 
         if (showAtoms) {
             atomXFieldLabel = new Label("X:");
