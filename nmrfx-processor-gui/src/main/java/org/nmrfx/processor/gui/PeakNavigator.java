@@ -486,21 +486,21 @@ public class PeakNavigator implements PeakListener {
         updateDeleteStatus();
     }
 
+    private void handlePeakListChangedEvent(){
+        if (currentPeak != null) {
+            deleteButton.setSelected(currentPeak.isDeleted());
+            setDeleteStatus(deleteButton);
+        }
+        peakNavigable.refreshPeakView();
+    }
+
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
-        if (peakEvent.getSource() instanceof PeakList) {
-            PeakList sourceList = (PeakList) peakEvent.getSource();
-            if (sourceList == peakList) {
-                if (Platform.isFxApplicationThread()) {
-                    peakNavigable.refreshPeakView();
-                    updateDeleteStatus();
-                } else {
-                    Platform.runLater(() -> {
-                                peakNavigable.refreshPeakView();
-                                updateDeleteStatus();
-                            }
-                    );
-                }
+        if (peakEvent.getSource() instanceof PeakList sourceList && sourceList == peakList) {
+            if (Platform.isFxApplicationThread()) {
+                handlePeakListChangedEvent();
+            } else {
+                Platform.runLater(this::handlePeakListChangedEvent);
             }
         }
     }

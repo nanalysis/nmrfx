@@ -86,6 +86,14 @@ public class PeakMenuBar {
         compressAndDegapMenuItem.setOnAction(e -> compressAndDegapPeakList());
         editMenu.getItems().add(compressAndDegapMenuItem);
 
+        MenuItem deletePeakMenuItem = new MenuItem("Delete Peaks");
+        deletePeakMenuItem.setOnAction(e -> menuTarget.deletePeaks());
+        editMenu.getItems().add(deletePeakMenuItem);
+
+        MenuItem restorePeakMenuItem = new MenuItem("Restore Peaks");
+        restorePeakMenuItem.setOnAction(e -> menuTarget.restorePeaks());
+        editMenu.getItems().add(restorePeakMenuItem);
+
         MenuItem deleteMenuItem = new MenuItem("Delete List");
         deleteMenuItem.setOnAction(e -> deletePeakList());
         editMenu.getItems().add(deleteMenuItem);
