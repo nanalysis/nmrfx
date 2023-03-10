@@ -10,6 +10,7 @@ import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.Background;
@@ -25,6 +26,7 @@ import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.PeakDisplayTool;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
@@ -49,11 +51,11 @@ public class PeakNavigator implements PeakListener {
     Peak currentPeak;
     static Background deleteBackground = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
-    Background defaultCellBackground = null;
     Optional<List<Peak>> matchPeaks = Optional.empty();
     int matchIndex = 0;
-    Consumer closeAction = null;
+    Consumer<PeakNavigator> closeAction = null;
     boolean showAtoms = false;
+    boolean addShowPeakButton = false;
     Label atomXFieldLabel;
     Label atomYFieldLabel;
     Label intensityFieldLabel;
@@ -66,22 +68,22 @@ public class PeakNavigator implements PeakListener {
         this.peakNavigable = peakNavigable;
     }
 
-    private PeakNavigator(PeakNavigable peakNavigable, Consumer closeAction) {
-        this.peakNavigable = peakNavigable;
-        this.closeAction = closeAction;
-    }
-
     public static PeakNavigator create(PeakNavigable peakNavigable) {
         return new PeakNavigator(peakNavigable);
     }
 
-    public PeakNavigator onClose(Consumer closeAction) {
+    public PeakNavigator onClose(Consumer<PeakNavigator> closeAction) {
         this.closeAction = closeAction;
         return this;
     }
 
     public PeakNavigator showAtoms() {
         this.showAtoms = true;
+        return this;
+    }
+
+    public PeakNavigator addShowPeakButton() {
+        this.addShowPeakButton = true;
         return this;
     }
 
@@ -115,26 +117,23 @@ public class PeakNavigator implements PeakListener {
         closeButton.setOnAction(e -> close());
 
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> navigator.firstPeak(e));
+        bButton.setOnAction(navigator::firstPeak);
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> navigator.previousPeak(e));
+        bButton.setOnAction(navigator::previousPeak);
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> navigator.nextPeak(e));
+        bButton.setOnAction(navigator::nextPeak);
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> navigator.lastPeak(e));
+        bButton.setOnAction(navigator::lastPeak);
         buttons.add(bButton);
         deleteButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.BAN, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
         // a second space bar hit would activate
-        deleteButton.setOnKeyPressed(e -> e.consume());
+        deleteButton.setOnKeyPressed(Event::consume);
         deleteButton.setOnAction(e -> navigator.setDeleteStatus(deleteButton));
 
-        for (Button button : buttons) {
-            // button.getStyleClass().add("toolButton");
-        }
         if (closeAction != null) {
             toolBar.getItems().add(closeButton);
         }
@@ -158,6 +157,12 @@ public class PeakNavigator implements PeakListener {
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(peakIdField);
         toolBar.getItems().add(deleteButton);
+
+        if (addShowPeakButton) {
+            Button showPeakButton = new Button("Goto");
+            showPeakButton.setOnAction(e -> PeakDisplayTool.gotoPeak(currentPeak));
+            toolBar.getItems().add(showPeakButton);
+        }
 
         if (showAtoms) {
             atomXFieldLabel = new Label("X:");
@@ -186,23 +191,14 @@ public class PeakNavigator implements PeakListener {
         peakIdField.setOnKeyReleased(kE -> {
             if (null != kE.getCode()) {
                 switch (kE.getCode()) {
-                    case ENTER:
-                        navigator.gotoPeakId(peakIdField);
-                        break;
-                    case UP:
-                        navigator.gotoNextMatch(1);
-                        break;
-                    case DOWN:
-                        navigator.gotoNextMatch(-1);
-                        break;
-                    default:
-                        break;
+                    case ENTER -> navigator.gotoPeakId(peakIdField);
+                    case UP -> navigator.gotoNextMatch(1);
+                    case DOWN -> navigator.gotoNextMatch(-1);
+                    default -> {}
                 }
             }
         });
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
-            updatePeakListMenu();
-        };
+        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
 
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
         // The different control items end up with different heights based on font and icon size,
@@ -213,12 +209,10 @@ public class PeakNavigator implements PeakListener {
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (PeakList peakList : ProjectBase.getActive().getPeakLists()) {
-            String peakListName = peakList.getName();
+        for (PeakList peakList1 : ProjectBase.getActive().getPeakLists()) {
+            String peakListName = peakList1.getName();
             MenuItem menuItem = new MenuItem(peakListName);
-            menuItem.setOnAction(e -> {
-                PeakNavigator.this.setPeakList(peakListName);
-            });
+            menuItem.setOnAction(e -> PeakNavigator.this.setPeakList(peakListName));
             peakListMenuButton.getItems().add(menuItem);
         }
     }
@@ -264,7 +258,6 @@ public class PeakNavigator implements PeakListener {
             firstPeak(null);
             setPeakIdField();
             peakList.registerPeakChangeListener(this);
-        } else {
         }
         peakNavigable.refreshPeakView(currentPeak);
         peakNavigable.refreshPeakListView(peakList);
@@ -336,7 +329,7 @@ public class PeakNavigator implements PeakListener {
         if (defaultBackground == null) {
             defaultBackground = peakIdField.getBackground();
         }
-        if (currentPeak.getStatus() < 0) {
+        if ((currentPeak != null) && (currentPeak.getStatus() < 0)) {
             deleteButton.setSelected(true);
             peakIdField.setBackground(deleteBackground);
         } else {
