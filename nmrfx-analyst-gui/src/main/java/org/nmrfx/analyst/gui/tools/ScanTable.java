@@ -169,24 +169,98 @@ public class ScanTable {
         return name;
     }
 
+    private void ensureAllDatasetsAdded() {
+        PolyChart chart = scannerTool.getChart();
+        List<String> datasetNames = new ArrayList<>();
+        for (var fileTableItem : getItems()) {
+            String datasetColumnValue = fileTableItem.getDatasetName();
+            if (datasetColumnValue.isEmpty()) {
+                continue;
+            }
+
+            String datasetPath = fileTableItem.getDatasetName();
+            File file = new File(datasetPath);
+            String datasetName = file.getName();
+            if (!datasetNames.contains(datasetName)) {
+                datasetNames.add(datasetName);
+                Dataset dataset = Dataset.getDataset(datasetName);
+                if (dataset == null) {
+                    File datasetFile = new File(scanDir, datasetPath);
+                    FXMLController.getActiveController().openDataset(datasetFile, false, true);
+                }
+            }
+        }
+        chart.updateDatasets(datasetNames);
+    }
+
+    private void setDatasetVisibility(List<FileTableItem> showRows, boolean setColors, Optional<Double> curLvl) {
+        PolyChart chart = scannerTool.getChart();
+        List<DatasetAttributes> datasetAttributesList = chart.getDatasetAttributes();
+        Map<String, FileTableItem> activeNames = new HashMap<>();
+        List<Integer> rows = new ArrayList<>();
+        Map<Integer, Color> colorMap = new HashMap<>();
+        Map<Integer, Double> offsetMap = new HashMap<>();
+        Set<Integer> groupSet = new HashSet<>();
+        for (FileTableItem fileTableItem : showRows) {
+            String datasetPath = fileTableItem.getDatasetName();
+            if (datasetPath == null) {
+                continue;
+            }
+            File file = new File(datasetPath);
+            String datasetName = file.getName();
+            activeNames.put(datasetName, fileTableItem);
+            Integer row = fileTableItem.getRow();
+            if (row != null) {
+                int iGroup = fileTableItem.getGroup();
+                groupSet.add(iGroup);
+                Color color = getGroupColor(iGroup);
+                double offset = iGroup * 1.0 / groupSize * 0.8;
+                colorMap.put(row - 1, color);
+                offsetMap.put(row - 1, offset);
+                rows.add(row - 1); // rows index from 1
+            }
+        }
+        for (var datasetAttributes : datasetAttributesList) {
+            FileTableItem fileTableItem = activeNames.get(datasetAttributes.getDataset().getName());
+            if (fileTableItem != null) {
+                datasetAttributes.setPos(true);
+                curLvl.ifPresent(lvl -> datasetAttributes.setLvl(lvl));
+            } else {
+                datasetAttributes.setPos(false);
+            }
+        }
+        if (chart.getDatasetAttributes().size() == 1) {
+            DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+            curLvl.ifPresent(dataAttr::setLvl);
+            int nDim = dataAttr.nDim;
+            chart.full(nDim - 1);
+            if ((nDim - dataAttr.getDataset().getNFreqDims()) == 1) {
+                chart.setDrawlist(rows);
+            } else {
+                chart.clearDrawlist();
+            }
+            dataAttr.setMapColors(colorMap);
+            if (groupSet.size() > 1) {
+                dataAttr.setMapOffsets(offsetMap);
+            } else {
+                dataAttr.clearOffsets();
+            }
+        }
+    }
+
     final protected void selectionChanged() {
         if (processingTable) {
             return;
         }
-        Map<Integer, Color> colorMap = new HashMap<>();
-        Map<Integer, Double> offsetMap = new HashMap<>();
-        Set<Integer> groupSet = new HashSet<>();
-        List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
+        List<FileTableItem> selected = tableView.getSelectionModel().getSelectedItems();
         PolyChart chart = scannerTool.getChart();
         ProcessorController processorController = chart.getProcessorController(false);
         if ((processorController == null)
                 || processorController.isViewingDataset()
                 || !processorController.isVisible()) {
-            List<Integer> showRows = new ArrayList<>();
+            List<FileTableItem> showRows = new ArrayList<>();
             if (selected.isEmpty()) {
-                for (int i = 0, n = tableView.getItems().size(); i < n; i++) {
-                    showRows.add(i);
-                }
+                showRows.addAll(tableView.getItems());
             } else {
                 showRows.addAll(selected);
             }
@@ -196,69 +270,9 @@ public class ScanTable {
                 curLvl = Optional.of(dataAttr.getLvl());
             }
 
-            List<Integer> rows = new ArrayList<>();
-            List<String> datasetNames = new ArrayList<>();
-            for (Integer index : showRows) {
-                FileTableItem fileTableItem = tableView.getItems().get(index);
-                Integer row = fileTableItem.getRow();
-                String datasetColumnValue = fileTableItem.getDatasetName();
-                if (datasetColumnValue.isEmpty()) {
-                    continue;
-                }
-                File datasetFile = new File(scanDir, fileTableItem.getDatasetName());
-                String datasetName = datasetFile.getName();
-
-                int iGroup = fileTableItem.getGroup();
-                groupSet.add(iGroup);
-                Color color = getGroupColor(iGroup);
-                double offset = iGroup * 1.0 / groupSize * 0.8;
-                DatasetBase dataset = chart.getDataset();
-                if ((dataset == null) || (chart.getDatasetAttributes().size() != 1) || !dataset.getName().equals(datasetName)) {
-                    dataset = Dataset.getDataset(datasetName);
-                    if (dataset == null) {
-                        FXMLController.getActiveController().openDataset(datasetFile, false, true);
-                    }
-                }
-                if (!datasetNames.contains(datasetName)) {
-                    datasetNames.add(datasetName);
-                }
-                if (row != null) {
-                    colorMap.put(row - 1, color);
-                    offsetMap.put(row - 1, offset);
-                    rows.add(row - 1); // rows index from 1
-                }
-            }
-            chart.updateDatasets(datasetNames);
-            if (chart.getDatasetAttributes().size() == 1) {
-                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                curLvl.ifPresent(dataAttr::setLvl);
-                int nDim = dataAttr.nDim;
-                chart.full(nDim - 1);
-                if ((nDim - dataAttr.getDataset().getNFreqDims()) == 1){
-                    chart.setDrawlist(rows);
-                } else{
-                    chart.clearDrawlist();
-                }
-                dataAttr.setMapColors(colorMap);
-                if (groupSet.size() > 1) {
-                    dataAttr.setMapOffsets(offsetMap);
-                } else {
-                    dataAttr.clearOffsets();
-                }
-                int curMode = chart.getController().getStatusBar().getMode();
-                if (curMode != nDim) {
-                    chart.getController().getStatusBar().setMode(nDim);
-                }
-            } else if (chart.getDatasetAttributes().size() == rows.size()) {
-                for (int i=0;i< chart.getDatasetAttributes().size();i++) {
-                    var dataAttr = chart.getDatasetAttributes().get(i);
-                    dataAttr.setPosColor(colorMap.get(i));
-                    curLvl.ifPresent(dataAttr::setLvl);
-                }
-            }
+            ensureAllDatasetsAdded();
+            setDatasetVisibility(showRows, false, curLvl);
             chart.refresh();
-        } else {
-            openSelectedListFile();
         }
     }
 
@@ -470,8 +484,6 @@ public class ScanTable {
                 String filePath = Paths.get(scanDir.getAbsolutePath(), fileName).toString();
 
                 scannerTool.getChart().getFXMLController().openFile(filePath, false, false);
-
-                processorController.parseScript(scriptString);
             }
 
         }
@@ -736,18 +748,20 @@ public class ScanTable {
             if (firstDatasetName.length() > 0) {
                 File parentDir = file.getParentFile();
                 Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
-                Dataset firstDataset = FXMLController.getActiveController().openDataset(path.toFile(), false, true);
-                // If there is only one unique dataset name, assume an arrayed experiment
-                List<String> uniqueDatasetNames = new ArrayList<>(fileListItems.stream().map(FileTableItem::getDatasetName).collect(Collectors.toSet()));
-                if (uniqueDatasetNames.size() == 1 && uniqueDatasetNames.get(0) != null && !uniqueDatasetNames.get(0).equals("")) {
-                    firstDataset.setNFreqDims(firstDataset.getNDim() - 1);
+                if (path.toFile().exists()) {
+                    Dataset firstDataset = FXMLController.getActiveController().openDataset(path.toFile(), false, true);
+                    // If there is only one unique dataset name, assume an arrayed experiment
+                    List<String> uniqueDatasetNames = new ArrayList<>(fileListItems.stream().map(FileTableItem::getDatasetName).collect(Collectors.toSet()));
+                    if (uniqueDatasetNames.size() == 1 && uniqueDatasetNames.get(0) != null && !uniqueDatasetNames.get(0).equals("")) {
+                        firstDataset.setNFreqDims(firstDataset.getNDim() - 1);
+                    }
+                    PolyChart chart = scannerTool.getChart();
+                    List<Integer> rows = new ArrayList<>();
+                    rows.add(0);
+                    chart.setDrawlist(rows);
+                    chart.full();
+                    chart.autoScale();
                 }
-                PolyChart chart = scannerTool.getChart();
-                List<Integer> rows = new ArrayList<>();
-                rows.add(0);
-                chart.setDrawlist(rows);
-                chart.full();
-                chart.autoScale();
             }
             addGroupColumn();
             scannerTool.miner.setDisableSubMenus(!combineFileMode);
