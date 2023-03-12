@@ -22,11 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleLongProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
+import javafx.scene.paint.Color;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
 /**
  *
@@ -41,6 +39,7 @@ public class FileTableItem {
     private SimpleIntegerProperty row;
     private SimpleLongProperty date;
     private SimpleIntegerProperty group;
+    private SimpleObjectProperty<DatasetAttributes> datasetAttr;
     private HashMap<String, String> extras = new HashMap<>();
     private HashMap<String, Integer> intExtras = new HashMap<>();
     private HashMap<String, Double> doubleExtras = new HashMap<>();
@@ -131,6 +130,47 @@ public class FileTableItem {
 
     public void setDate(long date) {
         this.date.set(date);
+    }
+
+    public Color getColor(boolean posColorMode) {
+        return posColorMode ? getPosColor() : getNegColor();
+    }
+
+    public void setColor(Color color, boolean posColorMode) {
+        if (posColorMode) {
+            setPosColor(color);
+
+        } else {
+            setNegColor(color);
+        }
+    }
+
+    public Color getPosColor() {
+        return datasetAttr == null ? Color.BLACK : datasetAttr.get().getPosColor();
+    }
+
+    public void setPosColor(Color color) {
+         if (datasetAttr != null) {
+             datasetAttr.get().setPosColor(color);
+         }
+    }
+
+    public Color getNegColor() {
+        return datasetAttr == null ? Color.BLACK : datasetAttr.get().getNegColor();
+    }
+
+    public void setNegColor(Color color) {
+        if (datasetAttr != null) {
+            datasetAttr.get().setNegColor(color);
+        }
+    }
+
+    public DatasetAttributes getDatasetAttributes() {
+        return datasetAttr.get();
+    }
+    public void setDatasetAttributes(DatasetAttributes datasetAttributes) {
+        System.out.println("set data attr " + datasetAttributes);
+        this.datasetAttr = new SimpleObjectProperty<>(datasetAttributes);
     }
 
     public String getExtra(String eName) {

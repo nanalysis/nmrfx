@@ -20,11 +20,15 @@ package org.nmrfx.analyst.gui.tools;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
+import javafx.event.EventHandler;
+import javafx.geometry.Side;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -36,6 +40,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import org.controlsfx.control.PopOver;
@@ -43,6 +48,7 @@ import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetMerger;
@@ -54,9 +60,12 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.utils.ColorSchemes;
+import org.nmrfx.processor.gui.utils.TableColors;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.utils.FormatUtils;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.TableUtils;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,6 +119,8 @@ public class ScanTable {
 
     static final Color[] COLORS = new Color[17];
     static final double[] hues = {0.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875, 0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375};
+    TableColumn<FileTableItem, Color> posColorCol = new TableColumn<>("Color");
+    TableColumn<FileTableItem, Color> negColorCol = new TableColumn<>("Color");
 
     static {
         COLORS[0] = Color.BLACK;
@@ -216,6 +227,7 @@ public class ScanTable {
         for (var datasetAttributes : datasetAttributesList) {
             FileTableItem fileTableItem = activeNames.get(datasetAttributes.getDataset().getName());
             if (fileTableItem != null) {
+                fileTableItem.setDatasetAttributes(datasetAttributes);
                 datasetAttributes.setPos(true);
                 if (curLvl != null) {
                     datasetAttributes.setLvl(curLvl);
@@ -860,6 +872,22 @@ public class ScanTable {
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("Date"));
         datasetColumn.setCellValueFactory(e -> new SimpleStringProperty(e.getValue().getDatasetName()));
 
+        posColorCol.setCellValueFactory(e -> new SimpleObjectProperty<>(e.getValue().getPosColor()));
+        posColorCol.setEditable(true);
+        posColorCol.setSortable(false);
+        TableUtils.addColorColumnEditor(posColorCol, (item, color) -> {
+            item.setPosColor(color);
+            scannerTool.getChart().refresh();
+        });
+
+        negColorCol.setCellValueFactory(e -> new SimpleObjectProperty<>(e.getValue().getNegColor()));
+        negColorCol.setEditable(true);
+        TableUtils.addColorColumnEditor(negColorCol, (item, color) -> {
+            item.setNegColor(color);
+            scannerTool.getChart().refresh();
+        });
+        negColorCol.setSortable(false);
+
         TableColumn<FileTableItem, Number> groupColumn = new TableColumn<>(GROUP_COLUMN_NAME);
         groupColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().getGroup()));
 
@@ -881,12 +909,18 @@ public class ScanTable {
         });
 
         tableView.getColumns().clear();
-        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn, rowColumn, datasetColumn, groupColumn);
+        TableColumn posColumn = new TableColumn("Positive");
+        TableColumn negColumn = new TableColumn("Negative");
+        posColumn.getColumns().addAll(posColorCol);
+        negColumn.getColumns().addAll(negColorCol);
+        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn, rowColumn, datasetColumn, groupColumn, posColumn, negColumn);
         updateFilter();
 
         for (TableColumn<FileTableItem, ?> column : tableView.getColumns()) {
-            setColumnGraphic(column);
-            column.graphicProperty().addListener(e -> graphicChanged(column));
+            if (!column.getText().equals("Color")) {
+                setColumnGraphic(column);
+                column.graphicProperty().addListener(e -> graphicChanged(column));
+            }
         }
     }
 
@@ -952,10 +986,82 @@ public class ScanTable {
         }
     }
 
+    private ContextMenu createColorContextMenu(boolean posColorMode) {
+        ContextMenu colorMenu = new ContextMenu();
+        MenuItem unifyColorItem = new MenuItem("unify");
+        unifyColorItem.setOnAction(e -> unifyColors(posColorMode));
+        MenuItem interpColor = new MenuItem("interpolate");
+        interpColor.setOnAction(e -> interpolateColors(posColorMode));
+        MenuItem schemaPosColor = new MenuItem("schema...");
+        schemaPosColor.setOnAction(e -> setColorsToSchema(posColorMode));
+        colorMenu.getItems().addAll(unifyColorItem, interpColor, schemaPosColor);
+        return colorMenu;
+    }
+
+    private void unifyColors(boolean posColorMode) {
+        if (getItems().size() > 0) {
+            var selectedItem = tableView.getSelectionModel().getSelectedItem();
+            if (selectedItem == null) {
+                selectedItem = getItems().get(0);
+            }
+            TableColors.unifyColor(getItems(), selectedItem.getColor(posColorMode), (item, color) -> item.setColor(color, posColorMode));
+            scannerTool.getChart().refresh();
+            refresh();
+        }
+    }
+
+    private void interpolateColors(boolean posColorMode) {
+        int size = getItems().size();
+        if (size > 1) {
+            Color color1 = getItems().get(0).getColor(posColorMode);
+            Color color2 = getItems().get(size - 1).getColor(posColorMode);
+            TableColors.interpolateColors(getItems(), color1, color2,
+                    (item, color) -> item.setColor(color, posColorMode));
+            scannerTool.getChart().refresh();
+            refresh();
+        }
+    }
+
+    void setColorsToSchema(boolean posColorMode) {
+        double x = tableView.getLayoutX();
+        double y = tableView.getLayoutY() + tableView.getHeight() + 10;
+        ColorSchemes.showSchemaChooser(s -> updateColorsWithSchema(s, posColorMode), x, y);
+    }
+
+    public void updateColorsWithSchema(String colorName, boolean posColors) {
+        var items = getItems();
+        if (items.size() < 2) {
+            return;
+        }
+        int i = 0;
+        List<Color> colors = ColorSchemes.getColors(colorName, items.size());
+        for (var item : items) {
+            Color color = colors.get(i++);
+            item.setColor(color, posColors);
+        }
+        refresh();
+        scannerTool.getChart().refresh();
+    }
+
+    private void setMenuGraphics(TableColumn<FileTableItem, ?> column, boolean posColorMode) {
+        Text text = new Text(". . .");
+        text.setMouseTransparent(true);
+        StackPane stackPane = new StackPane();
+        Rectangle rect = new Rectangle(30, 10);
+        rect.setFill(Color.WHITE);
+        stackPane.getChildren().addAll(rect, text);
+        column.setGraphic(stackPane);
+        column.setContextMenu(createColorContextMenu(posColorMode));
+        System.out.println("menu graph " + column.getText());
+//        rect.setOnMousePressed(e -> contextMenu.show(rect, Side.RIGHT, 15, 0));
+//        rect.setOnMouseReleased(Event::consume);
+//        rect.setOnMouseClicked(Event::consume);
+    }
+
     private void setColumnGraphic(TableColumn<FileTableItem, ?> column) {
         String text = column.getText().toLowerCase();
         String type = columnTypes.get(column.getText());
-        if (!"D".equals(type) && isGroupable(text)) {
+        if (!"D".equals(type) && isGroupable(text) && !text.equals("Color")) {
             boolean isGrouped = groupNames.contains(text);
             boolean isFiltered = isFiltered(column);
             StackPane stackPane = new StackPane();
@@ -1004,7 +1110,8 @@ public class ScanTable {
 
     private boolean isGroupable(String text) {
         return !standardHeaders.contains(text) && !text.equals(GROUP_COLUMN_NAME)
-                && !text.contains(":") && !text.equals(DATASET_COLUMN_NAME);
+                && !text.contains(":") && !text.equals(DATASET_COLUMN_NAME) &&
+                !text.contains("Color") && !text.equals("Positive") && !text.equals("Negative");
     }
 
     public boolean isData(String text) {
@@ -1047,6 +1154,8 @@ public class ScanTable {
         fileTableFilter.resetFilter();
         tableView.getItems().addListener(filterItemListener);
         getGroups();
+        setMenuGraphics(posColorCol, true);
+        setMenuGraphics(negColorCol, false);
     }
 
     public ObservableList<FileTableItem> getItems() {
