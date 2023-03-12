@@ -181,14 +181,24 @@ public class PeakPaths implements PeakListener {
         return peakPath;
     }
 
+    record X2WithData(Double x0, Double x1, String dataName) {}
+
     public static PeakPaths loadPathData(PATHMODE pathMode, List<String> datasetNames,
                                          List<Double> x0List, List<Double> x1List, String peakPathName) {
         double[] x0 = new double[x0List.size()];
         double[] x1 = new double[x0List.size()];
+        List<X2WithData> x2WithDataList = new ArrayList<>();
+        for (int i=0;i<datasetNames.size();i++) {
+            var x2d = new X2WithData(x0List.get(i), x1List.isEmpty() ? null : x1List.get(i), datasetNames.get(i));
+            x2WithDataList.add(x2d);
+        }
+        x2WithDataList.sort(Comparator.comparing(X2WithData::x0));
+
         List<PeakList> peakLists = new ArrayList<>();
 
-        for (int i = 0; i < datasetNames.size(); i++) {
-            String datasetName = datasetNames.get(i);
+        for (int i = 0; i < x2WithDataList.size(); i++) {
+            var x2d = x2WithDataList.get(i);
+            String datasetName = x2d.dataName;
             DatasetBase dataset = DatasetBase.getDataset(datasetName);
             if (dataset == null) {
                 throw new IllegalArgumentException("\"Dataset \"" + datasetName + "\" doesn't exist\"");
@@ -202,9 +212,9 @@ public class PeakPaths implements PeakListener {
                 throw new IllegalArgumentException("\"PeakList for dataset \"" + datasetName + "\" doesn't exist\"");
             }
             peakLists.add(peakList);
-            x0[i] = x0List.get(i);
-            if (!x1List.isEmpty()) {
-                x1[i] = x1List.get(i);
+            x0[i] = x2d.x0;
+            if (x2d.x1 != null) {
+                x1[i] = x2d.x1;
             } else {
                 x1[i] = 100.0;
             }
