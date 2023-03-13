@@ -69,6 +69,7 @@ import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.ProgressUpdater;
+import org.nmrfx.utils.FormatUtils;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
@@ -610,6 +611,18 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             }
             if (operationList.isEmpty()) {
                 propertyManager.clearPropSheet();
+                if (!chartProcessor.getAreOperationListsValidProperty().get()) {
+                    String currentDatasetName = chart.getDataset().getName();
+                    haltProcessAction();
+                    // Set available as halt may happen before code flow reaches the Processor
+                    Processor.getProcessor().setProcessorAvailableStatus(true);
+                    chartProcessor.reloadData();
+                    chartProcessor.datasetFile = null;
+                    chartProcessor.datasetFileTemp = null;
+                    viewingDataset(false);
+                    ProjectBase.getActive().removeDataset(currentDatasetName);
+                    chart.refresh();
+                }
             } else {
                 int currentIndex = scriptView.getSelectionModel().getSelectedIndex();
                 if (currentIndex != -1) {
@@ -1036,7 +1049,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void processDataset(boolean idleModeValue) {
-        if (!Processor.getProcessor().isProcessorAvailable()){
+        if (!Processor.getProcessor().isProcessorAvailable() || !chartProcessor.getAreOperationListsValidProperty().get()){
             return;
         }
         Processor.getProcessor().setProcessorAvailableStatus(false);
@@ -1099,8 +1112,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                                 processor.setTempFileMode(idleMode.get());
                                 processor.clearDataset();
                                 processInterp.exec("useProcessor(inNMRFx=True)");
-                                processInterp.exec(script);
-                            }
+                                processInterp.exec(FormatUtils.formatStringForPythonInterpreter(script));                            }
                             return 0;
                         }
                     };
@@ -1274,6 +1286,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         processDatasetButton.disableProperty()
                 .bind(stateProperty.isEqualTo(Worker.State.RUNNING)
                         .or(chartProcessor.nmrDataProperty().isNull())
+                        .or(chartProcessor.getAreOperationListsValidProperty().not())
                         .or(processorAvailable.isEqualTo(false)));
         haltProcessButton.disableProperty().bind(stateProperty.isNotEqualTo(Worker.State.RUNNING));
 

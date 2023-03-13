@@ -34,6 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -60,6 +61,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     Color stroke = Color.BLACK;
     Font font = Font.getDefault();
     double lineWidth = 1.0;
+    double[] lineDashes = null;
     StringBuilder sBuilder = new StringBuilder();
     OutputStream stream;
     XMLStreamWriter writer;
@@ -324,6 +326,11 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         builder.append("stroke-width: ");
         builder.append(format(lineWidth));
         builder.append(';');
+        if (lineDashes != null && lineDashes.length != 0) {
+            builder.append("stroke-dasharray:");
+            builder.append(String.join(" ", Arrays.stream(lineDashes).mapToObj(this::format).toList()));
+            builder.append(';');
+        }
         if (clipPath.length() != 0) {
             builder.append(clipPath);
         }
@@ -724,7 +731,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void setLineDashes(double... dashes) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        lineDashes = dashes;
     }
 
     @Override

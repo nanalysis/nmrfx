@@ -55,6 +55,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Callback;
+import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.SegmentedButton;
@@ -100,6 +101,9 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.IntStream;
+
+import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionInput;
 
 public class FXMLController implements  Initializable, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
@@ -173,6 +177,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     Set<ControllerTool> tools = new HashSet<>();
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
+
 
     private BooleanProperty minBordersProperty() {
         if (minBorders == null) {
@@ -739,12 +744,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
 
         //dataset.setScale(1.0);
-        int nDim = dataset.getNDim();
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
-        datasetAttributes.dim[0] = 0;
-        if (nDim > 1) {
-            datasetAttributes.dim[1] = 1;
-        }
         getActiveChart().setCrossHairState(true, true, true, true);
         getActiveChart().clearAnnotations();
         getActiveChart().clearPopoverTools();
@@ -1186,58 +1186,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @Override
     public void refreshPeakView(Peak peak) {
         if (peak != null) {
-            Set<String> dimsUsed = new HashSet<>();
-            PeakList peakList = peak.getPeakList();
-            int nDim = peakList.getNDim();
-            for (int i = 0; i < nDim; i++) {
-                String peakLabel = peakList.getSpectralDim(i).getDimName();
-                boolean ok1 = true;
-                for (PolyChart chart : charts) {
-                    if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
-                        DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
-                        int aDim = dataAttr.nDim;
-                        boolean ok2 = false;
-                        for (int j = 0; j < aDim; j++) {
-                            if (dataAttr.getLabel(j).equals(peakLabel)) {
-                                ok2 = true;
-                                break;
-                            }
-                        }
-                        if (!ok2) {
-                            ok1 = false;
-                            break;
-                        }
-                    }
-                }
-                if (ok1) {
-                    dimsUsed.add(peakLabel);
-                }
-            }
-            for (PolyChart chart : charts) {
-                if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
-                    DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
-                    int cDim = chart.getNDim();
-                    int aDim = dataAttr.nDim;
-                    Double[] ppms = new Double[cDim];
-                    Double[] widths = new Double[cDim];
-                    for (int i = 0; i < aDim; i++) {
-                        if (!dimsUsed.contains(dataAttr.getLabel(i))) {
-                            continue;
-                        }
-                        PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
-                        if (peakDim != null) {
-                            double peakWidth = peakDim.getSpectralDimObj().getMeanWidthPPM();
-                            ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
-                            widths[i] = widthScale * peakWidth;
-                        }
-                    }
-                    if (widthScale > 0.0) {
-                        chart.moveTo(ppms, widths);
-                    } else {
-                        chart.moveTo(ppms);
-                    }
-                }
-            }
+            PeakDisplayTool.gotoPeak(peak, charts, widthScale);
         }
     }
 
@@ -1351,7 +1300,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public static FXMLController create() {
         return create(null);
     }
-    
+
     public static FXMLController create(Stage stage) {
         FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
         FXMLController controller = null;
@@ -1984,18 +1933,17 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void addGrid() {
-        String rows = GUIUtils.input("nRows");
-        try {
-            if ((rows != null) && !rows.isBlank()) {
-                String columns = GUIUtils.input("nColumns");
-                if ((columns != null) && !columns.isBlank()) {
-                    int nRows = Integer.parseInt(rows);
-                    int nColumns = Integer.parseInt(columns);
-                    addCharts(nRows, nColumns);
-                }
-            }
-        } catch (NumberFormatException nfe) {
-            GUIUtils.warn("Grid Values", "Entry not an integer");
+        GridPaneCanvas.GridDimensions gdims = getGridDimensionInput();
+        if (gdims == null) {
+            return;
+        }
+        addCharts(gdims.rows(), gdims.cols());
+    }
+
+    public void removeSelectedChart() {
+        if (charts.size() > 1) {
+            getActiveChart().close();
+            arrange(chartGroup.getOrientation());
         }
     }
 
@@ -2020,6 +1968,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void arrange(int nRows) {
         chartGroup.setRows(nRows);
+        chartGroup.calculateAndSetOrientation();
     }
 
     public void alignCenters() {

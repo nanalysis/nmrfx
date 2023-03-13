@@ -63,7 +63,6 @@ public class Predictor {
     NodeValidatorInterface nodeValidator = null;
 
     static final Map<String, Double> RNA_REF_SHIFTS = new HashMap<>();
-//    static final Map<String, Double> RNA_REF_DIST_SHIFTS = new HashMap<>();
     static final Map<String, Double> RNA_MAE_SHIFTS = new HashMap<>();
 
     static {
@@ -157,6 +156,49 @@ public class Predictor {
     private static double intraScale = 5.0;
     static Map<String, Set<String>> rnaFixedMap = new HashMap<>();
 
+    void clearRefPPMs(int iRef) {
+        Molecule mol = Molecule.getActive();
+        if (mol != null) {
+            List<Atom> molAtoms = mol.getAtoms();
+            for (Atom atom : molAtoms) {
+                PPMv ppmV;
+                if (iRef < 0) {
+                    ppmV = atom.getRefPPM(-iRef - 1);
+                } else {
+                    ppmV = atom.getPPM(iRef);
+                }
+                if (ppmV != null) {
+                    ppmV.setValid(false, atom);
+                }
+            }
+        }
+    }
+
+    // used from Python
+    public void setToBMRBValues(int iRef) {
+        clearRefPPMs(iRef);
+        BMRBStats.loadAllIfEmpty();
+        Molecule mol = Molecule.getActive();
+        if (mol != null) {
+            List<Atom> molAtoms = mol.getAtoms();
+            for (Atom atom : molAtoms) {
+                String aName = atom.getName();
+                String resName = atom.getEntity().getName();
+                Optional<PPMv> ppmVOpt = BMRBStats.getValue(resName, aName);
+                if (ppmVOpt.isPresent()) {
+                    PPMv ppmV = ppmVOpt.get();
+                    if (iRef < 0) {
+                        atom.setRefPPM(-iRef - 1, ppmV.getValue());
+                        atom.setRefError(-iRef - 1, ppmV.getError());
+                    } else {
+                        atom.setPPM(iRef, ppmV.getValue());
+                        atom.setPPMError(iRef, ppmV.getError());
+                    }
+                }
+            }
+        }
+    }
+
     private boolean isRNA(Polymer polymer) {
         boolean rna = false;
         for (Residue residue : polymer.getResidues()) {
@@ -180,21 +222,14 @@ public class Predictor {
 
     public static Double getMAE(Atom atom) {
         String aName = atom.getName();
-        Double mae = maeMap.get(aName);
-        return mae;
+        return maeMap.get(aName);
     }
 
     public static Double getDistBaseShift(Atom atom) {
         checkRNADistData();
         String nucName = atom.getEntity().getName();
         String nucAtom = nucName + "." + atom.getName();
-        Double basePPM;
-        if (baseShiftMap.containsKey(nucAtom)) {
-            basePPM = baseShiftMap.get(nucAtom);
-        } else {
-            basePPM = null;
-        }
-        return basePPM;
+        return baseShiftMap.getOrDefault(nucAtom, null);
     }
 
     public static void checkRNADistData() {
@@ -268,23 +303,20 @@ public class Predictor {
 
     public void predictRNAWithAttributes(int ppmSet) {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
-        if (molecule != null) {
-            if (!molecule.getDotBracket().equals("")) {
-                try (PythonInterpreter interp = new PythonInterpreter()) {
-                    interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
-                }
+        if ((molecule != null) && !molecule.getDotBracket().equals("")) {
+            try (PythonInterpreter interp = new PythonInterpreter()) {
+                interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
             }
         }
     }
 
-    public void predictRNAWithRingCurrent(Polymer polymer, int iStruct, int iRef) throws InvalidMoleculeException {
+    public void predictRNAWithRingCurrent(Polymer polymer, int iStruct, int iRef) {
         RingCurrentShift ringShifts = new RingCurrentShift();
         ringShifts.makeRingList(polymer.molecule);
 
         double ringRatio = 0.56;
         List<Atom> atoms = polymer.getAtoms();
         for (Atom atom : atoms) {
-            String name = atom.getShortName();
             String aName = atom.getName();
             String nucName = atom.getEntity().getName();
             String nucAtom = nucName + "." + aName;
@@ -301,15 +333,13 @@ public class Predictor {
         }
     }
 
-    public void predictLigandWithRingCurrent(Entity ligand, int iRef) throws InvalidMoleculeException {
+    public void predictLigandWithRingCurrent(Entity ligand, int iRef) {
         RingCurrentShift ringShifts = new RingCurrentShift();
         ringShifts.makeRingList(ligand.molecule);
 
         double ringRatio = 0.56;
         List<Atom> atoms = ligand.getAtoms();
         for (Atom atom : atoms) {
-            String name = atom.getShortName();
-            String aName = atom.getName();
             double ringPPM = ringShifts.calcRingContributions(atom.getSpatialSet(), 0, ringRatio);
             PPMv ppmV = atom.getRefPPM(iRef);
             if (ppmV != null) {
@@ -327,11 +357,11 @@ public class Predictor {
     public static boolean isRNAPairFixed(Atom atom1, Atom atom2) {
         String aName1 = atom1.getName();
         if (!aName1.contains("'")) {
-            aName1 = ((Residue) atom1.getEntity()).getName() + "." + aName1;
+            aName1 = atom1.getEntity().getName() + "." + aName1;
         }
         String aName2 = atom2.getName();
         if (!aName2.contains("'")) {
-            aName2 = ((Residue) atom2.getEntity()).getName() + "." + aName2;
+            aName2 = atom2.getEntity().getName() + "." + aName2;
         }
         return isRNAPairFixed(aName1, aName2);
     }
@@ -341,7 +371,7 @@ public class Predictor {
             try {
                 readRNAFixed("data/rnafix.txt");
             } catch (IOException ex) {
-                System.out.println("failed load " + ex.getMessage());
+                log.error("failed load ", ex);
                 return false;
             }
         }
@@ -361,12 +391,11 @@ public class Predictor {
         return false;
     }
 
-    public void predictRNAWithDistances(Polymer polymer, int iStruct, int iRef, boolean eMode) throws InvalidMoleculeException {
+    public void predictRNAWithDistances(Polymer polymer, int iStruct, int iRef, boolean eMode) {
         Molecule molecule = (Molecule) polymer.molecule;
         if (eMode) {
             molecule.updateVecCoords();
             EnergyCoords eCoords = molecule.getEnergyCoords();
-            // eCoords.setCells(eCoords.getShiftPairs(), 10000, rMax, 0.0, true, 0.0, 0.0);
             eCoords.calcDistShifts(false, getRMax(), intraScale, 1.0);
         } else {
             List<Atom> atoms = polymer.getAtoms();
@@ -389,7 +418,6 @@ public class Predictor {
                     for (int i = 0; i < nAlpha; i++) {
                         double alpha = alphas[alphaType][i];
                         double shiftContrib;
-                        double dis = 0.0;
                         if (i < angStart) {
                             shiftContrib = alpha * distances[i];
                         } else {
@@ -416,7 +444,6 @@ public class Predictor {
     }
 
     public void predictWithShells(Entity aC, int iRef) {
-        HosePrediction hosePred = HosePrediction.getDefaultPredictor();
         PathIterator pI = new PathIterator(aC);
         if (nodeValidator == null) {
             nodeValidator = NodeEvaluatorFactory.getDefault();
@@ -425,35 +452,52 @@ public class Predictor {
         pI.processPatterns();
         pI.setProperties("ar", "AROMATIC");
         pI.setHybridization();
+        predictWithShells(aC, iRef, 6);
+        predictWithShells(aC, iRef, 7);
+    }
+
+    public void predictWithShells(Entity aC, int iRef, int aNum) {
+        HosePrediction hosePred = aNum == 6 ? HosePrediction.getDefaultPredictor() : HosePrediction.getDefaultPredictorN();
         HoseCodeGenerator hoseGen = new HoseCodeGenerator();
-        Map<Integer, String> result = hoseGen.genHOSECodes(aC, 5);
+        hoseGen.genHOSECodes(aC, 5, aNum);
         for (Atom atom : aC.getAtoms()) {
             String predAtomType = "";
             Atom hoseAtom = null;
             double roundScale = 1.0;
+            if (atom.getAtomicNumber() == 1) {
+                if (atom.getParent().getAtomicNumber() != aNum) {
+                    continue;
+                }
+            } else if (atom.getAtomicNumber() != aNum) {
+                continue;
+            }
 
-            if (atom.getAtomicNumber() == 6) {
+            if (atom.getAtomicNumber() == aNum) {
                 hoseAtom = atom;
-                predAtomType = "13C";
+                predAtomType = aNum == 6 ? "13C" : "15N";
                 roundScale = 10.0;
             } else if (atom.getAtomicNumber() == 1) {
                 hoseAtom = atom.parent;
                 predAtomType = "1H";
                 roundScale = 100.0;
             }
-            if ((hoseAtom != null) && (hoseAtom.getAtomicNumber() == 6)) {
+            if ((hoseAtom != null) && (hoseAtom.getAtomicNumber() == aNum)) {
                 String hoseCode = (String) hoseAtom.getProperty("hose");
                 if (hoseCode != null) {
                     PredictResult predResult;
                     HosePrediction.HOSEPPM hosePPM = new HosePrediction.HOSEPPM(hoseCode);
                     predResult = hosePred.predict(hosePPM, predAtomType);
                     HOSEStat hoseStat = predResult.getStat(predAtomType);
-                    double shift = hoseStat.dStat.getPercentile(50);
-                    shift = Math.round(shift * roundScale) / roundScale;
-                    if (iRef < 0) {
-                        atom.setRefPPM(-iRef - 1, shift);
+                    if (hoseStat != null) {
+                        double shift = hoseStat.dStat.getPercentile(50);
+                        shift = Math.round(shift * roundScale) / roundScale;
+                        if (iRef < 0) {
+                            atom.setRefPPM(-iRef - 1, shift);
+                        } else {
+                            atom.setPPM(iRef, shift);
+                        }
                     } else {
-                        atom.setPPM(iRef, shift);
+                        log.warn("no hose prediction for " + hoseAtom.getFullName() + " " + hoseCode);
                     }
                 }
             }
@@ -469,7 +513,7 @@ public class Predictor {
             InputStreamReader reader = new InputStreamReader(istream);
             BufferedReader breader = new BufferedReader(reader);
             String state = "";
-            int nCoef = 0;
+            int nCoef;
             String[] coefAtoms = null;
             int typeIndex = 0;
             while (true) {
@@ -502,19 +546,19 @@ public class Predictor {
                                 state = "mae";
                             } else {
                                 switch (state) {
-                                    case "coef":
+                                    case "coef" -> {
                                         int index = Integer.parseInt(fields[0]);
                                         coefAtoms[index] = fields[1];
                                         alphas[typeIndex][index] = Double.parseDouble(fields[2]);
-                                        break;
-                                    case "baseshifts":
+                                    }
+                                    case "baseshifts" -> {
                                         double shift = Double.parseDouble(fields[1]);
                                         baseShiftMap.put(fields[0], shift);
-                                        break;
-                                    case "mae":
+                                    }
+                                    case "mae" -> {
                                         double value = Double.parseDouble(fields[1]);
                                         maeMap.put(fields[0], value);
-                                        break;
+                                    }
                                 }
                             }
 
@@ -536,13 +580,8 @@ public class Predictor {
             srcName = aName2;
             targetName = aName1;
         }
-        Set<String> set = rnaFixedMap.get(srcName);
-        if (set == null) {
-            set = new HashSet<>();
-            rnaFixedMap.put(srcName, set);
-        }
+        Set<String> set = rnaFixedMap.computeIfAbsent(srcName, k -> new HashSet<>());
         set.add(targetName);
-
     }
 
     public static void readRNAFixed(String resourceName) throws IOException {
@@ -553,7 +592,6 @@ public class Predictor {
         } else {
             InputStreamReader reader = new InputStreamReader(istream);
             BufferedReader breader = new BufferedReader(reader);
-            String aType = "";
             while (true) {
                 String line = breader.readLine();
                 if (line == null) {

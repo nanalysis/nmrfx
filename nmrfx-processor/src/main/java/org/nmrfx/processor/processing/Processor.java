@@ -669,7 +669,16 @@ public class Processor {
     }
 
     public int[] getIndirectSizes() {
-        return tmult != null ? tmult.getIndirectSizes() : new int[0];
+        if (tmult == null) {
+            if (itemsToWrite > 1) {
+                int[] idSizes = {itemsToWrite};
+                return idSizes;
+            } else {
+                return new int[0];
+            }
+        } else {
+            return tmult.getIndirectSizes();
+        }
     }
 
     public boolean setMatDims(int[] dims) {
@@ -966,14 +975,17 @@ public class Processor {
             }
             this.mapToDataset = mapToDataset.clone();
             for (int i = 0; i < dataset.getNDim(); i++) {
-                dataset.setLabel(i, nmrData.getTN(mapToFID(i)));
-                dataset.setSf(i, nmrData.getSF(mapToFID(i)));
-                dataset.setSw(i, nmrData.getSW(mapToFID(i)));
-                dataset.setRefValue(i, nmrData.getRef(mapToFID(i)));
-                dataset.setRefPt(i, nmrData.getRefPoint(mapToFID(i)));
-                dataset.setTDSize(i, useSizes[mapToFID(i)]);
+                int fidDim = mapToFID(i);
+                if (fidDim < nmrData.getNDim()) {
+                    dataset.setLabel(i, nmrData.getTN(mapToFID(i)));
+                    dataset.setSf(i, nmrData.getSF(mapToFID(i)));
+                    dataset.setSw(i, nmrData.getSW(mapToFID(i)));
+                    dataset.setRefValue(i, nmrData.getRef(mapToFID(i)));
+                    dataset.setRefPt(i, nmrData.getRefPoint(mapToFID(i)));
+                    dataset.setComplex(i, nmrData.isComplex(mapToFID(i)));
+                }
                 dataset.setValues(i, nmrData.getValues(mapToFID(i)));
-                dataset.setComplex(i, nmrData.isComplex(mapToFID(i)));
+                dataset.setTDSize(i, useSizes[mapToFID(i)]);
             }
             dataset.setSolvent(nmrData.getSolvent());
             dataset.setTempK(nmrData.getTempK());
@@ -1507,20 +1519,21 @@ public class Processor {
         if (dataset.fFormat == DatasetBase.FFORMAT.UCSF) {
             dataset.writeHeader(false);
         }
+
+        int freqDimsProcessed = 0;
+        for (int i = 0; i < dataset.getNDim(); i++) {
+            if (dataset.getFreqDomain(i)) {
+                freqDimsProcessed++;
+            }
+        }
+        dataset.setNFreqDims(freqDimsProcessed);
+        for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
+            dataset.setComplex(i, false);
+        }
+        if (getNMRData() != null) {
+            dataset.sourceFID(new File(getNMRData().getFilePath()));
+        }
         if (!keepDatasetOpen || !dataset.isMemoryFile()) {
-            int freqDimsProcessed = 0;
-            for (int i = 0; i < dataset.getNDim(); i++) {
-                if (dataset.getFreqDomain(i)) {
-                    freqDimsProcessed++;
-                }
-            }
-            dataset.setNFreqDims(freqDimsProcessed);
-            for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
-                dataset.setComplex(i, false);
-            }
-            if (getNMRData() != null) {
-                dataset.sourceFID(new File(getNMRData().getFilePath()));
-            }
             if (!dataset.isMemoryFile()) {
                 dataset.writeParFile();
             }
@@ -1637,15 +1650,16 @@ public class Processor {
                 }
             }
             doneWriting.set(true);
+            boolean doneFlushed = true;
             if (useIOController && !p.isDataset()) {
-                boolean doneFlushed = datasetWriter.isDone(10000);
+                doneFlushed = datasetWriter.isDone(10000);
                 log.info("done flushed {}", doneFlushed);
             }
-            if (!getProcessorError()) {
+            if (!getProcessorError() && doneFlushed) {
                 if (p.isMatrix()) {
-                    log.warn("Processed dimensions {}, {} with {} threads.", (dim[0] + 1), (dim[1] + 1), numProcessors);
+                    log.info("Processed dimensions {}, {} with {} threads.", (dim[0] + 1), (dim[1] + 1), numProcessors);
                 } else {
-                    log.warn("Processed dimension {} with {} threads.", (dim[0] + 1), numProcessors);
+                    log.info("Processed dimension {} with {} threads.", (dim[0] + 1), numProcessors);
                 }
                 for (int i = 0; i < dataset.getNDim(); ++i) {
                     dataset.syncPars(i);

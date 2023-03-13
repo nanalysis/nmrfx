@@ -1,4 +1,3 @@
-
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.peaks.PeakList;
@@ -10,8 +9,11 @@ import org.nmrfx.peaks.PeakList;
  */
 public interface PeakMenuTarget {
     
-    public void setPeakList(PeakList peakList);
-    public PeakList getPeakList();
-    public void refreshPeakView();
-    
+    void setPeakList(PeakList peakList);
+    PeakList getPeakList();
+    void refreshPeakView();
+    void refreshChangedListView();
+    void copyPeakTableView();
+    void deletePeaks();
+    void restorePeaks();
 }

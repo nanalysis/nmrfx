@@ -27,7 +27,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
 
@@ -71,6 +70,10 @@ public class PeakMenuBar {
 
         MenuButton editMenu = new MenuButton("Edit");
 
+        MenuItem copyMenu = new MenuItem("Copy");
+        copyMenu.setOnAction(e -> menuTarget.copyPeakTableView());
+        editMenu.getItems().add(copyMenu);
+
         MenuItem compressMenuItem = new MenuItem("Compress");
         compressMenuItem.setOnAction(e -> compressPeakList());
         editMenu.getItems().add(compressMenuItem);
@@ -82,6 +85,14 @@ public class PeakMenuBar {
         MenuItem compressAndDegapMenuItem = new MenuItem("Compress and Degap");
         compressAndDegapMenuItem.setOnAction(e -> compressAndDegapPeakList());
         editMenu.getItems().add(compressAndDegapMenuItem);
+
+        MenuItem deletePeakMenuItem = new MenuItem("Delete Peaks");
+        deletePeakMenuItem.setOnAction(e -> menuTarget.deletePeaks());
+        editMenu.getItems().add(deletePeakMenuItem);
+
+        MenuItem restorePeakMenuItem = new MenuItem("Restore Peaks");
+        restorePeakMenuItem.setOnAction(e -> menuTarget.restorePeaks());
+        editMenu.getItems().add(restorePeakMenuItem);
 
         MenuItem deleteMenuItem = new MenuItem("Delete List");
         deleteMenuItem.setOnAction(e -> deletePeakList());
@@ -164,6 +175,10 @@ public class PeakMenuBar {
 
     void refreshPeakView() {
         menuTarget.refreshPeakView();
+    }
+
+    void refreshChangedListView() {
+        menuTarget.refreshChangedListView();
     }
 
     public static void addExtra(String name, Consumer<PeakList> function) {
@@ -302,7 +317,7 @@ public class PeakMenuBar {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Permanently remove deleted peaks");
             alert.showAndWait().ifPresent(response -> {
                 getPeakList().compress();
-                refreshPeakView();
+                refreshChangedListView();
             });
         }
     }
@@ -312,7 +327,7 @@ public class PeakMenuBar {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Renumber peak list (permanent!)");
             alert.showAndWait().ifPresent(response -> {
                 getPeakList().reNumber();
-                refreshPeakView();
+                refreshChangedListView();
             });
         }
     }
@@ -323,7 +338,7 @@ public class PeakMenuBar {
             alert.showAndWait().ifPresent(response -> {
                 getPeakList().compress();
                 getPeakList().reNumber();
-                refreshPeakView();
+                refreshChangedListView();
             });
         }
     }

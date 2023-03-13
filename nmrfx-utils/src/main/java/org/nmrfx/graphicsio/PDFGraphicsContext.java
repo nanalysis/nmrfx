@@ -640,6 +640,20 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void setLineDashes(double... dashes) {
+        float[] floatDashes;
+        if (dashes == null) {
+            floatDashes = new float[0];
+        } else {
+            floatDashes = new float[dashes.length];
+            for (int i = 0; i < dashes.length; i++) {
+                floatDashes[i] = (float) dashes[i];
+            }
+        }
+        try {
+            contentStream.setLineDashPattern(floatDashes, (float) 0.0);
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
         // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

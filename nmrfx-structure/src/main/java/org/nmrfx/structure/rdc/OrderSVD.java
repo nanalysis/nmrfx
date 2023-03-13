@@ -1052,7 +1052,8 @@ public class OrderSVD {
             try (PythonInterpreter interpreter = new PythonInterpreter()) {
                 interpreter.exec("import refine");
                 interpreter.exec("ref = refine.refine()");
-                interpreter.exec(String.join("", "ref.addRDCFile(\"", file.getAbsolutePath(), "\", mode='xplor', keep=None)"));
+                interpreter.set("rdcFilePath", file.getAbsolutePath());
+                interpreter.exec("ref.addRDCFile(rdcFilePath, mode='xplor', keep=None)");
                 interpreter.exec("ref.readRDCFiles()");
             }
         } else if (type.equals("cyana")) {

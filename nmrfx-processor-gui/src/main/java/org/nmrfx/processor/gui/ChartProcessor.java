@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.FileChooser;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -60,12 +61,18 @@ public class ChartProcessor {
     private boolean lastWasFreqDomain = false;
 
     private SimpleObjectProperty<NMRData> nmrDataObj;
+    private final SimpleBooleanProperty areOperationListsValid = new SimpleBooleanProperty(false);
+
 
     public SimpleObjectProperty<NMRData> nmrDataProperty() {
         if (nmrDataObj == null) {
             nmrDataObj = new SimpleObjectProperty<>(null);
         }
         return nmrDataObj;
+    }
+
+    public SimpleBooleanProperty getAreOperationListsValidProperty() {
+        return areOperationListsValid;
     }
 
     public void setNMRData(NMRData value) {
@@ -557,7 +564,9 @@ public class ChartProcessor {
         }
         Vec vec = vectors.get(iVec);
         vec.setName("vec" + iVec);
-        chart.setDataset(new Dataset(vec), false, true);
+        Dataset d = new Dataset(vec);
+        d.setNucleus(0, nmrData.getTN(vecDim));
+        chart.setDataset(d, false, true);
         return fileIndices;
     }
 
@@ -706,9 +715,13 @@ public class ChartProcessor {
             return;
         }
         scriptValid = false;
-        List<String> oldList = new ArrayList<>();
-        oldList.addAll(processorController.getOperationList());
-        mapOpLists.put(vecDimName, oldList);
+        List<String> newList = new ArrayList<>(processorController.getOperationList());
+        boolean clearedOperations = false;
+        if (newList.isEmpty() && vecDimName.equals("D1")) {
+            clearedOperations = true;
+        }
+        areOperationListsValid.set(!clearedOperations);
+        mapOpLists.put(vecDimName, newList);
         ProcessorController pController = processorController;
         if (pController.isViewingDataset() && pController.autoProcess.isSelected()) {
             processorController.processIfIdle();
@@ -1017,7 +1030,6 @@ public class ChartProcessor {
 
     Optional<String> fixDatasetName(String script) {
         final Optional<String> emptyResult = Optional.empty();
-        final Optional<String> result;
 
         if (!scriptHasDataset(script)) {
             String datasetName = suggestDatasetName();
@@ -1028,12 +1040,6 @@ public class ChartProcessor {
             if (getDatasetType()== DatasetType.SPINit) {
                 Path datasetDir = directory.toPath();
                 Path newProcPath = RS2DProcUtil.findNextProcPath(datasetDir);
-                try {
-                    Files.createDirectories(newProcPath);
-                } catch (IOException e) {
-                    GUIUtils.warn("Dataset creation", "Unable to create new dataset directory");
-                    return emptyResult;
-                }
                 file = newProcPath.toFile();
             } else {
                 FileChooser fileChooser = new FileChooser();
@@ -1044,37 +1050,44 @@ public class ChartProcessor {
                     return emptyResult;
                 }
                 Optional<DatasetType> fileTypeOpt = DatasetType.typeFromFile(file);
-                if (fileTypeOpt.isPresent()) {
-                    DatasetType fileType = fileTypeOpt.get();
-                    if (fileType != getDatasetType()) {
-                        GUIUtils.warn("Dataset creation", "File extension not consistent with dataset type");
-                        return emptyResult;
-                    }
-                }
-            }
-
-            file = getDatasetType().addExtension(file);
-            if (file.exists() && !file.canWrite()) {
-                GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
-                return emptyResult;
-            }
-            if (!file.exists()) {
-                File parentFile = file.getParentFile();
-                if (!parentFile.canWrite()) {
-                    GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
+                if (fileTypeOpt.isPresent() && fileTypeOpt.get() != getDatasetType()) {
+                    GUIUtils.warn("Dataset creation", "File extension not consistent with dataset type");
                     return emptyResult;
                 }
+            }
+            file = getDatasetType().addExtension(file);
+            if (!datasetFileOkay(file)) {
+                return emptyResult;
             }
             datasetFile = file;
             String fileString = file.getAbsoluteFile().toString();
             datasetFileTemp = new File(fileString + ".tmp");
             fileString = fileString.replace("\\", "/");
             script = script.replace("_DATASET_", "'" + fileString + "'");
-            result = Optional.of(script);
-        } else {
-            result = Optional.of(script);
         }
-        return result;
+        return Optional.of(script);
+    }
+
+    private boolean datasetFileOkay(File datasetFileToCheck) {
+        if (datasetFileToCheck.exists() && !datasetFileToCheck.canWrite()) {
+            GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
+            return false;
+        }
+        if (!datasetFileToCheck.exists()) {
+            File parentFile = datasetFileToCheck.getParentFile();
+            boolean canWrite = parentFile.canWrite();
+            // For SPINit files check if either of the above 2 parent directories are writable (Proc and the fid data directory)
+            if (getDatasetType()== DatasetType.SPINit) {
+                File procParent = parentFile.getParentFile();
+                File fidParent = procParent.getParentFile();
+                canWrite = (!procParent.exists() && fidParent.canWrite()) || procParent.canWrite();
+            }
+            if (!canWrite) {
+                GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
+                return false;
+            }
+        }
+        return true;
     }
 
     private String suggestDatasetName() {
@@ -1322,10 +1335,14 @@ public class ChartProcessor {
     }
 
     public void reloadData() {
+        NMRData nmrData = getNMRData();
+        if (nmrData == null) {
+            log.info("NMRData is null, unable to reload.");
+            return;
+        }
         chart.setPh0(0);
         chart.setPh1(0);
         chart.setPivot(null);
-        NMRData nmrData = getNMRData();
         int nDim = nmrData.getNDim();
         iVec = 0;
         execScript("", false, false);

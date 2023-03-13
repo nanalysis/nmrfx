@@ -55,6 +55,8 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.processing.Processor;
+import org.nmrfx.utils.FormatUtils;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
@@ -389,6 +391,8 @@ public class ScanTable {
 
             int nDim = fileTableItems.get(0).getNDim();
             String processScript = chartProcessor.buildScript(nDim);
+            Processor processor = Processor.getProcessor();
+            processor.keepDatasetOpen(false);
 
             int rowNum = 1;
             for (FileTableItem fileTableItem : fileTableItems) {
@@ -397,7 +401,7 @@ public class ScanTable {
                 File datasetFile = new File(scanOutputDir, fileRoot + rowNum + ".nv");
                 String datasetFilePath = datasetFile.getAbsolutePath();
                 String fileScript = ChartProcessor.buildFileScriptPart(fidFilePath, datasetFilePath);
-                processInterp.exec(fileScript);
+                processInterp.exec(FormatUtils.formatStringForPythonInterpreter(fileScript));
                 processInterp.exec(processScript);
                 fileNames.add(datasetFilePath);
                 fileTableItem.setRow(rowNum++);
