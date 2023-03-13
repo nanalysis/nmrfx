@@ -763,6 +763,26 @@ public class VarianData implements NMRData {
     }
 
     @Override
+    public int getGroupSize(int iDim) {
+        if (iDim == 0) {
+            String s = getPar("proc");
+            return !(s != null && s.equals("rft")) ? 2 : 1; // proc="ft" or "lp"
+        } else {
+            String ext = String.valueOf(iDim);
+            String s = getPar("proc"+ext);
+            boolean notRFT =  !"rft".equals(s);
+
+            s = getPar("phase" + ext);
+            if (s != null) {
+                String[] f = s.split("\n");
+                return f.length;
+            } else {
+                return 1;
+            }
+        }
+    }
+
+    @Override
     public boolean getNegatePairs(int iDim) {
         return false;
     }

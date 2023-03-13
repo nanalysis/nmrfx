@@ -466,6 +466,11 @@ public class BrukerData implements NMRData {
     }
 
     @Override
+    public int getGroupSize(int dim) {
+        return isComplex(dim) ? 2 : 1;
+    }
+
+    @Override
     public String getFTType(int iDim) {
         return fttype[iDim];
     }
