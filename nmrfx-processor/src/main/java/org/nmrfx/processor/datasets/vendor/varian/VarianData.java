@@ -744,16 +744,26 @@ public class VarianData implements NMRData {
             return !(s != null && s.equals("rft")); // proc="ft" or "lp"
         } else {
             String ext = String.valueOf(iDim);
-            String s = getPar("proc"+ext);
-            boolean notRFT =  !"rft".equals(s); 
+            String s = getPar("proc" + ext);
+            boolean notRFT = !(s != null && s.equals("rft")); // proc="ft" or "lp"
 
-            s = getPar("phase" + ext);
+            if (iDim == 1) {
+                s = getPar("phase");
+            } else {
+                s = getPar("phase" + ext);
+            }
             if (s != null) {
                 String[] f = s.split("\n");
-                return (f.length > 1);
+                if (f.length > 1) {
+                    return true;
+                } else if (f.length == 1) {
+                    return f[0].equals("0");
+                } else {
+                    return false;
+                }
             } else {
                 int td = getNI(iDim);
-                boolean isComplex = false; 
+                boolean isComplex = false;
                 if ((td > 1) && notRFT) {
                     isComplex = true;
                 }
@@ -772,7 +782,11 @@ public class VarianData implements NMRData {
             String s = getPar("proc"+ext);
             boolean notRFT =  !"rft".equals(s);
 
-            s = getPar("phase" + ext);
+            if (iDim == 1) {
+                s = getPar("phase");
+            } else {
+                s = getPar("phase" + ext);
+            }
             if (s != null) {
                 String[] f = s.split("\n");
                 return f.length;
