@@ -100,6 +100,7 @@ public class RS2DData implements NMRData {
     private final boolean[] negateImag = new boolean[MAXDIM];
     private final String[] obsNuc = new String[MAXDIM];
     private final boolean[] complexDim = new boolean[MAXDIM];
+    private final int[] groupSizes = new int[MAXDIM];
     private final double[][] f1coef = new double[MAXDIM][];
     private final String[] f1coefS = new String[MAXDIM];
     private final String[] fttype = new String[MAXDIM];
@@ -401,6 +402,7 @@ public class RS2DData implements NMRData {
         exchangeXY = true;
         negatePairs = false;
         fttype[0] = "ft";
+        groupSizes[0] = 2;
 
         // other dimensions depends on the PHASE_MOD parameter
         for (int i = 1; i < MAXDIM; i++) {
@@ -409,6 +411,7 @@ public class RS2DData implements NMRData {
             fttype[i] = mode.getFtType();
             f1coefS[i] = mode.getSymbolicCoefs();
             f1coef[i] = mode.getCoefs();
+            groupSizes[i] = mode.getGroupSize();
 
             if (mode == PhaseMod.TPPI || mode == PhaseMod.ECHO_ANTIECHO) {
                 negateImag[i] = true;
@@ -416,7 +419,7 @@ public class RS2DData implements NMRData {
 
             if (mode.isComplex()) {
                 // size is expressed as number of complex pairs
-                tdsize[i] /= 2;
+                tdsize[i] /= mode.getGroupSize();
             }
         }
     }
@@ -734,6 +737,11 @@ public class RS2DData implements NMRData {
     @Override
     public void setComplex(int dim, boolean value) {
         complexDim[dim] = value;
+    }
+
+    @Override
+    public int getGroupSize(int dim) {
+        return groupSizes[dim];
     }
 
     @Override
