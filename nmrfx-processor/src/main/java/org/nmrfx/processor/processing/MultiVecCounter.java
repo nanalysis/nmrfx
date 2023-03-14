@@ -67,12 +67,12 @@ public class MultiVecCounter {
      * @param datasetNDim number of dimensions in final dataset, could be
      * smaller than original data dimensions.
      */
-    public MultiVecCounter(int[] tdSizes, boolean[] complex, String[] modes, int datasetNDim) {
+    public MultiVecCounter(int[] tdSizes, int[] groupSizes, boolean[] complex, String[] modes, int datasetNDim) {
         nDim = tdSizes.length;
         osizes = new int[(nDim - 1) * 2];
         isizes = new int[(nDim - 1) * 2];
         this.datasetNDim = datasetNDim;
-        init(tdSizes, tdSizes, complex,complex, modes, null);
+        init(tdSizes, tdSizes, groupSizes, complex, modes, null);
     }
 
     /**
@@ -83,8 +83,8 @@ public class MultiVecCounter {
      * data in each dimension
      * @param outSizes an array of integers representing the size of the output
      * dataset in each dimension
-     * @param complex an array of booleans representing whether the input FID is
-     * complex in each dimension.
+     * @param groupSizes an array of integers representing the number of input rows used for each dimension
+     *                   typically 2 for phase-sensitive data (hyper complex or echo-antiecho) or 1 otherwise.
      * @param oComplex an array of booleans representing whether the output dataset is
      * complex in each dimension.
      * @param modes an array of string values representing the order in which
@@ -98,15 +98,15 @@ public class MultiVecCounter {
      * @param datasetNDim number of dimensions in final dataset, could be
      * smaller than original data dimensions.
      */
-    public MultiVecCounter(int[] tdSizes, int[] outSizes, boolean[] complex, boolean[] oComplex,  String[] modes, int[] swapIn, int datasetNDim) {
+    public MultiVecCounter(int[] tdSizes, int[] outSizes, int[] groupSizes, boolean[] oComplex,  String[] modes, int[] swapIn, int datasetNDim) {
         nDim = tdSizes.length;
         osizes = new int[(nDim - 1) * 2];
         isizes = new int[(nDim - 1) * 2];
         this.datasetNDim = datasetNDim;
-        init(tdSizes, outSizes, complex,oComplex,  modes, swapIn);
+        init(tdSizes, outSizes, groupSizes, oComplex,  modes, swapIn);
     }
 
-    void init(int[] tdSizes, int[] outSizes, boolean[] complex, boolean[] oComplex, String[] modes, int[] swapIn) {
+    void init(int[] tdSizes, int[] outSizes, int[] groupSizes, boolean[] oComplex, String[] modes, int[] swapIn) {
         int nIDim = tdSizes.length - 1;  // number of indirect dimensions
 
         // the index of the values in the multi-dimensional counter that references the phase increment
@@ -147,8 +147,8 @@ public class MultiVecCounter {
                 isizes[argIndex] = tdSizes[dim];
             } else if (mode.charAt(0) == 'p') {
                 inPhases[dim - 1] = argIndex;
-                isizes[argIndex] = complex[dim] ? 2 : 1;
-                groupSize *= complex[iPhase] ? 2 : 1;
+                isizes[argIndex] = groupSizes[dim];
+                groupSize *= groupSizes[dim];
             } else if (mode.charAt(0) == 'a') {
                 if (inPhases.length >= dim) {
                     inPhases[dim - 1] = argIndex;
@@ -177,11 +177,9 @@ public class MultiVecCounter {
                 outPoints[i] = nIDim - 1 - i;
                 osizes[nIDim - 1 - i] = outSizes[i + 1];
             }
-            groupSize = 1;
             for (int i = 0; i < nIDim; i++) {
                 if (oComplex[i + 1]) {
-                    groupSize *= 2;
-                    osizes[2 * nIDim - 1 - i] = 2;
+                    osizes[2 * nIDim - 1 - i] = groupSizes[i+1];
                 } else {
                     osizes[2 * nIDim - 1 - i] = 1;
                 }
@@ -406,8 +404,9 @@ public class MultiVecCounter {
     public static void main(String[] args) {
         int[] sizes = {64, 3, 4};
         boolean[] complex = {true, true, true};
+        int[] groupSizes = {2, 2, 2};
         String[] modes = {"p1", "d1", "p2", "d2"};
-        MultiVecCounter tmult = new MultiVecCounter(sizes, complex, modes, sizes.length);
+        MultiVecCounter tmult = new MultiVecCounter(sizes, groupSizes, complex, modes, sizes.length);
         tmult.getNextGroup(0);
     }
 }

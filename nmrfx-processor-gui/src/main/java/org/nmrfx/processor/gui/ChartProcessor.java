@@ -1266,10 +1266,12 @@ public class ChartProcessor {
 
         int[] tdSizes = new int[nDim + nArray];
         boolean[] complex = new boolean[nDim + nArray];
+        int[] groupSizes = new int[nDim + nArray];
         int j = 0;
         for (int i = 0; i < nDim; i++) {
             tdSizes[j] = nmrData.getSize(i);
             complex[j] = nmrData.isComplex(i);
+            groupSizes[i] = nmrData.getGroupSize(i);
 
             int arraySize = nmrData.getArraySize(i);
             if (arraySize != 0) {
@@ -1286,7 +1288,7 @@ public class ChartProcessor {
             }
         }
         if (nDim > 1) {
-            multiVecCounter = new MultiVecCounter(tdSizes, complex, acqOrder, nDim + nArray);
+            multiVecCounter = new MultiVecCounter(tdSizes, groupSizes, complex, acqOrder, nDim + nArray);
             vectorsPerGroup = multiVecCounter.getGroupSize();
         } else {
             vectorsPerGroup = 1;
@@ -1320,7 +1322,7 @@ public class ChartProcessor {
         vecDimName = "D1";
         boolean[] complex = new boolean[nDim];
         for (int iDim = 0; iDim < nDim; iDim++) {
-            complex[iDim] = data.isComplex(iDim);
+            complex[iDim] = data.getGroupSize(iDim) == 2;
         }
         processorController.updateDimChoice(complex);
         processorController.refManager.resetData();

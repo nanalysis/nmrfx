@@ -259,6 +259,11 @@ public class JeolDelta implements NMRData {
     }
 
     @Override
+    public int getGroupSize(int dim) {
+        return isComplex(dim) ? 2 : 1;
+    }
+
+    @Override
     public double[] getCoefs(int dim) {
         double dcoefs[] = {1, 0, 0, 0, 0, 0, -1, 0}; // fixme
         return dcoefs;
