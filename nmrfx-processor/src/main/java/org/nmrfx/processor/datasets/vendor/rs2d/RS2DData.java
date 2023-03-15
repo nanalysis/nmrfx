@@ -259,7 +259,7 @@ public class RS2DData implements NMRData {
         }
 
         log.info("Opening NUS file: {}", nusFile.getPath());
-        readSampleSchedule(nusFile.getPath(), false);
+        readSampleSchedule(nusFile.getPath(), true);
     }
 
     private void openParFile(String parpath) throws IOException {
