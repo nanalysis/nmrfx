@@ -378,7 +378,7 @@ public class SampleSchedule {
             int j = inVecs[i];
             int phOff = j % groupSize;
             j /= groupSize;
-            int index = sampleIndices[groupNum];
+            int index = groupNum < sampleIndices.length ? sampleIndices[groupNum] : -1;
             if (index == -1) {
                 ok = false;
                 break;
