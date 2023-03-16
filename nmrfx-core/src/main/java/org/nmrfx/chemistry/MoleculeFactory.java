@@ -1,59 +1,58 @@
 package org.nmrfx.chemistry;
 
+import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 public class MoleculeFactory {
 
+    private MoleculeFactory() {
+
+    }
+
     private static final Logger log = LoggerFactory.getLogger(MoleculeFactory.class);
 
     static Constructor constructor = null;
-    static MoleculeBase activeMol = null;
-    private static  Map<String, MoleculeBase> molecules = new HashMap<>();
 
     public static MoleculeBase getActive() {
-        return activeMol;
+        return ProjectBase.getActive().getActiveMolecule();
     }
 
     public static void setActive(MoleculeBase molecule) {
-        activeMol = molecule;
+        ProjectBase.getActive().setActiveMolecule(molecule);
     }
 
     public static void putMolecule(MoleculeBase molecule) {
-        molecules.put(molecule.getName(), molecule);
+        ProjectBase.getActive().putMolecule(molecule);
     }
 
     public static MoleculeBase getMolecule(String name) {
-        return molecules.get(name);
+        return ProjectBase.getActive().getMolecule(name);
     }
 
     public static Collection<MoleculeBase> getMolecules() {
-        return molecules.values();
+        return ProjectBase.getActive().getMolecules();
+    }
+
+    public static Collection<String> getMoleculeNames() {
+        return ProjectBase.getActive().getMoleculeNames();
     }
 
     public static void setMoleculeMap(Map<String, MoleculeBase> newMap) {
-        molecules = newMap;
+        ProjectBase.getActive().setMoleculeMap(newMap);
     }
 
     public static void removeMolecule(String name) {
-        var mol = molecules.get(name);
-        if (mol == activeMol) {
-            activeMol = null;
-        }
-        if (mol != null) {
-            molecules.remove(name);
-        }
+        ProjectBase.getActive().removeMolecule(name);
     }
 
     public static void clearAllMolecules() {
-        activeMol = null;
-        molecules.clear();
+        ProjectBase.getActive().clearAllMolecules();
     }
 
     public static MoleculeBase newMolecule(String molName) {
@@ -88,7 +87,7 @@ public class MoleculeFactory {
             }
         }
         if (moleculeBase != null) {
-            molecules.put(molName, moleculeBase);
+            ProjectBase.getActive().putMolecule(moleculeBase);
             setActive(moleculeBase);
         }
         return moleculeBase;

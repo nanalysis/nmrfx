@@ -2,6 +2,9 @@ import os
 from org.yaml.snakeyaml import Yaml
 from java.io import FileInputStream
 import gscript
+import gscript_adv
+from scriptutils import formatStringForJava
+
 
 def dumpYamlWin(fileName=None):
     if fileName != None:
@@ -10,7 +13,7 @@ def dumpYamlWin(fileName=None):
         yamlFile = yamlFileName
     yamlDump = genYamlData()
     with open(yamlFile,'w') as fOut:
-        fOut.write(yamlDump)
+        fOut.write(yamlDump.encode("utf-8"))
     
 def genYamlData():
     yaml=Yaml()
@@ -47,6 +50,9 @@ def genYamlData():
             pset['name']=peakList
             pset['config']= nw.pconfig(peakList)
             sd['peaklists'].append(pset)
+    strips = nw.strips2()
+    if (strips != None) and ("peaklist" in strips):
+        win['strips'] = strips
 
     yamlDump = yaml.dump(win)
     return yamlDump
@@ -96,7 +102,7 @@ def processYamlData(yamlFile, inputData, createNewStage):
         for dataset in datasets:
             print dataset
             name = dataset['name']
-            datasetValues.append(name)
+            datasetValues.append(formatStringForJava(name))
         print 'dv',datasetValues
         nw.cmd.datasets(datasetValues)
         if 'lim' in v:
@@ -117,7 +123,7 @@ def processYamlData(yamlFile, inputData, createNewStage):
             for peakList in peakLists:
                 print peakList
                 name = peakList['name']
-                peakListValues.append(name)
+                peakListValues.append(formatStringForJava(name))
             print 'dv',peakListValues
             nw.cmd.peakLists(peakListValues)
             for peakList in peakLists:
@@ -126,5 +132,8 @@ def processYamlData(yamlFile, inputData, createNewStage):
                     cfg = peakList['config']
                     nw.pconfig(peakLists=[name],pars=cfg)
         nw.drawAll()
+    if 'strips' in data:
+        strips = data['strips']
+        nw.strips2(strips["peaklist"], strips["xdim"], strips["zdim"])
 
-nw = gscript.NMRFxWindowScripting()
+nw = gscript_adv.NMRFxWindowAdvScripting()

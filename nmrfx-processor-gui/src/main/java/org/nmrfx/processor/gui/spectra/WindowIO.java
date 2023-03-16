@@ -267,7 +267,8 @@ public class WindowIO implements FileWatchListener {
         interp.exec("import nwyaml\\n");
         FXMLController activeController = GUIScripter.getController();
         GUIScripter.setController(controller);
-        interp.exec("nwyaml.dumpYamlWin('" + path.toString() + "')");
+        interp.set("yamlFileName", path.toString());
+        interp.exec("nwyaml.dumpYamlWin(yamlFileName)");
         GUIScripter.setController(activeController);
     }
 

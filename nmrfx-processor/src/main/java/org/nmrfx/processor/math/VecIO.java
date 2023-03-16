@@ -116,7 +116,7 @@ public class VecIO {
         if (vec.isComplex()) {
             for (int i = 0; i < vec.getSize(); i++) {
                 if (vec.freqDomain()) {
-                    xVal = vec.refValue - i * delta;
+                    xVal = vec.getZeroRefValue() - i * delta;
                 } else {
                     xVal = i * vec.dwellTime;
                 }
@@ -127,7 +127,7 @@ public class VecIO {
         } else {
             for (int i = 0; i < vec.getSize(); i++) {
                 if (vec.freqDomain()) {
-                    xVal = vec.refValue - i * delta;
+                    xVal = vec.getZeroRefValue() - i * delta;
                 } else {
                     xVal = i * vec.dwellTime;
                 }

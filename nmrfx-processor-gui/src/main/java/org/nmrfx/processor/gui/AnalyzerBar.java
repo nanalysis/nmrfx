@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,20 +19,19 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+
+import java.util.*;
 import java.util.function.Consumer;
 import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.Node;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-import javafx.scene.text.Font;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
+import org.nmrfx.utils.GUIUtils;
 
 /**
  *
@@ -42,6 +41,7 @@ public class AnalyzerBar {
 
     FXMLController controller;
     Consumer closeAction = null;
+    VBox vBox;
     GridPane gridPane;
     DatasetBase dataset;
     private final Map<String, TextField> fieldMap = new HashMap<>();
@@ -53,14 +53,16 @@ public class AnalyzerBar {
         this.closeAction = closeAction;
     }
 
-    public void buildBar(GridPane gridPane) {
-        this.gridPane = gridPane;
-        String iconSize = "12px";
-        String fontSize = "7pt";
-        Font font = new Font(10);
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+    public void buildBar(VBox vBox) {
+        this.vBox = vBox;
+        gridPane = new GridPane();
+        gridPane.setVgap(5);
+        gridPane.setHgap(5);
+        ToolBar toolBar = new ToolBar();
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
-        gridPane.add(closeButton, 0, 0);
+        toolBar.getItems().addAll(closeButton, gridPane);
+        vBox.getChildren().add(toolBar);
         Button analyzeButton = new Button("Analyze");
         analyzeButton.setOnAction(e -> analyze(e));
         analyzeButton.setPrefWidth(75.0);
@@ -73,7 +75,7 @@ public class AnalyzerBar {
         int iRow = 0;
         for (String field : fieldNames) {
             Label label = new Label(field);
-            label.setPrefWidth(75.0);
+            label.setPrefWidth(55.0);
             label.setAlignment(Pos.CENTER_RIGHT);
             TextField textField = new TextField();
             textField.setPrefWidth(100.0);
@@ -87,10 +89,18 @@ public class AnalyzerBar {
                 iCol += 2;
             }
         }
+
+        // The different control items end up with different heights based on font and icon size,
+        // set all the items to use the same height
+        List<Node> items = new ArrayList<>(Arrays.asList(closeButton, analyzeButton, setRMSButton));
+        items.addAll(gridPane.getChildren());
+        toolBar.heightProperty().addListener(
+                (observable, oldValue, newValue) -> GUIUtils.nodeAdjustHeights(items));
+
     }
 
-    public GridPane getToolBar() {
-        return gridPane;
+    public VBox getToolBar() {
+        return vBox;
     }
 
     public void close() {

@@ -17,11 +17,22 @@
  */
 package org.nmrfx.processor.datasets.vendor.rs2d;
 
+import com.nanalysis.spinlab.dataset.Header;
+import com.nanalysis.spinlab.dataset.HeaderParser;
+import com.nanalysis.spinlab.dataset.HeaderWriter;
+import com.nanalysis.spinlab.dataset.enums.NumberType;
+import com.nanalysis.spinlab.dataset.enums.Order;
+import com.nanalysis.spinlab.dataset.enums.Parameter;
+import com.nanalysis.spinlab.dataset.enums.Unit;
+import com.nanalysis.spinlab.dataset.values.ListNumberValue;
+import com.nanalysis.spinlab.dataset.values.NumberValue;
+import com.nanalysis.spinlab.dataset.values.Value;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -39,10 +50,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -51,13 +59,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.time.format.DateTimeParseException;
+import java.util.*;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static org.nmrfx.processor.datasets.vendor.rs2d.RS2DParam.*;
-import static org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil.*;
+import static com.nanalysis.spinlab.dataset.enums.Parameter.*;
+import static org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil.readDocument;
+import static org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil.writeDocument;
 
 /**
  * RS2D data support.
@@ -76,7 +87,7 @@ public class RS2DData implements NMRData {
 
     private final String fpath;
     private FileChannel fc = null;
-    private RS2DHeader header;
+    private Header header;
     private Document seriesDocument;
 
     File nusFile;
@@ -95,7 +106,9 @@ public class RS2DData implements NMRData {
     private final String[] sfNames = new String[MAXDIM];
     private double groupDelay = 0.0;
     private SampleSchedule sampleSchedule = null;
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
+    private ZonedDateTime zonedDateTime = null;
 
     private String[] acqOrder;
     int nvectors = 1;
@@ -108,16 +121,12 @@ public class RS2DData implements NMRData {
     double tempK = 298.15;
 
     public RS2DData(String path, File nusFile) throws IOException {
-        this(path, nusFile, false);
-    }
-
-    public RS2DData(String path, File nusFile, boolean processed) throws IOException {
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.length() - 1);
         }
         this.fpath = path;
         this.nusFile = nusFile;
-        openParFile(path, processed);
+        openParFile(path);
         openDataFile(path);
 
     }
@@ -148,19 +157,25 @@ public class RS2DData implements NMRData {
         Dataset dataset = new Dataset(path.toString(), datasetName, layout,
                 false, ByteOrder.BIG_ENDIAN, 0);
         dataset.newHeader();
+        int numFreqDomain = 0;
         for (int i = 0; i < nDim; i++) {
             resetSW(i);
-            dataset.setComplex(i, i == 0);
+            dataset.setComplex(i, isComplex(i));
             dataset.setSf(i, getSF(i));
             dataset.setSw(i, getSW(i));
             dataset.setRefValue(i, getRef(i));
             dataset.setRefPt(i, dataset.getSizeReal(i) / 2.0);
-            dataset.setFreqDomain(i, true);
+            // State can be used to set the freq domain
+            dataset.setFreqDomain(i, getState(i) == 1);
+            if (dataset.getFreqDomain(i)) {
+                numFreqDomain++;
+            }
             String nucLabel = getTN(i);
             dataset.setNucleus(i, nucLabel);
             dataset.setLabel(i, nucLabel + (i + 1));
             dataset.syncPars(i);
         }
+        dataset.setNFreqDims(numFreqDomain);
         if (nDim > 1) {
             dataset.setAxisReversed(1, true);
         }
@@ -212,17 +227,20 @@ public class RS2DData implements NMRData {
 
     @Override
     public boolean isFID() {
-        if (header.isPresent(RS2DParam.STATE)) {
-            List<Integer> states = header.getInts(RS2DParam.STATE);
-            if (states != null) {
-                return states.get(0) == 0;
-            } else {
-                log.debug("Unable to find state parameter. Setting state to FID.");
-            }
-        }
-        return true;
+        return getState(0) == 0;
     }
 
+    public int getState(int dim) {
+        if (header.contains(STATE)) {
+            List<Integer> states = header.get(STATE).intListValue();
+            if (states != null && !states.isEmpty()) {
+                return states.get(dim);
+            }
+        }
+
+        log.debug("Unable to find state parameter. Setting state to FID.");
+        return 0;
+    }
 
     private static boolean findFIDFiles(String dirPath) {
         Path headerPath = Paths.get(dirPath, HEADER_FILE_NAME);
@@ -230,34 +248,36 @@ public class RS2DData implements NMRData {
         return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
-    private void openParFile(String parpath, boolean processed) throws IOException {
+    private void openParFile(String parpath) throws IOException {
         log.info("Opening RS2D file: {}", parpath);
 
         Path headerPath = Paths.get(parpath, HEADER_FILE_NAME);
         Path seriesPath = Paths.get(parpath, SERIES_FILE_NAME);
-        try {
-            header = new RS2DHeader(headerPath);
+        try (InputStream input = Files.newInputStream(headerPath)) {
+            header = new HeaderParser().parse(input);
             if (seriesPath.toFile().exists()) {
                 seriesDocument = readDocument(seriesPath);
             }
             groupDelay = readGroupDelay();
-            obsNucleus = header.getString(OBSERVED_NUCLEUS);
+            obsNucleus = header.get(OBSERVED_NUCLEUS).stringValue();
             Double obsFreq = null;
-            Double obsSW = header.getDouble(SPECTRAL_WIDTH);
-            tempK = header.getDouble(SAMPLE_TEMPERATURE);
-            String baseSFName = "";
+            double obsSW = getSpectralWidthAsHertz();
+
+            if (header.contains(SAMPLE_TEMPERATURE)) {
+                tempK = header.get(SAMPLE_TEMPERATURE).doubleValue();
+            }
+
             nDim = 0;
 
             for (int i = 0; i < MAXDIM; i++) {
-                String nucleus = header.getString(NUCLEUS_PARAMS.get(i));
+                String nucleus = header.get(NUCLEUS_PARAMS.get(i)).stringValue();
                 if (nucleus.equals(obsNucleus)) {
                     obsFreq = getSF(i);
-                    baseSFName = BASE_FREQ_PARAMS.get(i).name();
                     break;
                 }
             }
-            if (processed) {
-                List<String> dataModes = header.getStrings(DATA_REPRESENTATION);
+            if (!isFID()) {
+                List<String> dataModes = header.get(DATA_REPRESENTATION).stringListValue();
                 if (!dataModes.isEmpty()) {
                     for (int i = 0; i < MAXDIM; i++) {
                         setComplex(i, dataModes.get(i).equals("COMPLEX"));
@@ -267,12 +287,12 @@ public class RS2DData implements NMRData {
 
             for (int i = 0; i < MAXDIM; i++) {
                 int dimSize;
-                if (processed) {
-                    dimSize = header.getInt(DIMENSION_PARAMS.get(i));
+                if (!isFID()) {
+                    dimSize = header.get(DIMENSION_PARAMS.get(i)).intValue();
                 } else {
-                    dimSize = header.getInt(ACQUISITION_DIMENSION_PARAMS.get(i));
+                    dimSize = header.get(ACQUISITION_DIMENSION_PARAMS.get(i)).intValue();
                 }
-                String nucleus = header.getString(NUCLEUS_PARAMS.get(i));
+                String nucleus = header.get(NUCLEUS_PARAMS.get(i)).stringValue();
                 if (nucleus.equals(obsNucleus)) {
                     Sf[i] = obsFreq;
                     Sw[i] = obsSW;  // fixme  this is kluge to fis some files that have wrong SPECTRAL_WIDTH_2D
@@ -292,20 +312,34 @@ public class RS2DData implements NMRData {
                     }
                 }
             }
-            if (!processed) {
+            setZonedDateTime();
+
+            if (isFID()) {
                 setFTParams();
             }
-        } catch (ParserConfigurationException | SAXException | XPathExpressionException | NullPointerException ex) {
+        } catch (ParserConfigurationException | SAXException | NullPointerException ex) {
             throw new IOException(ex.getMessage());
         }
     }
 
-    public RS2DHeader getHeader() {
-        return header;
+    private void setZonedDateTime() {
+        Value<String> dateTimeValue = header.get("ACQUISITION_DATE");
+        if (dateTimeValue == null) {
+            log.warn("Unable to find date. Setting date to now.");
+            zonedDateTime = ZonedDateTime.now();
+            return;
+        }
+        String dateTimeStr = dateTimeValue.stringValue();
+        try {
+            zonedDateTime = ZonedDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        } catch (DateTimeParseException dtpe) {
+            log.warn("Unable to parse date. Setting date to now. {}", dtpe.getMessage(), dtpe);
+            zonedDateTime = ZonedDateTime.now();
+        }
     }
 
-    public Document getSeriesDocument() {
-        return seriesDocument;
+    public Header getHeader() {
+        return header;
     }
 
     private void openDataFile(String datapath) {
@@ -330,11 +364,11 @@ public class RS2DData implements NMRData {
     }
 
     private double readGroupDelay() {
-        Integer digitalFilterShift = header.getInt(DIGITAL_FILTER_SHIFT);
-        Boolean digitalFilterRemoved = header.getBoolean(DIGITAL_FILTER_REMOVED);
-        if(digitalFilterShift != null && !Boolean.TRUE.equals(digitalFilterRemoved)) {
+        boolean digitalFilterRemoved = header.optional(DIGITAL_FILTER_REMOVED).map(Value::booleanValue).orElse(false);
+        if (header.contains(DIGITAL_FILTER_SHIFT) && !digitalFilterRemoved) {
+            double digitalFilterShift = header.get(DIGITAL_FILTER_SHIFT).doubleValue();
             log.info("Using group delay: {}", digitalFilterShift);
-            return digitalFilterShift.doubleValue();
+            return digitalFilterShift;
         }
 
         return 0d;
@@ -342,13 +376,15 @@ public class RS2DData implements NMRData {
 
     private void setFTParams() {
         List<PhaseMod> phaseMod;
-        List<String> phaseModParam = header.getStrings(PHASE_MOD);
-        List<String> acqModeParam = header.getStrings(ACQUISITION_MODE);
-        if (phaseModParam != null) {
-            phaseMod = phaseModParam.stream().map(PhaseMod::fromName).collect(Collectors.toList());
+        if (header.contains(PHASE_MOD)) {
+            phaseMod = header.get(PHASE_MOD).stringListValue()
+                    .stream().map(PhaseMod::fromName)
+                    .collect(Collectors.toList());
             log.info("Setting FT params from PHASE_MOD: {}", phaseMod);
-        } else if (acqModeParam != null) {
-            phaseMod = acqModeParam.stream().map(PhaseMod::fromAcquisitionMode).collect(Collectors.toList());
+        } else if (header.contains(ACQUISITION_MODE)) {
+            phaseMod = header.get(ACQUISITION_MODE).stringListValue().stream()
+                    .map(PhaseMod::fromAcquisitionMode)
+                    .collect(Collectors.toList());
             phaseMod.set(0, PhaseMod.NONE);
             log.info("Setting FT params from ACQUISITION_MODE: {}", phaseMod);
         } else {
@@ -374,7 +410,7 @@ public class RS2DData implements NMRData {
             f1coefS[i] = mode.getSymbolicCoefs();
             f1coef[i] = mode.getCoefs();
 
-            if(mode == PhaseMod.TPPI || mode == PhaseMod.ECHO_ANTIECHO) {
+            if (mode == PhaseMod.TPPI || mode == PhaseMod.ECHO_ANTIECHO) {
                 negateImag[i] = true;
             }
 
@@ -404,24 +440,111 @@ public class RS2DData implements NMRData {
         return fpath;
     }
 
+    /**
+     * Get a parameter string value from its name.
+     * May include some implicit conversion for specific parameters (such as SPECTRAL_WIDTH when stored in ppm).
+     *
+     * @param name The parameter name
+     * @return the string representation of its value.
+     */
     @Override
     public String getPar(String name) {
-        return header.getString(name);
+        Number convertedNumber = getConvertedNumberValue(name);
+        if (convertedNumber != null) {
+            return convertedNumber.toString();
+        }
+
+        List<? extends Number> convertedListNumber = getConvertedListNumberValue(name);
+        if (convertedListNumber != null) {
+            return convertedListNumber.toString();
+        }
+
+        return header.get(name).stringValue();
     }
 
+    /**
+     * Get a parameter numeric value from its name.
+     * May include some implicit conversion for specific parameters (such as SPECTRAL_WIDTH when stored in ppm).
+     *
+     * @param name The parameter name
+     * @return the floating point representation of its value.
+     */
     @Override
     public Double getParDouble(String name) {
-        return header.getDouble(name);
+        Number convertedNumber = getConvertedNumberValue(name);
+        if (convertedNumber != null) {
+            return convertedNumber.doubleValue();
+        }
+
+        List<? extends Number> convertedListNumber = getConvertedListNumberValue(name);
+        if (convertedListNumber != null && convertedListNumber.size() == 1) {
+            return convertedListNumber.get(0).doubleValue();
+        }
+
+        return header.get(name).doubleValue();
     }
 
+    /**
+     * Get a parameter integer value from its name.
+     * May include some implicit conversion for specific parameters (such as SPECTRAL_WIDTH when stored in ppm).
+     *
+     * @param name The parameter name
+     * @return the integer representation of its value.
+     */
     @Override
     public Integer getParInt(String name) {
-        return header.getInt(name);
+        Number converted = getConvertedNumberValue(name);
+        if (converted != null) {
+            return converted.intValue();
+        }
+
+        List<? extends Number> convertedListNumber = getConvertedListNumberValue(name);
+        if (convertedListNumber != null && convertedListNumber.size() == 1) {
+            return convertedListNumber.get(0).intValue();
+        }
+
+        return header.get(name).intValue();
     }
 
+    /**
+     * List all parameters and their string representation.
+     * Some of them may be converted (ex: from ppm to Hertz) before being returned here.
+     *
+     * @return a list of vendor parameters.
+     */
     @Override
     public List<VendorPar> getPars() {
-        return header.toVendorPars();
+        return header.all().stream()
+                // it is necessary to call getPar() to convert specific parameters such as SPECTRAL_WIDTH or OFFSETs
+                .map(value -> new VendorPar(value.getName(), getPar(value.getName())))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Some parameter may need internal conversion before use.
+     * This is needed for parameters which could be stored in Hz or ppm, but can only be used in Hz internally.
+     * This includes SPECTRAL_WIDTH* and OFFSET_FREQ_* parameters.
+     *
+     * @param name the parameter name
+     * @return a converted value, or null if there is no need for conversion.
+     */
+    private Number getConvertedNumberValue(String name) {
+        boolean needsConversion = SW_PARAMS.stream().anyMatch(p -> p.name().equals(name))
+                || OFFSET_FREQ_PARAMS.stream().anyMatch(p -> p.name().equals(name));
+        return needsConversion ? getParameterAsHertz(name) : null;
+    }
+
+    /**
+     * Some parameter may need internal conversion before use.
+     * This is needed for parameters which could be stored in Hz or ppm, but can only be used in Hz internally.
+     * This includes only SR (Spectral Reference).
+     *
+     * @param name the parameter name
+     * @return a converted list of values, or null if there is no need for conversion.
+     */
+    private List<? extends Number> getConvertedListNumberValue(String name) {
+        boolean needsConversion = SR.name().equals(name);
+        return needsConversion ? getParameterAsHertzList(name) : null;
     }
 
     @Override
@@ -456,7 +579,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public String getSolvent() {
-        return header.getString(SOLVENT);
+        return header.optional(SOLVENT).map(Value::stringValue).orElse("");
     }
 
     @Override
@@ -466,22 +589,27 @@ public class RS2DData implements NMRData {
 
     @Override
     public String getSequence() {
-        return header.getString(SEQUENCE_NAME);
+        return header.optional(SEQUENCE_NAME).map(Value::stringValue).orElse("");
     }
 
     @Override
     public double getSF(int iDim) {
-        double sf = 1.0;
+        // try cache value first
         if (Sf[iDim] != null) {
-            sf = Sf[iDim];
-        } else {
-            Double dpar;
-            if ((dpar = header.getDouble(BASE_FREQ_PARAMS.get(iDim))) != null) {
-                sf = (dpar + getOffset(iDim)) / 1.0e6;
-                Sf[iDim] = sf;
-            }
+            return Sf[iDim];
         }
-        return sf;
+
+        // otherwise, read from header
+        Optional<Value<?>> value = header.optional(BASE_FREQ_PARAMS.get(iDim));
+        if (value.isPresent()) {
+            double baseFreq = value.get().doubleValue();
+            double sf = (baseFreq + getOffsetAsHertz(iDim)) / 1.0e6;
+            Sf[iDim] = sf;
+            return sf;
+        }
+
+        // fallback default value
+        return 1.0;
     }
 
     @Override
@@ -496,16 +624,21 @@ public class RS2DData implements NMRData {
 
     @Override
     public double getSW(int iDim) {
-        double sw = 1.0;
+        // try cache value first
         if (Sw[iDim] != null) {
-            sw = Sw[iDim];
-        } else {
-            Double dpar;
-            if ((dpar = header.getDouble(SW_PARAMS.get(iDim))) != null) {
-                sw = dpar;
-            }
+            return Sw[iDim];
         }
-        return sw;
+
+        // otherwise, read from header
+        Parameter swParam = SW_PARAMS.get(iDim);
+        if (header.contains(swParam)) {
+            double sw = getParameterAsHertz(swParam);
+            Sw[iDim] = sw;
+            return sw;
+        }
+
+        // fallback default value
+        return 1.0;
     }
 
     @Override
@@ -518,28 +651,50 @@ public class RS2DData implements NMRData {
         Sw[dim] = null;
     }
 
-    double getOffset(int iDim) {
-        return header.getDouble(OFFSET_FREQ_PARAMS.get(iDim));
+    private double getSpectralWidthAsHertz() {
+        return getParameterAsHertz(SPECTRAL_WIDTH);
+    }
+
+    private double getOffsetAsHertz(int iDim) {
+        return getParameterAsHertz(OFFSET_FREQ_PARAMS.get(iDim));
+    }
+
+    private double getParameterAsHertz(Parameter param) {
+        return header.<NumberValue>get(param).getValueAs(Unit.Hertz, header);
+    }
+
+    private double getParameterAsHertz(String paramName) {
+        return header.<NumberValue>get(paramName).getValueAs(Unit.Hertz, header);
+    }
+
+    private List<Double> getParameterAsHertzList(Parameter param) {
+        return header.<ListNumberValue>get(param).getValueAs(Unit.Hertz, header);
+    }
+
+    private List<Double> getParameterAsHertzList(String paramName) {
+        return header.<ListNumberValue>get(paramName).getValueAs(Unit.Hertz, header);
     }
 
     @Override
     public double getRef(int iDim) {
-        double ref = 1.0;
+        // try cache value first
         if (Ref[iDim] != null) {
-            ref = Ref[iDim];
-        } else {
-            double sw = getSW(iDim);
-            var srValues = header.getDoubles(SR.name());
-
-            for (int i = 0; i < srValues.size() && i < nDim; i++) {
-                double offset = getOffset(i);
-                double sf = getSF(i);
-                double sr = srValues.get(i);
-                Ref[i] = (sr + offset) / (sf - offset / 1.0e6);
-            }
-            ref = Ref[iDim];
+            return Ref[iDim];
         }
-        return ref;
+
+        // otherwise, read from header if present
+        Optional<List<Double>> srValues = header.contains(SR) ? Optional.of(getParameterAsHertzList(SR)) : Optional.empty();
+        Optional<Double> value = srValues.filter(list -> list.size() > iDim).map(list -> list.get(iDim));
+        if (value.isPresent()) {
+            double offset = getOffsetAsHertz(iDim);
+            double sf = getSF(iDim);
+            double sr = value.get();
+            Ref[iDim] = (sr + offset) / (sf - offset / 1.0e6);
+            return Ref[iDim];
+        }
+
+        // fallback default value
+        return 1.0;
     }
 
     @Override
@@ -559,16 +714,15 @@ public class RS2DData implements NMRData {
 
     @Override
     public String getTN(int iDim) {
-        String tn = "";
         if (obsNuc[iDim] != null) {
-            tn = obsNuc[iDim];
-        } else {
-            String dpar;
-            if ((dpar = header.getString(NUCLEUS_PARAMS.get(iDim))) != null) {
-                tn = dpar;
-                obsNuc[iDim] = tn;
-            }
+            return obsNuc[iDim];
         }
+
+        String tn = header.optional(NUCLEUS_PARAMS.get(iDim)).map(Value::stringValue).orElse("");
+        if (!tn.isEmpty()) {
+            obsNuc[iDim] = tn;
+        }
+
         return tn;
     }
 
@@ -688,8 +842,7 @@ public class RS2DData implements NMRData {
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
 
-        double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
-        dvec.refValue = getRef(0) + delRef;
+        dvec.setRefValue(getRef(0));
     }
 
     private void copyFloatVecData(byte[] dataBuf, Complex[] cdata) {
@@ -787,9 +940,7 @@ public class RS2DData implements NMRData {
         }
         dvec.dwellTime = 1.0 / getSW(iDim);
         dvec.centerFreq = getSF(iDim);
-//        double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
-        double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
-        dvec.refValue = getRef(iDim) + delRef;
+        dvec.setRefValue(getRef(iDim));
         dvec.setPh0(getPH0(iDim));
         dvec.setPh1(getPH1(iDim));
         if (iDim == 0) {
@@ -1037,8 +1188,18 @@ public class RS2DData implements NMRData {
     }
 
     @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
+    }
+
+    @Override
     public DatasetType getPreferredDatasetType() {
         return preferredDatasetType;
+    }
+
+    @Override
+    public long getDate() {
+        return zonedDateTime.toEpochSecond();
     }
 
     private static void writeRow(Dataset dataset, Vec vec, int[] pt, BufferedOutputStream fOut) throws IOException {
@@ -1091,19 +1252,53 @@ public class RS2DData implements NMRData {
 
     public void setHeaderMatrixDimensions(Dataset dataset) throws XPathExpressionException {
         for (int iDim = 0; (iDim < RS2DData.MAXDIM) && (iDim < dataset.getNDim()); iDim++) {
-            header.writeParam(DIMENSION_PARAMS.get(iDim).name(), String.valueOf(dataset.getSizeReal(iDim)));
+            Parameter parameter = DIMENSION_PARAMS.get(iDim);
+            if (!header.contains(parameter)) {
+                header.put(new NumberValue(parameter.name(), 1));
+            }
+
+            NumberValue value = header.get(parameter);
+            value.setValue(dataset.getSizeReal(iDim));
         }
     }
 
     public void setHeaderPhases(Dataset dataset) throws XPathExpressionException {
-        List<String> phase0Values = new ArrayList<>();
-        List<String> phase1Values = new ArrayList<>();
-        for (int i = 0; i < dataset.getNDim(); i++) {
-            phase0Values.add(String.format("%.2f", dataset.getPh0(i)));
-            phase1Values.add(String.format("%.2f", dataset.getPh1(i)));
+        if (!header.contains(PHASE_0)) {
+            header.put(new ListNumberValue(PHASE_0.name(), Collections.emptyList()));
         }
-        header.writeParam(PHASE_0.name(), phase0Values);
-        header.writeParam(PHASE_0.name(), phase1Values);
+        if (!header.contains(PHASE_1)) {
+            header.put(new ListNumberValue(PHASE_1.name(), Collections.emptyList()));
+        }
+
+        List<Number> phase0Values = new ArrayList<>();
+        List<Number> phase1Values = new ArrayList<>();
+        for (int i = 0; i < dataset.getNDim(); i++) {
+            phase0Values.add(dataset.getPh0(i));
+            phase1Values.add(dataset.getPh1(i));
+        }
+
+        header.<ListNumberValue>get(PHASE_0).setValue(phase0Values);
+        header.<ListNumberValue>get(PHASE_1).setValue(phase1Values);
+    }
+
+    public void setHeaderState(Dataset dataset) {
+        if (!header.contains(STATE)) {
+            header.put(new ListNumberValue(STATE.name(), Collections.emptyList()));
+            ListNumberValue stateParam = header.get(STATE);
+            stateParam.setUuid(UUID.randomUUID().toString());
+            stateParam.setNumberEnum(NumberType.Integer);
+            stateParam.setMinValue(Integer.MIN_VALUE);
+            stateParam.setMaxValue(Integer.MAX_VALUE);
+            Order order = Stream.of(Order.values()).filter(o -> o.toString().equals(dataset.getNDim() + "D")).findFirst().orElse(Order.Unknown);
+            stateParam.setOrder(order);
+        }
+        List<Number> stateValues = new ArrayList<>(Collections.nCopies(4, 0));
+        for (int i = 0; i< dataset.getNDim(); i++) {
+            int state = dataset.getFreqDomain(i) ? 1 : 0;
+            stateValues.set(i, state);
+        }
+        header.<ListNumberValue>get(STATE).setValue(stateValues);
+
     }
 
     public boolean isValidDatasetPath(Path procNumPath) {
@@ -1112,9 +1307,10 @@ public class RS2DData implements NMRData {
     }
 
     public Path saveDataset(Dataset dataset) throws IOException {
-        File file = new File(dataset.getFileName());
+        File file =dataset.getFile();
         try {
             setHeaderMatrixDimensions(dataset);
+            setHeaderState(dataset);
             setHeaderPhases(dataset);
         } catch (XPathExpressionException e) {
             throw new IOException(e.getMessage());
@@ -1135,12 +1331,12 @@ public class RS2DData implements NMRData {
         File seriesFile = procNumPath.resolve(SERIES_FILE_NAME).toFile();
         saveToRS2DFile(dataset, dataFile.toString());
 
-        try {
-            header.writeTo(headerFile);
+        try (OutputStream output = new FileOutputStream(headerFile)) {
+            new HeaderWriter().writeXml(header, output);
             if (seriesDocument != null) {
                 writeDocument(seriesDocument, seriesFile);
             }
-        } catch (TransformerException e) {
+        } catch (TransformerException | ParserConfigurationException e) {
             throw new IOException(e);
         }
     }

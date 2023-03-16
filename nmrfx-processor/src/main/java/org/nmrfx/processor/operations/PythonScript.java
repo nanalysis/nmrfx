@@ -29,6 +29,8 @@ import org.python.core.PyObject;
 import org.python.core.PyJavaType;
 import org.python.util.PythonInterpreter;
 
+import static org.nmrfx.utils.FormatUtils.formatStringForPythonInterpreter;
+
 /**
  *
  * @author johnsonb
@@ -75,10 +77,10 @@ public class PythonScript extends MatrixOperation {
         if (!this.encapsulate) {
             interpreter = new PythonInterpreter();
             if (execFileName.length() != 0) {
-                interpreter.execfile(execFileName);
+                interpreter.execfile(formatStringForPythonInterpreter(execFileName));
             }
             if (initialScript.length() != 0) {
-                interpreter.exec(initialScript);
+                interpreter.exec(formatStringForPythonInterpreter(initialScript));
             }
         }
     }
@@ -92,17 +94,17 @@ public class PythonScript extends MatrixOperation {
         if (encapsulate) {
             interpreter = new PythonInterpreter();
             if (execFileName.length() != 0) {
-                interpreter.execfile(execFileName);
+                interpreter.execfile(formatStringForPythonInterpreter(execFileName));
             }
             if (initialScript.length() != 0) {
-                interpreter.exec(initialScript);
+                interpreter.exec(formatStringForPythonInterpreter(initialScript));
             }
         }
         PyObject pyObject = PyJavaType.wrapJavaObject(vector);
         try {
             interpreter.set("vec", pyObject);
             interpreter.set("vecmat", pyObject);
-            interpreter.exec(script);
+            interpreter.exec(formatStringForPythonInterpreter(script));
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());
         }
@@ -118,13 +120,13 @@ public class PythonScript extends MatrixOperation {
          */
         if (encapsulate) {
             interpreter = new PythonInterpreter();
-            interpreter.exec(initialScript);
+            interpreter.exec(formatStringForPythonInterpreter(initialScript));
         }
         PyObject pyObject = PyJavaType.wrapJavaObject(matrix);
         try {
             interpreter.set("matrix", pyObject);
             interpreter.set("vecmat", pyObject);
-            interpreter.exec(script);
+            interpreter.exec(formatStringForPythonInterpreter(script));
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());
         }

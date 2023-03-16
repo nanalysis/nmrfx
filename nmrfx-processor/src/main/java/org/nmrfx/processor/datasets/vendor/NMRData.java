@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.vendor;
 
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -746,6 +747,25 @@ public interface NMRData {
     }
 
     /**
+     * Create a sample schedule corresponding to zero filling
+     *
+     * @param nSizes the sizes of each indirect dimension
+     * @return the SampleSchedule
+     */
+    public default SampleSchedule createZFSchedule(List<Integer> nSizes, List<Integer> newSizes) {
+        int[] nSArray = new int[nSizes.size()];
+        int[] newArray = new int[newSizes.size()];
+        for (int i = 0; i < nSArray.length; i++) {
+            nSArray[i] = nSizes.get(i);
+            newArray[i] = newSizes.get(i);
+        }
+        SampleSchedule schedule = SampleSchedule.createZFSchedule(nSArray, newArray);
+        setSampleSchedule(schedule);
+        return schedule;
+    }
+
+
+    /**
      * Create a sample schedule (with Poisson - Gap sampling)
      *
      * @param z Full size of acquistion
@@ -857,4 +877,33 @@ public interface NMRData {
 
     public void setPreferredDatasetType(DatasetType datasetType);
 
+    List<DatasetGroupIndex> getSkipGroups();
+
+    default  List<int[]> getSkipIndices() {
+        List<int[]> result = new ArrayList<>();
+        List<DatasetGroupIndex> groups = getSkipGroups();
+        for(var group:groups) {
+            result.addAll(group.groupToIndices());
+        }
+        return result;
+    }
+
+    public default void addSkipGroup(int[] indices, String realImaginaryChoice) {
+        DatasetGroupIndex newGroup = new DatasetGroupIndex(indices, realImaginaryChoice);
+        List<DatasetGroupIndex> currentIndices = getSkipGroups();
+        if (!currentIndices.contains(newGroup)) {
+            currentIndices.add(newGroup);
+        }
+    }
+
+    public default void addSkipGroup(DatasetGroupIndex newGroup) {
+        List<DatasetGroupIndex> currentIndices = getSkipGroups();
+        if (!currentIndices.contains(newGroup)) {
+            currentIndices.add(newGroup);
+        }
+    }
+
+    public default void clearSkipGroups() {
+        getSkipGroups().clear();
+    }
 }

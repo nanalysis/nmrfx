@@ -24,6 +24,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.math.VecBase;
+import org.nmrfx.processor.DatasetUtils;
 import org.nmrfx.processor.datasets.DataCoordTransformer;
 import org.nmrfx.processor.datasets.DataGenerator;
 import org.nmrfx.processor.datasets.Dataset;
@@ -570,6 +571,10 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         projectionAxis = value;
     }
 
+    public boolean isProjection() {
+        return projectionAxis != -1;
+    }
+
     public int projection() {
         return projectionAxis;
     }
@@ -699,6 +704,11 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         initialize(aFile, aFile.getFileName());
     }
 
+    @Override
+    public String toString() {
+        return getDataset() != null ? getDataset().getName() : "";
+    }
+
     public void copyTo(DatasetAttributes dAttr) {
         dAttr.dim = getDims();
         dAttr.setPosColor(getPosColor());
@@ -765,6 +775,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         iBlkPut = new int[theFile.getNDim()];
         iWDim = new int[theFile.getNDim()];
         title = aFile.getTitle();
+        setActiveRegion(null);
         int i;
 
         for (i = 0; i < theFile.getNDim(); i++) {
@@ -925,8 +936,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         dimC[0] = 0;
         ptC[0][0] = dataset.ppmToPoint(0, ppm0);
         ptC[0][1] = dataset.ppmToPoint(0, ppm1);
-        specVec.resize(ptC[0][1] - ptC[0][0] + 1, dataset.getComplex_r(0));
-        dataset.readVectorFromDatasetFile(ptC, dimC, specVec);
+        specVec.resize(ptC[0][1] - ptC[0][0] + 1, dataset.getComplex(0));
+        dataset.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(ptC, dataset.getComplex(0)), dimC, specVec);
     }
 
     public boolean getSlice(Vec specVec, int iDim, double ppmx, double ppmy) throws IOException {
@@ -1116,8 +1127,9 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         specVec.resize(dimSize, false);
         ptC[0][0] = pt1;
         ptC[0][1] = pt2;
+
         if (theFile.getVec() == null) {
-            theFile.readVectorFromDatasetFile(ptC, dimC, specVec);
+            theFile.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(ptC, theFile.getComplex(dim[0])), dimC, specVec);
         } else {
             int j = 0;
             Vec vec = theFile.getVec();
@@ -1962,7 +1974,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public double[] getRegionAsArray() {
-        Set<DatasetRegion> regions = theFile.getRegions();
+        List<DatasetRegion> regions = theFile.getReadOnlyRegions();
         double[] ppms = null;
         if (regions != null) {
             ppms = new double[regions.size() * 2];
@@ -1977,7 +1989,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public double[] getOffsetsAsArray() {
-        Set<DatasetRegion> regions = theFile.getRegions();
+        List<DatasetRegion> regions = theFile.getReadOnlyRegions();
         double[] offsets = null;
         if (regions != null) {
             offsets = new double[regions.size() * 2];
@@ -2001,40 +2013,50 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     double deltaEnd = oldEnd - r.getRegionStartIntensity(0);
                     r.setRegionStartIntensity(0, newY);
                     r.setRegionEndIntensity(0, newY + deltaEnd);
-                    try {
-                        r.measure(theFile);
-                    } catch (IOException ioE) {
-                        log.warn("Error encountered moving region.", ioE);
-                    }
+                    measureRegion(r, "Error encountered moving region start and end intensity.");
                     break;
                 case 2:
                     r.setRegionEndIntensity(0, newY);
+                    measureRegion(r, "Error encountered moving region end intensity.");
                     break;
                 case 3:
                     r.setRegionEnd(0, newX);
+                    measureRegion(r, "Error encountered moving region end.");
                     break;
                 case 4:
                     r.setRegionStart(0, newX);
+                    measureRegion(r, "Error encountered moving region start.");
                     break;
                 default:
                     break;
             }
     }
 
+    private void measureRegion(DatasetRegion region, String errMsg) {
+        try {
+            region.measure(getDataset());
+        } catch (IOException e) {
+            log.warn("{} {}", errMsg, e.getMessage(), e);
+        }
+        region.setAuto(false);
+    }
+
     public int[] getMatchDim(DatasetAttributes dataAttr2, boolean looseMode) {
         int nMatchDim = dataAttr2.nDim;
-        int[] dim = new int[nDim];
+        int[] dimMatches = new int[nDim];
+        // Assume all dims are initially not matched
+        Arrays.fill(dimMatches, -1);
         int nMatch = 0;
         int nShouldMatch = 0;
         boolean[] used = new boolean[nMatchDim];
         int nAxes = 2;
 
-        for (int i = 0; (i < nAxes) && (i < dim.length); i++) {
-            dim[i] = -1;
+        for (int i = 0; (i < nAxes) && (i < dimMatches.length); i++) {
+            dimMatches[i] = -1;
             nShouldMatch++;
             for (int j = 0; j < nMatchDim; j++) {
                 if (getLabel(i).equals(dataAttr2.getLabel(j))) {
-                    dim[i] = j;
+                    dimMatches[i] = j;
                     nMatch++;
                     used[j] = true;
                     break;
@@ -2043,14 +2065,14 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         }
 
         if ((nMatch != nShouldMatch) && looseMode) {
-            for (int i = 0; (i < nAxes) && (i < dim.length); i++) {
-                if (dim[i] == -1) {
+            for (int i = 0; (i < nAxes) && (i < dimMatches.length); i++) {
+                if (dimMatches[i] == -1) {
                     for (int j = 0; j < nMatchDim; j++) {
                         if (!used[j]) {
                             String dNuc = getDataset().getNucleus(i).getNumberName();
                             String pNuc = dataAttr2.getDataset().getNucleus(j).getNumberName();
                             if (dNuc.equals(pNuc)) {
-                                dim[i] = j;
+                                dimMatches[i] = j;
                                 used[j] = true;
                                 nMatch++;
                                 break;
@@ -2060,7 +2082,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 }
             }
         }
-        return dim;
+        return dimMatches;
     }
 
 }

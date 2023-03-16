@@ -24,11 +24,9 @@ import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 import org.nmrfx.datasets.DatasetRegion;
-import org.nmrfx.processor.gui.CanvasAnnotation;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.annotations.AnnoText;
+import org.nmrfx.processor.gui.spectra.ChartBorder;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 
@@ -53,6 +51,7 @@ public class MouseBindings {
         DRAG_REGION,
         DRAG_ADDREGION,
         DRAG_ANNO,
+        DRAG_PEAKPICK,
         CROSSHAIR
     }
 
@@ -148,7 +147,7 @@ public class MouseBindings {
 
     private void showAfterDelay() {
         if (pause == null) {
-            pause = new PauseTransition(Duration.millis(500));
+            pause = new PauseTransition(Duration.millis(1000));
             pause.setOnFinished(
                     e -> showPopOver());
         }
@@ -159,12 +158,12 @@ public class MouseBindings {
         mouseX = mouseEvent.getX();
         mouseY = mouseEvent.getY();
         Optional<MultipletSelection> hit = PeakMouseHandlerHandler.handlerOverMultiplet(this);
-        int border = chart.hitBorder(mouseX, mouseY);
-        if (border == 1) {
-            setCursor(Cursor.V_RESIZE);
+        ChartBorder border = chart.hitBorder(mouseX, mouseY);
+        if (border == ChartBorder.LEFT ) {
+            setCursor(Cursor.CLOSED_HAND);
             return;
-        } else if (border == 2) {
-            setCursor(Cursor.H_RESIZE);
+        } else if (border == ChartBorder.BOTTOM) {
+            setCursor(Cursor.CLOSED_HAND);
             return;
         } else {
             unsetCursor();
@@ -186,7 +185,7 @@ public class MouseBindings {
             }
             setCursor(Cursor.HAND);
         } else {
-            Optional<CanvasAnnotation> annoOpt = chart.hitAnnotation(mouseX, mouseY);
+            Optional<CanvasAnnotation> annoOpt = chart.hitAnnotation(mouseX, mouseY, false);
             if (annoOpt.isPresent()) {
                 var annotation = annoOpt.get();
                 if (handler == null) {
@@ -264,21 +263,31 @@ public class MouseBindings {
         hidePopOver(false);
 
         boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());
-        int border = chart.hitBorder(mouseX, mouseY);
         if (chart.isSelected()) {
             Optional<Integer> hitCorner = hitChartCorner(mouseX, mouseY, 10);
             return;
         }
 
         if (!isPopupTrigger(mouseEvent)) {
-            if (!(altShift || (border != 0)) && (mouseEvent.isMetaDown() || chart.getCanvasCursor().toString().equals("CROSSHAIR"))) {
-                if (!chart.getCanvasCursor().toString().equals("CROSSHAIR")) {
-                    chart.getCrossHairs().setCrossHairState(true);
+            ChartBorder border = chart.hitBorder(mouseX, mouseY);
+            if (!(altShift || (border == ChartBorder.LEFT || border == ChartBorder.BOTTOM)) && (mouseEvent.isMetaDown() || CanvasCursor.isCrosshair(chart.getCanvasCursor()))) {
+                if (mouseEvent.isMetaDown() && !CanvasCursor.isSelector(chart.getCanvasCursor())) {
+                    BoxMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
+                } else {
+                    if (CanvasCursor.isCrosshair(chart.getCanvasCursor()) || mouseEvent.isMetaDown()) {
+                        chart.getCrossHairs().setCrossHairState(true);
+                    }
+                    CrossHairMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
                 }
-                CrossHairMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
                 handler.mousePressed(mouseEvent);
             } else {
                 if (mouseEvent.isPrimaryButtonDown()) {
+                    if (CanvasCursor.isPeak(chart.getCanvasCursor())) {
+                        PeakPickHandler.handler(this).ifPresent(this::setHandler);
+                    }
+                    if (CanvasCursor.isRegion(chart.getCanvasCursor())) {
+                        RegionMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
+                    }
                     boolean hadRegion = chart.hasActiveRegion();
                     Optional<DatasetRegion> previousRegion = chart.getActiveRegion();
                     boolean selectedRegion = false;

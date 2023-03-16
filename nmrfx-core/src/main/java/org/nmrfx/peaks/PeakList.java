@@ -57,6 +57,9 @@ public class PeakList {
     public AtomicBoolean peakUpdated = new AtomicBoolean(false);
     public AtomicBoolean peakListUpdated = new AtomicBoolean(false);
     public AtomicBoolean peakCountUpdated = new AtomicBoolean(false);
+    public AtomicBoolean assignmentStatusValid = new AtomicBoolean(false);
+
+    Map<Peak.AssignmentLevel, Integer> assignmentMap = new HashMap<>();
     Updater updater = null;
 
     /**
@@ -565,7 +568,8 @@ public class PeakList {
     /**
      * Copies an existing peak list.
      *
-     * @param name a string with the name of an existing peak list.
+     * @param name a string with the name of the new peak list.  If merge is true
+     *             then this must be an existing peak list that will be merged.
      * @param allLinks a boolean specifying whether or not to link peak
      * dimensions.
      * @param merge a boolean specifying whether or not to merge peak labels.
@@ -681,6 +685,7 @@ public class PeakList {
 
     public void peakListUpdated(Object object) {
         changed = true;
+        assignmentStatusValid.set(false);
         if (updater != null) {
             updater.update(object);
         }
@@ -2210,5 +2215,36 @@ public class PeakList {
         double getDistance() {
             return distance;
         }
+    }
+
+    void countStatus() {
+        assignmentMap.clear();
+        for (var assignLevel : Peak.AssignmentLevel.values()) {
+            assignmentMap.put(assignLevel, 0);
+        }
+        for (Peak peak : peaks) {
+            Peak.AssignmentLevel assignLevel = peak.getAssignmentLevel();
+            assignmentMap.computeIfPresent(assignLevel, (k, v) -> v + 1);
+        }
+        assignmentStatusValid.set(true);
+    }
+
+    public Map<Peak.AssignmentLevel, Integer> getAssignmentStatus() {
+        if (!assignmentStatusValid.get()) {
+            countStatus();
+        }
+        return assignmentMap;
+    }
+
+    public int getNumberAssigned() {
+        return getAssignmentStatus().get(Peak.AssignmentLevel.AVU) + getAssignmentStatus().get(Peak.AssignmentLevel.AVM);
+    }
+
+    public int getNumberPartialAssigned() {
+        return getAssignmentStatus().get(Peak.AssignmentLevel.SVU) + getAssignmentStatus().get(Peak.AssignmentLevel.SVM);
+    }
+
+    public int getNumberUnAssigned() {
+        return getAssignmentStatus().get(Peak.AssignmentLevel.UNASSIGNED);
     }
 }

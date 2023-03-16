@@ -1,5 +1,7 @@
 package org.nmrfx.peaks;
 
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
 import org.nmrfx.utilities.ColorUtil;
@@ -967,7 +969,7 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public void delete() {
-        status = -1;
+        setStatus(-1);
     }
 
     @Override
@@ -1790,6 +1792,97 @@ public class Peak implements Comparable, PeakOrMulti {
         }
 
         return matchDim;
+    }
+
+    public enum AssignmentLevel {
+        DELETED("Deleted"),
+        UNASSIGNED("None assigned"),
+        AVM("All Assigned, Valid, Ambiguous"),
+        AVU("All Assigned, Valid, Unambiguous"),
+        AIM("All Assigned, Invalid, Ambiguous"),
+        AIU("All Assigned, Invalid, Unambiguous"),
+        SVM("Some Assigned, Valid, Ambiguous"),
+        SVU("Some Assigned, Valid, Unambiguous"),
+        SIM("Some Assigned, Invalid, Ambiguous"),
+        SIU("Some Assigned, Invalid, Unambiguous");
+
+        String description;
+
+        AssignmentLevel(String description) {
+            this.description = description;
+        }
+
+        @Override
+        public String toString() {
+            return description;
+        }
+
+        public static boolean match(AssignmentLevel level, String mode) {
+            return  switch (mode) {
+                case "all" ->  true;
+                case "ok" ->  level != DELETED;
+                case "deleted" ->  level == DELETED;
+                case "assigned" ->  level == AVU || level == AVM;
+                case "partial" ->  level == SVM || level == SVU;
+                case "unassigned" ->  level == UNASSIGNED;
+                case "ambiguous" ->  level == AVM || level == SVM;
+                case "invalid" -> level == AIM || level == AIU || level == SIM || level == SIU;
+                default -> true;
+            };
+        }
+    }
+
+    public AssignmentLevel getAssignmentLevel() {
+        boolean assigned = true;
+        boolean someAssigned = false;
+        boolean invalid = false;
+        boolean ambiguous = false;
+        MoleculeBase molecule = MoleculeFactory.getActive();
+        if (isDeleted()) {
+            return AssignmentLevel.DELETED;
+        }
+        for (var peakDim : peakDims) {
+            String labels = peakDim.getLabel();
+            if (labels.isBlank()) {
+                assigned = false;
+            } else {
+                String[] fields = labels.split(" ");
+                if (fields.length > 1) {
+                    ambiguous = true;
+                }
+                for (String label : fields) {
+                    if (label.isBlank()) {
+                        assigned = false;
+                    } else {
+                        if ((molecule != null) && (molecule.findAtom(label) == null)) {
+                            invalid = true;
+                        }
+                        someAssigned = true;
+                    }
+                }
+            }
+        }
+        AssignmentLevel result;
+        if (!someAssigned) {
+            result = AssignmentLevel.UNASSIGNED;
+        } else if (assigned && !invalid && ambiguous) {
+            result = AssignmentLevel.AVM;
+        } else if (assigned && !invalid && !ambiguous) {
+            result = AssignmentLevel.AVU;
+        } else if (assigned && invalid && ambiguous) {
+            result = AssignmentLevel.AIM;
+        } else if (assigned && invalid && !ambiguous) {
+            result = AssignmentLevel.AIU;
+        } else if (someAssigned && !invalid && ambiguous) {
+            result = AssignmentLevel.SVM;
+        } else if (someAssigned && !invalid && !ambiguous) {
+            result = AssignmentLevel.SVU;
+        } else if (someAssigned && invalid && ambiguous) {
+            result = AssignmentLevel.SIM;
+        } else {
+            result = AssignmentLevel.SIU;
+        }
+        return result;
     }
 
     class CouplingUpdate {

@@ -1,5 +1,7 @@
 package org.nmrfx.analyst.gui.tools;
 
+import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -8,10 +10,13 @@ import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
-import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
+import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
+import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.JournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
@@ -20,6 +25,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
+import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
@@ -30,7 +36,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 import static org.nmrfx.utils.GUIUtils.affirm;
 import static org.nmrfx.utils.GUIUtils.warn;
@@ -38,6 +43,8 @@ import static org.nmrfx.utils.GUIUtils.warn;
 public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     private static final Logger log = LoggerFactory.getLogger(SimplePeakRegionTool.class);
     FXMLController controller;
+
+    private Menu changeMoleculeMenu;
 
 
     public SimplePeakRegionTool(FXMLController controller) {
@@ -52,6 +59,9 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
         var regionButton = new SplitMenuButton();
         regionButton.setText("Integrate");
+
+        MenuItem openRegionsTableItem = new MenuItem("Show Regions Table");
+        openRegionsTableItem.setOnAction(e -> RegionsTableController.getRegionsTableController().show());
 
         MenuItem clearRegionsItem = new MenuItem("Clear");
         clearRegionsItem.setOnAction(e -> clearAnalysis(true));
@@ -68,7 +78,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         MenuItem loadRegionsMenuItem = new MenuItem("Load Regions");
         loadRegionsMenuItem.setOnAction(e -> loadRegions());
 
-        regionButton.getItems().addAll(clearRegionsItem, saveRegionsMenuItem, loadRegionsMenuItem,
+        regionButton.getItems().addAll(openRegionsTableItem, clearRegionsItem, saveRegionsMenuItem, loadRegionsMenuItem,
                 thresholdMenuItem, clearThresholdMenuItem);
         regionButton.setOnAction(e -> findRegions());
 
@@ -98,8 +108,52 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         MenuItem delCanvasMolMenuItem = new MenuItem("Remove Molecule");
         delCanvasMolMenuItem.setOnAction(e -> removeMolecule());
         moleculeButton.getItems().add(delCanvasMolMenuItem);
-
+        changeMoleculeMenu = new Menu("Change Molecule");
+        moleculeButton.setOnShowing(this::adjustMenuOptions);
         statusBar.addToolBarButtons(regionButton, peakButton, wizardButton, moleculeButton);
+    }
+
+    /**
+     * Adds/Populates the changeMoleculeMenu to the "Molecule" SplitMenuButton if atleast one
+     * molecule is loaded into memory, otherwise the menu is removed.
+     * @param event The on showing event.
+     */
+    private void adjustMenuOptions(Event event) {
+        SplitMenuButton moleculeButton = (SplitMenuButton) event.getSource();
+        if (MoleculeFactory.getMoleculeNames().isEmpty()) {
+            moleculeButton.getItems().remove(changeMoleculeMenu);
+        } else {
+            populateChangeMoleculeMenu();
+            if (!moleculeButton.getItems().contains(changeMoleculeMenu)) {
+                moleculeButton.getItems().add(changeMoleculeMenu);
+            }
+        }
+    }
+
+    /**
+     * Clears the contents of the changeMoleculeMenu and adds the names of the current molecules loaded
+     * into memory as MenuItems.
+     */
+    private void populateChangeMoleculeMenu() {
+        changeMoleculeMenu.getItems().clear();
+        Set<String> moleculeNames = (Set<String>) MoleculeFactory.getMoleculeNames();
+        MenuItem moleculeMenuItem;
+        for (String moleculeName: moleculeNames) {
+            moleculeMenuItem = new MenuItem(moleculeName);
+            moleculeMenuItem.setOnAction(this::moleculeSelected);
+            changeMoleculeMenu.getItems().add(moleculeMenuItem);
+        }
+    }
+
+    /**
+     * Sets the selected molecule as the active molecule and updates it on the active chart.
+     * @param actionEvent
+     */
+    private void moleculeSelected(ActionEvent actionEvent) {
+        MenuItem selectedMoleculeMenuItem = (MenuItem) actionEvent.getSource();
+        MoleculeBase selectedMolecule = MoleculeFactory.getMolecule(selectedMoleculeMenuItem.getText());
+        MoleculeFactory.setActive(selectedMolecule);
+        MoleculeUtils.addActiveMoleculeToCanvas();
     }
 
     PolyChart getChart() {
@@ -145,7 +199,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         if (!chart.hasData()) {
             return false;
         } else {
-            Set<DatasetRegion> regions = chart.getDataset().getRegions();
+            List<DatasetRegion> regions = chart.getDataset().getReadOnlyRegions();
             return (regions != null) && !regions.isEmpty();
         }
     }
@@ -167,7 +221,6 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             analyzer.calculateThreshold();
-            analyzer.getThreshold();
             analyzer.autoSetRegions();
             try {
                 analyzer.integrate();
@@ -176,16 +229,10 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 eDialog.showAndWait();
                 return;
             }
-            Set<DatasetRegion> regions = chart.getDataset().getRegions();
+            List<DatasetRegion> regions = chart.getDataset().getReadOnlyRegions();
             Dataset dataset = (Dataset) chart.getDataset();
             if (!regions.isEmpty()) {
-                // normalize to the smallest integral, but don't count very small integrals (less than 0.001 of max
-                // to avoid artifacts
-
-                double threshold = regions.stream().mapToDouble(r -> r.getIntegral()).max().orElse(1.0) / 1000.0;
-                regions.stream().mapToDouble(r -> r.getIntegral()).filter(r -> r > threshold).min().ifPresent(min -> {
-                    dataset.setNorm(min * dataset.getScale() / 1.0);
-                });
+                dataset.setNormFromRegions(regions);
             }
             chart.refresh();
             chart.chartProps.setRegions(true);
@@ -219,7 +266,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     private void saveRegions() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
-            TreeSet<DatasetRegion> regions = analyzer.getDataset().getRegions();
+            List<DatasetRegion> regions = analyzer.getDataset().getReadOnlyRegions();
             if (regions.isEmpty()) {
                 GUIUtils.warn("Regions Save", "No regions to save");
                 return;
@@ -229,7 +276,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             File regionFile = chooser.showSaveDialog(null);
             if (regionFile != null) {
                 try {
-                    analyzer.saveRegions(regionFile);
+                    analyzer.saveRegions(FileUtils.addFileExtensionIfMissing(regionFile, "txt"));
                 } catch (IOException ioE) {
                     GUIUtils.warn("Error writing regions file", ioE.getMessage());
                 }
@@ -260,7 +307,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             PolyChart chart = getChart();
-            Set<DatasetRegion> regions = chart.getDataset().getRegions();
+            List<DatasetRegion> regions = chart.getDataset().getReadOnlyRegions();
             if ((regions == null) || regions.isEmpty()) {
                 analyzer.calculateThreshold();
                 double threshold = analyzer.getThreshold();
@@ -397,32 +444,11 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         Molecule activeMol = Molecule.getActive();
         if (activeMol == null) {
             ((AnalystApp) AnalystApp.getMainApp()).readMolecule("mol");
-            activeMol = Molecule.getActive();
         }
-        if (activeMol != null) {
-            var cMols = controller.getActiveChart().findAnnoTypes(CanvasMolecule.class);
-            CanvasMolecule cMol = null;
-            if (cMols.isEmpty()) {
-                cMol = new CanvasMolecule(FXMLController.getActiveController().getActiveChart());
-                cMol.setPosition(0.1, 0.1, 0.3, 0.3, "FRACTION", "FRACTION");
-            } else {
-                cMol = (CanvasMolecule) cMols.get(0);
-            }
-
-            cMol.setMolName(activeMol.getName());
-            activeMol.label = Molecule.LABEL_NONHC;
-            activeMol.clearSelected();
-
-            PolyChart chart = FXMLController.getActiveController().getActiveChart();
-            chart.clearAnnoType(CanvasMolecule.class);
-            chart.addAnnotation(cMol);
-            chart.refresh();
-        }
+        MoleculeUtils.addActiveMoleculeToCanvas();
     }
 
     void removeMolecule() {
-        PolyChart chart = FXMLController.getActiveController().getActiveChart();
-        chart.clearAnnoType(CanvasMolecule.class);
-        chart.refresh();
+        MoleculeUtils.removeMoleculeFromCanvas();
     }
 }

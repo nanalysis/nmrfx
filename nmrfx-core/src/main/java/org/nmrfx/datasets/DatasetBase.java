@@ -8,16 +8,19 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class DatasetBase {
     private static final Logger log = LoggerFactory.getLogger(DatasetBase.class);
 
-    public final static int NV_HEADER_SIZE = 2048;
-    public final static int UCSF_HEADER_SIZE = 180;
-    public final static int LABEL_MAX_BYTES = 16;
-    public final static int SOLVENT_MAX_BYTES = 24;
+    public static final int NV_HEADER_SIZE = 2048;
+    public static final int UCSF_HEADER_SIZE = 180;
+    public static final int LABEL_MAX_BYTES = 16;
+    public static final int SOLVENT_MAX_BYTES = 24;
+    public static final String DATASET_PROJECTION_TAG = "_proj_";
     public DatasetLayout layout = null;
     /**
      *
@@ -29,8 +32,6 @@ public class DatasetBase {
     protected String title;
     protected File file = null;
     protected int nDim;
-    protected int[] strides;
-    protected int[] fileDimSizes;
     protected int[] size;
     protected int[] vsize;
     protected int[] vsize_r;
@@ -68,8 +69,11 @@ public class DatasetBase {
     protected double scale = 1.0;
     protected int rdims;
     protected Double noiseLevel = null;
+    protected Double threshold = null;
     protected double[][] values;
-    TreeSet<DatasetRegion> regions;
+    List<DatasetRegion> regions;
+    // Listeners for changes in the list of regions
+    Set<DatasetRegionsListListener> regionsListListeners = new HashSet<>();
     protected DatasetStorageInterface dataFile = null;
     private boolean lvlSet = false;
     private double norm = 1.0;
@@ -80,6 +84,7 @@ public class DatasetBase {
     private String posColor = "black";
     private String negColor = "red";
     private boolean littleEndian = false;
+    private File fidFile = null;
 
     public DatasetBase() {
 
@@ -171,8 +176,6 @@ public class DatasetBase {
      *
      */
     public final void setNDim() {
-        strides = new int[nDim];
-        fileDimSizes = new int[nDim];
         vsize = new int[nDim];
         vsize_r = new int[nDim];
         tdSize = new int[nDim];
@@ -244,8 +247,8 @@ public class DatasetBase {
             sw[i] = 7000.0;
             sw_r[i] = 7000.0;
             sf[i] = 600.0;
-            refPt[i] = getSizeReal(i) / 2;
-            refPt_r[i] = getSizeReal(i) / 2;
+            refPt[i] = getSizeReal(i) / 2.0;
+            refPt_r[i] = getSizeReal(i) / 2.0;
             refValue[i] = 4.73;
             refValue_r[i] = 4.73;
             complex[i] = true;
@@ -303,8 +306,11 @@ public class DatasetBase {
                 throw new IllegalArgumentException("point >= size " + i + " " + pt[i] + " " + getSizeTotal(i));
             }
         }
-        return dataFile.getFloat(pt) / scale;
-
+        if (dataFile == null) {
+            return 0.0;
+        } else {
+            return dataFile.getFloat(pt) / scale;
+        }
     }
 
     /**
@@ -531,6 +537,10 @@ public class DatasetBase {
         return fileName;
     }
 
+    public void setFileName(String newName) {
+        this.fileName = newName;
+    }
+
     /**
      * Get the type of the data values. At present, only single precision float
      * values are used in the dataset. This is indicated with a return value of
@@ -543,7 +553,7 @@ public class DatasetBase {
     }
 
     protected void removeFile(String datasetName) {
-        ProjectBase.getActive().removeDataset(datasetName);
+        ProjectBase.getActive().removeDataset(datasetName, this);
     }
 
     /**
@@ -608,7 +618,7 @@ public class DatasetBase {
         }
 
         if (getRefUnits(iDim) == 3) {
-            ppm = (-(pt - refPt[iDim]) * (getSw(iDim) / aa)) + getRefValue(iDim);
+            ppm = (-(pt - getRefPt(iDim)) * (getSw(iDim) / aa)) + getRefValue(iDim);
         } else if (getRefUnits(iDim) == 1) {
             ppm = pt + 1;
         }
@@ -762,6 +772,16 @@ public class DatasetBase {
     }
 
     /**
+     * Return whether dataset is a memory file.
+     *
+     * @return true if this dataset doesn't have a data file associated with it.
+     */
+    public boolean isMemoryFile() {
+        return false;
+    }
+
+
+    /**
      * Get the File object corresponding to the data file for this Dataset
      *
      * @return File object, null if data stored in Vec
@@ -779,6 +799,26 @@ public class DatasetBase {
         if (file != null) {
             DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
             parFile.writeFile();
+        }
+    }
+
+    /**
+     * Write the data values to a file. Only works if the dataset values are in
+     * a Vec object (not dataset file)
+     *
+     * @param newFile New file to write to
+     * @throws java.io.IOException if an I/O error ocurrs
+     */
+    public void writeVecMat(File newFile) throws IOException {
+        if (vecMat == null) {
+            log.info("Vector Matrix is null. Unable to write file");
+            return;
+        }
+        try (RandomAccessFile outFile = new RandomAccessFile(newFile, "rw")) {
+            byte[] buffer = vecMat.getBytes();
+            DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
+            headerIO.writeHeader(layout, outFile);
+            DataUtilities.writeBytes(outFile, buffer, layout.getFileHeaderSize(), buffer.length);
         }
     }
 
@@ -1018,7 +1058,7 @@ public class DatasetBase {
         if (vecMat == null) {
             value = refPt[iDim];
         } else {
-            value = refPt[0];
+            value = vecMat.getSize() / 2.0;
         }
         return value;
     }
@@ -1033,8 +1073,7 @@ public class DatasetBase {
     public void setRefPt(final int iDim, final double refPt) {
         this.refPt[iDim] = refPt;
         if (vecMat != null) {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue[iDim] + delRef;
+            vecMat.setRefValue(vecMat.getRefValue(), refPt);
         }
 
     }
@@ -1050,8 +1089,7 @@ public class DatasetBase {
         if (vecMat == null) {
             value = refValue[iDim];
         } else {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            value = vecMat.refValue - delRef;
+            value = vecMat.getRefValue();
         }
         return value;
     }
@@ -1065,8 +1103,7 @@ public class DatasetBase {
     public void setRefValue(final int iDim, final double refValue) {
         this.refValue[iDim] = refValue;
         if (vecMat != null) {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue + delRef;
+            vecMat.setRefValue(refValue, getRefPt(iDim));
         }
     }
 
@@ -1188,8 +1225,7 @@ public class DatasetBase {
     public void setRefPt_r(final int iDim, final double refPt_r) {
         this.refPt_r[iDim] = refPt_r;
         if (vecMat != null) {
-            double delRef = getRefPt_r(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue_r[iDim] + delRef;
+            vecMat.setRefValue(refValue_r[iDim], getRefPt_r(iDim));
         }
     }
 
@@ -1205,7 +1241,7 @@ public class DatasetBase {
             value = refValue_r[iDim];
         } else {
             double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSizeReal(iDim);
-            value = vecMat.refValue - delRef;
+            value = vecMat.getRefValue() - delRef;
         }
         return value;
     }
@@ -1219,8 +1255,7 @@ public class DatasetBase {
     public void setRefValue_r(final int iDim, final double refValue_r) {
         this.refValue_r[iDim] = refValue_r;
         if (vecMat != null) {
-            double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue_r + delRef;
+            vecMat.setRefValue(refValue_r, getRefPt_r(iDim));
         }
     }
 
@@ -1667,6 +1702,31 @@ public class DatasetBase {
      */
     public void setNorm(double norm) {
         this.norm = norm;
+        // Setting the norm does not directly affect the DatasetRegion list, but listeners of the list may be
+        // calculating the norm value on update, so notify the listeners instead.
+        updateDatasetRegionsListListeners();
+    }
+
+    /**
+     * Set the norm value used to divide intensity values in the dataset by finding the smallest
+     * integral, without count very small integrals (less than 0.001 of max to avoid artifacts.
+     * @param datasetRegions The regions to calculate the norm from.
+     */
+    public void setNormFromRegions(Collection<DatasetRegion> datasetRegions) {
+        // normalize to the smallest integral, but don't count very small integrals (less than 0.001 of max
+        // to avoid artifacts
+
+        double threshold = datasetRegions.stream().mapToDouble(DatasetRegion::getIntegral).max().orElse(1.0) / 1000.0;
+        OptionalDouble min = datasetRegions.stream().mapToDouble(DatasetRegion::getIntegral).filter(r -> r > threshold).min();
+        if (min.isEmpty()) {
+            // if all the integrals are negative, get the smallest absolute value
+            min = datasetRegions.stream().mapToDouble(r -> Math.abs(r.getIntegral())).filter(r -> r > threshold).min();
+        }
+        if (min.isPresent()) {
+            // Save absolute value as the norm, so that spectra with all negative integrals will appear consistent
+            // with mixed and all positive integral spectra
+            setNorm(min.getAsDouble() * getScale());
+        }
     }
 
     /**
@@ -1722,6 +1782,26 @@ public class DatasetBase {
     public void setNoiseLevel(Double level) {
         if (level != null) {
             noiseLevel = level * scale;
+        }
+    }
+
+    /**
+     * Get the stored threshold level for this dataset
+     *
+     * @return noise level
+     */
+    public Double getThreshold() {
+        return threshold == null ? null : threshold / scale;
+    }
+
+    /**
+     * Store a threshold level for dataset
+     *
+     * @param level noise level
+     */
+    public void setThreshold(Double level) {
+        if (level != null) {
+            threshold = level * scale;
         }
     }
 
@@ -1859,13 +1939,6 @@ public class DatasetBase {
      */
     public String getStdLabel(final int iDim) {
         return "\u03B4 " + getNucleus(iDim).toLatexString();
-    }
-
-    public final void setStrides() {
-        strides[0] = 1;
-        for (int i = 1; i < nDim; i++) {
-            strides[i] = strides[i - 1] * getSizeTotal(i - 1);
-        }
     }
 
     /**
@@ -2007,9 +2080,6 @@ public class DatasetBase {
         if ((values == null) || values.isEmpty()) {
             this.values[iDim] = null;
         } else {
-            if (values.size() != getSizeTotal(iDim)) {
-                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + getSizeTotal(iDim) + ") for dim " + iDim);
-            }
             this.values[iDim] = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {
                 this.values[iDim][i] = values.get(i);
@@ -2017,14 +2087,12 @@ public class DatasetBase {
         }
     }
 
-    /**
-     * Set the size of the dataset along the specified dimension.
-     *
-     * @param iDim Dataset dimension index
-     * @param size the size to set
-     */
-    public void setFileDimSize(final int iDim, final int size) {
-        this.fileDimSizes[iDim] = size;
+    public void sourceFID(File sourceFID) {
+        this.fidFile = sourceFID;
+    }
+
+    public Optional<File> sourceFID() {
+        return Optional.ofNullable(fidFile);
     }
 
     /**
@@ -2034,11 +2102,11 @@ public class DatasetBase {
      * @return the size
      */
     public int getFileDimSize(int iDim) {
-        int value = fileDimSizes[iDim];
-        if (value == 0) {
-            value = layout.getSize(iDim);
-        }
-        return value;
+        return layout.getSize(iDim);
+    }
+
+    public boolean hasLayout() {
+        return layout != null;
     }
 
     synchronized public RegionData analyzeRegion(int[][] pt, int[] cpt, double[] width, int[] dim)
@@ -2046,23 +2114,78 @@ public class DatasetBase {
         return null;
     }
 
-    public void setRegions(TreeSet<DatasetRegion> regions) {
-        this.regions = regions;
+    public void addDatasetRegionsListListener(DatasetRegionsListListener listener) {
+        regionsListListeners.add(listener);
     }
 
-    public TreeSet<DatasetRegion> getRegions() {
+    public void removeDatasetRegionsListListener(DatasetRegionsListListener listener) {
+        regionsListListeners.remove(listener);
+    }
+
+    public void updateDatasetRegionsListListeners() {
+        regionsListListeners.forEach(listener -> listener.datasetRegionsListUpdated(getReadOnlyRegions()));
+    }
+
+    /**
+     * Sets the regions with a new list of regions
+     * @param regions
+     */
+    public void setRegions(List<DatasetRegion> regions) {
+        this.regions = regions;
+        updateDatasetRegionsListListeners();
+    }
+
+    /**
+     * Clears the regions list
+     */
+    public void clearRegions() {
+        regions.clear();
+        updateDatasetRegionsListListeners();
+    }
+
+    /**
+     * Gets a list of the regions that cannot be modified.
+     * @return An unmodifiable list of regions
+     */
+    public List<DatasetRegion> getReadOnlyRegions() {
         if (regions == null) {
-            regions = new TreeSet<>();
+            regions = new ArrayList<>();
         }
-        return regions;
+        return Collections.unmodifiableList(regions);
+    }
+
+    /**
+     * Adds a new region to the list of dataset regions and notifies all the listeners. If the region is already
+     * present in the list of regions it will not be added.
+     * @param region The DatasetRegion to add.
+     */
+    public void addRegion(DatasetRegion region) {
+        if (!(regions.contains(region))) {
+            regions.add(region);
+            updateDatasetRegionsListListeners();
+        }
+    }
+
+    /**
+     * Removes the region from the list of regions.
+     * @param region The DatasetRegion to remove
+     */
+    public void removeRegion(DatasetRegion region) {
+        regions.remove(region);
+        updateDatasetRegionsListListeners();
     }
 
     public DatasetRegion addRegion(double min, double max) {
-        TreeSet<DatasetRegion> regions = getRegions();
-        boolean firstRegion = regions.isEmpty();
+        // don't use Stream.toList as that will give an imutableList
+        List<DatasetRegion> sortedRegions = regions.stream().sorted().collect(Collectors.toList());
+        boolean firstRegion = sortedRegions.isEmpty();
 
         DatasetRegion newRegion = new DatasetRegion(min, max);
-        newRegion.removeOverlapping(regions);
+
+        boolean hasOverlapping = newRegion.removeOverlapping(sortedRegions);
+        if (hasOverlapping) {
+            setRegions(sortedRegions);
+        }
         regions.add(newRegion);
         try {
             newRegion.measure(this);
@@ -2073,6 +2196,7 @@ public class DatasetBase {
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
+        updateDatasetRegionsListListeners();
         return newRegion;
     }
 

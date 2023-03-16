@@ -26,7 +26,6 @@ import javafx.collections.ObservableMap;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
-import javafx.geometry.Point2D;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
@@ -34,8 +33,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
-import org.controlsfx.control.PopOver;
-import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
+import org.nmrfx.analyst.gui.events.DataFormatHandlerUtil;
 import org.nmrfx.analyst.gui.molecule.*;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.analyst.gui.peaks.*;
@@ -48,18 +46,16 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.console.ConsoleController;
-import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.PeakLabeller;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.log.LogConsoleController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
-import org.nmrfx.processor.project.Project;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -138,7 +134,8 @@ public class AnalystApp extends MainApp {
         MainApp.setAnalyst();
         mainApp = this;
         analystApp = this;
-        FXMLController controller = FXMLController.create(stage);
+        FXMLController.create(stage);
+
         Platform.setImplicitExit(true);
         hostServices = getHostServices();
         stage.setTitle(appName + " " + getVersion());
@@ -153,7 +150,7 @@ public class AnalystApp extends MainApp {
         interpreter.exec("import os");
         interpreter.exec("import glob");
         interpreter.exec("from pyproc import *\ninitLocal()");
-        interpreter.exec("from gscript import *\nnw=NMRFxWindowScripting()");
+        interpreter.exec("from gscript_adv import *\nnw=NMRFxWindowAdvScripting()");
         interpreter.exec("from dscript import *");
         interpreter.exec("from mscript import *");
         interpreter.exec("from pscript import *");
@@ -165,7 +162,9 @@ public class AnalystApp extends MainApp {
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
-        Project.setPCS(new FxPropertyChangeSupport(this));
+        DataFormatHandlerUtil.addHandlersToController();
+        ProjectBase.setPCS(new FxPropertyChangeSupport(this));
+        ProjectBase.addPropertyChangeListener(evt -> FXMLController.getControllers().forEach(FXMLController::enableFavoriteButton));
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
         runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
@@ -209,8 +208,15 @@ public class AnalystApp extends MainApp {
         return preferencesController;
     }
 
+    private void saveDatasets() {
+        for (var controller: FXMLController.getControllers()) {
+            controller.saveDatasets();
+        }
+    }
+
     public void quit() {
         System.out.println("quit");
+        saveDatasets();
         waitForCommit();
         Platform.exit();
         System.exit(0);
@@ -309,9 +315,11 @@ public class AnalystApp extends MainApp {
 
         helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
 
+        PluginLoader pluginLoader = PluginLoader.getInstance();
         Menu pluginsMenu = new Menu("Plugins");
-        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginsMenu);
+        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginsMenu);
         pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
+        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
 
         if (tk != null) {
             Menu windowMenu = new Menu("Window");
@@ -451,16 +459,19 @@ public class AnalystApp extends MainApp {
         proteinMenu.getItems().add(runAboutToolItem);
         runAboutToolItem.setOnAction(e -> showRunAboutTool());
 
+        MenuItem stripsToolItem = new MenuItem("Show Strips Tool");
+        proteinMenu.getItems().add(stripsToolItem);
+        stripsToolItem.setOnAction(e -> showStripsBar());
+
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
 
     }
 
     private void addStatusBarButtons(SpectrumStatusBar statusBar) {
-        String iconSize = "16px";
-        String fontSize = "7pt";
         var controller = statusBar.getController();
         SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller);
         simplePeakRegionTool.addButtons(statusBar);
+        controller.addTool(simplePeakRegionTool);
     }
 
     public static void addMultipletPopOver(FXMLController controller) {
@@ -537,6 +548,12 @@ public class AnalystApp extends MainApp {
         }
     }
 
+    public void showPeakTable(PeakList peakList) {
+        if (peakMenuActions != null) {
+            peakMenuActions.showPeakTable(peakList);
+        }
+    }
+
     public void showSpectrumLibrary() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(SimMolController.class)) {
@@ -575,12 +592,6 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(simMolController.getBox());
     }
 
-
-    public StripController getStripsTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        return (StripController) controller.getTool(StripController.class);
-    }
-
     public void showPeakAssignTool() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(PeakAssignTool.class)) {
@@ -601,10 +612,10 @@ public class AnalystApp extends MainApp {
     public void showPeakSlider() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(PeakSlider.class)) {
-            ToolBar navBar = new ToolBar();
-            controller.getBottomBox().getChildren().add(navBar);
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
             PeakSlider peakSlider = new PeakSlider(controller, this::removePeakSlider);
-            peakSlider.initSlider(navBar);
+            peakSlider.initSlider(vBox);
             controller.addTool(peakSlider);
         }
     }
@@ -612,7 +623,8 @@ public class AnalystApp extends MainApp {
     public void removePeakSlider(PeakSlider peakSlider) {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(PeakSlider.class);
-        controller.getBottomBox().getChildren().remove(peakSlider.getToolBar());
+        controller.getBottomBox().getChildren().remove(peakSlider.getBox());
+        peakSlider.removeListeners();
     }
 
     public void showPeakPathTool() {
@@ -679,6 +691,30 @@ public class AnalystApp extends MainApp {
         controller.removeTool(RunAboutGUI.class);
         controller.getBottomBox().getChildren().remove(runaboutTool.getTabPane());
     }
+
+    public StripController showStripsBar() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(StripController.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            StripController stripsController = new StripController(controller, this::removeStripsBar);
+            stripsController.initialize(vBox);
+            controller.addTool(stripsController);
+        }
+        return (StripController) controller.getTool(StripController.class);
+    }
+
+    public void removeStripsBar(StripController stripsController) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(StripController.class);
+        controller.getBottomBox().getChildren().remove(stripsController.getBox());
+    }
+
+    public StripController getStripsTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        return (StripController) controller.getTool(StripController.class);
+    }
+
 
     void addPrefs() {
         AnalystPrefs.addPrefs();

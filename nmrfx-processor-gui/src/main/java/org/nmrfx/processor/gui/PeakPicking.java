@@ -5,28 +5,33 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.collections.ObservableList;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.io.PeakWriter;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
+import org.nmrfx.processor.datasets.peaks.PeakPicker;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
-import javafx.collections.ObservableList;
-import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
-import org.nmrfx.processor.datasets.peaks.PeakPicker;
-import org.nmrfx.peaks.io.PeakWriter;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class PeakPicking {
+    private static final Logger log = LoggerFactory.getLogger(PeakPicking.class);
 
     static Consumer singlePickAction = null;
 
@@ -37,12 +42,12 @@ public class PeakPicking {
     public static void peakPickActive(FXMLController fxmlController, double level) {
         peakPickActive(fxmlController, false, level);
     }
+
     public static void peakPickActive(FXMLController fxmlController, boolean refineLS, Double level) {
         PolyChart chart = fxmlController.getActiveChart();
         ObservableList<DatasetAttributes> dataList = chart.getDatasetAttributes();
-        dataList.stream().forEach((DatasetAttributes dataAttr) -> {
-            peakPickActive(chart, dataAttr, chart.getCrossHairs().hasCrosshairRegion(), refineLS, level, false, null);
-        });
+        dataList.stream().filter(dataAttr -> !dataAttr.isProjection())
+                .forEach((DatasetAttributes dataAttr) -> peakPickActive(chart, dataAttr, chart.getCrossHairs().hasCrosshairRegion(), refineLS, level, false, null));
         chart.refresh();
     }
 
@@ -63,13 +68,34 @@ public class PeakPicking {
 
     public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean useCrossHairs, boolean refineLS,
                                           Double level, boolean saveFile, String listName) {
+         return peakPickActive(chart, dataAttr,  null, useCrossHairs,  refineLS, level, saveFile, listName);
+    }
+
+    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, double[][] region,
+                                          Double level) {
+        chart.getPeakListAttributes().clear();
+        return peakPickActive(chart, dataAttr,  region, false,  false, level, false, null);
+    }
+
+    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, double[][] region, boolean useCrossHairs, boolean refineLS,
+        Double level, boolean saveFile, String listName) {
         DatasetBase datasetBase = dataAttr.getDataset();
         Dataset dataset = (Dataset) datasetBase;
         int nDim = dataset.getNDim();
-
         if (listName == null) {
             listName = getListName(chart, dataAttr);
         }
+        PeakList testList = PeakList.get(listName);
+        if (testList != null) {
+            if (chart.is1D() && (testList.getNDim() != 1)) {
+                GUIUtils.warn("Peak Picking", "Peak list exists and is not 1D");
+                return null;
+            } else if (!chart.is1D() && (testList.getNDim() == 1)) {
+                GUIUtils.warn("Peak Picking", "Peak list exists and is 1D");
+                return null;
+            }
+        }
+
         if (level == null) {
             level = dataAttr.getLvl();
             if (nDim == 1) {
@@ -86,7 +112,18 @@ public class PeakPicking {
         for (int iDim = 0; iDim < nDim; iDim++) {
             int jDim = dataAttr.getDim(iDim);
             if (iDim < 2) {
-                if (useCrossHairs) {
+                if (region != null) {
+                    if (region.length > iDim) {
+                        peakPickPar.limit(jDim, region[iDim][0], region[iDim][1]);
+                    } else {
+                        List<Integer> drawList = chart.getDrawList();
+                        int row = 0;
+                        if (!drawList.isEmpty()) {
+                            row = drawList.get(0);
+                        }
+                        peakPickPar.limit(jDim, row, row);
+                    }
+                } else if (useCrossHairs) {
                     int orientation = iDim == 0 ? PolyChart.VERTICAL : PolyChart.HORIZONTAL;
                     peakPickPar.limit(jDim,
                             chart.crossHairPositions[0][orientation],
@@ -139,9 +176,24 @@ public class PeakPicking {
         Dataset dataset = (Dataset) datasetBase;
         int nDim = dataset.getNDim();
         String listName = getListName(chart, dataAttr);
+        PeakList testList = PeakList.get(listName);
+        if (testList != null) {
+            if (chart.is1D() && (testList.getNDim() != 1)) {
+                GUIUtils.warn("Peak Picking", "Peak list exists and is not 1D");
+                return null;
+            } else if (!chart.is1D() && (testList.getNDim() == 1)) {
+                GUIUtils.warn("Peak Picking", "Peak list exists and is 1D");
+                return null;
+            }
+        }
+
         double level = dataAttr.getLvl();
         if (nDim == 1) {
-            level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
+            Double threshold = dataset.getNoiseLevel();
+            if (threshold == null) {
+                threshold = 0.0;
+            }
+            level = Math.max(3.0 * threshold, y);
         }
         PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendif");
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());

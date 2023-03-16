@@ -8,30 +8,20 @@ package org.nmrfx.analyst.gui.tools;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
+
+import javafx.beans.InvalidationListener;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.nmrfx.chemistry.Atom;
@@ -43,6 +33,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -53,6 +44,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 import org.nmrfx.processor.project.Project;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +55,8 @@ import org.slf4j.LoggerFactory;
 public class PeakSlider implements ControllerTool {
 
     private static final Logger log = LoggerFactory.getLogger(PeakSlider.class);
+    private static final String SLIDER_MENU_NAME = "Slider";
+    VBox vBox;
     ToolBar sliderToolBar;
     FXMLController controller;
     Consumer closeAction;
@@ -82,6 +76,8 @@ public class PeakSlider implements ControllerTool {
     List<FreezeListener> listeners = new ArrayList<>();
     PeakClusterMatcher[] matchers = new PeakClusterMatcher[2];
     RandomDataGenerator rand = new RandomDataGenerator();
+    private InvalidationListener selectedPeaksListener;
+    private ListChangeListener<PolyChart> chartsListener = this::updateKeyBindings;
 
     public PeakSlider(FXMLController controller, Consumer<PeakSlider> closeAction) {
         this.controller = controller;
@@ -89,8 +85,8 @@ public class PeakSlider implements ControllerTool {
         setupLists(true);
     }
 
-    public ToolBar getToolBar() {
-        return sliderToolBar;
+    public VBox getBox() {
+        return this.vBox;
     }
 
     public void close() {
@@ -98,56 +94,53 @@ public class PeakSlider implements ControllerTool {
         closeAction.accept(this);
     }
 
-    public void initSlider(ToolBar toolBar) {
-        this.sliderToolBar = toolBar;
+    public void initSlider(VBox vBox) {
+        this.vBox = vBox;
+        sliderToolBar = new ToolBar();
+        vBox.getChildren().add(sliderToolBar);
 
-        String iconSize = "16px";
-        String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
-        Button bButton;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
-        shiftFreezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.CODE_FORK, "Shift+Freeze", iconSize, fontSize, ContentDisplay.TOP);
+        shiftFreezeButton = new Button("Shift+Freeze");
         shiftFreezeButton.setOnMouseClicked(e -> evalMatchCriteria(selPeaks));
         buttons.add(shiftFreezeButton);
 
-        freezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.LOCK, "Freeze", iconSize, fontSize, ContentDisplay.TOP);
-        freezeButton.setOnAction(e -> freezePeaks(e));
-        freezeButton.setOnMouseClicked(e -> freezePeaks(e));
+        freezeButton = new Button("Freeze");
+        freezeButton.setOnAction(this::freezePeaks);
+        freezeButton.setOnMouseClicked(this::freezePeaks);
         buttons.add(freezeButton);
 
-        thawButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNLOCK, "Thaw", iconSize, fontSize, ContentDisplay.TOP);
-        thawButton.setOnAction(e -> thawPeaks(e));
-        thawButton.setOnMouseClicked(e -> thawPeaks(e));
+        thawButton = new Button("Thaw");
+        thawButton.setOnAction(this::thawPeaks);
+        thawButton.setOnMouseClicked(this::thawPeaks);
         buttons.add(thawButton);
 
-        tweakFreezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Tweak+Freeze", iconSize, fontSize, ContentDisplay.TOP);
-        tweakFreezeButton.setOnAction(e -> tweakPeaks(e));
-        tweakFreezeButton.setOnMouseClicked(e -> tweakPeaks(e));
+        tweakFreezeButton = new Button("Tweak+Freeze");
+        tweakFreezeButton.setOnAction(this::tweakPeaks);
+        tweakFreezeButton.setOnMouseClicked(this::tweakPeaks);
         buttons.add(tweakFreezeButton);
 
-        linkButton = GlyphsDude.createIconButton(FontAwesomeIcon.CHAIN, "Link", iconSize, fontSize, ContentDisplay.TOP);
+        linkButton = new Button("Link");
         linkButton.setOnAction(e -> linkDims());
         buttons.add(linkButton);
 
-        unlinkButton = GlyphsDude.createIconButton(FontAwesomeIcon.CHAIN_BROKEN, "UnLink", iconSize, fontSize, ContentDisplay.TOP);
+        unlinkButton = new Button("UnLink");
         unlinkButton.setOnAction(e -> unlinkDims());
         buttons.add(unlinkButton);
 
-        buttons.forEach((button) -> {
-            button.getStyleClass().add("toolButton");
-        });
+        buttons.forEach(button -> button.getStyleClass().add("toolButton"));
 
         atomXFieldLabel = new Label("X:");
         atomYFieldLabel = new Label("Y:");
         intensityFieldLabel = new Label("I:");
         atomXLabel = new Label();
-        atomXLabel.setMinWidth(75);
+        atomXLabel.setMinWidth(55);
         atomYLabel = new Label();
-        atomYLabel.setMinWidth(75);
+        atomYLabel.setMinWidth(55);
         intensityLabel = new Label();
-        intensityLabel.setMinWidth(75);
+        intensityLabel.setMinWidth(55);
 
         MenuButton actionMenu = new MenuButton("Actions");
         MenuItem thawAllItem = new MenuItem("Thaw All");
@@ -176,31 +169,69 @@ public class PeakSlider implements ControllerTool {
         Pane filler1 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
         Pane filler2 = new Pane();
-        filler2.setMinWidth(50);
+        filler2.setMinWidth(20);
         Pane filler3 = new Pane();
-        filler3.setMinWidth(50);
+        filler3.setMinWidth(20);
         Pane filler4 = new Pane();
-        filler4.setMinWidth(50);
+        filler4.setMinWidth(20);
         Pane filler5 = new Pane();
         HBox.setHgrow(filler5, Priority.ALWAYS);
 
-        if (toolBar != null) {
-            toolBar.getItems().add(closeButton);
-            toolBar.getItems().add(filler1);
-            toolBar.getItems().add(actionMenu);
-            toolBar.getItems().addAll(buttons);
-            toolBar.getItems().add(filler2);
-            toolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel);
+        sliderToolBar.getItems().add(closeButton);
+        sliderToolBar.getItems().add(filler1);
+        sliderToolBar.getItems().add(actionMenu);
+        sliderToolBar.getItems().addAll(buttons);
+        sliderToolBar.getItems().add(filler2);
+        sliderToolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel);
+        sliderToolBar.getItems().add(filler5);
 
-            toolBar.getItems().add(filler5);
+        // The different control items end up with different heights based on font and icon size,
+        // set all the items to use the same height
+        sliderToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(sliderToolBar)));
+
+        // Setup listeners
+        selectedPeaksListener = event -> setActivePeaks(controller.selPeaks.get());
+        controller.selPeaks.addListener(selectedPeaksListener);
+        for (PolyChart chart : controller.getCharts()) {
+            addKeyBindingsToChart(chart);
         }
-        controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
+        ((ObservableList<PolyChart>) controller.getCharts()).addListener(chartsListener);
+   }
+
+    /**
+     * Add key bindings to newly added charts.
+     * @param change The change to the FXMLController charts list.
+     */
+    private void updateKeyBindings(ListChangeListener.Change<? extends PolyChart> change) {
+        if (change.next()) {
+            for (PolyChart chart: change.getAddedSubList()) {
+                addKeyBindingsToChart(chart);
+            }
+        }
+    }
+
+    /**
+     * Adds keybindings for df, dt and ds to the provided chart as well as adding the slider
+     * to the chart's peak menu.
+     * @param chart The PolyChart to modify.
+     */
+    private void addKeyBindingsToChart(PolyChart chart) {
+        KeyBindings keyBindings = chart.getKeyBindings();
+        keyBindings.registerKeyAction("df", this::freezePeaks);
+        keyBindings.registerKeyAction("dt", this::thawPeaks);
+        keyBindings.registerKeyAction("ds", this::tweakPeaks);
+        addSliderToPeakMenu(chart);
+    }
+
+    public void removeListeners() {
+        controller.selPeaks.removeListener(selectedPeaksListener);
+        ((ObservableList<PolyChart>) controller.getCharts()).removeListener(chartsListener);
         for (PolyChart chart : controller.getCharts()) {
             KeyBindings keyBindings = chart.getKeyBindings();
-            keyBindings.registerKeyAction("df", this::freezePeaks);
-            keyBindings.registerKeyAction("dt", this::thawPeaks);
-            keyBindings.registerKeyAction("ds", this::tweakPeaks);
-            addSliderToPeakMenu(chart);
+            keyBindings.deregisterKeyAction("df");
+            keyBindings.deregisterKeyAction("dt");
+            keyBindings.deregisterKeyAction("ds");
+            removeSliderFromPeakMenu(chart);
         }
     }
 
@@ -253,11 +284,11 @@ public class PeakSlider implements ControllerTool {
         }
     }
 
-//    public void freezePeaks(MouseEvent event) {
+    //    public void freezePeaks(MouseEvent event) {
 //
 //        freezePeaks(event.isAltDown());
 //        event.consume();
-//        
+//
 //    }
     public void freezePeaks(boolean useAllConditions) {
         // do setup because we could have added a peak list after adding slider controller.  Should be a better way
@@ -458,7 +489,7 @@ public class PeakSlider implements ControllerTool {
             PeakDim peakDim11 = selPeaks.get(1).getPeakDim(1);
             double delta0 = Math.abs(peakDim00.getChemShift() - peakDim01.getChemShift());
             double delta1 = Math.abs(peakDim10.getChemShift() - peakDim11.getChemShift());
-            // scale delta ppm between peaks by the bounds of the peaks so we can 
+            // scale delta ppm between peaks by the bounds of the peaks so we can
             //  compare axes with different nuclei
             double delta0F = Math.abs(delta0 / peakDim00.getBounds());
             double delta1F = Math.abs(delta1 / peakDim10.getBounds());
@@ -513,11 +544,6 @@ public class PeakSlider implements ControllerTool {
             tweakFreezeButton.setDisable(true);
             linkButton.setDisable(true);
             unlinkButton.setDisable(false);
-            controller.getCharts().stream()
-                    .forEach(chart -> {
-                        chart.clearPeakPaths();
-                        chart.drawPeakLists(true);
-                    });
         } else {
             // fixme axes could be swapped
             Peak peak = peaks.get(peaks.size() - 1);
@@ -566,7 +592,6 @@ public class PeakSlider implements ControllerTool {
                                         });
                                     }
                                 }
-                                chart.drawPeakLists(true);
                             }
                         }
                     });
@@ -611,19 +636,18 @@ public class PeakSlider implements ControllerTool {
     }
 
     public void evalMatchCriteria(List<Peak> peaks) {
-        System.out.println("overlapMatches(" + peaks + ")");
         if (isMatcherNull()) {
-            System.out.println("Both matchers must be valid (none should be null)");
+            log.warn("Both matchers must be valid (none should be null)");
             return;
         }
         if (peaks != null && !peaks.isEmpty()) {
             Peak clickedPeak = peaks.get(0);
             boolean c1ClickedPeak = satisfyCriteria1(clickedPeak);
             boolean c2ClickedPeak = satisfyCriteria2(clickedPeak, c1ClickedPeak);
-            System.out.println(String.format("\tClicked peak '%s' meets criteria 1 (%s) and 2 (%s)", clickedPeak, c1ClickedPeak, c2ClickedPeak));
+            log.info("\tClicked peak '{}' meets criteria 1 ({}) and 2 ({})", clickedPeak, c1ClickedPeak, c2ClickedPeak);
 
             if (c1ClickedPeak && c2ClickedPeak) {
-                // TODO: debugging list, need to delete 
+                // TODO: debugging list, need to delete
                 List<Peak> peaksToFreeze = new ArrayList<>();
                 peaksToFreeze.add(clickedPeak);
                 shiftAndFreezePeak(clickedPeak);
@@ -636,7 +660,7 @@ public class PeakSlider implements ControllerTool {
                         if (!p.equals(clickedPeak)) {
                             boolean c1AssocPeak = satisfyCriteria1(p);
                             boolean c2AssocPeak = satisfyCriteria2(p, c1AssocPeak);
-                            System.out.println(String.format("\tPeak '%s' linked to the clicked peak in dimension '%d' satisfies criteria 1 (%s) and 2 (%s)", p, matcher.getMatchDim(), c1AssocPeak, c2AssocPeak));
+                            log.info(String.format("\tPeak '%s' linked to the clicked peak in dimension '%d' satisfies criteria 1 (%s) and 2 (%s)", p, matcher.getMatchDim(), c1AssocPeak, c2AssocPeak));
                             int evalDim = (matcher.getMatchDim() == 0) ? 1 : 0;
                             if (c1AssocPeak && c2AssocPeak) {
                                 peaksToFreeze.add(p);
@@ -646,7 +670,7 @@ public class PeakSlider implements ControllerTool {
                                 if (bestCluster == null) {
                                     return; // continues to next iteration
                                 }
-                                System.out.println(String.format("\tThe cluster containing peak '%s' best matches cluster containing '%s'", p, bestCluster.rootPeak));
+                                log.info(String.format("\tThe cluster containing peak '%s' best matches cluster containing '%s'", p, bestCluster.rootPeak));
                                 Peak matchingPeak = matcher.getMatchingPeak(p); // experimental peak matching sim peak
                                 if (bestCluster.contains(matchingPeak) && !p.getPeakDim(evalDim).isFrozen()) {
                                     freezeMatchPeakDim(p, matchingPeak, evalDim);
@@ -656,7 +680,7 @@ public class PeakSlider implements ControllerTool {
                         }
                     });
                 }
-                System.out.println("All peaks to freeze: " + peaksToFreeze);
+                log.info("All peaks to freeze: {}", peaksToFreeze);
                 printClusterScore(clickedPeak, 0);
                 printClusterScore(clickedPeak, 1);
                 updateMatchers(true);
@@ -718,7 +742,6 @@ public class PeakSlider implements ControllerTool {
 
     // FIXME: ASSUMES CRITERIA 1 AND 2 ARE MET. SHOULDN'T RUN INDEPENDENTLY.
     public void shiftAndFreezePeak(Peak p0) {
-        System.out.println("shiftAndFrezePeak('" + p0 + "')");
         if (isMatcherNull()) {
             return;
         }
@@ -741,7 +764,6 @@ public class PeakSlider implements ControllerTool {
      *
      */
     boolean satisfyCriteria1(Peak peak) {
-        System.out.println("\tsatisfyCriteria1('" + peak + "')");
         boolean criteria1Met = false;
         if (peak.getPeakList().isSimulated() && matchers.length == 2) {
             Peak tempMatchingPeak = null;
@@ -769,7 +791,6 @@ public class PeakSlider implements ControllerTool {
      * display them
      */
     boolean satisfyCriteria2(Peak peak, boolean criteria1Met) {
-        System.out.println("\tsatisfyCriteria2('" + peak + "', '" + criteria1Met + "')");
         boolean criteria2Met = false;
         if (criteria1Met) {
             for (PeakClusterMatcher matcher : matchers) {
@@ -784,7 +805,7 @@ public class PeakSlider implements ControllerTool {
                     peaksInClus.forEach((p) -> {
                         double peakShift = p.getPeakDim(dim).getChemShift();
                         double shiftDiff = Math.abs(peakShift - matchPeakShift);
-                        System.out.println(String.format("\t\tIn dimension '%d', shift difference b/t experimental peak '%s' compared to peak '%s' is '%f'.", matchDim, matchingPeak, p, shiftDiff));
+                        log.info(String.format("\t\tIn dimension '%d', shift difference b/t experimental peak '%s' compared to peak '%s' is '%f'.", matchDim, matchingPeak, p, shiftDiff));
                         if ((shiftDiff > 0.0) && (shiftDiff < tolerance)) {
                             peaksWithinTol.add(p);
                         }
@@ -794,7 +815,7 @@ public class PeakSlider implements ControllerTool {
                     } else {
                         peaksWithinTol.forEach(peakInTol -> {
                             double w = PeakCluster.calcWeight(peak, peakInTol, peak.getPeakList().scale);
-                            System.out.println(String.format("\t\t* Predicted peak '%s' has experimental peak '%s' within a '%f' ppm tolerance. The weight b/t the 2 peaks is '%f'.", peak, peakInTol, tolerance, w));
+                            log.info(String.format("\t\t* Predicted peak '%s' has experimental peak '%s' within a '%f' ppm tolerance. The weight b/t the 2 peaks is '%f'.", peak, peakInTol, tolerance, w));
                         });
                     }
                 }
@@ -811,34 +832,32 @@ public class PeakSlider implements ControllerTool {
         int jDim = (iDim == 1) ? 0 : 1;
         PeakClusterMatcher iMatcher = matchers[iDim];
         PeakClusterMatcher jMatcher = matchers[jDim];
-        System.out.println("\n\n" + label + " Cluster Score Calculation");
+        log.info("\n\n{} Cluster Score Calculation", label);
         PeakCluster iPredClus = iMatcher.getCluster(predPeak);
         Peak expPeak = iMatcher.getMatchingPeak(predPeak);
         List<Peak> peaksPairedToExp = jMatcher.getCluster(expPeak).getLinkedPeaks();
 
         peaksPairedToExp.stream()
-                .map((assocExpPeak) -> {
+                .map(assocExpPeak -> {
                     PeakCluster jAssocExpClus = iMatcher.getCluster(assocExpPeak);
-                    System.out.println(String.format("Weights b/t predicted " + label + " cluster of '%s' and experimental cluster containing '%s'", predPeak, assocExpPeak));
+                    log.info(String.format("Weights b/t predicted %s cluster of '%s' and experimental cluster containing '%s'", label, predPeak, assocExpPeak));
 
                     iPredClus.getLinkedPeaks()
-                            .forEach((predP) -> {
+                            .forEach(predP -> {
                                 if (jAssocExpClus != null) {
                                     jAssocExpClus.getLinkedPeaks()
-                                            .forEach((eP) -> {
+                                            .forEach(eP -> {
                                                 double w = PeakCluster.calcWeight(predP, eP, predP.getPeakList().scale);
-                                                System.out.println(String.format("\tPred Peak ('%s') and Exp Peak ('%s'), weight : '%f'", predP, eP, w));
+                                                log.info(String.format("\tPred Peak ('%s') and Exp Peak ('%s'), weight : '%f'", predP, eP, w));
                                             });
                                 } else {
-                                    System.out.println("Associated peak '" + assocExpPeak + "' returned a null cluster.");
+                                    log.info("Associated peak '{}' returned a null cluster.", assocExpPeak);
                                 }
                             });
                     return jAssocExpClus;
                 })
-                .map((iExpClus) -> iPredClus.comparisonScore(iExpClus))
-                .forEachOrdered((clusScore) -> {
-                    System.out.println("Cluster score: " + clusScore);
-                });
+                .map(iPredClus::comparisonScore)
+                .forEachOrdered(clusScore -> log.info("Cluster score: {}", clusScore));
     }
 
     /**
@@ -888,8 +907,6 @@ public class PeakSlider implements ControllerTool {
     }
 
     public void matchClusters(int iDim, boolean drawMatches) {
-        System.out.println("matchClusters(" + iDim + ")");
-
         // storing peak list attributes which contain information about the peak lists
         // in each chart.
         if (matchers[iDim] == null) {
@@ -908,32 +925,32 @@ public class PeakSlider implements ControllerTool {
         List<PeakList> predLists = new ArrayList<>();
         List<PeakList> expLists = new ArrayList<>();
         controller.getCharts().stream().forEach(chart -> {
-            for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
-                double xMin = chart.getXAxis().getLowerBound();
-                double xMax = chart.getXAxis().getUpperBound();
-                double yMin = chart.getYAxis().getLowerBound();
-                double yMax = chart.getYAxis().getUpperBound();
-                double[][] limits = {{xMin, xMax}, {yMin, yMax}};
-                Optional<PeakList> expListOpt = Optional.empty();
-                Optional<PeakList> predListOpt = Optional.empty();
-                for (PeakList peakList : Project.getActive().getPeakLists()) {
-                    if (peakList.getDatasetName().equals(dataAttr.getDataset().getName())) {
-                        if (peakList.isSimulated()) {
-                            predListOpt = Optional.of(peakList);
-                        } else {
-                            expListOpt = Optional.of(peakList);
+                    for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
+                        double xMin = chart.getXAxis().getLowerBound();
+                        double xMax = chart.getXAxis().getUpperBound();
+                        double yMin = chart.getYAxis().getLowerBound();
+                        double yMax = chart.getYAxis().getUpperBound();
+                        double[][] limits = {{xMin, xMax}, {yMin, yMax}};
+                        Optional<PeakList> expListOpt = Optional.empty();
+                        Optional<PeakList> predListOpt = Optional.empty();
+                        for (PeakList peakList : Project.getActive().getPeakLists()) {
+                            if (peakList.getDatasetName().equals(dataAttr.getDataset().getName())) {
+                                if (peakList.isSimulated()) {
+                                    predListOpt = Optional.of(peakList);
+                                } else {
+                                    expListOpt = Optional.of(peakList);
+                                }
+                            }
+                        }
+                        if (expListOpt.isPresent() && predListOpt.isPresent()) {
+                            PeakCluster.prepareList(expListOpt.get(), limits);
+                            PeakCluster.prepareList(predListOpt.get(), limits);
+                            expLists.add(expListOpt.get());
+                            predLists.add(predListOpt.get());
+                            log.info("create {} {} {}", iDim, expListOpt.get().getName(), predListOpt.get().getName());
                         }
                     }
                 }
-                if (expListOpt.isPresent() && predListOpt.isPresent()) {
-                    PeakCluster.prepareList(expListOpt.get(), limits);
-                    PeakCluster.prepareList(predListOpt.get(), limits);
-                    expLists.add(expListOpt.get());
-                    predLists.add(predListOpt.get());
-                    System.out.println("create " + iDim + " " + expListOpt.get().getName() + " " + predListOpt.get().getName());
-                }
-            }
-        }
         );
         matchers[iDim] = new PeakClusterMatcher(expLists, predLists, iDim);
 
@@ -948,22 +965,19 @@ public class PeakSlider implements ControllerTool {
                         List<PeakCluster[]> clusterMatches = matcher.getClusterMatch(); // list of matched clusters
                         if (clusterMatches != null) {
                             clusterMatches.stream()
-                                    .map((clusMatch) -> {
+                                    .map(clusMatch -> {
                                         PeakCluster expCluster = clusMatch[0];
                                         PeakCluster predCluster = clusMatch[1];
-                                        List<List<Peak>> matchingPeaks = expCluster.getPeakMatches(predCluster);
-                                        return matchingPeaks;
+                                        return expCluster.getPeakMatches(predCluster);
                                     })
-                                    .forEachOrdered((matchingPeaks) -> {
-                                        matchingPeaks.forEach(pairedPeaks -> {
-                                            boolean isColumn = matcher.getMatchDim() == 0;
-                                            ConnectPeakAttributes connPeakAttrs = setPeakPairAttrs(isColumn, pairedPeaks);
-                                            if (connPeakAttrs != null) {
-                                                chart.addPeakPath(connPeakAttrs);
+                                    .forEachOrdered(matchingPeaks -> matchingPeaks.forEach(pairedPeaks -> {
+                                                boolean isColumn = matcher.getMatchDim() == 0;
+                                                ConnectPeakAttributes connPeakAttrs = setPeakPairAttrs(isColumn, pairedPeaks);
+                                                if (connPeakAttrs != null) {
+                                                    chart.addPeakPath(connPeakAttrs);
+                                                }
                                             }
-                                        }
-                                        );
-                                    });
+                                    ));
                             chart.drawPeakLists(true);
                         }
                     }
@@ -1075,14 +1089,14 @@ public class PeakSlider implements ControllerTool {
                 }
             }
         }
-        System.out.println(hmqcPredListOpt);
-        System.out.println(hmqcExpListOpt);
-        System.out.println(tocsyPredListOpt);
-        System.out.println(tocsyExpListOpt);
+        log.debug("{}", hmqcPredListOpt);
+        log.debug("{}", hmqcExpListOpt);
+        log.debug("{}", tocsyPredListOpt);
+        log.debug("{}", tocsyExpListOpt);
         if (hmqcExpListOpt.isPresent() && hmqcPredListOpt.isPresent()) {
-            System.out.println("got hmqc");
+            log.debug("got hmqc");
             if (tocsyExpListOpt.isPresent() && tocsyPredListOpt.isPresent()) {
-                System.out.println("got tocsy");
+                log.debug("got tocsy");
                 double[] tocsyScale = {0.5, 0.5};
                 double[] hmqcScale = {0.5, 5.0};
                 alignPeakList(hmqcPredListOpt.get(), hmqcExpListOpt.get(),
@@ -1155,8 +1169,8 @@ public class PeakSlider implements ControllerTool {
     }
 
     double calcTOCSYAdj(PeakList predTOCSYList, PeakList expTOCSYList,
-            Peak predHMQCPeak, Peak expHMQCPeak,
-            double[] tocsyScale, double smallTol) {
+                        Peak predHMQCPeak, Peak expHMQCPeak,
+                        double[] tocsyScale, double smallTol) {
         double weightAdj = 1.0;
         double[][] limits = new double[2][2];
 
@@ -1167,7 +1181,7 @@ public class PeakSlider implements ControllerTool {
                 if (peakDim.getPeakList() == predTOCSYList) {
                     Peak predTOCSYPeak = peakDim.getPeak();
                     double[] ppms = {predTOCSYPeak.getPeakDim(0).getChemShiftValue(),
-                        predTOCSYPeak.getPeakDim(1).getChemShiftValue()};
+                            predTOCSYPeak.getPeakDim(1).getChemShiftValue()};
                     int ppmDim;
                     double origPPM;
                     if (peakDim.getSpectralDim() == 1) {
@@ -1239,10 +1253,9 @@ public class PeakSlider implements ControllerTool {
     }
 
     void alignPeakList(PeakList predHMQCList, PeakList expHMQCList,
-            PeakList predTOCSYList, PeakList expTOCSYList,
-            PeakList predNOESYList, PeakList expNOESYList,
-            double[] scale, double[] tocsyScale) {
-        System.out.println("align");
+                       PeakList predTOCSYList, PeakList expTOCSYList,
+                       PeakList predNOESYList, PeakList expNOESYList,
+                       double[] scale, double[] tocsyScale) {
         try {
             alignTOCSY(predTOCSYList, expTOCSYList, tocsyScale);
             PolyChart.setPeakListenerState(false);
@@ -1285,7 +1298,7 @@ public class PeakSlider implements ControllerTool {
             double minWeight = matcher.getMinWeight();
 
             double score = matcher.getMaxWtSum(matching, minWeight);
-            System.out.println("aligned " + score);
+            log.debug("aligned {}", score);
 
             for (int i = 0; i < sizeP; i++) {
                 int match = matching[i];
@@ -1301,8 +1314,8 @@ public class PeakSlider implements ControllerTool {
             }
         } finally {
             PolyChart.setPeakListenerState(true);
-            for (FXMLController controller : FXMLController.getControllers()) {
-                controller.redrawChildren();
+            for (FXMLController fxmlController : FXMLController.getControllers()) {
+                fxmlController.redrawChildren();
             }
         }
     }
@@ -1311,24 +1324,38 @@ public class PeakSlider implements ControllerTool {
         boolean hasSliderMenu = false;
         ContextMenu menu = chart.getPeakMenu().chartMenu;
         for (var menuItem : menu.getItems()) {
-            if (menuItem.getText().equals("Slider")) {
+            if (menuItem.getText().equals(SLIDER_MENU_NAME)) {
                 hasSliderMenu = true;
                 break;
             }
         }
         if (!hasSliderMenu) {
-            Menu cascade = new Menu("Slider");
+            Menu cascade = new Menu(SLIDER_MENU_NAME);
             menu.getItems().add(cascade);
             MenuItem tweakFreezeItem = new MenuItem("Tweak & Freeze");
-            tweakFreezeItem.setOnAction(e -> tweakPeaks(e));
+            tweakFreezeItem.setOnAction(this::tweakPeaks);
             MenuItem thawItem = new MenuItem("Thaw");
-            thawItem.setOnAction(e -> thawPeaks(e));
+            thawItem.setOnAction(this::thawPeaks);
             MenuItem freezeItem = new MenuItem("Freeze");
-            freezeItem.setOnAction(e -> freezePeaks(e));
+            freezeItem.setOnAction(this::freezePeaks);
 
             cascade.getItems().addAll(tweakFreezeItem, thawItem, freezeItem);
         }
 
+    }
+
+    private void removeSliderFromPeakMenu(PolyChart chart) {
+        MenuItem sliderMenuItem = null;
+        ContextMenu menu = chart.getPeakMenu().chartMenu;
+        for (var menuItem : menu.getItems()) {
+            if (menuItem.getText().equals(SLIDER_MENU_NAME)) {
+                sliderMenuItem = menuItem;
+                break;
+            }
+        }
+        if (sliderMenuItem != null) {
+            menu.getItems().remove(sliderMenuItem);
+        }
     }
 
 }

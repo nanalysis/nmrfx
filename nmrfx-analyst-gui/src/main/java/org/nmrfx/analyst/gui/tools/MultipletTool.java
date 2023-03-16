@@ -9,16 +9,14 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
 import org.nmrfx.analyst.peaks.Analyzer;
@@ -27,6 +25,8 @@ import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.IconUtilities;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -93,6 +93,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     public void initializePopover(PopOver popOver) {
         this.vBox = new VBox();
+        vBox.setPadding(new Insets(0, 1, 0, 1));
         ToolBar topBar = new ToolBar();
         initIntegralType(topBar);
         initCouplingFields(Orientation.VERTICAL, 3);
@@ -165,63 +166,56 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         addRegion(region);
     }
 
-
-    ImageView getIcon(String name) {
-        Image imageIcon = new Image("/images/" + name + ".png", true);
-        return new ImageView(imageIcon);
-    }
-
     void initBasicButtons(ToolBar toolBar1, ToolBar toolBar2) {
         Button button;
-        Font font = new Font(7);
         List<Button> peakButtons = new ArrayList<>();
         List<Button> multipletButtons = new ArrayList<>();
 
-        button = new Button("AutoAdd", getIcon("peak_auto"));
+        button = new Button("AutoAdd", IconUtilities.getIcon("peak_auto"));
         button.setOnAction(e -> addAuto());
         peakButtons.add(button);
 
-        button = new Button("Delete", getIcon("editdelete"));
+        button = new Button("Delete", IconUtilities.getIcon("editdelete"));
         button.setOnAction(e -> removeWeakPeak());
         peakButtons.add(button);
 
-        button = new Button("Split", getIcon("region_split"));
+        button = new Button("Split", IconUtilities.getIcon("region_split"));
         button.setOnAction(e -> split());
         peakButtons.add(button);
 
-        button = new Button("Adjust", getIcon("region_adjust"));
+        button = new Button("Adjust", IconUtilities.getIcon("region_adjust"));
         button.setOnAction(e -> adjustRegion());
         peakButtons.add(button);
 
 
-        Button doubletButton = new Button("Doublets", getIcon("tree"));
+        Button doubletButton = new Button("Doublets", IconUtilities.getIcon("tree"));
         doubletButton.setOnAction(e -> toDoublets());
         multipletButtons.add(doubletButton);
 
-        button = new Button("Fit", getIcon("reload"));
+        button = new Button("Fit", IconUtilities.getIcon("reload"));
         button.setOnAction(e -> fitSelected());
         peakButtons.add(button);
 
-        extractButton = new Button("Extract", getIcon("extract"));
+        extractButton = new Button("Extract", IconUtilities.getIcon("extract"));
         extractButton.setOnAction(e -> extractMultiplet());
         multipletButtons.add(extractButton);
 
-        mergeButton = new Button("Merge", getIcon("merge"));
+        mergeButton = new Button("Merge", IconUtilities.getIcon("merge"));
         mergeButton.setOnAction(e -> mergePeaks());
         multipletButtons.add(mergeButton);
 
-        transferButton = new Button("Transfer", getIcon("transfer"));
+        transferButton = new Button("Transfer", IconUtilities.getIcon("transfer"));
         transferButton.setOnAction(e -> transferPeaks());
         multipletButtons.add(transferButton);
         for (Button button1 : peakButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
-            button1.setFont(font);
+            button1.setStyle("-fx-font-size:" + MainApp.ICON_FONT_SIZE_STR);
             button1.getStyleClass().add("toolButton");
             toolBar1.getItems().add(button1);
         }
         for (Button button1 : multipletButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
-            button1.setFont(font);
+            button1.setStyle("-fx-font-size:" + MainApp.ICON_FONT_SIZE_STR);
             button1.getStyleClass().add("toolButton");
             toolBar2.getItems().add(button1);
         }

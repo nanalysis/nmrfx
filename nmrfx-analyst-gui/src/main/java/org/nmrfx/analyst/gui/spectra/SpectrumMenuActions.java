@@ -3,7 +3,6 @@ package org.nmrfx.analyst.gui.spectra;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -36,7 +35,7 @@ public class SpectrumMenuActions extends MenuActions {
 
 
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
-        deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().removeSelected());
+        deleteItem.setOnAction(e -> FXMLController.getActiveController().removeSelectedChart());
         MenuItem syncMenuItem = new MenuItem("Sync Axes");
         syncMenuItem.setOnAction(e -> PolyChart.getActiveChart().syncSceneMates());
 
@@ -59,7 +58,7 @@ public class SpectrumMenuActions extends MenuActions {
         arrangeMenu.getItems().addAll(createGridItem, horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
         MenuItem favoritesMenuItem = new MenuItem("Favorites");
         favoritesMenuItem.setOnAction(e -> showFavorites());
-        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
+        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
         menu.getItems().addAll(newMenuItem, deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem);
         MenuItem[] disableItems = {deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem};
@@ -70,15 +69,11 @@ public class SpectrumMenuActions extends MenuActions {
 
     @Override
     protected void advanced() {
-        MenuItem stripsMenuItem = new MenuItem("Show Strips");
-        stripsMenuItem.setOnAction(e -> showStripsBar());
-
         MenuItem alignMenuItem = new MenuItem("Align Spectra");
         alignMenuItem.setOnAction(e -> FXMLController.getActiveController().alignCenters());
 
         menu.getItems().addAll(
-                alignMenuItem,
-                stripsMenuItem);
+                alignMenuItem);
     }
     void showFavorites() {
         if (windowIO == null) {
@@ -108,22 +103,4 @@ public class SpectrumMenuActions extends MenuActions {
         stage.setTitle(AnalystApp.getAppName() + " " + AnalystApp.getVersion());
         FXMLController.create(stage);
     }
-
-    public void showStripsBar() {
-        FXMLController controller = FXMLController.getActiveController();
-        if (!controller.containsTool(StripController.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            StripController stripsController = new StripController(controller, this::removeStripsBar);
-            stripsController.initialize(vBox);
-            controller.addTool(stripsController);
-        }
-    }
-    public void removeStripsBar(StripController stripsController) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(StripController.class);
-        controller.getBottomBox().getChildren().remove(stripsController.getBox());
-    }
-
-
 }

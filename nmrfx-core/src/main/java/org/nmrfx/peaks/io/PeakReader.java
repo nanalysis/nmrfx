@@ -622,13 +622,28 @@ public class PeakReader {
         String listName = fileTail;
         try (PythonInterpreter interpreter = new PythonInterpreter()) {
             interpreter.exec("import sparky");
-            String rdString;
             interpreter.set("pMap", pMap);
             interpreter.exec("sparky.pMap=pMap");
-            rdString = String.format("sparky.loadSaveFile('%s','%s')", fileName, listName);
-            interpreter.exec(rdString);
+            interpreter.set("sparkyFileName", fileName);
+            interpreter.set("sparkyListName", listName);
+            interpreter.exec("sparky.loadSaveFile(sparkyFileName, sparkyListName)");
         }
         return PeakList.get(listName);
+    }
+
+    public static boolean hasSparkyDataHeight(String[] fields) {
+        int nFields = fields.length;
+        return (nFields > 2) && fields[nFields - 2].equals("Data") && fields[nFields-1].equals("Height");
+    }
+
+    public static int countSparkyDims(String[] fields) {
+        int nDim = 0;
+        for (String field : fields) {
+            if (field.trim().startsWith("w")) {
+                nDim++;
+            }
+        }
+        return nDim;
     }
 
     public static PeakList readSparkyAssignmentFile(String fileName) throws IOException {
@@ -637,13 +652,18 @@ public class PeakReader {
         fileTail = fileTail.substring(0, fileTail.indexOf('.'));
         String listName = fileTail;
         PeakList peakList;
-        Pattern pattern = Pattern.compile("([A-Za-z]+)([0-9]+)(.*)");
+        Pattern pattern = Pattern.compile("([A-Za-z]*)([0-9]+)([A-Za-z].*)");
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             String line = fileReader.readLine();
             line = line.trim();
             String[] fields = line.split("\\s+");
-            int nDim = fields.length - 1;
+            int nDim = countSparkyDims(fields);
+            boolean hasHeight = hasSparkyDataHeight(fields);
             peakList = new PeakList(listName, nDim);
+            int expectedFields = 1 + nDim;
+            if (hasHeight) {
+                expectedFields++;
+            }
             while (true) {
                 line = fileReader.readLine();
                 if (line == null) {
@@ -651,16 +671,15 @@ public class PeakReader {
                 }
                 line = line.trim();
                 fields = line.split("\\s+");
-                if (fields.length == (nDim + 1)) {
+                if (fields.length >= expectedFields) {
                     Peak peak = peakList.getNewPeak();
-                    Matcher matcher = pattern.matcher(fields[0]);
-                    String resName = "";
-                    String[] atoms = null;
-                    if (matcher.matches()) {
-                        resName = matcher.group(1) + matcher.group(2);
-                        atoms = matcher.group(3).split("-");
+                    String[] assignFields = fields[0].split("-");
+                    if (hasHeight) {
+                        float height = Float.parseFloat(fields[fields.length - 1]);
+                        peak.setIntensity(height);
+                    } else {
+                        peak.setIntensity(1.0f);
                     }
-                    peak.setIntensity(1.0f);
 
                     for (int i = 0; i < nDim; i++) {
                         float ppm = Float.parseFloat(fields[i + 1]);
@@ -669,30 +688,46 @@ public class PeakReader {
                         float widthHz = 20.0f;
                         double sf = 600.0;
                         double sw = 2000.0;
+                        String resName = "";
+                        String atomName = "";
+                        if (assignFields.length == nDim) {
+                            String assignField = assignFields[i];
+                            if (!assignField.equals("?")) {
+                                Matcher matcher = pattern.matcher(assignField);
+                                if (matcher.matches()) {
+                                    if (matcher.group(1) == null) {
+                                        resName = matcher.group(2);
+                                    } else {
+                                        resName = matcher.group(1) + matcher.group(2);
+                                    }
+                                    atomName = matcher.group(3);
+                                }
+                            }
+                        }
 
-                        if ((atoms != null) && (atoms.length == nDim)) {
-                            String label = resName + "." + atoms[i];
+                        if (!atomName.isBlank()) {
+                            String label = resName + "." + atomName;
                             peakDim.setLabel(label);
-                            if (atoms[i].startsWith("H")) {
+                            if (atomName.startsWith("H")) {
                                 widthHz = 15.0f;
                                 sf = 600.0;
                                 sw = 5000.0;
 
                                 peakList.getSpectralDim(i).setDimName("1H");
-                            } else if (atoms[i].startsWith("N")) {
+                            } else if (atomName.startsWith("N")) {
                                 sf = 60.0;
                                 sw = 2000.0;
                                 widthHz = 30.0f;
                                 peakList.getSpectralDim(i).setDimName("15N");
-                            } else if (atoms[i].startsWith("C")) {
+                            } else if (atomName.startsWith("C")) {
                                 widthHz = 30.0f;
                                 sf = 150.0;
                                 sw = 4000.0;
                                 peakList.getSpectralDim(i).setDimName("13C");
                             }
+                            peakList.getSpectralDim(i).setSf(sf);
+                            peakList.getSpectralDim(i).setSw(sw);
                         }
-                        peakList.getSpectralDim(i).setSf(sf);
-                        peakList.getSpectralDim(i).setSw(sw);
                         peakDim.setLineWidthHz(widthHz);
                         peakDim.setBoundsHz(widthHz * 3.0f);
                     }

@@ -19,6 +19,7 @@ package org.nmrfx.processor.math;
 
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.processing.ProcessingException;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -29,6 +30,7 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.transform.DftNormalization;
@@ -666,15 +668,45 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    static int getZfSize(double vecSize, int factor) {
+        int size = (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
+        return size;
+    }
+
+    public boolean ensurePowerOf2() {
+        boolean needsZF = false;
+        int[] zfSizes = new int[getNDim()];
+        for (int i = 0; i < getNDim(); i++) {
+            int zfSize = getZfSize(getSize(i), 0);
+            zfSizes[i] = zfSize;
+            if (zfSize != getSize(i)) {
+                needsZF = true;
+            }
+        }
+        if (needsZF) {
+            zeroFill(zfSizes);
+        }
+        return needsZF;
+    }
+
     public void zeroFill(int factor) {
-        if (factor < 1) {
-            return;
+        if (factor < 0) {
+            factor = 0;
         }
-        int mult = (int) Math.round(Math.pow(2, factor));
         int[] newSizes = new int[nDim];
+        boolean needsZF = false;
         for (int i = 0; i < nDim; i++) {
-            newSizes[i] = sizes[i] * mult;
+            newSizes[i] = getZfSize(sizes[i], factor);
+            if (newSizes[i] != sizes[i]) {
+                needsZF = true;
+            }
         }
+        if (needsZF) {
+            zeroFill(newSizes);
+        }
+    }
+
+    public void zeroFill(int[] newSizes) {
         MatrixND zfMatrix = new MatrixND(newSizes);
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
@@ -688,8 +720,10 @@ public class MatrixND implements MatrixType {
         sizes = zfMatrix.sizes;
         strides = zfMatrix.strides;
         nElems = zfMatrix.nElems;
-        for (int i = 0; i < nDim; i++) {
-            pt[i][1] = sizes[i] - 1;
+        if (pt != null) {
+            for (int i = 0; i < nDim; i++) {
+                pt[i][1] = sizes[i] - 1;
+            }
         }
     }
 

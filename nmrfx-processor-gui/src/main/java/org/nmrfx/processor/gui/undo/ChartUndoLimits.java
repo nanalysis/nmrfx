@@ -33,8 +33,8 @@ public class ChartUndoLimits extends ChartUndo {
         int nDim = chart.getNDim();
         limits = new double[nDim][2];
         for (int i = 0; i < nDim; i++) {
-            limits[i][0] = chart.getAxis(i).getLowerBound();
-            limits[i][1] = chart.getAxis(i).getUpperBound();
+            limits[i][0] = chart.getAxis(i) != null ? chart.getAxis(i).getLowerBound() : Double.NaN;
+            limits[i][1] = chart.getAxis(i) != null ? chart.getAxis(i).getUpperBound() : Double.NaN;
         }
     }
 
@@ -50,8 +50,10 @@ public class ChartUndoLimits extends ChartUndo {
     public void setLimits(PolyChart chart) {
         int nDim = chart.getNDim();
         for (int i = 0; i < nDim; i++) {
-            chart.getAxis(i).setLowerBound(limits[i][0]);
-            chart.getAxis(i).setUpperBound(limits[i][1]);
+            if (!Double.isNaN(limits[i][0])) {
+                chart.getAxis(i).setLowerBound(limits[i][0]);
+                chart.getAxis(i).setUpperBound(limits[i][1]);
+            }
         }
         chart.refresh();
     }

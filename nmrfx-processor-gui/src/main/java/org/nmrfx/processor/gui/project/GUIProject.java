@@ -14,6 +14,7 @@ import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.util.FS;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -24,7 +25,6 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.spectra.WindowIO;
-import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.gui.utils.PeakListUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
@@ -54,13 +54,12 @@ public class GUIProject extends ProjectBase {
     static String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
 
     Git git;
-    private FxPropertyChangeSupport pcs = new FxPropertyChangeSupport(this);
 
     private static boolean commitActive = false;
 
     public GUIProject(String name) {
         super(name);
-        System.out.println("new project " + name);
+        log.info("new project {}", name);
         peakLists = FXCollections.observableHashMap();
         datasetMap = FXCollections.observableHashMap();
         datasets = FXCollections.observableArrayList();
@@ -68,16 +67,28 @@ public class GUIProject extends ProjectBase {
     }
 
     public static GUIProject replace(String name, GUIProject project) {
-        System.out.println("replace to " + name);
+        log.info("replace to {}", name);
         GUIProject newProject = new GUIProject(name);
+        project.copySaveFrames(newProject);
         newProject.datasetMap.putAll(project.datasetMap);
         newProject.peakLists.putAll(project.peakLists);
-
-        newProject.peakPaths = project.peakPaths;
+        newProject.peakPaths.putAll(project.peakPaths);
+        newProject.compoundMap.putAll(project.compoundMap);
+        newProject.molecules.putAll(project.molecules);
+        newProject.activeMol = project.activeMol;
         return newProject;
     }
 
-    public void createProject(Path projectDir) throws IOException {
+    public Git createAndInitializeGitObject(File gitDirectory) {
+        try {
+            return Git.init().setDirectory(gitDirectory).call();
+        } catch (GitAPIException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        return null;
+    }
+
+    public void createProject(Path projectDir) throws IOException{
         if (Files.exists(projectDir)) {
             throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
         }
@@ -87,20 +98,60 @@ public class GUIProject extends ProjectBase {
             Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
             Files.createDirectory(subDirectory);
         }
-        this.projectDir = projectDir;
-        try {
-            PreferencesController.saveRecentProjects(projectDir.toString());
-            git = Git.init().setDirectory(projectDir.toFile()).call();
-        } catch (GitAPIException ex) {
-            log.error(ex.getMessage(), ex);
-        }
+        setProjectDir(projectDir);
+        PreferencesController.saveRecentProjects(projectDir.toString());
+        checkUserHomePath();
+        git = createAndInitializeGitObject(projectDir.toFile());
         if (git != null) {
             writeIgnore();
         }
     }
 
+    /***
+     * Checks if the user home path that will be used by git exists and will be writable. jgit checks for the user
+     * home path in the preference of XDG_CONFIG_HOME, HOME, (HOMEDRIVE, HOMEPATH) and HOMESHARE. If XDG_CONGIG_HOME is set, then that
+     * path is used regardless of whether its writable. Otherwise the first environment variable that is set is checked
+     * for existence and writability. If it fails the check, the userHome variable of jgit FS is set to the 'user.home'
+     * property.
+     */
+    private void checkUserHomePath() {
+        if (getEnvironmentVariable("XDG_CONFIG_HOME") != null) {
+            return;
+        }
+        boolean setUserHome = false;
+        String home = getEnvironmentVariable("HOME");
+        if (home != null) {
+            setUserHome = isFileWritable(new File(home));
+        } else {
+            String homeDrive = getEnvironmentVariable("HOMEDRIVE");
+            String homePath = getEnvironmentVariable("HOMEPATH");
+            if (homeDrive != null && homePath != null) {
+                setUserHome = isFileWritable(new File(homeDrive, homePath));
+            }  else {
+                String homeShare = getEnvironmentVariable("HOMESHARE");
+                if (homeShare != null) {
+                    setUserHome = isFileWritable(new File(homeShare));
+                } else {
+                    setUserHome = true;
+                }
+            }
+        }
+        if (setUserHome) {
+            File userHome = new File(System.getProperty("user.home"));
+            FS.DETECTED.setUserHome(userHome);
+            log.info("Setting jgit config file path to: {}", userHome);
+        }
+    }
+
+    private boolean isFileWritable(File file) {
+        return !file.exists() || (file.exists() && !file.canWrite());
+    }
+
+    public String getEnvironmentVariable(String name) {
+        return System.getenv(name);
+    }
+
     public static GUIProject getActive() {
-        System.out.println("get active gui ");
         ProjectBase project = ProjectBase.getActive();
         if (project == null) {
             project = new GUIProject("Untitled 1");
@@ -114,7 +165,7 @@ public class GUIProject extends ProjectBase {
             try (FileWriter writer = new FileWriter(path.toFile())) {
                 writer.write("*.nv\n*.ucsf");
             } catch (IOException ioE) {
-                System.out.println(ioE.getMessage());
+                log.warn("{}", ioE.getMessage(), ioE);
             }
         }
     }
@@ -124,6 +175,8 @@ public class GUIProject extends ProjectBase {
         clearAllPeakLists();
         clearAllDatasets();
         MainApp.closeAll();
+        // Clear the project directory or else a user may accidentally overwrite their previously closed project
+        setProjectDir(null);
     }
 
     public static boolean checkProjectActive() {
@@ -132,9 +185,6 @@ public class GUIProject extends ProjectBase {
         boolean hasDatasets =  project != null && !project.getDatasets().isEmpty();
         boolean hasPeakLists = project != null && !project.getPeakLists().isEmpty();
         return hasMolecules || hasDatasets || hasPeakLists;
-    }
-    public void clearAllMolecules() {
-        MoleculeFactory.clearAllMolecules();
     }
 
     public void loadGUIProject(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {
@@ -148,7 +198,7 @@ public class GUIProject extends ProjectBase {
         if (projectDir != null) {
             boolean readSTAR3 = false;
             for (String subDir : subDirTypes) {
-                System.out.println("read " + subDir + " " + readSTAR3);
+                log.debug("read {} {}", subDir, readSTAR3);
                 Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
                 if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
                     switch (subDir) {
@@ -162,7 +212,7 @@ public class GUIProject extends ProjectBase {
                             break;
                         case "peaks":
                             if (!readSTAR3) {
-                                System.out.println("readpeaks");
+                                log.debug("readpeaks");
                                 loadProject(projectDir, "peaks");
                             } else {
                                 loadProject(projectDir, "mpk2");
@@ -187,7 +237,7 @@ public class GUIProject extends ProjectBase {
 
             }
         }
-        this.setProjectDir(projectDir);
+        setProjectDir(projectDir);
         PreferencesController.saveRecentProjects(projectDir.toString());
         currentProject.setActive();
     }
@@ -291,7 +341,6 @@ public class GUIProject extends ProjectBase {
         if (file.toString().endsWith(".pdb")) {
             PDBFile pdbReader = new PDBFile();
             pdbReader.readSequence(file.toString(), false, 0);
-            System.out.println("read mol: " + file.toString());
         } else if (file.toString().endsWith(".sdf")) {
             SDFile.read(file.toString(), null);
         } else if (file.toString().endsWith(".mol")) {
@@ -303,7 +352,7 @@ public class GUIProject extends ProjectBase {
         if (MoleculeFactory.getActive() == null) {
             throw new MoleculeIOException("Couldn't open any molecules");
         }
-        System.out.println("active mol " + MoleculeFactory.getActive().getName());
+        log.info("active mol {}", MoleculeFactory.getActive().getName());
     }
 
     void loadMoleculeEntities(Path directory) throws MoleculeIOException, IOException {
@@ -321,7 +370,6 @@ public class GUIProject extends ProjectBase {
                             String fileName = path.getFileName().toString();
                             Matcher matcher = pattern.matcher(fileName);
                             String baseName = matcher.group(1);
-                            System.out.println("read mol: " + pathName);
 
                             try {
                                 if (fileName.endsWith(".seq")) {
@@ -409,22 +457,22 @@ public class GUIProject extends ProjectBase {
     boolean gitCommit() {
         boolean didSomething = false;
         commitActive = true;
-        try {
-            if (git == null) {
-                try {
-                    git = Git.open(projectDir.toFile());
-                    System.out.println("gitopen");
-                } catch (IOException ioE) {
-                    System.out.println("gitinit");
-                    git = Git.init().setDirectory(projectDir.toFile()).call();
-                    writeIgnore();
-                    System.out.println("gitinited");
+        if (git == null) {
+            try {
+                git = Git.open(projectDir.toFile());
+            } catch (IOException ioE) {
+                checkUserHomePath();
+                git = createAndInitializeGitObject(projectDir.toFile());
+                if (git == null) {
+                    return didSomething;
                 }
+                writeIgnore();
             }
+        }
+        try {
 
             DirCache index = git.add().addFilepattern(".").call();
             Status status = git.status().call();
-            System.out.println("status " + status.isClean() + " " + status.hasUncommittedChanges());
             StringBuilder sBuilder = new StringBuilder();
             Set<String> actionMap = new HashSet<>();
             if (!status.isClean() || status.hasUncommittedChanges()) {
@@ -432,24 +480,20 @@ public class GUIProject extends ProjectBase {
                 for (String addedFile : addedFiles) {
                     String action = "add:" + Paths.get(addedFile).getName(0);
                     actionMap.add(action);
-                    System.out.println("added " + addedFile);
                 }
                 Set<String> changedFiles = status.getChanged();
                 for (String changedFile : changedFiles) {
                     String action = "change:" + Paths.get(changedFile).getName(0);
                     actionMap.add(action);
-                    System.out.println("changed " + changedFile);
                 }
                 Set<String> removedFiles = status.getRemoved();
                 for (String removedFile : removedFiles) {
-                    System.out.println("removed " + removedFile);
                     String action = "remove:" + Paths.get(removedFile).getName(0);
                     actionMap.add(action);
                     git.rm().addFilepattern(removedFile).call();
                 }
                 Set<String> missingFiles = status.getMissing();
                 for (String missingFile : missingFiles) {
-                    System.out.println("missing " + missingFile);
                     String action = "missing:" + Paths.get(missingFile).getName(0);
                     actionMap.add(action);
                     git.rm().addFilepattern(missingFile).call();
@@ -473,7 +517,6 @@ public class GUIProject extends ProjectBase {
     public void addPeakList(PeakList peakList, String name) {
         super.addPeakList(peakList, name);
         PeakListUpdater updater = new PeakListUpdater(peakList);
-        System.out.println("update " + name);
         peakList.registerUpdater(updater);
     }
 
@@ -516,7 +559,7 @@ public class GUIProject extends ProjectBase {
                 Files.createDirectory(subDirectory);
             }
         }
-        this.projectDir = projectDir;
+        setProjectDir(projectDir);
     }
 
 }

@@ -49,6 +49,8 @@ import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.python.util.InteractiveInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.beans.PropertyChangeSupport;
 import java.io.File;
@@ -63,7 +65,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MainApp extends Application {
-
+    private static final Logger log = LoggerFactory.getLogger(MainApp.class);
     public static ArrayList<Stage> stages = new ArrayList<>();
     public static PreferencesController preferencesController;
     public static DocWindowController docWindowController;
@@ -76,16 +78,35 @@ public class MainApp extends Application {
     protected static MainApp mainApp = null;
     static boolean isAnalyst = false;
     static Font defaultFont;
+    // Icon and font sizes for icon buttons
+    public static final String ICON_SIZE_STR = "16px";
+    public static final String ICON_FONT_SIZE_STR = "7pt";
+    // The default font size
+    public static final String REG_FONT_SIZE_STR = "9pt";
 
+    /**
+     * Closes all stages and controllers except the main stage/first controller.
+     */
     public static void closeAll() {
         for (PolyChart chart : PolyChart.CHARTS) {
             chart.clearDataAndPeaks();
             chart.clearAnnotations();
         }
+        List<FXMLController> controllers = new ArrayList<>(FXMLController.getControllers());
+        // Don't close the first controller that matches with the main stage, Note this first controller is not
+        // necessarily the active controller
+        for (int index = 1; index < controllers.size(); index++) {
+            controllers.get(index).close();
+        }
+
         Stage mainStage = getMainStage();
-        for (Stage stage : stages) {
+        // Since stages are removed in a separate function after calling stage.close, must make a copy of
+        // the list to avoid concurrent modification
+        List<Stage> stageCopy = new ArrayList<>(stages);
+        for (Stage stage : stageCopy) {
             if (stage != mainStage) {
-                stage.close();
+                stage.hide();
+                removeStage(stage);
             }
         }
     }
@@ -176,6 +197,20 @@ public class MainApp extends Application {
         return SystemUtils.IS_OS_MAC;
     }
 
+    /**
+     * Set the default font size of the provided stage with the provided
+     * font size string.
+     * @param stage The stage to set the font for
+     * @param fontSizeStr A string font size ex. '9pt'
+     */
+    public static void setStageFontSize(Stage stage, String fontSizeStr) {
+        if (stage != null && stage.getScene() != null) {
+            stage.getScene().getRoot().setStyle("-fx-font-size: " + fontSizeStr);
+        } else {
+            log.info("Unable to set font size for stage.");
+        }
+    }
+
     public static MenuBar getMenuBar() {
         return mainApp.makeMenuBar(appName);
     }
@@ -260,17 +295,14 @@ public class MainApp extends Application {
         }
         // File Menu (items TBD)
         Menu fileMenu = new Menu("File");
-        MenuItem openMenuItem = new MenuItem("Open FID...");
-        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openFIDAction(e));
-        MenuItem openDatasetMenuItem = new MenuItem("Open Dataset...");
-        openDatasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDatasetAction(e));
+        MenuItem openMenuItem = new MenuItem("Open...");
+        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openAction(e));
         MenuItem addMenuItem = new MenuItem("Open Dataset (No Display) ...");
         addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
         MenuItem newMenuItem = new MenuItem("New Window...");
-        newMenuItem.setOnAction(e -> newGraphics(e));
-        Menu recentFIDMenuItem = new Menu("Recent FIDs");
-        Menu recentDatasetMenuItem = new Menu("Recent Datasets");
-        PreferencesController.setupRecentMenus(recentFIDMenuItem, recentDatasetMenuItem);
+        newMenuItem.setOnAction(this::newGraphics);
+        Menu recentFilesMenuItem = new Menu("Recent Files");
+        PreferencesController.setupRecentMenus(recentFilesMenuItem);
 
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
         pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
@@ -313,11 +345,11 @@ public class MainApp extends Application {
 
         projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem);
 
-        fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, pngMenuItem, loadPeakListMenuItem);
+        fileMenu.getItems().addAll(openMenuItem, addMenuItem,
+                recentFilesMenuItem, newMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, pngMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
-        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
+        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
         deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().close());
@@ -356,13 +388,10 @@ public class MainApp extends Application {
         MenuItem consoleMenuItem = new MenuItem("Show Console");
         consoleMenuItem.setOnAction(e -> showConsole(e));
 
-        MenuItem attrMenuItem = new MenuItem("Show Attributes");
-        attrMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpecAttrAction(e));
-
         MenuItem procMenuItem = new MenuItem("Show Processor");
         procMenuItem.setOnAction(e -> FXMLController.getActiveController().showProcessorAction(e));
 
-        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem);
+        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, procMenuItem);
 
         Menu peakMenu = new Menu("Peaks");
 

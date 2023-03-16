@@ -1,52 +1,38 @@
 package org.nmrfx.analyst.gui.molecule;
 
-import javafx.geometry.Point2D;
-import javafx.scene.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Circle;
-import javafx.scene.text.Text;
-import java.util.ArrayList;
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.QuadCurve;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.predict.RNAStats;
 import org.nmrfx.structure.rna.SSLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.*;
+
 public class SSViewer extends Pane {
 
     private static final Logger log = LoggerFactory.getLogger(SSViewer.class);
+    private static final int N_ATOMS = 7;
 
-    class AtomCoord {
+    record AtomCoord(double x, double y) {}
 
-        final double x;
-        final double y;
-
-        AtomCoord(double x, double y) {
-            this.x = x;
-            this.y = y;
-        }
-
-    }
-//    Group root;
     Group drawingGroup;
     Group infoGroup;
     Pane pane;
@@ -65,10 +51,11 @@ public class SSViewer extends Pane {
     boolean seqState = true;
     boolean basePairState = true;
     boolean constraintPairState = true;
-    public SimpleBooleanProperty drawNumbersProp = new SimpleBooleanProperty(false);
-    public SimpleBooleanProperty showActiveProp = new SimpleBooleanProperty(true);
-    public SimpleIntegerProperty nAtomsProp = new SimpleIntegerProperty(7);
-    public SimpleStringProperty constraintTypeProp = new SimpleStringProperty("All");
+    private final SimpleBooleanProperty drawNumbersProp = new SimpleBooleanProperty(false);
+    private final SimpleBooleanProperty showActiveProp = new SimpleBooleanProperty(true);
+    private final SimpleStringProperty constraintTypeProp = new SimpleStringProperty("All");
+    private final List<String> displayAtomTypes = new ArrayList<>();
+    private final SimpleBooleanProperty hydrogenPredictionProp = new SimpleBooleanProperty(true);
 
     double centerX;
     double centerY;
@@ -80,7 +67,6 @@ public class SSViewer extends Pane {
 
     public SSViewer() {
         initScene();
-//        this.getChildren().add(pane);
     }
 
     @Override
@@ -89,6 +75,28 @@ public class SSViewer extends Pane {
         pane.setPrefHeight(this.getHeight());
         super.layoutChildren();
         drawSS();
+    }
+
+    public SimpleBooleanProperty getDrawNumbersProp() {
+        return drawNumbersProp;
+    }
+
+    public SimpleBooleanProperty getShowActiveProp() {
+        return showActiveProp;
+    }
+
+    public SimpleStringProperty getConstraintTypeProp() {
+        return constraintTypeProp;
+    }
+
+    public SimpleBooleanProperty getHydrogenPredictionProp() {
+        return hydrogenPredictionProp;
+    }
+
+    public void updateAtoms(List<String> atomNames) {
+        displayAtomTypes.clear();
+        displayAtomTypes.addAll(atomNames);
+        layoutChildren();
     }
 
     public final void initScene() {
@@ -102,7 +110,6 @@ public class SSViewer extends Pane {
         this.getChildren().add(pane);
         drawNumbersProp.addListener(e -> drawSS());
         showActiveProp.addListener(e -> drawSS());
-        nAtomsProp.addListener(e -> drawSS());
         constraintTypeProp.addListener(e -> drawSS());
         drawSS();
     }
@@ -128,10 +135,10 @@ public class SSViewer extends Pane {
         for (Point2D point : points) {
             double x = point.getX();
             double y = point.getY();
-            minX = x < minX ? x : minX;
-            minY = y < minY ? y : minY;
-            maxX = x > maxX ? x : maxX;
-            maxY = y > maxY ? y : maxY;
+            minX = Math.min(x, minX);
+            minY = Math.min(y, minY);
+            maxX = Math.max(x, maxX);
+            maxY = Math.max(y, maxY);
         }
         centerX = (maxX + minX) / 2.0;
         centerY = (maxY + minY) / 2.0;
@@ -139,8 +146,8 @@ public class SSViewer extends Pane {
         double widthY = maxY - minY;
         double scaleX = paneWidth / widthX;
         double scaleY = paneHeight / widthY;
-        scale = scaleX < scaleY ? scaleX : scaleY;
-        scale *= (0.85 - nAtomsProp.get() * 0.02);
+        scale = Math.min(scaleX, scaleY);
+        scale *= (0.85 - N_ATOMS * 0.02);
     }
 
     Node drawLabelledCircle(double width, String text, int fontSize, Color color, double x, double y) {
@@ -158,35 +165,19 @@ public class SSViewer extends Pane {
     }
 
     Node drawLabelledNode(int iRes, String resName, String text, double x, double y) {
-        StackPane stack = new StackPane();
         double width = scale * 0.5;
         if (width < 12) {
             width = 12.0;
         }
 
         int fontSize = (int) Math.round(width);
-        //Rectangle helpIcon = new Rectangle(width,width);
-        Color color;
-        switch (text) {
-            case "G":
-                color = Color.ORANGE;
-                break;
-            case "C":
-                color = Color.LIGHTGREEN;
-                break;
-            case "A":
-                color = Color.YELLOW;
-                break;
-            case "U":
-                color = Color.LIGHTBLUE;
-                break;
-            case "T":
-                color = Color.LIGHTBLUE;
-                break;
-            default:
-                color = Color.WHITE;
-
-        }
+        Color color = switch (text) {
+            case "G" -> Color.ORANGE;
+            case "C" -> Color.LIGHTGREEN;
+            case "A" -> Color.YELLOW;
+            case "U", "T" -> Color.LIGHTBLUE;
+            default -> Color.WHITE;
+        };
         String label;
         if (drawNumbersProp.get()) {
             label = resName.substring(1);
@@ -196,91 +187,27 @@ public class SSViewer extends Pane {
         }
 
         atomMap.put(iRes + "", new AtomCoord(x, y));
-        Node node = drawLabelledCircle(width, label, fontSize, color, x, y);
-        return node;
-//       Circle helpIcon = new Circle(width / 2.0, color);
-//        //helpIcon.setFill(Color.RED);
-//        Text textItem;
-//        if (drawNumbers) {
-//            textItem = new Text(resName.substring(1));
-//            textItem.setFont(Font.font(fontSize / 2));
-//        } else {
-//            textItem = new Text(text);
-//            textItem.setFont(Font.font(fontSize));
-//        }
-//
-//        stack.getChildren().addAll(helpIcon, textItem);
-//        stack.setAlignment(Pos.CENTER);     // Right-justify nodes in stack
-//        stack.setTranslateX(x - width / 2 + 1);
-//        stack.setTranslateY(y - width / 2 + 1);
-//        atomMap.put(iRes + "", new AtomCoord(x, y));
-//        return stack;
+        return drawLabelledCircle(width, label, fontSize, color, x, y);
     }
 
     Node drawAtom(String resNum, String text, double x, double y, boolean active) {
-//        StackPane stack = new StackPane();
         double width = scale * 0.2;
         if (width < 4) {
             width = 4.0;
         }
 
         int fontSize = (int) Math.round(width);
-        //Rectangle helpIcon = new Rectangle(width,width);
-        Color color;
-        switch (text) {
-            case "5''":
-                color = Color.SALMON;
-                break;
-            case "5'":
-                color = Color.SALMON;
-                break;
-            case "4'":
-                color = Color.SALMON;
-                break;
-            case "3'":
-                color = Color.SALMON;
-                break;
-            case "2'":
-                color = Color.SALMON;
-                break;
-            case "1'":
-                color = Color.SALMON;
-                break;
-            case "8":
-                color = Color.RED;
-                break;
-            case "6":
-                color = Color.RED;
-                break;
-            case "5":
-                color = Color.RED;
-                break;
-            case "2":
-                color = Color.RED;
-                break;
-            default:
-                color = Color.WHITE;
-
-        }
+        Color color = switch (text) {
+            case "5''", "5'", "4'", "3'", "2'", "1'" -> Color.SALMON;
+            case "8", "6", "5", "2" -> Color.RED;
+            default -> Color.WHITE;
+        };
         if (!active) {
             color = Color.LIGHTGRAY;
         }
         Node node = drawLabelledCircle(width, text, fontSize, color, x, y);
-        node.setOnMousePressed(e -> {
-            showInfo(e, resNum, text);
-        });
+        node.setOnMousePressed(e -> showInfo(e, resNum, text));
 
-//        Circle helpIcon = new Circle(width / 2.0, color);
-//        //helpIcon.setFill(Color.RED);
-//        Text helpText = new Text(text);
-//        helpText.setFont(Font.font(fontSize));
-//        //helpText.setFill(Color.WHITE);
-//        //helpText.setStroke(Color.web("#7080A0"));
-//
-//        stack.getChildren().addAll(helpIcon, helpText);
-//        stack.setAlignment(Pos.CENTER);     // Right-justify nodes in stack
-//        stack.setTranslateX(x - width / 2);
-//        stack.setTranslateY(y - width / 2);
         atomMap.put(resNum + "." + "H" + text, new AtomCoord(x, y));
 
         return node;
@@ -291,17 +218,17 @@ public class SSViewer extends Pane {
     }
 
     void showInfo(MouseEvent e, String resNum, String aName) {
-        String atomSpec = resNum + ".H" + aName;
+        String aType = hydrogenPredictionProp.get()  ? ".H" : ".C";
+        String atomSpec = resNum + aType + aName;
         Node node = (Node) e.getSource();
         double x = node.getBoundsInParent().getMinX();
         double y = node.getBoundsInParent().getMinY();
-        Atom atom = Molecule.getAtomByName(atomSpec);
+        Atom atom = MoleculeBase.getAtomByName(atomSpec);
         if (atom != null) {
             Double ppm = atom.getPPM();
             Double refPPM = atom.getRefPPM();
             String ppmStr = ppm == null ? "      " : String.format("%6.2f", ppm);
             String refppmStr = refPPM == null ? "      " : String.format("%6.2f", refPPM);
-            String aString = atom.getShortName();
             String attributes = RNAAttributes.get(atom);
             RNAStats stats = RNAAttributes.getStats(atom);
             String statString = stats != null ? stats.toString() : "0";
@@ -324,9 +251,7 @@ public class SSViewer extends Pane {
                 stack.getChildren().addAll(rect, textItem);
                 stack.setAlignment(Pos.CENTER);     // Right-justify nodes in stack
                 infoGroup.getChildren().add(stack);
-                rect.setOnMousePressed(mE -> {
-                    hideInfo();
-                });
+                rect.setOnMousePressed(mE -> hideInfo());
             } else {
                 stack = (StackPane) infoGroup.getChildren().get(0);
                 textItem = (Text) stack.getChildren().get(1);
@@ -359,38 +284,7 @@ public class SSViewer extends Pane {
         return new Line(iX, iY, jX, jY);
     }
 
-    Line getAtoms(int i, int j) {
-        Point2D iPoint = points.get(i);
-        Point2D jPoint = points.get(j);
-        double iX = iPoint.getX();
-        double iY = iPoint.getY();
-        double jX = jPoint.getX();
-        double jY = jPoint.getY();
-        iX = (iX - centerX) * scale + paneCenterX;
-        iY = (centerY - iY) * scale + paneCenterY;
-        jX = (jX - centerX) * scale + paneCenterX;
-        jY = (centerY - jY) * scale + paneCenterY;
-        double dX = (jX - iX);
-        double dY = (jY - iY);
-        for (int iText = 0; iText < 5; iText++) {
-            double x = iX + dX / 5.0;
-        }
-        return new Line(iX, iY, jX, jY);
-    }
-
     void addLines(Group group, int[] lineConnections) {
-        if (lineConnections != null) {
-            for (int i = 0; i < lineConnections.length; i += 2) {
-                int source = lineConnections[i];
-                int target = lineConnections[i + 1];
-                Line line = getLine(source, target);
-                line.setStrokeWidth(1.0);
-                group.getChildren().add(line);
-            }
-        }
-    }
-
-    void addAtoms(Group group, int[] lineConnections) {
         if (lineConnections != null) {
             for (int i = 0; i < lineConnections.length; i += 2) {
                 int source = lineConnections[i];
@@ -416,8 +310,7 @@ public class SSViewer extends Pane {
         int nRes = points.size();
         double sumX = 0.0;
         double sumY = 0.0;
-        for (int j = 0; j < nRes; j++) {
-            Point2D point1 = points.get(j);
+        for (Point2D point1 : points) {
             sumX += point1.getX();
             sumY += point1.getY();
         }
@@ -513,8 +406,8 @@ public class SSViewer extends Pane {
             Point2D point2 = points.get(iRes);
             double x2 = point2.getX();
             double y2 = point2.getY();
-            double deltaX = 0.0;
-            double deltaY = 0.0;
+            double deltaX;
+            double deltaY;
             boolean ok = false;
             int mode = 0;
             if (basePairAtoms[iRes] != -1) {
@@ -621,18 +514,30 @@ public class SSViewer extends Pane {
             double x1 = point.getX();
             double y1 = point.getY();
             AtomCoord aCoord = deltaCoords[iRes];
-//            Line line = new Line(x1, y1, x1 + aCoord.x * scale, y1 + aCoord.y * scale);
-//            group.getChildren().add(line);
-            int nAtoms = nAtomsProp.get();
-            for (int j = -2; j < nAtoms; j++) {
+            int startAtom = -2;
+            int iDrawn = 0;
+            for (int j = startAtom; j < N_ATOMS; j++) {
                 if ((j == -2) && (resChar != 'G')) {
                     continue;
                 }
                 double x;
                 double y;
+                if ((j < 0) && !displayAtomTypes.contains("Exchangeable")) {
+                    continue;
+                }
+                if ((j >= 0) && (j< 2) && !displayAtomTypes.contains("Base")) {
+                    continue;
+                }
+                if (j > 1) {
+                    String text = "H" + (j - 1) + "'";
+                    if (!displayAtomTypes.contains(text)) {
+                        continue;
+                    }
+                }
                 if (j >= 0) {
-                    x = x1 + aCoord.x / 5 * (j + 1.5);
-                    y = y1 - aCoord.y / 5 * (j + 1.5);
+                    x = x1 + aCoord.x / 5 * (iDrawn + 1.5);
+                    y = y1 - aCoord.y / 5 * (iDrawn + 1.5);
+                    iDrawn++;
                 } else {
                     x = x1 + (aCoord.y / 5.0 * (j + 1.5)) + aCoord.x / 5 * (-1 - 0.5);
                     y = y1 + (aCoord.x / 5.0 * (j + 1.5)) - aCoord.y / 5 * (-1 - 0.5);
@@ -666,17 +571,15 @@ public class SSViewer extends Pane {
                     } else if (resChar == 'G') {
                         text = "21";
                     }
-                } else if (j == -2) {
-                    if (resChar == 'G') {
-                        text = "1";
-                    }
+                } else  {
+                    text = "1";
                 }
                 if (!text.equals("")) {
                     boolean active = true;
                     if (showActiveProp.get()) {
                         active = false;
                         String atomSpec = resName + ".H" + text;
-                        Atom atom = Molecule.getAtomByName(atomSpec);
+                        Atom atom = MoleculeBase.getAtomByName(atomSpec);
                         if (atom != null) {
                             Atom parent = atom.getParent();
                             if (parent != null) {
@@ -696,9 +599,7 @@ public class SSViewer extends Pane {
     void markBasePairAtoms(int[] basePairs) {
         if (basePairs != null) {
             basePairAtoms = new int[sequence.size()];
-            for (int i = 0; i < basePairAtoms.length; i++) {
-                basePairAtoms[i] = -1;
-            }
+            Arrays.fill(basePairAtoms, -1);
             for (int i = 0; i < basePairs.length; i += 2) {
                 basePairAtoms[basePairs[i]] = basePairs[i + 1];
                 basePairAtoms[basePairs[i + 1]] = basePairs[i];
@@ -714,6 +615,7 @@ public class SSViewer extends Pane {
             return;
         }
         updateScale();
+        atomMap.clear();
         if (basePairState) {
             addLines(group, basePairs);
         }
@@ -728,7 +630,7 @@ public class SSViewer extends Pane {
                 double y = point.getY();
                 x = (x - centerX) * scale + paneCenterX;
                 y = (centerY - y) * scale + paneCenterY;
-                if ((i != 0) && (chainList.get(i - 1) == chainList.get(i))) {
+                if ((i != 0) && chainList.get(i - 1).equals(chainList.get(i))) {
                     Line line = new Line(lastX, lastY, x, y);
                     line.setStrokeWidth(3.0);
                     group.getChildren().add(line);
@@ -739,30 +641,13 @@ public class SSViewer extends Pane {
             }
         }
         int iRes = 0;
-        for (int iPoint = 0; iPoint < points.size(); iPoint++) {
-            Point2D point = points.get(iPoint);
-            Point2D point2;
-            if (iPoint == 0) {
-                point2 = points.get(iPoint + 1);
-            } else {
-                point2 = points.get(iPoint - 1);
-            }
+        for (Point2D point : points) {
             String resName = sequence.get(iRes);
             char resChar = resName.charAt(0);
             double x = point.getX();
             double y = point.getY();
-            double x2 = point2.getX();
-            double y2 = point2.getY();
             x = toX(x);
             y = toY(y);
-            x2 = toX(x2);
-            y2 = toY(y2);
-            double dX = -1.0 * (y2 - y);
-            double dY = x2 - x;
-            if (iPoint == 0) {
-                dX *= -1.0;
-                dY *= -1.0;
-            }
             Node node = drawLabelledNode(iRes, resName, String.valueOf(resChar), x, y);
             group.getChildren().add(node);
             iRes++;
@@ -815,30 +700,20 @@ public class SSViewer extends Pane {
         String r2 = getResNum(a2);
         int r1Num = Integer.parseInt(r1);
         int r2Num = Integer.parseInt(r2);
-        boolean ok = false;
-        if (constraintTypeProp.getValue().equals("All")) {
-            ok = true;
-        } else if (constraintTypeProp.getValue().equals("Intraresidue") && (r1Num == r2Num)) {
-            ok = true;
-        } else if (constraintTypeProp.getValue().equals("Interresidue") && (r1Num != r2Num)) {
-            ok = true;
-        }
-        if (!ok) {
+
+        boolean allOK = constraintTypeProp.getValue().equals("All");
+        boolean intraOK = constraintTypeProp.getValue().equals("Intraresidue") && (r1Num == r2Num);
+        boolean interOK = constraintTypeProp.getValue().equals("Interresidue") && (r1Num != r2Num);
+
+        if (!allOK && !intraOK && !interOK) {
             return;
         }
         String aName1 = getAtomName(a1);
         String aName2 = getAtomName(a2);
-        int nAtoms = nAtomsProp.get();
-        if ((getAtomIndex(aName1) >= nAtoms) || (getAtomIndex(aName2) >= nAtoms)) {
+        if ((getAtomIndex(aName1) >= N_ATOMS) || (getAtomIndex(aName2) >= N_ATOMS)) {
             return;
         }
-        if (r1Num > r2Num) {
-            String hold = a2;
-            a2 = a1;
-            a1 = hold;
-            r1 = getResNum(a1);
-            r2 = getResNum(a2);
-        } else if (a1.compareTo(a2) > 0) {
+        if ((r1Num > r2Num) || (a1.compareTo(a2) > 0)) {
             String hold = a2;
             a2 = a1;
             a1 = hold;
@@ -848,9 +723,7 @@ public class SSViewer extends Pane {
         width *= 0.4;
         AtomCoord c1 = atomMap.get(a1);
         AtomCoord c2 = atomMap.get(a2);
-        if (c1 == null) {
-        } else if (c2 == null) {
-        } else {
+        if ((c1 != null) &&  (c2 != null)) {
             double div = 5.0;
             if (r1.equals(r2)) {
                 div = 1.0;
@@ -874,21 +747,12 @@ public class SSViewer extends Pane {
             QuadCurve curve = new QuadCurve(x1, y1, cmx, cmy, x2, y2);
 
             curve.setFill(null);
-            Color color;
-            switch (intMode) {
-                case "s":
-                    color = Color.RED;
-                    break;
-                case "m":
-                    color = Color.ORANGE;
-                    break;
-                case "w":
-                    color = Color.BLUE;
-                    break;
-                default:
-                    color = Color.DARKGRAY;
-                    break;
-            }
+            Color color = switch (intMode) {
+                case "s" -> Color.RED;
+                case "m" -> Color.ORANGE;
+                case "w" -> Color.BLUE;
+                default -> Color.DARKGRAY;
+            };
             curve.setStroke(color);
             group.getChildren().add(curve);
         }
@@ -920,11 +784,9 @@ public class SSViewer extends Pane {
         List<Integer> bpList = new ArrayList<>();
         for (int i = 0; i < basePairs.length; i++) {
             int target = basePairs[i];
-            if (target >= 0) {
-                if (i < target) {
-                    bpList.add(i);
-                    bpList.add(target);
-                }
+            if ((target >= 0) && (i < target)) {
+                bpList.add(i);
+                bpList.add(target);
             }
         }
         this.basePairs = new int[bpList.size()];
@@ -933,58 +795,9 @@ public class SSViewer extends Pane {
         }
     }
 
-    void setConstraints() {
-
-    }
-
     public void setConstraintPairs(List<String> constraintPairs) {
         this.constraintPairs.clear();
         this.constraintPairs.addAll(constraintPairs);
         constraintPairState = true;
-    }
-
-    void loadCoordinates(String fileName) {
-        sequence = null;
-        basePairs = null;
-        File file = new File(fileName);
-        try (Scanner in = new Scanner(file)){
-            while (in.hasNextLine()) {
-                String line = in.nextLine();
-                String[] fields = line.split("\t");
-                double x = Double.parseDouble(fields[0]);
-                double y = Double.parseDouble(fields[1]);
-                Point2D point = new Point2D(x, y);
-                points.add(point);
-            }
-        } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
-        }
-    }
-
-    void setDisplay(String mode, int nAtoms) {
-        nAtomsProp.set(nAtoms);
-
-    }
-
-    void setDisplay(String mode, boolean state) {
-        switch (mode) {
-            case "bpairs":
-                basePairState = state;
-                break;
-            case "cpairs":
-                constraintPairState = state;
-                break;
-            case "seq":
-                seqState = state;
-                break;
-            case "active":
-                showActiveProp.set(state);
-                break;
-            case "numbers":
-                drawNumbersProp.set(state);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown display mode \"" + mode + "\"");
-        }
     }
 }

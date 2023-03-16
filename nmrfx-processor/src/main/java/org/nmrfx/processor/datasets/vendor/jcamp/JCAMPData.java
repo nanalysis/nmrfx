@@ -24,6 +24,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.codehaus.commons.nullanalysis.Nullable;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.*;
 import org.nmrfx.processor.datasets.vendor.NMRData;
@@ -116,6 +117,7 @@ public class JCAMPData implements NMRData {
     private final Map<Integer, Double> sw = new HashMap<>();
     private final Map<Integer, Double> ref = new HashMap<>();
     private final Map<Integer, Integer> size = new HashMap<>();
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     public JCAMPData(String path) throws IOException {
         this.path = path;
@@ -646,8 +648,7 @@ public class JCAMPData implements NMRData {
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
 
-        double delRef = (dvec.getSize() / 2d) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
-        dvec.refValue = getRef(0) + delRef;
+        dvec.setRefValue(getRef(0));
     }
 
     @Override
@@ -705,8 +706,7 @@ public class JCAMPData implements NMRData {
         dvec.dwellTime = 1.0 / getSW(1);
         dvec.centerFreq = getSF(1);
 
-        double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
-        dvec.refValue = getRef(1) + delRef;
+        dvec.setRefValue(getRef(1));
     }
 
     @Override
@@ -737,6 +737,11 @@ public class JCAMPData implements NMRData {
     @Override
     public void setSampleSchedule(SampleSchedule sampleSchedule) {
         this.sampleSchedule = sampleSchedule;
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
     }
 
     @Override
@@ -890,7 +895,7 @@ public class JCAMPData implements NMRData {
             datasetName = suggestName(fpath.toFile());
         }
         // Create a dataset in memory
-        Dataset dataset = new Dataset(datasetName + ".nv", dimSizes, true);
+        Dataset dataset = new Dataset(datasetName, file, dimSizes, true);
         dataset.newHeader();
         // Set the processed data into the dataset
         boolean hasImaginaryData = this.imaginary.length != 0;

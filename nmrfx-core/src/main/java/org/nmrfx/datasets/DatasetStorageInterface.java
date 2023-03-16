@@ -28,6 +28,7 @@ import org.nmrfx.math.VecBase;
  */
 public interface DatasetStorageInterface {
 
+    public DatasetLayout getLayout();
     /**
      * Flush the header values out to the dataset file.
      */

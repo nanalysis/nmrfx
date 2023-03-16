@@ -21,6 +21,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -42,6 +43,7 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.Map.Entry;
@@ -97,6 +99,7 @@ public class BrukerData implements NMRData {
     boolean hasSpectrum = false;
     List<Double> arrayValues = new ArrayList<>();
     File nusFile = null;
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     /**
      * Open Bruker parameter and data files.
@@ -200,6 +203,7 @@ public class BrukerData implements NMRData {
             dataset.setLabel(i, nucLabel + (i + 1));
             dataset.syncPars(i);
         }
+        dataset.setNFreqDims(dataset.getNDim());
         Integer ncProc = getParInt("NC_proc,1");
         if (ncProc == null) {
             ncProc = 0;
@@ -800,20 +804,20 @@ public class BrukerData implements NMRData {
     private void openParFile(File parDirFile) throws IOException {
         parMap = new LinkedHashMap<>(200);
         Path pulseSequencePath = parDirFile.toPath().resolve("pulseprogram");
-        String aqSeq = null;
+        String dimPar = null;
         if (pulseSequencePath.toFile().exists()) {
             var lines = scanPulseSequence(pulseSequencePath);
             var optLine = lines.stream().
                     map(line -> line.trim()).
-                    filter(line -> line.startsWith("aqseq")).findFirst();
+                    filter(line -> line.startsWith(";$DIM=")).findFirst();  // ;$DIM=2D
             if (optLine.isPresent()) {
-                String[] aqSeqParts = optLine.get().split(" ");
-                if (aqSeqParts.length == 2) {
-                    aqSeq = aqSeqParts[1];
+                String[] aqSeqParts = optLine.get().split("=");
+                if ((aqSeqParts.length == 2) && (aqSeqParts[1].endsWith("D") && Character.isDigit(aqSeqParts[1].charAt(0)))) {
+                    dimPar = aqSeqParts[1].substring(0,1);
                 }
             }
         }
-        int maxDim = aqSeq == null ? 2 : MAXDIM;
+        int maxDim = dimPar != null ? Integer.parseInt(dimPar) : MAXDIM;
 
             // process proc files if they exist
         File pdataFile = parDirFile.toPath().resolve("pdata").toFile();
@@ -915,9 +919,6 @@ public class BrukerData implements NMRData {
             }
             tdsize[0] = np / 2 - shiftAmount; // tcl line 348, lines 448-459
         }
-        arrayValues = getArrayValues();
-        setFTpars();
-        String tdpar = "TD,";
         boolean gotSchedule = false;
         if (nusFile == null) {
             nusFile = new File(fpath + File.separator + "nuslist");
@@ -930,6 +931,26 @@ public class BrukerData implements NMRData {
                 gotSchedule = true;
             }
         }
+        arrayValues = getArrayValues();
+        getTDSizes(gotSchedule);
+        setFTpars();
+        if (!gotSchedule) {
+            adjustTDForComplex();
+        }
+        if ((arrayValues != null) && !arrayValues.isEmpty()) {
+            arrayValues = fixArraySize(arrayValues, getMinDim());
+        }
+
+        if ((ipar = getParInt("BYTORDA,1")) != null) {
+            if (ipar == 0) {
+                setSwapBitsOn();
+            }
+        }
+    }
+
+    private void getTDSizes(boolean gotSchedule) {
+        String tdpar = "TD,";
+        Integer ipar;
         if (gotSchedule) {
             int[] dims = sampleSchedule.getDims();
             for (int i = 0; i < dims.length; i++) {
@@ -951,14 +972,14 @@ public class BrukerData implements NMRData {
             }
             maxSize[j] = tdsize[j];
         }
-        if ((arrayValues != null) && !arrayValues.isEmpty()) {
-            arrayValues = fixArraySize(arrayValues, getMinDim());
-        }
+    }
 
-        if ((ipar = getParInt("BYTORDA,1")) != null) {
-            if (ipar == 0) {
-                setSwapBitsOn();
+    private void adjustTDForComplex() {
+        for (int j = 1; j < tdsize.length; j++) {
+            if (isComplex(j)) {
+                tdsize[j] /= 2;
             }
+            maxSize[j] = tdsize[j];
         }
     }
 
@@ -1327,9 +1348,7 @@ public class BrukerData implements NMRData {
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
 
-        //double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
-        double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
-        dvec.refValue = getRef(0) + delRef;
+        dvec.setRefValue(getRef(0));
         //dvec.setPh0(getPH0(1));
         //dvec.setPh1(getPH1(1));
     }
@@ -1354,9 +1373,7 @@ public class BrukerData implements NMRData {
         }
         dvec.dwellTime = 1.0 / getSW(iDim);
         dvec.centerFreq = getSF(iDim);
-//        double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
-        double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
-        dvec.refValue = getRef(iDim) + delRef;
+        dvec.setRefValue(getRef(iDim));
         dvec.setPh0(getPH0(iDim));
         dvec.setPh1(getPH1(iDim));
         if (iDim == 0) {
@@ -1788,7 +1805,7 @@ public class BrukerData implements NMRData {
     @Override
     public List<Double> getValues(int dim) {
         List<Double> result;
-        if (dim == (getNDim() - 1)) {
+        if (dim == getMinDim()) {
             result = arrayValues;
         } else {
             result = new ArrayList<>();
@@ -1837,8 +1854,13 @@ public class BrukerData implements NMRData {
         this.sampleSchedule = sampleSchedule;
     }
 
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
+    }
+
     private List<String> scanPulseSequence(Path path) throws IOException {
-        return Files.readAllLines(path);
+        return Files.readAllLines(path, StandardCharsets.ISO_8859_1);
     }
 
     // write binary data into text file, using header info

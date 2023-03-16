@@ -18,6 +18,8 @@
 package org.nmrfx.processor.datasets;
 
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixND;
+import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -46,6 +49,7 @@ public class MatrixTypeService {
     AtomicInteger nWritten = new AtomicInteger(0);
     AtomicInteger nRead = new AtomicInteger(0);
     AtomicInteger processedQueueLimit;
+    AtomicBoolean errorWhileReadWrite = new AtomicBoolean(false);
     int itemsToWrite;
     int itemsToRead;
 
@@ -77,6 +81,10 @@ public class MatrixTypeService {
         } catch (InterruptedException ex) {
             log.warn(ex.getMessage(), ex);
         }
+    }
+
+    public boolean hasError() {
+        return errorWhileReadWrite.get();
     }
 
     public boolean finished() {
@@ -140,21 +148,90 @@ public class MatrixTypeService {
         }
     }
 
-    private void writeItems(List<MatrixType> temp) {
+    private boolean writeItems(List<MatrixType> temp) throws DatasetException, IOException {
         for (MatrixType vector : temp) {
-            try {
-                processor.getDataset().writeMatrixType(vector);
-                nWritten.incrementAndGet();
-            } catch (IOException ex) {
-                log.error(ex.getMessage(), ex);
+            Dataset dataset = processor.getDataset();
+            if (dataset == null) {
+                throw new DatasetException("Dataset is null.");
+            }
+            checkDataset(dataset, vector);
+            dataset.writeMatrixType(vector);
+            nWritten.incrementAndGet();
+        }
+        return true;
+    }
+
+    private void checkDataset(Dataset dataset, MatrixType matrixType) throws DatasetException {
+        if (matrixType instanceof Vec vec) {
+            checkVector(dataset, vec);
+        } else {
+            MatrixND matrix = (MatrixND) matrixType;
+            checkMatrix(dataset, matrix);
+        }
+    }
+
+    private void checkVector(Dataset dataset, Vec vec) throws DatasetException {
+        int[][] pt = vec.getPt();
+        int[] dim = vec.getDim();
+        int nDim = dataset.getNDim();
+        if (!dataset.hasLayout()) {
+            int[] idNVectors = processor.getIndirectSizes();
+            int size = vec.getSize();
+            dataset.resize(size, idNVectors);
+        }
+        for (int i = 0; i < nDim; i++) {
+            if (pt[i][0] == pt[i][1]) {
+                int testSize = pt[i][0] + 1;
+                if (testSize > dataset.getFileDimSize(dim[i])) {
+                    if (i > 0) {
+                        int[] idNVectors = processor.getIndirectSizes();
+                        testSize = testSize < idNVectors[i - 1] ? idNVectors[i - 1] : (int) Math.ceil(testSize / 16.0) * 16;
+                        int doubleSize = dataset.getFileDimSize(dim[i]) * 2;
+                        testSize = Math.max(doubleSize, testSize);
+                    } else {
+                        int doubleSize = dataset.getFileDimSize(dim[i]) * 2;
+                        testSize = (int) Math.ceil(testSize / 16.0) * 16;
+                        testSize = Math.max(doubleSize, testSize);
+                    }
+                    dataset.resizeDim(dim[i], testSize);
+                }
+            } else {
+                if ((pt[i][1] + 1) > dataset.getFileDimSize(dim[i])) {
+                    dataset.resizeDim(dim[i], pt[i][1] + 1);
+                }
             }
         }
     }
-    
+
+    private void checkMatrix(Dataset dataset, MatrixND matrix) throws DatasetException {
+        int[][] pt = matrix.getPt();
+        int[] dim = matrix.getDim();
+        int nDim = dataset.getNDim();
+        boolean resize = false;
+        int[] dimSizes = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            dimSizes[dim[i]] = dataset.getFileDimSize(dim[i]);
+            if (pt[i][0] == pt[i][1]) {
+                if ((pt[i][0] + 1) > dataset.getFileDimSize(dim[i])) {
+                    dimSizes[dim[i]] = pt[i][1] + 1;
+                    resize = true;
+                }
+            } else {
+                if ((pt[i][1] + 1) > dataset.getFileDimSize(dim[i])) {
+                    dimSizes[dim[i]] = pt[i][1] + 1;
+                    resize = true;
+                }
+            }
+        }
+        if (resize) {
+            dataset.resizeDims(dimSizes);
+        }
+    }
+
     /**
      * Writes all of the items from the processedItemQueue to file.
      */
-    public final boolean readWriteItems() {
+    public final boolean readWriteItems() throws InterruptedException {
         List<MatrixType> temp = null;
         while (true) {
             try {
@@ -173,12 +250,15 @@ public class MatrixTypeService {
                     writeItems(temp);
                 } else {
                     if (nWritten.get() >= itemsToWrite) {
-                        System.out.println("finished writing");
                         return true;
                     }
                 }
             } catch (InterruptedException ex) {
                 log.error(ex.getMessage(), ex);
+                throw(ex);
+            } catch (Exception ex) {
+                log.error(ex.getMessage(), ex);
+                errorWhileReadWrite.set(true);
                 return false;
             }
         }

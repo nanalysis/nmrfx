@@ -2,6 +2,7 @@ package org.nmrfx.analyst.peaks;
 
 import java.io.File;
 
+import org.apache.commons.math3.util.Precision;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.datasets.DatasetRegion;
@@ -24,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
 
 import org.apache.commons.math3.linear.RealMatrix;
 import org.nmrfx.peaks.AbsMultipletComponent;
@@ -65,9 +64,7 @@ public class Analyzer {
     double regionExtend = 9.0;
 
     double artifactRatio = 50;
-    double sDev = 0.0;
     double threshold = 0.0;
-    double filter = 0.0;
     Double positionRestraint = null;
     Optional<Double> manThreshold = Optional.empty();
     Solvents solvents;
@@ -136,48 +133,7 @@ public class Analyzer {
     }
 
     public void calculateThreshold() {
-        int size = dataset.getSizeTotal(0);
-        Vec vec = new Vec(size);
-
-        int dataDim = dataset.getNDim();
-        int[][] pt = new int[dataDim][2];
-        pt[0][0] = 0;
-        pt[0][1] = size - 1;
-        int[] dim = new int[dataDim];
-        dim[0] = 0;
-
-        try {
-            dataset.readVectorFromDatasetFile(pt, dim, vec);
-        } catch (IOException ex) {
-            log.error("Failed to get dataset vector", ex);
-            return;
-        }
-        int sdevWin = Math.max(16, vec.getSize() / 64);
-        sDev = vec.sdev(sdevWin);
-        if (scaleToLargest) {
-            int nIncr = size / nWin;
-            List<Double> maxs = new ArrayList<>();
-            for (int i = 0; i < size; i += nIncr) {
-                int j = i + nIncr - 1;
-                IndexValue indexVal = vec.maxIndex(i, j);
-                double max = indexVal.getValue();
-                maxs.add(max);
-            }
-            Collections.sort(maxs);
-            int nMax = maxs.size();
-            double max = maxs.get(nMax - 3);
-
-            double min = maxs.get(0);
-            threshold = max / maxRatio;
-            filter = sDev / max * 2400.0;
-        }
-        if (threshold < sdRatio * sDev) {
-            if (dataset.getNucleus(0) == Nuclei.H1) {
-                threshold = sdRatio * sDev;
-            } else {
-                threshold = sdRatio / 3.0 * sDev;
-            }
-        }
+        threshold = PeakPicker.calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
     }
 
     public PeakList peakPick() {
@@ -210,7 +166,7 @@ public class Analyzer {
 
     public void peakPickRegions() {
         updateThreshold();
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> regions = getReadOnlyRegions();
         for (DatasetRegion region : regions) {
 
             List<PeakDim> peakDims = Collections.EMPTY_LIST;
@@ -372,15 +328,13 @@ public class Analyzer {
             }
         }
 
-        int iDim = 0;
         int[] dim = new int[peakList.nDim];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
         }
         double[][] limits = new double[1][2];
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> regions = getReadOnlyRegions();
 
-        Set<DatasetRegion> newRegions = new TreeSet<>();
         regions.stream().forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
             limits[0][1] = region.getRegionEnd(0);
@@ -390,9 +344,41 @@ public class Analyzer {
 
             }
         });
+        deletePeaks(peakList.peaks());
+        for (Peak peak : peakList.peaks()) {
+            peak.setStatus(0);
+        }
+    }
 
-        for (int i = 0; i < n; i++) {
-            Peak peak = peakList.getPeak(i);
+    /**
+     * Locates any peaks within region and deletes them/
+     * @param region The DatasetRegion to search
+     */
+    public void removePeaksFromRegion(DatasetRegion region) {
+        if (peakList == null) {
+            return;
+        }
+        int[] dim = new int[peakList.nDim];
+        for (int i = 0; i < dim.length; i++) {
+            dim[i] = i;
+        }
+        double[][] limits = new double[1][2];
+        limits[0][0] = region.getRegionStart(0);
+        limits[0][1] = region.getRegionEnd(0);
+        List<Peak> peaks = locatePeaks(peakList, limits, dim);
+        for (Peak peak : peaks) {
+            peak.setStatus(0);
+        }
+        deletePeaks(peaks);
+    }
+
+    /**
+     * Deletes from peakList any peaks in peaksToDelete that have status of 0. The peak list will be compressed
+     * and renumbered.
+     * @param peaks List of peaks to check deletion status for.
+     */
+    private void deletePeaks(List<Peak> peaks) {
+        for (Peak peak: peaks) {
             if (peak.getStatus() == 0) {
                 List<Peak> lPeaks = PeakList.getLinks(peak);
                 for (Peak lPeak : lPeaks) {
@@ -403,10 +389,6 @@ public class Analyzer {
         }
         peakList.compress();
         peakList.reNumber();
-        for (Peak peak : peakList.peaks()) {
-            peak.setStatus(0);
-        }
-
     }
 
     public void trimRegionsToPeaks() {
@@ -416,8 +398,8 @@ public class Analyzer {
             dim[i] = i;
         }
         double[][] limits = new double[1][2];
-        Set<DatasetRegion> newRegions = new TreeSet<>();
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> newRegions = new ArrayList<>();
+        List<DatasetRegion> regions = getReadOnlyRegions();
 
         regions.stream().forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
@@ -455,8 +437,8 @@ public class Analyzer {
                 newRegions.add(region);
             }
         });
-        regions.clear();
-        regions.addAll(newRegions);
+        getDataset().clearRegions();
+        getDataset().setRegions(newRegions);
     }
 
     public void purgeNonPeakRegions() {
@@ -465,8 +447,8 @@ public class Analyzer {
             dim[i] = i;
         }
         double[][] limits = new double[1][2];
-        Set<DatasetRegion> newRegions = new TreeSet<>();
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> newRegions = new ArrayList<>();
+        List<DatasetRegion> regions = getReadOnlyRegions();
 
         regions.stream().forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
@@ -476,13 +458,13 @@ public class Analyzer {
                 newRegions.add(region);
             }
         });
-        regions.clear();
-        regions.addAll(newRegions);
+        getDataset().clearRegions();
+        getDataset().setRegions(newRegions);
     }
 
     public void removeRegion(double shift) {
-        Set<DatasetRegion> newRegions = new TreeSet<>();
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> newRegions = new ArrayList<>();
+        List<DatasetRegion> regions = getReadOnlyRegions();
         int rDim = 0;
 
         regions.stream().forEach(region -> {
@@ -492,16 +474,16 @@ public class Analyzer {
                 newRegions.add(region);
             }
         });
-        regions.clear();
-        regions.addAll(newRegions);
+        getDataset().clearRegions();
+        getDataset().setRegions(newRegions);
         if (peakList != null) {
             removePeaksFromNonRegions();
         }
     }
 
     public void removeRegion(double ppm1, double ppm2, boolean removePeaks) {
-        Set<DatasetRegion> newRegions = new TreeSet<>();
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> newRegions = new ArrayList<>();
+        List<DatasetRegion> regions = getReadOnlyRegions();
         int rDim = 0;
         double ppmStart = ppm1 < ppm2 ? ppm1 : ppm2;
         double ppmEnd = ppm2 > ppm1 ? ppm2 : ppm1;
@@ -512,15 +494,15 @@ public class Analyzer {
                 newRegions.add(region);
             }
         });
-        regions.clear();
-        regions.addAll(newRegions);
+        getDataset().clearRegions();
+        getDataset().setRegions(newRegions);
         if (removePeaks && (peakList != null)) {
             removePeaksFromNonRegions();
         }
     }
 
     public void groupPeaks() throws IOException {
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> regions = getReadOnlyRegions();
 
         Multiplets.groupPeaks(peakList, regions);
     }
@@ -551,7 +533,7 @@ public class Analyzer {
     }
 
     public void dumpRegions() {
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> regions = getReadOnlyRegions();
 
         for (DatasetRegion region : regions) {
             System.out.printf("%9.4f %9.4f %9.4f %9.4f\n", region.getRegionStart(0), region.getRegionEnd(0), region.getIntegral(), region.getMax());
@@ -559,10 +541,10 @@ public class Analyzer {
     }
 
     public Optional<DatasetRegion> getRegion(double shift) {
-        return getRegion(getRegions(), 0, shift);
+        return getRegion(getReadOnlyRegions(), 0, shift);
     }
 
-    public static Optional<DatasetRegion> getRegion(Set<DatasetRegion> dRegions, int rDim, double shift) {
+    public static Optional<DatasetRegion> getRegion(List<DatasetRegion> dRegions, int rDim, double shift) {
         Optional<DatasetRegion> found = Optional.empty();
         if (dRegions != null) {
             for (DatasetRegion region : dRegions) {
@@ -584,7 +566,7 @@ public class Analyzer {
         return bounds;
     }
 
-    public static double[] getRegionBounds(Set<DatasetRegion> dRegions, int rDim, double shift) {
+    public static double[] getRegionBounds(List<DatasetRegion> dRegions, int rDim, double shift) {
         Optional<DatasetRegion> found = getRegion(dRegions, rDim, shift);
         double[] bounds = null;
         if (found.isPresent()) {
@@ -594,7 +576,7 @@ public class Analyzer {
     }
 
     public void integrate() throws IOException {
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> regions = getReadOnlyRegions();
         for (DatasetRegion region : regions) {
             region.measure(dataset);
         }
@@ -606,7 +588,7 @@ public class Analyzer {
             dim[i] = i;
         }
         double[][] limits = new double[1][2];
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> regions = getReadOnlyRegions();
 
         regions.stream().forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
@@ -650,7 +632,7 @@ public class Analyzer {
             dim[i] = i;
         }
         double[][] limits = new double[1][2];
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> regions = getReadOnlyRegions();
 
         regions.stream().forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
@@ -669,70 +651,55 @@ public class Analyzer {
         });
     }
 
-    public Set<DatasetRegion> getRegions() {
-        TreeSet<DatasetRegion> regions = dataset.getRegions();
-
-        if (regions == null) {
-            regions = new TreeSet<>();
-            dataset.setRegions(regions);
-        }
-        return regions;
+    public List<DatasetRegion> getReadOnlyRegions() {
+        return dataset.getReadOnlyRegions();
     }
 
     public void autoSetRegions() {
-        int size = dataset.getSizeTotal(0);
-        Vec vec = new Vec(size);
-
-        int dataDim = dataset.getNDim();
-        int[][] pt = new int[dataDim][2];
-        pt[0][0] = 0;
-        pt[0][1] = size - 1;
-        int[] dim = new int[dataDim];
-        dim[0] = 0;
-
+        Vec vec;
         try {
-            dataset.readVectorFromDatasetFile(pt, dim, vec);
+            vec = dataset.readVector(0, 0);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
             return;
         }
+        int size = vec.getSize();
         double sw = dataset.getSw(0);
-        int region = (int) Math.round(1.0 * regionWidth / sw * size);
-        int join = (int) Math.round(1.0 * joinWidth / sw * size);
-        int extend = (int) Math.round(1.0 * regionExtend / sw * size);
+        int region = (int) Math.round(regionWidth / sw * size);
+        int join = (int) Math.round(joinWidth / sw * size);
+        int extend = (int) Math.round(regionExtend / sw * size);
 
-        double minThreshold = manThreshold.isPresent() ? manThreshold.get() : threshold;
+        double minThreshold = manThreshold.orElseGet(() -> threshold);
 
         RealMatrix rM = vec.idIntegrals(regionWindow, regionRatio, region, join, extend, minThreshold);
-        Set<DatasetRegion> regions = getRegions();
-        regions.clear();
+        Dataset datasetToAdjust = getDataset();
+        datasetToAdjust.clearRegions();
         int nRows = rM.getRowDimension();
         for (int iRow = 0; iRow < nRows; iRow++) {
             double min = rM.getEntry(iRow, 0);
-            min = dataset.pointToPPM(0, min);
+            min = datasetToAdjust.pointToPPM(0, min);
             double max = rM.getEntry(iRow, 1);
-            max = dataset.pointToPPM(0, max);
+            max = datasetToAdjust.pointToPPM(0, max);
             DatasetRegion newRegion = new DatasetRegion(min, max);
-            regions.add(newRegion);
+            newRegion.setAuto(true);
+            datasetToAdjust.addRegion(newRegion);
         }
     }
 
     public void clearRegions() {
-        Set<DatasetRegion> regions = getRegions();
-        regions.clear();
+        getDataset().clearRegions();
     }
 
     public void addRegion(double min, double max, boolean pick) {
-        Set<DatasetRegion> regions = getRegions();
         DatasetRegion newRegion = new DatasetRegion(min, max);
-        regions.add(newRegion);
+        getDataset().addRegion(newRegion);
         if (pick) {
             peakPickRegion(min, max);
         }
     }
 
     public List<Multiplet> splitRegion(double ppm) throws IOException {
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> regions = getReadOnlyRegions();
         Optional<DatasetRegion> found = getRegion(regions, 0, ppm);
         List<Multiplet> result = new ArrayList<>();
         if (found.isPresent()) {
@@ -744,7 +711,7 @@ public class Analyzer {
                 start = end;
                 end = hold;
             }
-            regions.remove(region);
+            getDataset().removeRegion(region);
             double pt1 = dataset.ppmToDPoint(0, ppm);
             double ppm1 = dataset.pointToPPM(0, pt1 + 1);
             double ppm2 = dataset.pointToPPM(0, pt1 - 1);
@@ -755,8 +722,8 @@ public class Analyzer {
 
             DatasetRegion newRegion1 = new DatasetRegion(start, ppm1);
             DatasetRegion newRegion2 = new DatasetRegion(ppm2, end);
-            regions.add(newRegion1);
-            regions.add(newRegion2);
+            getDataset().addRegion(newRegion1);
+            getDataset().addRegion(newRegion2);
             integrate();
             if (peakList != null) {
                 List<Peak> peaks = locatePeaks(peakList, limits, dim);
@@ -783,7 +750,7 @@ public class Analyzer {
     }
 
     public Optional<Multiplet> analyzeRegion(double ppm) throws IOException {
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> regions = getReadOnlyRegions();
         Optional<Multiplet> result = Optional.empty();
         Optional<DatasetRegion> found = getRegion(regions, 0, ppm);
         if (found.isPresent()) {
@@ -825,7 +792,7 @@ public class Analyzer {
     }
 
     public void fitRegions() throws Exception {
-        for (DatasetRegion region : getRegions()) {
+        for (DatasetRegion region : getReadOnlyRegions()) {
             fitRegion(region);
         }
     }
@@ -1121,7 +1088,7 @@ public class Analyzer {
 
     double getSmallPeakThreshold() {
         List<Double> intensities = new ArrayList<>();
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> regions = getReadOnlyRegions();
         regions.stream().forEach(region -> {
             intensities.add(region.getMax());
         });
@@ -1145,7 +1112,7 @@ public class Analyzer {
         double globalMin = smThreshold;
         double[][] limits = new double[1][2];
         int[] dim = new int[1];
-        Set<DatasetRegion> regions = getRegions();
+        List<DatasetRegion> regions = getReadOnlyRegions();
 
         regions.stream().forEach(region -> {
             double localThreshold = globalMin;
@@ -1205,8 +1172,7 @@ public class Analyzer {
         // clearRegions
         // auto set regions
         calculateThreshold();
-        double thresh = getThreshold();
-        if (getRegions().isEmpty()) {
+        if (getReadOnlyRegions().isEmpty()) {
             autoSetRegions();
             integrate();
             peakList = null;
@@ -1258,15 +1224,24 @@ public class Analyzer {
 
     public void loadRegions(File regionFile) throws IOException {
         if (regionFile.canRead()) {
-            TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+            List<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+            if (!DatasetRegion.isLongRegionFile(regionFile)) {
+                for (DatasetRegion region: regions) {
+                    region.measure(getDataset());
+                }
+            }
+            // Assuming a that a value of 1.0 means the norm hasn't been set
+            if (Precision.equals(dataset.getNorm(), 1.0, 1e-9)) {
+                dataset.setNormFromRegions(regions);
+            }
             dataset.setRegions(regions);
         }
     }
 
     public void saveRegions(File regionFile) throws IOException {
-        TreeSet<DatasetRegion> regions = dataset.getRegions();
+        List<DatasetRegion> regions = dataset.getReadOnlyRegions();
         if (!regions.isEmpty()) {
-            DatasetRegion.saveRegions(regionFile, dataset.getRegions());
+            DatasetRegion.saveRegions(regionFile, dataset.getReadOnlyRegions());
         }
     }
 

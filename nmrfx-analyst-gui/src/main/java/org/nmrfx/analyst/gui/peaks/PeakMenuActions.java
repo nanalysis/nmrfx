@@ -8,10 +8,10 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ToolBar;
 import org.nmrfx.analyst.gui.*;
-import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.project.Project;
@@ -38,8 +38,11 @@ public class PeakMenuActions extends MenuActions {
 
         MenuItem peakTableMenuItem = new MenuItem("Show Peak Table");
         peakTableMenuItem.setOnAction(e -> showPeakTable());
-        menu.getItems().addAll(peakAttrMenuItem,
-                peakTableMenuItem);
+
+        MenuItem peakListsTableItem = new MenuItem("Show PeakLists Table");
+        peakListsTableItem.setOnAction(e -> showPeakListsTable());
+
+        menu.getItems().addAll(peakAttrMenuItem, peakTableMenuItem, peakListsTableItem);
     }
 
     @Override
@@ -74,20 +77,32 @@ public class PeakMenuActions extends MenuActions {
 
     }
 
-    private void showPeakTable() {
+    public void showPeakTable() {
+        showPeakTable(null);
+    }
+
+    public void showPeakTable(PeakList peakList) {
         if (peakTableController == null) {
             peakTableController = PeakTableController.create();
+        }
+        if (peakList == null) {
             List<String> names = Project.getActive().getPeakListNames();
             if (!names.isEmpty()) {
-                peakTableController.setPeakList(Project.getActive().getPeakList(names.get(0)));
+                peakList = Project.getActive().getPeakList(names.get(0));
             }
         }
         if (peakTableController != null) {
+            if (peakList != null) {
+                peakTableController.setPeakList(peakList);
+            }
             peakTableController.getStage().show();
             peakTableController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make peak table controller");
         }
+    }
+
+    private void showPeakListsTable() {
+        PeakListsTableController pltc = PeakListsTableController.getPeakListsTableController();
+        pltc.show();
     }
 
     @FXML

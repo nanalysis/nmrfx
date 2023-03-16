@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.vendor.varian;
 
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -82,6 +83,7 @@ public class VarianData implements NMRData {
     double scale = 1.0e6;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
     List<Double> arrayValues = new ArrayList<>();
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     static final String PAR_LIST = "acqdim apptype array arraydim axis axisf procdim "
             + "solvent seqfil pslabel sfrq dfrq dfrq2 dfrq3 sw sw1 sw2 sw3 "
@@ -294,6 +296,9 @@ public class VarianData implements NMRData {
                     break;
                 case "1 0 1 0 1 0 1 0":
                     coefs = "ge";
+                    break;
+                case "1 0 0 1":
+                    coefs = "sep";
                     break;
                 default:
                     coefs = s;
@@ -645,16 +650,12 @@ public class VarianData implements NMRData {
                     sizes[i] = np / 2;
                 } else {
                     // see vnmr.tcl lines 773-779, use here or new method getNarray?
-                    Integer ipar;
-                    int td = 0;
-                    String name = "ni";
-                    if (i > 1) {
-                        name = "ni" + i;
-                    }
-                    if ((ipar = getParInt(name)) != null) {
-                        // use isComplex(dim) to look at phase
-                        // e.g. hnco3d.fid arraydim=6400; ni=40, phase=0,2; ni2=40, phase2=0,2
-                        td = ipar;
+                    int td = getNI(i);
+                    if (isComplex(i)) {
+                        String symbolicCoefs = getSymbolicCoefs(i);
+                        if (symbolicCoefs.equals("sep")) {
+                            td /= 2;
+                        }
                     }
                     sizes[i] = td;
                 }
@@ -662,6 +663,24 @@ public class VarianData implements NMRData {
             }
         }
         return sizes[iDim];
+    }
+
+    /**
+     * Get the number of increments in the specified dimension
+     * @param iDim the dimension (1 is the first indirect dimension)
+     * @return the number of increments
+     */
+    private int getNI(int iDim) {
+        Integer ipar;
+        int td = 0;
+        String name = "ni";
+        if (iDim > 1) {
+            name = "ni" + iDim;
+        }
+        if ((ipar = getParInt(name)) != null) {
+            td = ipar;
+        }
+        return td;
     }
 
     @Override
@@ -692,22 +711,53 @@ public class VarianData implements NMRData {
     }
 
     @Override
+    public List<Double> getValues(int dim) {
+        List<Double> result;
+        if (dim >= getNDim()) {
+            result = arrayValues;
+        } else {
+            if ((dim != 0) && (dim == getMinDim())) {
+                result = arrayValues;
+            } else {
+                result = new ArrayList<>();
+            }
+        }
+        return result;
+    }
+
+    int getMinDim() {
+        int minSize = getSize(0);
+        int minDim = 0;
+        for (int i = 1; i < getNDim(); i++) {
+            if (getSize(i) < minSize) {
+                minSize = getSize(i);
+                minDim = i;
+            }
+        }
+        return minDim;
+    }
+
+    @Override
     public boolean isComplex(int iDim) {
         if (iDim == 0) {
-//            return isComplex;
             String s = getPar("proc");
             return !(s != null && s.equals("rft")); // proc="ft" or "lp"
         } else {
-            String ext = "";
-            if (iDim > 1) {
-                ext += iDim;
-            }
-            String s = getPar("phase" + ext);
+            String ext = String.valueOf(iDim);
+            String s = getPar("proc"+ext);
+            boolean notRFT =  !"rft".equals(s); 
+
+            s = getPar("phase" + ext);
             if (s != null) {
                 String[] f = s.split("\n");
                 return (f.length > 1);
             } else {
-                return false;
+                int td = getNI(iDim);
+                boolean isComplex = false; 
+                if ((td > 1) && notRFT) {
+                    isComplex = true;
+                }
+                return isComplex;
             }
         }
     }
@@ -857,8 +907,7 @@ public class VarianData implements NMRData {
         }
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
-        double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
-        dvec.refValue = getRef(0) + delRef;
+        dvec.setRefValue(getRef(0));
 
         //dvec.setPh0(getPH0(0));
         //dvec.setPh1(getPH1(0));
@@ -877,8 +926,7 @@ public class VarianData implements NMRData {
         }
         dvec.dwellTime = 1.0 / getSW(iDim);
         dvec.centerFreq = getSF(iDim);
-        double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
-        dvec.refValue = getRef(iDim) + delRef;
+        dvec.setRefValue(getRef(iDim));
         dvec.setPh0(getPH0(iDim));
         dvec.setPh1(getPH1(iDim));
     }
@@ -1522,6 +1570,11 @@ public class VarianData implements NMRData {
     @Override
     public void setSampleSchedule(SampleSchedule sampleSchedule) {
         this.sampleSchedule = sampleSchedule;
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
     }
 
     // write binary data into text file, using header info

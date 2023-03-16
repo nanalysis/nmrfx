@@ -249,7 +249,7 @@ public class DrawPeaks {
         }
 
 //        if ((disDim != 0) && (nPeakDim > 1)) {
-        if (nPeakDim > 1) {
+        if ((nPeakDim > 1) && !peakAttr.chart.is1D()) {
             draw2DPeak(peakAttr, g2, dim, peak, false, selected);
         } else {
             draw1DPeak(peakAttr, g2, dim, peak, colorMode, selected);
@@ -1252,7 +1252,7 @@ public class DrawPeaks {
     }
 
     public void drawLinkLines(PeakListAttributes peakAttr, GraphicsContextInterface g2, Peak peak, int[] dim, boolean ignoreLinkDrawn) throws GraphicsIOException {
-        if (g2 == null) {
+        if ((g2 == null) || (peak.peakDims.length < 2)) {
             return;
         }
         PeakList peakList = peak.getPeakList();
