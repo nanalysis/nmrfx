@@ -651,12 +651,6 @@ public class VarianData implements NMRData {
                 } else {
                     // see vnmr.tcl lines 773-779, use here or new method getNarray?
                     int td = getNI(i);
-                    if (isComplex(i)) {
-                        String symbolicCoefs = getSymbolicCoefs(i);
-                        if (symbolicCoefs.equals("sep")) {
-                            td /= 2;
-                        }
-                    }
                     sizes[i] = td;
                 }
                 maxSizes[i] = sizes[i];
@@ -974,10 +968,7 @@ public class VarianData implements NMRData {
 
     public void readVector(int iDim, int iVec, Complex[] cdata) {
         int size = getSize(iDim);
-        int nPer = 1;
-        if (isComplex(iDim)) {
-            nPer = 2;
-        }
+        int nPer = getGroupSize(iDim);
         int nPoints = size * nPer;
         byte[] dataBuf = new byte[nPoints * ebytes * 2];
         if (isFloat) {
