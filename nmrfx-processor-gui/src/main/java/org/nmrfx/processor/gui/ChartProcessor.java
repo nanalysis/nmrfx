@@ -505,10 +505,7 @@ public class ChartProcessor {
         NMRData nmrData = getNMRData();
         int nPoints = nmrData.getNPoints();
         if (vecDim != 0) {
-            nPoints = nmrData.getSize(vecDim);
-            if (nmrData.isComplex(vecDim)) {
-                nPoints *= 2;
-            }
+            nPoints = nmrData.getSize(vecDim) * nmrData.getGroupSize(vecDim);
         }
         ProcessOps process = getProcess();
         process.clearVectors();
@@ -539,16 +536,18 @@ public class ChartProcessor {
                 }
                 fileIndices[j] = index + j;
                 nmrData.readVector(vecDim, index + j, newVec);
-                if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho")) {
-                    newVec.eaCombine(echoAntiEchoCoefs);
-                } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho-r")) {
-                    newVec.eaCombine(echoAntiEchoRCoefs);
-                } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper")) {
-                    newVec.eaCombine(hyperCoefs);
-                } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper-r")) {
-                    newVec.eaCombine(hyperRCoefs);
-                } else {
-                    newVec.hcCombine();
+                if (nmrData.getGroupSize(vecDim) > 1) {
+                    if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho")) {
+                        newVec.eaCombine(echoAntiEchoCoefs);
+                    } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho-r")) {
+                        newVec.eaCombine(echoAntiEchoRCoefs);
+                    } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper")) {
+                        newVec.eaCombine(hyperCoefs);
+                    } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper-r")) {
+                        newVec.eaCombine(hyperRCoefs);
+                    } else {
+                        newVec.hcCombine();
+                    }
                 }
             }
 
