@@ -743,9 +743,7 @@ public class BrukerData implements NMRData {
         Double dpar;
         if ((dpar = getParDouble("PHC0," + (iDim + 1))) != null) {
             ph0 = -dpar;
-            if (iDim == 0) {
-                ph0 += 90.0;
-            } else if (iDim == 1) {
+            if (iDim == 1) {
                 ph0 += deltaPh0_2;
             }
         }
