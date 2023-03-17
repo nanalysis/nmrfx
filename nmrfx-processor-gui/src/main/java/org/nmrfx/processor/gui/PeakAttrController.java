@@ -58,6 +58,7 @@ import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.TableUtils;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -197,7 +198,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         MenuButton peakListMenuButton = initMenuBar();
-        peakNavigator = PeakNavigator.create(this).initialize(peakNavigatorToolBar, peakListMenuButton);
+        peakNavigator = PeakNavigator.create(this).addShowPeakButton().initialize(peakNavigatorToolBar, peakListMenuButton);
         initTable();
         initReferenceTable();
         setFieldActions();
@@ -335,8 +336,34 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         tabOpt.ifPresent(t -> tabPane.getSelectionModel().select(t));
     }
 
+    @Override
+    public void copyPeakTableView() {
+        TableUtils.copyTableToClipboard(peakTableView, true);
+    }
+
+    @Override
+    public void deletePeaks() {
+        peakNavigator.getPeak().delete();
+    }
+
+    @Override
+    public void restorePeaks() {
+        peakNavigator.getPeak().setStatus(0);
+    }
+
     public void refreshPeakView() {
         refreshPeakView(currentPeak);
+    }
+
+    @Override
+    public void refreshChangedListView() {
+        int index = currentPeak.getIndex();
+        if (index >= peakList.size()) {
+            index = peakList.size() - 1;
+        }
+        Peak peak = peakList.getPeak(index);
+        peakNavigator.setPeak(peak);
+        refreshPeakView(peak);
     }
 
     public void refreshPeakView(Peak peak) {

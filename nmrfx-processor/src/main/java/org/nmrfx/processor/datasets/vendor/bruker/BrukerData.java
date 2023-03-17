@@ -466,6 +466,11 @@ public class BrukerData implements NMRData {
     }
 
     @Override
+    public int getGroupSize(int dim) {
+        return isComplex(dim) ? 2 : 1;
+    }
+
+    @Override
     public String getFTType(int iDim) {
         return fttype[iDim];
     }
@@ -1427,10 +1432,7 @@ public class BrukerData implements NMRData {
 
     public void readVector(int iDim, int iVec, Complex[] cdata, double[] rvec, double[] ivec) {
         int size = getSize(iDim);
-        int nPer = 1;
-        if (isComplex(iDim)) {
-            nPer = 2;
-        }
+        int nPer = getGroupSize(iDim);
         int nPoints = size * nPer;
         byte[] dataBuf = new byte[nPoints * 4 * nPer];
         IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();

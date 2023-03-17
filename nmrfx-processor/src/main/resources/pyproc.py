@@ -979,7 +979,6 @@ def DIM(*args):
             processor.addDimProcess(dataInfo.curDim)
         else:
             dims = []
-            dataInfo.curDims = [dim-1 for dim in args]
             for dim in args:
                 if (dim < 1 or dim > maxDim):
                     raise Exception("DIM("+str(dim)+"): should be between 1 and "+str(maxDim))
@@ -3052,7 +3051,6 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
         op.eval(dataset)
     else:
         process.addOperation(op)
-        curDims = dataInfo.curDims
     return op
 
 

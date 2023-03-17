@@ -342,13 +342,13 @@ public class SampleSchedule {
      * @param modes
      * @see MultiVecCounter
      */
-    public void setOutMult(boolean[] complex, String[] modes) {
+    public void setOutMult(int[] groupSizes, boolean[] complex, String[] modes) {
         if (outMult == null) {
             int[] zSizes = new int[nDim];
             for (int i = 1; i < zSizes.length; i++) {
                 zSizes[i] = dimSizes[i - 1];
             }
-            outMult = new MultiVecCounter(zSizes, complex, modes, nDim);
+            outMult = new MultiVecCounter(zSizes, groupSizes, complex, modes, nDim);
         }
     }
 

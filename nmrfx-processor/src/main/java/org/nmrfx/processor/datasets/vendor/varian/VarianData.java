@@ -651,12 +651,6 @@ public class VarianData implements NMRData {
                 } else {
                     // see vnmr.tcl lines 773-779, use here or new method getNarray?
                     int td = getNI(i);
-                    if (isComplex(i)) {
-                        String symbolicCoefs = getSymbolicCoefs(i);
-                        if (symbolicCoefs.equals("sep")) {
-                            td /= 2;
-                        }
-                    }
                     sizes[i] = td;
                 }
                 maxSizes[i] = sizes[i];
@@ -741,23 +735,55 @@ public class VarianData implements NMRData {
     public boolean isComplex(int iDim) {
         if (iDim == 0) {
             String s = getPar("proc");
-            return !(s != null && s.equals("rft")); // proc="ft" or "lp"
+            return !"rft".equals(s);
         } else {
             String ext = String.valueOf(iDim);
-            String s = getPar("proc"+ext);
-            boolean notRFT =  !"rft".equals(s); 
+            String s = getPar("proc" + ext);
+            boolean notRFT =  !"rft".equals(s);
 
-            s = getPar("phase" + ext);
+            if (iDim == 1) {
+                s = getPar("phase");
+            } else {
+                s = getPar("phase" + ext);
+            }
             if (s != null) {
                 String[] f = s.split("\n");
-                return (f.length > 1);
+                if (f.length > 1) {
+                    return true;
+                } else if (f.length == 1) {
+                    return f[0].equals("0");
+                } else {
+                    return false;
+                }
             } else {
                 int td = getNI(iDim);
-                boolean isComplex = false; 
+                boolean isComplex = false;
                 if ((td > 1) && notRFT) {
                     isComplex = true;
                 }
                 return isComplex;
+            }
+        }
+    }
+
+    @Override
+    public int getGroupSize(int iDim) {
+        if (iDim == 0) {
+            String s = getPar("proc");
+            return "rft".equals(s) ? 1 : 2; // proc="ft" or "lp"
+        } else {
+            String ext = String.valueOf(iDim);
+            String s;
+            if (iDim == 1) {
+                s = getPar("phase");
+            } else {
+                s = getPar("phase" + ext);
+            }
+            if (s != null) {
+                String[] f = s.split("\n");
+                return f.length;
+            } else {
+                return 1;
             }
         }
     }
@@ -951,10 +977,7 @@ public class VarianData implements NMRData {
 
     public void readVector(int iDim, int iVec, Complex[] cdata) {
         int size = getSize(iDim);
-        int nPer = 1;
-        if (isComplex(iDim)) {
-            nPer = 2;
-        }
+        int nPer = getGroupSize(iDim);
         int nPoints = size * nPer;
         byte[] dataBuf = new byte[nPoints * ebytes * 2];
         if (isFloat) {

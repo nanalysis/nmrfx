@@ -47,6 +47,7 @@ import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.console.ConsoleController;
 import org.nmrfx.peaks.PeakLabeller;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.log.Log;
@@ -544,6 +545,12 @@ public class AnalystApp extends MainApp {
     public void assignPeak(String keyStr, PolyChart chart) {
         if (peakMenuActions != null) {
             peakMenuActions.assignPeak();
+        }
+    }
+
+    public void showPeakTable(PeakList peakList) {
+        if (peakMenuActions != null) {
+            peakMenuActions.showPeakTable(peakList);
         }
     }
 
