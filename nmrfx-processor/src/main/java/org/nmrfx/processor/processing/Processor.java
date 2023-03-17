@@ -197,8 +197,9 @@ public class Processor {
      * The complex nature of time domain data.
      */
     boolean[] complex = null;
+    boolean[] newComplex = null;
     int[] adjustedTDSizes;
-    boolean[] newComplex;
+    int[] groupSizes;
     String[] acqOrderToUse;
 
     /**
@@ -426,12 +427,14 @@ public class Processor {
         }
         int nDim = nmrData.getNDim();
         int nArray = 0;
+        groupSizes = new int[nDim+nArray];
         for (int i = 1; i < nDim; i++) {
             int arraySize = nmrData.getArraySize(i);
             if (arraySize != 0) {
                 nArray++;
             }
             complex[i] = nmrData.isComplex(i);
+            groupSizes[i] = nmrData.getGroupSize(i);
         }
 
         if (nArray > 0) {
@@ -490,14 +493,7 @@ public class Processor {
             acqOrder = nmrData.getAcqOrder();
         }
         if (nDim > 1) {
-            if (acqSizesToUse == null) {
-                log.info("use newTDSize without useSizes {}", acqOrderToUse.length);
-                tmult = new MultiVecCounter(adjustedTDSizes, newComplex, acqOrderToUse, dataset.getNDim());
-            } else if (adjustedTDSizes == null) {
-                log.info("call adjustSizes {} new acqorder {}", acqSizesToUse.length, acqOrderToUse.length);
-                adjustSizes();
-                tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, newComplex, acqOrderToUse, null, dataset.getNDim());
-            } else if (acqSizesToUse.length <= adjustedTDSizes.length) {
+            if (acqSizesToUse.length <= adjustedTDSizes.length) {
                 log.info("useSizes <= than newTDSizes {}", acqSizesToUse.length);
                 int[] xOutSizes = acqSizesToUse.clone();
                 boolean[] oComplex = newComplex.clone();
@@ -529,10 +525,10 @@ public class Processor {
                         oComplex[i] = newComplex[swapIn[i]];
                     }
                 }
-                tmult = new MultiVecCounter(adjustedTDSizes, xOutSizes, newComplex, oComplex, acqOrderToUse, swapIn, dataset.getNDim());
+                tmult = new MultiVecCounter(adjustedTDSizes, xOutSizes, groupSizes, oComplex, acqOrderToUse, swapIn, dataset.getNDim());
             } else {
                 log.info("use newTDSize with useSize length {}", acqSizesToUse.length);
-                tmult = new MultiVecCounter(adjustedTDSizes, newComplex, acqOrderToUse, acqSizesToUse.length);
+                tmult = new MultiVecCounter(adjustedTDSizes, groupSizes, newComplex, acqOrderToUse, acqSizesToUse.length);
             }
             int totalVecs = nmrData.getNVectors();
             if (acqSizesToUse != null) {
@@ -553,10 +549,10 @@ public class Processor {
                 }
                 itemsToRead = totalVecs;
             }
-            log.info(" total vecs {} {} {}", totalVecs, tmult.getGroupSize(), nmrData.getNVectors());
+            log.info(" total vecs {} {} {} {}", totalVecs, tmult.getGroupSize(), nmrData.getNVectors(), itemsToWrite);
             if (isNUS()) {
                 sampleSchedule = nmrData.getSampleSchedule();
-                sampleSchedule.setOutMult(complex, acqOrderToUse);
+                sampleSchedule.setOutMult(groupSizes, complex, acqOrderToUse);
                 itemsToWrite = sampleSchedule.getTotalSamples() * tmult.getGroupSize();
                 itemsToRead = itemsToWrite;
             }
