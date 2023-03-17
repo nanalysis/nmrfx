@@ -21,28 +21,34 @@ package org.nmrfx.processor.datasets.vendor.rs2d;
  * Possible values for PHASE_MOD parameter in RS2D data
  */
 public enum PhaseMod {
-    NONE(true, "ft", "sep", new double[0]),
-    STATES(true, "negate", "hyper-r", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-    TPPI(false, "rft", "real", new double[0]),
-    STATES_TPPI(true, "negate", "hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-    ECHO_ANTIECHO(true, "ft", "echo-antiecho", new double[]{1, 0, -1, 0, 0, -1, 0, -1}),
-    QF(true, "ft", "sep", new double[0]),
-    QSEQ(false, "rft", "real", new double[0]);
+    NONE(true, "ft", "sep", new double[0], 1),
+    STATES(true, "negate", "hyper-r", new double[]{1, 0, 0, 0, 0, 0, 1, 0}, 2),
+    TPPI(false, "rft", "real", new double[0], 1),
+    STATES_TPPI(true, "negate", "hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}, 2),
+    ECHO_ANTIECHO(true, "ft", "echo-antiecho", new double[]{1, 0, -1, 0, 0, -1, 0, -1}, 2),
+    QF(true, "ft", "sep", new double[0], 1),
+    QSEQ(false, "rft", "real", new double[0], 2);
 
     private final boolean complex;
     private final String ftType;
     private final String symbolicCoefs;
+    private final int groupSize;
     private final double[] coefs;
 
-    PhaseMod(boolean complex, String ftType, String symbolicCoefs, double[] coefs) {
+    PhaseMod(boolean complex, String ftType, String symbolicCoefs, double[] coefs, int groupSize) {
         this.complex = complex;
         this.ftType = ftType;
         this.symbolicCoefs = symbolicCoefs;
         this.coefs = coefs;
+        this.groupSize = groupSize;
     }
 
     public boolean isComplex() {
         return complex;
+    }
+
+    public int getGroupSize() {
+        return groupSize;
     }
 
     public String getFtType() {
