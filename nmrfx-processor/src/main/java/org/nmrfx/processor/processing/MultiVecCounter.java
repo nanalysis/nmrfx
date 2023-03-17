@@ -122,10 +122,7 @@ public class MultiVecCounter {
         // the index of the values in the multi-dimensional counter that references the time increment 
         //  of the output data
         outPoints = new int[nIDim];
-        boolean matchIn = false;
         int iArg = 0;
-        int iSize = 1;
-        int iPhase = 1;
         groupSize = 1;
         if (swapIn == null) {
             swapIn = new int[nIDim + 1];
@@ -163,26 +160,16 @@ public class MultiVecCounter {
             iArg++;
         }
 
-        if (matchIn) {
-            for (int i = 0; i < nIDim; i++) {
-                outPhases[i] = inPhases[i];
-                outPoints[i] = inPoints[i];
-            }
-            if (isizes.length > 0) {
-                System.arraycopy(isizes, 0, osizes, 0, isizes.length);
-            }
-        } else {
-            for (int i = 0; i < nIDim; i++) {
-                outPhases[i] = 2 * nIDim - 1 - i;
-                outPoints[i] = nIDim - 1 - i;
-                osizes[nIDim - 1 - i] = outSizes[i + 1];
-            }
-            for (int i = 0; i < nIDim; i++) {
-                if (oComplex[i + 1]) {
-                    osizes[2 * nIDim - 1 - i] = groupSizes[i+1];
-                } else {
-                    osizes[2 * nIDim - 1 - i] = 1;
-                }
+        for (int i = 0; i < nIDim; i++) {
+            outPhases[i] = 2 * nIDim - 1 - i;
+            outPoints[i] = nIDim - 1 - i;
+            osizes[nIDim - 1 - i] = outSizes[i + 1];
+        }
+        for (int i = 0; i < nIDim; i++) {
+            if (oComplex[i + 1]) {
+                osizes[2 * nIDim - 1 - i] = groupSizes[i + 1];
+            } else {
+                osizes[2 * nIDim - 1 - i] = 1;
             }
         }
 
@@ -384,7 +371,6 @@ public class MultiVecCounter {
                     }
                 }
                 if (ok) {
-//                    vecIndex.printMe(i, 1);
                     return i;
                 }
                 i++;

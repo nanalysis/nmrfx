@@ -735,11 +735,11 @@ public class VarianData implements NMRData {
     public boolean isComplex(int iDim) {
         if (iDim == 0) {
             String s = getPar("proc");
-            return !(s != null && s.equals("rft")); // proc="ft" or "lp"
+            return !"rft".equals(s);
         } else {
             String ext = String.valueOf(iDim);
             String s = getPar("proc" + ext);
-            boolean notRFT = !(s != null && s.equals("rft")); // proc="ft" or "lp"
+            boolean notRFT =  !"rft".equals(s);
 
             if (iDim == 1) {
                 s = getPar("phase");
@@ -770,12 +770,10 @@ public class VarianData implements NMRData {
     public int getGroupSize(int iDim) {
         if (iDim == 0) {
             String s = getPar("proc");
-            return !(s != null && s.equals("rft")) ? 2 : 1; // proc="ft" or "lp"
+            return "rft".equals(s) ? 1 : 2; // proc="ft" or "lp"
         } else {
             String ext = String.valueOf(iDim);
-            String s = getPar("proc"+ext);
-            boolean notRFT =  !"rft".equals(s);
-
+            String s;
             if (iDim == 1) {
                 s = getPar("phase");
             } else {

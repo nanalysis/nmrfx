@@ -331,6 +331,15 @@ public interface NMRData {
 
     }
 
+    /**
+     * Return the number of members in each group of data that are collected with the same dwell time
+     * Typically this is 2 for phase sensitive (hyper-complex or echo-antiecho) data in indirect dimensions
+     * and 1 for data that will be processed in absolute value mode
+     *
+     * @param dim data dimension index
+     * @return the number of data values or rows for each dwell time
+     */
+
     default int getGroupSize(int dim) {
         return isComplex(dim) ? 2 : 1;
     }
