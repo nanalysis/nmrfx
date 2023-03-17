@@ -774,7 +774,6 @@ public class VarianData implements NMRData {
         } else {
             String ext = String.valueOf(iDim);
             String s = getPar("proc"+ext);
-            boolean notRFT =  !"rft".equals(s);
 
             if (iDim == 1) {
                 s = getPar("phase");

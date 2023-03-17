@@ -1407,28 +1407,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         vecSizes = sizes.clone();
         if (nDim > 1) {
             if (rowTextBoxes.length != (nDim - 1)) {
-                vectorDimButtons.clear();
-                navHBox.getChildren().clear();
-                navHBox.getChildren().add(vecNum1);
-                navHBox.getChildren().add(navDetailsVBox);
-                rowTextBoxes = new TextField[nDim - 1];
-                dimVBox.setId("dimVBox");
-                dimVBox.getChildren().clear();
-                for (int i = 0; i < nDim - 1; i++) {
-                    rowTextBoxes[i] = new TextField();
-                    rowTextBoxes[i].setEditable(false);
-                    HBox.setHgrow(rowTextBoxes[i], Priority.ALWAYS);
-                    RadioButton radioButton = new RadioButton((i + 2) + ": ");
-                    dimVBox.getChildren().add(new HBox(radioButton, rowTextBoxes[i]));
-                    radioButton.setToggleGroup(rowToggleGroup);
-                    vectorDimButtons.add(radioButton);
-                    if (i == 0) {
-                        rowToggleGroup.selectToggle(radioButton);
-                    }
-                }
-                fileIndexTextBox.setPrefWidth(60);
-                fileIndexTextBox.setEditable(false);
-
+                updateRowBoxes(nDim);
             }
             int j = 0;
             if (vecNum1 != null) {
@@ -1436,14 +1415,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     if (i != vecDim) {
                         String dimName = String.valueOf(i + 1);
                         vectorDimButtons.get(j).setText(dimName);
-                        vecNum1.setMax(sizes[i]);
-                        int majorTic = sizes[i] / 8;
-                        vecNum1.setMajorTickUnit(majorTic);
-                        vecNum1.setMinorTickCount(4);
-                        vecNum1.setValue(1);
-                        for (int iDim = 1; iDim < sizes.length; iDim++) {
-                            rowTextBoxes[j].setText(1 + " / " + sizes[i]);
+                        if (j == 0) {
+                            updateVectorSlider(sizes[i]);
                         }
+                        rowTextBoxes[j].setText(1 + " / " + sizes[i]);
                         fileIndexTextBox.setText("1");
                         realImagChoiceBox.setValue(realImagChoices.get(0));
                         j++;
@@ -1453,6 +1428,38 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         } else {
             navHBox.getChildren().clear();
         }
+    }
+
+    private void updateVectorSlider(int size) {
+        vecNum1.setMax(size);
+        int majorTic = size / 8;
+        vecNum1.setMajorTickUnit(majorTic);
+        vecNum1.setMinorTickCount(4);
+        vecNum1.setValue(1);
+    }
+
+    private void updateRowBoxes(int nDim) {
+        vectorDimButtons.clear();
+        navHBox.getChildren().clear();
+        navHBox.getChildren().add(vecNum1);
+        navHBox.getChildren().add(navDetailsVBox);
+        rowTextBoxes = new TextField[nDim - 1];
+        dimVBox.setId("dimVBox");
+        dimVBox.getChildren().clear();
+        for (int i = 0; i < nDim - 1; i++) {
+            rowTextBoxes[i] = new TextField();
+            rowTextBoxes[i].setEditable(false);
+            HBox.setHgrow(rowTextBoxes[i], Priority.ALWAYS);
+            RadioButton radioButton = new RadioButton((i + 2) + ": ");
+            dimVBox.getChildren().add(new HBox(radioButton, rowTextBoxes[i]));
+            radioButton.setToggleGroup(rowToggleGroup);
+            vectorDimButtons.add(radioButton);
+            if (i == 0) {
+                rowToggleGroup.selectToggle(radioButton);
+            }
+        }
+        fileIndexTextBox.setPrefWidth(60);
+        fileIndexTextBox.setEditable(false);
     }
 
     Integer getRowChoice() {
@@ -1474,18 +1481,15 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             if (rows.length > 0) {
                 int row = rows[iDim - 2];
                 if ((vecNum1 != null) && vecNum1.isVisible()) {
-                    int maxSize = vecSizes[iDim - 1];
-                    vecNum1.setMax(maxSize);
-                    int majorTic = maxSize / 8;
-                    vecNum1.setMajorTickUnit(majorTic);
-                    vecNum1.setMinorTickCount(4);
-                    vecNum1.setValue(row + 1.0);
+                    int size = vecSizes[iDim - 1];
+                    updateVectorSlider(size);
+                    vecNum1.setMax(size);
                 }
             }
         }
     }
 
-    protected void setRowLabel(int iBox, int row, int size) {
+    protected void setRowLabel(int row, int size) {
         for (int i = 0;i< vectorDimButtons.size();i++) {
             if (vectorDimButtons.get(i).isSelected()) {
                 rowTextBoxes[i].setText(row + " / " + size);
@@ -1538,7 +1542,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             if (i < 0) {
                 i = 0;
             }
-            setRowLabel(iDim, i + 1, size);
+            setRowLabel(i + 1, size);
         }
     }
 
