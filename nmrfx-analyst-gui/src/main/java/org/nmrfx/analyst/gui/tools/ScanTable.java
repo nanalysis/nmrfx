@@ -17,6 +17,8 @@
  */
 package org.nmrfx.analyst.gui.tools;
 
+import de.jensd.fx.glyphs.GlyphsDude;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -1073,13 +1075,9 @@ public class ScanTable {
     }
 
     private void setMenuGraphics(TableColumn<FileTableItem, ?> column, boolean posColorMode) {
-        Text text = new Text(". . .");
+        Text text = GlyphsDude.createIcon(FontAwesomeIcon.BARS);
         text.setMouseTransparent(true);
-        StackPane stackPane = new StackPane();
-        Rectangle rect = new Rectangle(30, 10);
-        rect.setFill(Color.WHITE);
-        stackPane.getChildren().addAll(rect, text);
-        column.setGraphic(stackPane);
+        column.setGraphic(text);
         column.setContextMenu(createColorContextMenu(posColorMode));
     }
 
@@ -1087,7 +1085,7 @@ public class ScanTable {
         String text = column.getText().toLowerCase();
         String type = columnTypes.get(column.getText());
         if (column.getText().equals("color") || column.getText().equals("positive") || column.getText().equals("negative")) {
-            return false
+            return false;
         }
         if (!"D".equals(type) && isGroupable(text) && !text.equalsIgnoreCase("Color")) {
             boolean isGrouped = groupNames.contains(text);
@@ -1107,6 +1105,7 @@ public class ScanTable {
             rect.setOnMouseReleased(Event::consume);
             rect.setOnMouseClicked(Event::consume);
             column.setGraphic(stackPane);
+            return true;
         } else if ("D".equals(type) || isData(text)) {
             StackPane stackPane = new StackPane();
             Rectangle rect = new Rectangle(10, 10);
@@ -1124,6 +1123,7 @@ public class ScanTable {
             rect.setOnMouseReleased(Event::consume);
             rect.setOnMouseClicked(Event::consume);
             column.setGraphic(stackPane);
+            return true;
         } else {
             return false;
         }
