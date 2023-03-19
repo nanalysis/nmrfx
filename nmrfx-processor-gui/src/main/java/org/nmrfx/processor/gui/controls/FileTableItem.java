@@ -40,6 +40,7 @@ public class FileTableItem {
     private SimpleLongProperty date;
     private SimpleIntegerProperty group;
     private SimpleObjectProperty<DatasetAttributes> datasetAttr;
+    private SimpleObjectProperty<Color> posColor;
     private HashMap<String, String> extras = new HashMap<>();
     private HashMap<String, Integer> intExtras = new HashMap<>();
     private HashMap<String, Double> doubleExtras = new HashMap<>();
@@ -139,24 +140,23 @@ public class FileTableItem {
     public void setColor(Color color, boolean posColorMode) {
         if (posColorMode) {
             setPosColor(color);
-
         } else {
             setNegColor(color);
         }
     }
 
     public Color getPosColor() {
-        return datasetAttr == null ? Color.BLACK : datasetAttr.get().getPosColor();
+        return datasetAttr == null ? Color.BLACK : datasetAttr.get().getPosColor(getRow() - 1);
     }
 
     public void setPosColor(Color color) {
-         if (datasetAttr != null) {
-             datasetAttr.get().setPosColor(color);
-         }
+        if (datasetAttr != null) {
+            datasetAttr.get().setPosColor(color, getRow() - 1);
+        }
     }
 
     public Color getNegColor() {
-        return datasetAttr == null ? Color.BLACK : datasetAttr.get().getNegColor();
+        return datasetAttr == null ? Color.RED : datasetAttr.get().getNegColor();
     }
 
     public void setNegColor(Color color) {
@@ -166,10 +166,9 @@ public class FileTableItem {
     }
 
     public DatasetAttributes getDatasetAttributes() {
-        return datasetAttr.get();
+        return datasetAttr == null ? null : datasetAttr.get();
     }
     public void setDatasetAttributes(DatasetAttributes datasetAttributes) {
-        System.out.println("set data attr " + datasetAttributes);
         this.datasetAttr = new SimpleObjectProperty<>(datasetAttributes);
     }
 

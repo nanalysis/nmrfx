@@ -25,10 +25,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.event.Event;
-import javafx.event.EventHandler;
-import javafx.geometry.Side;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -48,7 +45,6 @@ import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetMerger;
@@ -103,6 +99,7 @@ public class ScanTable {
 
     PopOver popOver = new PopOver();
     ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
+    Map<String, DatasetAttributes> activeDatasetAttributes = new HashMap<>();
     HashMap<String, String> columnTypes = new HashMap<>();
     HashMap<String, String> columnDescriptors = new HashMap<>();
     boolean processingTable = false;
@@ -111,6 +108,7 @@ public class ScanTable {
     int groupSize = 1;
     ListChangeListener<FileTableItem> filterItemListener = c -> {
         getGroups();
+        ensureAllDatasetsAdded();
         selectionChanged();
     };
     ListChangeListener<Integer> selectionListener;
@@ -197,50 +195,64 @@ public class ScanTable {
         chart.updateDatasets(datasetNames);
     }
 
-    private void setDatasetVisibility(List<FileTableItem> showRows, Double curLvl) {
+    private void setDatasetAttributes() {
         PolyChart chart = scannerTool.getChart();
         List<DatasetAttributes> datasetAttributesList = chart.getDatasetAttributes();
-        Map<String, FileTableItem> activeNames = new HashMap<>();
-        List<Integer> rows = new ArrayList<>();
-        Map<Integer, Color> colorMap = new HashMap<>();
-        Map<Integer, Double> offsetMap = new HashMap<>();
-        Set<Integer> groupSet = new HashSet<>();
-        for (FileTableItem fileTableItem : showRows) {
+        activeDatasetAttributes.clear();
+        for (var datasetAttributes : datasetAttributesList) {
+            activeDatasetAttributes.put(datasetAttributes.getDataset().getName(), datasetAttributes);
+        }
+        for (var fileTableItem : getItems()) {
             String datasetPath = fileTableItem.getDatasetName();
             if (datasetPath == null) {
                 continue;
             }
             File file = new File(datasetPath);
             String datasetName = file.getName();
-            activeNames.put(datasetName, fileTableItem);
-            Integer row = fileTableItem.getRow();
-            if (row != null) {
-                int iGroup = fileTableItem.getGroup();
-                groupSet.add(iGroup);
-                Color color = getGroupColor(iGroup);
-                double offset = iGroup * 1.0 / groupSize * 0.8;
-                colorMap.put(row - 1, color);
-                offsetMap.put(row - 1, offset);
-                rows.add(row - 1); // rows index from 1
-            }
+            DatasetAttributes datasetAttributes = activeDatasetAttributes.get(datasetName);
+            fileTableItem.setDatasetAttributes(datasetAttributes);
         }
-        for (var datasetAttributes : datasetAttributesList) {
-            FileTableItem fileTableItem = activeNames.get(datasetAttributes.getDataset().getName());
-            if (fileTableItem != null) {
-                fileTableItem.setDatasetAttributes(datasetAttributes);
-                datasetAttributes.setPos(true);
-                if (curLvl != null) {
-                    datasetAttributes.setLvl(curLvl);
+    }
+
+    private void setDatasetVisibility(List<FileTableItem> showRows, Double curLvl) {
+        if (activeDatasetAttributes.isEmpty()) {
+            ensureAllDatasetsAdded();
+            setDatasetAttributes();
+        }
+        PolyChart chart = scannerTool.getChart();
+        List<DatasetAttributes> datasetAttributesList = chart.getDatasetAttributes();
+        List<Integer> rows = new ArrayList<>();
+        Map<Integer, Double> offsetMap = new HashMap<>();
+        Set<Integer> groupSet = new HashSet<>();
+        datasetAttributesList.forEach(d -> d.setPos(false));
+        boolean singleData = datasetAttributesList.size() == 1;
+        if (singleData) {
+            DatasetAttributes dataAttr = datasetAttributesList.get(0);
+            dataAttr.setMapColor(0, dataAttr.getMapColor(0)); // ensure colorMap is not empty
+        }
+        showRows.forEach(fileTableItem -> {
+                    var dataAttr = fileTableItem.getDatasetAttributes();
+                    if (dataAttr != null) {
+                        dataAttr.setPos(true);
+                        if (curLvl != null) {
+                            dataAttr.setLvl(curLvl);
+                        }
+                        Integer row = fileTableItem.getRow();
+                        if (singleData && (row != null)) {
+                            int iGroup = fileTableItem.getGroup();
+                            groupSet.add(iGroup);
+                            double offset = iGroup * 1.0 / groupSize * 0.8;
+                            offsetMap.put(row - 1, offset);
+                            rows.add(row - 1); // rows index from 1
+                        } else {
+                            dataAttr.clearColors();
+                        }
+                    }
                 }
-            } else {
-                datasetAttributes.setPos(false);
-            }
-        }
-        if (chart.getDatasetAttributes().size() == 1) {
-            DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-            if (curLvl != null) {
-                dataAttr.setLvl(curLvl);
-            }
+        );
+
+        if (singleData) {
+            DatasetAttributes dataAttr = datasetAttributesList.get(0);
             int nDim = dataAttr.nDim;
             chart.full(nDim - 1);
             if ((nDim - dataAttr.getDataset().getNFreqDims()) == 1) {
@@ -248,13 +260,30 @@ public class ScanTable {
             } else {
                 chart.clearDrawlist();
             }
-            dataAttr.setMapColors(colorMap);
             if (groupSet.size() > 1) {
                 dataAttr.setMapOffsets(offsetMap);
             } else {
                 dataAttr.clearOffsets();
             }
         }
+    }
+
+    private void colorByGroup() {
+        getItems().forEach(fileTableItem -> {
+            var dataAttr = fileTableItem.getDatasetAttributes();
+            if (dataAttr != null) {
+                Integer row = fileTableItem.getRow();
+                if (row != null) {
+                    int iGroup = fileTableItem.getGroup();
+                    Color color = getGroupColor(iGroup);
+                    dataAttr.setMapColor(row - 1, color);
+                } else {
+                    dataAttr.clearColors();
+                }
+            }
+        });
+        PolyChart chart = scannerTool.getChart();
+        chart.refresh();
     }
 
      protected final void selectionChanged() {
@@ -279,7 +308,6 @@ public class ScanTable {
                 curLvl = dataAttr.getLvl();
             }
 
-            ensureAllDatasetsAdded();
             setDatasetVisibility(showRows, curLvl);
             chart.refresh();
         }
@@ -999,7 +1027,7 @@ public class ScanTable {
     }
 
     private void unifyColors(boolean posColorMode) {
-        if (getItems().size() > 0) {
+        if (!getItems().isEmpty()) {
             var selectedItem = tableView.getSelectionModel().getSelectedItem();
             if (selectedItem == null) {
                 selectedItem = getItems().get(0);
@@ -1052,10 +1080,6 @@ public class ScanTable {
         stackPane.getChildren().addAll(rect, text);
         column.setGraphic(stackPane);
         column.setContextMenu(createColorContextMenu(posColorMode));
-        System.out.println("menu graph " + column.getText());
-//        rect.setOnMousePressed(e -> contextMenu.show(rect, Side.RIGHT, 15, 0));
-//        rect.setOnMouseReleased(Event::consume);
-//        rect.setOnMouseClicked(Event::consume);
     }
 
     private void setColumnGraphic(TableColumn<FileTableItem, ?> column) {
@@ -1140,7 +1164,7 @@ public class ScanTable {
             rect.setFill(Color.GREEN);
         }
         getGroups();
-
+        colorByGroup();
         selectionChanged();
         tableView.refresh();
     }

@@ -381,6 +381,14 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return posColor;
     }
 
+    public void setPosColor(Color value, int row) {
+        if (!colorMap.isEmpty()) {
+            colorMap.put(row, value);
+        } else {
+            setPosColor(value);
+        }
+    }
+
     public void setPosColor(Color value) {
         posColorProperty().set(value);
     }
@@ -395,7 +403,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             color = colorMap.get(rowIndex);
         }
         if (color == null) {
-            color = posColorProperty().get();
+            color = getPosColor();
         }
         return color;
     }
@@ -1267,15 +1275,12 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 ptC[iDim][0] = pt[iDim][0] + iChunk;
                 ptC[iDim][1] = pt[iDim][0] + iChunk;
                 if (ptC[iDim][1] > pt[iDim][1]) {
-                    System.out.println("ret a " + iDim);
                     return (false);
                 }
                 if (ptC[iDim][0] < pt[iDim][0]) {
-                    System.out.println("ret b " + iDim);
                     return (false);
                 }
             } else if (iChunk < 0) {
-                System.out.println("ret c " + iDim + " " + iChunk);
                 return (false);
             } else {
                 ptC[1][0] = drawList.get(iChunk);
