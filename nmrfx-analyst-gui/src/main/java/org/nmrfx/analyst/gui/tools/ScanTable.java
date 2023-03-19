@@ -945,9 +945,10 @@ public class ScanTable {
         updateFilter();
 
         for (TableColumn<FileTableItem, ?> column : tableView.getColumns()) {
-            if (!column.getText().equals("Color")) {
-                setColumnGraphic(column);
-                column.graphicProperty().addListener(e -> graphicChanged(column));
+            if (!column.getText().equals("Color") && !column.getText().equals("Positive") && !column.getText().equals("Negative")) {
+                if (setColumnGraphic(column)) {
+                    column.graphicProperty().addListener(e -> graphicChanged(column));
+                }
             }
         }
     }
@@ -1082,10 +1083,13 @@ public class ScanTable {
         column.setContextMenu(createColorContextMenu(posColorMode));
     }
 
-    private void setColumnGraphic(TableColumn<FileTableItem, ?> column) {
+    private boolean setColumnGraphic(TableColumn<FileTableItem, ?> column) {
         String text = column.getText().toLowerCase();
         String type = columnTypes.get(column.getText());
-        if (!"D".equals(type) && isGroupable(text) && !text.equals("Color")) {
+        if (column.getText().equals("color") || column.getText().equals("positive") || column.getText().equals("negative")) {
+            return false
+        }
+        if (!"D".equals(type) && isGroupable(text) && !text.equalsIgnoreCase("Color")) {
             boolean isGrouped = groupNames.contains(text);
             boolean isFiltered = isFiltered(column);
             StackPane stackPane = new StackPane();
@@ -1120,6 +1124,8 @@ public class ScanTable {
             rect.setOnMouseReleased(Event::consume);
             rect.setOnMouseClicked(Event::consume);
             column.setGraphic(stackPane);
+        } else {
+            return false;
         }
     }
 
@@ -1133,9 +1139,10 @@ public class ScanTable {
     }
 
     private boolean isGroupable(String text) {
-        return !standardHeaders.contains(text) && !text.equals(GROUP_COLUMN_NAME)
-                && !text.contains(":") && !text.equals(DATASET_COLUMN_NAME) &&
-                !text.contains("Color") && !text.equals("Positive") && !text.equals("Negative");
+        return !standardHeaders.contains(text) && !text.equalsIgnoreCase(GROUP_COLUMN_NAME)
+                && !text.contains(":") && !text.equalsIgnoreCase(DATASET_COLUMN_NAME) &&
+                !text.contains("color") && !text.equalsIgnoreCase("Positive")
+                && !text.equalsIgnoreCase("Negative");
     }
 
     public boolean isData(String text) {
