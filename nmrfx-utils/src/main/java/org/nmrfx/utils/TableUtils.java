@@ -62,6 +62,7 @@ public class TableUtils {
                 } else {
                     final ColorPicker cp = new ColorPicker();
                     cp.getStyleClass().add("button");
+                    cp.setStyle("-fx-color-label-visible:false;");
                     cp.setValue(item);
                     setGraphic(cp);
                     cp.setOnAction(t -> {
