@@ -12,7 +12,6 @@ import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 public class TableUtils {
@@ -52,7 +51,7 @@ public class TableUtils {
     }
 
     public static <T> void addColorColumnEditor(TableColumn<T, Color> posColorCol, BiConsumer<T, Color> applyColor) {
-        posColorCol.setCellFactory(column -> new TableCell<T, Color>() {
+        posColorCol.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(Color item, boolean empty) {
                 super.updateItem(item, empty);
@@ -71,6 +70,7 @@ public class TableUtils {
                     });
                 }
             }
+
             @Override
             public void commitEdit(Color color) {
                 super.commitEdit(color);
