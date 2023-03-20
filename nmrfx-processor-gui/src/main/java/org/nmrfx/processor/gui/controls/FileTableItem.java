@@ -133,6 +133,26 @@ public class FileTableItem {
         this.date.set(date);
     }
 
+    public void setNeg(boolean value) {
+        if (datasetAttr != null) {
+            datasetAttr.get().setNeg(value, getRow() - 1);
+        }
+    }
+
+    public boolean getNeg() {
+        return datasetAttr == null ? false : datasetAttr.get().getNeg(getRow() - 1);
+    }
+
+    public boolean getPos() {
+        return datasetAttr == null ? false : datasetAttr.get().getPos(getRow() - 1);
+    }
+
+    public void setPos(Boolean value) {
+        if (datasetAttr != null) {
+            datasetAttr.get().setPos(value, getRow() - 1);
+        }
+    }
+
     public Color getColor(boolean posColorMode) {
         return posColorMode ? getPosColor() : getNegColor();
     }

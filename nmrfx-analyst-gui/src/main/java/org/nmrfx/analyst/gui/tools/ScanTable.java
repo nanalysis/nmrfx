@@ -20,10 +20,7 @@ package org.nmrfx.analyst.gui.tools;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -121,6 +118,8 @@ public class ScanTable {
     static final double[] hues = {0.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875, 0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375};
     TableColumn<FileTableItem, Color> posColorCol = new TableColumn<>("Color");
     TableColumn<FileTableItem, Color> negColorCol = new TableColumn<>("Color");
+    TableColumn<FileTableItem, Boolean> posDrawOnCol;
+    TableColumn<FileTableItem, Boolean> negDrawOnCol;
 
     static {
         COLORS[0] = Color.BLACK;
@@ -311,6 +310,7 @@ public class ScanTable {
             }
 
             setDatasetVisibility(showRows, curLvl);
+            refresh();
             chart.refresh();
         }
     }
@@ -888,6 +888,7 @@ public class ScanTable {
     }
 
     private void initTable() {
+        tableView.setEditable(true);
         TableColumn<FileTableItem, String> fileColumn = new TableColumn<>(PATH_COLUMN_NAME);
         TableColumn<FileTableItem, String> seqColumn = new TableColumn<>(SEQUENCE_COLUMN_NAME);
         TableColumn<FileTableItem, Number> nDimColumn = new TableColumn<>(NDIM_COLUMN_NAME);
@@ -918,6 +919,32 @@ public class ScanTable {
         });
         negColorCol.setSortable(false);
 
+        posDrawOnCol = new TableColumn<>("on");
+        posDrawOnCol.setSortable(false);
+        posDrawOnCol.setEditable(true);
+        posDrawOnCol.setCellValueFactory(e -> new SimpleBooleanProperty(e.getValue().getPos()));
+        TableUtils.addCheckBoxEditor(posDrawOnCol, (item, b) -> {
+            item.setPos(b);
+            scannerTool.getChart().refresh();
+        });
+
+        posDrawOnCol.setPrefWidth(25);
+        posDrawOnCol.setMaxWidth(25);
+        posDrawOnCol.setResizable(false);
+
+        negDrawOnCol = new TableColumn<>("on");
+        negDrawOnCol.setSortable(false);
+        negDrawOnCol.setEditable(true);
+        negDrawOnCol.setCellValueFactory(e -> new SimpleBooleanProperty(e.getValue().getNeg()));
+        TableUtils.addCheckBoxEditor(negDrawOnCol, (item, b) -> {
+            item.setNeg(b);
+            scannerTool.getChart().refresh();
+        });
+        negDrawOnCol.setPrefWidth(25);
+        negDrawOnCol.setMaxWidth(25);
+        negDrawOnCol.setResizable(false);
+
+
         TableColumn<FileTableItem, Number> groupColumn = new TableColumn<>(GROUP_COLUMN_NAME);
         groupColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().getGroup()));
 
@@ -941,8 +968,8 @@ public class ScanTable {
         tableView.getColumns().clear();
         TableColumn posColumn = new TableColumn("Positive");
         TableColumn negColumn = new TableColumn("Negative");
-        posColumn.getColumns().addAll(posColorCol);
-        negColumn.getColumns().addAll(negColorCol);
+        posColumn.getColumns().addAll(posDrawOnCol, posColorCol);
+        negColumn.getColumns().addAll(negDrawOnCol, negColorCol);
         tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn, rowColumn, datasetColumn, groupColumn, posColumn, negColumn);
         updateFilter();
 

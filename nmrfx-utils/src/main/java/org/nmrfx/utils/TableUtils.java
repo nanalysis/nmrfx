@@ -1,9 +1,7 @@
 package org.nmrfx.utils;
 
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
@@ -76,6 +74,34 @@ public class TableUtils {
                 super.commitEdit(color);
                 T item = getTableRow().getItem();
                 applyColor.accept(item, color);
+            }
+        });
+    }
+    public static <T> void addCheckBoxEditor(TableColumn<T, Boolean> posColorCol, BiConsumer<T, Boolean> applyValue) {
+        posColorCol.setCellFactory(column -> new CheckBoxTableCell<>() {
+            @Override
+            public void updateItem(Boolean item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(null);
+                if (empty || (item == null)) {
+                    setGraphic(null);
+                } else {
+                    final CheckBox cp = new CheckBox();
+                    cp.setSelected(item);
+                    setGraphic(cp);
+                    cp.setOnAction(t -> {
+                        getTableView().edit(getTableRow().getIndex(), column);
+                        commitEdit(cp.isSelected());
+                    });
+
+                }
+            }
+
+            @Override
+            public void commitEdit(Boolean value) {
+                super.commitEdit(value);
+                T item = getTableRow().getItem();
+                applyValue.accept(item, value);
             }
         });
     }
