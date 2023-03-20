@@ -8,16 +8,14 @@ package org.nmrfx.analyst.gui.tools;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.InvalidationListener;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.nmrfx.chemistry.Atom;
@@ -967,39 +965,54 @@ public class PeakSlider implements ControllerTool {
         }
         return isNull;
     }
-    PeakList[] createNDMatcher() {
-        PeakList[] result = new PeakList[2];
-        controller.getCharts().forEach(chart -> {
-                    for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
-                        Optional<PeakList> expListOpt = Optional.empty();
-                        Optional<PeakList> predListOpt = Optional.empty();
-                        for (PeakList peakList : ProjectBase.getActive().getPeakLists()) {
-                            if (peakList.getDatasetName().equals(dataAttr.getDataset().getName())) {
-                                if (peakList.isSimulated()) {
-                                    predListOpt = Optional.of(peakList);
-                                } else {
-                                    expListOpt = Optional.of(peakList);
-                                }
-                            }
+
+    record MatchListPair(PeakList refList, PeakList movingList) {}
+
+    Optional<MatchListPair> createNDMatcher() {
+        PolyChart chart = controller.getActiveChart();
+        List<PeakList> movingLists = new ArrayList<>();
+        List<PeakList> refLists = new ArrayList<>();
+        boolean gotMoving = false;
+        if (chart.getPeakListAttributes().size() == 1) {
+            movingLists.add(chart.getPeakListAttributes().get(0).getPeakList());
+            gotMoving = true;
+        }
+        for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
+            for (PeakList peakList : ProjectBase.getActive().getPeakLists()) {
+                if (peakList.getDatasetName().equals(dataAttr.getDataset().getName())) {
+                    if (peakList.isSimulated()) {
+                        if (!gotMoving) {
+                            movingLists.add(peakList);
                         }
-                        if (expListOpt.isPresent() && predListOpt.isPresent()) {
-                            result[0] = predListOpt.get();
-                            result[1] = expListOpt.get();
-                        }
+                    } else {
+                        refLists.add(peakList);
                     }
                 }
-        );
+            }
+        }
+        Optional<MatchListPair> result;
+        if (movingLists.isEmpty()) {
+            GUIUtils.warn("Peak Matching", "No Simulated List found");
+            result = Optional.empty();
+        }
+        if ((movingLists.size() == 1) && (refLists.size() == 1)) {
+            var pair = new MatchListPair(refLists.get(0), movingLists.get(0));
+            result = Optional.of(pair);
+        } else {
+            var pair = getMatchingPeakLists(refLists, movingLists);
+            result = Optional.of(pair);
+        }
         return result;
     }
 
     void matchPredWithExpPeakList(boolean draw) {
-        PeakList[] peakLists = createNDMatcher();
-        if ((peakLists[0] != null) && (peakLists[1] != null)) {
-            int[] dims = new int[peakLists[0].getNDim()];
+        Optional<MatchListPair> optionalPair = createNDMatcher();
+        optionalPair.ifPresent(matchListPair -> {
+            int[] dims = new int[matchListPair.refList.getNDim()];
             for (int i = 0; i < dims.length; i++) {
                 dims[i] = i;
             }
-            List<Peak[]> peakMatches = PeakListTools.getExpPredMatches(peakLists[0], peakLists[1], dims, null);
+            List<Peak[]> peakMatches = PeakListTools.getExpPredMatches(matchListPair.movingList, matchListPair.refList, dims, null);
             if (draw) {
                 for (var peakMatch : peakMatches) {
                     List<Peak> pairedPeaks = List.of(peakMatch[0], peakMatch[1]);
@@ -1012,7 +1025,7 @@ public class PeakSlider implements ControllerTool {
             } else {
                 PeakListTools.shiftAndFreezePeakList(peakMatches, dims);
             }
-        }
+        });
     }
 
 
@@ -1310,4 +1323,44 @@ public class PeakSlider implements ControllerTool {
         }
     }
 
+    public static MatchListPair getMatchingPeakLists(List<PeakList> refLists, List<PeakList> movingLists) {
+        Dialog<MatchListPair> dialog = new Dialog<>();
+        dialog.setTitle("Peak List Match");
+        dialog.setHeaderText("Enter peaklists:");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+        dialog.getDialogPane().setContent(grid);
+        int comboBoxWidth = 200;
+        ComboBox<PeakList> comboBoxRef = new ComboBox<>(FXCollections.observableArrayList(refLists.stream().toList()));
+        comboBoxRef.setValue(refLists.get(0));
+        comboBoxRef.setMinWidth(comboBoxWidth);
+        comboBoxRef.setMaxWidth(comboBoxWidth);
+        grid.add(new Label("Reference List"), 0, 0);
+        grid.add(comboBoxRef, 1, 0);
+
+        ComboBox<PeakList> comboBoxMoving = new ComboBox<>(FXCollections.observableArrayList(movingLists.stream().toList()));
+        comboBoxMoving.setValue(movingLists.get(0));
+        comboBoxMoving.setMinWidth(comboBoxWidth);
+        comboBoxMoving.setMaxWidth(comboBoxWidth);
+        grid.add(new Label("Moving List"), 0, 1);
+        grid.add(comboBoxMoving, 1, 1);
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                // The value set in the formatter may not have been set yet so commit the value before retrieving
+                comboBoxRef.commitValue();
+                comboBoxMoving.commitValue();
+                return new MatchListPair(comboBoxRef.getValue(), comboBoxMoving.getValue());
+            }
+            return null;
+        });
+
+        MatchListPair gd = null;
+        Optional<MatchListPair> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            gd = result.get();
+        }
+        return gd;
+    }
 }
