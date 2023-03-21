@@ -1432,7 +1432,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     private void updateVectorSlider(int size) {
         vecNum1.setMax(size);
-        int majorTic = size / 8;
+        int majorTic = Math.max(1, size / 8);
         vecNum1.setMajorTickUnit(majorTic);
         vecNum1.setMinorTickCount(4);
         vecNum1.setValue(1);
