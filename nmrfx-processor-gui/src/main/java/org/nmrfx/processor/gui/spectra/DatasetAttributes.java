@@ -381,6 +381,14 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return posColor;
     }
 
+    public void setPosColor(Color value, int row) {
+        if (!colorMap.isEmpty()) {
+            colorMap.put(row, value);
+        } else {
+            setPosColor(value);
+        }
+    }
+
     public void setPosColor(Color value) {
         posColorProperty().set(value);
     }
@@ -395,7 +403,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             color = colorMap.get(rowIndex);
         }
         if (color == null) {
-            color = posColorProperty().get();
+            color = getPosColor();
         }
         return color;
     }
@@ -513,8 +521,29 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         posProperty().set(value);
     }
 
+    public void setPos(Boolean value, int row) {
+        if (!drawList.isEmpty()) {
+            if (Boolean.TRUE.equals(value)) {
+                addToDrawList(row);
+                setPos(value);
+            } else {
+                drawList.remove(Integer.valueOf(row));
+            }
+        } else {
+            setPos(value);
+        }
+    }
+
     public boolean getPos() {
         return posProperty().get();
+    }
+
+    public boolean getPos(int index) {
+        if (!drawList.isEmpty()) {
+            return posProperty().get()  && drawList.contains(index);
+        } else {
+            return posProperty().get();
+        }
     }
 
     private BooleanProperty neg;
@@ -530,8 +559,26 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         negProperty().set(value);
     }
 
+    public void setNeg(Boolean value, int row) {
+        if (!drawList.isEmpty()) {
+            if (value) {
+                setNeg(value);
+            }
+        } else {
+            setNeg(value);
+        }
+    }
+
     public boolean getNeg() {
         return negProperty().get();
+    }
+
+    public boolean getNeg(int index) {
+        if (!drawList.isEmpty()) {
+            return negProperty().get()  && drawList.contains(index);
+        } else {
+            return negProperty().get();
+        }
     }
 
     private IntegerProperty nlvls;
@@ -895,6 +942,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public void setDrawList(int index) {
         drawList.clear();
         drawList.add(index);
+    }
+
+    public void addToDrawList(int index) {
+        if (!drawList.contains(index)) {
+            drawList.add(index);
+            Collections.sort(drawList);
+        }
     }
 
     public void setDrawList(List<Integer> indices) {
@@ -1267,15 +1321,12 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 ptC[iDim][0] = pt[iDim][0] + iChunk;
                 ptC[iDim][1] = pt[iDim][0] + iChunk;
                 if (ptC[iDim][1] > pt[iDim][1]) {
-                    System.out.println("ret a " + iDim);
                     return (false);
                 }
                 if (ptC[iDim][0] < pt[iDim][0]) {
-                    System.out.println("ret b " + iDim);
                     return (false);
                 }
             } else if (iChunk < 0) {
-                System.out.println("ret c " + iDim + " " + iChunk);
                 return (false);
             } else {
                 ptC[1][0] = drawList.get(iChunk);
@@ -1915,24 +1966,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return intSelected;
     }
 
-    /*
-                ((DatasetAttributes) o).setPosColor(getPosColor());
-            ((DatasetAttributes) o).setNegColor(getNegColor());
-            ((DatasetAttributes) o).setPosWidth(getPosWidth());
-            ((DatasetAttributes) o).setNegWidth(getNegWidth());
-            ((DatasetAttributes) o).setLvl(getLvl());
-            ((DatasetAttributes) o).clm = clm;
-            ((DatasetAttributes) o).setNLevels(getNLevels());
-            ((DatasetAttributes) o).nDim = nDim;
-            ((DatasetAttributes) o).fileName = fileName;
-            ((DatasetAttributes) o).theFile = theFile;
-            ((DatasetAttributes) o).setPos(getPos());
-            ((DatasetAttributes) o).setNeg(getNeg());
-            if (drawList != null) {
-                ((DatasetAttributes) o).drawList = drawList.clone();
-            }
-
-     */
     public void config(String name, Object value) {
         if (Platform.isFxApplicationThread()) {
             try {
