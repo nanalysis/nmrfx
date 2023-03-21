@@ -523,7 +523,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
     public void setPos(Boolean value, int row) {
         if (!drawList.isEmpty()) {
-            if (value) {
+            if (Boolean.TRUE.equals(value)) {
                 addToDrawList(row);
                 setPos(value);
             } else {

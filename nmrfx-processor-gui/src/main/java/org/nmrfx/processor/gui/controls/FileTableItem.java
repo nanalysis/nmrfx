@@ -40,7 +40,6 @@ public class FileTableItem {
     private SimpleLongProperty date;
     private SimpleIntegerProperty group;
     private SimpleObjectProperty<DatasetAttributes> datasetAttr;
-    private SimpleObjectProperty<Color> posColor;
     private HashMap<String, String> extras = new HashMap<>();
     private HashMap<String, Integer> intExtras = new HashMap<>();
     private HashMap<String, Double> doubleExtras = new HashMap<>();

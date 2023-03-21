@@ -89,6 +89,28 @@ public class ScanTable {
     static final String NDIM_COLUMN_NAME = "ndim";
     static final String DATASET_COLUMN_NAME = "dataset";
     static final String GROUP_COLUMN_NAME = "group";
+    static final String COLOR_COLUMN_NAME = "Color";
+    static final String POSITIVE_COLUMN_NAME = "Positive";
+    static final String NEGATIVE_COLUMN_NAME = "Negative";
+    static final String SCANNER_ERROR = "Scanner Error";
+
+    static final List<String> standardHeaders = List.of(PATH_COLUMN_NAME, SEQUENCE_COLUMN_NAME, ROW_COLUMN_NAME, ETIME_COLUMN_NAME, NDIM_COLUMN_NAME);
+    static final Color[] COLORS = new Color[17];
+    static final double[] hues = {0.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875, 0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375};
+    static {
+        COLORS[0] = Color.BLACK;
+        int i = 1;
+        double brightness = 0.8;
+        for (double hue : hues) {
+            if (i > 8) {
+                brightness = 0.5;
+            } else if (i > 4) {
+                brightness = 0.65;
+            }
+            COLORS[i++] = Color.hsb(hue * 360.0, 0.9, brightness);
+        }
+
+    }
 
     ScannerTool scannerTool;
     TableView<FileTableItem> tableView;
@@ -112,29 +134,10 @@ public class ScanTable {
     };
     ListChangeListener<Integer> selectionListener;
 
-    static final List<String> standardHeaders = List.of(PATH_COLUMN_NAME, SEQUENCE_COLUMN_NAME, ROW_COLUMN_NAME, ETIME_COLUMN_NAME, NDIM_COLUMN_NAME);
-
-    static final Color[] COLORS = new Color[17];
-    static final double[] hues = {0.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875, 0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375};
-    TableColumn<FileTableItem, Color> posColorCol = new TableColumn<>("Color");
-    TableColumn<FileTableItem, Color> negColorCol = new TableColumn<>("Color");
+    TableColumn<FileTableItem, Color> posColorCol = new TableColumn<>(COLOR_COLUMN_NAME);
+    TableColumn<FileTableItem, Color> negColorCol = new TableColumn<>(COLOR_COLUMN_NAME);
     TableColumn<FileTableItem, Boolean> posDrawOnCol;
     TableColumn<FileTableItem, Boolean> negDrawOnCol;
-
-    static {
-        COLORS[0] = Color.BLACK;
-        int i = 1;
-        double brightness = 0.8;
-        for (double hue : hues) {
-            if (i > 8) {
-                brightness = 0.5;
-            } else if (i > 4) {
-                brightness = 0.65;
-            }
-            COLORS[i++] = Color.hsb(hue * 360.0, 0.9, brightness);
-        }
-
-    }
 
     public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
         this.scannerTool = controller;
@@ -385,7 +388,6 @@ public class ScanTable {
     }
 
     public void processScanDir(ChartProcessor chartProcessor, boolean combineFileMode) {
-        String SCANNER_ERROR = "Scanner Error";
         if ((chartProcessor == null) || !chartProcessor.hasCommands()) {
             GUIUtils.warn(SCANNER_ERROR, "Processing Script Not Configured");
             return;
@@ -966,15 +968,15 @@ public class ScanTable {
         });
 
         tableView.getColumns().clear();
-        TableColumn posColumn = new TableColumn("Positive");
-        TableColumn negColumn = new TableColumn("Negative");
+        TableColumn<FileTableItem, TableColumn> posColumn = new TableColumn<>(POSITIVE_COLUMN_NAME);
+        TableColumn<FileTableItem, TableColumn> negColumn = new TableColumn<>(NEGATIVE_COLUMN_NAME);
         posColumn.getColumns().addAll(posDrawOnCol, posColorCol);
         negColumn.getColumns().addAll(negDrawOnCol, negColorCol);
         tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn, rowColumn, datasetColumn, groupColumn, posColumn, negColumn);
         updateFilter();
 
         for (TableColumn<FileTableItem, ?> column : tableView.getColumns()) {
-            if (!column.getText().equals("Color") && !column.getText().equals("Positive") && !column.getText().equals("Negative")) {
+            if (!column.getText().equals(COLOR_COLUMN_NAME) && !column.getText().equals(POSITIVE_COLUMN_NAME) && !column.getText().equals(NEGATIVE_COLUMN_NAME)) {
                 if (setColumnGraphic(column)) {
                     column.graphicProperty().addListener(e -> graphicChanged(column));
                 }
@@ -1110,11 +1112,11 @@ public class ScanTable {
 
     private boolean setColumnGraphic(TableColumn<FileTableItem, ?> column) {
         String text = column.getText().toLowerCase();
-        String type = columnTypes.get(column.getText());
-        if (column.getText().equals("color") || column.getText().equals("positive") || column.getText().equals("negative")) {
+        if (text.equalsIgnoreCase(COLOR_COLUMN_NAME) || text.equalsIgnoreCase(POSITIVE_COLUMN_NAME) || text.equalsIgnoreCase(NEGATIVE_COLUMN_NAME)) {
             return false;
         }
-        if (!"D".equals(type) && isGroupable(text) && !text.equalsIgnoreCase("Color")) {
+        String type = columnTypes.get(column.getText());
+        if (!"D".equals(type) && isGroupable(text) && !text.equalsIgnoreCase(COLOR_COLUMN_NAME)) {
             boolean isGrouped = groupNames.contains(text);
             boolean isFiltered = isFiltered(column);
             StackPane stackPane = new StackPane();
@@ -1168,8 +1170,8 @@ public class ScanTable {
     private boolean isGroupable(String text) {
         return !standardHeaders.contains(text) && !text.equalsIgnoreCase(GROUP_COLUMN_NAME)
                 && !text.contains(":") && !text.equalsIgnoreCase(DATASET_COLUMN_NAME) &&
-                !text.contains("color") && !text.equalsIgnoreCase("Positive")
-                && !text.equalsIgnoreCase("Negative");
+                !text.contains(COLOR_COLUMN_NAME) && !text.equalsIgnoreCase(POSITIVE_COLUMN_NAME)
+                && !text.equalsIgnoreCase(NEGATIVE_COLUMN_NAME);
     }
 
     public boolean isData(String text) {
