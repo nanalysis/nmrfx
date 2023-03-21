@@ -1,14 +1,14 @@
-package org.nmrfx.structure.tools;
+package org.nmrfx.analyst.peaks;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.PPMv;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.CouplingPattern;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.structure.chemistry.CouplingList;
 import org.nmrfx.structure.chemistry.JCoupling;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.processor.datasets.Dataset;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,11 +16,30 @@ import java.util.List;
 import java.util.Map;
 
 public class PeakGenerator {
+    static final String[][] HSQC = {{"H", "N"}};
+    static final String[][] HNCACO = {{"H","N","C"}, {"H","N","-1.C"}};
+    static final String[][] HNCO = {{"H","N","-1.C"}};
+    static final String[][] HNCOCA = {{"H","N","-1.CA"}};
+    static final String[][] HNCOCACB = {{"H","N","-1.CB"}, {"H","N","-1.CA"}};
+    static final String[][] HNCA = {{"H","N","CA"}, {"H","N","-1.CA"}};
+    static final String[][] HNCACB = {{"H","N","CB"}, {"H","N","-1.CB"}, {"H","N","CA"}, {"H","N","-1.CA"}};
+
     Molecule molecule = (Molecule) MoleculeFactory.getActive();
     Map<Atom, List<JCoupling>> jCouplingMap = null;
     Map<Atom, List<JCoupling>> tocsyCouplingMap = null;
     Map<Atom, List<JCoupling>> hmbcCouplingMap = null;
     boolean refMode = true;
+    static Map<String, String[][]> specifierMap = new HashMap<>();
+
+    private void initSpecifiers() {
+        specifierMap.put("hsqc", HSQC);
+        specifierMap.put("hncaco", HNCACO);
+        specifierMap.put("hnco", HNCO);
+        specifierMap.put("hncoca", HNCOCA);
+        specifierMap.put("hncocacb", HNCOCACB);
+        specifierMap.put("hnca", HNCA);
+        specifierMap.put("hncacb", HNCACB);
+    }
 
     void addPeak(PeakList peakList, double intensity, Atom... atoms) {
         int nAtoms = atoms.length;
@@ -78,6 +97,12 @@ public class PeakGenerator {
             listName = datasetName + tail;
         }
         return listName;
+    }
+
+    public PeakList makePeakList(DatasetBase dataset) {
+        String listName = PeakList.getNameForDataset(dataset.getName());
+        listName = listName + "_sim";
+        return makePeakList(listName, dataset, dataset.getNDim());
     }
 
     public PeakList makePeakList(String listName, DatasetBase dataset, int nDim) {
@@ -192,6 +217,27 @@ public class PeakGenerator {
 
     }
 
+    public void generateHMBC(PeakList peakList, int limit) {
+        if (hmbcCouplingMap == null) {
+            generateCouplings();
+        }
+        Atom[] atoms = new Atom[2];
+        molecule.getAtoms().stream()
+                .filter(atom -> atom.getAtomicNumber() == 1)
+                .filter(atom -> !atom.isMethyl() || atom.isFirstInMethyl())
+                .forEach(atom -> {
+                    var hmbcCouplings = hmbcCouplingMap.get(atom);
+                    if ((hmbcCouplings != null)) {
+                        for (var hmbcCoupling : hmbcCouplings) {
+                            atoms[0] = hmbcCoupling.getAtom(0);
+                            atoms[1] = hmbcCoupling.getAtom(1);
+                            double intensity = atom.isMethyl() ? 3.0 : 1.0;
+                            addPeak(peakList, intensity, atoms);
+                        }
+                    }
+                });
+    }
+
 
     public void generateTOCSY(PeakList peakList) {
         if (tocsyCouplingMap == null) {
@@ -226,5 +272,161 @@ public class PeakGenerator {
                             double intensity = atom.isMethyl() ? 3.0 : 1.0;
                             addPeak(peakList, intensity, atoms);
                 });
+    }
+
+    /*
+        def genDistancePeaks(self, dataset, listName="", condition="sim", scheme="", tol=5.0):
+        self.setWidths([self.widthH, self.widthH])
+        if dataset != None and dataset != "":
+            if not isinstance(dataset,DatasetBase):
+                dataset = DatasetBase.getDataset(dataset)
+            labelScheme = dataset.getProperty("labelScheme")
+            self.setLabelScheme(labelScheme)
+            if scheme == "":
+                scheme = dataset.getProperty("editScheme")
+        if scheme == "":
+            scheme = "aa"
+
+        (d1Edited, d2Edited) = editingModes[scheme]
+        peakList = self.getPeakList(dataset, listName)
+        self.mol.selectAtoms("*.H*")
+        protonPairs = self.mol.getDistancePairs(tol, False)
+        for protonPair in protonPairs:
+            dis = protonPair.getDistance()
+            if dis > 4.0:
+                volume = 0.2
+            elif dis > 3.0:
+                volume = 0.5
+            else:
+                volume = 1.0
+            intensity = volume
+            self.addProtonPairPeak(peakList, protonPair.getAtom1(), protonPair.getAtom2(), intensity, d1Edited, d2Edited)
+            self.addProtonPairPeak(peakList, protonPair.getAtom2(), protonPair.getAtom1(), intensity, d1Edited, d2Edited)
+        return peakList
+
+     */
+
+    public void generateNOESY(PeakList peakList, double tol) throws InvalidMoleculeException {
+        Atom[] atoms = new Atom[2];
+        molecule.selectAtoms("*.H*");
+        var protonPairs = molecule.getDistancePairs(tol, false);
+
+
+        protonPairs.forEach(aP -> {
+                    atoms[0] = aP.getAtom1();
+                    atoms[1] = aP.getAtom2();
+                    double distance = aP.getDistance();
+                    double volume;
+                    if (distance > 4.0) {
+                        volume = 0.2;
+                    } else if (distance > 3.0) {
+                        volume = 0.5;
+                    } else {
+                        volume = 1.0;
+                    }
+                    addPeak(peakList, volume, atoms);
+                });
+    }
+
+    public void generateProteinPeaks(DatasetBase dataset, PeakList peakList, String expType) {
+        if (specifierMap.isEmpty()) {
+            initSpecifiers();
+        }
+        String[][] specifiers = specifierMap.get(expType);
+        if (specifiers == null) {
+            throw new IllegalArgumentException("Invalid experiment type " + expType);
+        }
+        generateProteinPeaks(dataset, peakList, specifiers);
+    }
+
+    public void generateProteinPeaks(DatasetBase dataset, PeakList peakList,  String[][] specifiers) {
+        int nDim = peakList.getNDim();
+        List<String> nucNames = new ArrayList<>();
+        for (int i = 0; i < nDim; i++) {
+            String nucName;
+            if (dataset == null) {
+                nucName = peakList.getSpectralDim(i).getDimName().substring(0, 1);
+            } else {
+                nucName = dataset.getNucleus(i).getName();
+            }
+            nucNames.add(nucName);
+        }
+
+        for (var polymer : molecule.getPolymers()) {
+            for (var residue : polymer.getResidues()) {
+                boolean firstSpec = true;
+                for (String[] specifier : specifiers) {
+                    addResiduePeak(peakList, residue, nucNames, specifier, firstSpec);
+                    firstSpec = false;
+                }
+            }
+        }
+    }
+
+    private void addResiduePeak(PeakList peakList, Residue residue,
+            List<String> nucNames, String[] specifier, boolean firstSpec) {
+        int nDim = peakList.getNDim();
+        Atom[] atoms = new Atom[nDim];
+        boolean ok = true;
+        for (String atomSpec : specifier) {
+            int dot = atomSpec.indexOf(".");
+            String aName = dot == -1 ? atomSpec : atomSpec.substring(dot + 1);
+            Residue atomResidue = residue;
+            if (dot != -1) {
+                String resSpec = atomSpec.substring(0, dot);
+                if (resSpec.equals("-1")) {
+                    atomResidue = residue.getPrevious();
+                } else if (resSpec.equals("1")) {
+                    atomResidue = residue.getNext();
+                }
+            }
+            if (atomResidue == null) {
+                ok = false;
+            }
+            Atom atom = atomResidue.getAtom(aName);
+            if (atom == null) {
+                ok = false;
+                break;
+            }
+            String eName = atom.getElementName();
+            int eIndex = nucNames.indexOf(eName);
+            if (eIndex == -1) {
+                ok = false;
+                break;
+            }
+            atoms[eIndex] = atom;
+
+        }
+        if (ok) {
+            double intensity;
+            if (firstSpec) {
+                intensity = 1.0;
+            } else {
+                intensity = 0.5;
+            }
+            addPeak(peakList, intensity, atoms);
+        }
+    }
+
+    public void generateList(Dataset dataset) {
+        PeakList peakList = makePeakList(dataset);
+        int nDim = dataset.getNDim();
+        boolean ok = false;
+        if (nDim == 1) {
+            Nuclei nuclei = dataset.getNucleus(0);
+            if (nuclei.getName().equals("H")) {
+                generate1DProton(peakList);
+                ok = true;
+            }
+        } else if (nDim == 2) {
+            Nuclei nuclei0 = dataset.getNucleus(0);
+            Nuclei nuclei1 = dataset.getNucleus(1);
+            boolean nuc0Proton = nuclei0.getName().equals("H");
+            boolean nuc1Proton = nuclei1.getName().equals("H");
+            boolean nuc1Nitrogen = nuclei1.getName().equals("N");
+            boolean nuc1Carbon = nuclei1.getName().equals("C");
+            if (nuc0Proton && (nuc1Nitrogen || nuc1Carbon)) {
+            }
+        }
     }
 }
