@@ -139,16 +139,19 @@ public class FileTableItem {
     }
 
     public boolean getNeg() {
-        return datasetAttr == null ? false : datasetAttr.get().getNeg(getRow() - 1);
+        var dataAttr = getDatasetAttributes();
+        return dataAttr != null ? dataAttr.getNeg(getRow() - 1) : false;
     }
 
     public boolean getPos() {
-        return datasetAttr == null ? false : datasetAttr.get().getPos(getRow() - 1);
+        var dataAttr = getDatasetAttributes();
+        return dataAttr != null ? dataAttr.getPos(getRow() - 1) : false;
     }
 
     public void setPos(Boolean value) {
-        if (datasetAttr != null) {
-            datasetAttr.get().setPos(value, getRow() - 1);
+        var dataAttr = getDatasetAttributes();
+        if (dataAttr != null) {
+            dataAttr.setPos(value, getRow() - 1);
         }
     }
 
@@ -165,22 +168,26 @@ public class FileTableItem {
     }
 
     public Color getPosColor() {
-        return datasetAttr == null ? Color.BLACK : datasetAttr.get().getPosColor(getRow() - 1);
+        var dataAttr = getDatasetAttributes();
+        return dataAttr == null ? Color.BLACK : dataAttr.getPosColor(getRow() - 1);
     }
 
     public void setPosColor(Color color) {
-        if (datasetAttr != null) {
-            datasetAttr.get().setPosColor(color, getRow() - 1);
+        var dataAttr = getDatasetAttributes();
+        if (dataAttr != null) {
+            dataAttr.setPosColor(color, getRow() - 1);
         }
     }
 
     public Color getNegColor() {
-        return datasetAttr == null ? Color.RED : datasetAttr.get().getNegColor();
+        var dataAttr = getDatasetAttributes();
+        return dataAttr == null ? Color.RED : dataAttr.getNegColor();
     }
 
     public void setNegColor(Color color) {
-        if (datasetAttr != null) {
-            datasetAttr.get().setNegColor(color);
+        var dataAttr = getDatasetAttributes();
+        if (dataAttr != null) {
+            dataAttr.setNegColor(color);
         }
     }
 
@@ -192,16 +199,17 @@ public class FileTableItem {
     }
 
     public String getExtra(String eName) {
-        String extra = extras.get(eName);
+        String extra = extras.get(eName.toLowerCase());
         return extra == null ? "" : extra;
     }
 
     public Double getDoubleExtra(String eName) {
-        Double extra = doubleExtras.get(eName);
+        Double extra = doubleExtras.get(eName.toLowerCase());
         return extra == null ? 0.0 : extra;
     }
 
     public Double getDouble(String eName) {
+        eName = eName.toLowerCase();
         Double value = 0.0;
         if (eName.equals("group")) {
             value = (double) getGroup();
@@ -220,27 +228,28 @@ public class FileTableItem {
     }
 
     public Integer getIntegerExtra(String eName) {
-        Integer extra = intExtras.get(eName);
+        Integer extra = intExtras.get(eName.toLowerCase());
         return extra == null ? 0 : extra;
     }
 
     public void setExtra(String name, String value) {
-        extras.put(name, value);
+        extras.put(name.toLowerCase(), value);
     }
 
     public void setExtra(String name, Integer value) {
-        intExtras.put(name, value);
+        intExtras.put(name.toLowerCase(), value);
     }
 
     public void setExtra(String name, Double value) {
-        doubleExtras.put(name, value);
+        doubleExtras.put(name.toLowerCase(), value);
     }
 
     public void setObjectExtra(String name, Object value) {
-        objectExtras.put(name, value);
+        objectExtras.put(name.toLowerCase(), value);
     }
 
     public Optional<String> getType(String name) {
+        name = name.toLowerCase();
         if (intExtras.containsKey(name)) {
             return Optional.of("I");
         } else if (doubleExtras.containsKey(name)) {
@@ -255,6 +264,7 @@ public class FileTableItem {
     }
 
     public String getExtraAsString(String name) {
+        name = name.toLowerCase();
         switch (getType(name).orElse("")) {
             case "I":
                 return getIntegerExtra(name).toString();
@@ -270,6 +280,7 @@ public class FileTableItem {
     }
 
     public Optional<Double> getExtraAsDouble(String name) {
+        name = name.toLowerCase();
         Double value;
         switch (getType(name).orElse("")) {
             case "I":
@@ -285,7 +296,7 @@ public class FileTableItem {
     }
 
     public Object getObjectExtra(String eName) {
-        Object extra = objectExtras.get(eName);
+        Object extra = objectExtras.get(eName.toLowerCase());
         return extra;
     }
 
@@ -294,14 +305,15 @@ public class FileTableItem {
 
     public void setTypes(String[] headers, boolean[] notDouble, boolean[] notInteger) {
         for (int i = 0; i < headers.length; i++) {
-            String value = extras.get(headers[i]);
+            String header = headers[i].toLowerCase();
+            String value = extras.get(header);
             if (value != null) {
                 if (!notInteger[i]) {
-                    intExtras.put(headers[i], Integer.parseInt(value));
-                    extras.remove(headers[i]);
+                    intExtras.put(header, Integer.parseInt(value));
+                    extras.remove(header);
                 } else if (!notDouble[i]) {
-                    doubleExtras.put(headers[i], Double.parseDouble(value));
-                    extras.remove(headers[i]);
+                    doubleExtras.put(header, Double.parseDouble(value));
+                    extras.remove(header);
                 }
             }
         }
@@ -355,15 +367,15 @@ public class FileTableItem {
                     }
                     switch (type) {
                         case "D": {
-                            sBuilder.append(getDoubleExtra(header));
+                            sBuilder.append(getDoubleExtra(header.toLowerCase()));
                             break;
                         }
                         case "I": {
-                            sBuilder.append(getIntegerExtra(header));
+                            sBuilder.append(getIntegerExtra(header.toLowerCase()));
                             break;
                         }
                         default: {
-                            sBuilder.append(getExtra(header));
+                            sBuilder.append(getExtra(header.toLowerCase()));
                         }
 
                     }
