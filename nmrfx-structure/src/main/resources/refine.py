@@ -70,6 +70,58 @@ rnaBPPlanarity = {
 gnraHBonds = [["N2","N7",2.4,2.8],["N3","N6",2.7,5.0],["N2","OP1",2.4,2.9]]
 
 addPlanarity = False
+
+class Cluster:
+    def __init__(self,name,regex,suites,chi,bp,hb):
+        self.name = name
+        self.regex = regex
+        self.suites = suites
+        self.chi = chi
+        self.bp = bp
+        self.hb = hb
+        self.repSeqs = []
+
+def getClusterDict():
+    clusterDict = {}
+    cluster_table_file = "cluster_table.txt"
+    with open(cluster_table_file,'r') as fin:
+       currCluster = None
+       for nLine, line in enumerate(fin):
+           if nLine%2 != 0:
+               currCluster.repSeqs += [seq for seq in line.strip('\n').split()]
+               continue
+           line = line.strip('\n').split('\t')
+           name,regex,suites,chi = line[:4]
+           nSuites = int(len(suites)/2)
+           suites = [suites[i*2:(i+1)*2] for i in range(nSuites)]
+           bp = [item[3:] for item in line[4:] if item.startswith("bp")]
+           hb = [item[3:] for item in line[4:] if item.startswith("hb")]
+           clusterDict[name] = Cluster(name,regex,suites,chi,bp,hb)
+           currCluster = clusterDict[name]
+    return clusterDict
+
+def getCluster(tetraLoopSeq):
+    matched_cluster = None
+    clusterDict = getClusterDict()
+    search_representative_seqs = [cluster for cluster in clusterDict.values() if any([tetraLoopSeq == seq for seq in cluster.repSeqs])]
+    if search_representative_seqs:
+        matched_cluster  = search_representative_seqs[0]
+    else:
+        search_regex = [cluster for cluster in clusterDict.values() if re.compile(cluster.regex).match(tetraLoopSeq)]
+        if search_regex:
+            matched_cluster = search_regex[0]
+    return matched_cluster
+
+def getLoopType(ss):
+   residues = ss.getResidues()
+   if ss.getName() == "Loop" and len(residues) == 4:
+       residues = [residues[0].getPrevious()] + residues + [residues[-1].getNext()]
+       loopSeq = ''.join([residue.getName() for residue in residues])
+       cluster = getCluster(loopSeq) 
+       if cluster:
+           return ":"+cluster.name
+   return ""
+   
 def getRNAResType(ss, residues, residue):
     ssType = ss.getName()
     res = int(residue.getNumber())
@@ -85,25 +137,36 @@ def getRNAResType(ss, residues, residue):
     if prevRes != None:
        ssPrevName = prevRes.getSecondaryStructure().getName()
        if ssNextName == "Loop":
-           subType = "hL"
+           ssNextType = getLoopType(nextRes.getSecondaryStructure())
+           subType = "hL:" + ssNextType 
     if ssType == "Helix":
         subType = 'h'
         if prevRes == None:
             subType = "h5"
         elif ssNextName == "Loop":
-            subType = "hL"
+            ssNextType = getLoopType(nextRes.getSecondaryStructure())
+            subType = "hL" + ssNextType
         elif ssPrevName == "Loop":
-            subType = "hl"
+            ssPrevType = getLoopType(prevRes.getSecondaryStructure())
+            subType = "hl" + ssPrevType
+        elif ssNextName == "Bulge":
+            subType = "hB0"+":"'B'+str(len(nextRes.getSecondaryStructure().getResidues()))
         elif ssPrevName == "Bulge":
-            subType = "hB"
+            subType = "hB1"+":"'B'+str(len(prevRes.getSecondaryStructure().getResidues()))
         elif pairRes.getPrevious():
             if pairRes.getPrevious().getSecondaryStructure().getName() == "Bulge":
-                subType = "hb"
+                subType = "hb1"+":"'B'+str(len(pairRes.getPrevious().getSecondaryStructure().getResidues()))
+        if pairRes.getNext():
+            if pairRes.getNext().getSecondaryStructure().getName() == "Bulge":
+                subType = "hb0"+":"'B'+str(len(pairRes.getNext().getSecondaryStructure().getResidues()))
 
     elif ssType == "Loop":
-        subType = 'T'
+        loopType = getLoopType(ss)
+        subType = 'T' + loopType 
     elif ssType == "Bulge":
-        subType = 'B'+str(len(residues))
+        subType = 'B'+str(len(ss.getResidues()))
+        #check whether res num is greater than paired res num, to determine orientation of bulge
+        subType = subType+'c' if int(ss.getResidues()[0].getPrevious().getNumber()) > int(ss.getResidues()[0].getPrevious().pairedTo.getNumber()) else subType
     if pairRes:
         rName2 = pairRes.getName()
         rName += rName2
@@ -1417,6 +1480,8 @@ class refine:
         angleDict = {}
         for line in lines:
             fields = line.strip().split()
+            if len(fields) < 6:
+                continue
             if headerAtoms == None:
                 headerAtoms = fields[5:]
             else:
@@ -1590,6 +1655,8 @@ class refine:
                             lock = False
                         if lastRes and not lockLast:
                             lock = False
+                        if lastRes and ("hL" in subType or "hl" in subType) and lockLoop:
+                            lock = True 
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, lock)
             elif ss.getName() == "Loop":
                 for iLoop,res in enumerate(residues):
@@ -2179,6 +2246,8 @@ class refine:
                 if line.startswith("#"):
                     continue
                 (residueNum, rotamerName) = line.split()
+                if rotamerName == "..":
+                    continue
                 angleBoundaries = RNARotamer.getAngleBoundaries(polymer, residueNum, rotamerName, mul)
                 for angleBoundary in angleBoundaries:
                     self.addAngleConstraint(angleBoundary)
@@ -2333,40 +2402,33 @@ class refine:
                 residues = ss.getResidues()
                 self.addHelix(residues)
                 self.addHelixPP(residues)
-        gnraPat = re.compile('G[AGUC][AG]A')
-        uncgPat = re.compile('U[AGUC]CG')
 
         pat = re.compile('\(\(\.\.\.\.\)\)')
         for m in pat.finditer(vienna):
-            gnraStart = m.start()+2
+            start = m.start()+1
             tetraLoopSeq = ""
             tetraLoopRes = []
-            for iRes in range(gnraStart,gnraStart+4):
+            for iRes in range(start,start+6):
                 residue = allResidues[iRes]
                 tetraLoopSeq += residue.getName()
                 tetraLoopRes.append(residue.getNumber())
-            if gnraPat.match(tetraLoopSeq):
-                res1 = allResidues[m.start()+2]
-                res1Num = res1.getNumber()
-                res2 = allResidues[m.start()+3]
-                res2Num = res2.getNumber()
-                res3 = allResidues[m.start()+4]
-                res3Num = res3.getNumber()
-                res4 = allResidues[m.start()+5]
-                res4Num = res4.getNumber()
-                res5 = allResidues[m.start()+6]
-                res5Num = res5.getNumber()
-                if res2.getPolymer() == res5.getPolymer():
-                    self.addSuiteBoundary(polymer, res1Num,"1a")
-                    self.addSuiteBoundary(polymer, res2Num,"1g")
-                    self.addSuiteBoundary(polymer, res3Num,"1a")
-                    self.addSuiteBoundary(polymer, res4Num,"1a")
-                    self.addSuiteBoundary(polymer, res5Num,"1c")
-                addGNRAHBonds = False
-                if addGNRAHBonds: 
-                    atomNameI = self.getAtomName(res1,"P")
-                    atomNameJ5 = self.getAtomName(res4,"P")
-                    self.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
+
+            matched_cluster = getCluster(tetraLoopSeq) 
+
+            if matched_cluster:            
+                loopResidues = [allResidues[start+i] for i in range(6)]
+                if loopResidues[1].getPolymer() == loopResidues[-1].getPolymer():
+                    for i, suite in enumerate(matched_cluster.suites):
+                        if suite != "..":
+                            res = loopResidues[i+1]
+                            self.addSuiteBoundary(polymer, res.getNumber(), suite)
+
+                bps = matched_cluster.bp
+                for bp in bps:
+                    (resNum1, resNum2) = bp.split(':')
+                    res1 = loopResidues[int(resNum1) - 1]
+                    res2 = loopResidues[int(resNum2) - 1]
+                    self.addBasePair(res1, res2)
 
     def restart(self):
         print 'restart'
