@@ -2693,17 +2693,17 @@ public class Molecule extends MoleculeBase {
     }
 
     public static void getCouplings(final Entity entity, final ArrayList<JCoupling> jCouplings,
-            final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks,
-            int nShells, int minShells, int tocsyShells, int hmbcShells) {
+                                    final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks,
+                                    int nShells, int minShells, int tocsyShells, int hmbcShells) {
         MoleculeBase molecule = entity.molecule;
         molecule.getAtomTypes();
 
         MTree mTree = new MTree();
         MTree mTreeJ = new MTree();
-        HashMap<Atom, Integer> hash = new HashMap<Atom, Integer>();
-        HashMap<Atom, Integer> hashJ = new HashMap<Atom, Integer>();
-        ArrayList<Atom> eAtomList = new ArrayList<Atom>();
-        ArrayList<Atom> eAtomListJ = new ArrayList<Atom>();
+        HashMap<Atom, Integer> hash = new HashMap<>();
+        HashMap<Atom, Integer> hashJ = new HashMap<>();
+        List<Atom> eAtomList = new ArrayList<>();
+        List<Atom> eAtomListJ = new ArrayList<>();
         int i = 0;
 
         for (Atom atom : entity.atoms) {
@@ -2714,36 +2714,29 @@ public class Molecule extends MoleculeBase {
                 }
                 Atom parent = atom.getParent();
                 if (parent != null) {
-                    if (parent.getAtomicNumber() == 7) {
-                        if (atom.isMethylene()) {
-                            continue;
-                        }
+                    if ((parent.getAtomicNumber() == 7) && atom.isMethylene()) {
+                        continue;
                     }
-                    if (parent.getAtomicNumber() == 8) {
+                    // skip hydroxyl protons
+                    if ((atom.getAtomicNumber() == 1) && (parent.getAtomicNumber() == 8)) {
                         continue;
                     }
                 }
-                hash.put(atom, Integer.valueOf(i));
+                hash.put(atom, i);
                 eAtomList.add(atom);
-
                 MNode mNode = mTree.addNode();
-                //atom.equivAtoms = null;
                 mNode.setAtom(atom);
-
-                //mNode.atom = atom;
                 i++;
             }
-
         }
-
         for (Atom atom : entity.atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
                 Bond bond = atom.bonds.get(iBond);
-                Integer iNodeBegin = (Integer) hash.get(bond.begin);
-                Integer iNodeEnd = (Integer) hash.get(bond.end);
+                Integer iNodeBegin = hash.get(bond.begin);
+                Integer iNodeEnd = hash.get(bond.end);
 
                 if ((iNodeBegin != null) && (iNodeEnd != null)) {
-                    mTree.addEdge(iNodeBegin.intValue(), iNodeEnd.intValue());
+                    mTree.addEdge(iNodeBegin, iNodeEnd);
                 }
             }
 
@@ -2753,7 +2746,7 @@ public class Molecule extends MoleculeBase {
         Atom[] atoms = new Atom[nShells + 1];
         int iAtom = 0;
         for (int j = 0, n = eAtomList.size(); j < n; j++) {
-            Atom atomStart = (Atom) eAtomList.get(j);
+            Atom atomStart = eAtomList.get(j);
             if (atomStart.aNum != 1) {
                 continue;
             }
@@ -2773,7 +2766,6 @@ public class Molecule extends MoleculeBase {
                 boolean pathOK = true;
                 for (int iShell = shell; iShell >= 0; iShell--) {
                     atoms[iShell] = nNode.getAtom();
-                    // fixme what elements are acceptable on path?
                     if (atoms[iShell].getAtomicNumber() == 8) {
                         pathOK = false;
                         break;
@@ -2789,11 +2781,9 @@ public class Molecule extends MoleculeBase {
                     gotJ = true;
                     JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
                     jCouplings.add(jCoupling);
-                } else if ((shell > 1) && (atoms[shell].aNum == 6)) {
-                    if (shell <= hmbcShells) {
-                        JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
-                        hmbcLinks.add(jCoupling);
-                    }
+                } else if ((shell > 1) && (atoms[0].aNum == 1) && (atoms[shell].aNum == 6) && (shell <= hmbcShells)) {
+                    JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
+                    hmbcLinks.add(jCoupling);
                 }
                 if (gotJ) {
                     if (!hashJ.containsKey(atomStart)) {
@@ -2813,20 +2803,15 @@ public class Molecule extends MoleculeBase {
                     Integer iNodeBegin = hashJ.get(atomStart);
                     Integer iNodeEnd = hashJ.get(atomEnd);
 
-                    if ((iNodeBegin != null) && (iNodeEnd != null)) {
-                        if (iNodeBegin.intValue() != iNodeEnd.intValue()) {
-                            if (iNodeBegin < iNodeEnd) {
-                                mTreeJ.addEdge(iNodeBegin, iNodeEnd);
-                            }
-                        }
+                    if ((iNodeBegin != null) && (iNodeEnd != null) && (iNodeBegin.intValue() != iNodeEnd.intValue()) && (iNodeBegin < iNodeEnd)) {
+                        mTreeJ.addEdge(iNodeBegin, iNodeEnd);
                     }
                 }
-
             }
         }
 
         for (int j = 0, n = eAtomListJ.size(); j < n; j++) {
-            Atom atomStart = (Atom) eAtomListJ.get(j);
+            Atom atomStart = eAtomListJ.get(j);
             if (atomStart.aNum != 1) {
                 continue;
             }
@@ -2851,7 +2836,6 @@ public class Molecule extends MoleculeBase {
                 }
             }
         }
-
     }
 
     public void genAngleBranches() {
