@@ -2719,7 +2719,8 @@ public class Molecule extends MoleculeBase {
                             continue;
                         }
                     }
-                    if (parent.getAtomicNumber() == 8) {
+                    // skip hydroxyl protons
+                    if ((atom.getAtomicNumber() == 1) && (parent.getAtomicNumber() == 8)) {
                         continue;
                     }
                 }
@@ -2730,17 +2731,15 @@ public class Molecule extends MoleculeBase {
                 //atom.equivAtoms = null;
                 mNode.setAtom(atom);
 
-                //mNode.atom = atom;
                 i++;
             }
 
         }
-
         for (Atom atom : entity.atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
                 Bond bond = atom.bonds.get(iBond);
-                Integer iNodeBegin = (Integer) hash.get(bond.begin);
-                Integer iNodeEnd = (Integer) hash.get(bond.end);
+                Integer iNodeBegin = hash.get(bond.begin);
+                Integer iNodeEnd = hash.get(bond.end);
 
                 if ((iNodeBegin != null) && (iNodeEnd != null)) {
                     mTree.addEdge(iNodeBegin.intValue(), iNodeEnd.intValue());
@@ -2789,7 +2788,7 @@ public class Molecule extends MoleculeBase {
                     gotJ = true;
                     JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
                     jCouplings.add(jCoupling);
-                } else if ((shell > 1) && (atoms[shell].aNum == 6)) {
+                } else if ((shell > 1) && (atoms[0].aNum == 1) && (atoms[shell].aNum == 6)) {
                     if (shell <= hmbcShells) {
                         JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
                         hmbcLinks.add(jCoupling);
