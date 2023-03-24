@@ -55,7 +55,7 @@ class TestMolPeakGen(unittest.TestCase):
         project.removePeakList(listName);
 
         Molecule.removeAll()
-        self.assertEqual(20,nPeaks)
+        self.assertEqual(22,nPeaks)
 
     def testsdfhmbc(self):
         Molecule.removeAll()
@@ -77,7 +77,7 @@ class TestMolPeakGen(unittest.TestCase):
         project.removePeakList(listName);
 
         Molecule.removeAll()
-        self.assertEqual(136,nPeaks)
+        self.assertEqual(139,nPeaks)
 
 
 if __name__ == '__main__':

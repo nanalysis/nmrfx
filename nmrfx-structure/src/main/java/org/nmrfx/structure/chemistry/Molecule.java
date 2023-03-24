@@ -2763,25 +2763,21 @@ public class Molecule extends MoleculeBase {
                 }
 
                 MNode nNode = mNode;
-                boolean pathOK = true;
+                int nOx = 0;
                 for (int iShell = shell; iShell >= 0; iShell--) {
                     atoms[iShell] = nNode.getAtom();
                     if (atoms[iShell].getAtomicNumber() == 8) {
-                        pathOK = false;
-                        break;
+                        nOx++;
                     }
                     nNode = nNode.getParent();
                 }
-                if (!pathOK) {
-                    continue;
-                }
                 boolean gotJ = false;
 
-                if ((shell > 1) && (atoms[shell].aNum == 1)) {
+                if ((nOx == 0) && (shell > 1) && (atoms[shell].aNum == 1)) {
                     gotJ = true;
                     JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
                     jCouplings.add(jCoupling);
-                } else if ((shell > 1) && (atoms[0].aNum == 1) && (atoms[shell].aNum == 6) && (shell <= hmbcShells)) {
+                } else if ((nOx < 2) && (shell > 1) && (atoms[0].aNum == 1) && (atoms[shell].aNum == 6) && (shell <= hmbcShells)) {
                     JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
                     hmbcLinks.add(jCoupling);
                 }
