@@ -398,6 +398,11 @@
             <artifactId>ojalgo</artifactId>
             <version>47.2.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.actelion.research</groupId>
+            <artifactId>openchemlib</artifactId>
+            <version>2023.3.3</version>
+        </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

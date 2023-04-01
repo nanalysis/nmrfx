@@ -101,6 +101,10 @@
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.actelion.research</groupId>
+            <artifactId>openchemlib</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
