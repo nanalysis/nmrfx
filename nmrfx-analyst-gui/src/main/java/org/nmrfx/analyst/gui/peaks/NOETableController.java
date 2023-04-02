@@ -209,7 +209,6 @@ public class NOETableController implements Initializable {
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
-
         for (String peakListName : Project.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
@@ -402,6 +401,10 @@ public class NOETableController implements Initializable {
     }
 
     void extractPeakList(PeakList peakList) {
+        if (NOEAssign.getProtonDims(peakList).isEmpty()) {
+            GUIUtils.warn("Extract Peaks", "Peak list " + peakList.getName() + " doesn't have two proton dimensions");
+            return;
+        }
         int nDim = peakList.nDim;
         try {
             for (int i = 0; i < nDim; i++) {
@@ -423,7 +426,7 @@ public class NOETableController implements Initializable {
             }
             setNoeSet(noeSet);
             updateNoeSetMenu();
-        } catch (InvalidMoleculeException ex) {
+        } catch (InvalidMoleculeException | IllegalArgumentException ex) {
             ExceptionDialog exD = new ExceptionDialog(ex);
             exD.show();
         }
