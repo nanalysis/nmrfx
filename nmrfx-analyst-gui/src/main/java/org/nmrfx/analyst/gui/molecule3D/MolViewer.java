@@ -733,7 +733,14 @@ public class MolViewer extends Pane {
         } else {
             throw new IllegalArgumentException("invalid type " + type);
         }
+    }
 
+    public void refresh() {
+        for (var obj:molGroup.getChildren()) {
+            if (obj instanceof MolItem molItem) {
+                molItem.refresh();
+            }
+        }
     }
 
     public void addSelectionListener(MolSelectionListener listener) {

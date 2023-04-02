@@ -15,4 +15,6 @@ public interface MolItem {
         return null;
     }
 
+    public void refresh();
+
 }
