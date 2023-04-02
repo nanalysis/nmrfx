@@ -229,7 +229,7 @@ public class ScannerTool implements ControllerTool {
     }
 
     private void scanDirAction() {
-        scanTable.loadScanFiles(stage);
+        scanTable.loadScanFiles();
     }
 
     private void loadTableAction() {

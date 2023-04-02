@@ -198,7 +198,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         MenuButton peakListMenuButton = initMenuBar();
-        peakNavigator = PeakNavigator.create(this).initialize(peakNavigatorToolBar, peakListMenuButton);
+        peakNavigator = PeakNavigator.create(this).addShowPeakButton().initialize(peakNavigatorToolBar, peakListMenuButton);
         initTable();
         initReferenceTable();
         setFieldActions();
@@ -339,6 +339,16 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     @Override
     public void copyPeakTableView() {
         TableUtils.copyTableToClipboard(peakTableView, true);
+    }
+
+    @Override
+    public void deletePeaks() {
+        peakNavigator.getPeak().delete();
+    }
+
+    @Override
+    public void restorePeaks() {
+        peakNavigator.getPeak().setStatus(0);
     }
 
     public void refreshPeakView() {

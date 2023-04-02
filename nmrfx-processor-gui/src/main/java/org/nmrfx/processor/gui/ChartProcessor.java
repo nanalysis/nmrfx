@@ -505,10 +505,7 @@ public class ChartProcessor {
         NMRData nmrData = getNMRData();
         int nPoints = nmrData.getNPoints();
         if (vecDim != 0) {
-            nPoints = nmrData.getSize(vecDim);
-            if (nmrData.isComplex(vecDim)) {
-                nPoints *= 2;
-            }
+            nPoints = nmrData.getSize(vecDim) * nmrData.getGroupSize(vecDim);
         }
         ProcessOps process = getProcess();
         process.clearVectors();
@@ -539,16 +536,18 @@ public class ChartProcessor {
                 }
                 fileIndices[j] = index + j;
                 nmrData.readVector(vecDim, index + j, newVec);
-                if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho")) {
-                    newVec.eaCombine(echoAntiEchoCoefs);
-                } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho-r")) {
-                    newVec.eaCombine(echoAntiEchoRCoefs);
-                } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper")) {
-                    newVec.eaCombine(hyperCoefs);
-                } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper-r")) {
-                    newVec.eaCombine(hyperRCoefs);
-                } else {
-                    newVec.hcCombine();
+                if (nmrData.getGroupSize(vecDim) > 1) {
+                    if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho")) {
+                        newVec.eaCombine(echoAntiEchoCoefs);
+                    } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho-r")) {
+                        newVec.eaCombine(echoAntiEchoRCoefs);
+                    } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper")) {
+                        newVec.eaCombine(hyperCoefs);
+                    } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper-r")) {
+                        newVec.eaCombine(hyperRCoefs);
+                    } else {
+                        newVec.hcCombine();
+                    }
                 }
             }
 
@@ -1266,10 +1265,12 @@ public class ChartProcessor {
 
         int[] tdSizes = new int[nDim + nArray];
         boolean[] complex = new boolean[nDim + nArray];
+        int[] groupSizes = new int[nDim + nArray];
         int j = 0;
         for (int i = 0; i < nDim; i++) {
             tdSizes[j] = nmrData.getSize(i);
             complex[j] = nmrData.isComplex(i);
+            groupSizes[i] = nmrData.getGroupSize(i);
 
             int arraySize = nmrData.getArraySize(i);
             if (arraySize != 0) {
@@ -1286,7 +1287,7 @@ public class ChartProcessor {
             }
         }
         if (nDim > 1) {
-            multiVecCounter = new MultiVecCounter(tdSizes, complex, acqOrder, nDim + nArray);
+            multiVecCounter = new MultiVecCounter(tdSizes, groupSizes, complex, acqOrder, nDim + nArray);
             vectorsPerGroup = multiVecCounter.getGroupSize();
         } else {
             vectorsPerGroup = 1;
@@ -1320,7 +1321,7 @@ public class ChartProcessor {
         vecDimName = "D1";
         boolean[] complex = new boolean[nDim];
         for (int iDim = 0; iDim < nDim; iDim++) {
-            complex[iDim] = data.isComplex(iDim);
+            complex[iDim] = data.getGroupSize(iDim) == 2;
         }
         processorController.updateDimChoice(complex);
         processorController.refManager.resetData();

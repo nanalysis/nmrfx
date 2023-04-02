@@ -205,7 +205,7 @@ public class NMRPipeData implements NMRData {
             fileName = String.format(fileName, 1);
             file = Paths.get(dirName, fileName).toFile();
         }
-        if (file.exists()) {
+        if (file.exists() && file.isFile()) {
             try (FileReader reader = new FileReader(file)) {
                 boolean ok = true;
                 for (int i = 0; i < 4; i++) {
@@ -607,10 +607,7 @@ public class NMRPipeData implements NMRData {
 
     public void readVector(int iDim, int iVec, Complex[] cdata) {
         int size = getSize(iDim);
-        int nPer = 1;
-        if (isComplex(iDim)) {
-            nPer = 2;
-        }
+        int nPer = getGroupSize(iDim);
         int nPoints = size * nPer;
         byte[] dataBuf = new byte[nPoints * 4 * 2];
         ByteBuffer buf = ByteBuffer.wrap(dataBuf);

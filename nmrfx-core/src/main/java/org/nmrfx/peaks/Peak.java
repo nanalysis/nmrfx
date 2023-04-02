@@ -215,7 +215,7 @@ public class Peak implements Comparable, PeakOrMulti {
         }
 
         int k = 0;
-        peak.getPeakRegion(theFile, pdim, p, cpt, width);
+        peak.getPeakRegion(theFile, pdim, p, cpt, width, null);
 
         for (int i = 0; i < dataDim; i++) {
             dim[i] = i;
@@ -969,7 +969,7 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public void delete() {
-        status = -1;
+        setStatus(-1);
     }
 
     @Override
@@ -1201,9 +1201,11 @@ public class Peak implements Comparable, PeakOrMulti {
      * @param cpt Array of ints specifying the center of the peak region.
      * @param width Array of doubles containing the widths of the peak in units
      * of dataset points. The width is determined by the peak linewidth
+     * @param meanLineWidths Array of mean widths of peaks in list. If null, the
+     *                       line width of individual peak is used.
      */
     public void getPeakRegion(DatasetBase theFile, int[] pdim, int[][] p,
-                              int[] cpt, double[] width) {
+                              int[] cpt, double[] width, double[] meanLineWidths) {
         double p1;
         double p2;
         double p1d;
@@ -1218,10 +1220,10 @@ public class Peak implements Comparable, PeakOrMulti {
             p2 = pc - Math.abs(peakDims[i].getBoundsValue()) / 2;
             p[pdim[i]][1] = theFile.ppmToFoldedPoint(pdim[i], p2);
             cpt[pdim[i]] = theFile.ppmToFoldedPoint(pdim[i], pc);
-
-            p1 = peakDims[i].getChemShiftValue() + (Math.abs(peakDims[i].getLineWidthValue()) / 2.0);
+            double lineWidth = meanLineWidths == null ? peakDims[i].getLineWidthValue() : meanLineWidths[i];
+            p1 = peakDims[i].getChemShiftValue() + (Math.abs(lineWidth) / 2.0);
             p1d = theFile.ppmToDPoint(pdim[i], p1);
-            p2 = peakDims[i].getChemShiftValue() - (Math.abs(peakDims[i].getLineWidthValue()) / 2.0);
+            p2 = peakDims[i].getChemShiftValue() - (Math.abs(lineWidth) / 2.0);
             p2d = theFile.ppmToDPoint(pdim[i], p2);
             width[pdim[i]] = Math.abs(p2d - p1d);
         }
@@ -1793,21 +1795,40 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public enum AssignmentLevel {
-        del("Deleted"),
-        none("None assigned"),
-        avm("All Assigned, Valid, Ambiguous"),
-        avu("All Assigned, Valid, Unambiguous"),
-        aim("All Assigned, Invalid, Ambiguous"),
-        aiu("All Assigned, Invalid, Unambiguous"),
-        svm("Some Assigned, Valid, Ambiguous"),
-        svu("Some Assigned, Valid, Unambiguous"),
-        sim("Some Assigned, Invalid, Ambiguous"),
-        siu("Some Assigned, Invalid, Unambiguous");
+        DELETED("Deleted"),
+        UNASSIGNED("None assigned"),
+        AVM("All Assigned, Valid, Ambiguous"),
+        AVU("All Assigned, Valid, Unambiguous"),
+        AIM("All Assigned, Invalid, Ambiguous"),
+        AIU("All Assigned, Invalid, Unambiguous"),
+        SVM("Some Assigned, Valid, Ambiguous"),
+        SVU("Some Assigned, Valid, Unambiguous"),
+        SIM("Some Assigned, Invalid, Ambiguous"),
+        SIU("Some Assigned, Invalid, Unambiguous");
 
         String description;
 
         AssignmentLevel(String description) {
             this.description = description;
+        }
+
+        @Override
+        public String toString() {
+            return description;
+        }
+
+        public static boolean match(AssignmentLevel level, String mode) {
+            return  switch (mode) {
+                case "all" ->  true;
+                case "ok" ->  level != DELETED;
+                case "deleted" ->  level == DELETED;
+                case "assigned" ->  level == AVU || level == AVM;
+                case "partial" ->  level == SVM || level == SVU;
+                case "unassigned" ->  level == UNASSIGNED;
+                case "ambiguous" ->  level == AVM || level == SVM;
+                case "invalid" -> level == AIM || level == AIU || level == SIM || level == SIU;
+                default -> true;
+            };
         }
     }
 
@@ -1818,7 +1839,7 @@ public class Peak implements Comparable, PeakOrMulti {
         boolean ambiguous = false;
         MoleculeBase molecule = MoleculeFactory.getActive();
         if (isDeleted()) {
-            return AssignmentLevel.del;
+            return AssignmentLevel.DELETED;
         }
         for (var peakDim : peakDims) {
             String labels = peakDim.getLabel();
@@ -1843,23 +1864,23 @@ public class Peak implements Comparable, PeakOrMulti {
         }
         AssignmentLevel result;
         if (!someAssigned) {
-            result = AssignmentLevel.none;
+            result = AssignmentLevel.UNASSIGNED;
         } else if (assigned && !invalid && ambiguous) {
-            result = AssignmentLevel.avm;
+            result = AssignmentLevel.AVM;
         } else if (assigned && !invalid && !ambiguous) {
-            result = AssignmentLevel.avu;
+            result = AssignmentLevel.AVU;
         } else if (assigned && invalid && ambiguous) {
-            result = AssignmentLevel.aim;
+            result = AssignmentLevel.AIM;
         } else if (assigned && invalid && !ambiguous) {
-            result = AssignmentLevel.aiu;
+            result = AssignmentLevel.AIU;
         } else if (someAssigned && !invalid && ambiguous) {
-            result = AssignmentLevel.svm;
+            result = AssignmentLevel.SVM;
         } else if (someAssigned && !invalid && !ambiguous) {
-            result = AssignmentLevel.svu;
+            result = AssignmentLevel.SVU;
         } else if (someAssigned && invalid && ambiguous) {
-            result = AssignmentLevel.sim;
+            result = AssignmentLevel.SIM;
         } else {
-            result = AssignmentLevel.siu;
+            result = AssignmentLevel.SIU;
         }
         return result;
     }

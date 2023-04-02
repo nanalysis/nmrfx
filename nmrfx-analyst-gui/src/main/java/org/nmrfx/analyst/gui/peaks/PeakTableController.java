@@ -25,6 +25,8 @@ package org.nmrfx.analyst.gui.peaks;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -32,6 +34,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -165,6 +168,20 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     }
 
     @Override
+    public void deletePeaks() {
+        deleteSelectedPeaks();
+    }
+
+    @Override
+    public void restorePeaks() {
+        List<Peak> selectedPeaks = tableView.getSelectionModel().getSelectedItems();
+        for(Peak peak: selectedPeaks) {
+            peak.setStatus(0);
+        }
+        tableView.getSelectionModel().clearSelection();
+    }
+
+    @Override
     public void refreshPeakView() {
         tableView.refresh();
     }
@@ -194,7 +211,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         }
     }
 
-    private class ColumnFormatter<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
+    private static class ColumnFormatter<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
 
         private Format format;
 
@@ -219,21 +236,16 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         }
     }
 
-    class PeakStringFieldTableCell extends TextFieldTableCell<Peak, String> {
+    private static class PeakStringFieldTableCell extends TextFieldTableCell<Peak, String> {
 
-        PeakStringFieldTableCell(StringConverter converter) {
+        PeakStringFieldTableCell(StringConverter<String> converter) {
             super(converter);
-            setBackground(new Background(new BackgroundFill(Color.YELLOW, null, null)));
         }
 
         @Override
         public void updateItem(String item, boolean empty) {
             super.updateItem(item, empty);
-            if (item != null) {
-                setText(String.valueOf(item));
-            } else {
-                setText(null);
-            }
+            setText(item);
         }
 
     }
@@ -257,6 +269,18 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         });
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         tableView.setOnKeyPressed(this::keyPressed);
+        tableView.setRowFactory(tv -> new TableRow<Peak>() {
+            @Override
+            public void updateItem(Peak item, boolean empty) {
+                super.updateItem(item, empty) ;
+                if (item == null || !item.isDeleted()) {
+                    setStyle("");
+                } else {
+                    setStyle("-fx-background-color: rgba(255, 0, 0, 0.4);");
+                }
+            }
+        });
+
     }
 
     public void keyPressed(KeyEvent keyEvent) {
@@ -270,7 +294,17 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 TableUtils.copyTableToClipboard(tableView, false);
             }
             keyEvent.consume();
+        } else if (code == KeyCode.DELETE) {
+            deleteSelectedPeaks();
         }
+    }
+
+    private void deleteSelectedPeaks() {
+        List<Peak> selectedPeaks = new ArrayList<>(tableView.getSelectionModel().getSelectedItems());
+        for (Peak peak: selectedPeaks) {
+            peak.delete();
+        }
+        tableView.getSelectionModel().clearSelection();
     }
 
     void updateColumns(int nDim) {
@@ -373,7 +407,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             tableView.getColumns().addAll(shiftCol);
         }
         if (nDim == 1) {
-            StringConverter sConverter = new DefaultStringConverter();
+            StringConverter<String> sConverter = new DefaultStringConverter();
             TableColumn<Peak, String> multipletCol = new TableColumn<>("multiplet");
             multipletCol.setCellFactory(tc -> new PeakStringFieldTableCell(sConverter));
             multipletCol.setCellValueFactory((CellDataFeatures<Peak, String> p) -> {

@@ -63,7 +63,7 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
         getColumns().add(peakNumberCol);
 
         TableColumn<PeakList, Number> deletedNumberCol = new TableColumn<>(NUMBER_DELETED_COLUMN_NAME);
-        deletedNumberCol.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getAssignmentStatus().get(Peak.AssignmentLevel.del)));
+        deletedNumberCol.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getAssignmentStatus().get(Peak.AssignmentLevel.DELETED)));
         getColumns().add(deletedNumberCol);
 
         TableColumn<PeakList, Number> assignedNumberCol = new TableColumn<>(NUMBER_ASSIGNED_COLUMN_NAME);
