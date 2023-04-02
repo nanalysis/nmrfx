@@ -28,6 +28,7 @@ public class Bond implements IBond, Serializable {
     static final public int STEREO_BOND_UP = 10;
     static final public int STEREO_BOND_DOWN = 11;
     static final public int STEREO_BOND_EITHER = 12;
+    static final public int STEREO_BOND_CROSS = 13;
     static final public int VISITED = 0;
     static final public int ISAROMATIC = 1;
     boolean[] properties;

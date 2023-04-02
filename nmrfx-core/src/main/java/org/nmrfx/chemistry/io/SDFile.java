@@ -275,6 +275,9 @@ public class SDFile {
                     case 1:
                         stereo = Bond.STEREO_BOND_UP;
                         break;
+                    case 3:
+                        stereo = Bond.STEREO_BOND_CROSS;
+                        break;
                     case 4:
                         stereo = Bond.STEREO_BOND_EITHER;
                         break;
