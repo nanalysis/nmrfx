@@ -23,34 +23,21 @@
  */
 package org.nmrfx.analyst.gui.peaks;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.text.DecimalFormat;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ResourceBundle;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.*;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Side;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import java.text.Format;
-import java.util.Optional;
-import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.MapChangeListener;
-import javafx.collections.ObservableList;
-import javafx.collections.ObservableMap;
-import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
@@ -66,16 +53,25 @@ import org.nmrfx.chemistry.constraints.Noe;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.noe.NOEAssign;
 import org.nmrfx.structure.noe.NOECalibrator;
-import org.nmrfx.structure.noe.NoeCalibration;
-import org.nmrfx.structure.noe.NoeCalibrationExp;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.properties.ChoiceOperationItem;
 import org.nmrfx.utils.properties.DoubleRangeOperationItem;
 import org.nmrfx.utils.properties.NvFxPropertyEditorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.Format;
+import java.util.List;
+import java.util.Optional;
+import java.util.ResourceBundle;
 
 /**
  *
@@ -104,6 +100,11 @@ public class NOETableController implements Initializable {
     PropertySheet propertySheet;
     CheckBox detailsCheckBox;
     DoubleRangeOperationItem refDistanceItem;
+    DoubleRangeOperationItem expItem;
+    DoubleRangeOperationItem minDisItem;
+    DoubleRangeOperationItem maxDisItem;
+    DoubleRangeOperationItem fErrorItem;
+    ChoiceOperationItem modeItem;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -114,6 +115,7 @@ public class NOETableController implements Initializable {
         masterDetailPane.setDetailSide(Side.RIGHT);
         masterDetailPane.setDetailNode(propertySheet);
         masterDetailPane.setShowDetailNode(true);
+        propertySheet.setPrefWidth(250);
         propertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory());
         propertySheet.setMode(PropertySheet.Mode.CATEGORY);
         propertySheet.setModeSwitcherVisible(false);
@@ -139,10 +141,19 @@ public class NOETableController implements Initializable {
         updateNoeSetMenu();
         updatePeakListMenu();
         masterDetailPane.showDetailNodeProperty().bindBidirectional(detailsCheckBox.selectedProperty());
+        List<String> intVolChoice = List.of("Intensity", "Volume");
+        modeItem = new ChoiceOperationItem((a, b, c) -> refresh(), "intensity", intVolChoice,"Exp Calibrate", "Mode", "Reference Distance");
         refDistanceItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
-                3.0, 1.0, 7.0, false, "Exp Calibrate", "RefDist", "Reference Distance for Exp. Calibration");
-        propertySheet.getItems().addAll(refDistanceItem);
-
+                3.0, 1.0, 6.0, false, "Exp Calibrate", "Ref Distance", "Reference Distance");
+        expItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+                6.0, 1.0, 6.0, false, "Exp Calibrate", "Exp Factor", "Exponent value");
+        minDisItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+                2.0, 1.0, 3.0, false, "Exp Calibrate", "Min Distance", "Minimum bound");
+        maxDisItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+                6.0, 3.0, 6.0, false, "Exp Calibrate", "Max Distance", "Maximum bound");
+        fErrorItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+                0.125, 0.0, 0.2, false, "Exp Calibrate", "Tolerance", "Fractional additional bound");
+        propertySheet.getItems().addAll(modeItem, refDistanceItem, expItem, minDisItem, maxDisItem, fErrorItem);
     }
 
     public Stage getStage() {
@@ -182,12 +193,14 @@ public class NOETableController implements Initializable {
     void initToolBar() {
         Button exportButton = new Button("Export");
         exportButton.setOnAction(e -> exportNMRFxFile());
+        Button clearButton = new Button("Clear");
+        clearButton.setOnAction(e -> clearNOESet());
         Button calibrateButton = new Button("Calibrate");
         calibrateButton.setOnAction(e -> calibrate());
         noeSetMenuItem = new MenuButton("NoeSets");
         peakListMenuButton = new MenuButton("PeakLists");
         detailsCheckBox = new CheckBox("Details");
-        toolBar.getItems().addAll(exportButton, noeSetMenuItem, peakListMenuButton, detailsCheckBox, calibrateButton);
+        toolBar.getItems().addAll(exportButton, clearButton,  noeSetMenuItem, peakListMenuButton, calibrateButton, detailsCheckBox);
         updateNoeSetMenu();
     }
 
@@ -229,10 +242,6 @@ public class NOETableController implements Initializable {
                 exceptionDialog.show();
             }
         }
-    }
-
-    public void refreshPeakView() {
-        tableView.refresh();
     }
 
     public NoeSet getNoeSet() {
@@ -281,14 +290,14 @@ public class NOETableController implements Initializable {
             boolean state = nSelected == 1;
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(listener);
-//        tableView.setOnMouseClicked(e -> {
-//            if (e.getClickCount() == 2) {
-//                if (!tableView.getSelectionModel().getSelectedItems().isEmpty()) {
-//                    Noe peak = tableView.getSelectionModel().getSelectedItems().get(0);
-//                    showPeakInfo(peak);
-//                }
-//            }
-//        });
+        tableView.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                if (!tableView.getSelectionModel().getSelectedItems().isEmpty()) {
+                    Noe noe = tableView.getSelectionModel().getSelectedItems().get(0);
+                    showPeakInfo(noe);
+                }
+            }
+        });
     }
 
     void updateColumns() {
@@ -391,10 +400,15 @@ public class NOETableController implements Initializable {
             noeSet = noeSetOpt.get();
         }
         if (noeSetOpt.isPresent()) {
-            double referenceDist = refDistanceItem.doubleValue();
+            String intVolChoice = modeItem.getValue().toLowerCase();
+            double referenceDistance = refDistanceItem.doubleValue();
+            double expValue = expItem.doubleValue();
+            double minDistance = minDisItem.doubleValue();
+            double maxDistance = maxDisItem.doubleValue();
+            double fError = fErrorItem.doubleValue();
             noeSetOpt.get().setCalibratable(true);
             NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
-            noeCalibrator.setScale(referenceDist);
+            noeCalibrator.setScale(intVolChoice, referenceDistance, expValue, minDistance, maxDistance, fError);
             noeCalibrator.calibrateExp(null);
             refresh();
         }
@@ -432,11 +446,20 @@ public class NOETableController implements Initializable {
         }
     }
 
-    void showPeakInfo(Noe noe) {
-
+    void clearNOESet() {
+        if (GUIUtils.affirm("Clear active set")) {
+            Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
+            noeSetOpt.ifPresent(noeSet -> noeSet.clear());
+            refresh();
+        }
     }
 
-    void closePeak() {
-
+    void showPeakInfo(Noe noe) {
+        Peak peak = noe.peak;
+        if (peak != null) {
+            FXMLController.showPeakAttr();
+            FXMLController.getPeakAttrController().gotoPeak(peak);
+            FXMLController.getPeakAttrController().getStage().toFront();
+        }
     }
 }

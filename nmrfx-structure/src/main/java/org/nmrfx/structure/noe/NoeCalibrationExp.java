@@ -50,7 +50,6 @@ public class NoeCalibrationExp extends NoeCalibration {
     }
 
     public void calibrate(Noe noe) {
-        // fixme  what about negative NOE peaks?
         if (!noe.isActive()) {
             return;
         }

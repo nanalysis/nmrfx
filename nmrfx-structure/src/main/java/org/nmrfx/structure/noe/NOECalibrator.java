@@ -78,18 +78,13 @@ public class NOECalibrator {
         scaleMap.put(peakList, noeCal);
     }
 
-    public void setScale(double referenceDist) {
+    public void setScale(String mMode, double referenceDist, double expValue, double minBound, double maxBound, double fError) {
         for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
             PeakList peakList = entry.getKey().getPeakList();
-            String mMode = "intensity";
             HashMap<PeakList, List<Double>> medianMap = calcMedian(mMode, peakList);
             List<Double> valueList = medianMap.get(peakList);
             double referenceValue = valueList.get(2);
-            double expValue = 6.0;
             double lower = 1.8;
-            double minBound = 2.0;
-            double maxBound = 6.0;
-            double fError = 0.125;
             NoeCalibration noeCal = new NoeCalibrationExp(mMode, lower, referenceValue, referenceDist, expValue, minBound, maxBound, fError, true);
             scaleMap.put(peakList, noeCal);
         }
