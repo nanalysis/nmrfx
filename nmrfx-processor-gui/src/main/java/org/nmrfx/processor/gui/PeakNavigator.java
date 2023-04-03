@@ -585,8 +585,7 @@ public class PeakNavigator implements PeakListener {
 
     private void handlePeakListChangedEvent(){
         if (currentPeak != null) {
-            deleteButton.setSelected(currentPeak.isDeleted());
-            setDeleteStatus(deleteButton);
+            updateDeleteStatus();
         }
         peakNavigable.refreshPeakView();
     }
