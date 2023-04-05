@@ -64,7 +64,7 @@ def areShiftsUnique(globalDict, shiftDict):
     return iMatch
                 
 
-def scanPDB(fileName, aNames, allMode, vienna=None):
+def scanPDBOff(fileName, aNames, allMode, vienna=None):
     mol = molio.readPDB(fileName)
     if vienna == None:
         vienna,dotBracketDict = measure.rnaDotBracket(mol)
@@ -83,6 +83,26 @@ def scanPDB(fileName, aNames, allMode, vienna=None):
             if iMatch >= 0 or allMode:
                 print(str(iMatch)+' '+outLine)
             start += 1
+
+def scanPDB(fileName, aNames, allMode, vienna=None):
+    mol = molio.readPDB(fileName)
+    if vienna == None:
+        vienna,dotBracketDict = measure.rnaDotBracket(mol)
+    ssGen = SSGen(mol, vienna)
+    ssGen.secondaryStructGen()
+    allShifts=[]
+    for polymer in mol.getPolymers():
+        start = 0
+        residues = polymer.getResidues()
+        for lineNum, residue in enumerate(residues):
+            index = start
+            ss = residue.getSecondaryStructure()
+            shiftDict, outLine = dumpLine(ss,residues, residue,index)
+            iMatch = areShiftsUnique(allShifts, shiftDict)
+            if iMatch >= 0 or allMode:
+                print(str(lineNum+1)+' '+str(iMatch)+' '+outLine)
+            start += 1
+
 
 def scanAngles(fileName):
     atomDict = collections.OrderedDict()
@@ -126,6 +146,8 @@ if len(sys.argv) > 2:
     angleFile = sys.argv[1]
     pdbFile = sys.argv[2]
     atomDict,resDict = scanAngles(angleFile)
-    aNames = atomDict.keys()
+    #aNames = atomDict.keys()
+    #match header order in angles.txt 
+    aNames = ['P', "O5'", "C5'", "C4'", "C3'", "-1:O3'", "C2'", "C1'", 'N9', 'N1', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', "XC4'", "XC3'", "XO3'"]
     writeHeader()
     scanPDB(pdbFile, aNames, allMode)
