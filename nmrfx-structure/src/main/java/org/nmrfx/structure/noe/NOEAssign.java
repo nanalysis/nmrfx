@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
  * @author brucejohnson
  */
 public class NOEAssign {
-
     private static final Logger log = LoggerFactory.getLogger(NOEAssign.class);
 
     public static Optional<int[]> getProtonDims(PeakList peakList) {
@@ -379,6 +378,14 @@ public class NOEAssign {
                         for (Map.Entry<String, Noe.NoeMatch> entry : map.entrySet()) {
                             Noe.NoeMatch nM = entry.getValue();
                             final Noe noe = new Noe(peak, nM.sp1, nM.sp2, scale);
+                            double atomScale = 1.0;
+                            if (nM.sp1.getAtom().isMethyl()) {
+                                atomScale *= 3.0;
+                            }
+                            if (nM.sp2.getAtom().isMethyl()) {
+                                atomScale *= 3.0;
+                            }
+                            noe.atomScale = atomScale;
                             noe.setIntensity(peak.getIntensity());
                             noe.setVolume(peak.getVolume1());
                             noe.setPpmError(nM.error);
