@@ -19,7 +19,6 @@
 package org.nmrfx.structure.noe;
 
 import org.nmrfx.chemistry.constraints.Noe;
-import org.nmrfx.structure.noe.NoeCalibration;
 
 /**
  *
@@ -34,7 +33,7 @@ public class NoeCalibrationExp extends NoeCalibration {
     final double minBound;
     final double maxBound;
     final double fError;
-    static final double floor = 1.0e-16;
+    static final double INTENSITY_FLOOR = 1.0e-16;
 
     public NoeCalibrationExp(final String measurementMode, final double lower, final double referenceValue, final double referenceDist, final double expValue, final double minBound, final double maxBound, final double fError, final boolean removeRedundant) {
         this.mMode = MeasurementMode.select(measurementMode);
@@ -46,7 +45,6 @@ public class NoeCalibrationExp extends NoeCalibration {
         this.lower = lower;
         this.fError = fError;
         this.removeRedundant = removeRedundant;
-        System.out.println(referenceValue + " " + referenceDist + " " + expValue + " " + minBound + " " + maxBound);
     }
 
     public void calibrate(Noe noe) {
@@ -57,19 +55,18 @@ public class NoeCalibrationExp extends NoeCalibration {
         double bound = maxBound;
         double target = maxBound;
         double intensity = Math.abs(mMode.measure(noe));
-        if (intensity > floor) {
+        if (intensity > INTENSITY_FLOOR) {
             double I = intensity / noe.getScale() / noe.atomScale / C;
             if (I > 0.0) {
                 target = Math.pow(I, -1.0 / expValue);
             }
-            target = target > maxBound ? maxBound : target;
-            target = target < minBound ? minBound : target;
+            target = Math.min(target, maxBound);
+            target = Math.max(target, minBound);
 
             bound = target + target * target * fError;
-            bound = bound > maxBound ? maxBound : bound;
-            bound = bound < minBound ? minBound : bound;
+            bound = Math.min(bound, maxBound);
+            bound = Math.max(bound, minBound);
         }
-        System.out.println("ref " + referenceDist + " " + expValue + " " + intensity + " " + bound);
         noe.setTarget(target);
         noe.setUpper(bound);
         noe.setLower(lower);
