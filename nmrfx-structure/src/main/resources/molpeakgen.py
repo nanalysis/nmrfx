@@ -354,7 +354,7 @@ class MolPeakGen:
         entities = self.getResiduesAndCompounds(self.mol)
         for entity in entities:
             cList = CouplingList()
-            cList.generateCouplings(entity, 3, 2, 2, transfers)
+            cList.generateCouplings(entity, transfers, 2, 2, transfers)
             tLinks = cList.getHMBCLinks()
             for link in tLinks:
                 nAtoms = link.getNAtoms()

@@ -657,7 +657,7 @@ public class ScanTable {
                                     notDouble[iField] = true;
                                 }
                             }
-                            fieldMap.put(headers[iField], fields[iField]);
+                            fieldMap.put(headers[iField].toLowerCase(), fields[iField]);
                         }
                         boolean hasAll = true;
                         int nDim = 1;
@@ -688,11 +688,12 @@ public class ScanTable {
                         }
 
                         if (!hasAll) {
-                            if ((fileName == null) || (fileName.length() == 0)) {
-                                log.info("No path field or value");
+                            if ((fileName == null) || fileName.isBlank()) {
+                                GUIUtils.warn("Load scan table", "No value in path field");
                                 return;
                             }
                             if ((scanDir == null) || scanDir.toString().isBlank()) {
+                                GUIUtils.warn("Load scan table", "No scan directory");
                                 return;
                             }
                             Path filePath = FileSystems.getDefault().getPath(scanDir.toString(), fileName);
@@ -701,6 +702,7 @@ public class ScanTable {
                             try {
                                 nmrData = NMRDataUtil.getFID(filePath.toString());
                             } catch (IOException ioE) {
+                                GUIUtils.warn("Load scan table", "Couldn't load this file: " + filePath.toString());
                                 return;
                             }
 
