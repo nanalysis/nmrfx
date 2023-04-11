@@ -114,12 +114,14 @@ def getCluster(tetraLoopSeq):
 
 def getLoopType(ss):
    residues = ss.getResidues()
-   if ss.getName() == "Loop" and len(residues) == 4:
-       residues = [residues[0].getPrevious()] + residues + [residues[-1].getNext()]
-       loopSeq = ''.join([residue.getName() for residue in residues])
-       cluster = getCluster(loopSeq) 
-       if cluster:
-           return ":"+cluster.name
+   if ss.getName() == "Loop":
+       if len(residues) == 4:
+           residues = [residues[0].getPrevious()] + residues + [residues[-1].getNext()]
+           loopSeq = ''.join([residue.getName() for residue in residues])
+           cluster = getCluster(loopSeq) 
+           if cluster:
+               return ":"+cluster.name
+       return str(len(residues))
    return ""
    
 def getRNAResType(ss, residues, residue):
@@ -1387,6 +1389,8 @@ class refine:
             if len(self.molecule.getEntities()) > 1:
                 linkerList = self.validateLinkerList(linkerList, treeDict, rnaLinkerDict)
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
+            #if 'bonds' in data:
+            #    self.processBonds(data['bonds'], 'break')
             self.measureTree()
         else:
             if nEntities > 1:
