@@ -1112,10 +1112,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param width Array of widths of peaks
      * @param pdim Array of integers indicating mapping of peak dimension to
      * dataset dimension
-     * @param multiplier unused?? should multiply width of regions
+     * @param multiplier   multiply width of regions to get elliptical region
+     * @param minWidth: minimum half width (in points) of region.  Ensures that at least a minium number of peaks are used
      * @return List of points near peak centers
      */
-    public ArrayList<int[]> getFilteredPositions(final int[][] p2, final int[][] cpt, final double[][] width, int[] pdim, double multiplier) {
+    public ArrayList<int[]> getFilteredPositions(final int[][] p2, final int[][] cpt, final double[][] width, int[] pdim, double multiplier, int minWidth) {
         int[] sizes = new int[p2.length];
         for (int iDim = 0; iDim < p2.length; iDim++) {
             if (p2[iDim][1] >= p2[iDim][0]) {
@@ -1149,7 +1150,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                         return posArray;
                     }
                     if (width[iPeak][iDim] != 0.0) {
-                        delta2 += ((value - cpt[iPeak][iDim]) * (value - cpt[iPeak][iDim])) / (0.47 * width[iPeak][iDim] * width[iPeak][iDim]);
+                        double scaledWidth = multiplier * width[iPeak][iDim] / 2.0;
+                        int delta = Math.abs(value - cpt[iPeak][iDim]);
+                        if (delta > minWidth) {
+                            delta2 += (delta *delta) / (scaledWidth * scaledWidth);
+                        }
                     }
                     iDim++;
                 }
