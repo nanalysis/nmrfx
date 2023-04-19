@@ -4,12 +4,25 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import com.actelion.research.chem.Molecule3D;
 import com.actelion.research.chem.SmilesParser;
 import com.actelion.research.chem.StereoMolecule;
+import com.actelion.research.chem.conf.VDWRadii;
+import com.actelion.research.chem.descriptor.flexophore.calculator.StructureCalculator;
+import com.actelion.research.chem.forcefield.mmff.ForceFieldMMFF94;
+import com.actelion.research.chem.forcefield.mmff.MMFFMolecule;
+import com.actelion.research.chem.forcefield.mmff.Tables;
+import com.actelion.research.chem.forcefield.mmff.type.Charge;
+import com.actelion.research.chem.interactionstatistics.InteractionAtomTypeCalculator;
+import com.actelion.research.chem.io.pdb.converter.BondsCalculator;
+import com.actelion.research.chem.io.pdb.converter.GeometryCalculator;
 import org.nmrfx.chemistry.*;
 import org.openmolecules.chem.conf.gen.ConformerGenerator;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 import static org.nmrfx.chemistry.Bond.*;
 
@@ -111,6 +124,47 @@ public class OpenChemLibConverter {
                 default -> com.actelion.research.chem.Molecule.cBondTypeSingle;
             };
         };
+    }
+
+    public static StereoMolecule convertXYZToStereoMolecule(String xyzString) throws Exception {
+        String[] lines = xyzString.split("\n");
+        var stereoMolecule = new StereoMolecule();
+        int structureNumber = 0;
+        //dsgdb9nsd_000001,0,C,-0.012698135900000001,1.0858041578,0.008000995799999999
+        boolean nameSet = false;
+        for (String line : lines) {
+            String[] fields = line.split(",");
+            if (!nameSet) {
+                String molName = fields[0];
+                stereoMolecule.setName(molName);
+                nameSet = true;
+            }
+            String elemName = fields[2];
+            double x = Double.parseDouble(fields[3]);
+            double y = Double.parseDouble(fields[4]);
+            double z = Double.parseDouble(fields[5]);
+            int iAtom = stereoMolecule.addAtom(elemName);
+            stereoMolecule.setAtomX(iAtom, x);
+            stereoMolecule.setAtomY(iAtom, y);
+            stereoMolecule.setAtomZ(iAtom, z);
+        }
+        //   BondsCalculator.createBonds(stereoMolecule, true, null);
+        int nAtoms = stereoMolecule.getAllAtoms();
+        for (int i = 0; i < nAtoms; i++) {
+            for (int j = i + 1; j < nAtoms; j++) {
+                double dis = stereoMolecule.getCoordinates(i).distance(stereoMolecule.getCoordinates(j));
+                double idealDist = VDWRadii.COVALENT_RADIUS[stereoMolecule.getAtomicNo(i)]
+                        + VDWRadii.COVALENT_RADIUS[stereoMolecule.getAtomicNo(j)];
+                if (dis < idealDist + 0.45) {
+                    stereoMolecule.addBond(i, j, 1);
+                }
+            }
+        }
+
+        stereoMolecule.ensureHelperArrays(StereoMolecule.cHelperBitParities);
+        BondsCalculator.calculateBondOrders(stereoMolecule, true);
+        stereoMolecule.ensureHelperArrays(StereoMolecule.cHelperBitParities);
+        return stereoMolecule;
     }
 
     public static StereoMolecule convertToStereoMolecule(Molecule molecule) {

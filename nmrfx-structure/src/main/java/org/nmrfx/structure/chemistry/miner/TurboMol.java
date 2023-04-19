@@ -1,12 +1,18 @@
 package org.nmrfx.structure.chemistry.miner;
 
 import java.io.*;
+import java.util.List;
+import java.util.Optional;
+
+import com.actelion.research.chem.MolfileCreator;
+import com.actelion.research.chem.StereoMolecule;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
+import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,11 +22,16 @@ public class TurboMol {
     String inputData = null;
     String inFileName = null;
     String outValue = null;
-    MoleculeBase inMolecule = null;
+    Object inMolecule = null;
     BufferedReader bufReader = null;
+    String currentLine = null;
 
-    public MoleculeBase getMolecule() {
-        return inMolecule;
+    public Optional<MoleculeBase> getMolecule() {
+        if (inMolecule instanceof MoleculeBase mol) {
+            return Optional.of(mol);
+        } else {
+            return Optional.empty();
+        }
     }
 
     public void setMolecule(Molecule iMol) {
@@ -28,33 +39,40 @@ public class TurboMol {
     }
 
     public void labelAtoms() {
-        int i = 0;
-        for (Entity entity : inMolecule.entities.values()) {
-            for (Atom atom : entity.getAtoms()) {
-                atom.setID(i++);
+        getMolecule().ifPresent(mol ->{
+            int i = 0;
+            for (Entity entity : mol.entities.values()) {
+                for (Atom atom : entity.getAtoms()) {
+                    atom.setID(i++);
+                }
             }
-        }
+        });
     }
 
     public void removeHydrogens() {
-        int i = 0;
-        inMolecule.entities.values().forEach((entity) -> {
-            entity.getAtoms().stream().filter((atom) -> (atom.getAtomicNumber() == 1)).forEachOrdered((atom) -> {
-                atom.remove();
-            });
-        });
-    }
-    
-    public void getNeighborCount() {
-        int i = 0;
-        inMolecule.entities.values().forEach((entity) -> {
-            entity.getAtoms().stream().filter((atom) -> (atom.getAtomicNumber() == 1)).forEachOrdered((atom) -> {
-                atom.getConnected().size();
+        getMolecule().ifPresent(mol -> {
+            int i = 0;
+            mol.entities.values().forEach((entity) -> {
+                entity.getAtoms().stream().filter((atom) -> (atom.getAtomicNumber() == 1)).forEachOrdered((atom) -> {
+                    atom.remove();
+                });
             });
         });
     }
 
-//    public IAtom getAtom(final int index) {
+    public void getNeighborCount() {
+        getMolecule().ifPresent(mol -> {
+
+            int i = 0;
+            mol.entities.values().forEach((entity) -> {
+                entity.getAtoms().stream().filter((atom) -> (atom.getAtomicNumber() == 1)).forEachOrdered((atom) -> {
+                    atom.getConnected().size();
+                });
+            });
+        });
+    }
+
+    //    public IAtom getAtom(final int index) {
 //        IAtom atom = null;
 //        if (inMolecule != null) {
 //            atom = inMolecule.getAtom(index);
@@ -116,12 +134,82 @@ public class TurboMol {
         }
     }
 
+    String getLine() {
+        String s = null;
+        try {
+            if (currentLine == null) {
+                s = bufReader.readLine();
+            } else {
+                s = currentLine;
+                currentLine = null;
+            }
+        } catch (IOException ioE) {
+            bufReader = null;
+            s=null;
+        }
+        return s;
+    }
+
+    void restoreLine(String s) {
+        currentLine = s;
+    }
+
+    /*
+    dsgdb9nsd_000001,0,C,-0.012698135900000001,1.0858041578,0.008000995799999999
+    dsgdb9nsd_000001,1,H,0.002150416,-0.0060313176,0.0019761204
+    dsgdb9nsd_000001,2,H,1.0117308433,1.4637511618,0.0002765748
+    dsgdb9nsd_000001,3,H,-0.540815069,1.4475266138,-0.8766437152
+    dsgdb9nsd_000001,4,H,-0.5238136345000001,1.4379326443,0.9063972942
+    dsgdb9nsd_000002,0,N,-0.0404260543,1.0241077531,0.0625637998
+
+     */
+    public boolean setInputFromNextXYZ() {
+        if (bufReader == null) {
+            return false;
+        }
+        String molName = null;
+        String s = null;
+        StringBuilder sBuf = new StringBuilder();
+        while ((s = getLine()) != null) {
+            int commaPos = s.indexOf(',');
+            String thisMol = s.substring(0, commaPos);
+            if (molName == null) {
+                molName = thisMol;
+                sBuf.append(s).append('\n');
+            } else if (molName.equals(thisMol)) {
+                sBuf.append(s).append('\n');
+            } else {
+                restoreLine(s);
+                break;
+            }
+        }
+        if (!sBuf.isEmpty()) {
+            inputData = sBuf.toString();
+            return true;
+        }
+        bufReader = null;
+        return false;
+    }
+
+    public StereoMolecule fromXYZ()  {
+        StereoMolecule stereoMolecule = null;
+        try {
+            stereoMolecule = OpenChemLibConverter.convertXYZToStereoMolecule(inputData);
+            stereoMolecule.ensureHelperArrays(StereoMolecule.cHelperBitParities);
+            inMolecule = stereoMolecule;
+        } catch (Exception iE) {
+
+        }
+        return stereoMolecule;
+    }
+
+
     public void setInputFromFile(String fileName) {
 
         StringBuffer sBuf = new StringBuffer();
         String s = null;
 
-        try (BufferedReader bfReader = fileName.equals("-") ? new BufferedReader(new InputStreamReader(System.in)) : new BufferedReader(new FileReader(fileName))){
+        try (BufferedReader bfReader = fileName.equals("-") ? new BufferedReader(new InputStreamReader(System.in)) : new BufferedReader(new FileReader(fileName))) {
             while ((s = bfReader.readLine()) != null) {
                 sBuf.append(s);
                 sBuf.append('\n');
@@ -208,7 +296,9 @@ public class TurboMol {
     }
 
     public void toPDB() {
-        outValue = toPDB(inMolecule);
+        if (inMolecule instanceof MoleculeBase mol) {
+            outValue = toPDB(mol);
+        }
     }
 
     String toPDB(MoleculeBase mol) {
@@ -219,7 +309,29 @@ public class TurboMol {
     }
 
     public void toMOL() {
-        outValue = toMDL(inMolecule);
+        if (inMolecule instanceof StereoMolecule sMol) {
+            var mfC = new MolfileCreator(sMol);
+            outValue = mfC.getMolfile();
+        }
+    }
+
+    public void toPred() {
+        if (inMolecule instanceof StereoMolecule sMol) {
+            List<List<Double>> result = ChemPropertyCalculator.getPredictionParameters(sMol);
+            StringBuilder sBuilder = new StringBuilder();
+            for (var outRowValues : result) {
+                boolean first = true;
+                for (double value : outRowValues) {
+                    if (!first) {
+                        sBuilder.append(",");
+                    }
+                    sBuilder.append(String.format("%.3f", value));
+                    first = false;
+                }
+                sBuilder.append("\n");
+            }
+            outValue = sBuilder.toString();
+        }
     }
 
     String toMDL(MoleculeBase mol) {
@@ -245,7 +357,7 @@ public class TurboMol {
         outValue = generateSmiles(inMolecule);
     }
 
-    public String generateSmiles(MoleculeBase molecule) {
+    public String generateSmiles(Object molecule) {
         return "";
     }
 
