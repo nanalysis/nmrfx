@@ -43,7 +43,8 @@ import static org.nmrfx.peaks.io.PeakWriter.PIPEDIMS.D;
  * @author Bruce Johnson
  */
 public class PeakWriter {
-
+    static final String CHANNEL_NULL = "Channel is null";
+    static final String PEAK_NULL = "PeakWriter : Peak is null";
     static final String[] XPKDIMSTRINGS = {
         "label",
         "code",
@@ -93,7 +94,7 @@ public class PeakWriter {
         "_nef_peak.sequence_code_3",
         "_nef_peak.residue_type_3",
         "_nef_peak.atom_name_3"};
-    static String[] ASSIGNED_PEAK_CHEMSHIFT_STRINGS = {
+    static final String[] ASSIGNED_PEAK_CHEMSHIFT_STRINGS = {
         "_Assigned_peak_chem_shift.Peak_ID",
         "_Assigned_peak_chem_shift.Spectral_dim_ID",
         "_Assigned_peak_chem_shift.Val",
@@ -104,7 +105,6 @@ public class PeakWriter {
         try (FileWriter writer = new FileWriter(fileName)) {
             PeakWriter peakWriter = new PeakWriter();
             peakWriter.writePeaksXPK2(writer, peakList);
-            writer.close();
         }
     }
 
@@ -113,12 +113,12 @@ public class PeakWriter {
         Map<String, String> properties = peakList.getProperties();
         chan.write("peaklist\tdataset\tndim\tcondition\tscale");
         StringBuilder propBuilder = new StringBuilder();
-        for (String propName : properties.keySet()) {
-            String propValue = properties.get(propName);
+        for (var entry : properties.entrySet()) {
+            String propValue = entry.getValue();
             if (propValue.length() > 0) {
                 chan.write('\t');
                 chan.write("prop:");
-                chan.write(propName);
+                chan.write(entry.getKey());
                 propBuilder.append('\t');
                 propBuilder.append(propValue);
             }
@@ -133,7 +133,7 @@ public class PeakWriter {
         sBuilder.append(peakList.getSampleConditionLabel()).append(sep);
         sBuilder.append(peakList.getScale());
         if (propBuilder.length() > 0) {
-            sBuilder.append(propBuilder.toString());
+            sBuilder.append(propBuilder);
         }
         sBuilder.append('\n');
         chan.write(sBuilder.toString());
@@ -157,7 +157,7 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             chan.write(peak.toXPK2String(i) + "\n");
         }
@@ -177,7 +177,7 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             if (peak.getMeasures().isPresent()) {
                 if (!wroteHeader) {
@@ -205,14 +205,14 @@ public class PeakWriter {
 
     public void writePeaksXPK(Writer chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         if (chan == null) {
-            throw new IllegalArgumentException("Channel null");
+            throw new IllegalArgumentException(CHANNEL_NULL);
         }
         chan.write(peakList.getXPKHeader());
         int nPeaks = peakList.size();
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             chan.write(peak.toXPKString() + "\n");
         }
@@ -220,20 +220,19 @@ public class PeakWriter {
 
     public void writePeaks(Writer chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         if (chan == null) {
-            throw new IllegalArgumentException("Channel null");
+            throw new IllegalArgumentException(CHANNEL_NULL);
         }
         int nPeaks = peakList.size();
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             chan.write(peak.toMyString() + "\n");
         }
     }
 
     public void writePeaksNEF(Writer chan, PeakList peakList) throws IOException, InvalidPeakException {
-        char stringQuote = '"';
         chan.write("save_nef_nmr_spectrum_" + peakList.getName() + "\n");
         chan.write("_nef_nmr_spectrum.sf_category                 ");
         chan.write("nef_nmr_spectrum\n");
@@ -268,7 +267,7 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             chan.write(peak.toNEFString(i) + "\n");
         }
@@ -301,7 +300,7 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             chan.write(peak.toSTAR3LoopPeakString() + "\n");
         }
@@ -316,7 +315,7 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             chan.write(peak.toSTAR3LoopIntensityString(0) + "\n");
             chan.write(peak.toSTAR3LoopIntensityString(1) + "\n");
@@ -332,7 +331,7 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             PeakDim[] peakDims = peak.getPeakDims();
             for (PeakDim peakDim : peakDims) {
@@ -350,7 +349,7 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             PeakDim[] peakDims = peak.getPeakDims();
             for (PeakDim peakDim : peakDims) {
@@ -375,15 +374,14 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             PeakDim[] peakDims = peak.getPeakDims();
             for (PeakDim peakDim : peakDims) {
                 Multiplet multiplet = peakDim.getMultiplet();
                 if (multiplet != null) {
                     Coupling coupling = multiplet.getCoupling();
-                    if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
-                        ComplexCoupling complexCoupling = (ComplexCoupling) coupling;
+                    if ((coupling instanceof ComplexCoupling complexCoupling)) {
                         for (AbsMultipletComponent comp : complexCoupling.getAbsComponentList()) {
                             String value = peak.toSTAR3LoopSpectralTransitionString(index++);
                             chan.write(value);
@@ -406,15 +404,14 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             PeakDim[] peakDims = peak.getPeakDims();
             for (PeakDim peakDim : peakDims) {
                 Multiplet multiplet = peakDim.getMultiplet();
                 if (multiplet != null) {
                     Coupling coupling = multiplet.getCoupling();
-                    if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
-                        ComplexCoupling complexCoupling = (ComplexCoupling) coupling;
+                    if (coupling instanceof ComplexCoupling complexCoupling) {
                         for (AbsMultipletComponent comp : complexCoupling.getAbsComponentList()) {
                             String value = peakDim.toSTAR3LoopSpectralTransitionCharString(comp, index);
                             chan.write(value);
@@ -439,15 +436,14 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             PeakDim[] peakDims = peak.getPeakDims();
             for (PeakDim peakDim : peakDims) {
                 Multiplet multiplet = peakDim.getMultiplet();
                 if (multiplet != null) {
                     Coupling coupling = multiplet.getCoupling();
-                    if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
-                        ComplexCoupling complexCoupling = (ComplexCoupling) coupling;
+                    if ((coupling instanceof ComplexCoupling complexCoupling)) {
                         for (AbsMultipletComponent comp : complexCoupling.getAbsComponentList()) {
                             String value = peakDim.toSTAR3LoopSpectralTransitionGeneralCharString(comp, index, true);
                             chan.write(value);
@@ -474,14 +470,14 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             PeakDim[] peakDims = peak.getPeakDims();
             for (PeakDim peakDim : peakDims) {
                 Multiplet multiplet = peakDim.getMultiplet();
                 if (multiplet != null) {
                     Coupling coupling = multiplet.getCoupling();
-                    if ((coupling != null) && (coupling instanceof CouplingPattern)) {
+                    if ((coupling instanceof CouplingPattern)) {
                         List<String> values = peakDim.toSTAR3CouplingPatternString(index);
                         for (String value : values) {
                             chan.write(value);
@@ -500,13 +496,13 @@ public class PeakWriter {
     public void writePeaksToXML(Writer chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         int i;
         if (chan == null) {
-            throw new IllegalArgumentException("Channel null");
+            throw new IllegalArgumentException(CHANNEL_NULL);
         }
         int nPeaks = peakList.size();
         for (i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             chan.write(peak.toXMLString() + "\n");
         }
@@ -521,7 +517,7 @@ public class PeakWriter {
 
 )*/
         if (chan == null) {
-            throw new IllegalArgumentException("Channel null");
+            throw new IllegalArgumentException(CHANNEL_NULL);
         }
         chan.write(peakList.getSparkyHeader());
         chan.write("\n");
@@ -529,7 +525,7 @@ public class PeakWriter {
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+                throw new InvalidPeakException(PEAK_NULL + i);
             }
             chan.write(peak.toSparkyString());
             chan.write("\n");
@@ -545,8 +541,8 @@ public class PeakWriter {
         W_HZ("W_HZ", "%8.3f"),
         ONE("1", "%4d"),
         THREE("3", "%4d");
-        String label;
-        String format;
+        final String label;
+        final String format;
 
         PIPEDIMS(String label, String format) {
             this.label = label;
@@ -561,7 +557,7 @@ public class PeakWriter {
             SpectralDim spectralDim = peakList.getSpectralDim(iDim);
             int size = dataset.size(iDim);
             double ppm0 = dataset.pointToPPM(iDim, 0);
-            double ppm1 = dataset.pointToPPM(iDim, size -1);
+            double ppm1 = dataset.pointToPPM(iDim, size -1.0);
             String dataLine = String.format("DATA %s_AXIS %s %d %d %8.3fppm %8.3fppm",
                     labels[iDim], spectralDim.getDimName(),  1, size, ppm0, ppm1);
             chan.write(dataLine + "\n");
@@ -588,23 +584,23 @@ FORMAT %5d %9.3f %9.3f %9.3f %6.3f %6.3f %6.3f %8.3f %8.3f %8.3f %9.3f %9.3f %9.
         for (PIPEDIMS type: PIPEDIMS.values()) {
             for (int i = 0; i < nDim; i++) {
                 if (type == D) {
-                    stringBuilder.append(type.label + labels[i] + " ");
+                    stringBuilder.append(type.label).append(labels[i]).append(" ");
                 } else {
-                    stringBuilder.append(labels[i] + type.label + " ");
+                    stringBuilder.append(labels[i]).append(type.label).append(" ");
                 }
-                stringBuilderF.append(type.format + " ");
+                stringBuilderF.append(type.format).append(" ");
             }
         }
         stringBuilder.append("HEIGHT DHEIGHT VOL PCHI2 TYPE ASS CLUSTID MEMCNT");
         stringBuilderF.append(" %+e %+e %+e %.5f %d %s %4d %4d");
-        chan.write(stringBuilder.toString() + "\n");
-        chan.write(stringBuilderF.toString()+"\n");
+        chan.write(stringBuilder + "\n");
+        chan.write(stringBuilderF +"\n");
         int nPeaks = peakList.size();
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             Peak peak = peakList.getPeak(iPeak);
 
             if (peak == null) {
-                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + iPeak);
+                throw new InvalidPeakException(PEAK_NULL + iPeak);
             }
             StringBuilder sBuilderPeak = new StringBuilder();
             sBuilderPeak.append(String.format("%d ", iPeak + 1));
@@ -630,7 +626,7 @@ FORMAT %5d %9.3f %9.3f %9.3f %6.3f %6.3f %6.3f %8.3f %8.3f %8.3f %9.3f %9.3f %9.
                         case ONE -> String.format(type.format, one);
                         case THREE -> String.format(type.format, three);
                     };
-                    sBuilderPeak.append(result + " ");
+                    sBuilderPeak.append(result).append(" ");
                 }
             }
             sBuilderPeak.append(String.format("%+e ", peak.getIntensity()));
@@ -641,8 +637,7 @@ FORMAT %5d %9.3f %9.3f %9.3f %6.3f %6.3f %6.3f %8.3f %8.3f %8.3f %9.3f %9.3f %9.
             sBuilderPeak.append(String.format("%s ", "None"));
             sBuilderPeak.append(String.format("%4d ", iPeak + 1));
             sBuilderPeak.append(String.format("%4d", 1));
-            chan.write(sBuilderPeak.toString() + "\n");
+            chan.write(sBuilderPeak + "\n");
         }
     }
-
 }
