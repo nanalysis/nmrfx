@@ -35,7 +35,9 @@ public class PeakFileDetector extends FileTypeDetector {
             type = "csv";
         } else {
             String firstLine = firstLine(path).strip();
-            if (firstLine.startsWith("Assignment")) {
+            if (nmrPipeLine(firstLine)) {
+                type = "nmrpipe";
+            } else if (firstLine.startsWith("Assignment")) {
                 type = "sparky_assign";
             } else if (firstLine.contains(",")) {
                 type = "csv";
@@ -45,10 +47,25 @@ public class PeakFileDetector extends FileTypeDetector {
         return type;
     }
 
+    boolean nmrPipeLine(String line) {
+        String[] lineStarts = {"REMARK", "DATA", "VARS", "FORMAT"};
+        boolean isPipe = false;
+        for (String lineStart : lineStarts) {
+            if (line.startsWith(lineStart)) {
+                isPipe = true;
+                break;
+            }
+        }
+        return isPipe;
+    }
+
     String firstLine(Path path) {
         String firstLine = "";
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             firstLine = fileReader.readLine();
+            while (firstLine.isBlank()) {
+                firstLine = fileReader.readLine();
+            }
         } catch (IOException ioE) {
             log.warn(ioE.getMessage(), ioE);
         }

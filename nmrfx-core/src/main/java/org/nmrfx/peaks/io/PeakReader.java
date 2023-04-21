@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.Measures;
 import org.nmrfx.peaks.PeakDim;
@@ -37,7 +38,6 @@ import org.nmrfx.peaks.SpectralDim;
 import org.python.util.PythonInterpreter;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class PeakReader {
@@ -96,6 +96,8 @@ public class PeakReader {
                 return readSparkySaveFile(fileName, pMap);
             case "sparky_assign":
                 return readSparkyAssignmentFile(fileName);
+            case "nmrpipe":
+                return readNMRPipePeaks(fileName);
             default:
                 throw new IllegalArgumentException("Invalid file type " + fileName);
         }
@@ -580,6 +582,7 @@ public class PeakReader {
      * and {123.h5''} -> 123.h5''
      * In this method, quote characters are any of the following four characters: ", ', {, }, Empty quotes are returned
      * as an empty string in the list.
+     *
      * @param line The String to parse.
      * @return The parsed String as a list.
      */
@@ -633,7 +636,7 @@ public class PeakReader {
 
     public static boolean hasSparkyDataHeight(String[] fields) {
         int nFields = fields.length;
-        return (nFields > 2) && fields[nFields - 2].equals("Data") && fields[nFields-1].equals("Height");
+        return (nFields > 2) && fields[nFields - 2].equals("Data") && fields[nFields - 1].equals("Height");
     }
 
     public static int countSparkyDims(String[] fields) {
@@ -736,4 +739,109 @@ public class PeakReader {
         }
         return peakList;
     }
+
+    public PeakList readNMRPipePeaks(String fileName) throws IOException {
+        Path path = Paths.get(fileName);
+        String fileTail = path.getFileName().toString();
+        fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
+        boolean gotHeader = false;
+        Map<String, Integer> dataMap = new HashMap<>();
+        PeakList peakList = null;
+        String units = "ppm";
+        List<String> dimNames = new ArrayList<>();
+        try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
+            while (true) {
+                String line = fileReader.readLine();
+                if (line == null) {
+                    break;
+                }
+                line = line.trim();
+                if (line.length() == 0) {
+                    continue;
+                }
+                if (line.charAt(0) == '#') {
+                    continue;
+                }
+                if (!gotHeader) {
+                    //DATA  X_AXIS HN           1   659   10.297ppm    5.798ppm
+                    if (line.startsWith("DATA")) {
+                        String[] fields = line.split(" +", -1);
+                        dimNames.add(fields[2]);
+                    } else if (line.startsWith("FORMAT")) {
+                        gotHeader = true;
+                    } else if (line.startsWith("VARS")) {
+                        //VARS   INDEX X_AXIS Y_AXIS Z_AXIS DX DY DZ X_PPM Y_PPM Z_PPM X_HZ Y_HZ Z_HZ XW YW ZW XW_HZ YW_HZ ZW_HZ X1 X3 Y1 Y3 Z1 Z3 HEIGHT DHEIGHT VOL PCHI2 TYPE ASS CLUSTID MEMCNT
+                        String[] fields = line.split(" +", -1);
+                        int nDim = 0;
+                        System.out.println(line + " " + fields + " " + fields.length);
+                        for (int i = 1; i < fields.length; i++) {
+                            System.out.println(i + " " + fields[i]);
+                            dataMap.put(fields[i], i - 1);
+                            if (fields[i].endsWith("_AXIS")) {
+                                nDim++;
+                            }
+                        }
+                        String listName = fileTail;
+                        peakList = new PeakList(listName, nDim);
+                        System.out.println("DIMS " + nDim + " " + dimNames);
+                        for (int i = 0; i < dimNames.size(); i++) {
+                            peakList.getSpectralDim(i).setDimName(dimNames.get(i));
+                        }
+                    } else {
+                    }
+                } else {
+                    String[] data = line.split(" +", -1);
+                    processNMRPipeLine(peakList, dataMap, data);
+                }
+            }
+        }
+        return peakList;
+    }
+
+    private Double getPipeValue(Map<String, Integer> dataMap, String[]data, String varName) {
+        Integer index = dataMap.get(varName);
+        Double result = null;
+        if (index != null) {
+            String field = data[index];
+            result = Double.parseDouble(field);
+        }
+        return result;
+    }
+
+    public void processNMRPipeLine(PeakList peakList, Map<String, Integer> dataMap, String[]
+            data) {
+        Peak peak = peakList.getNewPeak();
+        Double intensity =  getPipeValue(dataMap, data, "HEIGHT");
+        if (intensity != null) {
+            peak.setIntensity(intensity.floatValue());
+        }
+        Double volume =  getPipeValue(dataMap, data, "VOL");
+        if (volume != null) {
+            peak.setVolume1(volume.floatValue());
+        }
+        int nDim = peakList.getNDim();
+        String[] labels = {"X", "Y", "Z", "A", "B", "C"};
+
+        for (int iDim=0;iDim<nDim;iDim++) {
+            PeakDim peakDim = peak.getPeakDim(iDim);
+            String axis = labels[iDim];
+            Double shift = getPipeValue(dataMap, data, axis + "_PPM");
+            if (shift != null) {
+                peakDim.setChemShiftValue(shift.floatValue());
+            }
+            Double wHz = getPipeValue(dataMap, data, axis + "W_HZ");
+            Double w = getPipeValue(dataMap, data, axis + "W");
+            if (wHz != null) {
+                peakDim.setLineWidthHz(wHz.floatValue());
+            }
+            Double bound1 = getPipeValue(dataMap, data, axis + "1");
+            Double bound3 = getPipeValue(dataMap, data, axis + "3");
+            if ((bound1 != null)  && (bound3 != null) && (wHz != null) && (w != null)) {
+                float bounds = bound3.floatValue() - bound1.floatValue() + 1.0f;
+                float boundsHz = (float) (bounds * wHz / w);
+                peakDim.setBoundsHz(boundsHz);
+            }
+        }
+    }
+
 }
