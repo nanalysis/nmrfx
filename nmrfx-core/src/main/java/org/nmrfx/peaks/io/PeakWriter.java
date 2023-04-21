@@ -565,14 +565,15 @@ public class PeakWriter {
 
 
         /*
+        Example file
         DATA  X_AXIS HN           1   659   10.297ppm    5.798ppm
 DATA  Y_AXIS 15N          1  1024  129.088ppm  107.091ppm
 DATA  Z_AXIS CA           1   512   69.128ppm   41.069ppm
 
          */
 
-
         /*
+        See https://spin.niddk.nih.gov/NMRPipe/doc2new/ for peak table variables
         VARS   INDEX X_AXIS Y_AXIS Z_AXIS DX DY DZ X_PPM Y_PPM Z_PPM X_HZ Y_HZ Z_HZ XW YW ZW XW_HZ YW_HZ ZW_HZ X1 X3 Y1 Y3 Z1 Z3 HEIGHT DHEIGHT VOL PCHI2 TYPE ASS CLUSTID MEMCNT
 FORMAT %5d %9.3f %9.3f %9.3f %6.3f %6.3f %6.3f %8.3f %8.3f %8.3f %9.3f %9.3f %9.3f %7.3f %7.3f %7.3f %8.3f %8.3f %8.3f %4d %4d %4d %4d %4d %4d %+e %+e %+e %.5f %d %s %4d %4d
 
@@ -618,7 +619,7 @@ FORMAT %5d %9.3f %9.3f %9.3f %6.3f %6.3f %6.3f %8.3f %8.3f %8.3f %9.3f %9.3f %9.
                     int three = (int) Math.ceil(pt + bWidth / 2.0);
                     String result = switch (type) {
                         case AXIS -> String.format(type.format, pt);
-                        case D -> String.format(type.format, wPt);
+                        case D -> String.format(type.format, 0.0);
                         case PPM -> String.format(type.format, ppm);
                         case HZ -> String.format(type.format, hz);
                         case W -> String.format(type.format, wPt);
