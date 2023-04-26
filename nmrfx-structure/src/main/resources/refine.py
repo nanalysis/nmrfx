@@ -1666,6 +1666,12 @@ class refine:
                         if lastRes and ("hL" in subType or "hl" in subType) and lockLoop:
                             lock = True 
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, lock)
+                    else:
+                        subType = 'hL:GNRAXe' if subType[-2] =='X' else 'hl:GNRAxe'
+                        genericHelixLinker = 'Helix'+':0:'+aaType+':'+subType
+                        anglesToSet = angleDict[genericHelixLinker].copy()
+                        lock = True if lastRes and lockLoop else False
+                        RNARotamer.setDihedrals(res,anglesToSet,0.0,lock)
             elif ss.getName() == "Loop":
                 for iLoop,res in enumerate(residues):
                     subType = getRNAResType(ss, residues, res)
