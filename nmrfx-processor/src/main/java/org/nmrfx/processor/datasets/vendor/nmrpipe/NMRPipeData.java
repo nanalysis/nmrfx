@@ -205,7 +205,7 @@ public class NMRPipeData implements NMRData {
             fileName = String.format(fileName, 1);
             file = Paths.get(dirName, fileName).toFile();
         }
-        if (file.exists()) {
+        if (file.exists() && file.isFile()) {
             try (FileReader reader = new FileReader(file)) {
                 boolean ok = true;
                 for (int i = 0; i < 4; i++) {

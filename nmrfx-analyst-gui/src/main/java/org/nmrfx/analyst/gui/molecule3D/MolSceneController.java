@@ -51,6 +51,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
+import static org.nmrfx.analyst.gui.molecule3D.MolSceneController.StructureCalculator.StructureMode.*;
+
 public class MolSceneController implements Initializable, MolSelectionListener, FreezeListener, ProgressUpdater {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
 
@@ -103,7 +105,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     Pane ligandCanvasPane;
     PeakList peakList = null;
     int itemIndex = 0;
-    private StructureCalculator calcStructure = new StructureCalculator();
+    private StructureCalculator structureCalculator = new StructureCalculator();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -798,19 +800,19 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
 
     @FXML
     private void calcStructureAction() {
-        calcStructure.setStatus("anneal");
+        structureCalculator.setMode(ANNEAL);
         calcStructure();
     }
 
     @FXML
     private void refineStructureAction() {
-        calcStructure.setStatus("refine");
+        structureCalculator.setMode(REFINE);
         calcStructure();
     }
 
     @FXML
     private void ssTo3D() {
-        calcStructure.setStatus("init");
+        structureCalculator.setMode(INIT);
         calcStructure();
     }
 
@@ -855,10 +857,10 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         GradientRefinement.setUpdater(this);
         setProcessingOn();
         statusBar.setProgress(0.0);
-        ((Service) calcStructure.worker).restart();
+        ((Service) structureCalculator.worker).restart();
     }
 
-    String getScript(String status) {
+    String getScript(StructureCalculator.StructureMode mode) {
         StringBuilder scriptB = new StringBuilder();
         scriptB.append("homeDir = os.getcwd()\n");
         scriptB.append("print yamlString\n");
@@ -869,23 +871,21 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         scriptB.append("osfiles.setOutFiles(refiner,dataDir,0)\n");
         scriptB.append("refiner.rootName = 'temp'\n");
         scriptB.append("refiner.loadFromYaml(data,0)\n");
-        if (status == "init") {
+        if (mode == INIT) {
             scriptB.append("refiner.init(save=False)\n");
-        } else if (status == "refine") {
+        } else if (mode == REFINE) {
             scriptB.append("refiner.refine(refiner.dOpt)\n");
-        } else if (status == "anneal") {
+        } else if (mode == ANNEAL) {
             scriptB.append("refiner.anneal(refiner.dOpt)\n");
         }
-//        scriptB.append("refiner.output()\n");
-
         return scriptB.toString();
     }
 
-    String genYaml(String status) {
+    String genYaml(StructureCalculator.StructureMode mode) {
         Molecule molecule = Molecule.getActive();
         boolean isRNA = molecule.getPolymers().get(0).isRNA();
         StringBuilder scriptB = new StringBuilder();
-        if (isRNA & (status == "init" || status == "anneal")) {
+        if (isRNA & (mode == INIT || mode == ANNEAL)) {
             scriptB.append("rna:\n");
             scriptB.append("    ribose : Constrain\n");
             String dotBracket = molecule.getDotBracket();
@@ -929,14 +929,14 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
 
     }
 
-    private class StructureCalculator {
-
+    class StructureCalculator {
+        enum StructureMode {INIT, REFINE, ANNEAL};
         String script;
         public Worker<Integer> worker;
-        String status;
+        StructureMode mode;
 
-        public void setStatus(String status) {
-            this.status = status;
+        public void setMode(StructureMode mode) {
+            this.mode = mode;
         }
 
         private StructureCalculator() {
@@ -945,12 +945,12 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                 protected Task createTask() {
                     return new Task() {
                         protected Object call() {
-                            script = getScript(status);
+                            script = getScript(mode);
                             try (PythonInterpreter processInterp = new PythonInterpreter()) {
                                 updateStatus("Start calculating");
                                 updateTitle("Start calculating");
                                 processInterp.exec("import os\nfrom refine import *\nfrom molio import readYamlString\nimport osfiles");
-                                processInterp.set("yamlString", genYaml(status));
+                                processInterp.set("yamlString", genYaml(mode));
                                 processInterp.exec(script);
                             }
                             return 0;

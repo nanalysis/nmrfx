@@ -1389,6 +1389,8 @@ class refine:
             if len(self.molecule.getEntities()) > 1:
                 linkerList = self.validateLinkerList(linkerList, treeDict, rnaLinkerDict)
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
+            #if 'bonds' in data:
+            #    self.processBonds(data['bonds'], 'break')
             self.measureTree()
         else:
             if nEntities > 1:
@@ -1496,13 +1498,13 @@ class refine:
                 id = fields[0]
                 ssType = fields[1]
                 posType = fields[2]
-                aaType = fields[3]
+                nucType = fields[3]
                 subType = fields[4]
                 d = {}
                 for field,headerAtom in zip(fields[5:], headerAtoms):
                     if field != '-':
                         d[headerAtom] = float(field)
-                angleDict[ssType+':'+posType+':'+aaType+':'+subType] = d
+                angleDict[ssType+':'+posType+':'+nucType+':'+subType] = d
                 
     def setAnglesDoubleHelix(self,data,doLock):
         if(doLock):
@@ -1530,10 +1532,10 @@ class refine:
                         print 'Unexpected format for residue name: ' + str(isplit) + '... Using previous residue name'
                     if inHelix:
                         if resLett in ['G', 'A']:
-                            aaType = 'GC'
+                            nucType = 'GC'
                         else:
-                            aaType = 'UA'
-                        anglesToSet = angleDict['helix'+':0:'+aaType].copy()
+                            nucType = 'UA'
+                        anglesToSet = angleDict['helix'+':0:'+nucType].copy()
                         if (str(res) == entry['first'][1]):
                             print 'Helix segment end found at residue: ' + str(res)
                             anglesToSet = angleDict['tetra-link'+':0:'+'U'].copy()
@@ -1581,8 +1583,8 @@ class refine:
                         print 'Unexpected format for residue name: ' + str(isplit) + '... Using previous residue name'
                     if inLoop:
                         loopIndices = ['tetraloop1','tetraloop2','tetraloop3','tetraloop4']
-                        aaType = res.getName()
-                        anglesToSet = angleDict['tetra'+':'+str(loopResDone+1)+':'+aaType].copy()
+                        nucType = res.getName()
+                        anglesToSet = angleDict['tetra'+':'+str(loopResDone+1)+':'+nucType].copy()
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock)
                         print 'Residue: ' + str(res) + ' set with angles: ' + str(anglesToSet)
                         loopResDone = loopResDone + 1
@@ -1650,12 +1652,12 @@ class refine:
                     lastRes = lastResI or lastResJ
                     resLett = res.getName()
                     pairLett = res.pairedTo.getName()
-                    aaType = resLett
-                    if aaType == 'A' or aaType == 'G':
-                        aaType = "P"
+                    nucType = resLett
+                    if nucType == 'A' or nucType == 'G':
+                        nucType = "P"
                     else:
-                        aaType = "p"
-                    key = 'Helix'+':0:'+aaType+':'+subType
+                        nucType = "p"
+                    key = 'Helix'+':0:'+nucType+':'+subType
                     if key in angleDict:
                         anglesToSet = angleDict[key].copy()
                         lock = doLock
@@ -1675,24 +1677,24 @@ class refine:
             elif ss.getName() == "Loop":
                 for iLoop,res in enumerate(residues):
                     subType = getRNAResType(ss, residues, res)
-                    aaType = res.getName()
-                    if aaType == 'A' or aaType == 'G':
-                        aaType = "P"
+                    nucType = res.getName()
+                    if nucType == 'A' or nucType == 'G':
+                        nucType = "P"
                     else:
-                        aaType = "p"
-                    key = 'Loop'+':'+str(iLoop)+':'+aaType+':'+subType
+                        nucType = "p"
+                    key = 'Loop'+':'+str(iLoop)+':'+nucType+':'+subType
                     if key in angleDict:
                         anglesToSet = angleDict[key].copy()
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockLoop)
             elif ss.getName() == "Bulge":
                 for iLoop,res in enumerate(residues):
                     subType = getRNAResType(ss, residues, res)
-                    aaType = res.getName()
-                    if aaType == 'A' or aaType == 'G':
-                        aaType = "P"
+                    nucType = res.getName()
+                    if nucType == 'A' or nucType == 'G':
+                        nucType = "P"
                     else:
-                        aaType = "p"
-                    key = 'Bulge'+':'+str(iLoop)+':'+aaType+':'+subType
+                        nucType = "p"
+                    key = 'Bulge'+':'+str(iLoop)+':'+nucType+':'+subType
                     if key in angleDict:
                         anglesToSet = angleDict[key].copy()
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockBulge)
