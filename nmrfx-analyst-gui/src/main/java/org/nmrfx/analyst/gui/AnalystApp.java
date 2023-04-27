@@ -33,6 +33,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
+import org.nmrfx.analyst.gui.datastore.DatastorePrefs;
 import org.nmrfx.analyst.gui.events.DataFormatHandlerUtil;
 import org.nmrfx.analyst.gui.molecule.*;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
@@ -718,6 +719,7 @@ public class AnalystApp extends MainApp {
 
     void addPrefs() {
         AnalystPrefs.addPrefs();
+        DatastorePrefs.addPrefs();
     }
 
     void addMolecule() {

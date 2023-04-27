@@ -1,4 +1,4 @@
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.datastore;
 
 import com.nanalysis.datastore.api.enums.DataFormat;
 import com.nanalysis.datastore.api.enums.DataType;
@@ -17,17 +17,15 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.List;
 
-public class DataStore {
-    private static final Logger log = LoggerFactory.getLogger(DataStore.class);
+public class Datastore {
+    private static final Logger log = LoggerFactory.getLogger(Datastore.class);
 
-    //TODO: put in preferences, load only once
     private static DatastoreClient createDatastoreClient() {
-        return new DatastoreClient("http://localhost:8080/", "admin", "password");
+        return new DatastoreClient(DatastorePrefs.getUrl(), DatastorePrefs.getUsername(), DatastorePrefs.getPassword());
     }
 
-    //TODO: put in preferences
     public static boolean isEnabled() {
-        return true;
+        return DatastorePrefs.isEnabled();
     }
 
     public static ObservableList<RemoteDataset> loadFromDatastore() {
@@ -35,7 +33,7 @@ public class DataStore {
 
         try (DatastoreClient client = createDatastoreClient()) {
             client.getExperimentResource().list().stream()
-                    .map(DataStore::experientToRemoteDataset)
+                    .map(Datastore::experientToRemoteDataset)
                     .forEach(items::add);
         }
 

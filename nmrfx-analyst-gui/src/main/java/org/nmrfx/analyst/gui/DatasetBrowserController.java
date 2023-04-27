@@ -46,6 +46,7 @@ import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import org.controlsfx.control.tableview2.TableView2;
+import org.nmrfx.analyst.gui.datastore.Datastore;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
@@ -391,7 +392,7 @@ public class DatasetBrowserController implements Initializable {
             return;
         }
 
-        var items = DataStore.isEnabled() ? DataStore.loadFromDatastore() : loadRemoteDatasets();
+        var items = Datastore.isEnabled() ? Datastore.loadFromDatastore() : loadRemoteDatasets();
         tableView.setItems(items);
     }
 
@@ -464,8 +465,8 @@ public class DatasetBrowserController implements Initializable {
                     }
                 } else {
                     if (!rData.isPresent()) {
-                        if (DataStore.isEnabled()) {
-                            DataStore.downloadFromDatastore(rData, localFile);
+                        if (Datastore.isEnabled()) {
+                            Datastore.downloadFromDatastore(rData, localFile);
                         } else if (initRemoteDatasetAccess()) {
                             File file = new File(fileName);
                             String fileRoot = file.getParent();
