@@ -466,7 +466,7 @@ public class DatasetBrowserController implements Initializable {
                 } else {
                     if (!rData.isPresent()) {
                         if (Datastore.isEnabled()) {
-                            Datastore.download(rData, localFile);
+                            localFile = Datastore.download(rData, localFile);
                         } else if (initRemoteDatasetAccess()) {
                             File file = new File(fileName);
                             String fileRoot = file.getParent();
