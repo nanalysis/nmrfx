@@ -46,6 +46,14 @@
             <artifactId>nmrfx-plugin-api</artifactId>
             <version>11.3.3-SNAPSHOT</version>
         </dependency>
+
+        <!-- TODO put in bom, or try to write as plugin -->
+        <dependency>
+            <groupId>com.nanalysis.datastore</groupId>
+            <artifactId>datastore-client</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>

@@ -7,13 +7,11 @@ import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,6 +61,25 @@ public class RemoteDataset {
     private String hashKey;
     private boolean present;
     private String processed;
+
+    private Long datastoreExperimentId;
+    private Long datastoreDatasetId;
+
+    public Long getDatastoreExperimentId() {
+        return datastoreExperimentId;
+    }
+
+    public void setDatastoreExperimentId(long datastoreExperimentId) {
+        this.datastoreExperimentId = datastoreExperimentId;
+    }
+
+    public Long getDatastoreDatasetId() {
+        return datastoreDatasetId;
+    }
+
+    public void setDatastoreDatasetId(long datastoreDatasetId) {
+        this.datastoreDatasetId = datastoreDatasetId;
+    }
 
     /**
      * @return the path

@@ -26,16 +26,6 @@ package org.nmrfx.analyst.gui;
 import com.jcraft.jsch.JSchException;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -45,12 +35,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
@@ -60,16 +45,23 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
-import org.nmrfx.utilities.RemoteDataset;
 import org.controlsfx.control.tableview2.TableView2;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.utilities.RemoteDataset;
 import org.nmrfx.utilities.RemoteDatasetAccess;
 import org.nmrfx.utilities.UnZipper;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.*;
+import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  *
@@ -398,6 +390,12 @@ public class DatasetBrowserController implements Initializable {
             scanAndLoad();
             return;
         }
+
+        var items = DataStore.isEnabled() ? DataStore.loadFromDatastore() : loadRemoteDatasets();
+        tableView.setItems(items);
+    }
+
+    private ObservableList<RemoteDataset> loadRemoteDatasets() {
         File localFile = getLocalIndexFile();
         ObservableList<RemoteDataset> items = FXCollections.observableArrayList();
         if (localFile.exists()) {
@@ -409,7 +407,7 @@ public class DatasetBrowserController implements Initializable {
             }
             scanDirectory(RemoteDataset.getDatasets());
         }
-        tableView.setItems(items);
+        return items;
     }
 
     void cacheDatasets() {
@@ -466,7 +464,9 @@ public class DatasetBrowserController implements Initializable {
                     }
                 } else {
                     if (!rData.isPresent()) {
-                        if (initRemoteDatasetAccess()) {
+                        if (DataStore.isEnabled()) {
+                            DataStore.downloadFromDatastore(rData, localFile);
+                        } else if (initRemoteDatasetAccess()) {
                             File file = new File(fileName);
                             String fileRoot = file.getParent();
                             String remoteFile = remoteDir + "/data/" + fileRoot + ".zip";
