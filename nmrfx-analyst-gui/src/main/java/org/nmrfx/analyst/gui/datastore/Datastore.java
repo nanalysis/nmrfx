@@ -11,14 +11,13 @@ import javafx.collections.ObservableList;
 import org.apache.commons.io.IOUtils;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.utilities.RemoteDataset;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public class Datastore {
-    private static final Logger log = LoggerFactory.getLogger(Datastore.class);
+    private static final Set<DataFormat> SUPPORTED_FORMATS = Set.of(DataFormat.SPINLAB, DataFormat.JCAMP);
 
     private static DatastoreClient createDatastoreClient() {
         return new DatastoreClient(DatastorePrefs.getUrl(), DatastorePrefs.getUsername(), DatastorePrefs.getPassword());
@@ -66,12 +65,7 @@ public class Datastore {
     private static RemoteDataset experientToRemoteDataset(ExperimentDTO experiment) {
         RemoteDataset dataset = new RemoteDataset();
         dataset.setDatastoreExperimentId(experiment.getId());
-
-        // download only one raw data
-        var rawDatasets = findSpinlabDatasets(experiment, DataType.RAW);
-        if (!rawDatasets.isEmpty()) {
-            dataset.setDatastoreDatasetId(rawDatasets.get(0).getId());
-        }
+        selectRawDataset(experiment).ifPresent(ds -> dataset.setDatastoreDatasetId(ds.getId()));
 
         dataset.setPath(experiment.getId() + "-" + experiment.getName());
         dataset.setUser(experiment.getOperatorName());
@@ -82,10 +76,10 @@ public class Datastore {
         return dataset;
     }
 
-    private static List<DatasetDTO> findSpinlabDatasets(ExperimentDTO experiment, DataType type) {
+    private static Optional<DatasetDTO> selectRawDataset(ExperimentDTO experiment) {
         return experiment.getDatasets().stream()
-                .filter(ds -> ds.getType() == type)
-                .filter(ds -> ds.getFiles().stream().anyMatch(df -> df.getFormat() == DataFormat.SPINLAB))
-                .toList();
+                .filter(ds -> ds.getType() == DataType.RAW)
+                .filter(ds -> ds.getFiles().stream().anyMatch(df -> SUPPORTED_FORMATS.contains(df.getFormat())))
+                .findFirst();
     }
 }
