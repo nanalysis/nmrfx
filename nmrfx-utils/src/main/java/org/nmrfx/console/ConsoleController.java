@@ -17,6 +17,7 @@
  */
 package org.nmrfx.console;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -41,14 +42,14 @@ import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
-import javafx.stage.Screen;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.stage.WindowEvent;
+import javafx.stage.*;
+
 import static org.nmrfx.utils.GUIUtils.affirm;
 
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.utils.FormatUtils;
 
+import org.nmrfx.utils.GUIUtils;
 import org.python.util.InteractiveInterpreter;
 
 /**
@@ -215,6 +216,19 @@ public class ConsoleController extends OutputStream implements Initializable {
     public void clearConsole() {
         textArea.setText("> ");
         textArea.end();
+    }
+
+    public void execScript() {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showOpenDialog(null);
+        if (file != null) {
+            try {
+                interpreter.execfile(file.toString());
+            } catch (Exception e) {
+                ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                exceptionDialog.show();
+            }
+        }
     }
 
     public void pwd() {
