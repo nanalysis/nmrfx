@@ -392,7 +392,7 @@ public class DatasetBrowserController implements Initializable {
             return;
         }
 
-        var items = Datastore.isEnabled() ? Datastore.loadFromDatastore() : loadRemoteDatasets();
+        var items = Datastore.isEnabled() ? Datastore.listExperiments() : loadRemoteDatasets();
         tableView.setItems(items);
     }
 
@@ -466,7 +466,7 @@ public class DatasetBrowserController implements Initializable {
                 } else {
                     if (!rData.isPresent()) {
                         if (Datastore.isEnabled()) {
-                            Datastore.downloadFromDatastore(rData, localFile);
+                            Datastore.download(rData, localFile);
                         } else if (initRemoteDatasetAccess()) {
                             File file = new File(fileName);
                             String fileRoot = file.getParent();

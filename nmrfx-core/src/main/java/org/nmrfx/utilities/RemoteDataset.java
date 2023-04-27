@@ -62,25 +62,6 @@ public class RemoteDataset {
     private boolean present;
     private String processed;
 
-    private Long datastoreExperimentId;
-    private Long datastoreDatasetId;
-
-    public Long getDatastoreExperimentId() {
-        return datastoreExperimentId;
-    }
-
-    public void setDatastoreExperimentId(long datastoreExperimentId) {
-        this.datastoreExperimentId = datastoreExperimentId;
-    }
-
-    public Long getDatastoreDatasetId() {
-        return datastoreDatasetId;
-    }
-
-    public void setDatastoreDatasetId(long datastoreDatasetId) {
-        this.datastoreDatasetId = datastoreDatasetId;
-    }
-
     /**
      * @return the path
      */
