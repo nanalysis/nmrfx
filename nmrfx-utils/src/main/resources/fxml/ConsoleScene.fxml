@@ -16,6 +16,7 @@
     <top>
         <HBox>
             <children>
+                <Button fx:id="execButton" text="Exec File..." onAction="#execScript"/>
                 <Button fx:id="clearButton" text="Clear" onAction="#clearConsole"/>
             </children>
         </HBox>
