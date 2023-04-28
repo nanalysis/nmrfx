@@ -1336,6 +1336,13 @@ class refine:
                         residues = ",".join(molDict['residues'].split()) if 'residues' in molDict else None
                         self.readMoleculeDict(seqReader, molDict)
                     self.molecule = MoleculeFactory.getActive()
+                    if 'rna' in data:
+                        self.findRNAHelices(data['rna'])
+                        if not 'link' in molData:
+                            if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
+                                rnaLinks,rnaBonds = self.findSSLinks()
+                                molData['link'] = rnaLinks
+                                data['bonds'] = rnaBonds
                 else:
                     #Only one entity in the molecule
                     residues = ",".join(molData['residues'].split()) if 'residues' in molData else None
@@ -1663,7 +1670,7 @@ class refine:
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, lock)
                     else:
                         subType = 'hL:GNRAXe' if subType[-2] =='X' else 'hl:GNRAxe'
-                        genericHelixLinker = 'Helix'+':0:'+aaType+':'+subType
+                        genericHelixLinker = 'Helix'+':0:'+nucType+':'+subType
                         anglesToSet = angleDict[genericHelixLinker].copy()
                         lock = True if lastRes and lockLoop else False
                         RNARotamer.setDihedrals(res,anglesToSet,0.0,lock)
