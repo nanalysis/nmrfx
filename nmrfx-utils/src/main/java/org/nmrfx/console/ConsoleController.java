@@ -17,6 +17,25 @@
  */
 package org.nmrfx.console;
 
+import javafx.application.Platform;
+import javafx.event.Event;
+import javafx.event.EventHandler;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.Scene;
+import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.stage.*;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.utils.FormatUtils;
+import org.python.util.InteractiveInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -28,28 +47,8 @@ import java.util.ResourceBundle;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import javafx.application.Platform;
-import javafx.event.Event;
-import javafx.event.EventHandler;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
-import javafx.geometry.Rectangle2D;
-import javafx.scene.Scene;
 
-import javafx.scene.control.TextArea;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Pane;
-import javafx.stage.Screen;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.stage.WindowEvent;
 import static org.nmrfx.utils.GUIUtils.affirm;
-
-import org.nmrfx.utils.FormatUtils;
-
-import org.python.util.InteractiveInterpreter;
 
 /**
  * This class extends from OutputStream to redirect output to a TextArea
@@ -58,6 +57,7 @@ import org.python.util.InteractiveInterpreter;
  *
  */
 public class ConsoleController extends OutputStream implements Initializable {
+    private static final Logger log = LoggerFactory.getLogger(ConsoleController.class);
 
     private static ConsoleController consoleController;
     private static InteractiveInterpreter interpreter;
@@ -98,9 +98,9 @@ public class ConsoleController extends OutputStream implements Initializable {
         Stage stage = new Stage(StageStyle.DECORATED);
 
         try {
-            Scene scene = new Scene((Pane) loader.load());
+            Scene scene = new Scene(loader.load());
             stage.setScene(scene);
-            controller = loader.<ConsoleController>getController();
+            controller = loader.getController();
             controller.stage = stage;
             stage.setTitle(title);
             stage.show();
@@ -112,7 +112,7 @@ public class ConsoleController extends OutputStream implements Initializable {
             stage.setOnCloseRequest(consoleController.close);
             ConsoleController.interpreter = interpreter;
         } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
+            log.error("Error creating console", ioE);
         }
 
         return controller;
@@ -143,9 +143,6 @@ public class ConsoleController extends OutputStream implements Initializable {
         });
 
         PrintStream printStream = new PrintStream(this);
-        // re-assigns standard output stream and error output stream
-        //System.setOut(printStream);
-        //System.setErr(printStream);
 
         interpreter.setOut(printStream);
         interpreter.setErr(printStream);
@@ -170,14 +167,10 @@ public class ConsoleController extends OutputStream implements Initializable {
     public void write(String text) {
         if (Platform.isFxApplicationThread()) {
             textArea.appendText(text);
-            // scrolls the text area to the end of data
-            //textArea.positionCaret(String.valueOf((char)b).length());
             textArea.appendText("");
         } else {
             Platform.runLater(() -> {
                 textArea.appendText(text);
-                // scrolls the text area to the end of data
-                //textArea.positionCaret(String.valueOf((char)b).length());
                 textArea.appendText("");
             });
         }
@@ -215,6 +208,19 @@ public class ConsoleController extends OutputStream implements Initializable {
     public void clearConsole() {
         textArea.setText("> ");
         textArea.end();
+    }
+
+    public void execScript() {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showOpenDialog(null);
+        if (file != null) {
+            try {
+                interpreter.execfile(file.toString());
+            } catch (Exception e) {
+                ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                exceptionDialog.show();
+            }
+        }
     }
 
     public void pwd() {
@@ -320,7 +326,7 @@ public class ConsoleController extends OutputStream implements Initializable {
     void doHistory(KeyEvent keyEvent) {
         KeyCode key = keyEvent.getCode();
         keyEvent.consume();
-        if (history.size() > 0) {
+        if (!history.isEmpty()) {
             prevKey = key;
             String command = "";
             if (key == KeyCode.UP) {
@@ -349,8 +355,7 @@ public class ConsoleController extends OutputStream implements Initializable {
     private String getLastTyped() {
         String text = textArea.getText();
         int lastLineStart = text.lastIndexOf(">") + 2;
-        String typed = text.substring(lastLineStart).trim();
-        return typed;
+        return text.substring(lastLineStart).trim();
     }
 
     private boolean isPromptPresent() {
@@ -382,13 +387,9 @@ public class ConsoleController extends OutputStream implements Initializable {
     }
 
     synchronized void startTimer() {
-        if (schedExecutor != null) {
-            if ((futureUpdate == null) || futureUpdate.isDone()) {
-                UpdateTask updateTask = new UpdateTask();
-                futureUpdate = schedExecutor.schedule(updateTask, 500, TimeUnit.MILLISECONDS);
-            }
+        if ((schedExecutor != null) && ((futureUpdate == null) || futureUpdate.isDone())) {
+            UpdateTask updateTask = new UpdateTask();
+            futureUpdate = schedExecutor.schedule(updateTask, 500, TimeUnit.MILLISECONDS);
         }
-
     }
-
 }
