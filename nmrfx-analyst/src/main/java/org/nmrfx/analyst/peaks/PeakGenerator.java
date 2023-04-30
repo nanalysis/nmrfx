@@ -402,7 +402,7 @@ public class PeakGenerator {
             }
             if (ok) {
                 double distance = Math.max(2.0, Math.abs(aP.getDistance()));
-                double intensity = Math.pow(distance, exponent) / scale;
+                double intensity = 100.0 * Math.pow(distance, exponent) / scale;
                 addPeak(peakList, intensity, atoms);
             }
         });
@@ -416,7 +416,6 @@ public class PeakGenerator {
             interp.set("datasetName", dataset.getName());
             interp.set("listName", peakList.getName());
             interp.exec(script);
-            System.out.println("execute " + peakList.getName() + " " + peakList.size());
         }
     }
 
