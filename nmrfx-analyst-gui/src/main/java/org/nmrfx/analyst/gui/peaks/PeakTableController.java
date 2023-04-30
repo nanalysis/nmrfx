@@ -363,7 +363,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             labelCol.setCellValueFactory((CellDataFeatures<Peak, String> p) -> {
                 Peak peak = p.getValue();
                 int iDim = labelCol.peakDim;
-                String label = peak.getPeakDim(iDim).getLabel();
+                String label = iDim < peak.getPeakDims().length ? peak.getPeakDim(iDim).getLabel() : "";
                 return new ReadOnlyObjectWrapper(label);
             });
 
@@ -375,14 +375,16 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                     Peak peak = getTableRow().getItem();
                     if (peak != null) {
                         int iDim = labelCol.peakDim;
-                        PeakDim peakDim = peak.getPeakDim(iDim);
-                        if (!peakDim.isLabelValid()) {
-                            setBackground(ERROR_BACKGROUND);
-                        } else {
-                            setBackground(Background.EMPTY);
-                        }
-                        if (item != null) {
-                            setText(String.valueOf(item));
+                        if (iDim < peak.getPeakDims().length){
+                            PeakDim peakDim = peak.getPeakDim(iDim);
+                            if (!peakDim.isLabelValid()) {
+                                setBackground(ERROR_BACKGROUND);
+                            } else {
+                                setBackground(Background.EMPTY);
+                            }
+                            if (item != null) {
+                                setText(String.valueOf(item));
+                            }
                         }
                     }
                 }
@@ -398,7 +400,12 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             shiftCol.setCellValueFactory((CellDataFeatures<Peak, Float> p) -> {
                 Peak peak = p.getValue();
                 int iDim = shiftCol.peakDim;
-                float ppm = peak.getPeakDim(iDim).getChemShiftValue();
+                float ppm;
+                if (iDim < peak.getPeakDims().length) {
+                    ppm = peak.getPeakDim(iDim).getChemShiftValue();
+                } else {
+                    ppm = 0.0f;
+                }
                 return new ReadOnlyObjectWrapper(ppm);
             });
             shiftCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".000")));

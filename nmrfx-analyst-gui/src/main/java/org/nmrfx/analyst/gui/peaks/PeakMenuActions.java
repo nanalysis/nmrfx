@@ -20,12 +20,13 @@ import java.util.Collection;
 import java.util.List;
 
 public class PeakMenuActions extends MenuActions {
-    private PeakTableController peakTableController;
+    private static PeakTableController peakTableController;
     private LigandScannerController scannerController;
     private NOETableController noeTableController;
     private AtomBrowser atomBrowser;
     private CheckMenuItem assignOnPick;
     private PeakAtomPicker peakAtomPicker;
+    private static PeakGeneratorGUI peakGeneratorGUI;
 
     public PeakMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);
@@ -47,6 +48,10 @@ public class PeakMenuActions extends MenuActions {
 
     @Override
     protected void advanced() {
+
+        MenuItem peakGeneratorMenuItem = new MenuItem("Simulate Peaks");
+        peakGeneratorMenuItem.setOnAction(e -> showPeakGeneratorGUI());
+
         MenuItem linkPeakDimsMenuItem = new MenuItem("Link by Labels");
         linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
 
@@ -70,7 +75,7 @@ public class PeakMenuActions extends MenuActions {
 
         assignCascade.getItems().addAll(assignOnPick,
                 atomBrowserMenuItem, runAboutMenuItem);
-        menu.getItems().addAll(linkPeakDimsMenuItem,
+        menu.getItems().addAll(peakGeneratorMenuItem, linkPeakDimsMenuItem,
                 ligandScannerMenuItem,
                 noeTableMenuItem,
                 assignCascade);
@@ -81,7 +86,7 @@ public class PeakMenuActions extends MenuActions {
         showPeakTable(null);
     }
 
-    public void showPeakTable(PeakList peakList) {
+    public static void showPeakTable(PeakList peakList) {
         if (peakTableController == null) {
             peakTableController = PeakTableController.create();
         }
@@ -176,5 +181,14 @@ public class PeakMenuActions extends MenuActions {
         }
         peakAtomPicker.show(300, 300, null);
     }
+
+    public void showPeakGeneratorGUI() {
+        if (peakGeneratorGUI == null) {
+            peakGeneratorGUI = new PeakGeneratorGUI();
+            peakGeneratorGUI.create();
+        }
+        peakGeneratorGUI.show(300, 300);
+    }
+
 
 }
