@@ -495,24 +495,4 @@ public class PeakGenerator {
             addPeak(peakList, intensity, atoms);
         }
     }
-
-    public void generateList(Dataset dataset) {
-        PeakList peakList = makePeakList(dataset);
-        int nDim = dataset.getNDim();
-        if (nDim == 1) {
-            Nuclei nuclei = dataset.getNucleus(0);
-            if (nuclei.getName().equals("H")) {
-                generate1DProton(peakList);
-            }
-        } else if (nDim == 2) {
-            Nuclei nuclei0 = dataset.getNucleus(0);
-            Nuclei nuclei1 = dataset.getNucleus(1);
-            boolean nuc0Proton = nuclei0.getName().equals("H");
-            boolean nuc1Proton = nuclei1.getName().equals("H");
-            boolean nuc1Nitrogen = nuclei1.getName().equals("N");
-            boolean nuc1Carbon = nuclei1.getName().equals("C");
-            if (nuc0Proton && (nuc1Nitrogen || nuc1Carbon)) {
-            }
-        }
-    }
 }
