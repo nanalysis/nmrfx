@@ -54,6 +54,7 @@ import javafx.util.converter.FloatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.*;
+import org.nmrfx.peaks.io.PeakPatternReader;
 import org.nmrfx.peaks.types.PeakListType;
 import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.processor.datasets.Dataset;
@@ -213,6 +214,20 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             } else {
             }
         });
+
+        try {
+            if (peakListTypes == null) {
+                peakListTypes = PeakPatternReader.loadYaml();
+            }
+        } catch (IOException e) {
+            log.warn(e.getMessage(), e);
+        }
+        if (peakListTypes != null) {
+            for (PeakListType peakListType : peakListTypes.getTypes()) {
+                peakListTypeChoice.getItems().add(peakListType.getName());
+            }
+        }
+        peakListTypeChoice.setOnAction(this::setPeakListType);
         if (!MainApp.isAnalyst()) {
             tabPane.getTabs().remove(3);
         }
