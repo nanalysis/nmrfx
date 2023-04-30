@@ -2,13 +2,12 @@ package org.nmrfx.analyst.peaks;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.CouplingPattern;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.structure.chemistry.CouplingList;
 import org.nmrfx.structure.chemistry.JCoupling;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.processor.datasets.Dataset;
 import org.python.util.PythonInterpreter;
 
 import java.util.*;
@@ -47,7 +46,7 @@ public class PeakGenerator {
         PeakGeneratorTypes(String[][] pattern) {
             this.pattern = pattern;
         }
-        }
+    }
 
 
     Molecule molecule = (Molecule) MoleculeFactory.getActive();
@@ -115,11 +114,6 @@ public class PeakGenerator {
     }
 
 
-    public void generate1DProton(String listName, DatasetBase dataset) {
-        PeakList peakList = makePeakList(listName, dataset, 0);
-        generate1DProton(peakList);
-    }
-
     String getListName(DatasetBase dataset, String listName, String tail) {
         if ((listName == null) || listName.isBlank()) {
             String datasetName = dataset.getName();
@@ -151,26 +145,6 @@ public class PeakGenerator {
         peakList.setDatasetName(dataset.getName());
         peakList.setSampleConditionLabel("sim");
         peakList.setScale(1.0);
-
-        return peakList;
-    }
-
-    public PeakList makePeakList(String listName, String[] labels, double[] sfs, double[] sws) {
-        int nDim = labels.length;
-        if (sfs.length != nDim) {
-            throw new IllegalArgumentException("number of labels and spectrometer frequencies is not equal");
-        }
-        if (sws.length != nDim) {
-            throw new IllegalArgumentException("number of labels and sweep widths is not equal");
-        }
-        PeakList peakList = new PeakList(listName, nDim);
-        for (int i = 0; i < peakList.getNDim(); i++) {
-            peakList.getSpectralDim(i).setSw(sws[i]);
-            peakList.getSpectralDim(i).setSf(sfs[i]);
-            peakList.getSpectralDim(i).setDimName(labels[i]);
-        }
-        peakList.setDatasetName("peaks");
-        peakList.setSampleConditionLabel("sim");
 
         return peakList;
     }
@@ -451,27 +425,28 @@ public class PeakGenerator {
         }
     }
 
+    private Atom getAtom(Residue residue, String atomSpec) {
+        int dot = atomSpec.indexOf(".");
+        String aName = dot == -1 ? atomSpec : atomSpec.substring(dot + 1);
+        Residue atomResidue = residue;
+        if (dot != -1) {
+            String resSpec = atomSpec.substring(0, dot);
+            if (resSpec.equals("-1")) {
+                atomResidue = residue.getPrevious();
+            } else if (resSpec.equals("1")) {
+                atomResidue = residue.getNext();
+            }
+        }
+        return atomResidue != null ? atomResidue.getAtom(aName) : null;
+    }
+
     private void addResiduePeak(PeakList peakList, Residue residue,
                                 List<String> nucNames, String[] specifier, boolean firstSpec) {
         int nDim = peakList.getNDim();
         Atom[] atoms = new Atom[nDim];
         boolean ok = true;
         for (String atomSpec : specifier) {
-            int dot = atomSpec.indexOf(".");
-            String aName = dot == -1 ? atomSpec : atomSpec.substring(dot + 1);
-            Residue atomResidue = residue;
-            if (dot != -1) {
-                String resSpec = atomSpec.substring(0, dot);
-                if (resSpec.equals("-1")) {
-                    atomResidue = residue.getPrevious();
-                } else if (resSpec.equals("1")) {
-                    atomResidue = residue.getNext();
-                }
-            }
-            if (atomResidue == null) {
-                ok = false;
-            }
-            Atom atom = atomResidue.getAtom(aName);
+            Atom atom = getAtom(residue, atomSpec);
             if (atom == null) {
                 ok = false;
                 break;
@@ -483,7 +458,6 @@ public class PeakGenerator {
                 break;
             }
             atoms[eIndex] = atom;
-
         }
         if (ok) {
             double intensity;
