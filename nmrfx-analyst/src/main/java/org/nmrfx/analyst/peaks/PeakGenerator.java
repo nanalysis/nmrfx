@@ -384,6 +384,8 @@ public class PeakGenerator {
         }
 
         final int testANum = aNum;
+        double exponent = -5.0;
+        double scale = Math.pow(2.0, exponent);
         protonPairs.forEach(aP -> {
             atoms[indices[0]] = aP.getAtom1();
             atoms[indices[1]] = aP.getAtom2();
@@ -399,16 +401,9 @@ public class PeakGenerator {
                 }
             }
             if (ok) {
-                double distance = aP.getDistance();
-                double volume;
-                if (distance > 4.0) {
-                    volume = 0.2;
-                } else if (distance > 3.0) {
-                    volume = 0.5;
-                } else {
-                    volume = 1.0;
-                }
-                addPeak(peakList, volume, atoms);
+                double distance = Math.max(2.0, Math.abs(aP.getDistance()));
+                double intensity = Math.pow(distance, exponent) / scale;
+                addPeak(peakList, intensity, atoms);
             }
         });
     }
@@ -421,6 +416,7 @@ public class PeakGenerator {
             interp.set("datasetName", dataset.getName());
             interp.set("listName", peakList.getName());
             interp.exec(script);
+            System.out.println("execute " + peakList.getName() + " " + peakList.size());
         }
     }
 
