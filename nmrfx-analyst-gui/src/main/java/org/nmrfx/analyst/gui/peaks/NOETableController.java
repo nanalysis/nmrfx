@@ -115,7 +115,8 @@ public class NOETableController implements Initializable {
         masterDetailPane.setDetailSide(Side.RIGHT);
         masterDetailPane.setDetailNode(propertySheet);
         masterDetailPane.setShowDetailNode(true);
-        propertySheet.setPrefWidth(250);
+        masterDetailPane.setDividerPosition(0.7);
+        propertySheet.setPrefWidth(400);
         propertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory());
         propertySheet.setMode(PropertySheet.Mode.CATEGORY);
         propertySheet.setModeSwitcherVisible(false);
@@ -366,12 +367,16 @@ public class NOETableController implements Initializable {
         networkCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
         networkCol.setPrefWidth(75);
 
-        tableView.getColumns().addAll(lowerCol, upperCol, ppmCol, contribCol, networkCol);
+        TableColumn<Noe, String> flagCol = new TableColumn<>("Flags");
+        flagCol.setCellValueFactory(new PropertyValueFactory("ActivityFlags"));
+        flagCol.setPrefWidth(75);
+
+        tableView.getColumns().addAll(lowerCol, upperCol, ppmCol, contribCol, networkCol, flagCol);
 
     }
 
     public void setNoeSet(NoeSet noeSet) {
-        log.info("set noes {}", noeSet);
+        log.info("set noes {}", noeSet != null ? noeSet.getName() : "empty");
         this.noeSet = noeSet;
         if (tableView == null) {
             log.warn("null table");
@@ -392,24 +397,28 @@ public class NOETableController implements Initializable {
     }
 
     void calibrate() {
-        Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
-        if (noeSetOpt.isEmpty()) {
-            noeSet = molConstr.newNOESet("default");
-            noeSetOpt = Optional.of(noeSet);
-        } else {
-            noeSet = noeSetOpt.get();
+        if (noeSet == null) {
+            Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
+            if (noeSetOpt.isEmpty()) {
+                noeSet = molConstr.newNOESet("default");
+            } else {
+                noeSet = noeSetOpt.get();
+            }
         }
-        if (noeSetOpt.isPresent()) {
+        if (noeSet != null) {
+            log.info("Calibrate {}", noeSet.getName() + " " + noeSet);
             String intVolChoice = modeItem.getValue().toLowerCase();
             double referenceDistance = refDistanceItem.doubleValue();
             double expValue = expItem.doubleValue();
             double minDistance = minDisItem.doubleValue();
             double maxDistance = maxDisItem.doubleValue();
             double fError = fErrorItem.doubleValue();
-            noeSetOpt.get().setCalibratable(true);
-            NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
+            noeSet.setCalibratable(true);
+            NOECalibrator noeCalibrator = new NOECalibrator(noeSet);
             noeCalibrator.setScale(intVolChoice, referenceDistance, expValue, minDistance, maxDistance, fError);
             noeCalibrator.calibrateExp(null);
+
+            setNoeSet(noeSet);
             refresh();
         }
     }
@@ -428,8 +437,6 @@ public class NOETableController implements Initializable {
             if (noeSetOpt.isEmpty()) {
                 noeSet = molConstr.newNOESet("default");
                 noeSetOpt = Optional.of(noeSet);
-            } else {
-                noeSet = noeSetOpt.get();
             }
             NOEAssign.extractNoePeaks2(noeSetOpt, peakList, 2, false, 0);
             if (noeSetOpt.isPresent()) {
