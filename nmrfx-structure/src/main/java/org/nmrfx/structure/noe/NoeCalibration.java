@@ -40,7 +40,7 @@ public abstract class NoeCalibration {
                 return noe.getVolume();
             }
         };
-        private String description;
+        private final String description;
 
         MeasurementMode(String description) {
             this.description = description;
@@ -55,9 +55,7 @@ public abstract class NoeCalibration {
             }
         }
 
-        double measure(Noe noe) {
-            return 0.0;
-        }
+        abstract double measure(Noe noe);
     }
     MeasurementMode mMode;
     boolean removeRedundant = true;

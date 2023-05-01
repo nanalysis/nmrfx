@@ -33,14 +33,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Callback;
-import javafx.util.StringConverter;
-import javafx.util.converter.DefaultStringConverter;
 import org.controlsfx.control.MasterDetailPane;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -54,7 +50,7 @@ import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.noe.NOEAssign;
 import org.nmrfx.structure.noe.NOECalibrator;
 import org.nmrfx.utils.GUIUtils;
@@ -89,9 +85,6 @@ public class NOETableController implements Initializable {
     private TableView<Noe> tableView;
     private NoeSet noeSet;
 
-    Button valueButton;
-    Button saveParButton;
-    Button closeButton;
     MenuButton noeSetMenuItem;
     MenuButton peakListMenuButton;
     ObservableMap<String, NoeSet> noeSetMap;
@@ -129,15 +122,11 @@ public class NOETableController implements Initializable {
         }
 
         noeSetMap = FXCollections.observableMap(molConstr.noeSets);
-        MapChangeListener<String, NoeSet> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends NoeSet> change) -> {
-            updateNoeSetMenu();
-        };
+        MapChangeListener<String, NoeSet> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends NoeSet> change) -> updateNoeSetMenu();
 
         noeSetMap.addListener(mapChangeListener);
-        MapChangeListener<String, PeakList> peakmapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
-            updatePeakListMenu();
-        };
-        Project.getActive().addPeakListListener(peakmapChangeListener);
+        MapChangeListener<String, PeakList> peakmapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
+        ProjectBase.getActive().addPeakListListener(peakmapChangeListener);
 
         updateNoeSetMenu();
         updatePeakListMenu();
@@ -175,11 +164,11 @@ public class NOETableController implements Initializable {
         NOETableController controller = null;
         Stage stage = new Stage(StageStyle.DECORATED);
         try {
-            Scene scene = new Scene((Pane) loader.load());
+            Scene scene = new Scene(loader.load());
             stage.setScene(scene);
             scene.getStylesheets().add("/styles/Styles.css");
 
-            controller = loader.<NOETableController>getController();
+            controller = loader.getController();
             controller.stage = stage;
             stage.setTitle("Peaks");
             stage.show();
@@ -210,12 +199,10 @@ public class NOETableController implements Initializable {
         MoleculeBase mol = MoleculeFactory.getActive();
 
         if (mol != null) {
-            MolecularConstraints molConstr = mol.getMolecularConstraints();
-            for (String noeSetName : molConstr.getNOESetNames()) {
+            MolecularConstraints molecularConstraints = mol.getMolecularConstraints();
+            for (String noeSetName : molecularConstraints.getNOESetNames()) {
                 MenuItem menuItem = new MenuItem(noeSetName);
-                menuItem.setOnAction(e -> {
-                    setNoeSet(molConstr.noeSets.get(noeSetName));
-                });
+                menuItem.setOnAction(e -> setNoeSet(molecularConstraints.noeSets.get(noeSetName)));
                 noeSetMenuItem.getItems().add(menuItem);
             }
         }
@@ -223,11 +210,9 @@ public class NOETableController implements Initializable {
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
-        for (String peakListName : Project.getActive().getPeakListNames()) {
+        for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
-            menuItem.setOnAction(e -> {
-                extractPeakList(PeakList.get(peakListName));
-            });
+            menuItem.setOnAction(e -> extractPeakList(PeakList.get(peakListName)));
             peakListMenuButton.getItems().add(menuItem);
         }
     }
@@ -245,18 +230,7 @@ public class NOETableController implements Initializable {
         }
     }
 
-    public NoeSet getNoeSet() {
-        return noeSet;
-    }
-
-    private class ColumnFormatter<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
-
-        private Format format;
-
-        public ColumnFormatter(Format format) {
-            super();
-            this.format = format;
-        }
+    private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
 
         @Override
         public TableCell<S, T> call(TableColumn<S, T> arg0) {
@@ -274,21 +248,12 @@ public class NOETableController implements Initializable {
         }
     }
 
-    class PeakStringFieldTableCell extends TextFieldTableCell<Peak, String> {
-
-        PeakStringFieldTableCell(StringConverter converter) {
-            super(converter);
-        }
-
-    }
-
     void initTable() {
         tableView.setEditable(true);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         updateColumns();
-        ListChangeListener listener = (ListChangeListener) (ListChangeListener.Change c) -> {
+        ListChangeListener listener = (ListChangeListener.Change c) -> {
             int nSelected = tableView.getSelectionModel().getSelectedItems().size();
-            boolean state = nSelected == 1;
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(listener);
         tableView.setOnMouseClicked(e -> {
@@ -303,7 +268,6 @@ public class NOETableController implements Initializable {
 
     void updateColumns() {
         tableView.getColumns().clear();
-        StringConverter sConverter = new DefaultStringConverter();
 
         TableColumn<Noe, Integer> idNumCol = new TableColumn<>("id");
         idNumCol.setCellValueFactory(new PropertyValueFactory("ID"));
@@ -406,7 +370,7 @@ public class NOETableController implements Initializable {
             }
         }
         if (noeSet != null) {
-            log.info("Calibrate {}", noeSet.getName() + " " + noeSet);
+            log.info("Calibrate {} {}", noeSet.getName() , noeSet);
             String intVolChoice = modeItem.getValue().toLowerCase();
             double referenceDistance = refDistanceItem.doubleValue();
             double expValue = expItem.doubleValue();
@@ -439,12 +403,11 @@ public class NOETableController implements Initializable {
                 noeSetOpt = Optional.of(noeSet);
             }
             NOEAssign.extractNoePeaks2(noeSetOpt, peakList, 2, false, 0);
-            if (noeSetOpt.isPresent()) {
-                NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
-                noeCalibrator.updateContributions(false, false);
-                noeSet = noeSetOpt.get();
-                log.info("active {}", noeSet.getName());
-            }
+            NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
+            noeCalibrator.updateContributions(false, false);
+            noeSet = noeSetOpt.get();
+            log.info("active {}", noeSet.getName());
+
             setNoeSet(noeSet);
             updateNoeSetMenu();
         } catch (InvalidMoleculeException | IllegalArgumentException ex) {
@@ -456,7 +419,7 @@ public class NOETableController implements Initializable {
     void clearNOESet() {
         if (GUIUtils.affirm("Clear active set")) {
             Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
-            noeSetOpt.ifPresent(noeSet -> noeSet.clear());
+            noeSetOpt.ifPresent(NoeSet::clear);
             refresh();
         }
     }
