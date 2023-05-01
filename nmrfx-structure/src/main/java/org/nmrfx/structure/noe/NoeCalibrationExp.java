@@ -48,9 +48,6 @@ public class NoeCalibrationExp extends NoeCalibration {
     }
 
     public void calibrate(Noe noe) {
-        if (!noe.isActive()) {
-            return;
-        }
         double C = referenceValue * Math.pow(referenceDist, expValue);
         double bound = maxBound;
         double target = maxBound;
