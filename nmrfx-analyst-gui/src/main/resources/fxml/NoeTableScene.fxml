@@ -18,9 +18,7 @@
         </ToolBar>
     </top>
     <center>  
-        <TableView fx:id="tableView">
-            <columns>
-            </columns>
-        </TableView>
+        <MasterDetailPane fx:id="masterDetailPane">
+        </MasterDetailPane>
     </center>
 </BorderPane>

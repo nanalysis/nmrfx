@@ -31,10 +31,44 @@ import org.slf4j.LoggerFactory;
  * @author brucejohnson
  */
 public class NOEAssign {
-
     private static final Logger log = LoggerFactory.getLogger(NOEAssign.class);
 
-    public static MatchCriteria[] getMatchCriteria(PeakList peakList) throws NumberFormatException {
+    public static Optional<int[]> getProtonDims(PeakList peakList) {
+        int nDim = peakList.nDim;
+        int protonDim1 = -1;
+        int protonDim2 = -1;
+        String[][] atomPats = new String[nDim][];
+        for (int iDim = 0; iDim < peakList.nDim; iDim++) {
+            SpectralDim spectralDim = peakList.getSpectralDim(iDim);
+            String pattern = spectralDim.getPattern();
+            int dot = pattern.indexOf('.');
+            if (dot < 0) {
+                atomPats[iDim] = new String[1];
+                atomPats[iDim][0] = "*";
+            } else {
+                atomPats[iDim] = pattern.substring(dot + 1).toLowerCase().split(",");
+            }
+            for (int j = 0; j < atomPats[iDim].length; j++) {
+                if (Util.stringMatch(atomPats[iDim][j], "h*")) {
+                    if (protonDim1 == -1) {
+                        protonDim1 = iDim;
+                    } else if (protonDim2 == -1) {
+                        protonDim2 = iDim;
+                    } else {
+                        throw new IllegalArgumentException("Too many proton dimensions, check peakList patterns");
+                    }
+                }
+            }
+        }
+        Optional<int[]> result = Optional.empty();
+        if ((protonDim1 != -1) && (protonDim2 != -1)) {
+            int[] dims = {protonDim1, protonDim2};
+            result = Optional.of(dims);
+        }
+        return result;
+    }
+
+    public static MatchCriteria[] getMatchCriteria(PeakList peakList) throws NumberFormatException, IllegalArgumentException {
         int nDim = peakList.nDim;
         MatchCriteria[] matchCriteria = new MatchCriteria[4];
         String[][] atomPats = new String[nDim][];
@@ -185,12 +219,16 @@ public class NOEAssign {
     // mode == 0  only extract contraints for peaks with one assignment
     // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
 
-    public static AssignResult extractNoePeaks2(NoeSet noeSet, final PeakList peakList, final int maxAmbig, final boolean strict, final int ppmSet) throws InvalidMoleculeException {
+    public static AssignResult extractNoePeaks2(NoeSet noeSet, final PeakList peakList, final int maxAmbig,
+                                                final boolean strict, final int ppmSet)
+            throws InvalidMoleculeException, IllegalArgumentException {
         Optional<NoeSet> noeSetOpt = Optional.of(noeSet);
         return extractNoePeaks2(noeSetOpt, peakList, maxAmbig, strict, ppmSet);
     }
 
-    public static AssignResult extractNoePeaks2(Optional<NoeSet> noeSetOpt, final PeakList peakList, final int maxAmbig, final boolean strict, final int ppmSet) throws InvalidMoleculeException {
+    public static AssignResult extractNoePeaks2(Optional<NoeSet> noeSetOpt, final PeakList peakList, final int maxAmbig,
+                                                final boolean strict, final int ppmSet)
+            throws InvalidMoleculeException, IllegalArgumentException {
         Peak peak;
         double scale = 1.0;
         int nPeaks;
@@ -340,6 +378,14 @@ public class NOEAssign {
                         for (Map.Entry<String, Noe.NoeMatch> entry : map.entrySet()) {
                             Noe.NoeMatch nM = entry.getValue();
                             final Noe noe = new Noe(peak, nM.sp1, nM.sp2, scale);
+                            double atomScale = 1.0;
+                            if (nM.sp1.getAtom().isMethyl()) {
+                                atomScale *= 3.0;
+                            }
+                            if (nM.sp2.getAtom().isMethyl()) {
+                                atomScale *= 3.0;
+                            }
+                            noe.atomScale = atomScale;
                             noe.setIntensity(peak.getIntensity());
                             noe.setVolume(peak.getVolume1());
                             noe.setPpmError(nM.error);
@@ -537,7 +583,7 @@ public class NOEAssign {
     // mode == 0  only extract contraints for peaks with one assignment
     // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
 
-    public static double findMax(PeakList peakList, int dim, double mult) throws InvalidMoleculeException {
+    public static double findMax(PeakList peakList, int dim, double mult) throws InvalidMoleculeException, IllegalArgumentException {
         boolean strict = true;
         if (mult < 1.0e-6) {
             mult = peakList.getSpectralDim(dim).getIdTol() / 4.0;
