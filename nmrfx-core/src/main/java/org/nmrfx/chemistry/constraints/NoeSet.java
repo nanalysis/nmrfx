@@ -202,15 +202,17 @@ public class NoeSet implements ConstraintSet, Iterable {
         try ( FileWriter fileWriter = new FileWriter(file)) {
             int i = 0;
             for (Noe noe : constraints) {
-                double lower = noe.getLower();
-                double upper = noe.getUpper();
-                SpatialSetGroup spg1 = noe.spg1;
-                SpatialSetGroup spg2 = noe.spg2;
-                String aName1 = spg1.getFullName();
-                String aName2 = spg2.getFullName();
-                String outputString = String.format("%d\t%d\t%s\t%s\t%.3f\t%.3f\n", i, i, aName1, aName2, lower, upper);
-                fileWriter.write(outputString);
-                i++;
+                if (noe.isActive()) {
+                    double lower = noe.getLower();
+                    double upper = noe.getUpper();
+                    SpatialSetGroup spg1 = noe.spg1;
+                    SpatialSetGroup spg2 = noe.spg2;
+                    String aName1 = spg1.getFullName();
+                    String aName2 = spg2.getFullName();
+                    String outputString = String.format("%d\t%d\t%s\t%s\t%.3f\t%.3f\n", i, i, aName1, aName2, lower, upper);
+                    fileWriter.write(outputString);
+                    i++;
+                }
             }
         }
     }
