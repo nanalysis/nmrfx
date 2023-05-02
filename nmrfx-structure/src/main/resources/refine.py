@@ -84,20 +84,20 @@ class Cluster:
 def getClusterDict():
     clusterDict = {}
     cluster_table_file = "cluster_table.txt"
-    with open(cluster_table_file,'r') as fin:
-       currCluster = None
-       for nLine, line in enumerate(fin):
-           if nLine%2 != 0:
-               currCluster.repSeqs += [seq for seq in line.strip('\n').split()]
-               continue
-           line = line.strip('\n').split('\t')
-           name,regex,suites,chi = line[:4]
-           nSuites = int(len(suites)/2)
-           suites = [suites[i*2:(i+1)*2] for i in range(nSuites)]
-           bp = [item[3:] for item in line[4:] if item.startswith("bp")]
-           hb = [item[3:] for item in line[4:] if item.startswith("hb")]
-           clusterDict[name] = Cluster(name,regex,suites,chi,bp,hb)
-           currCluster = clusterDict[name]
+    lines = loadFile(cluster_table_file)
+    currCluster = None
+    for nLine, line in enumerate(lines):
+        if nLine%2 != 0:
+            currCluster.repSeqs += [seq for seq in line.strip('\n').split()]
+            continue
+        line = line.strip('\n').split('\t')
+        name,regex,suites,chi = line[:4]
+        nSuites = int(len(suites)/2)
+        suites = [suites[i*2:(i+1)*2] for i in range(nSuites)]
+        bp = [item[3:] for item in line[4:] if item.startswith("bp")]
+        hb = [item[3:] for item in line[4:] if item.startswith("hb")]
+        clusterDict[name] = Cluster(name,regex,suites,chi,bp,hb)
+        currCluster = clusterDict[name]
     return clusterDict
 
 def getCluster(tetraLoopSeq):
@@ -114,12 +114,14 @@ def getCluster(tetraLoopSeq):
 
 def getLoopType(ss):
    residues = ss.getResidues()
-   if ss.getName() == "Loop" and len(residues) == 4:
-       residues = [residues[0].getPrevious()] + residues + [residues[-1].getNext()]
-       loopSeq = ''.join([residue.getName() for residue in residues])
-       cluster = getCluster(loopSeq) 
-       if cluster:
-           return ":"+cluster.name
+   if ss.getName() == "Loop":
+       if len(residues) == 4:
+           residues = [residues[0].getPrevious()] + residues + [residues[-1].getNext()]
+           loopSeq = ''.join([residue.getName() for residue in residues])
+           cluster = getCluster(loopSeq) 
+           if cluster:
+               return ":"+cluster.name
+       return str(len(residues))
    return ""
    
 def getRNAResType(ss, residues, residue):
@@ -1350,6 +1352,12 @@ class refine:
                     self.readMolEditDict(seqReader, molData['edit'])
 
 
+        if 'rna' in data:
+            self.findRNAHelices(data['rna'])
+            if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
+                rnaLinks,rnaBonds = self.findSSLinks()
+                molData['link'] = rnaLinks
+                data['bonds'] = rnaBonds
         self.molecule = MoleculeFactory.getActive()
         self.molName = self.molecule.getName()
 
@@ -1381,6 +1389,8 @@ class refine:
             if len(self.molecule.getEntities()) > 1:
                 linkerList = self.validateLinkerList(linkerList, treeDict, rnaLinkerDict)
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
+            #if 'bonds' in data:
+            #    self.processBonds(data['bonds'], 'break')
             self.measureTree()
         else:
             if nEntities > 1:
@@ -1658,6 +1668,12 @@ class refine:
                         if lastRes and ("hL" in subType or "hl" in subType) and lockLoop:
                             lock = True 
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, lock)
+                    else:
+                        subType = 'hL:GNRAXe' if subType[-2] =='X' else 'hl:GNRAxe'
+                        genericHelixLinker = 'Helix'+':0:'+nucType+':'+subType
+                        anglesToSet = angleDict[genericHelixLinker].copy()
+                        lock = True if lastRes and lockLoop else False
+                        RNARotamer.setDihedrals(res,anglesToSet,0.0,lock)
             elif ss.getName() == "Loop":
                 for iLoop,res in enumerate(residues):
                     subType = getRNAResType(ss, residues, res)
@@ -3050,7 +3066,7 @@ class refine:
         if self.eFileRoot != None and self.reportDump:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 
-    def init(self,dOpt=None):
+    def init(self,dOpt=None,save=True):
         from anneal import runStage
         from anneal import getAnnealStages
         dOpt = dOpt if dOpt else dynOptions()
@@ -3062,7 +3078,8 @@ class refine:
         print 'start energy is', energy
 
         self.prepAngles()
-        self.output()
+        if save:
+            self.output()
 
     def refine(self,dOpt=None):
         from anneal import runStage

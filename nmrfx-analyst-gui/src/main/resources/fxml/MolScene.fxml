@@ -76,6 +76,7 @@
                                         <MenuButton  mnemonicParsing="false" text="Calculate">
                                             <items>
                                                 <MenuItem mnemonicParsing="false" onAction="#calcStructureAction" text="Calc Structure" />
+                                                <MenuItem mnemonicParsing="false" onAction="#refineStructureAction" text="Refine Structure" />
                                             </items>
                                         </MenuButton>
                                         <MenuButton  mnemonicParsing="false" text="Edit">
@@ -107,6 +108,7 @@
                                             <buttons>
                                                 <Button mnemonicParsing="false" onAction="#layoutSS" prefHeight="27.0" prefWidth="87.0" text="Draw" />
                                                 <Button mnemonicParsing="false" onAction="#ssFrom3D" prefHeight="27.0" prefWidth="87.0" text="From3D" />
+                                                <Button mnemonicParsing="false" onAction="#ssTo3D" prefHeight="27.0" prefWidth="87.0" text="To3D" />
                                                 <MenuButton fx:id="atomMenu" text="Atoms"/>
                                                 <MenuButton fx:id="peakListMenuButton" text="PeakList"/>
                                                 <MenuButton fx:id="modeMenuButton" text="Modes"/>

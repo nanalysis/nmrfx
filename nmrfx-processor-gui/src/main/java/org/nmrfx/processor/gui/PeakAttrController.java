@@ -40,7 +40,10 @@ import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.*;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -50,7 +53,6 @@ import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.io.PeakPatternReader;
 import org.nmrfx.peaks.types.PeakListType;
@@ -59,14 +61,14 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.TableUtils;
-import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
-import java.text.DecimalFormat;
-import java.util.*;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -77,7 +79,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     private static final Logger log = LoggerFactory.getLogger(PeakAttrController.class);
 
-    static final DecimalFormat formatter = new DecimalFormat();
     static PeakListTypes peakListTypes = null;
     private Stage stage;
     @FXML
@@ -118,37 +119,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     private BorderPane graphBorderPane;
 
     @FXML
-    private BorderPane simBorderPane;
-    @FXML
-    private TextField simPeakListNameField;
-    @FXML
-    private ComboBox simDatasetNameField;
-
-    @FXML
-    private MenuButton simTypeMenu;
-
-    @FXML
-    private Label typeLabel;
-
-    @FXML
-    private Label subTypeLabel;
-
-    @FXML
-    private GridPane peakListParsPane;
-    TextField[][] peakListParFields;
-
-    @FXML
-    private HBox optionBox;
-
-    @FXML
-    Button generateButton;
-
-    @FXML
     private ChoiceBox<PEAK_NORM> normChoice;
-
-    private Slider distanceSlider = new Slider(2, 7.0, 5.0);
-    private ChoiceBox transferLimitChoice = new ChoiceBox();
-    private CheckBox useNCheckBox = new CheckBox("UseN");
 
     private ScatterChart<Number, Number> scatterChart;
 
@@ -159,10 +130,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     ToggleButton deleteButton;
     ComboTableCell comboTableCell = new ComboTableCell();
     ObservableList<String> relationChoiceItems = FXCollections.observableArrayList("", "D1", "D2", "D3", "D4");
-
-    String type = "";
-    String subType = "";
-    double sfH = 700.0;
 
     enum PEAK_NORM {
         NO_NORM() {
@@ -219,45 +186,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             }
         });
 
-        simDatasetNameField.setOnShowing(e -> updateSimDatasetNames());
-        simDatasetNameField.setOnAction(e -> {
-            selectSimDataset();
-        });
-
-        String[] basicTypes = {"HSQC-13C", "HSQC-15N", "HMBC", "TOCSY", "NOESY"};
-        String[] rnaTypes = {"RNA-NOESY-2nd-str"};
-        String[] proteinTypes = {"HSQC", "HNCO", "HNCOCA", "HNCOCACB", "HNCACO", "HNCA", "HNCACB"};
-        String[] types = {"Basic", "Protein", "RNA"};
-        Map<String, String[]> subTypeMap = new HashMap<>();
-        subTypeMap.put("Basic", basicTypes);
-        subTypeMap.put("RNA", rnaTypes);
-        subTypeMap.put("Protein", proteinTypes);
-        for (String type : types) {
-            Menu menu = new Menu(type);
-            simTypeMenu.getItems().add(menu);
-            String[] subTypes = subTypeMap.get(type);
-            for (String subType : subTypes) {
-                MenuItem item = new MenuItem(subType);
-                item.setOnAction(e -> setType(type, subType));
-                menu.getItems().add(item);
-            }
-        }
-        try {
-            if (peakListTypes == null) {
-                peakListTypes = PeakPatternReader.loadYaml();
-            }
-        } catch (IOException e) {
-            log.warn(e.getMessage(), e);
-        }
-        if (peakListTypes != null) {
-            for (PeakListType peakListType : peakListTypes.getTypes()) {
-                peakListTypeChoice.getItems().add(peakListType.getName());
-            }
-        }
-        peakListTypeChoice.setOnAction(this::setPeakListType);
-
-        generateButton.setDisable(true);
-
         normChoice.getItems().addAll(PEAK_NORM.values());
         normChoice.setValue(PEAK_NORM.NO_NORM);
         normChoice.setOnAction(e -> updateGraph());
@@ -286,7 +214,20 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             } else {
             }
         });
-        initOptions();
+
+        try {
+            if (peakListTypes == null) {
+                peakListTypes = PeakPatternReader.loadYaml();
+            }
+        } catch (IOException e) {
+            log.warn(e.getMessage(), e);
+        }
+        if (peakListTypes != null) {
+            for (PeakListType peakListType : peakListTypes.getTypes()) {
+                peakListTypeChoice.getItems().add(peakListType.getName());
+            }
+        }
+        peakListTypeChoice.setOnAction(this::setPeakListType);
         if (!MainApp.isAnalyst()) {
             tabPane.getTabs().remove(3);
         }
@@ -449,15 +390,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         }
     }
 
-    public void updateSimDatasetNames() {
-        simDatasetNameField.getItems().clear();
-        simDatasetNameField.getItems().add("Sim");
-
-        Dataset.datasets().stream().sorted().forEach(d -> {
-            simDatasetNameField.getItems().add(d.getName());
-        });
-    }
-
     public void refreshPeakListView(PeakList refreshPeakList) {
         if (referenceTableView == null) {
             System.out.println("null table");
@@ -554,8 +486,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             }
         }
     }
-
-    ;
 
     static class TextFieldTableCellPeakLabel extends TextFieldTableCell<PeakDim, String> {
 
@@ -903,269 +833,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         PeakListType.setPeakList(peakList, peakListTypeName);
     }
 
-    void selectSimDataset() {
-        String name = (String) simDatasetNameField.getValue();
-        if (name != null) {
-            if (!name.equals("Sim")) {
-                Dataset dataset = Dataset.getDataset(name);
-                if (dataset != null) {
-                    int nDim = dataset.getNDim();
-                    if (peakListParFields.length < nDim) {
-                        initPeakListParFields(nDim);
-                    }
-                    for (int i = 0; i < nDim; i++) {
-                        peakListParFields[i][0].setText(String.valueOf(dataset.getSw(i)));
-                        peakListParFields[i][1].setText(String.valueOf(dataset.getSf(i)));
-                        peakListParFields[i][2].setText(dataset.getLabel(i));
-                        for (int j = 0; j < peakListParFields[i].length; j++) {
-                            peakListParFields[i][j].setDisable(true);
-                        }
-                    }
 
-                }
-                int dotIndex = name.indexOf(".");
-                if (dotIndex != -1) {
-                    name = name.substring(0, dotIndex);
-                }
-                simPeakListNameField.setText(name + "_sim");
-                generateButton.setDisable(false);
 
-            } else {
-                simPeakListNameField.setText(subType + "_sim");
-                generateButton.setDisable(false);
-            }
-        }
-    }
-
-    void initOptions() {
-        transferLimitChoice.getItems().add("1");
-        transferLimitChoice.getItems().add("2");
-        transferLimitChoice.getItems().add("3");
-        transferLimitChoice.getItems().add("4");
-        transferLimitChoice.getItems().add("5");
-        transferLimitChoice.setValue("2");
-        distanceSlider.setShowTickLabels(true);
-        distanceSlider.setShowTickMarks(true);
-        distanceSlider.setMajorTickUnit(1.0);
-        distanceSlider.setMinorTickCount(9);
-        distanceSlider.setMinWidth(250.0);
-
-    }
-
-    void setType(String type, String subType) {
-        this.type = type;
-        this.subType = subType;
-        typeLabel.setText(type);
-        subTypeLabel.setText(subType);
-        generateButton.setDisable(true);
-        simDatasetNameField.setValue(null);
-        updateOptions();
-    }
-
-    void initPeakListParFields(int nDim) {
-        peakListParsPane.getChildren().clear();
-        String[] headers = {"Dim", "SW", "SF", "Label"};
-        int col = 0;
-        for (String header : headers) {
-            peakListParsPane.add(new Label(header), col++, 0);
-        }
-        peakListParFields = new TextField[nDim][3];
-        peakListParFields = new TextField[nDim][3];
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            Label dimLabel = new Label(String.valueOf(iDim + 1));
-            dimLabel.setMinWidth(50);
-            peakListParsPane.add(dimLabel, 0, iDim + 1);
-            for (int i = 0; i < 3; i++) {
-                peakListParFields[iDim][i] = new TextField();
-                peakListParsPane.add(peakListParFields[iDim][i], 1 + i, iDim + 1);
-
-            }
-        }
-    }
-
-    void updateOptions() {
-        optionBox.getChildren().clear();
-        List<String> labels = new ArrayList<>();
-        double swP = 10.0;
-        double[] ratios = {1, 1, 1};
-
-        if (subType != null) {
-            if (subType.equals("TOCSY")) {
-                Label label = new Label("Transfers");
-                optionBox.getChildren().add(label);
-                optionBox.getChildren().add(transferLimitChoice);
-                labels.add("H");
-                labels.add("H2");
-            } else if (subType.equals("NOESY")) {
-                Label label = new Label("Distance");
-                optionBox.getChildren().add(label);
-                optionBox.getChildren().add(distanceSlider);
-                labels.add("H");
-                labels.add("H2");
-            } else if (subType.equals("HSQC-15N")) {
-                labels.add("H");
-                labels.add("N");
-                ratios[1] = 2.0;
-            } else if (subType.equals("HSQC-13C")) {
-                labels.add("H");
-                labels.add("C");
-                ratios[1] = 10.0;
-            } else if (subType.equals("HMBC")) {
-                Label label = new Label("Transfers");
-                optionBox.getChildren().add(label);
-                optionBox.getChildren().add(transferLimitChoice);
-                labels.add("H");
-                labels.add("C");
-                ratios[1] = 10.0;
-            } else if (subType.startsWith("RNA")) {
-                labels.add("H");
-                labels.add("H2");
-                optionBox.getChildren().add(useNCheckBox);
-            } else if (subType.equals("HSQC")) {
-                labels.add("H");
-                labels.add("N");
-                ratios[1] = 2.0;
-            } else {
-                labels.add("H");
-                labels.add("N");
-                ratios[1] = 2.0;
-                if (type.endsWith("CO")) {
-                    labels.add("C");
-                    ratios[2] = 2.0;
-                } else {
-                    labels.add("CA");
-                    ratios[2] = 5.0;
-                }
-            }
-            int nDim = labels.size();
-            initPeakListParFields(nDim);
-            for (int iDim = 0; iDim < nDim; iDim++) {
-                for (int i = 0; i < 3; i++) {
-                    double sf = sfH * Nuclei.findNuclei(labels.get(iDim).substring(0, 1)).getFreqRatio();
-                    switch (i) {
-                        case 0:
-                            double sw = swP * ratios[i] * sf;
-                            peakListParFields[iDim][i].setText(String.valueOf(sw));
-                            break;
-                        case 1:
-                            peakListParFields[iDim][i].setText(String.valueOf(sf));
-                            break;
-                        case 2:
-                            peakListParFields[iDim][i].setText(labels.get(iDim));
-                            break;
-                        default:
-                            break;
-                    }
-                    peakListParFields[iDim][i].setDisable(false);
-                }
-            }
-            peakListParFields[0][1].setOnKeyPressed(k -> {
-                if (k.getCode() == KeyCode.ENTER) {
-                    try {
-                        sfH = Double.parseDouble(peakListParFields[0][1].getText());
-                    } catch (NumberFormatException nfE) {
-                        log.warn("Unable to parse sfH.", nfE);
-                    }
-                    updateOptions();
-                }
-            });
-        }
-    }
-
-    PeakList makePeakListFromPars() {
-        String listName = simPeakListNameField.getText();
-        int nDim = peakListParFields.length;
-        PeakList newPeakList = new PeakList(listName, nDim);
-        try {
-            for (int iDim = 0; iDim < nDim; iDim++) {
-                newPeakList.getSpectralDim(iDim).setSw(Double.parseDouble(peakListParFields[iDim][0].getText()));
-                newPeakList.getSpectralDim(iDim).setSf(Double.parseDouble(peakListParFields[iDim][1].getText()));
-                newPeakList.getSpectralDim(iDim).setDimName(peakListParFields[iDim][2].getText());
-            }
-            newPeakList.setSampleConditionLabel("sim");
-        } catch (NumberFormatException nfE) {
-            System.out.println(nfE.getMessage());
-            PeakList.remove(listName);
-            newPeakList = null;
-        }
-        return newPeakList;
-    }
-
-    PeakList makePeakListFromDataset(Dataset dataset) {
-        String listName = simPeakListNameField.getText();
-        int nDim = dataset.getNDim();
-        PeakList newPeakList = new PeakList(listName, nDim);
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            newPeakList.getSpectralDim(iDim).setSw(dataset.getSw(iDim));
-            newPeakList.getSpectralDim(iDim).setSf(dataset.getSf(iDim));
-            newPeakList.getSpectralDim(iDim).setDimName(dataset.getLabel(iDim));
-        }
-        newPeakList.setSampleConditionLabel("sim");
-        return newPeakList;
-    }
-
-    @FXML
-    public void genPeaksAction(ActionEvent e) {
-        String mode = subType;
-
-        if ((mode != null) && !mode.equals("")) {
-            String listName;
-            PeakList newPeakList;
-            Dataset dataset;
-            String datasetName = "";
-            if ((simDatasetNameField.getValue() == null) || simDatasetNameField.getValue().equals("Sim")) {
-                newPeakList = makePeakListFromPars();
-                if (newPeakList == null) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setContentText("Could not make peakList");
-                    alert.showAndWait();
-                    return;
-                }
-            } else {
-                datasetName = simDatasetNameField.getValue().toString();
-                dataset = Dataset.getDataset(datasetName);
-                newPeakList = makePeakListFromDataset(dataset);
-            }
-            listName = newPeakList.getName();
-            String script = null;
-            if (type.equals("Protein")) {
-                script = String.format("molGen.genProteinPeaks(\"%s\", datasetName, listName=listName)", mode);
-            } else {
-                switch (mode) {
-                    case "NOESY":
-                        double range = distanceSlider.getValue();
-                        script = String.format("molGen.genDistancePeaks(datasetName, listName=listName, tol=%f)", range);
-                        break;
-                    case "TOCSY":
-                        int limit = Integer.parseInt(transferLimitChoice.getValue().toString());
-                        script = String.format("molGen.genTOCSYPeaks(datasetName, listName=listName, transfers=%d)", limit);
-                        break;
-                    case "HMBC":
-                        int hmbcLimit = Integer.parseInt(transferLimitChoice.getValue().toString());
-                        script = String.format("molGen.genHMBCPeaks(datasetName, listName=listName, transfers=%d)", hmbcLimit);
-                        break;
-                    case "HSQC-13C":
-                        script = String.format("molGen.genHSQCPeaks(\"%s\", datasetName, listName=listName)", "C");
-                        break;
-                    case "HSQC-15N":
-                        script = String.format("molGen.genHSQCPeaks(\"%s\", datasetName, listName=listName)", "N");
-                        break;
-                    case "RNA-NOESY-2nd-str":
-                        int useN = useNCheckBox.isSelected() ? 1 : 0;
-                        script = String.format("molGen.genRNASecStrPeaks(datasetName, listName=listName, useN=%d)", useN);
-                        break;
-                    default:
-                }
-            }
-            if (script != null) {
-                PythonInterpreter interp = MainApp.getInterpreter();
-                interp.exec("import molpeakgen");
-                interp.exec("molGen=molpeakgen.MolPeakGen()");
-                interp.set("datasetName", datasetName);
-                interp.set("listName", listName);
-                interp.exec(script);
-            }
-        }
-
-    }
 }

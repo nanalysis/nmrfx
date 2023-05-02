@@ -655,11 +655,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
         undoManager.clear();
     }
 
-    public PeakAttrController getPeakAttrController() {
+    public static PeakAttrController getPeakAttrController() {
         return peakAttrController;
     }
 
-    public boolean isPeakAttrControllerShowing() {
+    public static boolean isPeakAttrControllerShowing() {
         boolean state = false;
         if (peakAttrController != null) {
             if (peakAttrController.getStage().isShowing()) {
@@ -838,10 +838,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         peakAttrController.initIfEmpty();
     }
 
-    public void showPeakAttr() {
+    public static void showPeakAttr() {
         if (peakAttrController == null) {
             peakAttrController = PeakAttrController.create();
-            stage.setResizable(true);
         }
         if (peakAttrController != null) {
             peakAttrController.getStage().show();

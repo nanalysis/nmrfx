@@ -78,6 +78,18 @@ public class NOECalibrator {
         scaleMap.put(peakList, noeCal);
     }
 
+    public void setScale(String mMode, double referenceDist, double expValue, double minBound, double maxBound, double fError) {
+        for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
+            PeakList peakList = entry.getKey().getPeakList();
+            HashMap<PeakList, List<Double>> medianMap = calcMedian(mMode, peakList);
+            List<Double> valueList = medianMap.get(peakList);
+            double referenceValue = valueList.get(2);
+            double lower = 1.8;
+            NoeCalibration noeCal = new NoeCalibrationExp(mMode, lower, referenceValue, referenceDist, expValue, minBound, maxBound, fError, true);
+            scaleMap.put(peakList, noeCal);
+        }
+    }
+
     public void updateContributions(boolean useDistances, boolean requireActive) {
         this.useDistances = useDistances;
         inactivateDiagonal();
@@ -735,29 +747,16 @@ public class NOECalibrator {
         if (!noeSet.isCalibratable()) {
             return;
         }
-        double maxBound = 5.5;
-        double minBound = 2.0;
-        double floor = 1.0e-16;
-        double fError = 0.125;
-        double lower = 1.8;
-        for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
-            PeakList peakList = entry.getKey().getPeakList();
+        for (Noe noe : noeSet.getConstraints()) {
+            PeakList peakList = noe.getPeak().peakList;
             if ((whichList != null) && (whichList != peakList)) {
                 continue;
             }
-            List<Noe> noeList = entry.getValue();
             NoeCalibration noeCal = getCalibration(peakList);
             if (noeCal == null) {
                 noeCal = defaultCal(peakList);
             }
-            for (Noe noe : noeList) {
-                // fixme  what about negative NOE peaks?
-                if (!noe.isActive()) {
-
-                    continue;
-                }
-                noeCal.calibrate(noe);
-            }
+            noeCal.calibrate(noe);
         }
     }
 
