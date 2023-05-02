@@ -66,7 +66,7 @@ public class PeakFitTest {
     }
 
     @Test
-    public void testFitWithLinearAmpsBOBYQA() {
+    public void testFitWithLinearAmpsBOBYQA() throws Exception {
         int nSteps = 1000;
         int nDim = start.length;
         PeakFit peakFit = new PeakFit(false);
@@ -94,7 +94,6 @@ public class PeakFitTest {
 
     @Test
     public void testFitCMAES() throws Exception {
-        System.out.println("cmaeslin");
         int nDim = astart.length;
         int nSteps = 400;
         PeakFit peakFit = new PeakFit(true);
@@ -104,7 +103,6 @@ public class PeakFitTest {
         double[] best = peakFit.getBestPoint();
         System.out.println("done");
         for (int i = 0; i < best.length; i++) {
-            System.out.println(i + " " + astart[i] + " " + aa[i] + " " + best[i]);
             Assert.assertEquals(aa[i], best[i], atol[i]);
         }
     }

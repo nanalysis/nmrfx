@@ -17,37 +17,27 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import org.nmrfx.peaks.CouplingItem;
-import org.nmrfx.peaks.CouplingPattern;
-import org.nmrfx.processor.optimization.NNLSMat;
-import org.nmrfx.processor.optimization.SineSignal;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Random;
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.exception.NotPositiveException;
-import org.apache.commons.math3.exception.NotStrictlyPositiveException;
-import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import org.apache.commons.math3.exception.*;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.optim.InitialGuess;
-import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.SimpleBounds;
-import org.apache.commons.math3.optim.SimpleValueChecker;
+import org.apache.commons.math3.optim.*;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
-import org.apache.commons.math3.optimization.GoalType;
-import org.apache.commons.math3.optimization.PointValuePair;
-import org.apache.commons.math3.optimization.direct.BOBYQAOptimizer;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.SynchronizedRandomGenerator;
 import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.peaks.CouplingItem;
+import org.nmrfx.peaks.CouplingPattern;
+import org.nmrfx.processor.optimization.NNLSMat;
+import org.nmrfx.processor.optimization.SineSignal;
+
+import java.util.*;
 
 public class PeakFit implements MultivariateFunction {
 
@@ -142,10 +132,23 @@ public class PeakFit implements MultivariateFunction {
         return result.getValue();
     }
 
-    public double optimizeBOBYQA(final int nSteps, final int nInterpolationPoints) {
-        BOBYQAOptimizer optimizer = new BOBYQAOptimizer(nInterpolationPoints);
-        PointValuePair result = optimizer.optimize(nSteps, this, GoalType.MINIMIZE, newStart, uniformBoundaries[0], uniformBoundaries[1]);
-        double[] point = result.getPoint();
+    public double optimizeBOBYQA(final int nSteps, final int nInterpolationPoints) throws Exception {
+        org.apache.commons.math3.optim.PointValuePair result = null;
+        BOBYQAOptimizer optimizer =
+                new BOBYQAOptimizer(nInterpolationPoints, 10.0, 1.0e-2);
+        try {
+            result = optimizer.optimize(
+                    new MaxEval(nSteps),
+                    new ObjectiveFunction(this), GoalType.MINIMIZE,
+                    new SimpleBounds(uniformBoundaries[0], uniformBoundaries[1]),
+                    new InitialGuess(newStart));
+            result = new org.apache.commons.math3.optim.PointValuePair(unscalePar(result.getPoint()), result.getValue());
+        } catch (TooManyEvaluationsException e) {
+            throw new Exception("failure to fit data " + e.getMessage());
+        } catch (MathIllegalStateException e) {
+            throw new Exception("failure to fit data " + e.getMessage());
+        }
+
         return result.getValue();
     }
 
@@ -571,13 +574,10 @@ public class PeakFit implements MultivariateFunction {
     public double lShape(double x, double b, double freq, boolean useLorentzian) {
         double y;
         if (useLorentzian) {
-            b *= 0.5;
-            y = (b * b) / ((b * b) + ((x - freq) * (x - freq)));
+            y = LineShapes.LORENTZIAN.calculate(x, 1.0, freq, b);
         } else {
-            double dX = (x - freq);
-            y = Math.exp(-dX * dX / b);
+            y = LineShapes.GAUSSIAN.calculate(x, 1.0, freq, b);
         }
-
         return y;
     }
 
@@ -691,44 +691,5 @@ public class PeakFit implements MultivariateFunction {
         }
         boundaries[0] = lower;
         boundaries[1] = upper;
-    }
-
-    public static void main(String[] args) {
-        PeakFit peakFit = new PeakFit(true);
-        int n = 100;
-//        CouplingItem[][] cplItems = new CouplingItem[2][2];
-//        cplItems[0][0] = new CouplingItem(0, 2);
-//        cplItems[0][1] = new CouplingItem(0, 2);
-//        cplItems[1][0] = new CouplingItem(0, 3);
-//        cplItems[1][1] = new CouplingItem(0, 2);
-//        peakFit.initTest(n);
-//        peakFit.setSignals(cplItems);
-//        peakFit.dumpSignals();
-//        double[] a = {2, 15, 10, 5, 2, 59, 10, 2};
-//        double[] amps = {1, 2};
-
-        CouplingItem[][] cplItems = new CouplingItem[2][1];
-        cplItems[0][0] = new CouplingItem(0, 2);
-        cplItems[1][0] = new CouplingItem(0, 2);
-        peakFit.initTest(n);
-        peakFit.setSignals(cplItems);
-        peakFit.dumpSignals();
-        //            lw  f   j  d         lw  f  j d
-        double[] a = {2, 15, 10, 30, 2, 59, 10, 5000};
-        double[] start = {2.2, 12, 9, 70, 2.2, 55, 9, 4000};
-        double[] lower = {1, 10, 8, 10, 1, 50, 8, 3000};
-        double[] upper = {3, 19, 15, 120, 3, 70, 13, 7000};
-
-        double[] amps = {1};
-
-        RealVector ampVector = new ArrayRealVector(amps);
-        peakFit.simulate(a, ampVector, 0.001);
-        peakFit.setOffsets(start, lower, upper);
-        peakFit.value(peakFit.scalePar(a));
-        int nSteps = 1000;
-        int nDim = start.length;
-        int nInterpolationPoints = (nDim + 1) * (nDim + 2) / 2;
-        System.out.println(start.length + " " + nInterpolationPoints);
-        peakFit.optimizeBOBYQA(nSteps, nInterpolationPoints);
     }
 }
