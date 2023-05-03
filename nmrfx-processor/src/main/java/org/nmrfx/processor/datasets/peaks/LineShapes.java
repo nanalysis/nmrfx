@@ -46,7 +46,6 @@ enum LineShapes {
             double dXb2 = dXb * dXb;
             double lorentz = 1.0 / (1.0 + dXb2);
             double gauss = (1.0 + (dXb2 / 2.0)) / (1.0 + dXb2 + dXb2 * dXb2);
-            System.out.println(dXb + " " + lorentz + " " + gauss);
             return amp * ((1.0 - k) * lorentz + k * gauss);
         }
     };

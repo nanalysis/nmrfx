@@ -184,6 +184,7 @@ public class PeakFitting {
     }
 
     public double jfitRegion(DatasetRegion region, List<PeakDim> peakDims, String fitModeString, Double positionRestraint) throws Exception {
+        boolean fitShape = true;
         double value = 0.0;
         int fitMode = getFitMode(fitModeString);
         List<Peak> peaks = new ArrayList<>();
@@ -203,7 +204,7 @@ public class PeakFitting {
         peakFitter.setup(peaks);
         int nTries = 1;
         for (int i = 0; i < nTries; i++) {
-            value = peakFitter.simpleFit(i1, i2, rows, true);
+            value = peakFitter.simpleFit(i1, i2, rows, true, fitShape);
         }
         bicValue = peakFitter.getBIC();
 
@@ -215,6 +216,7 @@ public class PeakFitting {
             success = false;
             return 0.0;
         }
+        boolean fitShape = true;
         success = true;
         anyFit = false;
         int fitMode = getFitMode(fitModeString);
@@ -267,7 +269,7 @@ public class PeakFitting {
         if ((fitMode == FIT_RMS) || (fitMode == FIT_MAX_DEV)) {
             if (mode.equals("jfit")) {
                 peakFitter.setup(allPeaks);
-                value = peakFitter.doJFit(i1, i2, rows, true);
+                value = peakFitter.doJFit(i1, i2, rows, true, fitShape);
                 bicValue = peakFitter.getBIC();
 
             } else {
@@ -283,7 +285,7 @@ public class PeakFitting {
                 } else {
                     if (mode.equals("jfit")) {
                         peakFitter.setup(allPeaks);
-                        value = peakFitter.doJFit(i1, i2, rows, true);
+                        value = peakFitter.doJFit(i1, i2, rows, true, fitShape);
                     } else {
                         value = peakFitter.doFit(i1, i2, rows, true, true);
                     }
@@ -293,7 +295,7 @@ public class PeakFitting {
                         double previous = 0.0;
                         for (int iTry = 0; iTry < nTries; iTry++) {
                             if (mode.equals("jfit")) {
-                                value = peakFitter.doJFit(i1, i2, rows, true);
+                                value = peakFitter.doJFit(i1, i2, rows, true, fitShape);
                             } else {
                                 value = peakFitter.doFit(i1, i2, rows, true, false);
 
