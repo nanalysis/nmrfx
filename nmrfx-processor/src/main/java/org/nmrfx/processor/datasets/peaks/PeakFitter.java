@@ -164,7 +164,7 @@ public class PeakFitter {
 
     }
 
-    List<Double> getGuesses(int i0, int i1) {
+    List<Double> getGuesses(boolean fitShape, int i0, int i1) {
         int dataDim = theFile.getNDim();
         int[][] p1 = new int[dataDim][2];
         int[] cpt = new int[dataDim];
@@ -173,6 +173,12 @@ public class PeakFitter {
 
         splitCount = new int[nPeaks][];
         List<Double> guessList = new ArrayList<>();
+        if (fitShape) {
+            PeakDim peakDim = peaks[0].getPeakDim(0);
+            double fitShapeGuess = peakDim.getShapeFactor() == null ? 0.3 : peakDim.getShapeFactorValue();
+            guessList.add(fitShapeGuess);
+        }
+
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             PeakDim peakDim = peaks[iPeak].getPeakDim(0);
             Multiplet multiplet = peakDim.getMultiplet();
@@ -256,7 +262,6 @@ public class PeakFitter {
             throws IllegalArgumentException {
         int nPeaks = peaks.length;
         int dataDim = theFile.getNDim();
-        int nFitShape = fitShape ? 1 : 0;
         rootedPeaks = true;
 
         //int k=0;
@@ -269,7 +274,7 @@ public class PeakFitter {
             pdim[i] = -1;
         }
         getDims(peaks[0], rows);
-        List<Double> guessList = getGuesses(i0, i1);
+        List<Double> guessList = getGuesses(fitShape, i0, i1);
 //        if (fitMode == PeakList.FIT_MAX_DEV) {
         if (p2[0][0] > i0) {
             p2[0][0] = i0;
@@ -289,7 +294,10 @@ public class PeakFitter {
 
         int size = p2[0][1] - p2[0][0] + 1;
         int iGuess = 0;
-        double[] guesses = new double[guessList.size() + nFitShape];
+        if (fitShape) {
+            iGuess = 1;
+        }
+        double[] guesses = new double[guessList.size()];
         double[] lower = new double[guesses.length];
         double[] upper = new double[guesses.length];
         //            lw  f   j  d         lw  f  j d
@@ -297,15 +305,15 @@ public class PeakFitter {
 
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             double lineWidth = Math.abs(((Double) guessList.get(iGuess)));
-            guesses[iGuess + nFitShape] = lineWidth;  // guess for linewidth
-            lower[iGuess + nFitShape] = guesses[iGuess + nFitShape] * 0.5;  // constraints on linewidth
-            upper[iGuess + nFitShape] = guesses[iGuess + nFitShape] * 2.0;
-            if (lower[iGuess + nFitShape] < 0.5) {
-                lower[iGuess + nFitShape] = 0.5;
-                if (guesses[iGuess + nFitShape] < lower[iGuess + nFitShape]) {
-                    guesses[iGuess + nFitShape] = lower[iGuess + nFitShape] + 1;
-                    if (guesses[iGuess + nFitShape] >= upper[iGuess + nFitShape]) {
-                        upper[iGuess + nFitShape] = guesses[iGuess + nFitShape] + 1.0;
+            guesses[iGuess] = lineWidth;  // guess for linewidth
+            lower[iGuess] = guesses[iGuess] * 0.5;  // constraints on linewidth
+            upper[iGuess] = guesses[iGuess] * 2.0;
+            if (lower[iGuess] < 0.5) {
+                lower[iGuess] = 0.5;
+                if (guesses[iGuess] < lower[iGuess]) {
+                    guesses[iGuess] = lower[iGuess] + 1;
+                    if (guesses[iGuess] >= upper[iGuess]) {
+                        upper[iGuess] = guesses[iGuess] + 1.0;
                     }
                 }
             }
@@ -316,17 +324,17 @@ public class PeakFitter {
                 int jGuess = iGuess;
                 for (int iFreq = 0; iFreq < nFreq; iFreq++) {
                     if (fitAmps) {
-                        guesses[iGuess + nFitShape] = guessList.get(iGuess);
-                        if (guesses[iGuess + nFitShape] < 0.0) {
-                            upper[iGuess + nFitShape] = 0.0;
-                            lower[iGuess + nFitShape] = 5.0 * guesses[iGuess + nFitShape];
+                        guesses[iGuess] = guessList.get(iGuess);
+                        if (guesses[iGuess] < 0.0) {
+                            upper[iGuess] = 0.0;
+                            lower[iGuess] = 5.0 * guesses[iGuess];
                         } else {
-                            lower[iGuess + nFitShape] = 0.0;
-                            upper[iGuess + nFitShape] = 5.0 * guesses[iGuess + nFitShape];
+                            lower[iGuess] = 0.0;
+                            upper[iGuess] = 5.0 * guesses[iGuess];
                         }
                         iGuess++;
                     }
-                    guesses[iGuess + nFitShape] = (guessList.get(iGuess)) - p2[0][0];
+                    guesses[iGuess] = (guessList.get(iGuess)) - p2[0][0];
                     iGuess++;
                 }
                 // set lower and upper bounds so component can't cross over
@@ -337,78 +345,78 @@ public class PeakFitter {
                         jGuess++;
                     }
                     if (iFreq == 0) {
-                        lower[jGuess + nFitShape] = guesses[jGuess + nFitShape] - lineWidth / 2.0;
+                        lower[jGuess] = guesses[jGuess] - lineWidth / 2.0;
                     } else {
-                        lower[jGuess + nFitShape] = (guesses[jGuess + nFitShape] + guesses[jGuess - guessOffset + nFitShape]) / 2;
+                        lower[jGuess] = (guesses[jGuess] + guesses[jGuess - guessOffset]) / 2;
                     }
-                    if (lower[jGuess + nFitShape] < 1) {
-                        lower[jGuess + nFitShape] = 1;
+                    if (lower[jGuess] < 1) {
+                        lower[jGuess] = 1;
 
                     }
                     if (iFreq == (nFreq - 1)) {
-                        upper[jGuess + nFitShape] = guesses[jGuess + nFitShape] + lineWidth / 2.0;
+                        upper[jGuess] = guesses[jGuess] + lineWidth / 2.0;
                     } else {
-                        upper[jGuess + nFitShape] = (guesses[jGuess + nFitShape] + guesses[jGuess + guessOffset + nFitShape]) / 2;
+                        upper[jGuess] = (guesses[jGuess] + guesses[jGuess + guessOffset]) / 2;
                     }
-                    if (upper[jGuess + nFitShape] > size - 2) {
-                        upper[jGuess + nFitShape] = size - 2;
+                    if (upper[jGuess] > size - 2) {
+                        upper[jGuess] = size - 2;
                     }
-                    if ((guesses[jGuess + nFitShape] <= lower[jGuess + nFitShape]) || (guesses[jGuess + nFitShape] >= upper[jGuess + nFitShape])) {
-                        guesses[jGuess + nFitShape] = (lower[jGuess + nFitShape] + upper[jGuess + nFitShape]) / 2;
+                    if ((guesses[jGuess] <= lower[jGuess]) || (guesses[jGuess] >= upper[jGuess])) {
+                        guesses[jGuess] = (lower[jGuess] + upper[jGuess]) / 2;
                     }
                     jGuess++;
                 }
             } else {
                 if (fitAmps) {
-                    guesses[iGuess + nFitShape] = guessList.get(iGuess);
-                    if (guesses[iGuess + nFitShape] < 0.0) {
-                        upper[iGuess + nFitShape] = 0.0;
-                        lower[iGuess + nFitShape] = 5.0 * guesses[iGuess + nFitShape];
+                    guesses[iGuess] = guessList.get(iGuess);
+                    if (guesses[iGuess] < 0.0) {
+                        upper[iGuess] = 0.0;
+                        lower[iGuess] = 5.0 * guesses[iGuess];
                     } else {
-                        lower[iGuess + nFitShape] = 0.0;
-                        upper[iGuess + nFitShape] = 5.0 * guesses[iGuess + nFitShape];
+                        lower[iGuess] = 0.0;
+                        upper[iGuess] = 5.0 * guesses[iGuess];
                     }
                     iGuess++;
                 }
-                guesses[iGuess + nFitShape] = ((Double) guessList.get(iGuess))
+                guesses[iGuess] = ((Double) guessList.get(iGuess))
                         - p2[0][0];
-                lower[iGuess + nFitShape] = guesses[iGuess + nFitShape] - lineWidth;
-                upper[iGuess + nFitShape] = guesses[iGuess + nFitShape] + lineWidth;
+                lower[iGuess] = guesses[iGuess] - lineWidth;
+                upper[iGuess] = guesses[iGuess] + lineWidth;
                 iGuess++;
 
                 int nCouplings = splitCount[iPeak].length;
                 int[] couplingIndices = new int[nCouplings];
                 for (int iCoupling = 0; iCoupling < nCouplings; iCoupling++) {
                     couplingIndices[iCoupling] = iGuess;
-                    guesses[iGuess + nFitShape] = ((Double) guessList.get(iGuess));  // coupling
+                    guesses[iGuess] = ((Double) guessList.get(iGuess));  // coupling
                     iGuess++;
-                    guesses[iGuess + nFitShape] = ((Double) guessList.get(iGuess)); // slope
-                    lower[iGuess + nFitShape] = -0.4;
-                    upper[iGuess + nFitShape] = 0.4;
-                    if ((lower[iGuess + nFitShape] > guesses[iGuess + nFitShape]) || (upper[iGuess + nFitShape] < guesses[iGuess + nFitShape])) {
-                        guesses[iGuess + nFitShape] = (lower[iGuess + nFitShape] + upper[iGuess + nFitShape]) / 2.0;
+                    guesses[iGuess] = ((Double) guessList.get(iGuess)); // slope
+                    lower[iGuess] = -0.4;
+                    upper[iGuess] = 0.4;
+                    if ((lower[iGuess] > guesses[iGuess]) || (upper[iGuess] < guesses[iGuess])) {
+                        guesses[iGuess] = (lower[iGuess] + upper[iGuess]) / 2.0;
                     }
                     iGuess++;
                 }
                 // setup bounds on couplings so that they can't change to more than half the distance
                 //    to nearest one
                 for (int couplingIndex : couplingIndices) {
-                    double value = guesses[couplingIndex + nFitShape];
-                    lower[couplingIndex + nFitShape] = value * 0.3;
-                    upper[couplingIndex + nFitShape] = value * 2.0;
+                    double value = guesses[couplingIndex];
+                    lower[couplingIndex] = value * 0.3;
+                    upper[couplingIndex] = value * 2.0;
                     for (int couplingIndex2 : couplingIndices) {
                         if (couplingIndex == couplingIndex2) {
                             continue;
                         }
-                        double value2 = guesses[couplingIndex2 + nFitShape];
+                        double value2 = guesses[couplingIndex2];
                         if (value2 < value) {
-                            if (((value2 + value) / 2) > lower[couplingIndex + nFitShape]) {
-                                lower[couplingIndex + nFitShape] = (value + value2) / 2;
+                            if (((value2 + value) / 2) > lower[couplingIndex]) {
+                                lower[couplingIndex] = (value + value2) / 2;
                             }
                         }
                         if (value2 > value) {
-                            if (((value2 + value) / 2) < upper[couplingIndex + nFitShape]) {
-                                upper[couplingIndex + nFitShape] = (value + value2) / 2;
+                            if (((value2 + value) / 2) < upper[couplingIndex]) {
+                                upper[couplingIndex] = (value + value2) / 2;
                             }
                         }
                     }
@@ -422,8 +430,6 @@ public class PeakFitter {
             }
         }
         if (fitShape) {
-            PeakDim peakDim = peaks[0].getPeakDim(0);
-            guesses[0] = peakDim.getShapeFactorValue();
             lower[0] = -0.2;
             upper[0] = 1.3;
         }
