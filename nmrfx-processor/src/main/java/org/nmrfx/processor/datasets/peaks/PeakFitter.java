@@ -430,6 +430,7 @@ public class PeakFitter {
             }
         }
         if (fitShape) {
+            guesses[0] = guessList.get(0);
             lower[0] = -0.2;
             upper[0] = 1.3;
         }
