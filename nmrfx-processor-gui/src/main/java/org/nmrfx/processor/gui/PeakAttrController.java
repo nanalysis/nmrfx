@@ -606,6 +606,19 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
         boundsCol.setEditable(true);
 
+        TableColumn<PeakDim, Float> shapeCol = new TableColumn<>("Shape");
+        shapeCol.setCellValueFactory(new PropertyValueFactory("ShapeFactor"));
+        shapeCol.setCellFactory(tc -> new TextFieldTableCellFloat(fsConverter));
+        shapeCol.setOnEditCommit(
+                (CellEditEvent<PeakDim, Float> t) -> {
+                    Float value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setShapeFactorValue(value);
+                    }
+                });
+
+        shapeCol.setEditable(true);
+
         TableColumn<PeakDim, String> resonanceColumn = new TableColumn<>("ResID");
         resonanceColumn.setCellValueFactory(new PropertyValueFactory("ResonanceIDsAsString"));
         resonanceColumn.setEditable(false);
@@ -619,7 +632,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             t.getRowValue().setUser(value == null ? "" : value);
         });
 
-        peakTableView.getColumns().setAll(dimNameCol, labelCol, ppmCol, widthCol, boundsCol, resonanceColumn, userCol);
+        peakTableView.getColumns().setAll(dimNameCol, labelCol, ppmCol, widthCol, boundsCol, shapeCol, resonanceColumn, userCol);
     }
 
     private void setFieldActions() {
