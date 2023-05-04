@@ -1,6 +1,6 @@
 package org.nmrfx.processor.datasets.peaks;
 
-enum LineShapes {
+public enum LineShapes {
     LORENTZIAN(3) {
         @Override
         public double calculate(double x, double... pars) {

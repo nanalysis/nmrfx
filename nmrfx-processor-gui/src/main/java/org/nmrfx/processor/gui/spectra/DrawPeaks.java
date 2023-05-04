@@ -23,15 +23,6 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
-import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes;
-
-import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.PPM;
-
-import java.util.*;
-
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
@@ -40,7 +31,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
@@ -49,16 +39,23 @@ import org.apache.commons.collections4.list.TreeList;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
-import org.nmrfx.peaks.AbsMultipletComponent;
-import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.Peak.Corner;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.TreeLine;
+import org.nmrfx.processor.datasets.peaks.LineShapes;
+import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes;
 import org.nmrfx.processor.gui.utils.GUIColorUtils;
 import org.nmrfx.utilities.Format;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+
+import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.PPM;
 
 /**
  * @author brucejohnson
@@ -82,37 +79,10 @@ public class DrawPeaks {
     NMRAxis xAxis;
     NMRAxis yAxis;
 
-    static int nSim = 19;
-    static double[] bpCoords = new double[nSim * 2];
-
-    static {
-        int nSide = (nSim - 1) / 2;
-        int j = 0;
-
-        /* double w=1.66;
-         for (int i = -nSide;i<=nSide;i++) {
-         bpCoords[j] = i/4.0;
-         bpCoords[j+1] = Math.exp(-bpCoords[j]*bpCoords[j]*w*w);
-         j += 2;
-         }
-         BezierPath.makeBezierCurve(bpCoords, 1, g1DPath,1.0);
-         */
-        double w = 0.5;
-
-        for (int i = -nSide; i <= nSide; i++) {
-            double f = i / 4.0;
-            bpCoords[j] = f;
-            bpCoords[j + 1] = (w * w) / ((w * w) + (f * f));
-            j += 2;
-        }
-    }
-
-    //    DatasetAttributes specPar = null;
     int jmode = 0;
     int disDim = 0;
     PolyChart chart = null;
     int peakDisType = 0;
-    //    int labelType = PeakDisplayParameters.LABEL_PPM;
     int peakLabelType = 0;
     int multipletLabelType = PeakDisplayParameters.MULTIPLET_LABEL_SUMMARY;
     boolean treeOn = false;
@@ -444,7 +414,7 @@ public class DrawPeaks {
 
                 break;
 
-            case Atom: //FIXME
+            case Atom:
 
                 for (i = 0; i < nPeakDim; i++) {
                     if (i > 0) {
@@ -1430,6 +1400,22 @@ public class DrawPeaks {
         return ab;
     }
 
+    static double[] genPeakShape(double w, double shapeFactor) {
+        int nSim = 19;
+
+        int nSide = (nSim - 1) / 2;
+
+        double[] coords = new double[nSim * 2];
+
+        int j = 0;
+        for (int i = -nSide; i <= nSide; i++) {
+            double f = i / 4.0;
+            coords[j] = f;
+            coords[j + 1] = LineShapes.G_LORENTZIAN.calculate(f, 1.0, 0.0, w, shapeFactor);
+            j += 2;
+        }
+        return coords;
+    }
     class Peak1DRep {
 
         double x = 0;
@@ -1524,9 +1510,10 @@ public class DrawPeaks {
                         if (w < widthLimit) {
                             w = widthLimit;
                         }
+                        double shapeFactor = peakDim.getShapeFactorValue();
                         double a = comp.getIntensity();
-                        bpCoords[iCoord + 1] += ((a * ((w * w) / 4)) / (((w * w) / 4)
-                                + ((f - c) * (f - c))));
+                        double height = LineShapes.G_LORENTZIAN.calculate(f, a, c, w, shapeFactor);
+                        bpCoords[iCoord + 1] += height;
                     }
                 }
                 iCoord += 2;
@@ -1650,19 +1637,22 @@ public class DrawPeaks {
                 if (w < widthLimit) {
                     w = widthLimit;
                 }
+                double shapeFactor = peak.peakDims[dim].getShapeFactorValue();
+                double[] coords = genPeakShape(1.0, shapeFactor);
 
                 double intensity = peak.getIntensity();
                 g2.setStroke(peakAttr.getOnColor());
                 g2.setLineWidth(peak1DStroke);
 
                 g2.beginPath();
-                BezierPath.makeBezierCurve(bpCoords, 1, g2, 1.0, x, 0.0, w, intensity, xAxis, yAxis);
+                BezierPath.makeBezierCurve(coords, 1, g2, 1.0, x, 0.0, w, intensity, xAxis, yAxis);
                 g2.stroke();
             }
 
         }
 
         void renderSimulatedMultiplet(GraphicsContextInterface g2, boolean eraseFirst) throws GraphicsIOException {
+            double shapeFactor = peak.peakDims[dim].getShapeFactorValue();
             g2.setStroke(peakAttr.getOnColor());
             g2.setLineWidth(peak1DStroke);
             List<AbsMultipletComponent> comps = peak.peakDims[dim].getMultiplet().getAbsComponentList();
@@ -1674,21 +1664,14 @@ public class DrawPeaks {
 
                 double intensity = comp.getIntensity();
                 double pos = comp.getOffset();
+                double[] coords = genPeakShape(1.0, shapeFactor);
 
                 g2.beginPath();
-                BezierPath.makeBezierCurve(bpCoords, 1, g2, 1.0, pos, 0.0, w, intensity, xAxis, yAxis);
+                BezierPath.makeBezierCurve(coords, 1, g2, 1.0, pos, 0.0, w, intensity, xAxis, yAxis);
                 g2.stroke();
             }
 
         }
-//
-//        void renderSimSum(GraphicsContextInterface g2, boolean eraseFirst) {
-//            if (gDerived1DPath != null) {
-//                g2.setColor(colorOff);
-//                chart.drawShape(g2, gDerived1DPath);
-//            }
-//        }
-//
 
         void renderSelection(GraphicsContextInterface g2, boolean erase) throws GraphicsIOException {
             double x1 = xAxis.getDisplayPosition(x);
