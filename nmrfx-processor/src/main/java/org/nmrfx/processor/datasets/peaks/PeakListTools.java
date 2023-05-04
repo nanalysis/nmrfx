@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
 import static org.nmrfx.peaks.Peak.getMeasureFunction;
+import static org.nmrfx.processor.datasets.peaks.PeakListTools.GuessType.*;
 
 /**
  *
@@ -995,20 +996,20 @@ public class PeakListTools {
         }
     }
 
-    final static class GuessValue {
-
-        final double value;
-        final double lower;
-        final double upper;
-        final boolean floating;
-
-        public GuessValue(final double value, final double lower, final double upper, final boolean floating) {
-            this.value = value;
-            this.lower = lower;
-            this.upper = upper;
-            this.floating = floating;
-        }
+    public enum GuessType {
+        GLOBAL_INTENSITY,
+        RELAX_END_INTENSITY,
+        RELAX_RATE,
+        INTENSITY,
+        CENTER,
+        WIDTH,
+        SHAPE
     }
+
+
+    public record GuessValue(double value, double lower, double upper, boolean floating, GuessType guessType) {
+    }
+
 
     /**
      *
@@ -1288,7 +1289,8 @@ public class PeakListTools {
         List<Peak> peaks = Arrays.asList(peakArray);
         boolean[] fitPeaks = new boolean[peakArray.length];
         Arrays.fill(fitPeaks, true);
-        return peakFit(peakList, theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1, ARRAYED_FIT_MODE.SINGLE);
+        boolean fitShape = false;
+        return peakFit(peakList, theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, fitShape, false, -1, ARRAYED_FIT_MODE.SINGLE);
     }
 
     /**
@@ -1307,7 +1309,8 @@ public class PeakListTools {
         int fitMode = FIT_ALL;
         boolean updatePeaks = true;
         double multiplier = 3.0;
-        return peakFit(peakList, theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, lsFit, constrainDim, arrayedFitMode);
+        boolean fitShape = false;
+        return peakFit(peakList, theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, fitShape, lsFit, constrainDim, arrayedFitMode);
     }
 
     /**
@@ -1394,8 +1397,8 @@ public class PeakListTools {
         }
         boolean[] fitPeaks = new boolean[peaks.size()];
         Arrays.fill(fitPeaks, true);
-
-        return peakFit(peakList, theFile, peakList.peaks(), fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1, ARRAYED_FIT_MODE.SINGLE);
+        boolean fitShape = false;
+        return peakFit(peakList, theFile, peakList.peaks(), fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, fitShape, false, -1, ARRAYED_FIT_MODE.SINGLE);
     }
 
     /**
@@ -1419,6 +1422,7 @@ public class PeakListTools {
      * null then fit peaks to lineshapes and an exponential delay model using
      * data values from different rows or planes of dataset
      * @param multiplier unused?? should multiply width of regions
+     * @param fitShape If true fit using the generalized Lorentzian model
      * @param lsFit If true and a lineshape catalog exists in dataset then use
      * the lineshape catalog to fit
      * @param constrainDim If this is greater than or equal to 0 then the
@@ -1434,7 +1438,7 @@ public class PeakListTools {
     public static List<Object> peakFit(PeakList peakList, Dataset theFile, List<Peak> peaks,
             boolean[] fitPeaks,
             int[] rows, boolean doFit, int fitMode, final boolean updatePeaks,
-            double[] delays, double multiplier, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
+            double[] delays, double multiplier, boolean fitShape, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
             throws IllegalArgumentException, IOException, PeakFitException {
         List<Object> peaksResult = new ArrayList<>();
         if (peaks.isEmpty()) {
@@ -1517,9 +1521,9 @@ public class PeakListTools {
             double intensity = (double) peak.getIntensity();
             GuessValue gValue;
             if (intensity > 0.0) {
-                gValue = new GuessValue(intensity, intensity * 0.1, intensity * 3.5, true);
+                gValue = new GuessValue(intensity, intensity * 0.1, intensity * 3.5, true, INTENSITY);
             } else {
-                gValue = new GuessValue(intensity, intensity * 1.5, intensity * 0.5, true);
+                gValue = new GuessValue(intensity, intensity * 1.5, intensity * 0.5, true, INTENSITY);
             }
             // add intensity for this peak to guesses
             guessList.add(gValue);
@@ -1534,15 +1538,15 @@ public class PeakListTools {
             // if rate mode add guesses for relaxation time constant 1/rate and
             // intensity at infinite delay
             if ((delays != null) && (delays.length > 0)) {
-                gValue = new GuessValue(maxDelay / 2.0, maxDelay * 5.0, maxDelay * 0.02, true);
+                gValue = new GuessValue(maxDelay / 2.0, maxDelay * 5.0, maxDelay * 0.02, true, RELAX_RATE);
                 guessList.add(gValue);
                 if (fitC) {
-                    gValue = new GuessValue(0.0, -0.5 * FastMath.abs(intensity), 0.5 * FastMath.abs(intensity), true);
+                    gValue = new GuessValue(0.0, -0.5 * FastMath.abs(intensity), 0.5 * FastMath.abs(intensity), true, RELAX_END_INTENSITY);
                     guessList.add(gValue);
                 }
             } else if (nPlanes != 1) {
                 for (int iPlane = 1; iPlane < nPlanes; iPlane++) {
-                    gValue = new GuessValue(intensity, 0.0, intensity * 3.5, true);
+                    gValue = new GuessValue(intensity, 0.0, intensity * 3.5, true, INTENSITY);
                     guessList.add(gValue);
                 }
             }
@@ -1569,18 +1573,18 @@ public class PeakListTools {
                     }
                 }
                 if (fitMode == FIT_AMPLITUDES) {
-                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.05, width[iPeak][dDim] * 1.05, false);
+                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.05, width[iPeak][dDim] * 1.05, false, WIDTH);
                 } else {
-                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.7, width[iPeak][dDim] * 1.5, fitThis);
+                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.7, width[iPeak][dDim] * 1.5, fitThis, WIDTH);
                 }
                 guessList.add(gValue);
                 centerList.add(new CenterRef(parIndex, dDim));
                 // if fit amplitudes constrain cpt to near current value  fixme
                 // and set floating parameter of GuessValue to false
                 if (fitMode == FIT_AMPLITUDES) {
-                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 40, cpt[iPeak][dDim] + width[iPeak][dDim] / 40, false);
+                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 40, cpt[iPeak][dDim] + width[iPeak][dDim] / 40, false, CENTER);
                 } else {
-                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 3, cpt[iPeak][dDim] + width[iPeak][dDim] / 3, fitThis);
+                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 3, cpt[iPeak][dDim] + width[iPeak][dDim] / 3, fitThis, CENTER);
                 }
                 guessList.add(gValue);
 
@@ -1600,7 +1604,12 @@ public class PeakListTools {
             }
             firstPeak = false;
         }
-        guessList.add(0, new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false));
+        for (int j = 0; j < nPeakDim; j++) {
+            double shapeFactor = peaks.get(0).peakDims[0].getShapeFactorValue();
+            GuessValue gValue = new GuessValue(shapeFactor, 0.0, 1.5, fitShape, SHAPE);
+            guessList.add(gValue);
+        }
+        guessList.add(0, new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false, GLOBAL_INTENSITY));
         // get a list of positions that are near the centers of each of the peaks
         ArrayList<int[]> posArray = theFile.getFilteredPositions(p2, cpt, width, pdim, multiplier, 2);
         if (posArray.isEmpty()) {
@@ -1625,7 +1634,7 @@ public class PeakListTools {
         for (CenterRef centerRef : centerList) {
             GuessValue gValueAdj = guessList.get(centerRef.index);
             int offset = p2[centerRef.dim][0];
-            guessList.set(centerRef.index, new GuessValue(gValueAdj.value - offset, gValueAdj.lower - offset, gValueAdj.upper - offset, gValueAdj.floating));
+            guessList.set(centerRef.index, new GuessValue(gValueAdj.value - offset, gValueAdj.lower - offset, gValueAdj.upper - offset, gValueAdj.floating, CENTER));
         }
         int[][] positions = new int[posArray.size()][nPeakDim];
         int i = 0;
@@ -1648,6 +1657,7 @@ public class PeakListTools {
         boolean[] floating = new boolean[guess.length];
         i = 0;
         for (GuessValue gVal : guessList) {
+            System.out.println(gVal);
             guess[i] = gVal.value;
             lower[i] = gVal.lower;
             upper[i] = gVal.upper;

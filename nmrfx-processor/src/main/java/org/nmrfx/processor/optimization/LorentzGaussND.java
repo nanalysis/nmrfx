@@ -30,6 +30,7 @@ import org.apache.commons.math3.optim.SimpleBounds;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
+import org.nmrfx.processor.datasets.peaks.LineShapes;
 
 public class LorentzGaussND implements MultivariateFunction {
 
@@ -235,18 +236,7 @@ public class LorentzGaussND implements MultivariateFunction {
     }
 
     public double lShape(double x, double b, double freq) {
-        double yL = 0.0;
-        double yG = 0.0;
-        if (calcLorentz) {
-            b *= 0.5;
-            yL = fracLorentz * ((b * b) / ((b * b) + ((x - freq) * (x - freq))));
-        }
-        if (calcGauss) {
-            double dX = (x - freq);
-            yG = (1.0 - fracLorentz) * Math.exp(-dX * dX / b);
-        }
-
-        return yL + yG;
+        return LineShapes.LORENTZIAN.calculate(x, 1.0, freq, b);
     }
 
     public double[] unscalePar(final double[] par) {
