@@ -228,15 +228,16 @@ public class LorentzGaussND implements MultivariateFunction {
         for (int iDim = 0; iDim < nDim; iDim++) {
             double lw = a[iPar++];
             double freq = a[iPar++];
-            y *= lShape(x[iDim], lw, freq);
+            double shapeFactor = a[a.length - nDim + iDim];
+            y *= lShape(x[iDim], lw, freq, shapeFactor);
         }
         y *= amplitude;
         y += base;
         return y;
     }
 
-    public double lShape(double x, double b, double freq) {
-        return LineShapes.LORENTZIAN.calculate(x, 1.0, freq, b);
+    public double lShape(double x, double b, double freq, double shapeFactor) {
+        return LineShapes.G_LORENTZIAN.calculate(x, 1.0, freq, b, shapeFactor);
     }
 
     public double[] unscalePar(final double[] par) {
@@ -278,8 +279,8 @@ public class LorentzGaussND implements MultivariateFunction {
                 nRelaxPar = nDelays - 1;
             }
         }
-        nSignals = (start.length - 1) / (nDim * 2 + 1 + nRelaxPar);
-        if (nSignals * (nDim * 2 + 1 + nRelaxPar) != start.length - 1) {
+        nSignals = (start.length - 1 - nDim) / (nDim * 2 + 1 + nRelaxPar);
+        if (nSignals * (nDim * 2 + 1 + nRelaxPar) != start.length - 1 - nDim) {
             throw new IllegalArgumentException("Wrong number of starting parameters " + start.length + " nSig " + nSignals + " nCalc " + (nDim * 2 + 1 + nRelaxPar));
         }
         nParDim = start.length;

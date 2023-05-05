@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -55,9 +54,11 @@ import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.math.VecBase;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
-import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
@@ -3371,10 +3372,11 @@ public class PolyChart extends Region implements PeakListener {
             try {
 
                 Set<Peak> peaks = peakListAttr.getSelectedPeaks();
+                boolean fitShape = PreferencesController.getFitPeakShape();
                 if (fitAll && peaks.isEmpty()) {
-                    PeakListTools.peakFit(peakListAttr.getPeakList(), dataset, fitRows, delays, lsFit, syncDim, arrayedFitMode);
+                    PeakListTools.peakFit(peakListAttr.getPeakList(), dataset, fitRows, delays, fitShape, lsFit, syncDim, arrayedFitMode);
                 } else if (!peaks.isEmpty()) {
-                    PeakListTools.peakFit(peakListAttr.getPeakList(), dataset, fitRows, delays, peaks, lsFit, syncDim, arrayedFitMode);
+                    PeakListTools.peakFit(peakListAttr.getPeakList(), dataset, fitRows, delays, peaks, fitShape, lsFit, syncDim, arrayedFitMode);
                 }
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 log.error(ex.getMessage(), ex);

@@ -1303,13 +1303,12 @@ public class PeakListTools {
      * @throws PeakFitException
      */
     public static List<Object> simPeakFit(PeakList peakList, Dataset theFile, int[] rows, double[] delays, List<Peak> peaks,
-            boolean[] fitPeaks, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
+            boolean[] fitPeaks, boolean fitShape, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean doFit = true;
         int fitMode = FIT_ALL;
         boolean updatePeaks = true;
         double multiplier = 3.0;
-        boolean fitShape = false;
         return peakFit(peakList, theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, fitShape, lsFit, constrainDim, arrayedFitMode);
     }
 
@@ -1320,9 +1319,9 @@ public class PeakListTools {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static void peakFit(PeakList peakList, Dataset theFile, int[] rows, double[] delays, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
+    public static void peakFit(PeakList peakList, Dataset theFile, int[] rows, double[] delays, boolean fitShape, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
             throws IllegalArgumentException, IOException, PeakFitException {
-        peakFit(peakList, theFile, rows, delays, peakList.peaks(), lsFit, constrainDim, arrayedFitMode);
+        peakFit(peakList, theFile, rows, delays, peakList.peaks(), fitShape, lsFit, constrainDim, arrayedFitMode);
     }
 
     /**
@@ -1333,7 +1332,7 @@ public class PeakListTools {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static void peakFit(PeakList peakList, Dataset theFile, int[] rows, double[] delays, Collection<Peak> peaks, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
+    public static void peakFit(PeakList peakList, Dataset theFile, int[] rows, double[] delays, Collection<Peak> peaks, boolean fitShape,  boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
             throws IllegalArgumentException, IOException, PeakFitException {
         Set<List<Set<Peak>>> oPeaks = null;
         if (constrainDim < 0) {
@@ -1357,7 +1356,7 @@ public class PeakListTools {
                 for (int i = nFit; i < fitPeaks.length; i++) {
                     fitPeaks[i] = false;
                 }
-                simPeakFit(peakList, theFile, rows, delays, lPeaks, fitPeaks, lsFit, constrainDim, arrayedFitMode);
+                simPeakFit(peakList, theFile, rows, delays, lPeaks, fitPeaks, fitShape, lsFit, constrainDim, arrayedFitMode);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 log.error(ex.getMessage(), ex);
             }
@@ -1604,8 +1603,13 @@ public class PeakListTools {
             }
             firstPeak = false;
         }
+
         for (int j = 0; j < nPeakDim; j++) {
-            double shapeFactor = peaks.get(0).peakDims[0].getShapeFactorValue();
+            Float shapeFactor = peaks.get(0).peakDims[j].getShapeFactor();
+            if (shapeFactor == null) {
+                shapeFactor = fitShape ? 0.25f : 0.0f;
+            }
+            System.out.println("fit shape is " + fitShape + " " + shapeFactor);
             GuessValue gValue = new GuessValue(shapeFactor, 0.0, 1.5, fitShape, SHAPE);
             guessList.add(gValue);
         }
@@ -1657,7 +1661,7 @@ public class PeakListTools {
         boolean[] floating = new boolean[guess.length];
         i = 0;
         for (GuessValue gVal : guessList) {
-            System.out.println(gVal);
+            log.debug(gVal.toString());
             guess[i] = gVal.value;
             lower[i] = gVal.lower;
             upper[i] = gVal.upper;
@@ -1735,6 +1739,8 @@ public class PeakListTools {
                     lineWidthAll *= lineWidthHz;
                     peakDim.setBoundsValue((float) (lineWidth * 1.5));
                     peakDim.setChemShiftValueNoCheck((float) theFile.pointToPPM(dDim, values[index++]));
+                    double shapeFactor = values[values.length - nPeakDim + pkDim];
+                    peakDim.setShapeFactorValue((float) shapeFactor);
                 }
                 peak.setVolume1((float) (peak.getIntensity() * lineWidthAll));
             }

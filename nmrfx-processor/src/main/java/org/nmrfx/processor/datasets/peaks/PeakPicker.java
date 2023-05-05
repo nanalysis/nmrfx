@@ -440,7 +440,7 @@ public class PeakPicker {
                 try {
                     dataset.fromBuffer("prepick");
                     List<Peak> peaks = getPeaksInRegion();
-                    PeakListTools.peakFit(peakList, dataset, rows, null, peaks, true, -1, PeakListTools.ARRAYED_FIT_MODE.SINGLE);
+                    PeakListTools.peakFit(peakList, dataset, rows, null, peaks, false, true, -1, PeakListTools.ARRAYED_FIT_MODE.SINGLE);
                     dataset.addPeakList(peakList, -1.0);
                     // split
                     // combine
@@ -449,7 +449,7 @@ public class PeakPicker {
                     purgeNarrowPeaks(peaks);
 
                     dataset.fromBuffer("prepick");
-                    PeakListTools.peakFit(peakList, dataset, rows, null, getPeaksInRegion(), true, -1, PeakListTools.ARRAYED_FIT_MODE.SINGLE);
+                    PeakListTools.peakFit(peakList, dataset, rows, null, getPeaksInRegion(), false, true, -1, PeakListTools.ARRAYED_FIT_MODE.SINGLE);
                     dataset.addPeakList(peakList, -1.0);
                     if (i != (nTries - 1)) {
                         peakPickPar.mode = "append";
