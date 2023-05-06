@@ -1,45 +1,32 @@
 package org.nmrfx.analyst.peaks;
 
-import java.io.File;
-
-import org.apache.commons.math3.util.Precision;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.datasets.Nuclei;
-import org.nmrfx.datasets.DatasetRegion;
-import org.nmrfx.peaks.io.PeakWriter;
-
-import static org.nmrfx.analyst.peaks.Multiplets.locatePeaks;
-
-import org.nmrfx.processor.math.Vec;
-import org.nmrfx.math.VecBase.IndexValue;
-
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-
-import static java.util.Comparator.comparing;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-
 import org.apache.commons.math3.linear.RealMatrix;
-import org.nmrfx.peaks.AbsMultipletComponent;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
+import org.apache.commons.math3.util.Precision;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.peaks.*;
+import org.nmrfx.peaks.io.PeakWriter;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
+import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
+import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.operations.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static java.util.Comparator.comparing;
+import static org.nmrfx.analyst.peaks.Multiplets.locatePeaks;
+import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FIT_MODE.MAXDEV;
+import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FIT_MODE.RMS;
 
 /**
  * @author Bruce Johnson
@@ -210,7 +197,7 @@ public class Analyzer {
         }
     }
 
-    public Optional<Double> measureRegion(DatasetRegion region, String mode) throws Exception {
+    public Optional<Double> measureRegion(DatasetRegion region, PeakFitParameters fitParameters) throws Exception {
         List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
         double[] bounds = {region.getRegionStart(0), region.getRegionEnd(0)};
         Optional<Double> result = Optional.empty();
@@ -222,7 +209,7 @@ public class Analyzer {
         } else {
             PeakFitting peakFitting = new PeakFitting(dataset);
             try {
-                double value = peakFitting.jfitRegion(region, peakDims, mode, positionRestraint);
+                double value = peakFitting.jfitRegion(region, peakDims, fitParameters, positionRestraint);
                 result = Optional.of(value);
             } catch (IllegalArgumentException | PeakFitException | IOException ex) {
                 System.out.println("error in fit " + ex.getMessage());
@@ -735,12 +722,13 @@ public class Analyzer {
                     Optional<Multiplet> splitResult = multiplet.split(ppm);
                     setVolumesFromIntegrals();
                     PeakFitting peakFitting = new PeakFitting(dataset);
-                    peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
-                    peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+                    PeakFitParameters fitParameters = new PeakFitParameters();
+                    peakFitting.fitLinkedPeak(multiplet.getOrigin(), fitParameters);
+                    peakFitting.jfitLinkedPeak(multiplet.getOrigin(), fitParameters);
                     if (splitResult.isPresent()) {
                         Multiplet newMultiplet = splitResult.get();
-                        peakFitting.fitLinkedPeak(newMultiplet.getOrigin(), true);
-                        peakFitting.jfitLinkedPeak(newMultiplet.getOrigin(), "all");
+                        peakFitting.fitLinkedPeak(newMultiplet.getOrigin(), fitParameters);
+                        peakFitting.jfitLinkedPeak(newMultiplet.getOrigin(), fitParameters);
                     }
                     renumber();
                 }
@@ -762,17 +750,19 @@ public class Analyzer {
             Multiplets.unlinkPeaksInRegion(peakList, region);
             Multiplet multiplet = Multiplets.linkPeaksInRegion(peakList, region);
             result = Optional.ofNullable(multiplet);
-            peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
+            PeakFitParameters fitParameters = new PeakFitParameters();
+            peakFitting.fitLinkedPeak(multiplet.getOrigin(), fitParameters);
             renumber();
             Multiplets.analyzeMultiplet(multiplet.getOrigin());
-            peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+            peakFitting.jfitLinkedPeak(multiplet.getOrigin(), fitParameters);
         }
         return result;
     }
 
     public void fitLinkedPeaks() {
         PeakFitting peakFitting = new PeakFitting(dataset);
-        peakFitting.fitLinkedPeaks(peakList, true);
+        PeakFitParameters fitParameters = new PeakFitParameters();
+        peakFitting.fitLinkedPeaks(peakList, fitParameters);
     }
 
     public Optional<Double> fitMultiplet(Multiplet multiplet) {
@@ -781,7 +771,8 @@ public class Analyzer {
             PeakFitting peakFitting = new PeakFitting(dataset);
             Peak peak = multiplet.getPeakDim().getPeak();
             peak.setFlag(4, false);
-            double rms = peakFitting.jfitLinkedPeak(peak, "all");
+            PeakFitParameters fitParameters = new PeakFitParameters();
+            double rms = peakFitting.jfitLinkedPeak(peak, fitParameters);
             result = Optional.of(rms);
         }
         return result;
@@ -806,7 +797,8 @@ public class Analyzer {
                 for (PeakDim peakDim : peakDims) {
                     peakDim.getPeak().setFlag(4, false);
                 }
-                double rms = peakFitting.jfitRegion(region, peakDims, "all", positionRestraint);
+                PeakFitParameters fitParameters = new PeakFitParameters();
+                double rms = peakFitting.jfitRegion(region, peakDims, fitParameters, positionRestraint);
                 result = Optional.of(rms);
             }
         }
@@ -865,17 +857,21 @@ public class Analyzer {
         }
         double rms = Double.MAX_VALUE;
         double minBIC = Double.MAX_VALUE;
+        PeakFitParameters fitParameters = new PeakFitParameters();
         if (!peakDims.isEmpty()) {
-            rms = peakFitting.jfitRegion(region, peakDims, "all", positionRestraint);
+            rms = peakFitting.jfitRegion(region, peakDims, fitParameters, positionRestraint);
             minBIC = peakFitting.getBIC();
         }
         System.out.println("start " + rms + " " + minBIC);
+
+
         for (int i = 0; i < nAdd; i++) {
-            Optional<Double> result = measureRegion(region, "maxdev");
+            fitParameters.fitMode(MAXDEV);
+            Optional<Double> result = measureRegion(region, fitParameters);
             if (result.isPresent()) {
                 addPeaksToRegion(region, result.get());
                 peakDims = Multiplets.findPeaksInRegion(peakList, region);
-                rms = peakFitting.jfitRegion(region, peakDims, "all", positionRestraint);
+                rms = peakFitting.jfitRegion(region, peakDims, fitParameters, positionRestraint);
                 double BIC = peakFitting.getBIC();
                 System.out.println(result.get() + " " + rms + " " + BIC);
                 if (BIC < minBIC) {
@@ -894,6 +890,7 @@ public class Analyzer {
         System.out.println("MinList size " + minList.size() + " " + minBIC);
         double limit = 15.0;
         if (peakDims.size() > nComps) {
+            fitParameters.fitMode(PeakFitParameters.FIT_MODE.ALL);
             int n = peakDims.size();
             for (int j = 0; j < n - 1; j++) {
 
@@ -906,7 +903,7 @@ public class Analyzer {
                     restorePeaks(tempList);
                     if (!peakDims.get(i).getPeak().isDeleted()) {
                         peakDims.get(i).getPeak().setStatus(-1);
-                        rms = peakFitting.jfitRegion(region, peakDims, "all", positionRestraint);
+                        rms = peakFitting.jfitRegion(region, peakDims, fitParameters, positionRestraint);
                         double BIC = peakFitting.getBIC();
                         System.out.println(i + " " + rms + " " + BIC);
                         peakDims.get(i).getPeak().setStatus(0);
@@ -921,7 +918,8 @@ public class Analyzer {
                     if (bestList != null) {
                         System.out.println("better " + minSkipBIC);
                         restorePeaks(bestList);
-                        System.out.println("rest " + measureRegion(region, "rms").get());
+                        fitParameters.fitMode(RMS);
+                        System.out.println("rest " + measureRegion(region, fitParameters).get());
                         peakDims.get(minSkip).getPeak().setStatus(-1);
                         if (minSkipBIC < minBIC) {
                             minBIC = minSkipBIC;
@@ -930,16 +928,18 @@ public class Analyzer {
                 } else {
                     System.out.println("done " + minSkipBIC);
                     restorePeaks(tempList);
-                    System.out.println("rest2 " + measureRegion(region, "rms").get());
+                    fitParameters.fitMode(RMS);
+                    System.out.println("rest2 " + measureRegion(region, fitParameters).get());
                     break;
                 }
             }
         }
-        Optional<Double> rmsOpt = measureRegion(region, "rms");
+        fitParameters.fitMode(RMS);
+        Optional<Double> rmsOpt = measureRegion(region, fitParameters);
         System.out.println("restored rms " + rmsOpt.get());
         renumber();
         peakDims = Multiplets.findPeaksInRegion(peakList, region);
-        rms = peakFitting.jfitRegion(region, peakDims, "all", positionRestraint);
+        rms = peakFitting.jfitRegion(region, peakDims, fitParameters, positionRestraint);
         double BIC = peakFitting.getBIC();
         System.out.println("finish " + rms + " " + BIC + " " + peakDims.size());
 
@@ -947,6 +947,7 @@ public class Analyzer {
 
     public void objectiveDeconvolution(Multiplet multiplet) {
         PeakFitting peakFitting = new PeakFitting(dataset);
+        PeakFitParameters fitParameters = new PeakFitParameters();
         int nComps = multiplet.getRelComponentList().size();
         int nAdd = 0;
         if (nComps < 2) {
@@ -956,14 +957,14 @@ public class Analyzer {
         }
         List<AbsMultipletComponent> minList = null;
         multiplet.getOrigin().setFlag(4, false);
-        double rms = peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+        double rms = peakFitting.jfitLinkedPeak(multiplet.getOrigin(), fitParameters);
         double minBIC = peakFitting.getBIC();
         for (int i = 0; i < nAdd; i++) {
             Optional<Double> result = Multiplets.deviation(multiplet);
             if (result.isPresent()) {
                 Multiplets.addPeaksToMultiplet(multiplet, result.get());
                 multiplet.getOrigin().setFlag(4, false);
-                rms = peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+                rms = peakFitting.jfitLinkedPeak(multiplet.getOrigin(), fitParameters);
                 double BIC = peakFitting.getBIC();
                 if (BIC < minBIC) {
                     minBIC = BIC;
@@ -973,6 +974,7 @@ public class Analyzer {
         }
         List<AbsMultipletComponent> minSkipList = null;
         double limit = 15.0;
+
         if (minList != null) {
             multiplet.updateCoupling(minList);
             while (true) {
@@ -983,7 +985,7 @@ public class Analyzer {
                     List<AbsMultipletComponent> newList = AbsMultipletComponent.copyList(minList, i);
                     multiplet.updateCoupling(newList);
                     multiplet.getOrigin().setFlag(4, false);
-                    peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+                    peakFitting.jfitLinkedPeak(multiplet.getOrigin(), fitParameters);
                     double BIC = peakFitting.getBIC();
                     if (BIC < minSkipBIC) {
                         minSkip = i;

@@ -51,7 +51,7 @@ public class PeakFitter {
     int[][] splitCount;
     final Dataset theFile;
     boolean rootedPeaks;
-    int fitMode;
+    PeakFitParameters fitParameters;
     Double positionRestraint = null;
     Peak[] peaks;
     final int[][] p2;
@@ -60,10 +60,10 @@ public class PeakFitter {
     final int[] pdim;
     double BIC;
 
-    public PeakFitter(final Dataset theFile, boolean rootedPeaks, int fitMode) {
+    public PeakFitter(final Dataset theFile, boolean rootedPeaks, PeakFitParameters fitParameters) {
         this.theFile = theFile;
         this.rootedPeaks = rootedPeaks;
-        this.fitMode = fitMode;
+        this.fitParameters = fitParameters;
         int dataDim = theFile.getNDim();
         p2 = new int[dataDim][2];
         pdim = new int[dataDim];
@@ -491,16 +491,16 @@ public class PeakFitter {
         double result;
         int nDim = guesses.length;
         BIC = 0.0;
-        switch (fitMode) {
-            case PeakListTools.FIT_RMS:
+        switch (fitParameters.fitMode) {
+            case RMS:
                 rms = peakFit.rms(guesses);
                 updateBIC(rms, size, nDim);
                 result = rms;
                 return result;
-            case PeakListTools.FIT_AMPLITUDES:
+            case AMPLITUDES:
                 rms = peakFit.rms(guesses);
                 break;
-            case PeakListTools.FIT_MAX_DEV:
+            case MAXDEV:
                 int maxDev = peakFit.maxPosDev(guesses, 3);
                 double maxDevFreq = theFile.pointToPPM(0, maxDev + p2[0][0]);
                 result = maxDevFreq;
@@ -629,9 +629,9 @@ public class PeakFitter {
             p2[0][1] = theFile.getSizeTotal(pdim[0]) - 1;
         }
         int extra = 5;
-        if (fitMode == PeakListTools.FIT_RMS) {
+        if (fitParameters.fitMode == PeakFitParameters.FIT_MODE.RMS) {
             extra = 0;
-        } else if (fitMode == PeakListTools.FIT_MAX_DEV) {
+        } else if (fitParameters.fitMode == PeakFitParameters.FIT_MODE.MAXDEV) {
             extra = 0;
         }
 
@@ -738,14 +738,13 @@ public class PeakFitter {
         int nPars = guesses.length;
         double[] bestPars;
         double rms;
-        if (fitMode == PeakListTools.FIT_RMS) {
+        if (fitParameters.fitMode == PeakFitParameters.FIT_MODE.RMS) {
             rms = fitter.rms(guesses);
             updateBIC(rms, size, nPars);
             return rms;
-        } else if (fitMode == PeakListTools.FIT_MAX_DEV) {
+        } else if (fitParameters.fitMode == PeakFitParameters.FIT_MODE.MAXDEV) {
             double[] yCalc = peakFit.sim(guesses, xv);
             int maxPos = fitter.maxDevLoc(yCalc, 3);
-            System.out.println("maxPos " + extra + " " + maxPos);
             double centerPt = maxPos + p2[0][0];
             double centerPPM = theFile.pointToPPM(0, centerPt);
             return centerPPM;
