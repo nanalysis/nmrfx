@@ -258,12 +258,12 @@ public class PeakFitter {
         return guessList;
     }
 
-    public double doJFit(int i0, int i1, int[] rows, boolean doFit, boolean fitShape)
+    public double doJFit(int i0, int i1, int[] rows, boolean doFit)
             throws IllegalArgumentException {
         int nPeaks = peaks.length;
         int dataDim = theFile.getNDim();
         rootedPeaks = true;
-
+        boolean fitShape = fitParameters.shapeParameters().fitShape();
         //int k=0;
         if (i0 > i1) {
             int hold = i0;

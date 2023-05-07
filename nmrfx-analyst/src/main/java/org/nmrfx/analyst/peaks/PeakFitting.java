@@ -265,7 +265,7 @@ public class PeakFitting {
         if ((fitParameters.fitMode() == RMS) || (fitParameters.fitMode() == MAXDEV)) {
             if (fitParameters.fitJMode() == JFIT) {
                 peakFitter.setup(allPeaks);
-                value = peakFitter.doJFit(i1, i2, rows, true, fitShape);
+                value = peakFitter.doJFit(i1, i2, rows, true);
                 bicValue = peakFitter.getBIC();
 
             } else {
@@ -281,7 +281,7 @@ public class PeakFitting {
                 } else {
                     if (fitParameters.fitJMode() == JFIT) {
                         peakFitter.setup(allPeaks);
-                        value = peakFitter.doJFit(i1, i2, rows, true, fitShape);
+                        value = peakFitter.doJFit(i1, i2, rows, true);
                     } else {
                         value = peakFitter.doFit(i1, i2, rows, true, true);
                     }
@@ -291,7 +291,7 @@ public class PeakFitting {
                         double previous = 0.0;
                         for (int iTry = 0; iTry < nTries; iTry++) {
                             if (fitParameters.fitJMode() == JFIT) {
-                                value = peakFitter.doJFit(i1, i2, rows, true, fitShape);
+                                value = peakFitter.doJFit(i1, i2, rows, true);
                             } else {
                                 value = peakFitter.doFit(i1, i2, rows, true, false);
 
