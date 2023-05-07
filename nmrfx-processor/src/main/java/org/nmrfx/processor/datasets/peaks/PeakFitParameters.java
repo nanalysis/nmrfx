@@ -76,6 +76,13 @@ public class PeakFitParameters {
         this.arrayedFitMode = arrayedFitMode;
     }
 
+    public PeakFitParameters copy() {
+        PeakFitParameters newFitParameters = new PeakFitParameters(this.doFit, this.fitMode, this.fitJMode,
+                this.updatePeaks, this.multiplier, this.lsFit, this.constrainDim, this.arrayedFitMode);
+        newFitParameters.shapeParameters = this.shapeParameters;
+        return newFitParameters;
+    }
+
     public boolean doFit() {
         return doFit;
     }

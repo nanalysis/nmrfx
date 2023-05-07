@@ -174,6 +174,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         if (!chart.getPeakListAttributes().isEmpty()) {
             analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
+        MainApp.getShapePrefs(analyzer.getFitParameters());
         return analyzer;
     }
 

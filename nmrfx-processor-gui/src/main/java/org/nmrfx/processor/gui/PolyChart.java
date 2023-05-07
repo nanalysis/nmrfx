@@ -3332,21 +3332,13 @@ public class PolyChart extends Region implements PeakListener {
     public void fitPeakLists(int syncDim) {
         PeakFitParameters fitPars = new PeakFitParameters();
         fitPars.constrainDim(syncDim);
-        getShapePrefs(fitPars);
+        MainApp.getShapePrefs(fitPars);
         fitPeakLists(fitPars, true);
-    }
-
-    private void getShapePrefs(PeakFitParameters fitPars) {
-        fitPars.shapeParameters(PreferencesController.getFitPeakShape(),
-                PreferencesController.getConstrainPeakShape(),
-                PreferencesController.getPeakShapeDirectFactor(),
-                PreferencesController.getPeakShapeIndirectFactor());
-
     }
 
     public void fitPeakLists(PeakFitParameters fitPars, boolean getShapePars) {
         if (getShapePars) {
-            getShapePrefs(fitPars);
+            MainApp.getShapePrefs(fitPars);
         }
         peakListAttributesList.forEach((peakListAttr) -> {
             DatasetBase datasetBase = peakListAttr.getDatasetAttributes().getDataset();
