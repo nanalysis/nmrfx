@@ -430,12 +430,19 @@ public class PeakFitter {
             }
         }
         if (fitShape) {
-            guesses[0] = guessList.get(0);
-            lower[0] = -0.2;
-            upper[0] = 1.3;
+            if (fitParameters.shapeParameters().constrainShape()) {
+                guesses[0] = fitParameters.shapeParameters().directShapeFactor();
+                lower[0] = guesses[0] - 0.1;
+                upper[0] = guesses[0] + 0.1;
+
+            } else {
+                guesses[0] = guessList.get(0);
+                lower[0] = -0.2;
+                upper[0] = 1.3;
+            }
         }
 
-        double result = fitNow(guesses, lower, upper, fitShape);
+        double result = fitNow(guesses, lower, upper);
         return result;
     }
 
@@ -444,8 +451,8 @@ public class PeakFitter {
         BIC = size * Math.log(meanSq) + nDim * Math.log(size);
     }
 
-    double fitNow(final double[] guesses, final double[] lower, final double[] upper, boolean fitShape) throws IllegalArgumentException {
-        PeakFit peakFit = new PeakFit(fitAmps, fitShape);
+    double fitNow(final double[] guesses, final double[] lower, final double[] upper) throws IllegalArgumentException {
+        PeakFit peakFit = new PeakFit(fitAmps, fitParameters);
 
         int size = p2[0][1] - p2[0][0] + 1;
         if (size <= 0) {
@@ -528,7 +535,14 @@ public class PeakFitter {
         result = rms;
 
         List<List<SineSignal>> signalGroups = peakFit.getSignals();
-        double shapeFactor = peakFit.getShapeFactor();
+        double shapeFactor;
+        if (fitParameters.shapeParameters().fitShape()) {
+            shapeFactor = peakFit.getShapeFactor();
+        } else if (fitParameters.shapeParameters().constrainShape()) {
+            shapeFactor = fitParameters.shapeParameters().directShapeFactor();
+        } else {
+            shapeFactor = 0.0;
+        }
         int nPeaks = peaks.length;
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             List<SineSignal> signals = signalGroups.get(iPeak);
@@ -732,7 +746,7 @@ public class PeakFitter {
             System.out.printf("%10.4f %10.4f %10.4f\n", guesses[i], lower[i], upper[i]);
         }
 
-        PeakFit peakFit = new PeakFit(true, fitShape);
+        PeakFit peakFit = new PeakFit(true, fitParameters);
         Fitter fitter = Fitter.getArrayFitter(peakFit::value);
         fitter.setXYE(xv, yv, ev);
         int nPars = guesses.length;

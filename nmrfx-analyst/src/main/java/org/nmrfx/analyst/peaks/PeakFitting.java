@@ -129,13 +129,8 @@ public class PeakFitting {
         return fitRoots;
     }
 
-    public List<Peak> jfitLinkedPeaks(PeakList peakList) {
-        PeakFitParameters fitParameters = new PeakFitParameters();
-        fitParameters.fitMode(ALL);
-        return jfitLinkedPeaks(peakList, fitParameters);
-    }
-
     public List<Peak> jfitLinkedPeaks(PeakList peakList, PeakFitParameters fitParameters) {
+        fitParameters.fitMode(ALL);
         List<Peak> fitRoots = new ArrayList<>();
         List<Peak> peaks = peakList.peaks();
         for (Peak peak : peaks) {

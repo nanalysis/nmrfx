@@ -77,7 +77,8 @@ public class PeakFitTest {
     public void testFitWithLinearAmpsBOBYQA() throws Exception {
         int nSteps = 1000;
         int nDim = start.length;
-        PeakFit peakFit = new PeakFit(false, false);
+        PeakFitParameters fitParameters = new PeakFitParameters();
+        PeakFit peakFit = new PeakFit(false, fitParameters);
         setupTwoSigsAmp(peakFit);
         int nInterpolationPoints = (nDim + 1) * (nDim + 2) / 2;
         peakFit.optimizeBOBYQA(nSteps, nInterpolationPoints);
@@ -91,7 +92,8 @@ public class PeakFitTest {
     public void testFitWithLinearAmpsCMAES() throws Exception {
         int nSteps = 500;
         int nDim = start.length;
-        PeakFit peakFit = new PeakFit(false, false);
+        PeakFitParameters fitParameters = new PeakFitParameters();
+        PeakFit peakFit = new PeakFit(false, fitParameters);
         setupTwoSigsAmp(peakFit);
         peakFit.optimizeCMAES(nSteps);
         double[] best = peakFit.getBestPoint();
@@ -104,7 +106,8 @@ public class PeakFitTest {
     public void testFitCMAES() throws Exception {
         int nDim = astart.length;
         int nSteps = 400;
-        PeakFit peakFit = new PeakFit(true, false);
+        PeakFitParameters fitParameters = new PeakFitParameters();
+        PeakFit peakFit = new PeakFit(true, fitParameters);
         setupTwoSigsFitAmp(peakFit, aa, astart, alower, aupper);
         peakFit.optimizeCMAES(nSteps);
         double[] best = peakFit.getBestPoint();
@@ -116,7 +119,10 @@ public class PeakFitTest {
     public void testFitCMAESWithShape() throws Exception {
         int nDim = astart.length;
         int nSteps = 400;
-        PeakFit peakFit = new PeakFit(true, true);
+        PeakFitParameters fitParameters = new PeakFitParameters();
+        PeakFitParameters.ShapeParameters shapeParameters = new PeakFitParameters.ShapeParameters(true, false, 0.0, 0.0);
+        fitParameters.shapeParameters(shapeParameters);
+        PeakFit peakFit = new PeakFit(true, fitParameters);
         setupTwoSigsFitAmp(peakFit, aaf, astartf, alowerf, aupperf);
         peakFit.optimizeCMAES(nSteps);
         double[] best = peakFit.getBestPoint();

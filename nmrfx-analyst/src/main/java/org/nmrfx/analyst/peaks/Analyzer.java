@@ -816,7 +816,7 @@ public class Analyzer {
 
     public void jfitLinkedPeaks() {
         PeakFitting peakFitting = new PeakFitting(dataset);
-        peakFitting.jfitLinkedPeaks(peakList);
+        peakFitting.jfitLinkedPeaks(peakList, getFitParameters());
     }
 
     private List<Peak> getPeaks(List<PeakDim> peakDims) {

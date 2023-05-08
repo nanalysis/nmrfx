@@ -361,6 +361,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                         return;
                     }
                 }
+                MainApp.getShapePrefs(analyzer.getFitParameters());
                 analyzer.analyze();
                 PeakList peakList = analyzer.getPeakList();
                 List<String> peakListNames = new ArrayList<>();
