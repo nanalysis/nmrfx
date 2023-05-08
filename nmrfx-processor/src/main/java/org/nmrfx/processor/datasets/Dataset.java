@@ -1122,7 +1122,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             if (p2[iDim][1] >= p2[iDim][0]) {
                 sizes[iDim] = p2[iDim][1] - p2[iDim][0] + 1;
             } else {
-                sizes[iDim] = layout.getSize(iDim) - p2[iDim][0] - p2[iDim][1] + 1;
+                sizes[iDim] = layout.getSize(iDim) - (p2[iDim][0] - p2[iDim][1]) + 1;
             }
         }
         ArrayList<int[]> posArray = new ArrayList<>();

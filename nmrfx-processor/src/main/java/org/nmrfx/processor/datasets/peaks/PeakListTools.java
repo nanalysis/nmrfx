@@ -30,7 +30,6 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.Residue;
-import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
@@ -50,6 +49,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
 import static org.nmrfx.peaks.Peak.getMeasureFunction;
+import static org.nmrfx.processor.datasets.peaks.PeakListTools.GuessType.*;
 
 /**
  *
@@ -63,35 +63,6 @@ public class PeakListTools {
         return project.resFactory;
     }
 
-    public enum ARRAYED_FIT_MODE {
-        SINGLE,
-        PLANES,
-        EXP;
-    }
-    /**
-     *
-     */
-    public static final int FIT_ALL = 0;
-
-    /**
-     *
-     */
-    public static final int FIT_AMPLITUDES = 2;
-
-    /**
-     *
-     */
-    public static final int FIT_LW_AMPLITUDES = 1;
-
-    /**
-     *
-     */
-    public static final int FIT_MAX_DEV = 3;
-
-    /**
-     *
-     */
-    public static final int FIT_RMS = 4;
 
     /**
      *
@@ -995,20 +966,20 @@ public class PeakListTools {
         }
     }
 
-    final static class GuessValue {
-
-        final double value;
-        final double lower;
-        final double upper;
-        final boolean floating;
-
-        public GuessValue(final double value, final double lower, final double upper, final boolean floating) {
-            this.value = value;
-            this.lower = lower;
-            this.upper = upper;
-            this.floating = floating;
-        }
+    public enum GuessType {
+        GLOBAL_INTENSITY,
+        RELAX_END_INTENSITY,
+        RELAX_RATE,
+        INTENSITY,
+        CENTER,
+        WIDTH,
+        SHAPE
     }
+
+
+    public record GuessValue(double value, double lower, double upper, boolean floating, GuessType guessType) {
+    }
+
 
     /**
      *
@@ -1269,30 +1240,6 @@ public class PeakListTools {
 
     /**
      *
-     * @param dataset
-     * @param peakArray
-     * @return
-     * @throws IllegalArgumentException
-     * @throws IOException
-     * @throws PeakFitException
-     */
-    public static List<Object> peakFit(PeakList peakList, DatasetBase dataset, Peak... peakArray)
-            throws IllegalArgumentException, IOException, PeakFitException {
-        Dataset theFile = (Dataset) dataset;
-        boolean doFit = true;
-        int fitMode = FIT_ALL;
-        boolean updatePeaks = true;
-        double[] delays = null;
-        double multiplier = 0.686;
-        int[] rows = new int[theFile.getNDim()];
-        List<Peak> peaks = Arrays.asList(peakArray);
-        boolean[] fitPeaks = new boolean[peakArray.length];
-        Arrays.fill(fitPeaks, true);
-        return peakFit(peakList, theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1, ARRAYED_FIT_MODE.SINGLE);
-    }
-
-    /**
-     *
      * @param theFile
      * @param peaks
      * @return
@@ -1300,14 +1247,10 @@ public class PeakListTools {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static List<Object> simPeakFit(PeakList peakList, Dataset theFile, int[] rows, double[] delays, List<Peak> peaks,
-            boolean[] fitPeaks, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
+    public static List<Object> fitPeakGroup(PeakList peakList, Dataset theFile, int[] rows, double[] delays, List<Peak> peaks,
+                                            boolean[] fitPeaks, PeakFitParameters fitPars)
             throws IllegalArgumentException, IOException, PeakFitException {
-        boolean doFit = true;
-        int fitMode = FIT_ALL;
-        boolean updatePeaks = true;
-        double multiplier = 3.0;
-        return peakFit(peakList, theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, lsFit, constrainDim, arrayedFitMode);
+        return fitPeaks(peakList, theFile, peaks, fitPars, fitPeaks, rows,  delays);
     }
 
     /**
@@ -1317,9 +1260,9 @@ public class PeakListTools {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static void peakFit(PeakList peakList, Dataset theFile, int[] rows, double[] delays, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
+    public static void groupPeakListAndFit(PeakList peakList, Dataset theFile, int[] rows, double[] delays, PeakFitParameters fitPars)
             throws IllegalArgumentException, IOException, PeakFitException {
-        peakFit(peakList, theFile, rows, delays, peakList.peaks(), lsFit, constrainDim, arrayedFitMode);
+        groupPeaksAndFit(peakList, theFile, rows, delays, peakList.peaks(), fitPars);
     }
 
     /**
@@ -1330,13 +1273,12 @@ public class PeakListTools {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static void peakFit(PeakList peakList, Dataset theFile, int[] rows, double[] delays, Collection<Peak> peaks, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
-            throws IllegalArgumentException, IOException, PeakFitException {
+    public static void groupPeaksAndFit(PeakList peakList, Dataset theFile, int[] rows, double[] delays, Collection<Peak> peaks, PeakFitParameters fitPars) {
         Set<List<Set<Peak>>> oPeaks = null;
-        if (constrainDim < 0) {
+        if (fitPars.constrainDim() < 0) {
             oPeaks = getPeakLayers(peaks);
         } else {
-            oPeaks = getPeakColumns(peakList, peaks, constrainDim);
+            oPeaks = getPeakColumns(peakList, peaks, fitPars.constrainDim());
         }
         oPeaks.stream().forEach(oPeakSet -> {
             try {
@@ -1354,7 +1296,7 @@ public class PeakListTools {
                 for (int i = nFit; i < fitPeaks.length; i++) {
                     fitPeaks[i] = false;
                 }
-                simPeakFit(peakList, theFile, rows, delays, lPeaks, fitPeaks, lsFit, constrainDim, arrayedFitMode);
+                fitPeakGroup(peakList, theFile, rows, delays, lPeaks, fitPeaks, fitPars);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 log.error(ex.getMessage(), ex);
             }
@@ -1362,43 +1304,7 @@ public class PeakListTools {
         );
     }
 
-    /**
-     *
-     * @param theFile
-     * @param argv
-     * @param start
-     * @param rows
-     * @param doFit
-     * @param fitMode
-     * @param updatePeaks
-     * @param delays
-     * @param multiplier
-     * @return
-     * @throws IllegalArgumentException
-     * @throws IOException
-     * @throws PeakFitException
-     */
-    public static List<Object> peakFit(PeakList peakList, Dataset theFile, String[] argv,
-            int start, int[] rows, boolean doFit, int fitMode, final boolean updatePeaks, double[] delays, double multiplier)
-            throws IllegalArgumentException, IOException, PeakFitException {
-
-        List<Peak> peaks = new ArrayList<>();
-
-        for (int iArg = start, iPeak = 0; iArg < argv.length; iArg++, iPeak++) {
-            Peak peak = peakList.getAPeak(argv[iArg]);
-            if (peak == null) {
-                throw new IllegalArgumentException(
-                        "Couln't find peak \"" + argv[iArg] + "\"");
-            }
-            peaks.add(peak);
-        }
-        boolean[] fitPeaks = new boolean[peaks.size()];
-        Arrays.fill(fitPeaks, true);
-
-        return peakFit(peakList, theFile, peakList.peaks(), fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1, ARRAYED_FIT_MODE.SINGLE);
-    }
-
-    /**
+     /**
      * Fit peaks by adjusting peak position (chemical shift), linewidth and
      * intensity to optimize agreement with data values. Multiple peaks are fit
      * simultaneously. These are normally a group of overlapping peaks.
@@ -1410,31 +1316,20 @@ public class PeakListTools {
      * @param rows An array of rows (planes etc) of the dataset to be used. This
      * is used when the number of peak dimensions is less than the number of
      * dataset dimensions.
-     * @param doFit Currently unused
-     * @param fitMode An int value that specifies whether to fit all parameters
-     * or just amplitudes
-     * @param updatePeaks If true update the peaks with the fitted parameters
-     * otherwise return a list of the fit parameters
-     * @param delays An array of doubles specifying relaxation delays. If not
-     * null then fit peaks to lineshapes and an exponential delay model using
-     * data values from different rows or planes of dataset
-     * @param multiplier unused?? should multiply width of regions
-     * @param lsFit If true and a lineshape catalog exists in dataset then use
-     * the lineshape catalog to fit
-     * @param constrainDim If this is greater than or equal to 0 then the
-     * specified all positions and widths of the specified dimension will be
-     * constrained to be the same value. Useful for fitting column or row of
-     * peaks.
-     * @return a List of alternating name/values with the parameters of the fit
+      * @param delays An array of doubles specifying relaxation delays. If not
+      * null then fit peaks to lineshapes and an exponential delay model using
+      * data values from different rows or planes of dataset
+      * @return a List of alternating name/values with the parameters of the fit
      * if updatePeaks is false. Otherwise return empty list
      * @throws IllegalArgumentException
      * @throws IOException
      * @throws PeakFitException
      */
-    public static List<Object> peakFit(PeakList peakList, Dataset theFile, List<Peak> peaks,
-            boolean[] fitPeaks,
-            int[] rows, boolean doFit, int fitMode, final boolean updatePeaks,
-            double[] delays, double multiplier, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
+    public static List<Object> fitPeaks(PeakList peakList, Dataset theFile, List<Peak> peaks,
+                                        PeakFitParameters fitPars,
+                                        boolean[] fitPeaks,
+                                        int[] rows,
+                                        double[] delays)
             throws IllegalArgumentException, IOException, PeakFitException {
         List<Object> peaksResult = new ArrayList<>();
         if (peaks.isEmpty()) {
@@ -1458,7 +1353,7 @@ public class PeakListTools {
             maxDelay = StatUtils.max(delays);
         }
         int[][] syncPars = null;
-        if (constrainDim != -1) {
+        if (fitPars.constrainDim() != -1) {
             syncPars = new int[peaks.size() * 2][2];
         }
 
@@ -1517,9 +1412,9 @@ public class PeakListTools {
             double intensity = (double) peak.getIntensity();
             GuessValue gValue;
             if (intensity > 0.0) {
-                gValue = new GuessValue(intensity, intensity * 0.1, intensity * 3.5, true);
+                gValue = new GuessValue(intensity, intensity * 0.1, intensity * 3.5, true, INTENSITY);
             } else {
-                gValue = new GuessValue(intensity, intensity * 1.5, intensity * 0.5, true);
+                gValue = new GuessValue(intensity, intensity * 1.5, intensity * 0.5, true, INTENSITY);
             }
             // add intensity for this peak to guesses
             guessList.add(gValue);
@@ -1527,22 +1422,22 @@ public class PeakListTools {
                 globalMax = FastMath.abs(intensity);
             }
             if ((dataDim - nPeakDim) == 1) {
-                if (arrayedFitMode != ARRAYED_FIT_MODE.SINGLE) {
+                if (fitPars.arrayedFitMode() != PeakFitParameters.ARRAYED_FIT_MODE.SINGLE) {
                     nPlanes = theFile.getSizeTotal(dataDim - 1);
                 }
             }
             // if rate mode add guesses for relaxation time constant 1/rate and
             // intensity at infinite delay
             if ((delays != null) && (delays.length > 0)) {
-                gValue = new GuessValue(maxDelay / 2.0, maxDelay * 5.0, maxDelay * 0.02, true);
+                gValue = new GuessValue(maxDelay / 2.0, maxDelay * 5.0, maxDelay * 0.02, true, RELAX_RATE);
                 guessList.add(gValue);
                 if (fitC) {
-                    gValue = new GuessValue(0.0, -0.5 * FastMath.abs(intensity), 0.5 * FastMath.abs(intensity), true);
+                    gValue = new GuessValue(0.0, -0.5 * FastMath.abs(intensity), 0.5 * FastMath.abs(intensity), true, RELAX_END_INTENSITY);
                     guessList.add(gValue);
                 }
             } else if (nPlanes != 1) {
                 for (int iPlane = 1; iPlane < nPlanes; iPlane++) {
-                    gValue = new GuessValue(intensity, 0.0, intensity * 3.5, true);
+                    gValue = new GuessValue(intensity, 0.0, intensity * 3.5, true, INTENSITY);
                     guessList.add(gValue);
                 }
             }
@@ -1555,12 +1450,12 @@ public class PeakListTools {
                 // if fit amplitudes constrain width fixme
                 boolean fitThis = fitPeaks[iPeak];
                 if (syncPars != null) {
-                    if ((iPeak == 0) && (dDim == constrainDim)) {
+                    if ((iPeak == 0) && (dDim == fitPars.constrainDim())) {
                         syncPars[0][0] = parIndex;
                         syncPars[0][1] = parIndex;
                         syncPars[1][0] = parIndex - 1;
                         syncPars[1][1] = parIndex - 1;
-                    } else if ((iPeak > 0) && (dDim == constrainDim)) {
+                    } else if ((iPeak > 0) && (dDim == fitPars.constrainDim())) {
                         fitThis = false;
                         syncPars[iPeak * 2][0] = parIndex;
                         syncPars[iPeak * 2][1] = syncPars[0][0];
@@ -1568,19 +1463,19 @@ public class PeakListTools {
                         syncPars[iPeak * 2 + 1][1] = syncPars[1][0];
                     }
                 }
-                if (fitMode == FIT_AMPLITUDES) {
-                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.05, width[iPeak][dDim] * 1.05, false);
+                if (fitPars.fitMode() == PeakFitParameters.FIT_MODE.AMPLITUDES) {
+                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.05, width[iPeak][dDim] * 1.05, false, WIDTH);
                 } else {
-                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.7, width[iPeak][dDim] * 1.5, fitThis);
+                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.7, width[iPeak][dDim] * 1.5, fitThis, WIDTH);
                 }
                 guessList.add(gValue);
                 centerList.add(new CenterRef(parIndex, dDim));
                 // if fit amplitudes constrain cpt to near current value  fixme
                 // and set floating parameter of GuessValue to false
-                if (fitMode == FIT_AMPLITUDES) {
-                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 40, cpt[iPeak][dDim] + width[iPeak][dDim] / 40, false);
+                if (fitPars.fitMode() == PeakFitParameters.FIT_MODE.AMPLITUDES) {
+                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 40, cpt[iPeak][dDim] + width[iPeak][dDim] / 40, false, CENTER);
                 } else {
-                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 3, cpt[iPeak][dDim] + width[iPeak][dDim] / 3, fitThis);
+                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 3, cpt[iPeak][dDim] + width[iPeak][dDim] / 3, fitThis, CENTER);
                 }
                 guessList.add(gValue);
 
@@ -1600,9 +1495,31 @@ public class PeakListTools {
             }
             firstPeak = false;
         }
-        guessList.add(0, new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false));
+
+        for (int j = 0; j < nPeakDim; j++) {
+            Float shapeFactor = peaks.get(0).peakDims[j].getShapeFactor();
+            double lower = 0.0;
+            double upper = 1.5;
+            if (fitPars.shapeParameters().constrainShape()) {
+                if (j == 0) {
+                    shapeFactor = (float) fitPars.shapeParameters.directShapeFactor();
+                } else {
+                    shapeFactor = (float) fitPars.shapeParameters.indirectShapeFactor();
+                }
+                lower = shapeFactor - 0.1;
+                upper = shapeFactor + 0.1;
+
+            }
+            if (shapeFactor == null) {
+                shapeFactor = fitPars.shapeParameters().fitShape() ? 0.25f : 0.0f;
+            }
+            boolean fitShape = fitPars.shapeParameters.fitShape();
+            GuessValue gValue = new GuessValue(shapeFactor, lower, upper, fitShape, SHAPE);
+            guessList.add(gValue);
+        }
+        guessList.add(0, new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false, GLOBAL_INTENSITY));
         // get a list of positions that are near the centers of each of the peaks
-        ArrayList<int[]> posArray = theFile.getFilteredPositions(p2, cpt, width, pdim, multiplier, 2);
+        ArrayList<int[]> posArray = theFile.getFilteredPositions(p2, cpt, width, pdim, fitPars.multiplier(), 2);
         if (posArray.isEmpty()) {
             System.out.println("no positions");
             for (Peak peak : peaks) {
@@ -1625,7 +1542,7 @@ public class PeakListTools {
         for (CenterRef centerRef : centerList) {
             GuessValue gValueAdj = guessList.get(centerRef.index);
             int offset = p2[centerRef.dim][0];
-            guessList.set(centerRef.index, new GuessValue(gValueAdj.value - offset, gValueAdj.lower - offset, gValueAdj.upper - offset, gValueAdj.floating));
+            guessList.set(centerRef.index, new GuessValue(gValueAdj.value - offset, gValueAdj.lower - offset, gValueAdj.upper - offset, gValueAdj.floating, CENTER));
         }
         int[][] positions = new int[posArray.size()][nPeakDim];
         int i = 0;
@@ -1637,7 +1554,7 @@ public class PeakListTools {
             i++;
         }
         LorentzGaussND peakFit;
-        if (lsFit && (theFile.getLSCatalog() != null)) {
+        if (fitPars.lsFit() && (theFile.getLSCatalog() != null)) {
             peakFit = new LorentzGaussNDWithCatalog(positions, theFile.getLSCatalog());
         } else {
             peakFit = new LorentzGaussND(positions);
@@ -1648,6 +1565,7 @@ public class PeakListTools {
         boolean[] floating = new boolean[guess.length];
         i = 0;
         for (GuessValue gVal : guessList) {
+            log.debug(gVal.toString());
             guess[i] = gVal.value;
             lower[i] = gVal.lower;
             upper[i] = gVal.upper;
@@ -1695,7 +1613,7 @@ public class PeakListTools {
             int offset = p2[centerRef.dim][0];
             values[centerRef.index] += offset;
         }
-        if (updatePeaks) {
+        if (fitPars.updatePeaks()) {
             int index = 1;
             for (Peak peak : peaks) {
                 peak.setIntensity((float) values[index++]);
@@ -1725,6 +1643,8 @@ public class PeakListTools {
                     lineWidthAll *= lineWidthHz;
                     peakDim.setBoundsValue((float) (lineWidth * 1.5));
                     peakDim.setChemShiftValueNoCheck((float) theFile.pointToPPM(dDim, values[index++]));
+                    double shapeFactor = values[values.length - nPeakDim + pkDim];
+                    peakDim.setShapeFactorValue((float) shapeFactor);
                 }
                 peak.setVolume1((float) (peak.getIntensity() * lineWidthAll));
             }

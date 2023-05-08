@@ -69,7 +69,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     ChangeListener<String> patternListener;
     PopOver popOver = null;
 
-    public MultipletTool(PolyChart chart) {
+    private MultipletTool(PolyChart chart) {
         this.chart = chart;
         this.controller = chart.getController();
     }
@@ -265,6 +265,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         if (!chart.getPeakListAttributes().isEmpty()) {
             analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
+        MainApp.getShapePrefs(analyzer.getFitParameters());
+
         return analyzer;
     }
 

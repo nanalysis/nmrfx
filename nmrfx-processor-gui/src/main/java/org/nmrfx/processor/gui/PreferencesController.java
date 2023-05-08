@@ -17,10 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.utils.properties.DirectoryOperationItem;
-import org.nmrfx.utils.properties.ChoiceOperationItem;
-import org.nmrfx.utils.properties.IntRangeOperationItem;
-import org.nmrfx.utils.properties.FileOperationItem;
+import org.nmrfx.utils.properties.*;
 import org.nmrfx.processor.operations.NESTANMREx;
 import java.io.File;
 import java.io.IOException;
@@ -82,6 +79,10 @@ public class PreferencesController implements Initializable {
     static IntegerProperty tickFontSizeProp = null;
     static IntegerProperty labelFontSizeProp = null;
     static IntegerProperty peakFontSizeProp = null;
+    static BooleanProperty fitPeakShapeProp = null;
+    static BooleanProperty constrainPeakShapeProp = null;
+    static DoubleProperty peakShapeDirectFactorProp = null;
+    static DoubleProperty peakShapeIndirectFactorProp = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -133,8 +134,34 @@ public class PreferencesController implements Initializable {
                 },
                 getPeakFontSize(), 1, 32, "Spectra", "PeakFontSize", "Font size for peak box labels");
 
+        BooleanOperationItem fitPeakShapeItem = new BooleanOperationItem(
+                (a, b, c) -> {
+                    fitPeakShapeProp.setValue((Boolean) c);
+                },
+                getFitPeakShape(), "Peak", "FitPeakShape", "Fit Non-Lorentzian Peak Shapes");
+
+        BooleanOperationItem constrainPeakShapeItem = new BooleanOperationItem(
+                (a, b, c) -> {
+                    constrainPeakShapeProp.setValue((Boolean) c);
+                },
+                getConstrainPeakShape(), "Peak", "ConstrainPeakShape", "Constrain Non-Lorentzian Peak Shapes");
+
+        DoubleRangeOperationItem peakShapeDirectItem = new DoubleRangeOperationItem(
+                (a, b, c) -> {
+                    peakShapeDirectFactorProp.setValue((Double) c);
+                },
+                getPeakShapeDirectFactor(), 0.0, 1.5, 0.0, 1.5, "Peak", "PeakShapeDirect", "Shape factor for direct dimension");
+
+        DoubleRangeOperationItem peakShapeInirectItem = new DoubleRangeOperationItem(
+                (a, b, c) -> {
+                    peakShapeIndirectFactorProp.setValue((Double) c);
+                },
+                getPeakShapeIndirectFactor(), 0.0, 1.5, 0.0, 1.5, "Peak", "PeakShapeIndirect", "Shape factor for indirect dimension");
+
+
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
-                nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem);
+                nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem,
+                fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem);
 
     }
 
@@ -268,9 +295,9 @@ public class PreferencesController implements Initializable {
     }
 
     /**
-     * Returns the Directory for datasets,
+     * Sets the preferences location,
      *
-     * @param file the file or null to remove the path
+     * @param value set preference location
      */
     public static void setLocation(String value) {
         Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
@@ -383,9 +410,9 @@ public class PreferencesController implements Initializable {
     }
 
     /**
-     * Returns the Directory for datasets,
+     * Set the number of processes to use when processing,
      *
-     * @param file the file or null to remove the path
+     * @param value the number of processes
      */
     public static void setNProcesses(Integer value) {
         Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
@@ -412,6 +439,26 @@ public class PreferencesController implements Initializable {
     public static Integer getPeakFontSize() {
         peakFontSizeProp = getInteger(peakFontSizeProp, "PEAK_FONT_SIZE", 12);
         return peakFontSizeProp.getValue();
+    }
+
+    public static Boolean getFitPeakShape() {
+        fitPeakShapeProp = getBoolean(fitPeakShapeProp, "FIT_PEAK_SHAPE", false);
+        return fitPeakShapeProp.getValue();
+    }
+
+    public static Boolean getConstrainPeakShape() {
+        constrainPeakShapeProp = getBoolean(constrainPeakShapeProp, "CONSTRAIN_PEAK_SHAPE", false);
+        return constrainPeakShapeProp.getValue();
+    }
+
+    public static Double getPeakShapeDirectFactor() {
+        peakShapeDirectFactorProp = getDouble(peakShapeDirectFactorProp, "PEAK_SHAPE_DIRECT", 0.0);
+        return peakShapeDirectFactorProp.getValue();
+    }
+
+    public static Double getPeakShapeIndirectFactor() {
+        peakShapeIndirectFactorProp = getDouble(peakShapeIndirectFactorProp, "PEAK_SHAPE_INDIRECT", 0.0);
+        return peakShapeIndirectFactorProp.getValue();
     }
 
     public static IntegerProperty getInteger(IntegerProperty prop, String name, int defValue) {
