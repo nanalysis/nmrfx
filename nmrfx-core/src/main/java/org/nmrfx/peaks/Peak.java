@@ -40,6 +40,8 @@ public class Peak implements Comparable, PeakOrMulti {
         "_Peak_char.Bounding_box_val_err",
         "_Peak_char.Line_width_val",
         "_Peak_char.Line_width_val_err",
+        "_Peak_char.Shape_factor_val",
+        "_Peak_char.Shape_factor_val_err",
         "_Peak_char.Phase_val",
         "_Peak_char.Phase_val_err",
         "_Peak_char.Decay_rate_val",

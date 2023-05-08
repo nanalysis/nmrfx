@@ -51,7 +51,7 @@ public class PeakFitter {
     int[][] splitCount;
     final Dataset theFile;
     boolean rootedPeaks;
-    int fitMode;
+    PeakFitParameters fitParameters;
     Double positionRestraint = null;
     Peak[] peaks;
     final int[][] p2;
@@ -60,10 +60,10 @@ public class PeakFitter {
     final int[] pdim;
     double BIC;
 
-    public PeakFitter(final Dataset theFile, boolean rootedPeaks, int fitMode) {
+    public PeakFitter(final Dataset theFile, boolean rootedPeaks, PeakFitParameters fitParameters) {
         this.theFile = theFile;
         this.rootedPeaks = rootedPeaks;
-        this.fitMode = fitMode;
+        this.fitParameters = fitParameters;
         int dataDim = theFile.getNDim();
         p2 = new int[dataDim][2];
         pdim = new int[dataDim];
@@ -164,7 +164,7 @@ public class PeakFitter {
 
     }
 
-    List<Double> getGuesses(int i0, int i1) {
+    List<Double> getGuesses(boolean fitShape, int i0, int i1) {
         int dataDim = theFile.getNDim();
         int[][] p1 = new int[dataDim][2];
         int[] cpt = new int[dataDim];
@@ -173,6 +173,12 @@ public class PeakFitter {
 
         splitCount = new int[nPeaks][];
         List<Double> guessList = new ArrayList<>();
+        if (fitShape) {
+            PeakDim peakDim = peaks[0].getPeakDim(0);
+            double fitShapeGuess = peakDim.getShapeFactor() == null ? 0.3 : peakDim.getShapeFactorValue();
+            guessList.add(fitShapeGuess);
+        }
+
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             PeakDim peakDim = peaks[iPeak].getPeakDim(0);
             Multiplet multiplet = peakDim.getMultiplet();
@@ -257,7 +263,7 @@ public class PeakFitter {
         int nPeaks = peaks.length;
         int dataDim = theFile.getNDim();
         rootedPeaks = true;
-
+        boolean fitShape = fitParameters.shapeParameters().fitShape();
         //int k=0;
         if (i0 > i1) {
             int hold = i0;
@@ -268,7 +274,7 @@ public class PeakFitter {
             pdim[i] = -1;
         }
         getDims(peaks[0], rows);
-        List<Double> guessList = getGuesses(i0, i1);
+        List<Double> guessList = getGuesses(fitShape, i0, i1);
 //        if (fitMode == PeakList.FIT_MAX_DEV) {
         if (p2[0][0] > i0) {
             p2[0][0] = i0;
@@ -288,6 +294,9 @@ public class PeakFitter {
 
         int size = p2[0][1] - p2[0][0] + 1;
         int iGuess = 0;
+        if (fitShape) {
+            iGuess = 1;
+        }
         double[] guesses = new double[guessList.size()];
         double[] lower = new double[guesses.length];
         double[] upper = new double[guesses.length];
@@ -382,8 +391,8 @@ public class PeakFitter {
                     guesses[iGuess] = ((Double) guessList.get(iGuess));  // coupling
                     iGuess++;
                     guesses[iGuess] = ((Double) guessList.get(iGuess)); // slope
-                    lower[iGuess] = -0.8;
-                    upper[iGuess] = 0.8;
+                    lower[iGuess] = -0.4;
+                    upper[iGuess] = 0.4;
                     if ((lower[iGuess] > guesses[iGuess]) || (upper[iGuess] < guesses[iGuess])) {
                         guesses[iGuess] = (lower[iGuess] + upper[iGuess]) / 2.0;
                     }
@@ -420,6 +429,18 @@ public class PeakFitter {
                 }
             }
         }
+        if (fitShape) {
+            if (fitParameters.shapeParameters().constrainShape()) {
+                guesses[0] = fitParameters.shapeParameters().directShapeFactor();
+                lower[0] = guesses[0] - 0.1;
+                upper[0] = guesses[0] + 0.1;
+
+            } else {
+                guesses[0] = guessList.get(0);
+                lower[0] = -0.2;
+                upper[0] = 1.3;
+            }
+        }
 
         double result = fitNow(guesses, lower, upper);
         return result;
@@ -431,7 +452,7 @@ public class PeakFitter {
     }
 
     double fitNow(final double[] guesses, final double[] lower, final double[] upper) throws IllegalArgumentException {
-        PeakFit peakFit = new PeakFit(fitAmps);
+        PeakFit peakFit = new PeakFit(fitAmps, fitParameters);
 
         int size = p2[0][1] - p2[0][0] + 1;
         if (size <= 0) {
@@ -477,16 +498,16 @@ public class PeakFitter {
         double result;
         int nDim = guesses.length;
         BIC = 0.0;
-        switch (fitMode) {
-            case PeakListTools.FIT_RMS:
+        switch (fitParameters.fitMode) {
+            case RMS:
                 rms = peakFit.rms(guesses);
                 updateBIC(rms, size, nDim);
                 result = rms;
                 return result;
-            case PeakListTools.FIT_AMPLITUDES:
+            case AMPLITUDES:
                 rms = peakFit.rms(guesses);
                 break;
-            case PeakListTools.FIT_MAX_DEV:
+            case MAXDEV:
                 int maxDev = peakFit.maxPosDev(guesses, 3);
                 double maxDevFreq = theFile.pointToPPM(0, maxDev + p2[0][0]);
                 result = maxDevFreq;
@@ -514,11 +535,20 @@ public class PeakFitter {
         result = rms;
 
         List<List<SineSignal>> signalGroups = peakFit.getSignals();
+        double shapeFactor;
+        if (fitParameters.shapeParameters().fitShape()) {
+            shapeFactor = peakFit.getShapeFactor();
+        } else if (fitParameters.shapeParameters().constrainShape()) {
+            shapeFactor = fitParameters.shapeParameters().directShapeFactor();
+        } else {
+            shapeFactor = 0.0;
+        }
         int nPeaks = peaks.length;
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             List<SineSignal> signals = signalGroups.get(iPeak);
 
             Multiplet multiplet = peaks[iPeak].peakDims[0].getMultiplet();
+            peaks[iPeak].peakDims[0].setShapeFactorValue((float) shapeFactor);
             if ((splitCount[iPeak].length == 1)
                     && (splitCount[iPeak][0] < 0)) { // generic multiplet
                 int nFreqs = signals.size();
@@ -577,11 +607,12 @@ public class PeakFitter {
         return result;
     }
 
-    public double simpleFit(int i0, int i1, int[] rows, boolean doFit)
+    public double simpleFit(int i0, int i1, int[] rows, boolean doFit, boolean fitShape)
             throws IllegalArgumentException, Exception {
         int nPeaks = peaks.length;
         int dataDim = theFile.getNDim();
         Arrays.sort(peaks, comparing((p) -> -p.getPeakDim(0).getChemShiftValue()));
+        int nShapePar = fitShape ? 1 : 0;
 
         //int k=0;
         if (i0 > i1) {
@@ -612,9 +643,9 @@ public class PeakFitter {
             p2[0][1] = theFile.getSizeTotal(pdim[0]) - 1;
         }
         int extra = 5;
-        if (fitMode == PeakListTools.FIT_RMS) {
+        if (fitParameters.fitMode == PeakFitParameters.FIT_MODE.RMS) {
             extra = 0;
-        } else if (fitMode == PeakListTools.FIT_MAX_DEV) {
+        } else if (fitParameters.fitMode == PeakFitParameters.FIT_MODE.MAXDEV) {
             extra = 0;
         }
 
@@ -623,7 +654,7 @@ public class PeakFitter {
         double[][] xv = new double[1][nFitPoints];
         double[] yv = new double[nFitPoints];
         double[] ev = new double[nFitPoints];
-        double[] guesses = new double[nPeaks * 3];
+        double[] guesses = new double[nPeaks * 3 + nShapePar];
         double[] lower = new double[guesses.length];
         double[] upper = new double[guesses.length];
         Vec fitVec = new Vec(size);
@@ -672,41 +703,41 @@ public class PeakFitter {
             lineWidthPts = Math.max(minWidth * 1.1, lineWidthPts);
             lineWidthPts = Math.min(useMaxWidth * 0.9, lineWidthPts);
 
-            guesses[iPeak * 3] = intensity;
-            guesses[iPeak * 3 + 1] = c - p2[0][0];
-            guesses[iPeak * 3 + 2] = lineWidthPts;
+            guesses[iPeak * 3 + nShapePar] = intensity;
+            guesses[iPeak * 3 + 1 + nShapePar] = c - p2[0][0];
+            guesses[iPeak * 3 + 2+ nShapePar] = lineWidthPts;
 
             int cPos = (int) Math.round(c - p2[0][0]);
             if (intensity > 0.0) {
-                lower[iPeak * 3] = 0.0;
-                upper[iPeak * 3] = yv[cPos + extra] * 1.2;
+                lower[iPeak * 3 + nShapePar] = 0.0;
+                upper[iPeak * 3+ nShapePar] = yv[cPos + extra] * 1.2;
             } else {
-                lower[iPeak * 3] = yv[cPos + extra] * 1.2;
-                upper[iPeak * 3] = 0.0;
+                lower[iPeak * 3+ nShapePar] = yv[cPos + extra] * 1.2;
+                upper[iPeak * 3+ nShapePar] = 0.0;
             }
-            lower[iPeak * 3 + 2] = minWidth;
-            upper[iPeak * 3 + 2] = useMaxWidth;
+            lower[iPeak * 3 + 2+ nShapePar] = minWidth;
+            upper[iPeak * 3 + 2+ nShapePar] = useMaxWidth;
             if (positionRestraint != null) {
                 double lineWidthRange = lineWidthPts * positionRestraint;
-                lower[iPeak * 3 + 2] = Math.max(minWidth, lineWidthPts - lineWidthRange);
-                upper[iPeak * 3 + 2] = Math.min(useMaxWidth, lineWidthPts + lineWidthRange);
+                lower[iPeak * 3 + 2+ nShapePar] = Math.max(minWidth, lineWidthPts - lineWidthRange);
+                upper[iPeak * 3 + 2+ nShapePar] = Math.min(useMaxWidth, lineWidthPts + lineWidthRange);
             }
         }
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
-            double lineWidthPts = guesses[iPeak * 3 + 2];
+            double lineWidthPts = guesses[iPeak * 3 + 2+ nShapePar];
             if (iPeak == 0) {
-                lower[iPeak * 3 + 1] = Math.max(extra + 1.0, guesses[iPeak * 3 + 1] - lineWidthPts);
+                lower[iPeak * 3 + 1+ nShapePar] = Math.max(extra + 1.0, guesses[iPeak * 3 + 1+ nShapePar] - lineWidthPts);
             } else {
-                lower[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak - 1) * 3 + 1]) / 2.0;
+                lower[iPeak * 3 + 1+ nShapePar] = (guesses[iPeak * 3 + 1+ nShapePar] + guesses[(iPeak - 1) * 3 + 1+ nShapePar]) / 2.0;
             }
             if (iPeak == nPeaks - 1) {
-                upper[iPeak * 3 + 1] = Math.min(size - extra - 1.0, guesses[iPeak * 3 + 1] + lineWidthPts);
+                upper[iPeak * 3 + 1+ nShapePar] = Math.min(size - extra - 1.0, guesses[iPeak * 3 + 1+ nShapePar] + lineWidthPts);
             } else {
-                upper[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak + 1) * 3 + 1]) / 2.0;
+                upper[iPeak * 3 + 1+ nShapePar] = (guesses[iPeak * 3 + 1+ nShapePar] + guesses[(iPeak + 1) * 3 + 1+ nShapePar]) / 2.0;
             }
             if (positionRestraint != null) {
-                lower[iPeak * 3 + 1] = Math.max(lower[iPeak * 3 + 1], guesses[iPeak * 3 + 1] - lineWidthPts * positionRestraint);
-                upper[iPeak * 3 + 1] = Math.min(upper[iPeak * 3 + 1], guesses[iPeak * 3 + 1] + lineWidthPts * positionRestraint);
+                lower[iPeak * 3 + 1+ nShapePar] = Math.max(lower[iPeak * 3 + 1+ nShapePar], guesses[iPeak * 3 + 1+ nShapePar] - lineWidthPts * positionRestraint);
+                upper[iPeak * 3 + 1+ nShapePar] = Math.min(upper[iPeak * 3 + 1+ nShapePar], guesses[iPeak * 3 + 1+ nShapePar] + lineWidthPts * positionRestraint);
             }
 
         }
@@ -715,20 +746,19 @@ public class PeakFitter {
             System.out.printf("%10.4f %10.4f %10.4f\n", guesses[i], lower[i], upper[i]);
         }
 
-        PeakFit peakFit = new PeakFit(true);
+        PeakFit peakFit = new PeakFit(true, fitParameters);
         Fitter fitter = Fitter.getArrayFitter(peakFit::value);
         fitter.setXYE(xv, yv, ev);
         int nPars = guesses.length;
         double[] bestPars;
         double rms;
-        if (fitMode == PeakListTools.FIT_RMS) {
+        if (fitParameters.fitMode == PeakFitParameters.FIT_MODE.RMS) {
             rms = fitter.rms(guesses);
             updateBIC(rms, size, nPars);
             return rms;
-        } else if (fitMode == PeakListTools.FIT_MAX_DEV) {
+        } else if (fitParameters.fitMode == PeakFitParameters.FIT_MODE.MAXDEV) {
             double[] yCalc = peakFit.sim(guesses, xv);
             int maxPos = fitter.maxDevLoc(yCalc, 3);
-            System.out.println("maxPos " + extra + " " + maxPos);
             double centerPt = maxPos + p2[0][0];
             double centerPPM = theFile.pointToPPM(0, centerPt);
             return centerPPM;
@@ -747,9 +777,9 @@ public class PeakFitter {
             Peak peak = peaks[iPeak];
             PeakDim peakDim = peak.getPeakDim(0);
 
-            double intensity = bestPars[iPeak * 3];
-            double centerPt = bestPars[iPeak * 3 + 1] + p2[0][0];
-            double lineWithPts = bestPars[iPeak * 3 + 2];
+            double intensity = bestPars[iPeak * 3+ nShapePar];
+            double centerPt = bestPars[iPeak * 3 + 1+ nShapePar] + p2[0][0];
+            double lineWithPts = bestPars[iPeak * 3 + 2+ nShapePar];
             double lineWidthPPM = theFile.ptWidthToPPM(0, lineWithPts);
             double centerPPM = theFile.pointToPPM(0, centerPt);
             double volume = intensity * lineWidthPPM * Math.PI / 2 / 1.05;
@@ -758,6 +788,9 @@ public class PeakFitter {
             peak.setVolume1((float) volume);
             peakDim.setLineWidthValue((float) lineWidthPPM);
             peakDim.setChemShiftValue((float) centerPPM);
+            if (fitShape) {
+                peakDim.setShapeFactorValue((float) bestPars[0]);
+            }
 
         }
         return rms;

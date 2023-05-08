@@ -33,6 +33,8 @@ public class PeakDim {
     private Float chemShiftError = null;
     private Float lineWidth = null;
     private Float lineWidthError = null;
+    private Float shapeFactor = null;
+    private Float shapeFactorError = null;
     private Float bounds = null;
     private Float boundsError = null;
     private Float phase = null;
@@ -66,6 +68,8 @@ public class PeakDim {
         newPeakDim.chemShiftError = chemShiftError;
         newPeakDim.lineWidth = lineWidth;
         newPeakDim.lineWidthError = lineWidthError;
+        newPeakDim.shapeFactor = shapeFactor;
+        newPeakDim.shapeFactorError = shapeFactorError;
         newPeakDim.bounds = bounds;
         newPeakDim.boundsError = boundsError;
         newPeakDim.phase = phase;
@@ -82,6 +86,8 @@ public class PeakDim {
         targetPeakDim.chemShiftError = chemShiftError;
         targetPeakDim.lineWidth = lineWidth;
         targetPeakDim.lineWidthError = lineWidthError;
+        targetPeakDim.shapeFactor = shapeFactor;
+        targetPeakDim.shapeFactorError = shapeFactorError;
         targetPeakDim.bounds = bounds;
         targetPeakDim.boundsError = boundsError;
         targetPeakDim.phase = phase;
@@ -97,6 +103,8 @@ public class PeakDim {
         chemShiftError = peakDim.chemShiftError;
         lineWidth = peakDim.lineWidth;
         lineWidthError = peakDim.lineWidthError;
+        shapeFactor = peakDim.shapeFactor;
+        shapeFactorError = peakDim.shapeFactorError;
         bounds = peakDim.bounds;
         boundsError = peakDim.boundsError;
         phase = peakDim.phase;
@@ -232,6 +240,14 @@ public class PeakDim {
         }
         result.append(sep);
         result.append(STAR3.valueOf(getLineWidthError())).append(sep);
+        Float shapeFactor = getShapeFactor();
+        if (shapeFactor == null) {
+            result.append(".");
+        } else {
+            result.append(shapeFactor);
+        }
+        result.append(sep);
+        result.append(STAR3.valueOf(getShapeFactorError())).append(sep);
         result.append(STAR3.valueOf(getPhase())).append(sep);
         result.append(STAR3.valueOf(getPhaseError())).append(sep);
         result.append(STAR3.valueOf(getDecayRate())).append(sep);
@@ -598,6 +614,34 @@ public class PeakDim {
         peakDimUpdated();
     }
 
+    public Float getShapeFactor() {
+        return shapeFactor;
+    }
+
+    public float getShapeFactorValue() {
+        float value = 0.0f;
+
+        if (shapeFactor != null) {
+            return shapeFactor;
+        } else {
+            return value;
+        }
+    }
+
+    public Float getShapeFactorError() {
+        return shapeFactorError;
+    }
+
+    public void setShapeFactorValue(float wid) {
+        this.shapeFactor = wid;
+        peakDimUpdated();
+    }
+
+    public void setShapeFactorErrorValue(float value) {
+        this.shapeFactorError = value;
+        peakDimUpdated();
+    }
+
     public double getDeltaHz(double delta) {
         delta /= getSpectralDimObj().getSf();
         return delta;
@@ -846,6 +890,16 @@ public class PeakDim {
             case "Line_width_val_err": {
                 float fvalue = ConvUtil.getFloatValue(value);
                 setLineWidthErrorValue(fvalue);
+                break;
+            }
+            case "Shape_factor_val": {
+                float fvalue = ConvUtil.getFloatValue(value);
+                setShapeFactorValue(fvalue);
+                break;
+            }
+            case "Shape_factor_val_err": {
+                float fvalue = ConvUtil.getFloatValue(value);
+                setShapeFactorErrorValue(fvalue);
                 break;
             }
             case "Phase_val": {

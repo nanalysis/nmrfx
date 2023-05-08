@@ -174,6 +174,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         if (!chart.getPeakListAttributes().isEmpty()) {
             analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
+        MainApp.getShapePrefs(analyzer.getFitParameters());
         return analyzer;
     }
 
@@ -275,11 +276,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             chooser.setTitle("Save Regions File");
             File regionFile = chooser.showSaveDialog(null);
             if (regionFile != null) {
-                try {
-                    analyzer.saveRegions(FileUtils.addFileExtensionIfMissing(regionFile, "txt"));
-                } catch (IOException ioE) {
-                    GUIUtils.warn("Error writing regions file", ioE.getMessage());
-                }
+                analyzer.saveRegions(FileUtils.addFileExtensionIfMissing(regionFile, "txt"));
             }
         }
     }
@@ -360,6 +357,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                         return;
                     }
                 }
+                MainApp.getShapePrefs(analyzer.getFitParameters());
                 analyzer.analyze();
                 PeakList peakList = analyzer.getPeakList();
                 List<String> peakListNames = new ArrayList<>();

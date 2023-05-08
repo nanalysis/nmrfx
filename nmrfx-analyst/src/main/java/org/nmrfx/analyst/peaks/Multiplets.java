@@ -28,6 +28,7 @@ import org.nmrfx.peaks.RelMultipletComponent;
 import org.nmrfx.peaks.Singlet;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
+import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -500,14 +501,18 @@ public class Multiplets {
     }
 
     public static Optional<Double> rms(Multiplet multiplet) {
-        return measure(multiplet, "rms");
+        PeakFitParameters fitParameters = new PeakFitParameters();
+        fitParameters.fitMode(PeakFitParameters.FIT_MODE.RMS).fitJMode(PeakFitParameters.FITJ_MODE.JFIT);
+        return measure(multiplet, fitParameters);
     }
 
     public static Optional<Double> deviation(Multiplet multiplet) {
-        return measure(multiplet, "maxdev");
+        PeakFitParameters fitParameters = new PeakFitParameters();
+        fitParameters.fitMode(PeakFitParameters.FIT_MODE.MAXDEV).fitJMode(PeakFitParameters.FITJ_MODE.JFIT);
+        return measure(multiplet, fitParameters);
     }
 
-    public static Optional<Double> measure(Multiplet multiplet, String mode) {
+    public static Optional<Double> measure(Multiplet multiplet, PeakFitParameters fitParameters) {
         List<AbsMultipletComponent> comps = getSortedMultipletPeaks(multiplet, "1.P");
         PeakDim peakDim = getMultipletRoot(multiplet);
         Peak refPeak = peakDim.getPeak();
@@ -521,7 +526,7 @@ public class Multiplets {
             double[] bounds = Analyzer.getRegionBounds(dataset.getReadOnlyRegions(), 0, refPeak.peakDims[0].getChemShift());
             PeakFitting peakFitting = new PeakFitting(dataset);
             try {
-                double rms = peakFitting.fitPeakDims(peakDims, "jfit", bounds, mode);
+                double rms = peakFitting.fitPeakDims(peakDims,  bounds, fitParameters);
                 result = Optional.of(rms);
             } catch (IllegalArgumentException | PeakFitException | IOException ex) {
                 System.out.println("error in fit " + ex.getMessage());
@@ -535,7 +540,8 @@ public class Multiplets {
         PeakList peakList = multiplet.getOrigin().peakList;
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
         PeakFitting peakFitting = new PeakFitting(dataset);
-        peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
+        PeakFitParameters fitParameters = new PeakFitParameters();
+        peakFitting.fitLinkedPeak(multiplet.getOrigin(), fitParameters);
     }
 
     public static Optional<Double> updateAfterMultipletConversion(Multiplet multiplet) {
@@ -554,8 +560,10 @@ public class Multiplets {
             }
 
             PeakFitting peakFitting = new PeakFitting(dataset);
+            PeakFitParameters fitParameters = new PeakFitParameters();
+            fitParameters.fitJMode(PeakFitParameters.FITJ_MODE.JFIT);
             try {
-                double rms = peakFitting.fitPeakDims(peakDims, "jfit", bounds, "all");
+                double rms = peakFitting.fitPeakDims(peakDims,  bounds, fitParameters);
                 result = Optional.of(rms);
 
             } catch (IllegalArgumentException | PeakFitException | IOException ex) {

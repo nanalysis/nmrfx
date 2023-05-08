@@ -435,12 +435,14 @@ public class PeakPicker {
         int[] rows = new int[dataset.getNDim()];  // only works if datset dims = peak list dims
         int nTries = 2;
         PeakList peakList = PeakList.get(peakPickPar.listName);
+        PeakFitParameters fitPars = new PeakFitParameters();
+        fitPars.lsFit(true);
         if (peakList != null) {
             for (int i = 0; i < nTries; i++) {
                 try {
                     dataset.fromBuffer("prepick");
                     List<Peak> peaks = getPeaksInRegion();
-                    PeakListTools.peakFit(peakList, dataset, rows, null, peaks, true, -1, PeakListTools.ARRAYED_FIT_MODE.SINGLE);
+                    PeakListTools.groupPeakListAndFit(peakList, dataset, rows, null, fitPars);
                     dataset.addPeakList(peakList, -1.0);
                     // split
                     // combine
@@ -449,7 +451,7 @@ public class PeakPicker {
                     purgeNarrowPeaks(peaks);
 
                     dataset.fromBuffer("prepick");
-                    PeakListTools.peakFit(peakList, dataset, rows, null, getPeaksInRegion(), true, -1, PeakListTools.ARRAYED_FIT_MODE.SINGLE);
+                    PeakListTools.groupPeakListAndFit(peakList, dataset, rows, null, fitPars);
                     dataset.addPeakList(peakList, -1.0);
                     if (i != (nTries - 1)) {
                         peakPickPar.mode = "append";

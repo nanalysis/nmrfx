@@ -21,9 +21,10 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import org.nmrfx.processor.datasets.peaks.PeakListTools.ARRAYED_FIT_MODE;
+import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.tools.PeakLinker;
 
 /**
@@ -122,13 +123,17 @@ public class SpectrumMenu extends ChartMenu {
 
         MenuItem fitPlanesItem = new MenuItem("Fit Planes");
         fitPlanesItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(-1, true, false, ARRAYED_FIT_MODE.PLANES);
+            PeakFitParameters fitPars = new PeakFitParameters();
+            fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.PLANES);
+            chart.fitPeakLists(fitPars, true);
         });
         peakFitMenu.getItems().add(fitPlanesItem);
 
         MenuItem fitExpDecayItem = new MenuItem("Fit Planes (Exp)");
         fitExpDecayItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(-1, true, false, ARRAYED_FIT_MODE.EXP);
+            PeakFitParameters fitPars = new PeakFitParameters();
+            fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.EXP);
+            chart.fitPeakLists(fitPars, true);
         });
         peakFitMenu.getItems().add(fitExpDecayItem);
 

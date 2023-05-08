@@ -25,7 +25,6 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
-import javafx.geometry.Point2D;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
@@ -37,11 +36,10 @@ import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.console.ConsoleController;
-import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.annotations.AnnoText;
+import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.log.LogConsoleController;
@@ -646,4 +644,12 @@ public class MainApp extends Application {
     public void showPopover(PolyChart chart, Bounds objectBounds, Object hitObject) {
 
     }
+
+    public static void getShapePrefs(PeakFitParameters fitPars) {
+        fitPars.shapeParameters(PreferencesController.getFitPeakShape(),
+                PreferencesController.getConstrainPeakShape(),
+                PreferencesController.getPeakShapeDirectFactor(),
+                PreferencesController.getPeakShapeIndirectFactor());
+    }
+
 }
