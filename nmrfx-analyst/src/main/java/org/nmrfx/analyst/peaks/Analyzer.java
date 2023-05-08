@@ -59,7 +59,6 @@ public class Analyzer {
 
     public Analyzer(Dataset dataset) {
         this.dataset = dataset;
-        this.peakFitParameters = peakFitParameters;
         solvents = new Solvents();
         Solvents.loadYaml();
     }
@@ -112,11 +111,7 @@ public class Analyzer {
     }
 
     public double getThreshold() {
-        if (manThreshold.isPresent()) {
-            return manThreshold.get();
-        } else {
-            return threshold;
-        }
+        return manThreshold.orElseGet(() -> threshold);
     }
 
     void updateThreshold() {
@@ -145,7 +140,6 @@ public class Analyzer {
         String datasetName = dataset.getName();
         String listName = PeakList.getNameForDataset(datasetName);
         double level = threshold;
-        System.out.println("level " + level);
         PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("replaceif");
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
@@ -165,7 +159,7 @@ public class Analyzer {
         List<DatasetRegion> regions = getReadOnlyRegions();
         for (DatasetRegion region : regions) {
 
-            List<PeakDim> peakDims = Collections.EMPTY_LIST;
+            List<PeakDim> peakDims = Collections.emptyList();
             if (peakList != null) {
                 peakDims = Multiplets.findPeaksInRegion(peakList, region);
             }
@@ -208,7 +202,6 @@ public class Analyzer {
 
     public Optional<Double> measureRegion(DatasetRegion region, PeakFitParameters fitParameters) throws Exception {
         List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
-        double[] bounds = {region.getRegionStart(0), region.getRegionEnd(0)};
         Optional<Double> result = Optional.empty();
         if (peakDims.isEmpty()) {
             region.measure(dataset);
@@ -221,7 +214,7 @@ public class Analyzer {
                 double value = peakFitting.jfitRegion(region, peakDims, fitParameters, positionRestraint);
                 result = Optional.of(value);
             } catch (IllegalArgumentException | PeakFitException | IOException ex) {
-                System.out.println("error in fit " + ex.getMessage());
+                log.error("error in fit ", ex);
             }
         }
         return result;
@@ -230,7 +223,7 @@ public class Analyzer {
     public void removeWeakPeaksInRegion(DatasetRegion region, int nRemove) throws Exception {
         List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
         if (peakDims.size() > 1) {
-            peakDims.sort(comparing((p) -> p.getPeak().getIntensity()));
+            peakDims.sort(comparing(p -> p.getPeak().getIntensity()));
             if (nRemove < 0) {
                 nRemove = peakDims.size() + nRemove;
             }
@@ -275,7 +268,7 @@ public class Analyzer {
 
         Solvent solvent = solvents.getSolvent(solventName);
         if (solvent == null) {
-            System.out.println("null solv");
+            log.info("Solvent not found: {} ", solventName);
         } else {
             double sf = dataset.getSf(iDim);
             Nuclei nuc = dataset.getNucleus(iDim);
@@ -331,7 +324,7 @@ public class Analyzer {
         double[][] limits = new double[1][2];
         List<DatasetRegion> regions = getReadOnlyRegions();
 
-        regions.stream().forEach(region -> {
+        regions.forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
             limits[0][1] = region.getRegionEnd(0);
             List<Peak> peaks = locatePeaks(peakList, limits, dim);
@@ -397,7 +390,7 @@ public class Analyzer {
         List<DatasetRegion> newRegions = new ArrayList<>();
         List<DatasetRegion> regions = getReadOnlyRegions();
 
-        regions.stream().forEach(region -> {
+        regions.forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
             limits[0][1] = region.getRegionEnd(0);
             List<Peak> peaks = locatePeaks(peakList, limits, dim);
@@ -446,7 +439,7 @@ public class Analyzer {
         List<DatasetRegion> newRegions = new ArrayList<>();
         List<DatasetRegion> regions = getReadOnlyRegions();
 
-        regions.stream().forEach(region -> {
+        regions.forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
             limits[0][1] = region.getRegionEnd(0);
             List<Peak> peaks = locatePeaks(peakList, limits, dim);
@@ -463,7 +456,7 @@ public class Analyzer {
         List<DatasetRegion> regions = getReadOnlyRegions();
         int rDim = 0;
 
-        regions.stream().forEach(region -> {
+        regions.forEach(region -> {
             double start = region.getRegionStart(rDim);
             double end = region.getRegionEnd(rDim);
             if ((shift < start) || (shift > end)) {
@@ -481,9 +474,9 @@ public class Analyzer {
         List<DatasetRegion> newRegions = new ArrayList<>();
         List<DatasetRegion> regions = getReadOnlyRegions();
         int rDim = 0;
-        double ppmStart = ppm1 < ppm2 ? ppm1 : ppm2;
-        double ppmEnd = ppm2 > ppm1 ? ppm2 : ppm1;
-        regions.stream().forEach(region -> {
+        double ppmStart = Math.min(ppm1, ppm2);
+        double ppmEnd = Math.max(ppm2, ppm1);
+        regions.forEach(region -> {
             double start = region.getRegionStart(rDim);
             double end = region.getRegionEnd(rDim);
             if ((ppmEnd < start) || (ppmStart > end)) {
@@ -558,8 +551,7 @@ public class Analyzer {
     public static double[] getBounds(DatasetRegion region, int rDim) {
         double start = region.getRegionStart(rDim);
         double end = region.getRegionEnd(rDim);
-        double[] bounds = {start, end};
-        return bounds;
+        return new double[]{start, end};
     }
 
     public static double[] getRegionBounds(List<DatasetRegion> dRegions, int rDim, double shift) {
@@ -586,7 +578,7 @@ public class Analyzer {
         double[][] limits = new double[1][2];
         List<DatasetRegion> regions = getReadOnlyRegions();
 
-        regions.stream().forEach(region -> {
+        regions.forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
             limits[0][1] = region.getRegionEnd(0);
             double integral = region.getIntegral();
@@ -630,7 +622,7 @@ public class Analyzer {
         double[][] limits = new double[1][2];
         List<DatasetRegion> regions = getReadOnlyRegions();
 
-        regions.stream().forEach(region -> {
+        regions.forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
             limits[0][1] = region.getRegionEnd(0);
             double integral = region.getIntegral();
@@ -759,11 +751,13 @@ public class Analyzer {
             Multiplets.unlinkPeaksInRegion(peakList, region);
             Multiplet multiplet = Multiplets.linkPeaksInRegion(peakList, region);
             result = Optional.ofNullable(multiplet);
-            PeakFitParameters fitParameters = getFitParameters();
-            peakFitting.fitLinkedPeak(multiplet.getOrigin(), fitParameters);
+            if (multiplet != null) {
+                PeakFitParameters fitParameters = getFitParameters();
+                peakFitting.fitLinkedPeak(multiplet.getOrigin(), fitParameters);
+                Multiplets.analyzeMultiplet(multiplet.getOrigin());
+                peakFitting.jfitLinkedPeak(multiplet.getOrigin(), fitParameters);
+            }
             renumber();
-            Multiplets.analyzeMultiplet(multiplet.getOrigin());
-            peakFitting.jfitLinkedPeak(multiplet.getOrigin(), fitParameters);
         }
         return result;
     }
@@ -854,7 +848,7 @@ public class Analyzer {
         }
         PeakFitting peakFitting = new PeakFitting(dataset);
         int nComps = peakDims.size();
-        int nAdd = 0;
+        int nAdd;
         if (nComps < 2) {
             nAdd = 3;
         } else {
@@ -871,7 +865,6 @@ public class Analyzer {
             rms = peakFitting.jfitRegion(region, peakDims, objDeconvFitParameters, positionRestraint);
             minBIC = peakFitting.getBIC();
         }
-        System.out.println("start " + rms + " " + minBIC);
 
 
         for (int i = 0; i < nAdd; i++) {
@@ -882,7 +875,6 @@ public class Analyzer {
                 peakDims = Multiplets.findPeaksInRegion(peakList, region);
                 rms = peakFitting.jfitRegion(region, peakDims, objDeconvFitParameters, positionRestraint);
                 double BIC = peakFitting.getBIC();
-                System.out.println(result.get() + " " + rms + " " + BIC);
                 if (BIC < minBIC) {
                     minBIC = BIC;
                     minList = savePeaks(getPeaks(Multiplets.findPeaksInRegion(peakList, region)));
@@ -896,7 +888,6 @@ public class Analyzer {
         restorePeaks(minList);
         renumber();
         peakDims = Multiplets.findPeaksInRegion(peakList, region);
-        System.out.println("MinList size " + minList.size() + " " + minBIC);
         double limit = 15.0;
         if (peakDims.size() > nComps) {
             objDeconvFitParameters.fitMode(PeakFitParameters.FIT_MODE.ALL);
@@ -914,7 +905,6 @@ public class Analyzer {
                         peakDims.get(i).getPeak().setStatus(-1);
                         rms = peakFitting.jfitRegion(region, peakDims, objDeconvFitParameters, positionRestraint);
                         double BIC = peakFitting.getBIC();
-                        System.out.println(i + " " + rms + " " + BIC);
                         peakDims.get(i).getPeak().setStatus(0);
                         if (BIC < minSkipBIC) {
                             minSkip = i;
@@ -925,40 +915,35 @@ public class Analyzer {
                 }
                 if (minSkipBIC < (minBIC + limit)) {
                     if (bestList != null) {
-                        System.out.println("better " + minSkipBIC);
                         restorePeaks(bestList);
                         objDeconvFitParameters.fitMode(RMS);
-                        System.out.println("rest " + measureRegion(region, objDeconvFitParameters).get());
+                        measureRegion(region, objDeconvFitParameters);
                         peakDims.get(minSkip).getPeak().setStatus(-1);
                         if (minSkipBIC < minBIC) {
                             minBIC = minSkipBIC;
                         }
                     }
                 } else {
-                    System.out.println("done " + minSkipBIC);
                     restorePeaks(tempList);
                     objDeconvFitParameters.fitMode(RMS);
-                    System.out.println("rest2 " + measureRegion(region, objDeconvFitParameters).get());
+                    measureRegion(region, objDeconvFitParameters);
                     break;
                 }
             }
         }
         objDeconvFitParameters.fitMode(RMS);
         Optional<Double> rmsOpt = measureRegion(region, objDeconvFitParameters);
-        System.out.println("restored rms " + rmsOpt.get());
         renumber();
         peakDims = Multiplets.findPeaksInRegion(peakList, region);
         rms = peakFitting.jfitRegion(region, peakDims, objDeconvFitParameters, positionRestraint);
         double BIC = peakFitting.getBIC();
-        System.out.println("finish " + rms + " " + BIC + " " + peakDims.size());
-
     }
 
     public void objectiveDeconvolution(Multiplet multiplet) {
         PeakFitting peakFitting = new PeakFitting(dataset);
         PeakFitParameters fitParameters = new PeakFitParameters();
         int nComps = multiplet.getRelComponentList().size();
-        int nAdd = 0;
+        int nAdd;
         if (nComps < 2) {
             nAdd = 3;
         } else {
@@ -974,9 +959,9 @@ public class Analyzer {
                 Multiplets.addPeaksToMultiplet(multiplet, result.get());
                 multiplet.getOrigin().setFlag(4, false);
                 rms = peakFitting.jfitLinkedPeak(multiplet.getOrigin(), fitParameters);
-                double BIC = peakFitting.getBIC();
-                if (BIC < minBIC) {
-                    minBIC = BIC;
+                double bic = peakFitting.getBIC();
+                if (bic < minBIC) {
+                    minBIC = bic;
                     minList = multiplet.getAbsComponentList();
                 }
             }
@@ -988,7 +973,6 @@ public class Analyzer {
             multiplet.updateCoupling(minList);
             while (true) {
                 double minSkipBIC = Double.MAX_VALUE;
-                int minSkip = -1;
                 int n = minList.size();
                 for (int i = 0; i < n; i++) {
                     List<AbsMultipletComponent> newList = AbsMultipletComponent.copyList(minList, i);
@@ -997,7 +981,6 @@ public class Analyzer {
                     peakFitting.jfitLinkedPeak(multiplet.getOrigin(), fitParameters);
                     double BIC = peakFitting.getBIC();
                     if (BIC < minSkipBIC) {
-                        minSkip = i;
                         minSkipBIC = BIC;
                         minSkipList = multiplet.getAbsComponentList();
                     }
@@ -1059,7 +1042,6 @@ public class Analyzer {
             norm = calculateNormalization(aliphaticValues);
         }
         peakList.scale = norm;
-        System.out.println("norm " + norm);
     }
 
     public double calculateNormalization(List<Double> values) {
@@ -1100,9 +1082,7 @@ public class Analyzer {
     double getSmallPeakThreshold() {
         List<Double> intensities = new ArrayList<>();
         List<DatasetRegion> regions = getReadOnlyRegions();
-        regions.stream().forEach(region -> {
-            intensities.add(region.getMax());
-        });
+        regions.forEach(region -> intensities.add(region.getMax()));
         Collections.sort(intensities);
         int n = intensities.size();
         // fixme rethink this
@@ -1125,7 +1105,7 @@ public class Analyzer {
         int[] dim = new int[1];
         List<DatasetRegion> regions = getReadOnlyRegions();
 
-        regions.stream().forEach(region -> {
+        regions.forEach(region -> {
             double localThreshold = globalMin;
             double localMax = Double.NEGATIVE_INFINITY;
             limits[0][0] = region.getRegionStart(0);
@@ -1163,7 +1143,6 @@ public class Analyzer {
         try (FileWriter writer = new FileWriter(listFileName)) {
             PeakWriter peakWriter = new PeakWriter();
             peakWriter.writePeaksXPK2(writer, peakList);
-            writer.close();
         }
     }
 
@@ -1249,7 +1228,7 @@ public class Analyzer {
         }
     }
 
-    public void saveRegions(File regionFile) throws IOException {
+    public void saveRegions(File regionFile) {
         List<DatasetRegion> regions = dataset.getReadOnlyRegions();
         if (!regions.isEmpty()) {
             DatasetRegion.saveRegions(regionFile, dataset.getReadOnlyRegions());
