@@ -276,11 +276,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             chooser.setTitle("Save Regions File");
             File regionFile = chooser.showSaveDialog(null);
             if (regionFile != null) {
-                try {
-                    analyzer.saveRegions(FileUtils.addFileExtensionIfMissing(regionFile, "txt"));
-                } catch (IOException ioE) {
-                    GUIUtils.warn("Error writing regions file", ioE.getMessage());
-                }
+                analyzer.saveRegions(FileUtils.addFileExtensionIfMissing(regionFile, "txt"));
             }
         }
     }
