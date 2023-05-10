@@ -143,16 +143,6 @@ public class PlotDemo {
     }
 
     public void addLinePlot() {
-//        double[] y = {2.0, 4.0, 0.5, 7.0, 1.4};
-//        LinePlot lPlot = LinePlot.of(y);
-//        smileCanvas = null;
-//        if (smileCanvas == null) {
-//            smileCanvas = lPlot.canvas();
-//        } else {
-//            smileCanvas.clear();
-//            smileCanvas.add(lPlot);
-//        }
-//        refresh();
     }
 
     public void addScatterPlot() {
@@ -236,24 +226,9 @@ public class PlotDemo {
     }
 
     public void addBarPlot() {
-//        double[] z = {1.0, 2.0, 4.0, 0.0, 1.0};
-//
-//        BarPlot barPlot = BarPlot.of(z);
-//        smileCanvas = null;
-//        if (smileCanvas == null) {
-//            smileCanvas = barPlot.canvas();
-//        } else {
-//            smileCanvas.clear();
-//            smileCanvas.add(barPlot);
-//        }
-//        refresh();
     }
 
     public void addPlotGrid() {
-//        if (loadIRIS() == null) {
-//            return;
-//        }
-//        refresh();
     }
 
     void refresh() {
@@ -266,10 +241,6 @@ public class PlotDemo {
             chart.setHeight(height);
             chart.drawChart();
         }
-//        if (smileCanvas != null) {
-//            smileCanvas.resetAxis();
-//            smileCanvas.paint(gcP, (int) width, (int) height);
-//        }
     }
 
     public void showCanvas() {

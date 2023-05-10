@@ -261,8 +261,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeEndDocument();
             writer.flush();
             writer.close();
-//            stream.flush();
-//            stream.close();
         } catch (XMLStreamException ex) {
             log.warn(ex.getMessage(), ex);
         }
@@ -282,11 +280,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     private String getTextStyle(boolean fillMode) {
-//        style="font-family: Arial;
-//                 font-size  : 34;
-//                 stroke     : #000000;
-//                 fill       : #00ff00;
-//                "
         StringBuilder builder = new StringBuilder();
         builder.append("stroke: ");
         if (!fillMode) {

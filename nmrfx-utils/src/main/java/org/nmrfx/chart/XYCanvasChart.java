@@ -252,15 +252,11 @@ public class XYCanvasChart {
     }
 
     public double[] getMinBorders() {
-        // fixme
-//        xAxis.setTickFontSize(PreferencesController.getTickFontSize());
-//        xAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
+        // fixme use preferences for tick & label sizes
         xAxis.setTickFontSize(10);
         xAxis.setLabelFontSize(12);
         double[] borders = new double[4];
 
-//        yAxis.setTickFontSize(PreferencesController.getTickFontSize());
-//        yAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
         yAxis.setTickFontSize(10);
         yAxis.setLabelFontSize(12);
         borders[0] = yAxis.getBorderSize();
@@ -481,7 +477,6 @@ public class XYCanvasChart {
     public void exportSVG() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to SVG");
-        //fileChooser.setInitialDirectory(pyController.getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();

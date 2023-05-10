@@ -218,7 +218,6 @@ public class ZoomSlider extends GridPane {
             downButton.getStyleClass().add("toolButton");
         }
 
-        //downButton.setBorder(Border.EMPTY);
         textField.setFont(new Font(11));
         textField.setPrefWidth(60);
         addControls(zoomable);

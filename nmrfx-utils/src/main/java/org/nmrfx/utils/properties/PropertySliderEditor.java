@@ -32,12 +32,9 @@ import org.controlsfx.property.editor.AbstractPropertyEditor;
  * @author brucejohnson
  */
 public class PropertySliderEditor extends AbstractPropertyEditor<Object, Node> {
-
-//    DoubleRangeOperationItem item;
     public PropertySliderEditor(DoubleRangeOperationItem item, ZoomSlider slider) {
         super(item, slider);
     }
-//    DoubleRangeOperationItem item;
 
     public PropertySliderEditor(DoubleUnitsRangeOperationItem item, ZoomSlider slider) {
         super(item, slider);
@@ -47,7 +44,6 @@ public class PropertySliderEditor extends AbstractPropertyEditor<Object, Node> {
     protected ObservableValue<Object> getObservableValue() {
         ZoomSlider slider = (ZoomSlider) getEditor();
         return (ObservableValue) slider.getSlider().valueProperty();
-//        return (ObservableValue) getProperty();
     }
 
     double[] getMinMax(ZoomSlider zoomSlider, double value) {
@@ -120,23 +116,3 @@ public class PropertySliderEditor extends AbstractPropertyEditor<Object, Node> {
     }
 
 }
-
-
-/*
-  @Override
-    public void setValue(Object t) {
-        ZoomSlider slider = (ZoomSlider) getEditor();
-        double value = (Double) t;
-        double[] newRange = getMinMax(slider, value);
-        double min = newRange[0];
-        double max = newRange[1];
-        double incr = newRange[2];
-        slider.getSlider().setMin(min);
-        slider.getSlider().setMax(max);
-        slider.getSlider().setBlockIncrement(incr);
-        slider.getSlider().setMajorTickUnit((max - min) / 2);
-        slider.updateFormat();
-        slider.getSlider().setValue(value);
-    }
-
- */
