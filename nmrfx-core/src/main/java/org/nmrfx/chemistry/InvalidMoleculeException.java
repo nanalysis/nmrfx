@@ -19,10 +19,13 @@
 
 package org.nmrfx.chemistry;
 
+import org.nmrfx.annotations.PluginAPI;
+
 /**
  *
  * @author Bruce Johnson
  */
+@PluginAPI("ring")
 public class InvalidMoleculeException extends Exception {
 
     public InvalidMoleculeException(String message) {

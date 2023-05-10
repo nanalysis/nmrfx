@@ -24,6 +24,8 @@ import javafx.beans.value.ObservableStringValue;
  *
  * @author Bruce Johnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("ring")
 public class DirectoryOperationItem extends TextOperationItem implements ObservableStringValue {
 
     public DirectoryOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {

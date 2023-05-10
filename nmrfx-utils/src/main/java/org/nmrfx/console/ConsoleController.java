@@ -56,6 +56,8 @@ import static org.nmrfx.utils.GUIUtils.affirm;
  * @author Martha Beckwith
  *
  */
+//TODO uncomment when core & utils are regrouped
+//@PluginAPI("ring")
 public class ConsoleController extends OutputStream implements Initializable {
     private static final Logger log = LoggerFactory.getLogger(ConsoleController.class);
 

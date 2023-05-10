@@ -19,11 +19,13 @@ package org.nmrfx.chemistry;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.annotations.PluginAPI;
 
 import java.util.*;
 
 import static org.nmrfx.chemistry.io.PDBFile.isIUPACMode;
 
+@PluginAPI("ring")
 public class Residue extends Compound {
 
     static final double DELTA_V3 = 121.8084 * Math.PI / 180.0;

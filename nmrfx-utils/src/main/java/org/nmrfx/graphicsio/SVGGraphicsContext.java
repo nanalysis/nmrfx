@@ -49,6 +49,8 @@ import javax.xml.stream.XMLStreamWriter;
  *
  * @author brucejohnson
  */
+//TODO uncomment when core & utils are regrouped
+//@PluginAPI("ring")
 public class SVGGraphicsContext implements GraphicsContextInterface {
 
     private static final Logger log = LoggerFactory.getLogger(SVGGraphicsContext.class);

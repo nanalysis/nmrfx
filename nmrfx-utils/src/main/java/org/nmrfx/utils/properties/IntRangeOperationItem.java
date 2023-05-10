@@ -29,6 +29,8 @@ import javafx.beans.value.ChangeListener;
  *
  * @author brucejohnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("ring")
 public class IntRangeOperationItem extends IntOperationItem {
 
     public IntRangeOperationItem(ChangeListener listener, int defaultValue, String category, String name, String description) {

@@ -1,5 +1,6 @@
 package org.nmrfx.peaks;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -16,6 +17,7 @@ import java.util.function.Function;
 import static java.util.Comparator.comparing;
 
 @PythonAPI("pscript")
+@PluginAPI("ring")
 public class Peak implements Comparable, PeakOrMulti {
 
     static String peakStrings[] = {

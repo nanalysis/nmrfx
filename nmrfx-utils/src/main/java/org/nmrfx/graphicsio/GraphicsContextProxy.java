@@ -36,6 +36,8 @@ import javafx.scene.transform.Affine;
  *
  * @author brucejohnson
  */
+//TODO uncomment when core & utils are regrouped
+//@PluginAPI("ring")
 public class GraphicsContextProxy implements GraphicsContextInterface {
 
     final private GraphicsContext gC;

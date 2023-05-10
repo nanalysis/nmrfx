@@ -18,9 +18,11 @@
 
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@PluginAPI("ring")
 public class PDBAtomParser extends AtomParser {
 
     private static final Logger log = LoggerFactory.getLogger(PDBAtomParser.class);

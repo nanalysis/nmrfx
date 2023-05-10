@@ -52,6 +52,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author brucejohnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("ring")
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
 
     private static final Logger log = LoggerFactory.getLogger(NvFxPropertyEditorFactory.class);

@@ -28,6 +28,8 @@
  */
 package org.nmrfx.graphicsio;
 
+//TODO uncomment when core & utils are regrouped
+//@PluginAPI("ring")
 public class GraphicsIOException extends Exception {
 
     public GraphicsIOException(String message) {

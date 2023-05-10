@@ -17,11 +17,14 @@
  */
 package org.nmrfx.datasets;
 
+import org.nmrfx.annotations.PluginAPI;
+
 /**
  * Representation of different NMR active nuclei.
  *
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public enum Nuclei {
 
     H1("H", 1, "1/2", 99.98, 1.00000) {

@@ -20,6 +20,7 @@ package org.nmrfx.chemistry.io;
 import java.io.*;
 import java.util.*;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.star.Loop;
@@ -31,6 +32,7 @@ import org.nmrfx.chemistry.protein.Sheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@PluginAPI("ring")
 public class MMcifReader {
 
     private static final Logger log = LoggerFactory.getLogger(MMcifReader.class);

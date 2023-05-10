@@ -18,6 +18,8 @@
 
 package org.nmrfx.chemistry.utilities;
 
+import org.nmrfx.annotations.PluginAPI;
+
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
@@ -27,6 +29,7 @@ import java.util.regex.*;
  * Does NOT use the "CSV" class defined in the Java CookBook.
  * RE Pattern from Chapter 7, Mastering Regular Expressions (p. 205, first edn.)
  */
+@PluginAPI("ring")
 public class CSVRE {
 
     /**

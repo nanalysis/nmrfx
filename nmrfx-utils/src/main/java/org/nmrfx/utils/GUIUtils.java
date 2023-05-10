@@ -30,7 +30,7 @@ import java.util.*;
  * @author brucejohnson
  */
 //TODO add annotations once core and utils are merged
-// @PluginAPI("parametric")
+// @PluginAPI({"parametric", "ring"})
 public class GUIUtils {
     static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, null, null));
     static final Background DEFAULT_BACKGROUND = new Background(new BackgroundFill(Color.WHITE, null, null));

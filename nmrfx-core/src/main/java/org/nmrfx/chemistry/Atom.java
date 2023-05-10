@@ -33,7 +33,7 @@ import org.nmrfx.chemistry.relax.SpectralDensity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@PluginAPI("residuegen")
+@PluginAPI({"residuegen", "ring"})
 public class Atom implements IAtom, Comparable<Atom> {
 
     private static final Logger log = LoggerFactory.getLogger(Atom.class);

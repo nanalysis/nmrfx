@@ -18,10 +18,13 @@
 
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.annotations.PluginAPI;
+
 /**
  *
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public class MoleculeIOException extends Exception {
 
     public MoleculeIOException(String message) {

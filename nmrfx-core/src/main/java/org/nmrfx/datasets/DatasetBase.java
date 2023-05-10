@@ -1,6 +1,7 @@
 package org.nmrfx.datasets;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import java.nio.ByteOrder;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@PluginAPI("ring")
 public class DatasetBase {
     private static final Logger log = LoggerFactory.getLogger(DatasetBase.class);
 
