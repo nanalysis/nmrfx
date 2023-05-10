@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import static java.lang.Double.compare;
 import static java.util.Comparator.comparing;
 
-@PythonAPI("dscript")
+@PythonAPI({"dscript", "pscript"})
 public class PeakList {
 
     static ResonanceFactory resFactory = new ResonanceFactory();
