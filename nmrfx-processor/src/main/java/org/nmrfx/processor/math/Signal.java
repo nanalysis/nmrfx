@@ -17,6 +17,9 @@
  */
 package org.nmrfx.processor.math;
 
+import org.nmrfx.annotations.PluginAPI;
+
+@PluginAPI("parametric")
 public class Signal implements Comparable<Signal> {
 
     public double amplitude = 0.0;

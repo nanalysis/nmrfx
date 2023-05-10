@@ -43,6 +43,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.control.SegmentedButton;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
@@ -58,6 +59,7 @@ import java.util.*;
  *
  * @author Bruce Johnson
  */
+@PluginAPI("parametric")
 public class SpectrumStatusBar {
 
     private static final Logger log = LoggerFactory.getLogger(SpectrumStatusBar.class);
@@ -183,6 +185,7 @@ public class SpectrumStatusBar {
         this.controller = controller;
     }
 
+    @PluginAPI("parametric")
     public FXMLController getController() {
         return controller;
     }
@@ -358,6 +361,7 @@ public class SpectrumStatusBar {
         Collections.addAll(specialButtons, buttons);
     }
 
+    @PluginAPI("parametric")
     public void addToToolMenu(MenuItem menuItem) {
         toolButton.getItems().add(menuItem);
     }

@@ -24,16 +24,13 @@ import javafx.util.converter.FormatStringConverter;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author brucejohnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("parametric")
 public class GUIUtils {
     static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, null, null));
     static final Background DEFAULT_BACKGROUND = new Background(new BackgroundFill(Color.WHITE, null, null));
