@@ -22,11 +22,12 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import org.python.core.PyObject;
 import org.python.core.PyJavaType;
+import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 
 import static org.nmrfx.utils.FormatUtils.formatStringForPythonInterpreter;
@@ -35,6 +36,7 @@ import static org.nmrfx.utils.FormatUtils.formatStringForPythonInterpreter;
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class PythonScript extends MatrixOperation {
 
     /**

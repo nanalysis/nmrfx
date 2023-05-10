@@ -23,12 +23,14 @@
  */
 package org.nmrfx.math.units;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.math.VecBase;
 
 /**
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class PPM extends Unit<Double> {
 
     public PPM(Double d) {

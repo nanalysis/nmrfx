@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -25,6 +26,7 @@ import org.nmrfx.processor.processing.ProcessingException;
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class EACombine extends Operation {
 
     static private final double[] echoAntiEchoCoefs = {1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0};

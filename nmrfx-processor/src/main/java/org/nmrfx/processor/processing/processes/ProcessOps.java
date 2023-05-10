@@ -17,25 +17,19 @@
  */
 package org.nmrfx.processor.processing.processes;
 
-import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.operations.DatasetOperation;
-import org.nmrfx.processor.operations.MatrixOperation;
-import org.nmrfx.processor.operations.Operation;
-import org.nmrfx.processor.operations.OperationException;
-import org.nmrfx.processor.operations.WriteMatrix;
-import org.nmrfx.processor.operations.WriteVector;
+import org.nmrfx.processor.operations.*;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.Processor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import org.nmrfx.processor.operations.Apodization;
-import org.nmrfx.processor.operations.Ft;
-import org.nmrfx.processor.operations.Zf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The ProcessOps class will contain a list of all Operations which will be
@@ -45,6 +39,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class ProcessOps implements Callable<Object> {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessOps.class);

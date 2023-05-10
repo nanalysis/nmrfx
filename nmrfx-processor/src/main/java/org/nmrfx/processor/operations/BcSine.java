@@ -23,16 +23,18 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.processing.ProcessingException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.processing.ProcessingException;
 
 /**
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class BcSine extends Operation {
 
     private final int order;

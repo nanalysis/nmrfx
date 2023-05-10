@@ -22,24 +22,8 @@
  */
 package org.nmrfx.processor.math;
 
-import static org.nmrfx.processor.math.VecUtil.nnlsFit;
-
-import org.nmrfx.math.VecBase;
-import org.nmrfx.math.VecException;
-import org.nmrfx.processor.operations.Util;
-import org.nmrfx.processor.operations.TestBasePoints;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.processor.processing.SampleSchedule;
-
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -55,10 +39,25 @@ import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.ResizableDoubleArray;
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.math.VecBase;
+import org.nmrfx.math.VecException;
+import org.nmrfx.processor.operations.TestBasePoints;
+import org.nmrfx.processor.operations.Util;
+import org.nmrfx.processor.processing.SampleSchedule;
 import org.python.core.Py;
 import org.python.core.PyComplex;
 import org.python.core.PyObject;
 import org.python.core.PyType;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.nmrfx.processor.math.VecUtil.nnlsFit;
 
 /**
  * A class for representing vectors of data (typically for NMR). The data is
@@ -75,6 +74,7 @@ import org.python.core.PyType;
  *
  * @author michael
  */
+@PythonAPI("pyproc")
 public class Vec extends VecBase {
 
     public static final PyType VTYPE = PyType.fromClass(Vec.class);

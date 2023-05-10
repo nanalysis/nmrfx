@@ -23,18 +23,19 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.processing.ProcessingException;
 import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well19937c;
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.processing.ProcessingException;
 
 /**
  * Adds a Gaussian distribution to a Vec.
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class RandN extends Operation {
 
     private final double mean;

@@ -17,12 +17,11 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.GRINS;
-
-import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
+import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.slf4j.Logger;
@@ -30,10 +29,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
+
 /**
  *
  * @author Bruce Johnson
  */
+@PythonAPI("pyproc")
 public class DGRINSOp extends DatasetOperation {
 
     private static final Logger log = LoggerFactory.getLogger(DGRINSOp.class);

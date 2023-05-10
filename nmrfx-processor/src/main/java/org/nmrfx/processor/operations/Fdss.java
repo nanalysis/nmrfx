@@ -17,14 +17,16 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.math.units.Unit;
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.math.units.*;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Fdss extends Operation {
 
     // fixme do Unit fields get initialized in clone

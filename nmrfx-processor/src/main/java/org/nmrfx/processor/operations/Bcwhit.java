@@ -17,14 +17,15 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import java.util.ArrayList;
 
 /**
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Bcwhit extends Operation {
 
     private final double lambda;

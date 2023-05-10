@@ -17,12 +17,12 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.IstMath;
-import org.nmrfx.processor.processing.SampleSchedule;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import java.util.ArrayList;
-import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.processing.SampleSchedule;
 
 /**
  * Iterative Soft Thresholding (IST) is used to process non-uniformly sampled data sets, acquired with a particular
@@ -48,6 +48,7 @@ import org.apache.commons.math3.complex.Complex;
  * @since NMRViewJ 9.0
  * @author bfetler
  */
+@PythonAPI("pyproc")
 public class IstVec extends Operation {
 
     /**

@@ -22,6 +22,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.LinearPrediction;
 import org.nmrfx.processor.math.Vec;
 
@@ -29,6 +30,7 @@ import org.nmrfx.processor.math.Vec;
  *
  * @author michael
  */
+@PythonAPI("pyproc")
 public class Extend extends Operation {
 
     private final int fitStart;

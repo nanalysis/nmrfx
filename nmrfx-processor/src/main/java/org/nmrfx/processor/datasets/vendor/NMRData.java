@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.vendor;
 
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
@@ -66,6 +67,7 @@ import java.util.Map;
  * @see LPParams
  * @author bfetler
  */
+@PythonAPI("pyproc")
 public interface NMRData {
 
     /**

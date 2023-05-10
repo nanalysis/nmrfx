@@ -23,9 +23,11 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -39,6 +41,7 @@ import java.util.List;
  *
  * @author Bruce Johnson
  */
+@PythonAPI("pyproc")
 public class NESTANMREx extends MatrixOperation {
 
     public static File nestaExecutable = new File("NESTANMR");

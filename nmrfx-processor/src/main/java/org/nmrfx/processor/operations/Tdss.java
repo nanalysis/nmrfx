@@ -17,13 +17,15 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.math.units.Unit;
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.math.units.*;
 
 /**
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Tdss extends Operation {
 
     private final int winSize;

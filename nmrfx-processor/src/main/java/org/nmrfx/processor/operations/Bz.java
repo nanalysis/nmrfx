@@ -17,16 +17,18 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.math.VecUtil;
 import org.nmrfx.processor.processing.ProcessingException;
-import org.apache.commons.math3.complex.Complex;
 
 /**
  * Zero Bruker baseline and assorted algorithms.
  *
  * @author bfetler
  */
+@PythonAPI("pyproc")
 public class Bz extends Operation {
 
     private final String alg;

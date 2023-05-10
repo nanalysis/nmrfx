@@ -17,7 +17,9 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +27,7 @@ import java.util.List;
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Combine extends Operation {
 
     private final int numInputVec;

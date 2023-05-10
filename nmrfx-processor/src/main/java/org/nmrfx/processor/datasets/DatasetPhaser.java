@@ -23,19 +23,22 @@
  */
 package org.nmrfx.processor.datasets;
 
-import org.nmrfx.processor.math.Vec;
+import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.math.VecBase.IndexValue;
+import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.operations.TestBasePoints;
 import org.nmrfx.processor.operations.Util;
+
 import java.io.IOException;
 import java.util.Iterator;
-import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.processor.operations.IDBaseline2;
 
 /**
  *
  * @author Bruce Johnson
  */
+@PythonAPI("pyproc")
 public class DatasetPhaser {
 
     final Dataset dataset;

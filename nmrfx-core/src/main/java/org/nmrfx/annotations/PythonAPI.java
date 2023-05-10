@@ -27,6 +27,10 @@ import java.lang.annotation.Target;
  * This is used to avoid changing or removing a public API by mistake.
  */
 @Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.METHOD)
+@Target({ElementType.TYPE, ElementType.METHOD})
 public @interface PythonAPI {
+    /**
+     * @return Known python modules using this element.
+     */
+    String[] value() default {};
 }

@@ -17,8 +17,10 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
+
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -26,6 +28,7 @@ import java.util.Map;
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Measure extends Operation {
 
     final String key;

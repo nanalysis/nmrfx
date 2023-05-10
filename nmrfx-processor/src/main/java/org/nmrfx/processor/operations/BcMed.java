@@ -23,16 +23,19 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
+
 import java.util.ArrayList;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 /**
  * Median Baseline Correction.
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class BcMed extends Operation {
 
     private final double winFrac;

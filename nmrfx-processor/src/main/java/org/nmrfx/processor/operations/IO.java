@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 
 /**
@@ -26,6 +27,7 @@ import org.nmrfx.processor.math.Vec;
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class IO extends Operation { //make abstract
 
     /**

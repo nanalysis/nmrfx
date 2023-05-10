@@ -17,15 +17,18 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetPhaser;
 import org.nmrfx.processor.processing.ProcessingException;
+
 import java.io.IOException;
 
 /**
  *
  * @author Bruce Johnson
  */
+@PythonAPI("pyproc")
 public class AutoPhaseDataset extends DatasetOperation {
 
     private final int iDim;
