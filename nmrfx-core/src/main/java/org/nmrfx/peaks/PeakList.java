@@ -1748,7 +1748,7 @@ public class PeakList {
         }
     }
 
-    public void remove() {
+    public void clear() {
         if (peaks != null) {
             for (Peak peak : peaks) {
                 for (PeakDim peakDim : peak.peakDims) {
@@ -1761,6 +1761,10 @@ public class PeakList {
             }
             peaks.clear();
         }
+    }
+
+    public void remove() {
+        clear();
         peaks = null;
         if (updater != null) {
             updater.shutdown();
@@ -2108,6 +2112,17 @@ public class PeakList {
      */
     public DoubleSummaryStatistics widthStats(int iDim) {
         DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).summaryStatistics();
+        return stats;
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
+    public DescriptiveStatistics shapeFactorDStats(int iDim) {
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getShapeFactorValue()).forEach((v) -> stats.addValue(v));
         return stats;
     }
 

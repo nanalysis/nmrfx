@@ -17,6 +17,8 @@
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.processor.datasets.peaks.ConvolutionPickPar;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.utils.properties.*;
 import org.nmrfx.processor.operations.NESTANMREx;
 import java.io.File;
@@ -84,6 +86,11 @@ public class PreferencesController implements Initializable {
     static DoubleProperty peakShapeDirectFactorProp = null;
     static DoubleProperty peakShapeIndirectFactorProp = null;
 
+    static BooleanProperty convolutionPickProp = null;
+    static IntegerProperty convolutionPickIterationsProp = null;
+    static DoubleProperty convolutionPickSquashProp = null;
+    static DoubleProperty convolutionPickScaleProp = null;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         prefSheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory());
@@ -138,30 +145,54 @@ public class PreferencesController implements Initializable {
                 (a, b, c) -> {
                     fitPeakShapeProp.setValue((Boolean) c);
                 },
-                getFitPeakShape(), "Peak", "FitPeakShape", "Fit Non-Lorentzian Peak Shapes");
+                getFitPeakShape(), "Peak Fit", "FitPeakShape", "Fit Non-Lorentzian Peak Shapes");
 
         BooleanOperationItem constrainPeakShapeItem = new BooleanOperationItem(
                 (a, b, c) -> {
                     constrainPeakShapeProp.setValue((Boolean) c);
                 },
-                getConstrainPeakShape(), "Peak", "ConstrainPeakShape", "Constrain Non-Lorentzian Peak Shapes");
+                getConstrainPeakShape(), "Peak Fit", "ConstrainPeakShape", "Constrain Non-Lorentzian Peak Shapes");
 
         DoubleRangeOperationItem peakShapeDirectItem = new DoubleRangeOperationItem(
                 (a, b, c) -> {
                     peakShapeDirectFactorProp.setValue((Double) c);
                 },
-                getPeakShapeDirectFactor(), 0.0, 1.5, 0.0, 1.5, "Peak", "PeakShapeDirect", "Shape factor for direct dimension");
+                getPeakShapeDirectFactor(), 0.0, 1.5, false, "Peak Fit", "PeakShapeDirect", "Shape factor for direct dimension");
 
         DoubleRangeOperationItem peakShapeInirectItem = new DoubleRangeOperationItem(
                 (a, b, c) -> {
                     peakShapeIndirectFactorProp.setValue((Double) c);
                 },
-                getPeakShapeIndirectFactor(), 0.0, 1.5, 0.0, 1.5, "Peak", "PeakShapeIndirect", "Shape factor for indirect dimension");
+                getPeakShapeIndirectFactor(), 0.0, 1.5, false, "Peak Fit", "PeakShapeIndirect", "Shape factor for indirect dimension");
 
+        BooleanOperationItem convolutionPickItem = new BooleanOperationItem(
+                (a, b, c) -> {
+                    convolutionPickProp.setValue((Boolean) c);
+                },
+                getConvolutionPick(), "Peak Picker", "ConvolutionPick", "Pick using convolution mode");
+
+        IntRangeOperationItem convolutionPickIterationsItem = new IntRangeOperationItem(
+                (a, b, c) -> {
+                    convolutionPickIterationsProp.setValue((Integer) c);
+                },
+                getConvolutionPickIterations(), 1,200, "Peak Picker", "ConvolutionPickIterations", "Convolution Pick Iterations");
+
+        DoubleRangeOperationItem convolutionPickSquashItem = new DoubleRangeOperationItem(
+                (a, b, c) -> {
+                    convolutionPickSquashProp.setValue((Double) c);
+                },
+                getConvolutionPickSquash(), 0.25, 1.5, false, "Peak Picker", "ConvolutionPickSquash", "Convolution Pick Squash Factor");
+
+        DoubleRangeOperationItem convolutionPickScaleItem = new DoubleRangeOperationItem(
+                (a, b, c) -> {
+                    convolutionPickScaleProp.setValue((Double) c);
+                },
+                getConvolutionPickScale(), 0.5, 2.0, false, "Peak Picker", "ConvolutionPickScale", "Convolution Pick Scale Factor");
 
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
                 nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem,
-                fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem);
+                fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem,
+                convolutionPickItem, convolutionPickIterationsItem, convolutionPickSquashItem, convolutionPickScaleItem);
 
     }
 
@@ -459,6 +490,34 @@ public class PreferencesController implements Initializable {
     public static Double getPeakShapeIndirectFactor() {
         peakShapeIndirectFactorProp = getDouble(peakShapeIndirectFactorProp, "PEAK_SHAPE_INDIRECT", 0.0);
         return peakShapeIndirectFactorProp.getValue();
+    }
+
+    public static Boolean getConvolutionPick() {
+        convolutionPickProp = getBoolean(convolutionPickProp, "PEAK_PICK_CONVOLUTION", false);
+        return convolutionPickProp.getValue();
+    }
+
+    public static Integer getConvolutionPickIterations() {
+        convolutionPickIterationsProp = getInteger(convolutionPickIterationsProp, "PEAK_PICK_CONVOLUTION_ITERATIONS", 100);
+        return convolutionPickIterationsProp.getValue();
+    }
+
+    public static Double getConvolutionPickSquash() {
+        convolutionPickSquashProp = getDouble(convolutionPickSquashProp, "PEAK_PICK_CONVOLUTION_SQUASH", 0.625);
+        return convolutionPickSquashProp.getValue();
+    }
+
+    public static Double getConvolutionPickScale() {
+        convolutionPickScaleProp = getDouble(convolutionPickScaleProp, "PEAK_PICK_CONVOLUTION_SCALE", 1.25);
+        return convolutionPickScaleProp.getValue();
+    }
+
+    public static ConvolutionPickPar getConvolutionPickPar() {
+        return new ConvolutionPickPar(
+                getConvolutionPick(),
+                getConvolutionPickIterations(),
+                getConvolutionPickSquash(),
+                getConvolutionPickScale());
     }
 
     public static IntegerProperty getInteger(IntegerProperty prop, String name, int defValue) {

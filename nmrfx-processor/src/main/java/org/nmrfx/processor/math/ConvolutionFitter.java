@@ -6,6 +6,8 @@ import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.LineShapes;
+import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.project.ProjectBase;
 
 import java.io.IOException;
@@ -13,32 +15,26 @@ import java.io.IOException;
 public class ConvolutionFitter {
     public static final double SQRT_TWO_LN2 = Math.sqrt(2.0 * Math.log(2.0));
     final double[] psf;
-    PSEUDOVOIGT psv;
+    double[] widths;
     double squash = 0.625;
 
-    record PSEUDOVOIGT(int n, double sigmaL, double sigmaG, double f) {
-        double[] calculate() {
-            double[] yValues = new double[n];
-            for (int i = 0; i < n; i++) {
-                double x = -n / 2.0 + i;
-                yValues[i] = calculate(x);
-            }
-            return yValues;
+    double[] makePSF(int n, double width, double shapeFactor) {
+        double[] yValues = new double[n];
+        for (int i = 0; i < n; i++) {
+            double x = -n / 2.0 + i;
+            yValues[i] = LineShapes.G_LORENTZIAN.calculate(x, 1.0, 0.0, width, shapeFactor);
         }
-
-        double calculate(double x) {
-            double x2 = x * x;
-            double gauss = Math.exp(-x2 * SQRT_TWO_LN2 / (sigmaG * sigmaG));
-            double sigmaLhalf = (sigmaL / 2.0);
-            double sigmaL2 = sigmaLhalf * sigmaLhalf;
-            double lorentz = sigmaL2 / (x2 + sigmaL2);
-            return (1.0 - f) * gauss + f * lorentz;
-        }
+        return yValues;
     }
 
-    public ConvolutionFitter(int n, double sigmaL, double sigmaG, double f) {
-        psv = new PSEUDOVOIGT(n, sigmaL, sigmaG, f);
-        psf = psv.calculate();
+    public ConvolutionFitter(int n, int width, double shapeFactor) {
+        psf = makePSF(n, width, shapeFactor);
+        widths = new double[1];
+        widths[0] = width;
+    }
+
+    public void squash(double value) {
+        this.squash = value;
     }
 
     public double[] convolve(double[] values, boolean[] skip) {
@@ -89,8 +85,8 @@ public class ConvolutionFitter {
     }
 
     void squash(double[] values, boolean[] skip) {
-        int width = (int) Math.ceil(psv.sigmaL * squash);
-        int half = width / 2;
+        int width = (int) Math.ceil(widths[0] * squash);
+        int half = width;
         for (int i = half; i < values.length - half; i++) {
             for (int j = -half; j <= half; j++) {
                 if ((i != j) && (values[i] < values[i + j])) {
@@ -183,8 +179,8 @@ public class ConvolutionFitter {
                 PeakDim peakDim = peak.getPeakDim(0);
                 double shift = vec.pointToPPM(i);
                 peakDim.setChemShiftValue((float) shift);
-                double x1 = vec.pointToPPM(i - psv.sigmaL / 2.0);
-                double x2 = vec.pointToPPM(i + psv.sigmaL / 2.0);
+                double x1 = vec.pointToPPM(i - widths[0] / 2.0);
+                double x2 = vec.pointToPPM(i + widths[0] / 2.0);
                 double dx = Math.abs(x2 - x1);
                 peakDim.setLineWidthValue((float) dx);
                 peakDim.setBoundsValue((float) (dx * 2.0));
@@ -196,4 +192,36 @@ public class ConvolutionFitter {
         }
         System.out.println("npeaks " + nPeaks);
     }
+    public void lr(Dataset dataset, PeakList peakList, double threshold, int iterations) throws IOException {
+        Vec vec = dataset.readVector(0, 0);
+
+        double[] signal = new double[vec.getSize()];
+        for (int i = 0; i < signal.length; i++) {
+            signal[i] = vec.getReal(i);
+        }
+        boolean[] skip = new boolean[signal.length];
+
+        double[] result = lr(signal, skip, threshold, iterations);
+        double[] sim = convolve(result, skip);
+
+        int psfSize = psf.length;
+        for (int i = 0; i < result.length; i++) {
+            if (!skip[i]) {
+                Peak peak = peakList.getNewPeak();
+                PeakDim peakDim = peak.getPeakDim(0);
+                double shift = vec.pointToPPM(i);
+                peakDim.setChemShiftValue((float) shift);
+                double x1 = vec.pointToPPM(i - widths[0] / 2.0);
+                double x2 = vec.pointToPPM(i + widths[0] / 2.0);
+                double dx = Math.abs(x2 - x1);
+                peakDim.setLineWidthValue((float) dx);
+                peakDim.setBoundsValue((float) (dx * 2.0));
+                double intensity = result[i] / psfSize;
+                peak.setIntensity((float) intensity);
+                double volume = intensity * dx * (Math.PI / 2.0) / 1.05;
+                peak.setVolume1((float) volume);
+            }
+        }
+    }
+
 }

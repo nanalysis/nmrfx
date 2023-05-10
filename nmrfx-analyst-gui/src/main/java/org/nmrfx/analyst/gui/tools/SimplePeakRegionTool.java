@@ -303,6 +303,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     public void peakPick() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
+            analyzer.setConvolutionPickPar(PreferencesController.getConvolutionPickPar());
             PolyChart chart = getChart();
             List<DatasetRegion> regions = chart.getDataset().getReadOnlyRegions();
             if ((regions == null) || regions.isEmpty()) {
@@ -358,6 +359,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                     }
                 }
                 MainApp.getShapePrefs(analyzer.getFitParameters());
+                analyzer.setConvolutionPickPar(PreferencesController.getConvolutionPickPar());
                 analyzer.analyze();
                 PeakList peakList = analyzer.getPeakList();
                 List<String> peakListNames = new ArrayList<>();

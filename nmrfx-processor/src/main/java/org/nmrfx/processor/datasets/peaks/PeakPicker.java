@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -32,6 +32,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DimCounter;
+import org.nmrfx.processor.math.ConvolutionFitter;
 import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,6 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakPicker {
@@ -81,7 +81,7 @@ public class PeakPicker {
     }
 
     public boolean checkForPeak(double centerValue, int[] pt,
-            int[] dim, boolean findMax, boolean fixedPick, double regionSizeHz, int nPeakDim, int sign) {
+                                int[] dim, boolean findMax, boolean fixedPick, double regionSizeHz, int nPeakDim, int sign) {
         int[] checkPoint = new int[nDim];
         int[] deltaPoint = new int[nDim];
         int[] testPoint = new int[nDim];
@@ -184,8 +184,8 @@ public class PeakPicker {
     }
 
     public boolean measurePeak(double threshold, int[] pt, double[] cpt,
-            int[] dim, int[] pldim, boolean fixedPick, Peak peak, int nPeakDim,
-            double sDevN, int sign, boolean measurePeak) throws IOException {
+                               int[] dim, int[] pldim, boolean fixedPick, Peak peak, int nPeakDim,
+                               double sDevN, int sign, boolean measurePeak) throws IOException {
         double testValue = 0.0;
         int[] checkPoint = new int[nDim];
         int[] maxWidth = new int[nDim];
@@ -512,7 +512,7 @@ public class PeakPicker {
                 double mean = stats.getMean();
                 double stdDev = stats.getStandardDeviation();
                 double tol = mean - 3.0 * stdDev;
-                if(log.isInfoEnabled()) {
+                if (log.isInfoEnabled()) {
                     DecimalFormat decimalFormatter = new DecimalFormat("#######.###");
                     log.info("purge {} {} {}", decimalFormatter.format(mean), decimalFormatter.format(stdDev), decimalFormatter.format(tol));
                 }
@@ -533,14 +533,10 @@ public class PeakPicker {
         int[] dim;
         int[][] pt;
         int[] pdim = new int[nDim];
-        int[] checkPoint = new int[nDim];
-        int[] lastPoint = new int[nDim];
         nPeaks = 0;
         int nMatch;
-        double checkValue;
         dim = peakPickPar.dim;
         pt = peakPickPar.pt;
-        Double noiseLevel = dataset.getNoiseLevel();
         lastPeakPicked = null;
 
         if (nDim == peakPickPar.nPeakDim) {
@@ -633,11 +629,36 @@ public class PeakPicker {
             }
 
         }
-        boolean findMax = !peakPickPar.fixedPick && peakPickPar.region.equalsIgnoreCase("point");
 
         if (peakList == null) {
             throw new IllegalArgumentException("nv_dataset peakPick: invalid mode");
         }
+        pickRegion(peakList, pt, dim, pdim);
+        if ((peakPickPar != null) && peakPickPar.convolutionPickPar.state()) {
+            convolutionPick(peakList);
+        }
+        return peakList;
+    }
+
+    void convolutionPick(PeakList peakList) throws IOException {
+        ConvolutionPickPar convolutionPickPar = peakPickPar.convolutionPickPar;
+        double widthHz = peakList.widthDStats(0).getPercentile(50);
+        widthHz *= convolutionPickPar.scale();
+        int widthPt = (int) dataset.hzWidthToPoints(0, widthHz);
+        int n = widthPt * 4 + 1;
+        double shapeFactor = peakList.shapeFactorDStats(0).getPercentile(50);
+        System.out.println("wid " + widthHz + " " + widthPt + " " + n + " " + shapeFactor);
+        ConvolutionFitter convolutionFitter = new  ConvolutionFitter(n, widthPt, shapeFactor);
+        peakList.clear();
+        convolutionFitter.lr(dataset, peakList, peakPickPar.level,convolutionPickPar.iterations() );
+    }
+
+    void pickRegion(PeakList peakList, int[][] pt, int[] dim, int[] pdim) throws IOException {
+        int[] checkPoint = new int[nDim];
+        int[] lastPoint = new int[nDim];
+        double checkValue;
+        Double noiseLevel = dataset.getNoiseLevel();
+        boolean findMax = !peakPickPar.fixedPick && peakPickPar.region.equalsIgnoreCase("point");
 
         SummaryStatistics stats = new SummaryStatistics();
         int nStatPoints = 1024;
@@ -744,7 +765,6 @@ public class PeakPicker {
         }
         dataset.setNoiseLevel(noiseLevel);
         peakList.reIndex();
-        return peakList;
     }
 
     public boolean anyPeaksInRegion() {

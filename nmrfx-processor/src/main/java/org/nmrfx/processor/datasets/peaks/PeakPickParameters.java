@@ -43,6 +43,7 @@ public class PeakPickParameters {
     public int nPeakDim = 0;
     public int posNeg = 1;
     public double noiseLimit = 0.0;
+    ConvolutionPickPar convolutionPickPar = null;
 
     public PeakPickParameters(Dataset dataset, String listName) {
         this.theFile = dataset;
@@ -76,6 +77,11 @@ public class PeakPickParameters {
 
     public PeakPickParameters level(int thickness) {
         this.thickness = thickness;
+        return this;
+    }
+
+    public PeakPickParameters convolve(ConvolutionPickPar par) {
+        this.convolutionPickPar = par;
         return this;
     }
 

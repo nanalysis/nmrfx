@@ -7,10 +7,7 @@ import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.PeakFitException;
-import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
-import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
-import org.nmrfx.processor.datasets.peaks.PeakPicker;
+import org.nmrfx.processor.datasets.peaks.*;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.operations.Util;
@@ -35,6 +32,7 @@ public class Analyzer {
     private static final Logger log = LoggerFactory.getLogger(Analyzer.class);
 
     PeakFitParameters peakFitParameters = null;
+    ConvolutionPickPar convolutionPickPar = null;
     Dataset dataset;
     PeakList peakList;
     boolean analyzed = false;
@@ -80,6 +78,10 @@ public class Analyzer {
             peakFitParameters = new PeakFitParameters();
         }
         return peakFitParameters;
+    }
+
+    public void setConvolutionPickPar(ConvolutionPickPar par) {
+        this.convolutionPickPar = par;
     }
 
     public Dataset getDataset() {
@@ -143,6 +145,7 @@ public class Analyzer {
         PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("replaceif");
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
+        peakPickPar.convolve(convolutionPickPar);
         PeakPicker picker = new PeakPicker(peakPickPar);
         peakList = null;
         try {
@@ -191,6 +194,7 @@ public class Analyzer {
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
         peakPickPar.limit(0, ppm1, ppm2);
+        peakPickPar.convolve(convolutionPickPar);
         PeakPicker picker = new PeakPicker(peakPickPar);
         peakList = null;
         try {
@@ -246,6 +250,7 @@ public class Analyzer {
         }
         PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(threshold).mode("appendif");
         peakPickPar.region("point").fixed(true);
+        peakPickPar.convolve(convolutionPickPar);
         for (double ppm : ppms) {
             peakPickPar.limit(0, ppm, ppm);
             PeakPicker picker = new PeakPicker(peakPickPar);

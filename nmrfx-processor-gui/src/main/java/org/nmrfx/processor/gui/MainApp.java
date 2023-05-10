@@ -40,6 +40,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.log.LogConsoleController;
@@ -651,5 +652,4 @@ public class MainApp extends Application {
                 PreferencesController.getPeakShapeDirectFactor(),
                 PreferencesController.getPeakShapeIndirectFactor());
     }
-
 }

@@ -109,6 +109,7 @@ public class PeakPicking {
         PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendregion");
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.calcRange();
+        peakPickPar.convolve(PreferencesController.getConvolutionPickPar());
         for (int iDim = 0; iDim < nDim; iDim++) {
             int jDim = dataAttr.getDim(iDim);
             if (iDim < 2) {
