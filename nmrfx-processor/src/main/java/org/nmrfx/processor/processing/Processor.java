@@ -64,7 +64,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author johnsonb
  */
-@PythonAPI("pyproc")
+@PythonAPI({"nmrpar", "pyproc"})
 public class Processor {
     private static final Logger log = LoggerFactory.getLogger(Processor.class);
     private static long MEMORY_MODE_LIMIT = 536870912L;
