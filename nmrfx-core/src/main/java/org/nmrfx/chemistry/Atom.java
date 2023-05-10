@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.relax.OrderPar;
 import org.nmrfx.chemistry.relax.RelaxationData;
 import org.nmrfx.chemistry.constraints.AngleConstraint;
@@ -32,6 +33,7 @@ import org.nmrfx.chemistry.relax.SpectralDensity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@PluginAPI("residuegen")
 public class Atom implements IAtom, Comparable<Atom> {
 
     private static final Logger log = LoggerFactory.getLogger(Atom.class);

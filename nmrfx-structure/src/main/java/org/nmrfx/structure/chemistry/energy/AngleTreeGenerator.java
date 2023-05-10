@@ -1,5 +1,6 @@
 package org.nmrfx.structure.chemistry.energy;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
@@ -15,6 +16,7 @@ import java.util.*;
  *
  * @author Bruce Johnson
  */
+@PluginAPI("residuegen")
 public class AngleTreeGenerator {
     private static final Logger log = LoggerFactory.getLogger(AngleTreeGenerator.class);
 
