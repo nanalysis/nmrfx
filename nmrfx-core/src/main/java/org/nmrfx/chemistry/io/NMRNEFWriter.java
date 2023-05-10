@@ -218,7 +218,6 @@ public class NMRNEFWriter {
                         continue;
                     }
                 }
-                //collapse = atom.getStereo() == -1 ? 2 : atom.getStereo() == 0 ? 1 : 0;
             } else if (atom.isMethylene()) {
                 List<List<Atom>> partners = atom.getPartners(1);
                 sameShift = checkPartnerShifts(atom, partners);
@@ -227,7 +226,6 @@ public class NMRNEFWriter {
                         continue;
                     }
                 }
-                //partnerOpt = atom.getMethylenePartner();
             } else if (atom.isAromaticFlippable()) {
                 List<List<Atom>> partners = atom.getPartners(-1);
                 sameShift = checkPartnerShifts(atom, partners);
@@ -236,7 +234,6 @@ public class NMRNEFWriter {
                         continue;
                     }
                 }
-                //partnerOpt = atom.getMethylenePartner();
             } else {
                 // check for aromatic atoms
                 List<Object> equiv = atom.getEquivalency();

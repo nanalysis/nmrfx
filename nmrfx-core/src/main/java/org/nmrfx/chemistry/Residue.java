@@ -804,7 +804,6 @@ public class Residue extends Compound {
         char chainID = polymerName.charAt(0);
 
         //entity ID
-//        int entityIDNum = chainID - 'A' + 1;
         int entityIDNum = this.polymer.getIDNum();
 
         //seq ID

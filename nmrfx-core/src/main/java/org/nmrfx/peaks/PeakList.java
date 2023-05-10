@@ -411,8 +411,6 @@ public class PeakList {
                     }
 
                     v[k] /= linkedPeaks.size();
-
-                    //datum.n = linkedPeaks.size();
                     tol[k] = sDim.getTol();
                 }
                 Clusters.ClusterItem clusterItem = new Clusters.ClusterItem(peak, v, iList);
@@ -1593,7 +1591,6 @@ public class PeakList {
      */
     public List<Peak> locatePeaks(double[][] limits, int[] dim, double[][] foldLimits) {
         List<org.nmrfx.peaks.PeakDistance> foundPeaks = new ArrayList<>();
-//        final Vector peakDistance = new Vector();
 
         int i;
         int j;

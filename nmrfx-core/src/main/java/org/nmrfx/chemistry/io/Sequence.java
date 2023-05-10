@@ -159,7 +159,6 @@ public class Sequence {
                     }
                 }
                 Atom atom = Atom.genAtomWithType(aName, aType);
-                // atom.setPointValidity(true);
                 atom.entity = residue;
                 atom.name = aName;
                 residue.addAtom(atom);

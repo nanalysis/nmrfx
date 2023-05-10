@@ -278,7 +278,6 @@ public class MTree {
 
         cNode = (MNode) nodes.elementAt(iStart);
 
-        //cNode.shell=0;
         path[0] = 0;
         path[1] = iStart;
 
@@ -319,8 +318,6 @@ public class MTree {
                     path[2 * nodesAdded] = m; // node index of current node
                     path[(2 * nodesAdded) + 1] = next; // node index of the node this edge connects
                     nodesAdded++;
-
-                    //nNode.shell = cNode.shell+1;
                 }
             }
 

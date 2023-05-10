@@ -268,9 +268,6 @@ public class DatasetBase {
         rdims = nDim;
         posDrawOn = true;
         negDrawOn = false;
-
-        //rdims = 0;
-        //theFile.dataType = 0;
     }
 
     /**

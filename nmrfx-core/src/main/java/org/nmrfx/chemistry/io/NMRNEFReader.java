@@ -62,7 +62,6 @@ public class NMRNEFReader {
         this.nef = nef;
         this.nefFile = nefFile;
         this.nefDir = nefFile.getAbsoluteFile().getParentFile();
-//        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
     /**
@@ -187,10 +186,8 @@ public class NMRNEFReader {
                     RES_POSITION resPos = RES_POSITION.MIDDLE;
                     if (linkType.equals("start")) {
                         resPos = RES_POSITION.START;
-                        //residue.capFirstResidue();
                     } else if (linkType.equals("end")) {
                         resPos = RES_POSITION.END;
-                        //residue.capLastResidue();
                     }
                     String extension = "";
                     if (resVariant.replace("-H3", "").contains("-H")) {
@@ -198,9 +195,6 @@ public class NMRNEFReader {
                     } else if (resVariant.replace("+HXT", "").contains("+H")) {
                         extension = "_prot";
                     }
-                    //                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
-                    //                    extension += "_NCtermVar";
-                    //                }
                     if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
                         log.warn("Can't find residue \"{}{}\" in residue libraries or STAR file", resName, extension);
                         try {
@@ -378,10 +372,6 @@ public class NMRNEFReader {
                             if (resonance == null) {
                                 throw new ParseException("atom elem resonance " + resIDStr + ": invalid resonance");
                             }
-//                    ResonanceSet resonanceSet = resonance.getResonanceSet();
-//                    if (resonanceSet == null) {
-//                        resonanceSet = new ResonanceSet(resonance);
-//                    }
                             atom.setResonance(resonance);
                             resonance.setAtom(atom);
                         }
@@ -399,14 +389,12 @@ public class NMRNEFReader {
         var compoundMap = MoleculeBase.compoundMap();
         List<String>[] chainCodeColumns = new ArrayList[4];
         List<String>[] sequenceCodeColumns = new ArrayList[4];
-//        List<String>[] residueNameColumns = new ArrayList[4];
         List<String>[] atomNameColumns = new ArrayList[4];
 
         List<Integer> restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
         for (int i = 1; i <= 4; i++) {
             chainCodeColumns[i - 1] = loop.getColumnAsList("chain_code_" + i);
             sequenceCodeColumns[i - 1] = loop.getColumnAsList("sequence_code_" + i);
-//            residueNameColumns[i - 1] = loop.getColumnAsList("residue_name_" + i);
             atomNameColumns[i - 1] = loop.getColumnAsList("atom_name_" + i);
         }
         List<String> weightColumn = loop.getColumnAsList("weight");
@@ -507,7 +495,6 @@ public class NMRNEFReader {
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
         ArrayList<String> atomNames[] = new ArrayList[2];
-//        String[] resNames = new String[2];
         atomNames[0] = new ArrayList<>();
         atomNames[1] = new ArrayList<>();
         DistanceConstraintSet distanceSet = molecule.getMolecularConstraints().newDistanceSet(saveframe.getName());
@@ -565,7 +552,6 @@ public class NMRNEFReader {
                     }
                 }
                 atomNames[iAtom].add(fullAtomName);
-//                resNames[iAtom] = resName;
             }
             String targetValue = (String) targetValueColumn.get(i);
             String upperValue = (String) upperColumn.get(i);

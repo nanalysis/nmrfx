@@ -67,7 +67,6 @@ public class RDC {
         } else {
             r = vector.getNorm() * 1.0E-10;
         }
-        //    static final double PREFACTOR = -(MU0 * HBAR) / (4 * (Math.PI * Math.PI));
         double maxRDC = 1.0;
         if (!calcMaxRDC && maxRDCDict.containsKey(type)) {
             maxRDC = maxRDCDict.get(type);
