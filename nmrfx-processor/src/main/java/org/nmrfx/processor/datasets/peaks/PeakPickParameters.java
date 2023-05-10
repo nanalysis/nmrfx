@@ -17,12 +17,14 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.datasets.Dataset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Arrays;
 
+@PythonAPI("dscript")
 public class PeakPickParameters {
 
     private static final Logger log = LoggerFactory.getLogger(PeakPickParameters.class);

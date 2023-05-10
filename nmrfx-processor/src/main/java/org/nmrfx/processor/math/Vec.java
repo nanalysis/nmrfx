@@ -74,7 +74,7 @@ import static org.nmrfx.processor.math.VecUtil.nnlsFit;
  *
  * @author michael
  */
-@PythonAPI({"autoscript", "pyproc"})
+@PythonAPI({"autoscript", "dscript", "pyproc"})
 public class Vec extends VecBase {
 
     public static final PyType VTYPE = PyType.fromClass(Vec.class);

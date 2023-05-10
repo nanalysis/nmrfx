@@ -25,6 +25,7 @@ package org.nmrfx.processor.datasets.peaks;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.peaks.Peak;
@@ -47,6 +48,7 @@ import java.util.Optional;
  *
  * @author brucejohnson
  */
+@PythonAPI("dscript")
 public class PeakPicker {
     private static final Logger log = LoggerFactory.getLogger(PeakPicker.class);
 

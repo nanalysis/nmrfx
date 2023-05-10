@@ -19,6 +19,7 @@ package org.nmrfx.processor.datasets.vendor.nmrpipe;
 
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -49,6 +50,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@PythonAPI("dscript")
 public class NMRPipeData implements NMRData {
     private static final Logger log = LoggerFactory.getLogger(NMRPipeData.class);
 
@@ -257,6 +259,7 @@ public class NMRPipeData implements NMRData {
             log.warn(e.getMessage(), e);
         }
     }
+
     @Override
     public DatasetType getPreferredDatasetType() {
         return preferredDatasetType;
@@ -300,12 +303,12 @@ public class NMRPipeData implements NMRData {
     public int getNVectors() {
         return FIELDS.FDSPECNUM.getInt(fileHeader);
     }
-  
+
     @Override
     public String getFTType(int iDim) {
         return "ft";
     }
-    
+
     @Override
     public int getNPoints() {
         return FIELDS.FDSIZE.getInt(fileHeader);
@@ -1474,17 +1477,17 @@ public class NMRPipeData implements NMRData {
     private void dumpHeader(Header header) {
         int nDim = FIELDS.FDDIMCOUNT.getInt(header);
         String[] pars = {"MAGIC", "FLTFORMAT", "FLTORDER", "SIZE", "SPECNUM", "QUADFLAG", "2DPHASE", "TRANSPOSED", "DIMCOUNT",
-            "DIMORDER", "DIMORDER1", "DIMORDER2", "DIMORDER3", "DIMORDER4", "NUSDIM",
-            "PIPEFLAG", "PIPECOUNT", "SLICECOUNT0", "SLICECOUNT1", "FILECOUNT", "THREADCOUNT", "THREADID",
-            "FIRSTPLANE", "LASTPLANE", "PARTITION", "MAX", "MIN", "SCALEFLAG", "DISPMAX", "DISPMIN", "PTHRESH",
-            "NTHRESH", "MONTH", "DAY", "YEAR", "HOURS", "MINS", "SECS", "MCFLAG", "NOISE", "TEMPERATURE",
-            "TAU", "TITLE", "COMMENT"
+                "DIMORDER", "DIMORDER1", "DIMORDER2", "DIMORDER3", "DIMORDER4", "NUSDIM",
+                "PIPEFLAG", "PIPECOUNT", "SLICECOUNT0", "SLICECOUNT1", "FILECOUNT", "THREADCOUNT", "THREADID",
+                "FIRSTPLANE", "LASTPLANE", "PARTITION", "MAX", "MIN", "SCALEFLAG", "DISPMAX", "DISPMIN", "PTHRESH",
+                "NTHRESH", "MONTH", "DAY", "YEAR", "HOURS", "MINS", "SECS", "MCFLAG", "NOISE", "TEMPERATURE",
+                "TAU", "TITLE", "COMMENT"
         };
         String[] dimPars = {"SIZE", "APOD", "SW", "OBS", "SW", "ORIG", "FTFLAG", "QUADFLAG", "LABEL", "OBSMID", "AQSIGN", "P0", "P1",
-            "CAR", "CENTER", "OFFPPM", "APODQ1", "APODQ2", "APODQ3", "LB", "GB", "GOFF", "C1",
-            "UNITS",
-            "APODCODE", "ZF",
-            "X1", "XN", "FTSIZE", "TDSIZE"};
+                "CAR", "CENTER", "OFFPPM", "APODQ1", "APODQ2", "APODQ3", "LB", "GB", "GOFF", "C1",
+                "UNITS",
+                "APODCODE", "ZF",
+                "X1", "XN", "FTSIZE", "TDSIZE"};
         System.out.println("ndim " + nDim);
         for (String par : dimPars) {
             System.out.printf("%-10s", par + ":");

@@ -23,6 +23,7 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.*;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.peaks.Peak;
@@ -60,6 +61,7 @@ import java.util.stream.IntStream;
  *
  * @author brucejohnson
  */
+@PythonAPI("dscript")
 public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     private static final Logger log = LoggerFactory.getLogger(Dataset.class);
