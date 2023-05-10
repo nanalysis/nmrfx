@@ -61,7 +61,7 @@ import java.util.stream.IntStream;
  *
  * @author brucejohnson
  */
-@PythonAPI({"dscript", "nustest"})
+@PythonAPI({"dscript", "nustest", "simfid"})
 public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     private static final Logger log = LoggerFactory.getLogger(Dataset.class);
