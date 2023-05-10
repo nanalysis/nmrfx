@@ -48,7 +48,7 @@ import java.util.stream.Stream;
  *
  * @author bfetler
  */
-@PythonAPI("pyproc")
+@PythonAPI({"autoscript", "pyproc"})
 public final class NMRDataUtil {
 
     private static final Logger log = LoggerFactory.getLogger(NMRDataUtil.class);

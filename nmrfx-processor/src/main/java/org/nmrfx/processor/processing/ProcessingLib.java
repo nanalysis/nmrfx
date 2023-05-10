@@ -1,5 +1,8 @@
 package org.nmrfx.processor.processing;
 
+import org.nmrfx.annotations.PythonAPI;
+import org.yaml.snakeyaml.Yaml;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -7,12 +10,12 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.yaml.snakeyaml.Yaml;
 
 /**
  *
  * @author brucejohnson
  */
+@PythonAPI("autoscript")
 public class ProcessingLib {
 
     static Map<String, SequenceScript> sequences = new HashMap<>();
