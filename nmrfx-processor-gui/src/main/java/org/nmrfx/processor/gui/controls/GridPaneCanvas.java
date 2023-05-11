@@ -20,20 +20,13 @@ package org.nmrfx.processor.gui.controls;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.geometry.Bounds;
-import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextFormatter;
+import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
-import javafx.scene.transform.NonInvertibleTransformException;
-import javafx.scene.transform.Transform;
 import javafx.util.converter.IntegerStringConverter;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
@@ -102,39 +95,6 @@ public class GridPaneCanvas extends GridPane {
                 chart.refresh();
             }
         }
-    }
-
-
-    Point2D getLocal(double x, double y) {
-        Transform transform = getLocalToSceneTransform();
-        Point2D result;
-        try {
-            Transform inverseTrans = transform.createInverse();
-            result = inverseTrans.transform(x, y);
-        } catch (NonInvertibleTransformException ex) {
-            result = new Point2D(0.0, 0.0);
-        }
-
-        return result;
-    }
-
-    Point2D getFraction(double x, double y) {
-        Transform transform = getLocalToSceneTransform();
-        Point2D result;
-        try {
-            Transform inverseTrans = transform.createInverse();
-            Point2D point = inverseTrans.transform(x, y);
-            double width = getWidth();
-            double height = getHeight();
-            double fx = point.getX() / width;
-            double fy = point.getY() / height;
-            result = new Point2D(fx, fy);
-
-        } catch (NonInvertibleTransformException ex) {
-            result = new Point2D(0.0, 0.0);
-        }
-
-        return result;
     }
 
     public boolean setOrientation(ORIENTATION orient, boolean force) {
@@ -216,15 +176,6 @@ public class GridPaneCanvas extends GridPane {
         updateGrid();
     }
 
-    public void addChart(int position, PolyChart chart) {
-        if (position == 0) {
-            getChildren().add(0, chart);
-        } else {
-            getChildren().add(chart);
-        }
-        updateGrid();
-    }
-
     public void addCharts(int nRows, List<PolyChart> charts) {
         disableCharts(charts, true);
         getChildren().clear();
@@ -240,10 +191,6 @@ public class GridPaneCanvas extends GridPane {
         } else {
             orientation = ORIENTATION.GRID;
         }
-    }
-
-    public void addChart(PolyChart chart, int chartColumn, int chartRow, int columnSpan, int rowSpan) {
-        add(chart, chartColumn * 2, chartRow * 2, columnSpan * 2, rowSpan * 2);
     }
 
     public void updateConstraints() {
