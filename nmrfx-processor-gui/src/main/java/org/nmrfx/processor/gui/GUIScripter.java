@@ -1,18 +1,11 @@
 package org.nmrfx.processor.gui;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.stream.Collectors;
 import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
 import org.nmrfx.processor.gui.annotations.AnnoShape;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
@@ -24,10 +17,16 @@ import org.python.util.InteractiveInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.stream.Collectors;
+
 /**
  *
  * @author Bruce Johnson
  */
+@PythonAPI("gscript")
 public class GUIScripter {
 
     private static final Logger log = LoggerFactory.getLogger(GUIScripter.class);
