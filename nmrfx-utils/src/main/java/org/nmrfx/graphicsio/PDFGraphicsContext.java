@@ -73,49 +73,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     double scaleY;
     boolean landScape = false;
     Matrix matrix = new Matrix();
-    GCCache cache = new GCCache();
     boolean nativeCoords = false;
-
-    class GCCache {
-
-        double fontSize = 12;
-        String fontFamilyName = "Helvetica";
-        Color fill = Color.BLACK;
-        Color stroke = Color.BLACK;
-        PDFont font;
-        double lineWidth = 1.0;
-        String clipPath = "";
-        TextAlignment textAlignment = TextAlignment.LEFT;
-        VPos textBaseline = VPos.BASELINE;
-        Matrix matrix = null;
-        List<Object> transforms = new ArrayList<>();
-
-        void save(PDFGraphicsContext pdfGC) {
-            this.fontSize = pdfGC.fontSize;
-            this.font = pdfGC.font;
-            this.fill = pdfGC.fill;
-            this.stroke = pdfGC.stroke;
-            this.textAlignment = pdfGC.textAlignment;
-            this.textBaseline = pdfGC.textBaseline;
-            this.matrix = pdfGC.matrix == null ? null : pdfGC.matrix.clone();
-        }
-
-        void restore(PDFGraphicsContext pdfGC) {
-            pdfGC.fontSize = (float) fontSize;
-            pdfGC.font = font;
-            pdfGC.fill = fill;
-            pdfGC.stroke = stroke;
-            pdfGC.textAlignment = textAlignment;
-            pdfGC.textBaseline = textBaseline;
-            pdfGC.matrix = matrix == null ? null : matrix.clone();
-            try {
-                pdfGC.contentStream.transform(matrix);
-            } catch (IOException ex) {
-                log.warn(ex.getMessage(), ex);
-            }
-        }
-
-    }
 
     public void create(boolean landScape, double width, double height, String fileName) throws GraphicsIOException {
         // the document
