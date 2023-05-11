@@ -52,14 +52,10 @@ public class DocWindowController implements Initializable {
     @FXML
     WebView webView;
 
-    private AutoComplete autoComplete;
-
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         System.out.println("initializing doc window controller");
         System.out.println("init ");
-
-        autoComplete = new AutoComplete();
 
         webView.getEngine().loadContent(FXMLController.getHTMLDocs());
     }
