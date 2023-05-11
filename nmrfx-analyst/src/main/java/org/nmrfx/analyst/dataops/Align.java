@@ -417,8 +417,6 @@ public class Align {
         double sdev = targetVec.sdev(sDevWindow);
         Vec subTarget = new Vec(32);
         Vec subSample = new Vec(32);
-//        var targetRegions = targetVec.idIntegrals(64, 6, 2, 32, 1, -1);
-//        var sampleRegions = sampleVec.idIntegrals(64, 6, 2, 32, 1, -1);
         var shift = 0;
         var pt1e = 0;
         var pt2e = 0;
@@ -426,12 +424,6 @@ public class Align {
         var alignments = new ArrayList<Alignment>();
         for (AlignRegion region : regions) {
             boolean useSection = true;
-//            if (overlapsRegion(targetRegions, region.min, region.max)) {
-//                useSection = true;
-//            }
-//            if (overlapsRegion(sampleRegions, region.min, region.max)) {
-//                useSection = true;
-//            }
 
             int size = region.max - region.min + 1;
             subTarget.resize(size);

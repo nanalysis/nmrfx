@@ -61,7 +61,6 @@ public class Multiplets {
     }
 
     public static String getCouplingPattern(Multiplet multiplet) {
-//        return multiplet.getMultiplicity();
         Coupling coupling = multiplet.getCoupling();
         String pattern = "";
         if (coupling instanceof Singlet) {
@@ -80,32 +79,6 @@ public class Multiplets {
         return pattern;
     }
 
-    /*
-    proc ::dcs::multiplets::getCouplingPattern {couplings} {
-    set patterns "s d t q p"
-    set pattern {}
-    if {[llength $couplings] == 0} {
-        set pattern ""
-    } elseif {[llength $couplings] == 1} {
-        set pattern s
-    } else {
-        foreach "j n" $couplings {
-            set symbol [lindex $patterns $n]
-            append pattern $symbol
-        }
-        if {$pattern == ""} {
-            set pattern m
-        }
-    }
-    return $pattern
-}
-
-     */
-//    public static void removeWeakPeaksInMultiplet(String mSpec, int nRemove) {
-//        List<PeakDim> weakPeaks = getWeakestPeaksInMultiplet(mSpec, nRemove);
-//        removePeaks(getPeaks(weakPeaks));
-//        updateAfterMultipletConversion(getMultiplet(mSpec));
-//    }
     public static void removeWeakPeaksInMultiplet(Multiplet multiplet, int nRemove) {
         List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
         if (comps.size() > 1) {
@@ -116,9 +89,6 @@ public class Multiplets {
             comps.subList(0, nRemove).clear();
             multiplet.updateCoupling(comps);
             fitComponents(multiplet);
-
-            // updateAfterMultipletConversion(multiplet);
-            //analyzeMultiplet(multiplet.getOrigin());
         }
     }
 
@@ -302,10 +272,8 @@ public class Multiplets {
         float dSign = -1;
         if (addNumber == 1) {
             double lastIntensity = lastComp.getIntensity();
-            // double lastVolume = lastComp.myPeak.getVolume1();
             if (lastIntensity < intensity) {
                 intensity = lastIntensity;
-                //volume = lastVolume;
                 addWhich = 0;
                 dSign = -1f;
             } else {
@@ -352,10 +320,6 @@ public class Multiplets {
         multiplet.expandCoupling(limit);
     }
 
-//    public static void convertMultiplicity(String mSpec, String multOrig, String multNew) {
-//        Multiplet multiplet = getMultiplet(mSpec);
-//        convertMultiplicity(multiplet, multOrig, multNew);
-//    }
     public static void splitToMultiplicity(Multiplet multiplet, String fullCouplingType) {
         for (int i = 0; i < fullCouplingType.length(); i++) {
             String couplingType = fullCouplingType.substring(i, i + 1);
@@ -448,7 +412,6 @@ public class Multiplets {
             expandCoupling(multiplet, 3);
         } else if (multNew.equals("dddd")) {
             expandCoupling(multiplet, 3);
-            //guessMultiplicityFromGeneric(multiplet);
         } else if (multOrig.equals("dd") && multNew.equals("q")) {
             defineMultiplicity(multiplet, multNew);
             setCouplingPattern(multiplet, multNew);
@@ -628,14 +591,7 @@ public class Multiplets {
     public static void analyzeMultiplet(Peak peak) {
         PeakDim peakDim = peak.getPeakDim(0);
         CouplingData couplingData = determineMultiplicity(peakDim, true);
-        // dumpPeakDims(peakSet);
         Multiplet multiplet = peakDim.getMultiplet();
-        // dumpPeakDims(peakSet);
-//        if (peakSet.size() == 1) {
-//            multiplet.setSinglet();
-//        }
-//        multiplet.setCenter(couplingData.centerPPM);
-        //dumpPeakDims(peakSet);
         double[] values = new double[couplingData.couplingItems.size()];
         if (values.length > 0) {
             int[] nValues = new int[couplingData.couplingItems.size()];
@@ -648,9 +604,6 @@ public class Multiplets {
             double[] sin2thetas = new double[values.length];
             multiplet.setCouplingValues(values, nValues, multiplet.getIntensity(), sin2thetas);
         }
-        //peakSet = peak.peakDims[0].getCoupledPeakDims();
-        //dumpPeakDims(peakSet);
-
     }
 
     public static CouplingData determineMultiplicity(PeakDim peakDim, boolean pow2Mode) {
@@ -1232,12 +1185,10 @@ public class Multiplets {
             return;
         }
         splitRegionsByPeakSep(regions, peakList, vec);
-        //splitRegionsByPeakCount(regions, peakList, vec, 24);
         peakList.unLinkPeaks();
         peakList.sortPeaks(0, false);
         peakList.reNumber();
         linkPeaksInRegions(peakList, regions);
-
     }
 
     public static List<Peak> getLinkRoots(PeakList peakList) {
