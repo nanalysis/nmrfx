@@ -813,9 +813,7 @@ public class SpinSystem {
                 shiftList[0][i] = new ArrayList<>();
                 shiftList[1][i] = new ArrayList<>();
             }
-            if (addShift(nPeaks, resAtomPatterns, shiftList, null)) {
-              //  writeShifts(shiftList);
-            }
+            addShift(nPeaks, resAtomPatterns, shiftList, null);
 
         } else {
             int[] indices = new int[nCountable];
@@ -842,7 +840,6 @@ public class SpinSystem {
                     dumpShifts(shiftList);
                 }
                 if (validShifts) {
-//                    writeShifts(shiftList);
                     double prob = analyzeShifts(shiftList);
                     if (prob > best) {
                         best = prob;
@@ -852,7 +849,6 @@ public class SpinSystem {
             }
             if (!display && (bestIndex >= 0)) {
                 int[] pt = counter.getCounts(bestIndex);
-//                boolean validShifts = getShifts(nPeaks, resAtomPatterns, shiftList, pt);
                 setUserFields(resAtomPatterns, pt);
                 updateSpinSystem();
             }
@@ -906,7 +902,6 @@ public class SpinSystem {
 
             }
         }
-     //   writeShifts(shiftList);
         saveShifts(shiftList);
     }
 

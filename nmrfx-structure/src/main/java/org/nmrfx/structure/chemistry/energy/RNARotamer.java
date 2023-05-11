@@ -53,7 +53,6 @@ public class RNARotamer {
     public static double HPOWER = 3.0;
     static final int[] subsetIndices = {1, 2, 3, 4};
     static final int[] indices = {0, 1, 2, 3, 4, 5, 6};
-    // static final String[] atomNames = {"O3'", "P", "O5'", "C5'", "C4'", "C3'", "O3'"};
     static Atom[] atoms = {null, null, null, null, null, null, null};
     static final int NPREVIOUS = 1;
 
@@ -155,7 +154,6 @@ public class RNARotamer {
             if (angles != null) {
                 for (int i = 0; i < 7; i++) {
                     double delta = angles[i] - rotamer.angles[i];
-//                double delta = Math.abs(angles[i] - rotamer.angles[i]);
 
                     if (delta > Math.PI) {
                         delta = -(2.0 * Math.PI - delta);

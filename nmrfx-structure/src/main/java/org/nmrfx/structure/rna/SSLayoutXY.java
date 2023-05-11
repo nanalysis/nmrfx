@@ -314,23 +314,6 @@ public class SSLayoutXY implements MultivariateFunction {
         double xj2 = values[j * 2 + 2];
         double yj2 = values[j * 2 + 3];
         return OverlappingLines.doLinesIntersect(xi1, yi1, xi2, yi2, xj1, yj1, xj2, yj2);
-//        Vector2D pj1 = new Vector2D(xj1, yj1);
-//        Vector2D pj2 = new Vector2D(xj2, yj2);
-//        Line lineI = new Line(pi1, pi2);
-//        Line lineJ = new Line(pj1, pj2);
-//        Vector2D vI = lineI.intersection(lineJ);
-//        if (vI != null) {
-//            double disi1 = vI.distance(pi1);
-//            double disi2 = vI.distance(pi2);
-//            double disj1 = vI.distance(pj1);
-//            double disj2 = vI.distance(pj2);
-//            double leni = pi1.distance(pi2)*1.2;
-//            double lenj = pj1.distance(pj2)*1.2;
-//            if ((disi1 < leni) && (disi2 < leni) && (disj1 < lenj) && (disj2 < lenj)) {
-//                intersects = true;
-//            }
-//        }
-//        return intersects;
     }
 
     public void toSinCos(double inValue, double[] outValues, int index) {
@@ -410,12 +393,6 @@ public class SSLayoutXY implements MultivariateFunction {
                     double deltaY = y2 - y1;
                     if (Math.abs(deltaY) < 10.0 * targetNBDistance) {
                         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-//                        if ((distance < 5 * targetSeqDistance) && !intersects && (j < (limit - 1))) {
-//                            if (nIntersections(i, j, report)) {
-//                                intersects = true;
-//                                nIntersections++;
-//                            }
-//                        }
                         if (interactions[i][j] == 0) {
                             if (distance < targetNBDistance) {
                                 if (report) {
@@ -456,9 +433,6 @@ public class SSLayoutXY implements MultivariateFunction {
             double deltaX = x1 - xCenter;
             double deltaY = y1 - yCenter;
             double dis2 = (deltaX * deltaX + deltaY * deltaY);
-            //sumNBError += 0.00000001*(1000.0-dis2);
-            //sumNBError -= 0.0000001*Math.sqrt(dis2);
-            //sumNBError += 0.0000001*Math.sqrt(dis2);
         }
         double sumAngle = 0.0;
         for (int i = 1; i < (limit - 1); i++) {
@@ -486,15 +460,7 @@ public class SSLayoutXY implements MultivariateFunction {
 
         }
 
-//        for (int i = 0; i < pars.length; i++) {
-//            if (angleTargets[i] > -999.0) {
-//                double delta = Math.abs(angleTargets[i] - pars[i]);
-//                sumAngle += delta * delta;
-//            }
-//        }
-        //double value = sumPairError * 1.0 + sumNBError + sumAngle * 0.3 + nIntersections * 100.0 + sumDis * 1.0;
         double value = sumPairAbsError * 50.0 + sumNBError + sumAngle * 0.3 + nIntersections * 100.0 + sumDis * 1.0;
-        //double value = sumPairError+sumNBError + sumAngle + nIntersections*1.0;
         String logMsg = String.format("lim %3d nNuc %3d nFree %3d pairs %7.3f nb %7.3f ang %7.3f nint %2d ndis %7.3f tot %7.3f",  limit, nNuc, nFreeAnglesTot, sumPairError, sumNBError, sumAngle, nIntersections, sumDis, value);
         log.info(logMsg);
         return value;
@@ -508,7 +474,6 @@ public class SSLayoutXY implements MultivariateFunction {
         }
         double value = value(guess);
         log.info("start value {} free angles {} freedis {}", value, nFreeAngles, nFreeDis);
-        //dumpAngles(guess);
         limit = nNuc;
         PointValuePair result = null;
         DEFAULT_RANDOMGENERATOR.setSeed(1);
@@ -533,11 +498,8 @@ public class SSLayoutXY implements MultivariateFunction {
             limit = nNuc;
             log.info("do value");
             value(result.getPoint(), true);
-//            dumpCoordinates(result.getPoint());
-//            dumpPars(result.getPoint());
         } else {
             result = new PointValuePair(guess, value);
-//            dumpCoordinates(guess);
         }
         return result;
     }
@@ -577,9 +539,6 @@ public class SSLayoutXY implements MultivariateFunction {
             double centerY = sumY / nNuc;
             StringBuilder coordStr = new StringBuilder();
             for (int i = 0; i < nNuc; i++) {
-//            values[i*2] -= centerX;
-                //           values[i*2+1] -= centerY;
-
                 coordStr.append(String.format("%.3f\t%.3f%n", values[i * 2], values[i * 2 + 1]));
             }
             log.debug(coordStr.toString());
@@ -633,18 +592,8 @@ public class SSLayoutXY implements MultivariateFunction {
         SSLayoutXY ssLayout = new SSLayoutXY(vienna.length());
         ssLayout.interpVienna(vienna);
         ssLayout.dumpPairs();
-        /*
-         ssLayout.addPair(1,20);
-         ssLayout.addPair(2,19);
-         ssLayout.addPair(3,18);
-         ssLayout.addPair(4,17);
-         ssLayout.addPair(5,16);
-         ssLayout.addPair(6,15);
-         ssLayout.addPair(7,14);
-         ssLayout.addPair(8,13);
-         */
+
         ssLayout.fillPairs();
-//        ssLayout.refineCMAES(30000,0.01,0.5,1.0,100);
         PointValuePair result = ssLayout.refineCMAES(1000, 1.0, 0.5, 1.0, 0);
         ssLayout.dumpCoordinates(result.getPoint());
     }

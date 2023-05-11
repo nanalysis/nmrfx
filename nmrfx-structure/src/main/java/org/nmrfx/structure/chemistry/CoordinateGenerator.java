@@ -68,17 +68,11 @@ public class CoordinateGenerator {
         for (int i = 0; i < genVecs.length; i++) {
             if (genVecs[i].length > 3) {
                 if (genVecs[i][0] < 0) {
-//                    if (fillCoords) {
-//                        //continue;
-//                    }
                     pts[0] = origins[genVecs[i][0] + 2];
                 } else {
                     pts[0] = atoms.get(genVecs[i][0]).spatialSet.getPoint(iStruct);
                 }
                 if (genVecs[i][1] < 0) {
-//                    if (fillCoords) {
-//                        //continue;
-//                    }
                     pts[1] = origins[genVecs[i][1] + 2];
                 } else {
                     pts[1] = atoms.get(genVecs[i][1]).spatialSet.getPoint(iStruct);
@@ -91,9 +85,6 @@ public class CoordinateGenerator {
                 }
                 Coordinates coords = new Coordinates(pts[0], pts[1], pts[2]);
                 if (!coords.setup()) {
-                    //                    if (fillCoords) {
-                    //                       continue;
-                    //                    }
                     throw new RuntimeException("genCoords: coordinates the same for "
                             + i + " " + pts[0].toString() + " "
                             + " " + pts[1].toString()

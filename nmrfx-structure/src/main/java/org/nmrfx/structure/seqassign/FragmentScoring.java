@@ -174,7 +174,6 @@ public class FragmentScoring {
                         }
                     }
                     if (stdShift != null) {
-                        //result = Math.abs(stdShift.avg-ppm)/stdShift.sdev;
                         double normDev = (stdShift.getAvg() - ppm) / (stdShift.getSdev() * sdevMul);
                         result = normDev * normDev;
                     }

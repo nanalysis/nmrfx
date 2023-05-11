@@ -816,7 +816,6 @@ public class IdPeak {
             idx[i] = 0;
         }
 
-        //Vector resultsVec = new Vector(32);
         SpatialSet[] spatialSets = new SpatialSet[nDim];
 
         while (true) {

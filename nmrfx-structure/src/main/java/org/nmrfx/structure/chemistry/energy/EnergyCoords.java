@@ -319,7 +319,6 @@ public class EnergyCoords {
                 cValues[i] = atom1.getCharge();
                 double lambda = 3.5; // fixme should use 6.0 for ionic side chains
                 double sigma2 = rMin; // fixme use sigma
-                //  double alpha2 = iProp.getVol() * iProp.getDeltaGFree() / (2 * PI32 * lambda );
             }
         }
     }
@@ -456,9 +455,7 @@ public class EnergyCoords {
                                             boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
                                             // fixme  this is fast, but could miss interactions for atoms that are not bonded
                                             // as it doesn't test for an explicit bond between the pairs
-                                            // boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
                                             if (notFixed && interactable1) {
-                                                //double rH = ePair.getRh();
                                                 double rH = contactRadii[iAtom] + contactRadii[jAtom];
                                                 if (disSq < limit2) {
                                                     if (useFF) {
@@ -548,7 +545,6 @@ public class EnergyCoords {
 
             }
         }
-        //dumpFixed();
     }
 
     public void dumpFixed() {
@@ -612,9 +608,6 @@ public class EnergyCoords {
                         close = true;
                     } else if (parent2 == testAtom1.parent) {
                         close = true;
-                    } else if (parent1 == parent2) {
-                        //  rh1 -= 0.1;
-                        //  rh2 -= 0.1;
                     }
                 }
             }

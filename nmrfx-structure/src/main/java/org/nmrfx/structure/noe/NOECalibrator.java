@@ -448,22 +448,7 @@ public class NOECalibrator {
             return;
         }
         Map<String, Map<String, Noe>> resMap1 = new TreeMap<>();
-//
-//        for (CoordSet cSet : mol.coordSets.values()) {
-//            for (Entity entity : cSet.entities.values()) {
-//                if (entity instanceof Polymer) {
-//                    Vector residues = ((Polymer) entity).getResidues();
-//                    for (int iRes = 0; iRes < residues.size(); iRes++) {
-//                        Residue residue = (Residue) residues.elementAt(iRes);
-//                        String cName = cSet.getName() + "." + entity.getName() + ":" + residue.getNumber();
-//                    }
-//                }
-//            }
-//        }
-//        ArrayList<String> aList = mol.getCompounds();
-//        for (String cmpdName: aList) {
-//
-//        }
+
         StringBuilder cName1 = new StringBuilder();
         StringBuilder cName2 = new StringBuilder();
         long start = System.currentTimeMillis();

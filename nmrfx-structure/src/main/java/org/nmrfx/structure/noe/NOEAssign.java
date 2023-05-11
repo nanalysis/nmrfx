@@ -257,7 +257,6 @@ public class NOEAssign {
                     continue;
                 }
                 matchCriteria[0].setPPM(ppm);
-                //                ArrayList res1s = peakDim.getResonances();
                 ArrayList res1s = new ArrayList();
                 peakDim = peak.getPeakDim(matchCriteria[1].getDim());
                 ppm = peakDim.getChemShift();
@@ -265,7 +264,6 @@ public class NOEAssign {
                     continue; // diagonal fixme
                 }
                 matchCriteria[1].setPPM(ppm);
-                //                ArrayList res2s = peakDim.getResonances();
                 ArrayList res2s = new ArrayList();
                 int nRes1 = res1s.size();
                 int nRes2 = res2s.size();
@@ -419,9 +417,6 @@ public class NOEAssign {
             }
             if (matchCriteria != null) {
                 List<Noe> noeList = entry.getValue();
-                for (Noe noe : noeList) {
-                    //                    noe.updateGenType(map, matchCriteria);
-                }
             }
         }
     }

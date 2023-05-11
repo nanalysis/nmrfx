@@ -166,7 +166,6 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
             // restore if swap not lower energy
             swapIt(i);
         }
-//        double restoreSwap = swapEnergy(swaps);
     }
 
     double swapEnergy(Set<Integer> swaps) {

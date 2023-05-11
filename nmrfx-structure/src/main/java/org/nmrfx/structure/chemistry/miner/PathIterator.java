@@ -476,7 +476,6 @@ public class PathIterator implements Iterator<List<Integer>> {
                 }
             }
         }
-//        nodeValidator.dumpProps();
     }
 
     int getPropIndex(String[] propNames, String propName) {

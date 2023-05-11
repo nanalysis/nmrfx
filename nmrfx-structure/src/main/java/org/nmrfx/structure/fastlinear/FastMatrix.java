@@ -134,7 +134,6 @@ public class FastMatrix {
     }
 
     public void mMm(FastMatrix matrix, FastMatrix temp, FastMatrix out) {
-//                RealMatrix tempMat2 = tempMat.multiply(iBranch.phiMat.transpose()).preMultiply(iBranch.phiMat);
         final int nRowsA = nRows;
         final int nColsB = matrix.nCols;
 

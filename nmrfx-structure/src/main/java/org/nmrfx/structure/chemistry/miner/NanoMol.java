@@ -565,8 +565,6 @@ public class NanoMol {
         int j = 0;
 
         for (int i = 0; i < nBonds; i++) {
-            //Atom atom1 = mol.getAtom(iAtoms[i]);
-            //Atom atom2 = mol.getAtom(jAtoms[i]);
             int order = bondProps[i];
 
             if (order == 4) {
@@ -837,9 +835,6 @@ public class NanoMol {
         unCompressAtomDeltas();
         unCompressCoordDeltas();
         unCompressAtoms();
-
-        //dumpNanoBonds();
-        //dumpAtoms();
     }
 
     public void unCompressAtoms() {

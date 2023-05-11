@@ -172,10 +172,6 @@ public class AngleTreeGenerator {
                 parent.setValue(parent.getValue() + mNode.getValue());
             }
         }
-        // fixme should we sort
-        //        for (MNode mNode : pathNodes) {
-        //            mNode.sortNodesDescending();
-        //        }
 
         mTree.broad_path(startIndex);
         pathNodes = mTree.getPathNodes();
@@ -469,7 +465,6 @@ public class AngleTreeGenerator {
             }
         }
         // Sorting the shellNodes results in errors calculating dihedral angles
-        //        Collections.sort(shellNodes, MNode::compareByParValue);
         return shellNodes;
     }
 

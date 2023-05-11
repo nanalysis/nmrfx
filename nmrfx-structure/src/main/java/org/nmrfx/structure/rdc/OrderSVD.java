@@ -125,9 +125,9 @@ public class OrderSVD {
             double ddcosZ = dcosZ * dcosZ;
             A[iRow][0] = ddcosY - ddcosX;
             A[iRow][1] = ddcosZ - ddcosX;
-            A[iRow][2] = 2 * dcosX * dcosY; //2 * ddcosX * ddcosY;
-            A[iRow][3] = 2 * dcosX * dcosZ; //2 * ddcosX * ddcosZ;
-            A[iRow][4] = 2 * dcosY * dcosZ; //2 * ddcosY * ddcosZ;
+            A[iRow][2] = 2 * dcosX * dcosY;
+            A[iRow][3] = 2 * dcosX * dcosZ;
+            A[iRow][4] = 2 * dcosY * dcosZ;
             iRow++;
         }
 

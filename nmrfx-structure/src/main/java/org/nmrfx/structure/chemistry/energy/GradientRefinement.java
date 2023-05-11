@@ -201,7 +201,6 @@ public class GradientRefinement extends Refinement {
         }
         dihedrals.denormalize(dihValues, dihedrals.angleValues);
         putDihedrals();
-        //int iStruct = energyList.getStructure();
         molecule.genCoords(false, null);
         EnergyDeriv eDeriv = eDeriv();
         double energy = eDeriv.getEnergy();
@@ -263,7 +262,6 @@ public class GradientRefinement extends Refinement {
             System.out.println("nAnalytical " + derivatives.length + " nNumeric " + nDerivatives.length);
             System.out.printf("%4s %10s %9s %9s %9s %9s\n", "i", "name", "e1", "e2", "nDer", "aDer");
         }
-        // molecule.resetGenCoords();
         for (int i = 0; i < nAngles; i++) {
             double deriv = calcDeriv(delta, i);
             nDerivatives[i] = deriv;
@@ -283,7 +281,6 @@ public class GradientRefinement extends Refinement {
     }
 
     public double[] calcDerivError(final double delta) {
-        //dumpAngles();
         prepareAngles(false);
         getDihedrals();
         int nAngles = dihedrals.angleValues.length;
@@ -292,10 +289,7 @@ public class GradientRefinement extends Refinement {
         double maxError = Double.NEGATIVE_INFINITY;
         double maxDeriv = Double.NEGATIVE_INFINITY;
         molecule.updateVecCoords();
-        //molecule.resetGenCoords();
         molecule.genCoords(false);
-//        dumpAngles();
-        //molecule.dumpCoordsGen();
         for (int i = 0; i < nAngles; i++) {
             Atom atom = dihedrals.energyList.branches[i].atom;
             double deriv = calcDeriv(delta, i);
