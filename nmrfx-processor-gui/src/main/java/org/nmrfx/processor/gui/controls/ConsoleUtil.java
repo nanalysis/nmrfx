@@ -15,57 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.processor.gui.controls;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import javafx.application.Platform;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.KeyEvent;
-import org.fxmisc.richtext.CodeArea;
-import org.fxmisc.richtext.model.Paragraph;
-import org.python.util.InteractiveConsole;
-import org.python.util.InteractiveInterpreter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
 
 /**
  *
  * @author brucejohnson
  */
 public class ConsoleUtil {
-
-    private static final Logger log = LoggerFactory.getLogger(ConsoleUtil.class);
-
-    static Clipboard clipBoard = Clipboard.getSystemClipboard();
-
-    InteractiveInterpreter interpreter;
-    CodeArea outputArea;
-
-    protected final List<String> history = new ArrayList<>();
-    protected int historyPointer = 0;
-    String prompt = ">>>";
-    boolean renjinMode = false;
-
-    class ConsoleOutputStream extends OutputStream {
-
-        @Override
-        public void write(int b) throws IOException {
-            runOnFxThread(() -> outputArea.appendText(String.valueOf((char) b)));
-        }
-
-    }
-
+    //XXX questionable. This should be moved to another utility class.
     public static void runOnFxThread(final Runnable runnable) {
         Objects.requireNonNull(runnable, "runnable");
         if (Platform.isFxApplicationThread()) {
@@ -73,124 +34,5 @@ public class ConsoleUtil {
         } else {
             Platform.runLater(runnable);
         }
-    }
-
-    public void banner() {
-        String banner = InteractiveConsole.getDefaultBanner();
-        runOnFxThread(() -> outputArea.appendText(banner + "\n"));
-    }
-
-    public void prompt() {
-        runOnFxThread(() -> outputArea.appendText(prompt));
-    }
-
-    public void save() {
-        System.out.println("save");
-    }
-
-    public void typed(KeyEvent keyEvent) {
-        if (keyEvent.isShortcutDown()) {
-            return;
-        }
-        String keyString = keyEvent.getCharacter();
-        if ((keyString != null) && (keyString.length() > 0)) {
-            char keyChar = keyString.charAt(0);
-            if (!Character.isISOControl(keyChar)) {
-                outputArea.appendText(keyString);
-            }
-        }
-    }
-
-    public void delete() {
-        int nChar = outputArea.getLength();
-        int col = outputArea.getCaretColumn();
-        if (col > prompt.length()) {
-            outputArea.deleteText(nChar - 1, nChar);
-        }
-    }
-
-    public void historyUp() {
-        historyPointer--;
-        if (historyPointer < 0) {
-            historyPointer = 0;
-        }
-        getHistory();
-    }
-
-    public void historyDown() {
-        historyPointer++;
-        if (historyPointer > history.size()) {
-            historyPointer = history.size();
-        }
-        getHistory();
-    }
-
-    public void getHistory() {
-        int nParagraphs = outputArea.getParagraphs().size();
-        Paragraph para = outputArea.getParagraph(nParagraphs - 1);
-        int nChar = para.length();
-        para.delete(prompt.length(), nChar);
-
-        String historyString = "";
-        if (historyPointer < history.size()) {
-            historyString = history.get(historyPointer);
-        }
-        int nChars = outputArea.getLength();
-        int paraStart = nChars - para.length();
-
-        outputArea.replaceText(paraStart + prompt.length(), nChars, historyString);
-
-    }
-
-    public void paste(KeyEvent event) {
-        String string = clipBoard.getString();
-        System.out.println("paste " + string);
-        if (string != null) {
-            outputArea.appendText(string);
-        }
-    }
-
-    public void copy(KeyEvent event) {
-        String text = outputArea.getSelectedText();
-        ClipboardContent content = new ClipboardContent();
-        content.putString(text);
-        clipBoard.setContent(content);
-    }
-
-    public void enter() {
-        int nParagraphs = outputArea.getParagraphs().size();
-        Paragraph para = outputArea.getParagraph(nParagraphs - 1);
-        String command = para.toString().trim();
-        if (command.startsWith(prompt)) {
-            command = command.substring(prompt.length());
-        }
-        command = command.replace("\0", "");
-        if (command.length() > 0) {
-            history.add(command);
-            historyPointer = history.size();
-        }
-        outputArea.appendText("\n");
-        if (command.equals("clear()")) {
-            outputArea.clear();
-        } else if (command.equals("renjin()")) {
-            renjinMode = true;
-        } else if (command.equals("jython()")) {
-            renjinMode = false;
-        } else {
-            try {
-                boolean more = interpreter.runsource(command);
-            } catch (Exception e) {
-                log.warn(e.getMessage(), e);
-            }
-        }
-        prompt();
-    }
-
-    public void addHandler(CodeArea outputArea, InteractiveInterpreter interpreter) {
-        this.outputArea = outputArea;
-        this.interpreter = interpreter;
-        outputArea.setEditable(false);
-        interpreter.setOut(new ConsoleOutputStream());
-        interpreter.setErr(new ConsoleOutputStream());
     }
 }
