@@ -235,10 +235,6 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
         this.setEffect(null);
     }
 
-    private static int cellSize() {
-        return cells.size();
-    }
-
     public static void setFailedIndex(int index) {
         failedIndex = index;
     }

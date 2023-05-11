@@ -51,14 +51,11 @@ import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
-import javafx.util.converter.IntegerStringConverter;
-import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.io.PeakPatternReader;
 import org.nmrfx.peaks.types.PeakListType;
 import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.TableUtils;
 import org.slf4j.Logger;
@@ -417,14 +414,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         peakNavigator.setPeak(peak);
     }
 
-    public void setPeak(Peak peak) {
-        currentPeak = peak;
-        if (peakList != peak.getPeakList()) {
-            peakList = peak.getPeakList();
-            stage.setTitle(peakList.getName());
-        }
-    }
-
     public void initIfEmpty() {
         peakNavigator.setPeakList();
     }
@@ -468,7 +457,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             super.updateItem(item, empty);
             if (item != null) {
                 setText(String.valueOf(item));
-            } else {
             }
         }
     }
@@ -507,7 +495,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             super.updateItem(item, empty);
             if (item != null) {
                 setText(String.valueOf(item));
-            } else {
             }
         }
     }
@@ -521,11 +508,8 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     }
 
     void initTable() {
-        DoubleStringConverter dsConverter = new DoubleStringConverter();
         FloatStringConverter fsConverter = new FloatStringConverter2();
         peakTableView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-
-        IntegerStringConverter isConverter = new IntegerStringConverter();
         peakTableView.setEditable(true);
         TableColumn<PeakDim, String> dimNameCol = new TableColumn<>("Dim");
         dimNameCol.setCellValueFactory(new PropertyValueFactory("DimName"));
@@ -544,7 +528,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             }
             AtomResPattern.assignDim(peakDim, value);
             TablePosition tPos = t.getTablePosition();
-            int col = tPos.getColumn();
             int row = tPos.getRow();
             row++;
             if (row < t.getTableView().getItems().size()) {
@@ -660,9 +643,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     void initReferenceTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();
-        FloatStringConverter fsConverter = new FloatStringConverter2();
-
-        IntegerStringConverter isConverter = new IntegerStringConverter();
         referenceTableView.setEditable(true);
         TableColumn<SpectralDim, String> dimNameCol = new TableColumn<>("Dim");
         dimNameCol.setCellValueFactory(new PropertyValueFactory("DimName"));
@@ -751,36 +731,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                 });
 
         referenceTableView.getColumns().setAll(labelCol, nucCol, sfCol, swCol, tolCol, patternCol, relCol, spatialCol);
-    }
-
-    public boolean checkDataset() {
-        boolean ok = false;
-        String datasetName = peakList.getDatasetName();
-        if ((datasetName == null) || datasetName.equals("")) {
-            PolyChart chart = PolyChart.getActiveChart();
-            DatasetBase dataset = chart.getDataset();
-            if (dataset != null) {
-                for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
-                    if (peakAttr.getPeakList() == peakList) {
-                        peakList.setDatasetName(dataset.getName());
-                        ok = true;
-                        break;
-                    }
-                }
-            }
-        } else {
-            ok = true;
-        }
-        if (!ok) {
-            alert("No dataset assigned to this peak list");
-        }
-        return ok;
-    }
-
-    void alert(String text) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setContentText(text);
-        alert.showAndWait();
     }
 
     void renamePeakList() {

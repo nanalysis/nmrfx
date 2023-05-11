@@ -289,16 +289,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         operationList.setAll(scriptList);
     }
 
-    public void setScripts(List<String> headerList, Map<String, List<String>> mapOps) {
-        chartProcessor.setScripts(headerList, mapOps);
-    }
-
     protected List<String> getOperationList() {
         return operationList;
-    }
-
-    protected String getFlagString() {
-        return "";
     }
 
     protected String getFullScript() {
@@ -510,24 +502,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
-    void viewDatasetFileInApp(File file) {
-        boolean viewingDataset = isViewingDataset();
-        Dataset currentDataset = (Dataset) chart.getDataset();
-        Dataset datasetByName = Dataset.getDataset(file.getName());
-        if (datasetByName != null) {
-            datasetByName.close();
-        }
-        Dataset dataset = chart.controller.openDataset(file, false, true);
-        if ((currentDataset != null) && (currentDataset != dataset)) {
-            currentDataset.close();
-        }
-        viewMode.setValue(DisplayMode.SPECTRUM);
-        if (!viewingDataset) {
-            chart.full();
-            chart.autoScale();
-        }
-    }
-
     void viewingDataset(boolean state) {
         if (state) {
             viewMode.setValue(DisplayMode.SPECTRUM);
@@ -627,7 +601,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             } else {
                 int currentIndex = scriptView.getSelectionModel().getSelectedIndex();
                 if (currentIndex != -1) {
-                    String selOp = (String) scriptView.getItems().get(currentIndex);
+                    String selOp = scriptView.getItems().get(currentIndex);
                     propertyManager.setPropSheet(currentIndex, selOp);
                 } else {
                     propertyManager.clearPropSheet();
@@ -837,16 +811,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
-    private void loadOps(File file) {
-        try {
-            byte[] encoded = Files.readAllBytes(Paths.get(file.toString()));
-            String scriptString = new String(encoded);
-            parseScript(scriptString);
-        } catch (IOException ioe) {
-            log.warn("Can't read script {}", ioe.getMessage(), ioe);
-        }
-    }
-
     protected void openScript(File file) {
         try {
             byte[] encoded = Files.readAllBytes(Paths.get(file.toString()));
@@ -974,10 +938,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 GUIUtils.warn("Write Script Error", ex.getMessage());
             }
         }
-    }
-
-    public String getCurrentScript() {
-        return textArea.getText();
     }
 
     void finishProcessing(Dataset dataset) {
@@ -1117,7 +1077,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             };
 
             ((Service<Integer>) worker).setOnSucceeded(event -> {
-                Dataset processedDataset;
                 Dataset dataset = processor.releaseDataset(null);
                 if (dataset != null) {
                     dataset.script(script);
@@ -1393,10 +1352,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         fidParTableView.setItems(pars);
     }
 
-    public PolyChart getChart() {
-        return chart;
-    }
-
     @FXML
     protected void vectorStatus(int[] sizes, int vecDim) {
         int nDim = sizes.length;
@@ -1655,7 +1610,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             double ratio = scanRatio.getValue();
             int scanN = scanMaxN.getValue();
             List<ChartProcessor.VecIndexScore> indices = chartProcessor.scanForCorruption(ratio, scanN);
-            ObservableList<DatasetGroupIndex> groupList = FXCollections.observableArrayList();
             for (ChartProcessor.VecIndexScore vecIndexScore : indices) {
                 var vecIndex = vecIndexScore.vecIndex();
                 int maxIndex = vecIndexScore.maxIndex();
@@ -1716,7 +1670,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public Optional<String> getSkipString() {
         Optional<String> result = Optional.empty();
         NMRData nmrData = getNMRData();
-        boolean scriptMode = true;
         if (nmrData != null) {
             result = DatasetGroupIndex.getSkipString(nmrData.getSkipGroups());
         }
@@ -1726,7 +1679,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public ObservableList<DatasetGroupIndex> getSkipList() {
         ObservableList<DatasetGroupIndex> groupList = FXCollections.observableArrayList();
         NMRData nmrData = getNMRData();
-        boolean scriptMode = true;
         if (nmrData != null) {
             groupList.addAll(nmrData.getSkipGroups());
         }

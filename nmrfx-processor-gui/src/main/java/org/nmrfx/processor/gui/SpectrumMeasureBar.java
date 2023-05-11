@@ -25,32 +25,27 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.IOException;
-
+import javafx.geometry.HPos;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.TextAlignment;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import javafx.beans.value.ChangeListener;
-import javafx.geometry.HPos;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.text.TextAlignment;
-import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.math.VecBase;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.utils.GUIUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -71,12 +66,6 @@ public class SpectrumMeasureBar {
     FXMLController controller;
     VBox vBox;
     GridPane gridPane;
-    boolean[][] iconStates = new boolean[2][2];
-    ChangeListener<String> vecNumListener;
-    Pane filler1 = new Pane();
-    Pane filler2 = new Pane();
-    static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
-    Background defaultBackground = null;
     Consumer closeAction = null;
     ToggleButton absModeButton;
     ToggleButton gridModeButton;
@@ -178,55 +167,6 @@ public class SpectrumMeasureBar {
         closeAction.accept(this);
     }
 
-    public SpectrumMeasureBar onClose(Consumer closeAction) {
-        this.closeAction = closeAction;
-        return this;
-    }
-
-    private StackPane makeIcon(int i, int j, boolean boundMode) {
-        StackPane stackPane = new StackPane();
-        stackPane.setPadding(Insets.EMPTY);
-        Rectangle rect = new Rectangle(10, 10);
-        rect.setFill(Color.LIGHTGREY);
-        rect.setStroke(Color.LIGHTGREY);
-        Line line = new Line();
-        if (j == 0) {
-            line.setStartX(0.0f);
-            line.setStartY(8.0f);
-            line.setEndX(10.0f);
-            line.setEndY(8.0f);
-            if (boundMode) {
-                if (i == 0) {
-                    line.setTranslateY(4);
-                } else {
-                    line.setTranslateY(-4);
-
-                }
-            }
-        } else {
-            line.setStartX(8.0f);
-            line.setStartY(0.0f);
-            line.setEndX(8.0f);
-            line.setEndY(10.0f);
-            if (boundMode) {
-                if (i == 0) {
-                    line.setTranslateX(-4);
-                } else {
-                    line.setTranslateX(4);
-
-                }
-            }
-        }
-        stackPane.getChildren().add(rect);
-        stackPane.getChildren().add(line);
-        if (i == 1) {
-            line.setStroke(Color.RED);
-        } else {
-            line.setStroke(Color.BLACK);
-        }
-        return stackPane;
-    }
-
     public void update() {
         if (chart != null) {
             for (int iOrient = 0; iOrient < 2; iOrient++) {
@@ -282,7 +222,6 @@ public class SpectrumMeasureBar {
         double[] pts = new double[2];
         double[] hzs = new double[2];
         double[] mHzs = new double[2];
-        VecBase vec = dataset.getVec();
         boolean gridMode = gridModeButton.isSelected();
         boolean absMode = absModeButton.isSelected();
 
