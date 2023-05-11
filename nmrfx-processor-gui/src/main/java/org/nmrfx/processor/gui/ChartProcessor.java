@@ -245,11 +245,6 @@ public class ChartProcessor {
     }
 
     public void setEchoAntiEcho(boolean value) {
-        //if (value) {
-        //acqMode[vecDim] = "ea";
-        //} else {
-        //acqMode[vecDim] = "hc";
-        //}
     }
 
     public String getAcqOrder() {
@@ -501,7 +496,6 @@ public class ChartProcessor {
     }
 
     public int[] loadVectors(int iDim, int[] rows) {
-        //setFlags();
         NMRData nmrData = getNMRData();
         int nPoints = nmrData.getNPoints();
         if (vecDim != 0) {
@@ -612,11 +606,6 @@ public class ChartProcessor {
     }
 
     public void setupProcess() {
-        // process.addOp(new Phase(0.0,216*360.0));
-        //process.addOp(new Tdss(31, 3, 216.0));
-
-//        process.addOp(new Zf(1, -1));
-//        process.addOp(new Ft(false, false));
     }
 
     public Map<String, List<String>> getOperations() {
@@ -665,7 +654,6 @@ public class ChartProcessor {
             opList = new ArrayList<>();
         }
         processorController.setOperationList(opList);
-        //execScriptList(false);
         if (!processorController.isViewingDataset()) {
             chart.full();
             chart.autoScale();
@@ -1166,9 +1154,6 @@ public class ChartProcessor {
     public String getScriptCmds(int nDim, String indent, boolean includeRun) {
         String lineSep = System.lineSeparator();
         StringBuilder scriptBuilder = new StringBuilder();
-        // List<String> oldList = new ArrayList<>();
-        // oldList.addAll(fxmlController.getOperationList());
-        // dimOpLists[vecDim] = oldList;
         int nDatasetDims = 0;
         mapToDataset = new int[nDim];
         for (Map.Entry<String, List<String>> entry : mapOpLists.entrySet()) {
@@ -1223,13 +1208,7 @@ public class ChartProcessor {
             String[] flagParts = flag.split("=");
             if (flagParts.length == 2) {
                 if (flagParts[0].equals("mode")) {
-                    //    if (flagParts[1].equals("ea")) {
-                    //       acqMode[vecDim] = "ea";
-                    //  } else if (flagParts[1].equals("hc")) {
-                    //     acqMode[vecDim] = "hc";
-                    //} else {
-                    //   acqMode[vecDim] = "";
-                    //}
+
                 } else {
                     boolean flagValue = flagParts[1].equals("1");
                     flags.put(flagParts[0], flagValue);
@@ -1350,15 +1329,12 @@ public class ChartProcessor {
         if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
             NMRViewData nvData = (NMRViewData) nmrData;
             chart.setDataset(nvData.getDataset());
-//            chart.datasetAttributes = null;
             chart.setCrossHairState(true, true, true, true);
             int[] sizes = new int[0];
             processorController.vectorStatus(sizes, vecDim);
         } else {
             chart.controller.isFID = true;
 
-//            chart.setDataset(null);
-//            chart.datasetAttributes = null;
             loadVectors(0);
             chart.setCrossHairState(false, true, false, true);
             try {

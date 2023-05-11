@@ -117,25 +117,6 @@ public class ComplexOperationItem extends OperationItem implements ObservableObj
         return complexToString(value);
     }
 
-//    @Override
-//    public int intValue() {
-//        return (int) value;
-//    }
-//
-//    @Override
-//    public long longValue() {
-//        return (long) value;
-//    }
-//
-//    @Override
-//    public float floatValue() {
-//        return (float) value;
-//    }
-//
-//    @Override
-//    public double doubleValue() {
-//        return value;
-//    }
     @Override
     public void addListener(ChangeListener<? super String> listener) {
         System.out.println("add Listener " + getName());
@@ -196,7 +177,6 @@ public class ComplexOperationItem extends OperationItem implements ObservableObj
         if (value == null) {
             value = defaultValue;
         }
-//        listener.changed(this, complexToString(old), complexToString(value));
     }
 
     @Override

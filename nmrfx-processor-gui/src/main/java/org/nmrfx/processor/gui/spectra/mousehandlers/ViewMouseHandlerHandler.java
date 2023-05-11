@@ -16,7 +16,6 @@ public class ViewMouseHandlerHandler extends MouseHandler {
         PolyChart chart = mouseBindings.getChart();
         ChartBorder border = chart.hitBorder(mouseBindings.getMouseX(), mouseBindings.getMouseY());
         ViewMouseHandlerHandler handler = null;
-        //boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());
 
         if (border != ChartBorder.NONE) {
             handler = new ViewMouseHandlerHandler(mouseBindings);

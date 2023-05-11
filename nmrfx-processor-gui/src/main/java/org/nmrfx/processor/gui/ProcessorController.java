@@ -660,10 +660,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 popOver.setAnchorLocation(PopOver.AnchorLocation.WINDOW_BOTTOM_RIGHT);
                 popOver.show(textField, nodeCoord.getX(), nodeCoord.getY());
             }
-            //text.setFill(Color.RED);
-
         }
-
     }
 
     @FXML
@@ -936,7 +933,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             }
         }
         chartProcessor.setScripts(headerList, mapOpLists);
-        //textArea.setText(getFullScript());
         String script = getFullScript();
         if (!script.equals(currentText)) {
             textArea.replaceText(script);

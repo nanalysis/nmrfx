@@ -64,8 +64,6 @@ public class NMRAxisBase {
 
     public String getTickMarkLabel(Object value) {
         return df.format(value);
-//        StringConverter<Number> formatter = defaultFormatter;
-//        return formatter.toString((Number) value);
     }
 
     private List<Number> getTics(double pmin, double pmax) {

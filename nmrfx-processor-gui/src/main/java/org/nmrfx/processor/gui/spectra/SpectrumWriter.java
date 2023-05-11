@@ -137,7 +137,6 @@ public class SpectrumWriter {
         yAxis.setLabel(axes[1].getLabel());
         NMRAxisIO[] axes2 = {xAxis, yAxis};
         int nDrawLevels = 1;
-//        long startTime = System.currentTimeMillis();
         double[] offset = {0, 0};
         drawHorizontalAxis(writer, xAxis, yAxis.getStart());
         drawVerticalAxis(writer, yAxis, xAxis.getStart());
@@ -191,7 +190,6 @@ public class SpectrumWriter {
         float scale = Contour.getScaleFac() / Short.MAX_VALUE;
         double cxOffset = contours.xOffset;
         double cyOffset = contours.yOffset;
-        // g2.beginPath();
         ArrayList<Double> polyLines = new ArrayList<>();
         DatasetBase dataset = dataGenerator.getDataset();
         for (int iLine = 0; iLine < lineCount; iLine += 4) {
@@ -274,19 +272,6 @@ public class SpectrumWriter {
                 System.out.println(ioE.getMessage());
                 return;
             }
-//            SwingUtilities.invokeLater(new Runnable() {
-//                @Override
-//                public void run() {
-//                    final PrinterJob job = PrinterJob.getPrinterJob();
-//                    if (job.printDialog()) {
-//                        job.setPageable(new PDFPageable(doc));
-//                        try {
-//                            job.print();
-//                        } catch (PrinterException pE) {
-//                        }
-//                    }
-//                }
-//            });
         }
     }
 }

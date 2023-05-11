@@ -154,9 +154,7 @@ public class PolyChart extends Region implements PeakListener {
     Map<String, Object> popoverMap = new HashMap<>();
 
     int iVec = 0;
-    //    Vec vec;
     FileProperty datasetFileProp = new FileProperty();
-    //    DatasetAttributes datasetAttributes = null;
     ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
     ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
     ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
@@ -461,7 +459,6 @@ public class PolyChart extends Region implements PeakListener {
 
     public void focus() {
         getController().stage.requestFocus();
-        //  canvas.setFocused(true);
     }
 
     public Cursor getCanvasCursor() {
@@ -820,9 +817,6 @@ public class PolyChart extends Region implements PeakListener {
         max = center + range / 2.0;
         double[] limits = getRange(0, min, max);
         setXAxis(limits[0], limits[1]);
-
-//        double[] limits = datasetAttributes.checkLimits(axModes[0], 0, min, max);
-//        setXAxis(limits[0], limits[1]);
     }
 
     public void swapView() {
@@ -1609,11 +1603,6 @@ public class PolyChart extends Region implements PeakListener {
         }
         min += currentRegion[0];
         max += currentRegion[0];
-        /*
-         if (max >= size) {
-         max = size - 1;
-         }
-         */
         double f1 = min / (size - 1);
         double f2 = max / (size - 1);
         double mul = Math.pow(10.0, Math.ceil(Math.log10(size)));
@@ -1903,7 +1892,6 @@ public class PolyChart extends Region implements PeakListener {
             datasetAttributes.drawList.clear();
             currentDatasetProperty.set(dataset);
         } else {
-            //statusBar.sliceStatus.setSelected(false);
             setSliceStatus(false);
 
             datasetFileProp.setValue(null);
@@ -2041,7 +2029,6 @@ public class PolyChart extends Region implements PeakListener {
             axModes[1] = AXMODE.PPM;
             for (int i = 2; i < nAxes; i++) {
                 if (axes[i] != null) {
-                    //axes[i] = new NMRAxis(Orientation.HORIZONTAL, Position.BOTTOM, datasetAttrs.pt[i][0], datasetAttrs.pt[i][1], 4);
                     if (dataset.getFreqDomain(i)) {
                         axModes[i] = AXMODE.PPM;
                     } else {
@@ -2393,13 +2380,7 @@ public class PolyChart extends Region implements PeakListener {
             GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
             peakGC.clearRect(xPos, yPos, width, height);
             gC.beginPath();
-//
-//        if (annoCanvas != null) {
-//            annoCanvas.setWidth(width);
-//            annoCanvas.setHeight(height);
-//            GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
-//            annoGC.clearRect(0, 0, width, height);
-//        }
+
             drawParameters(chartProps.getParameters());
             if (!datasetAttributesList.isEmpty()) {
                 drawPeakLists(true);
@@ -3517,15 +3498,12 @@ public class PolyChart extends Region implements PeakListener {
                         if (peakListAttr.getDrawPeaks()) {
                             drawPeakList(peakListAttr, peakGC);
                         }
-//                drawSelectedPeaks(peakListAttr);
                     }
                 }
                 if (!peakPaths.isEmpty()) {
                     drawPeakPaths();
                 }
                 drawAnnotations(peakGC);
-
-//                peakGC.restore();
             } catch (Exception ioE) {
                 log.warn(ioE.getMessage(), ioE);
             }
@@ -3543,7 +3521,6 @@ public class PolyChart extends Region implements PeakListener {
     public Optional<Peak> hitPeak(double pickX, double pickY) {
         Optional<Peak> hit = Optional.empty();
         if (peakStatus.get()) {
-            // drawPeakLists(false);
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
                 if (peakListAttr.getDrawPeaks()) {
                     hit = peakListAttr.hitPeak(drawPeaks, pickX, pickY);
@@ -4153,10 +4130,6 @@ public class PolyChart extends Region implements PeakListener {
         peakCanvas.setCache(true);
         peakCanvas.setMouseTransparent(true);
         annoCanvas.setMouseTransparent(true);
-
-        //getPlotChildren().add(1, canvas);
-        //getPlotChildren().add(2, peakCanvas);
-        //getPlotChildren().add(3, annoCanvas);
     }
 
     public void addAnnoCanvas() {
@@ -4252,7 +4225,6 @@ public class PolyChart extends Region implements PeakListener {
                 if (datasetProj == null) {
                     return;
                 }
-                //drawProjection(gC, i, datasetProj);
             }
         }
     }
@@ -4620,7 +4592,6 @@ public class PolyChart extends Region implements PeakListener {
             }
             for (PeakListAttributes peakAttr : peakListAttributesList) {
                 PeakList peakList = peakAttr.getPeakList();
-                // double[] limits = {0.1, 0.8};
                 int nCells = 25;
                 try {
                     PeakNeighbors peakNeighbors = new PeakNeighbors(peakList, nCells, dimNames);

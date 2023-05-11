@@ -635,10 +635,6 @@ public class PeakListAttributes implements PeakListener {
             activeComp.setOffset(activeComp.getOffset() + delta);
             comps.set(mLine, activeComp);
             multiplet.updateCoupling(comps);
-//            PeakDim peakDim = multiplet.getPeakDims().get(mLine);
-//            double shift = peakDim.getChemShiftValue();
-//            peakDim.setChemShiftValue((float) (shift + delta));
-//            multiplet.updateCenter();
         } else {
             PeakDim peakDim = multiplet.getPeakDim();
             double shift = peakDim.getChemShiftValue();

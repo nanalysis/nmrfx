@@ -155,28 +155,6 @@ public class DrawPeaks {
         lastTextBoxes.clear();
     }
 
-    //    protected void setParameters(PeakDisplayParameters pdPar) {
-////        disDim = specPar.disDim;
-//        colorOn = pdPar.getColorOn();
-//        colorOff = pdPar.getColorOff();
-//        jmode = pdPar.getJmode();
-//        displayType = pdPar.getDisplayType();
-//        oneDStroke = pdPar.getOneDStroke();
-//        if (oneDStroke == 0.0) {
-//            oneDStroke = peak2DStroke;
-//        }
-//        labelType = pdPar.getLabelType();
-//        colorType = pdPar.getColorType();
-//        multipletLabelType = pdPar.getTreeLabelType();
-//        treeOn = pdPar.isTreeOn();
-//        displayOn = pdPar.isDisplayOn();
-//        displayOff = pdPar.isDisplayOff();
-////        iPeakList = specPar.viewPar.iPeakList;
-////        lastTextBox = null;
-////        dY = (float) ((24 * Math.abs(chart.activeView[1][0]
-////                - chart.activeView[1][1])) / Math.abs(chart.corner[1][0]
-////                        - chart.corner[1][1]));
-//    }
     public void setMultipletMode(boolean state) {
         multipletMode = state;
     }
@@ -185,7 +163,6 @@ public class DrawPeaks {
                                          double[] offset, double x, double y) throws GraphicsIOException {
         int nPeakDim = peak.peakList.nDim;
         boolean result = false;
-        //        if ((disDim != 0) && (nPeakDim > 1)) {
         if ((nPeakDim > 1)) {
             result = pick2DPeak(peakAttr, dataAttr, g2, dim, peak, x, y);
         } else {
@@ -193,20 +170,9 @@ public class DrawPeaks {
         }
         return result;
     }
-//
-//    synchronized boolean pickMultiplet(GraphicsContextInterface g2, Multiplet multiplet, int[] dim,
-//            double[] offset, int x, int y) {
-//        int nPeakDim = multiplet.getPeakDim().getPeak().peakList.nDim;
-//
-//        if ((disDim != 0) && (nPeakDim > 1)) {
-//            return false;
-//        } else {
-//            return pick1DMultiplet(g2, dim, multiplet, x, y);
-//        }
-//    }
+
 
     public void drawSimSum(GraphicsContextInterface g2, ArrayList peaks, int[] dim) throws GraphicsIOException {
-        //int colorMode = setColor(g2, peak, offset);
         Peak1DRep peakRep = new Peak1DRep(g2, dim[0], peaks);
     }
 
@@ -218,7 +184,6 @@ public class DrawPeaks {
             return;
         }
 
-//        if ((disDim != 0) && (nPeakDim > 1)) {
         if ((nPeakDim > 1) && !peakAttr.chart.is1D()) {
             draw2DPeak(peakAttr, g2, dim, peak, false, selected);
         } else {
@@ -237,9 +202,7 @@ public class DrawPeaks {
                 if (((colorMode == 0) && !peakDisOn) || ((colorMode != 0) && !peakDisOff)) {
                     return;
                 }
-                if ((disDim != 0) && (nPeakDim > 1)) {
-//            draw2DPeak(peakAttr, g2, dim, peak, false, false);
-                } else {
+                if ((disDim == 0) || (nPeakDim <= 1)) {
                     draw1DMultiplet(peakAttr, g2, dim, multiplet, colorMode, selected, line);
                 }
             }
@@ -468,7 +431,6 @@ public class DrawPeaks {
                     label = Format.format2(normVal) + " " + peak.peakDims[0].getMultiplet().getMultiplicity() + " " + couplings
                             + "\n" + Format.format4(peak.peakDims[0].getMultiplet().getCenter());
                 } else {
-                    //label = (String.valueOf(peak.getIdNum()));
                     double ppm = peak.peakDims[0].getChemShiftValue();
                     if (ppm > 20.0) {
                         label = Format.format2(ppm);
@@ -608,7 +570,6 @@ public class DrawPeaks {
         int colorMode = 0;
         Color color = peakAttr.getOnColor();
 
-        // g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         switch (peakAttr.getColorType()) {
             case Plane:
 
@@ -1069,22 +1030,10 @@ public class DrawPeaks {
                 ctr[0] = ctr0 + ((j0 * ((jx * (kx - 1)) + 1)) / 2.0);
                 ctr[1] = ctr1 + ((j1 * ((jy * (ky - 1)) + 1)) / 2.0);
 
-                //Nv_FoldPPM(&(peak.d[pkdim[0]].ctr), fFldLim, 0);
-                //Nv_FoldPPM(&(peak.d[pkdim[1]].ctr), fFldLim, 1);
-                for (int j = 0; j < 2; j++) {
-                    //ctr[j] = peak.peakDim[dim[j]].getCtr();
-                    //bou[j] = peak.peakDim[dim[j]].getBou();
-                }
                 g2.setLineWidth(peak2DStroke);
 
                 if (erase) {
-//                    Rectangle box = chart.getBox(g2, ctr[0], ctr[1], bou[0],
-//                            bou[1]);
-// FIXME
-//                    g2.drawImage(specPar.bufOffscreen, box.x - 2, box.y - 2,
-                    //                           box.x + box.width + 4, box.y + box.height + 4,
-                    //                          box.x - 2, box.y - 2, box.x + box.width + 4,
-                    //                         box.y + box.height + 4, null);
+                    // FIXME
                 } else if (selected) {
                     Rectangle box = getBox(ctr, bou);
                     Paint currentPaint = g2.getFill();
@@ -1102,10 +1051,7 @@ public class DrawPeaks {
 
                     double[] position = peak.getCorner().getPosition(x1, y1, x2, y2);
                     DisplayTypes disType = peakAttr.getDisplayType();
-                    if (null == disType) {
-//                        g2.setStroke(peakOvalStroke);
-//                        chart.myDrawPointer(g2, position[0], position[1], xc, yc);
-                    } else {
+                    if (disType != null) {
                         switch (disType) {
                             case Peak:
                                 g2.beginPath();
@@ -1196,7 +1142,6 @@ public class DrawPeaks {
                 Peak p1 = connPeaks.getPeaks().get(i);
                 Peak p2 = connPeaks.getPeaks().get(j);
                 if (p1 != null && p2 != null) {
-                    //g2.save();
                     PeakDim p1x = p1.peakDims[dim[0]];
                     PeakDim p1y = p1.peakDims[dim[1]];
                     PeakDim p2x = p2.peakDims[dim[0]];
@@ -1521,24 +1466,11 @@ public class DrawPeaks {
             }
             g2.beginPath();
             BezierPath.makeBezierCurve(bpCoords, 1, g2, 1.0, x, 0.0, 1.0, 1.0, xAxis, yAxis);
-            //            GraphicsContextInterface gC, double smoothValue, double xOffset, double yOffset, double width, double height, NMRAxis xAxis, NMRAxis yAxis) throws GraphicsIOException {
 
             g2.stroke();
-
         }
-//
-//        void erase(GraphicsContextInterface g2) {
-//            //  Rectangle textBox = chart.getTextBox(g2,x,textY, label , anchorS,0);
-//            //   g2.drawImage(spectrum.bufOffscreen,textBox.x-1,textBox.y-14,textBox.x+textBox.width+2,textBox.y+textBox.height+14,
-//            //           textBox.x-1,textBox.y-14,textBox.x+textBox.width+2,textBox.y+textBox.height+14,null);
-//        }
-//
 
         void renderToMulti(GraphicsContextInterface g2, boolean eraseFirst, float mX) throws GraphicsIOException {
-            if (eraseFirst) {
-                // erase(g2);
-            }
-
             if ((peak.getStatus() < 0) || !peak.isValid()) {
                 return;
             }

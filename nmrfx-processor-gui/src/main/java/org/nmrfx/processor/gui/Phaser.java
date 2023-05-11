@@ -200,7 +200,6 @@ public class Phaser {
             chart.setPh0(deltaPH0);
             chart.layoutPlotChildren();
         } else {
-            //chart.setPh0(sliderPH0);
             chart.setPh0(deltaPH0);
             chart.getCrossHairs().refreshCrossHairs();
         }
@@ -236,8 +235,6 @@ public class Phaser {
             chart.setPh1(deltaPH1);
             chart.layoutPlotChildren();
         } else {
-            //chart.setPh0(sliderPH0);
-            //chart.setPh1(sliderPH1);
             chart.setPh0(deltaPH0);
             chart.setPh1(deltaPH1);
             chart.getCrossHairs().refreshCrossHairs();
@@ -321,8 +318,6 @@ public class Phaser {
         if (phaseDim >= 0) {
             chart.setPhaseDim(phaseDim);
             getPhaseOp();
-            //handlePh1Reset(chart.getPh1());
-            //handlePh0Reset(chart.getPh0());
         } else {
             chart.datasetPhaseDim = 0;
             handlePh1Reset(0.0);
@@ -364,8 +359,6 @@ public class Phaser {
                 chart.setPh1(0.0);
                 chart.layoutPlotChildren();
             } else if (phaseDim.equals(controller.chartProcessor.getVecDimName().substring(1))) {
-                //double newph0 = ph0 + chart.getDataPH0();
-                //double newph1 = ph1 + chart.getDataPH1();
                 double newph0 = ph0;
                 double newph1 = ph1;
                 double deltaPH0 = ph0 - chart.getDataPH0();
@@ -375,8 +368,6 @@ public class Phaser {
                 if (chart.processorController != null) {
                     setPhaseOp(opString);
                 }
-                //chart.setPh0(ph0);
-                //chart.setPh1(ph1);
                 chart.setPh0(deltaPH0);
                 chart.setPh1(deltaPH1);
                 chart.getCrossHairs().refreshCrossHairs();

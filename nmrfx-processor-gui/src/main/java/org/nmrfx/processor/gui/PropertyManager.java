@@ -93,11 +93,6 @@ public class PropertyManager {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
                 PropertySheet.Item item = (PropertySheet.Item) observableValue;
-                if (item.getCategory().equals("PHASE")) {
-                    if (item.getName().equals("ph0") || item.getName().equals("ph1")) {
-                        //updatePhases(item, number, number2);
-                    }
-                }
                 updateOp((PropertySheet.Item) observableValue);
             }
         };

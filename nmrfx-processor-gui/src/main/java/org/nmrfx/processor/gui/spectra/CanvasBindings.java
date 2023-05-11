@@ -161,9 +161,5 @@ public class CanvasBindings {
                 chart.getGestureBindings().scroll(event);
             }
         });
-        mouseNode.focusedProperty().addListener(e -> {
-            //chart.setActiveChart();
-        });
     }
-
 }

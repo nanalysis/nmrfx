@@ -120,8 +120,6 @@ public class OperationInfo {
         "MULT", //"SCRIPT"
     };
 
-//    public final static String[] opOrders = {"BZ","TDCOMB","EA","DCFID", "TDSS", "IST", "LP", "EXPD", "SB", "ZF", "FT",
-//        "IFT", "FDSS", "PHASE", "COMB", "REAL", "DC", "BCPOLY", "BCWHIT", "REVERSE", "EXTRACT", "HFT"};
     public final static ArrayList<String> opOrderList = new ArrayList<>();
 
     static {

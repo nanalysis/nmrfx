@@ -742,7 +742,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
             PreferencesController.saveRecentFiles(dataset.getFile().toString());
         }
 
-        //dataset.setScale(1.0);
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
         getActiveChart().setCrossHairState(true, true, true, true);
         getActiveChart().clearAnnotations();
@@ -1314,7 +1313,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
             MainApp.setStageFontSize(stage, MainApp.REG_FONT_SIZE_STR);
             controller = loader.<FXMLController>getController();
             controller.stage = stage;
-            //controllers.add(controller);
             FXMLController myController = controller;
             stage.focusedProperty().addListener(e -> myController.setActiveController(e));
             controller.setActiveController();
@@ -1421,13 +1419,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         enableFavoriteButton();
         buttons.add(favoriteButton);
         buttons.add(new Separator(Orientation.VERTICAL));
-        // bButton.disableProperty().bind(Project.getActive());
 
-        /* Disabled till clipping problem fixed
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.PRINT, "Print", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> printAction(e));
-        buttons.add(bButton);
-         */
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> getActiveChart().refresh());
         buttons.add(bButton);
@@ -1729,8 +1721,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
             chartGroup.requestLayout();
             for (PolyChart refreshChart : charts) {
-//                refreshChart.requestLayout();
-//                refreshChart.layout();
                 refreshChart.layoutPlotChildren();
             }
         }
@@ -1740,7 +1730,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
         charts.add(chart);
         chart.setChartDisabled(true);
-        // chart.setController(this);
         chartGroup.addChart(chart);
         activeChart = chart;
     }
@@ -1755,7 +1744,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
         charts.add(chart);
         chart.setController(this);
-        // chartGroup.setOrientation(orient, false);
         if ((pos % 2) == 0) {
             chartGroup.addChart(0, chart);
         } else {
@@ -1804,7 +1792,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     iChart.yAxis.setLowerBound(yLower);
                     iChart.yAxis.setUpperBound(yUpper);
                     iChart.getCrossHairs().setCrossHairState(true);
-                    //iChart.refresh();
                 }
                 setChartDisable(false);
                 chartGroup.layoutChildren();
@@ -1923,9 +1910,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void redrawChildren() {
         // fixme
-//        chartGroup.getChildrenUnmodifiable().stream().map((node) -> (PolyChart) node).forEachOrdered((chart) -> {
-//            chart.layoutPlotChildren();
-//        });
     }
 
     public void draw() {
@@ -2004,7 +1988,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         refList.clearSearchDims();
         refList.addSearchDim(dimName1, 0.05);
         refList.addSearchDim(dimName2, 0.1);
-        //refList.clusterPeaks();
         int[] dims = activeAttr.dim.clone();
 
         for (int i = 2; i < dims.length; i++) {
@@ -2020,7 +2003,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     movingList.clearSearchDims();
                     movingList.addSearchDim(dimName1, 0.05);
                     movingList.addSearchDim(dimName2, 0.1);
-                    //movingList.clusterPeaks();
                     log.info("act {} {}", dataAttr.getFileName(), movingList.size());
 
                     log.info("test {}", movingList.getName());
