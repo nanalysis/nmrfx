@@ -323,7 +323,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         TableColumn<PeakListSelection, Boolean> peakListPatternColumn = new TableColumn<>("Pattern");
         peakListPatternColumn.setCellValueFactory(new PropertyValueFactory<>("pattern"));
-        // peakListPatternColumn.setCellFactory(param -> new CheckBoxTableCell<>());
         peakListPatternColumn.setEditable(false);
 
         TableColumn<PeakListSelection, Integer> peakListSizeColumn = new TableColumn<>("Size");
@@ -1014,7 +1013,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 if (!ok) {
                     sysFields[i].setText("");
                 }
-//scoreField[i].setText(String.format("%4.2f", spinMatch.score));
             }
         }
 
@@ -1939,7 +1937,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             if (iChart == 0) {
                 spinSystem.dumpPeakMatches();
             }
-            // spinSystem.dumpPeakMatches();
             Peak peak = spinSystem.getRootPeak();
             chart.clearAnnotations();
             if (peak != null && !chart.getDatasetAttributes().isEmpty()) {

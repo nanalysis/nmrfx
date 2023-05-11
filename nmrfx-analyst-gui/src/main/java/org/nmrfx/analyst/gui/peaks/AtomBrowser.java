@@ -253,13 +253,8 @@ public class AtomBrowser {
                 datasetList.add(item.dataset.getName());
                 List<String> peakListList = new ArrayList<>();
                 peakListList.add(item.peakList.getName());
-                // fixme chart.setTitle(item.dataset.getTitle());
                 chart.updateDatasets(datasetList);
                 chart.updatePeakLists(peakListList);
-                // fixme
-//                chart.getChildrenUnmodifiable().stream().filter((node) -> (node instanceof Label)).forEachOrdered((node) -> {
-//                    node.setOnMouseClicked(e -> System.out.println("Clicked node " + item.dataset.getName()));
-//                });
 
                 Double ppm = item.getShift();
                 double delta = 0.1;

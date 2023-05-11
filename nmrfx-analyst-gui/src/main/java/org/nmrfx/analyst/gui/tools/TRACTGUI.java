@@ -265,15 +265,7 @@ public class TRACTGUI {
                 errValues[i] = 1.0;
                 i++;
             }
-//            for (FileTableItem item : items) {
-//                double xValue = getXValue(item, xElem);
-//                xValues[0][i] = xValue;
-//                maxX = Math.max(xValues[0][i], maxX);
-//                xValues[1][i] = i % 2;
-//                yValues[i] = item.getDoubleExtra(yElem);
-//                errValues[i] = 1.0;
-//                i++;
-//            }
+
             tractFit.setXYE(xValues, yValues, errValues);
             PointValuePair result = tractFit.fit(); // fixme
             double[] errs = tractFit.getParErrs();
@@ -310,7 +302,6 @@ public class TRACTGUI {
     void exportBarPlotSVGAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to SVG");
-        //fileChooser.setInitialDirectory(pyController.getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
@@ -334,7 +325,6 @@ public class TRACTGUI {
     void exportData() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export data values");
-        //fileChooser.setInitialDirectory(pyController.getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try (FileWriter writer = new FileWriter(selectedFile)) {

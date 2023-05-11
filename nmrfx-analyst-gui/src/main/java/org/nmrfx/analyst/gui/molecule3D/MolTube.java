@@ -151,7 +151,6 @@ public class MolTube extends Group implements MolItem {
         TriangleMesh mesh = tesselation.makeTubeMesh(nodes.size());
         MeshView meshView = new MeshView(mesh);
         PhongMaterial material = new PhongMaterial();
-//        material.setDiffuseColor(Color.GREEN);
         material.setSpecularColor(Color.WHITE);
         meshView.setMaterial(material);
         Image image = makeTubeColors(nodes.size());

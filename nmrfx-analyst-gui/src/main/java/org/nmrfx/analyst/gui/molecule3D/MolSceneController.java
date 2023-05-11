@@ -414,7 +414,6 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                         mol.setDotBracket(dotBracket);
                         layoutSS();
                     }
-                    //dotBracketField.clear();
                 }
             }
         } catch (InvalidMoleculeException ex) {

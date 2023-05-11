@@ -143,7 +143,6 @@ public class AnalystApp extends MainApp {
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(appName);
         }
-//        ScannerController.addCreateAction(e -> updateScannerGUI(e));
         Parameters parameters = getParameters();
         System.out.println(parameters.getRaw());
 

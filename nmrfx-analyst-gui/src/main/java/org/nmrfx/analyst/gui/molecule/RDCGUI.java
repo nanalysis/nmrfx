@@ -247,13 +247,6 @@ public class RDCGUI {
         localRDCSet = rdcSet(name);
         if (localRDCSet != null) {
             List<RDC> rdcValues = new ArrayList<>(localRDCSet.get());
-
-//            if (pdbFile.getText().equals("")) {
-//                Alert alert = new Alert(Alert.AlertType.ERROR);
-//                alert.setContentText("Error: No PDB file loaded (Load PDB XYZ...).");
-//                alert.showAndWait();
-//                return;
-//            }
             System.out.println("nrdcs " + localRDCSet.getSize());
 
             RealMatrix directionMatrix = AlignmentMatrix.setupDirectionMatrix(rdcValues);
@@ -335,7 +328,6 @@ public class RDCGUI {
     void exportPlotSVGAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to SVG");
-        //fileChooser.setInitialDirectory(pyController.getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
