@@ -547,11 +547,6 @@ public class GUIProject extends ProjectBase {
         obsMap.addListener((MapChangeListener<String, Dataset>) mapChangeListener);
     }
 
-    public ObservableMap<String, Dataset> getObservableDatasetMap() {
-        ObservableMap obsMap = (ObservableMap) datasetMap;
-        return obsMap;
-    }
-
     public void checkSubDirs(Path projectDir) throws IOException {
         for (String subDir : SUB_DIR_TYPES) {
             Path subDirectory = Path.of(projectDir.toString(), subDir);
