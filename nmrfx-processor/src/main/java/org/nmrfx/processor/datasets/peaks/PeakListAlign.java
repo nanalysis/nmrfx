@@ -24,7 +24,6 @@ public class PeakListAlign {
         double[] refCenters = new double[dimNames.size()];
         double[] movingCenters = new double[dimNames.size()];
         for (int i = 0; i < dimNames.size(); i++) {
-            //refList.addSearchDim(dimNames.get(i), tols.get(i));
             refCenters[i] = refList.center(refList.getListDim(dimNames.get(i)));
         }
         System.out.println(refList.getName());
@@ -38,7 +37,6 @@ public class PeakListAlign {
             double[] deltas = new double[dimNames.size()];
 
             for (int i = 0; i < dimNames.size(); i++) {
-                //  movingList.addSearchDim(dimNames.get(i), tols.get(i));
                 movingCenters[i] = movingList.center(movingList.getListDim(dimNames.get(i)));
                 deltas[i] = movingCenters[i] - refCenters[i];
                 System.out.println(i + " " + dimNames.get(i) + " " + refCenters[i] + " " + movingCenters[i] + " " + deltas[i]);

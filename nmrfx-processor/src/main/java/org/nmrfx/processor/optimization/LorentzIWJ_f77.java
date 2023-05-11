@@ -180,7 +180,6 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
         map = new int[a.length];
         for (int iSig = 0; iSig < xy_nsig; iSig++) {
             int start = sigStarts[iSig];
-            // aCalc[start] = a[iSig];
             map[iSig + 1] = start;
         }
     }
@@ -614,8 +613,6 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
                 int nSplits = cplItems[iSig].length;
                 if ((nSplits > 1) && (cplItems[iSig][nSplits - 1].getNSplits() == 2)) {
                     for (int j = 0; j < freqs[iSig].length; j += 2) {
-                        //ampMap[jCol+j] = newCol;
-                        //ampMap[jCol+j+1] = newCol;
                         lwfrSorter.lwfrs[jCol + j].freq2 = lwfrSorter.lwfrs[jCol + j + 1].freq1;
                         lwfrSorter.lwfrs[jCol + j + 1].inActive = true;
                         lwfrSorter.lwfrs[jCol + j].partnerCol = lwfrSorter.lwfrs[jCol + j + 1].iCol;
@@ -707,7 +704,6 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
     public double[] fitSignalAmplitudesNN(double[][] A) {
         int nRows = xv.length;
 
-        //dumpMatrix(A);
         int nCols = A[0].length;
         double[] b = new double[nRows];
 
@@ -751,11 +747,5 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
         fcn.yv = new double[n];
         minimizer.xv = fcn.xv;
         minimizer.yv = fcn.yv;
-
-        //minimizer.initTestPt();
-        //minimizer.simulate(fcn.aCalc, 0.1);
-        //minimizer.dumpXY();
-        //      minimizer.randomizeGuess(0.5);
-        //minimizer.doMin();
     }
 }

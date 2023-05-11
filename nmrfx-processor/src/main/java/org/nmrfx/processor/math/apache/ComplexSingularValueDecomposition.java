@@ -129,7 +129,7 @@ public class ComplexSingularValueDecomposition {
          * Scale the bidiagonal matrix so that its elements are real.
          */
         for (k = 0; k < m; k++) {
-            xkk = xdata[k][k];// X.getEntry(k, k);
+            xkk = xdata[k][k];
 
             axkk = xkk.abs();
 
@@ -139,9 +139,7 @@ public class ComplexSingularValueDecomposition {
 
             if (k < xcol - 1) {
                 xkk1 = xdata[k][k + 1];
-                // X.setEntry(k, k + 1, xkk1.multiply(scale));
                 xdata[k][k + 1] = xkk1.multiply(scale);
-                // xdata[k][k+1] = xdata[k][k+1].multiply(scale);
             }
             scale = scale.conjugate();
             for (i = 0; i < urow; i++) {
@@ -149,13 +147,13 @@ public class ComplexSingularValueDecomposition {
             }
 
             if (k < xcol - 1) {
-                xkk1 = xdata[k][k + 1];// X.getEntry(k, k + 1);
+                xkk1 = xdata[k][k + 1];
                 axkk1 = xkk1.abs();
                 xdata[k][k + 1] = new Complex(axkk1);
                 e[k] = axkk1;
                 scale = xkk1.conjugate().divide(axkk1);
                 if (k < xrow) {
-                    xk1k1 = xdata[k][k + 1];// X.getEntry(k + 1, k + 1);
+                    xk1k1 = xdata[k][k + 1];
                     xdata[k][k + 1] = xk1k1.multiply(scale);
                 }
                 for (i = 0; i < vrow; i++) {
@@ -672,7 +670,6 @@ public class ComplexSingularValueDecomposition {
             if (x == 0 & y == 0) {
                 P.c = 1;
                 P.s = Complex.ZERO;
-                // P.zr = 0.;
                 return;
             }
 

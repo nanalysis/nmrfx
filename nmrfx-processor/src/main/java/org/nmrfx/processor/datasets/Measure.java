@@ -83,15 +83,6 @@ public class Measure {
 
     }
 
-//    public Measure(Dataset dataset) {
-//        this.datasets = new ArrayList<>();
-//        datasets.add(dataset);
-//    }
-//
-//    public Measure(List<Dataset> datasets) {
-//        this.datasets = new ArrayList<>();
-//        this.datasets.addAll(datasets);
-//    }
     public Measure(String name, int iDim, double ppm1, double ppm2) {
         this.name = name;
         this.iDim = iDim;

@@ -21,7 +21,6 @@ public abstract class DataBuffer {
 
     public abstract double get(int index);
 
-    //public abstract float[] get(float[] vector);
     public abstract float[] getBlock(int size);
 
     public abstract void put(int index, double value);

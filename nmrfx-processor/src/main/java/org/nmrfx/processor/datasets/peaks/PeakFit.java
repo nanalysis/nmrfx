@@ -468,7 +468,6 @@ public class PeakFit implements MultivariateFunction {
 
         for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
             amplitudes[iSig][iLine] = a[start + iLine];
-            //amplitudes[iSig][iLine] = 1.0;
         }
 
         CouplingPattern.jSplittings(cplItems[iSig], freqs[iSig], amplitudes[iSig]);
@@ -589,7 +588,6 @@ public class PeakFit implements MultivariateFunction {
                 }
 
                 for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-                    //amplitudes[iSig][iLine] = a[start + iLine];
                     amplitudes[iSig][iLine] = 1.0;
                 }
 
@@ -707,7 +705,6 @@ public class PeakFit implements MultivariateFunction {
     public RealVector fitSignalAmplitudesNN(RealMatrix AR) {
         int nRows = xv.length;
 
-        //dumpMatrix(A);
         int nCols = A.getColumnDimension();
         double[] b = new double[nRows];
 

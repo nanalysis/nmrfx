@@ -160,7 +160,6 @@ public class LorentzIWJ implements MultivariateFunction {
         map = new int[a.length];
         for (int iSig = 0; iSig < xy_nsig; iSig++) {
             int start = sigStarts[iSig];
-            // aCalc[start] = a[iSig];
             map[iSig + 1] = start;
         }
     }
@@ -617,25 +616,14 @@ public class LorentzIWJ implements MultivariateFunction {
             int nSplits = splitCount[iSig].length;
             if ((nSplits > 1) && (splitCount[iSig][nSplits - 1] == 2)) {
                 for (int j = 0; j < freqs[iSig].length; j += 2) {
-                    //ampMap[jCol+j] = newCol;
-                    //ampMap[jCol+j+1] = newCol;
                     LwFr lwfrsA = lwfrSorter.lwfrs.get(jCol + j);
                     LwFr lwfrsB = lwfrSorter.lwfrs.get(jCol + j + 1);
                     lwfrsA.freq2 = lwfrsB.freq1;
                     lwfrsB.inActive = true;
                     lwfrsA.partnerCol = lwfrsB.iCol;
-                    //  for (int iRow=0;iRow<nRows;iRow++) {
-                    //      A[iRow][newCol] = A[iRow][jCol+j] + A[iRow][jCol+j+1];                        
-                    //  }
                 }
                 iCol += freqs[iSig].length / 2;
             } else {
-                for (int j = 0; j < freqs[iSig].length; j++) {
-                    //ampMap[jCol+j]=newCol;
-                    //  for (int iRow=0;iRow<nRows;iRow++) {
-                    //     A[iRow][newCol] = A[iRow][jCol+j];
-                    //  }
-                }
                 iCol += freqs[iSig].length;
             }
             jCol += freqs[iSig].length;
@@ -712,8 +700,6 @@ public class LorentzIWJ implements MultivariateFunction {
 
     public double[] fitSignalAmplitudesNN(double[][] A) {
         int nRows = xv.length;
-
-        //dumpMatrix(A);
         int nCols = A[0].length;
         double[] b = new double[nRows];
 

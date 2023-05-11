@@ -31,21 +31,13 @@ public class DataRMap {
     private int vectorSize;
     private RealMatrix map;
     private VecID[] pList;
-    //private boolean[]  pCache;
-    //private double[][] vCache;
-    //private int[]      pCacheHits;
-    //private final static int cacheThreshold = 2;
 
     public DataRMap(VecID[] pList, int length) {
         this.pList = pList;
         vectorSize = length;
 
-        //pCache = new boolean[pList.length];
-        //pCacheHits = new int[pList.length];
         for (int i = 0; i < pList.length; i++) {
             this.pList[i].setVarIndex(i);
-            //pCache[i] = false;
-            //pCacheHits[i] = 0;
         }
 
         map = new Array2DRowRealMatrix(length, pList.length);
@@ -120,9 +112,6 @@ public class DataRMap {
         try {
             int vIndex = v.getVarIndex();
             map.setColumn(vIndex, data);
-            //pCache[vIndex] = false;
-            //pCacheHits[vIndex] = 0;
-            //vCache[vIndex] = null;
 
             return true;
         } catch (Exception ex) {

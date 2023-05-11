@@ -138,6 +138,5 @@ public class BrukerPar {
             value = sBuf.toString();
         }
         pmap.put(parName, value);
-//        pmap.put(parName, new BrukerPar(parName, value));
     }
 }

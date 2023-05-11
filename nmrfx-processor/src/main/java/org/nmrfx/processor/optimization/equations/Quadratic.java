@@ -69,9 +69,6 @@ public class Quadratic extends OptFunction {
 
                     double n1 = p + x + b;
                     double s1 = Math.sqrt(n1 * n1 - 4.0 * x * p);
-                    //double dn = 1.0 / (2.0 * y);
-
-                    //return dn  * n1 * s1 * (c - a);
                     return ((a - c) * ((2 * n1) / (2 * s1) - 1)) / (2 * p);
                 }
             },

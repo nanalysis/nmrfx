@@ -935,7 +935,6 @@ public class RS2DData implements NMRData {
         int shiftAmount = 0;
         if (groupDelay > 0) {
             // fixme which is correct (use ceil or not)
-            //shiftAmount = (int)Math.round(Math.ceil(groupDelay));
             shiftAmount = (int) Math.round(groupDelay);
         }
         if (dvec.isComplex()) {

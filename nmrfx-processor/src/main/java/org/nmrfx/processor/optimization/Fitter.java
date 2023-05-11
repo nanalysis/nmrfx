@@ -295,7 +295,6 @@ public class Fitter {
             random.setSeed(1);
             double lambdaMul = 3.0;
             int lambda = (int) (lambdaMul * FastMath.round(4 + 3 * FastMath.log(guess.length)));
-            //int nSteps = guess.length*1000;
             int nSteps = 2000;
             double stopFitness = 0.0;
             int diagOnly = 0;
@@ -308,7 +307,6 @@ public class Fitter {
             double[] normGuess = normalize(guess);
             fixGuesses(normGuess);
 
-            //new Checker(100 * Precision.EPSILON, 100 * Precision.SAFE_MIN, nSteps));
             CMAESOptimizer cmaesOptimizer = new CMAESOptimizer(nSteps, stopFitness, true, diagOnly, 0,
                     random, true,
                     new Checker(tol, tol, nSteps));

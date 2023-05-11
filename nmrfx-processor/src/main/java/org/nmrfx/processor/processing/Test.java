@@ -38,9 +38,7 @@ public class Test {
 
         processor.opendata("/home/johnsonb/Development/NMRView/9.1/dcengine/target/dcengine-9.1.0-b1-bin/dcengine-9.1.0-b1/cnnoe-py.nv", true);
 
-        //defaultProcess.addOperation(new Expd(1.0, 1.0));
         defaultProcess.addOperation(new Hft());
-        //defaultProcess.addOperation(new Fdss(-1, -1, -1, false));
         defaultProcess.addOperation(new Phase(p0, p1, false));
         defaultProcess.addOperation(new Real());
         defaultProcess.addOperation(new WriteVector());

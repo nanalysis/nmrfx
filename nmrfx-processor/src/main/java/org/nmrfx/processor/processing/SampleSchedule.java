@@ -444,7 +444,6 @@ public class SampleSchedule {
         } else {
             randomWell = new Well19937c();
         }
-//        RandomDataGenerator rData = new RandomDataGenerator(randomWell);
 
         do {
             i = 0;
@@ -456,7 +455,6 @@ public class SampleSchedule {
                 i++;
                 arg = adj * Math.sin(HALF_PI * (double) (i + 0.5) / (double) (nPoints + 1.0));
                 k = poisson(arg);
-//                k = (int) rData.nextPoisson(arg);  // alternate to poisson()
                 // ex: adj init = 6, sin between 0 and 1
                 i += k;
                 n++;
@@ -589,7 +587,6 @@ public class SampleSchedule {
                             sampLen = sc.length;
                             samp = new int[sampLen];
                         }
-                        // sd = sd.replaceAll("[^0-9]+", "");
                         sd = pat.matcher(sd).replaceAll("");
                         k = -1;
                         try {
@@ -707,15 +704,11 @@ public class SampleSchedule {
      */
     public static void main(String[] args) {
         SampleSchedule ss;
-//        ss = new SampleSchedule(64, 256);
-//        ss = new SampleSchedule(2, 8);
         ss = new SampleSchedule(32, 128);
-//        ss = new SampleSchedule(32, 128, 22433778);
         ss.createArray();
         ss.writeFile();
         ss.readFile();
 
-//        ss = new SampleSchedule("/tmp/sample_schedule.txt");
         ss.display();
         System.out.println("DONE");
     }

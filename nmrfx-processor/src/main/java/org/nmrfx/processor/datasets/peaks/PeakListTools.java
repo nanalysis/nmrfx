@@ -781,8 +781,6 @@ public class PeakListTools {
         }
         MatchFunction f = new MatchFunction(minDim);
         double tolAbs = 1E-6;
-        //UnivariateRealPointValuePairChecker cCheck = new UnivariateRealPointValuePairChecker();
-        //BrentOptimizer brentOptimizer = new BrentOptimizer(tolAbs*10.0,tolAbs,cCheck);
         BrentOptimizer brentOptimizer = new BrentOptimizer(tolAbs * 10.0, tolAbs);
         try {
             UnivariatePointValuePair optValue = brentOptimizer.optimize(100, f, GoalType.MINIMIZE, min, max);
@@ -855,7 +853,6 @@ public class PeakListTools {
         int n = peakList.size();
         double[][] proximity = new double[n][n];
         for (Peak peakA : peakList.peaks()) {
-            // PeakList.unLinkPeak(peakA, iDim);
             double shiftA = peakA.getPeakDim(iDim).getChemShiftValue();
             for (Peak peakB : peakList.peaks()) {
                 double shiftB = peakB.getPeakDim(iDim).getChemShiftValue();
@@ -1357,7 +1354,6 @@ public class PeakListTools {
             syncPars = new int[peaks.size() * 2][2];
         }
 
-        //int k=0;
         for (int i = 0; i < nPeakDim; i++) {
             pdim[i] = -1;
             meanDimWidth[i] = peakList.widthDStatsPPM(i).getMean();
@@ -1599,7 +1595,6 @@ public class PeakListTools {
                 nFloating++;
             }
         }
-        //int nInterpolationPoints = (nFloating + 1) * (nFloating + 2) / 2;
         int nInterpolationPoints = 2 * nFloating + 1;
         int nSteps = nInterpolationPoints * 5;
         PointValuePair result;
@@ -1636,10 +1631,8 @@ public class PeakListTools {
                     int dDim = pdim[pkDim];
                     PeakDim peakDim = peak.getPeakDim(pkDim);
                     double lineWidth = theFile.ptWidthToPPM(dDim, values[index]);
-                    //double lineWidthHz = theFile.ptWidthToHz(iDim, values[index++]);
                     double lineWidthHz = values[index++];
                     peakDim.setLineWidthValue((float) lineWidth);
-                    //lineWidthAll *= lineWidthHz * (Math.PI / 2.0);
                     lineWidthAll *= lineWidthHz;
                     peakDim.setBoundsValue((float) (lineWidth * 1.5));
                     peakDim.setChemShiftValueNoCheck((float) theFile.pointToPPM(dDim, values[index++]));
@@ -1672,9 +1665,7 @@ public class PeakListTools {
                 }
                 double lineWidthAll = 1.0;
                 for (int iDim = 0; iDim < peak.peakList.nDim; iDim++) {
-                    //double lineWidthHz = theFile.ptWidthToHz(iDim, values[index++]);
                     double lineWidthHz = values[index++];
-                    //lineWidthAll *= lineWidthHz * (Math.PI / 2.0);
                     lineWidthAll *= lineWidthHz;
                     String elem = (iDim + 1) + ".WH";
                     peakData.add(elem);

@@ -334,21 +334,16 @@ public class LinearPrediction {
      */
     //functions involving Zsvd to work on later
     public static FieldMatrix<Complex> PInv(Array2DRowFieldMatrix<Complex> A, int nSingular) {
-        //Zsvd zsvd = null;
-        //Zmat Ainv = null;
         ComplexSingularValueDecomposition csvd;
         FieldMatrix<Complex> Ainv;
 
         try {
-            //zsvd = new Zsvd(A);
             csvd = new ComplexSingularValueDecomposition(A);
         } catch (Exception jpE) {
             System.out.println(jpE.getMessage());
             return null;
         }
 
-        //Zdiagmat s = zsvd.S;
-        //Zmat Sinv = new Zmat(A.nr, A.nc);
         FieldDiagonalMatrix<Complex> s = csvd.S;
         FieldMatrix<Complex> Sinv = new Array2DRowFieldMatrix<>(
                 ComplexField.getInstance(), A.getRowDimension(),
@@ -356,7 +351,6 @@ public class LinearPrediction {
 
         for (int i = 0; i < nSingular; i++) {
             Complex z = s.getEntry(i, i);
-            //z = z.Div(new Z(Z.ONE), z);
             Sinv.setEntry(i, i, z.reciprocal());
         }
 
@@ -366,7 +360,6 @@ public class LinearPrediction {
         ComplexMatrixConjugateTranspose cmcj = new ComplexMatrixConjugateTranspose();
         Sinv.walkInOptimizedOrder(cmcj);
 
-        //Zmat Vs = Times.o(V, H.o(Sinv));
         FieldMatrix<Complex> Vs = V.multiply(Sinv);
         U.walkInOptimizedOrder(new ComplexMatrixConjugateTranspose());
         Ainv = Vs.multiply(U);
@@ -524,13 +517,7 @@ public class LinearPrediction {
         ComplexSingularValueDecomposition csvd = new ComplexSingularValueDecomposition(chqrd.R);
         FieldMatrix<Complex> U1 = csvd.U;
         FieldMatrix<Complex> U = chqrd.qb(U1);
-        /*
-         zsvd = new Zsvd(A);
-         U = zsvd.U;
-         */
-
         FieldDiagonalMatrix<Complex> s = csvd.S;
-//        Zmat Sinv = new Zmat(A.nr, A.nc);
 
         try {
             for (int i = 0; i < s.getRowDimension(); i++) {
@@ -547,9 +534,8 @@ public class LinearPrediction {
             FieldMatrix<Complex> V = csvd.V;
             FieldMatrix<Complex> Vs = V.multiply(s);
             FieldMatrix<Complex> Ur = U.getSubMatrix(0, U.getRowDimension() - 1, 0, s.getRowDimension() - 1);
-            Ur.walkInOptimizedOrder(new ComplexMatrixConjugateTranspose()); //H.o(Ur);
+            Ur.walkInOptimizedOrder(new ComplexMatrixConjugateTranspose());
 
-            //Ainv = Times.o(Vs, H.o(Ur));
             Ainv = Vs.multiply(Ur);
 
         } catch (OutOfRangeException | NumberIsTooLargeException | DimensionMismatchException | NumberIsTooSmallException e) {

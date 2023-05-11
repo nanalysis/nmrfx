@@ -206,7 +206,6 @@ public class VNMRPar {
             return valueList;
         } else {
             String[] fields = attrLine.split("\\s");
-//            String subtype = fields[1];
             String type = fields[2];
             String active = fields[9];
 

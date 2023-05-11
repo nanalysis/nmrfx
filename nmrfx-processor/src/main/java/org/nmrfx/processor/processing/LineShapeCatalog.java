@@ -91,15 +91,6 @@ public class LineShapeCatalog {
         double fOffset = frac * sw / vec.getSize();
         vec.genSignalHz(fOffset, lw, 1.0, 0.0);
         vec.set(0, vec.getReal(0) * 0.5, vec.getImag(0) * 0.5);
-//        double rExp = 1.0 / (lw * Math.PI);
-//        for (int i = 0; i < n; i++) {
-//            double t = i * dwell;
-//            double rValue = Math.exp(-t / rExp);
-//            if (i == 0) {
-//                rValue *= 0.5;
-//            }
-//            vec.set(i, rValue, 0.0);
-//        }
     }
 
     List<Vec> getSimVectors(int iDim) {

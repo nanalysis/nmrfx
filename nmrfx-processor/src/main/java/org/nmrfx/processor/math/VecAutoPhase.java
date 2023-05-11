@@ -84,7 +84,6 @@ public class VecAutoPhase {
             la += Math.sqrt((cvec[icenter - i].getReal() * cvec[icenter - i].getReal())
                     + (cvec[icenter - i].getImaginary() * cvec[icenter - i].getImaginary()));
 
-            //dlr = Math.sqrt(ra)-Math.sqrt(la);
             dc = cvec[icenter + i].getReal() - cvec[icenter - i].getReal();
             ds = cvec[icenter + i].getImaginary() - cvec[icenter - i].getImaginary();
             dcSum += dc;
@@ -129,14 +128,6 @@ public class VecAutoPhase {
         }
 
         newphase = (newphase * 180.0) / Math.PI;
-
-        /*
-         if (Math.abs (dcc) > Math.abs (dsc)) {
-         newphase = newphase * 180.0 / Math.PI + 90.0;
-         } else {
-         newphase = newphase * 180.0 / Math.PI;
-         }
-         */
         return (newphase);
     }
 

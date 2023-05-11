@@ -43,22 +43,7 @@ public class Cwtd extends Operation {
 
     private void cwtd(Vec vector) throws ProcessingException {
         int size = vector.getSize(); //operation specific or vector specific?
-//        Object vectorObject;
-//        //We only processing the vector through vectorObject.
-//        if (vector.isComplex())
-//            vectorObject = vector.getCvec();
-//        else
-//            vectorObject = vector.getRvec();
-//        
         boolean complex = vector.isComplex();
-//        double[] vec = null;
-//        Complex[] cvec = null;
-//        if (vectorObject instanceof double[]) {
-//            vec = (double[]) vectorObject;
-//        } else if (vectorObject instanceof Complex[]) {
-//            cvec = (Complex[]) vectorObject;
-//            complex = true;
-//        }
 
         int m = size;
         double[] reVec = new double[m];
@@ -89,11 +74,8 @@ public class Cwtd extends Operation {
                 if (complex) {
                     reSum += vector.getReal(j) * psi;
                     imSum += vector.getImag(j) * psi;
-                    //reSum += cvec[j].getReal() * psi;
-                    //imSum += cvec[j].getImaginary() * psi;
                 } else {
                     reSum += vector.getReal(j) * psi;
-                    //reSum += vec[j] * psi;
                 }
             }
             if (complex) {
@@ -113,11 +95,9 @@ public class Cwtd extends Operation {
         } else {
             for (int i = 0; i < halfWin; i++) {
                 vector.set(i, 0.0);
-                //vec[i] = 0.0;
             }
             for (int i = halfWin; i < m; i++) {
                 vector.set(i, reVec[i - halfWin]);
-                //vec[i] = reVec[i - halfWin];
             }
         }
     }

@@ -874,9 +874,6 @@ public interface NMRData {
         rData.setTn(getTN(0));
         rData.setVnd(getVendor());
         rData.setNv(getNVectors());
-//        rData.setSample(getSample());
-//        rData.setIso(getIsotope());
-//        rData.setNb(getNotebook());
         rData.setTime(getZonedDate().format(DateTimeFormatter.ISO_DATE_TIME));
         return rData;
     }

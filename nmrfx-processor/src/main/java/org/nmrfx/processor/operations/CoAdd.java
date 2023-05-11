@@ -42,7 +42,6 @@ public class CoAdd extends Operation {
 
     public CoAdd eval(Vec vector) {
         throw new OperationException("Cannot combine a single Vec");
-        //return this;
     }
 
     @Override

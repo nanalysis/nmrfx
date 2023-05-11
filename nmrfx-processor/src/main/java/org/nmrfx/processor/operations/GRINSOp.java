@@ -194,7 +194,6 @@ public class GRINSOp extends MatrixOperation {
             log.error("Error in GRINS nus", e);
             throw new ProcessingException(e.getLocalizedMessage());
         }
-        //PyObject obj = interpreter.get("a");
         return this;
     }
 

@@ -264,7 +264,6 @@ public class PeakFitter {
         int dataDim = theFile.getNDim();
         rootedPeaks = true;
         boolean fitShape = fitParameters.shapeParameters().fitShape();
-        //int k=0;
         if (i0 > i1) {
             int hold = i0;
             i0 = i1;
@@ -300,8 +299,6 @@ public class PeakFitter {
         double[] guesses = new double[guessList.size()];
         double[] lower = new double[guesses.length];
         double[] upper = new double[guesses.length];
-        //            lw  f   j  d         lw  f  j d
-        //double[] a =     {2,   15, 10,30, 2, 59, 10, 5000};
 
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             double lineWidth = Math.abs(((Double) guessList.get(iGuess)));
@@ -614,7 +611,6 @@ public class PeakFitter {
         Arrays.sort(peaks, comparing((p) -> -p.getPeakDim(0).getChemShiftValue()));
         int nShapePar = fitShape ? 1 : 0;
 
-        //int k=0;
         if (i0 > i1) {
             int hold = i0;
             i0 = i1;
@@ -675,8 +671,6 @@ public class PeakFitter {
         for (int j = 0; j < size; j++) {
             yv[j + extra] = fitVec.getReal(j);
         }
-        //            lw  f   j  d         lw  f  j d
-        //double[] a =     {2,   15, 10,30, 2, 59, 10, 5000};
         PeakList peakList = peaks[0].getPeakList();
         double minWidth = 2;
         double maxWidth = 0.0;
@@ -811,7 +805,6 @@ public class PeakFitter {
             i0 = i1;
             i1 = hold;
         }
-        //int k=0;
         int[] fitDim = new int[dataDim];
         List<AbsMultipletComponent> absComps = new ArrayList<>();
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
@@ -906,12 +899,10 @@ public class PeakFitter {
 
         guesses[0] = lwSum / absComps.size();
 
-        //k = 1;
         k = 2;
         for (int iPeak = 0; iPeak < nComps; iPeak++) {
             guesses[k] = guesses[k] - pt[0][0];
 
-            //k += 3;
             k += 2;
         }
 
@@ -922,10 +913,8 @@ public class PeakFitter {
         // the function so pt should not be modified.
         theFile.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(pt, theFile.getComplex(pdim[0])), fitDim, fitVec);
 
-        //LmdifTest_f77  lmdifTest = new LmdifTest_f77();
         Lmder_f77 lmdifTest = new Lmder_f77();
 
-        //int extra = size/2;
         int extra = 0;
         lmdifTest.setLengths(size + (2 * extra));
         double[] values = lmdifTest.getArray(0);
@@ -944,11 +933,9 @@ public class PeakFitter {
             values[j + extra] = fitVec.getReal(j);
         }
 
-        //lmdifTest.setFunc(8);
         lmdifTest.setFunc(11);
         lmdifTest.setN(guesses.length);
 
-        //lmdifTest.initpt();
         lmdifTest.initpt0offset(guesses);
 
         if (!doFit) {
@@ -975,7 +962,6 @@ public class PeakFitter {
 
             double[] pars = lmdifTest.getPars();
 
-            //k=1;
             k = 2;
             for (int iPeak = 0; iPeak < nComps; iPeak++) {
                 k++;

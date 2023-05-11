@@ -151,34 +151,6 @@ public class PeakNetworkMatch {
 
         matchResult = doBPMatch(iMList, offsets[0], jMList, offsets[1], tol, true);
         System.out.println(matchResult.score);
-//        int[] matching = matchResult.matching;
-//        TclObject resultList = TclList.newInstance();
-//        for (int i = 0; i < iMList.size(); i++) {
-//            MatchItem iItem = iMList.get(i);
-//            if ((matching[i] >= 0) && (matching[i] < jMList.size())) {
-//                MatchItem jItem = jMList.get(matching[i]);
-//                Peak iPeak = (Peak) iList.getPeak(iItem.itemIndex);
-//                Peak jPeak = (Peak) jList.getPeak(jItem.itemIndex);
-//                double deltaSqSum = getMatchingDistanceSq(iItem, offsets[0], jItem, offsets[1], tol);
-//                double delta = Math.sqrt(deltaSqSum);
-//                TclList.append(interp, resultList, TclString.newInstance(iPeak.getIdNum() + " " + jPeak.getIdNum() + " " + delta));
-//            }
-//
-//        }
-//        TclObject result = TclList.newInstance();
-//        TclList.append(interp, result, TclString.newInstance("score"));
-//        TclList.append(interp, result, TclDouble.newInstance(matchResult.score));
-//        TclList.append(interp, result, TclString.newInstance("nMatches"));
-//        TclList.append(interp, result, TclInteger.newInstance(matchResult.nMatches));
-//        TclList.append(interp, result, TclString.newInstance("offsets"));
-//        TclObject offsetList = TclList.newInstance();
-//        for (int k = 0; k < dimsI.length; k++) {
-//            TclList.append(interp, offsetList, TclDouble.newInstance(offsets[0][k]));
-//        }
-//
-//        TclList.append(interp, result, offsetList);
-//        TclList.append(interp, result, TclString.newInstance("matches"));
-//        TclList.append(interp, result, resultList);
     }
 
     void bpMatchList(String[] dimNamesI, double[][] tols, double[][] offsets,

@@ -401,7 +401,6 @@ public class Lmder_f77 {
                 int iAmp = 0;
 
                 for (int j = 2; j < aCalc.length; j += 2) {
-                    // aCalc[j] *= amps.get(iAmp);
                     aCalc[j] = amps[iAmp];
                     iAmp++;
                 }
@@ -432,13 +431,10 @@ public class Lmder_f77 {
             int iAmp = 0;
 
             for (int j = 2; j < aCalc.length; j += 2) {
-                // aCalc[j] *= amps.get(iAmp);
                 aCalc[j] = amps[iAmp];
                 iAmp++;
             }
         }
-
-        //System.out.println("Initial rmsd: " + rmsd1 + "Final rmsd: " + rmsd3);
     }
 
     public static void lmder1_f77(Lmder_fcn nlls, int m, int n, double[] x,
@@ -866,21 +862,12 @@ public class Lmder_f77 {
         double[] diag = new double[n + 1];
         double[] qtf = new double[n + 1];
 
-        //      double factor,ftol,gtol,xtol,zero;
         double factor;
-
-        //      double factor,ftol,gtol,xtol,zero;
         double ftol;
-
-        //      double factor,ftol,gtol,xtol,zero;
         double gtol;
-
-        //      double factor,ftol,gtol,xtol,zero;
         double xtol;
 
         factor = 1.0e+2;
-
-        //      zero = 0.0;
         info[1] = 0;
 
         // Check the input parameters for errors.
@@ -1818,7 +1805,6 @@ public class Lmder_f77 {
             int iAmp = 0;
 
             for (int j = 2; j < aCalc.length; j += 2) {
-                // aCalc[j] *= amps.get(iAmp);
                 aCalc[j] = amps[iAmp];
                 iAmp++;
             }
@@ -1913,8 +1899,6 @@ public class Lmder_f77 {
 
         public double calculateOneSig(double[] a, int iSig, double x) {
             int start = (iSig * 2) + 2;
-
-            // double y = a[start]*lShape(a,start,x,0);
             double y = lShape(a, start, x, 0);
 
             if (a[start] < 0) {
