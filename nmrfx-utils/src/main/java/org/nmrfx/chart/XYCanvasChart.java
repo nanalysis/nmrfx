@@ -17,9 +17,6 @@
  */
 package org.nmrfx.chart;
 
-import java.io.File;
-import java.util.List;
-import java.util.Optional;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
@@ -37,6 +34,10 @@ import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.List;
+import java.util.Optional;
 
 /**
  *
@@ -446,10 +447,6 @@ public class XYCanvasChart {
             }
         }
         return hitOpt;
-    }
-
-    public void addLines(double[] x, double[] y, boolean symbol) {
-        addLines(x, y, symbol, null);
     }
 
     public void addLines(double[] x, double[] y, boolean symbol, Color color) {

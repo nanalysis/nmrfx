@@ -29,7 +29,6 @@ public class PlotApp extends Application {
 
     static private boolean launched = false;
     static private PlotApp myApp = null;
-    static int iStage = -1;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -40,20 +39,7 @@ public class PlotApp extends Application {
         plotManager.showCanvasNow();
     }
 
-    public static void setLaunched() {
-        launched = true;
-    }
-
-    public static void exitApp() {
-        Platform.exit();
-        System.exit(0);
-    }
-
     public static void initApp() {
-        initApp(false);
-    }
-
-    public static void initApp(final boolean showStage) {
         if (!launched) {
             launched = true;
             Thread thread = new Thread() {
