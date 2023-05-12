@@ -21,6 +21,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.FileChooser;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
@@ -173,7 +174,7 @@ public class ChartProcessor {
     static double[] hyperRCoefs = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
     public ChartProcessor(ProcessorController processorController) {
-        interpreter = MainApp.interpreter;
+        interpreter = AnalystApp.interpreter;
         this.processorController = processorController;
         PyObject pyDocObject = interpreter.eval("getDocs()");
         pyDocs = (ArrayList) pyDocObject.__tojava__(java.util.ArrayList.class);

@@ -3,6 +3,7 @@ package org.nmrfx.processor.gui;
 import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.Dataset;
@@ -756,7 +757,7 @@ public class GUIScripter {
     }
 
     public List<Stage> getStages() {
-        return MainApp.getStages();
+        return AnalystApp.getStages();
     }
 
     public AnnoShape addPolyLine(List<Double> xList, List<Double> yList, String strokeName, double lineWidth) {
@@ -784,7 +785,7 @@ public class GUIScripter {
     public static void chartCommand(String keyStr, PolyChart chart) {
         PolyChart currentActive = PolyChart.getActiveChart();
         chart.setActiveChart();
-        InteractiveInterpreter interp = MainApp.getInterpreter();
+        InteractiveInterpreter interp = AnalystApp.getInterpreter();
         interp.exec(keyActions.get(keyStr));
         currentActive.setActiveChart();
     }

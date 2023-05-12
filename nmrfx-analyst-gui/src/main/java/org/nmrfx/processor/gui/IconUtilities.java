@@ -26,9 +26,8 @@ package org.nmrfx.processor.gui;
 import javafx.scene.ImageCursor;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import org.controlsfx.glyphfont.Glyph;
-import org.controlsfx.glyphfont.GlyphFont;
 import org.controlsfx.glyphfont.GlyphFontRegistry;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +49,7 @@ public class IconUtilities {
         Image imageIcon = new Image("/images/" + name + ".png", false);
         ImageView imageView = new ImageView(imageIcon);
         try {
-            double size = Double.parseDouble(MainApp.ICON_SIZE_STR.replaceAll("[^\\d.]", ""));
+            double size = Double.parseDouble(AnalystApp.ICON_SIZE_STR.replaceAll("[^\\d.]", ""));
             imageView.setFitHeight(size);
             imageView.setFitWidth(size);
         } catch (NumberFormatException e) {

@@ -23,6 +23,7 @@ import javafx.geometry.Bounds;
 import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.annotations.AnnoText;
@@ -112,7 +113,7 @@ public class MouseBindings {
 
     boolean isPopupTrigger(MouseEvent mouseEvent) {
         boolean popUpTrigger = mouseEvent.isPopupTrigger();
-        if (MainApp.isMac()) {
+        if (AnalystApp.isMac()) {
             popUpTrigger = popUpTrigger || mouseEvent.isControlDown();
         }
         return popUpTrigger;
@@ -137,12 +138,12 @@ public class MouseBindings {
     private void showPopOver() {
         if (waitingForPopover.get()) {
             Bounds objectBounds = chart.getCanvas().localToScreen(currentBounds);
-            MainApp.getMainApp().showPopover(chart, objectBounds, currentSelection);
+            AnalystApp.getMainApp().showPopover(chart, objectBounds, currentSelection);
         }
     }
 
     private void hidePopOver(boolean always) {
-        MainApp.getMainApp().hidePopover(always);
+        AnalystApp.getMainApp().hidePopover(always);
     }
 
     private void showAfterDelay() {

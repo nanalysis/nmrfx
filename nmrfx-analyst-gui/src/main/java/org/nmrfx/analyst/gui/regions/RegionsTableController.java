@@ -16,12 +16,12 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.tools.SimplePeakRegionTool;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.DatasetRegionsListListener;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.utils.FileUtils;
@@ -215,7 +215,7 @@ public class RegionsTableController implements Initializable {
         if (regionFile != null) {
             try {
                 Analyzer analyzer = Analyzer.getAnalyzer((Dataset) chart.getDataset());
-                MainApp.getShapePrefs(analyzer.getFitParameters());
+                AnalystApp.getShapePrefs(analyzer.getFitParameters());
                 analyzer.loadRegions(regionFile);
                 updateActiveChartRegions();
                 chart.chartProps.setIntegrals(true);

@@ -678,7 +678,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         }
     }
 
-    void refresh() {
+    public void refresh() {
         tableView.refresh();
     }
 

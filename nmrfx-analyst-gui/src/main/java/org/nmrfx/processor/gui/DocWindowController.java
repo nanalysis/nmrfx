@@ -34,6 +34,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +71,7 @@ public class DocWindowController implements Initializable {
             if (stage != null) {
                 stage.show();
             } else {
-                MainApp.docWindowController = this;
+                AnalystApp.docWindowController = this;
 
                 Parent root = FXMLLoader.load(DocWindowController.class.getResource("/fxml/DocScene.fxml"));
                 System.out.println("made root");
