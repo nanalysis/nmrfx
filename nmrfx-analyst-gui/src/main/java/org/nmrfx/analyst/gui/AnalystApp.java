@@ -88,7 +88,6 @@ public class AnalystApp extends Application {
     private static DatasetsController datasetController;
     private static HostServices hostServices;
     private static AnalystApp mainApp = null;
-    private static boolean isAnalyst = false;
     private static AnalystApp analystApp = null;
     private static MenuBar mainMenuBar = null;
     private static FileMenuActions fileMenuActions;
@@ -115,7 +114,6 @@ public class AnalystApp extends Application {
         if ("BASIC".equalsIgnoreCase(nmrfxAdvanced)) {
             startInAdvanced = false;
         }
-        AnalystApp.setAnalyst();
         mainApp = this;
         analystApp = this;
         FXMLController.create(stage);
@@ -164,10 +162,6 @@ public class AnalystApp extends Application {
 
     public static boolean isMac() {
         return SystemUtils.IS_OS_MAC;
-    }
-
-    public static void setAnalyst() {
-        isAnalyst = true;
     }
 
     public static String getVersion() {
@@ -718,10 +712,6 @@ public class AnalystApp extends Application {
                 }
             }
         }
-    }
-
-    public static boolean isAnalyst() {
-        return isAnalyst;
     }
 
     public static AnalystApp getMainApp() {
