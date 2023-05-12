@@ -78,16 +78,18 @@ public class AnalystApp extends Application {
     // The default font size
     public static final String REG_FONT_SIZE_STR = "9pt";
     private static final PopOverTools popoverTool = new PopOverTools();
-    public static ArrayList<Stage> stages = new ArrayList<>();
+    private static final List<Stage> stages = new ArrayList<>();
+    private static final String appName = "NMRFx Analyst";
+    //XXX called by AnalystPrefs
     public static PreferencesController preferencesController;
-    public static DocWindowController docWindowController;
-    public static DatasetsController datasetController;
-    public static HostServices hostServices;
+    //XXX called by ChartProcessor's constructor
+    //TODO create specific controller / singleton to hold interpreter?
     public static InteractiveInterpreter interpreter = new InteractiveInterpreter();
-    protected static AnalystApp mainApp = null;
-    static String appName = "NMRFx Analyst";
-    static boolean isAnalyst = false;
-    static AnalystApp analystApp = null;
+    private static DatasetsController datasetController;
+    private static HostServices hostServices;
+    private static AnalystApp mainApp = null;
+    private static boolean isAnalyst = false;
+    private static AnalystApp analystApp = null;
     private static MenuBar mainMenuBar = null;
     private static FileMenuActions fileMenuActions;
     private static MoleculeMenuActions molMenuActions;
@@ -98,7 +100,6 @@ public class AnalystApp extends Application {
     private static boolean startInAdvanced = true;
     private static boolean advancedIsActive = false;
     private static ObservableMap<String, MoleculeBase> moleculeMap;
-    RunAboutSaveFrameProcessor runAboutSaveFrameProcessor;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -148,7 +149,7 @@ public class AnalystApp extends Application {
         ProjectBase.setPCS(new FxPropertyChangeSupport(this));
         ProjectBase.addPropertyChangeListener(evt -> FXMLController.getControllers().forEach(FXMLController::enableFavoriteButton));
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
-        runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
+        RunAboutSaveFrameProcessor runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STARTUP, null);

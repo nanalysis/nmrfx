@@ -23,8 +23,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import java.net.URL;
-import java.util.ResourceBundle;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -34,9 +32,11 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URL;
+import java.util.ResourceBundle;
 
 /**
  *
@@ -71,8 +71,6 @@ public class DocWindowController implements Initializable {
             if (stage != null) {
                 stage.show();
             } else {
-                AnalystApp.docWindowController = this;
-
                 Parent root = FXMLLoader.load(DocWindowController.class.getResource("/fxml/DocScene.fxml"));
                 System.out.println("made root");
 
