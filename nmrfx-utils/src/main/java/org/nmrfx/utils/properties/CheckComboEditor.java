@@ -23,7 +23,6 @@
  */
 package org.nmrfx.utils.properties;
 
-import java.util.List;
 import javafx.beans.property.SimpleListProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
@@ -58,10 +57,5 @@ public class CheckComboEditor extends AbstractPropertyEditor<Object, Node> {
     @Override
     public void setValue(Object t) {
         CheckComboBox comboBox = (CheckComboBox) getEditor();
-
-//        List<Integer> indices = (List<Integer>) t;
-//        for (var i : indices) {
-//            comboBox.getCheckModel().check(i);
-//        }
     }
 }

@@ -310,8 +310,6 @@ public class SVGWriter implements GraphicsIO {
             writer.writeEndDocument();
             writer.flush();
             writer.close();
-//            stream.flush();
-//            stream.close();
         } catch (XMLStreamException ex) {
             throw new GraphicsIOException(ex.getMessage());
         }
@@ -329,11 +327,8 @@ public class SVGWriter implements GraphicsIO {
             writer.writeAttribute("height", String.valueOf(h));
             writer.writeAttribute("width", String.valueOf(w));
             writer.writeEndElement();
-//            writer.writeCharacters("\n");
             writer.writeEndElement();
-//            writer.writeCharacters("\n");
             writer.writeEndElement();
-//            writer.writeCharacters("\n");
 
             clipPath = "clip-path: url(#clipPath1);";
         } catch (XMLStreamException ex) {

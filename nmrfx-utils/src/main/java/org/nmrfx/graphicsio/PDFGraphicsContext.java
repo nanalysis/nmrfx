@@ -95,12 +95,9 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             this.font = pdfGC.font;
             this.fill = pdfGC.fill;
             this.stroke = pdfGC.stroke;
-            //  this.clipPath = pdfGC.clipPath;
             this.textAlignment = pdfGC.textAlignment;
             this.textBaseline = pdfGC.textBaseline;
             this.matrix = pdfGC.matrix == null ? null : pdfGC.matrix.clone();
-            //this.transforms.clear();
-            //this.transforms.addAll(pdfGC.transforms);
         }
 
         void restore(PDFGraphicsContext pdfGC) {
@@ -108,7 +105,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             pdfGC.font = font;
             pdfGC.fill = fill;
             pdfGC.stroke = stroke;
-            //pdfGC.clipPath = clipPath;
             pdfGC.textAlignment = textAlignment;
             pdfGC.textBaseline = textBaseline;
             pdfGC.matrix = matrix == null ? null : matrix.clone();
@@ -117,9 +113,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             } catch (IOException ex) {
                 log.warn(ex.getMessage(), ex);
             }
-            // pdfGC.transforms.clear();
-            // pdfGC.transforms.addAll(transforms);
-
         }
 
     }
@@ -575,22 +568,12 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void setFillRule(FillRule fillRule) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void setFont(Font fxfont) {
         this.fxFont = fxfont;
-//        switch (fxfont.getFamily().toUpperCase()) {
-//            case "HELVETICA":
-//                font = PDType1Font.HELVETICA;
-//                break;
-//            case "COURIER":
-//                font = PDType1Font.COURIER;
-//                break;
-//            default:
-//                font = PDType1Font.HELVETICA;
-//        }
         fontSize = (float) Math.round(fxfont.getSize() * scaleX);
         try {
             contentStream.setFont(font, fontSize);
@@ -601,7 +584,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void setFontSmoothingType(FontSmoothingType fontsmoothing) {
-        // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -610,7 +592,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void setGlobalBlendMode(BlendMode op) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -654,17 +636,14 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
-        // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void setLineDashOffset(double dashOffset) {
-        // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void setLineJoin(StrokeLineJoin join) {
-        //  throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -841,7 +820,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     public void translate(double x, double y) {
         Matrix translate = new Matrix();
         translate.translate(tX(x), tY(y));
-        // translate.translate((float) (scaleX * x), pageWidth - border - (float) (scaleY * y));
         try {
             contentStream.transform(translate);
         } catch (IOException ex) {

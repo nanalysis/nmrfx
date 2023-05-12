@@ -46,9 +46,4 @@ public class ListOperationItemTypeSelector extends ChoiceOperationItem {
     public boolean isDefault() {
         return true;
     }
-//    
-//    @Override
-//    public String getStringRep() {
-//        return "";
-//    }
 }

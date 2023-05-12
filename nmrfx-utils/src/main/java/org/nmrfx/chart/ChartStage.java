@@ -83,11 +83,8 @@ public class ChartStage {
             borderPane.setCenter(pane);
             pane.widthProperty().addListener(e -> updateMCplot());
             pane.heightProperty().addListener(e -> updateMCplot());
-//            canvas.setWidth(500.0);
-//            canvas.setHeight(500.0);
             stage.setScene(stageScene);
         }
-        //updateMCPlotChoices();
         stage.show();
         updateMCplot();
     }
