@@ -189,7 +189,6 @@ public class IstVec extends Operation {
         System.out.println("test Vec");
         Vec vec = new Vec(size, true);
         vec.genSignal(15, 0.97, 100, 0);
-//        vec.genSignal(15, 0.97, 100, 180);  // additive
         vec.genSignal(50, 0.97, 20, 0);
         vec.genNoise(1);
 
@@ -213,13 +212,11 @@ public class IstVec extends Operation {
         IstVec ist;
         int[] iters
                 = {2, 5, 10, 20, 50, 100, 200, 500, 1000};
-//                 {2, 10, 30, 100, 300, 1000};
 
         for (int iter : iters) {
             ist = new IstVec(0.96, iter, ss, "abs", false, false, false, false);
             copy.copy(vec);
             ist.eval(vec);
-//            vec.ift();
             printVec("out vec " + iter, vec);
         }
 

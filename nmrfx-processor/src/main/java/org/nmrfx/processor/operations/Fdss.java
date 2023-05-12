@@ -49,7 +49,6 @@ public class Fdss extends Operation {
     }
 
     private void fdss(Vec vector) throws ProcessingException {
-        //vector.makeApache();
         /*
          * Allowing for the vector size for the vectors in a process
          * to have different sizes requires us to calculate these variables

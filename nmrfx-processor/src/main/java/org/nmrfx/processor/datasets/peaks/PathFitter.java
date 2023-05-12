@@ -112,8 +112,6 @@ public class PathFitter {
         int nPar = nDims * 3;
         int n = xValues[0].length;
         double[][] x = new double[n][3];
-//        double[][] x = new double[n][2];
-//        double[] y = new double[n];
         double[][] parValues = new double[nDims * 3][nSim];
         bestPars = new double[nDims * 3];
         parErrs = new double[nDims * 3];
@@ -123,16 +121,13 @@ public class PathFitter {
                 for (int iP = 0; iP < 2; iP++) {
                     x[i][iP] = Math.pow(p, iP + 1.0) / (iP + 1.0);
                 }
-//                y[i] = yValues[iDim][i];
                 x[i][2] = yValues[iDim][i];
 
             }
             String[] colNames = {"a", "b", "y"};
             DataFrame dataframe = DataFrame.of(x, colNames);
             Formula f = Formula.lhs("y");
-//            OLS ols = new OLS(x, y);
             LinearModel model = OLS.fit(f, dataframe);
-//            double[][] ppars = ols.ttest();
             double[][] ppars = model.ttest();
             bestPars[iDim * 3] = ppars[0][0];
             bestPars[iDim * 3 + 1] = ppars[1][0];
@@ -140,30 +135,8 @@ public class PathFitter {
             parErrs[iDim * 3] = ppars[0][1];
             parErrs[iDim * 3 + 1] = ppars[1][1];
             parErrs[iDim * 3 + 2] = ppars[2][1];
-
-//            Bootstrap boot = new Bootstrap(y.length, nSim);
-//            double[][] xs = new double[n][2];
-//            double[] ys = new double[n];
-//            for (int iSim = 0; iSim < nSim; iSim++) {
-//                for (int j = 0; j < n; j++) {
-//                    int index = boot.train[iSim][j];
-//                    xs[j][0] = x[index][0];
-//                    xs[j][1] = x[index][1];
-//                    ys[j] = y[index];
-//                    ols = new OLS(xs, ys);
-//                    double[] sppars = ols.fittedValues();
-//                    parValues[iDim * 3][iSim] = ols.intercept();
-//                    parValues[iDim * 3 + 1][iSim] = ppars[0];
-//                    parValues[iDim * 3 + 2][iSim] = ppars[1];
-//
-//                }
-//            }
         }
-//        parErrs = new double[nPar];
-//        for (int i = 0; i < nPar; i++) {
-//            DescriptiveStatistics dStat = new DescriptiveStatistics(parValues[i]);
-//            parErrs[i] = dStat.getStandardDeviation();
-//        }        for (int iPath = 0; iPath < nPaths; iPath++) {
+
         for (int iPath = 0; iPath < nPaths; iPath++) {
             PeakPath path = currentPaths.get(iPath);
             path.setFitPars(bestPars);

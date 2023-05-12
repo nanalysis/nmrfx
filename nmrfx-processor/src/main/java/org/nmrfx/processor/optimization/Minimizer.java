@@ -24,8 +24,6 @@ public class Minimizer {
     private static final Logger log = LoggerFactory.getLogger(Minimizer.class);
 
     // epsmch is the machine precision
-    //static final double epsmch = 2.22044604926e-16;
-
     static final double EPSMCH = 2.22044604926e-9;
     int nfev = 0;
     public double[] xv = null;
@@ -149,25 +147,10 @@ public class Minimizer {
                 }
                 lmdifFunc.fcn(m, n, a, fvec, iflag);
 
-                //lmdiftest.nfev = 0;
                 lmdifFunc.clearEvaluationCount();
                 Minpack_f77.lmdif1_f77(lmdifFunc, m, n, a, fvec, tol, info);
                 lmdifFunc.getEvaluationCount();
                 lmdifFunc.fcn(m, n, a, fvec, iflag);
-
-
-                /*
-                 System.out.print("\n Initial rms of the residuals: " + rms1 +
-                 "\n Final rms of the residuals: " + rms2 +
-                 */
- /*
-                 System.out.print("\n Number of function evaluations: " + nf[k] +
-                 "\n Info value: " + info[1] +
-                 "\n Final approximate solution: \n\n");
-                 for (int i=1;i<a.length;i++) {
-                 System.out.println(a[i]);
-                 }
-                 */
                 factor *= 10.0;
             }
         } catch (Exception e) {

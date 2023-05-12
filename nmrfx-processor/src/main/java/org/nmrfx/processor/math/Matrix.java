@@ -222,7 +222,7 @@ public class Matrix implements MatrixType {
     }
 
     private void row2ri(int row, double[][] dataRI) {
-        int mid = dataRI[0].length;  // matrix[0].length / 2;
+        int mid = dataRI[0].length;
         for (int i = 0; i < mid; i++) {
             dataRI[0][i] = matrix[row][2 * i];
             dataRI[1][i] = matrix[row][2 * i + 1];
@@ -260,7 +260,7 @@ public class Matrix implements MatrixType {
     }
 
     private void column2ri(int col, double[][] dataRI) {
-        int mid = dataRI[0].length;  // matrix.length / 2;
+        int mid = dataRI[0].length;
         for (int i = 0; i < mid; i++) {
             dataRI[0][i] = matrix[2 * i][col];
             dataRI[1][i] = matrix[2 * i + 1][col];
@@ -268,7 +268,7 @@ public class Matrix implements MatrixType {
     }
 
     private void column2r(int col, double[][] dataRI) {
-        int size = dataRI[0].length;  // matrix.length / 2;
+        int size = dataRI[0].length;
         for (int i = 0; i < size; i++) {
             dataRI[0][i] = matrix[i][col];
         }
@@ -404,7 +404,6 @@ public class Matrix implements MatrixType {
         for (i = 0; i < msize2; i++) {
             ftColumn(i, dataRI);
         }
-//        printMatrix();
     }
 
     public void ift2dNoswap() {
@@ -437,7 +436,6 @@ public class Matrix implements MatrixType {
         for (i = 0; i < msize2; i++) {
             ftZFColumn(i, dataRI);
         }
-//        printMatrix();
     }
 
     public void hift2dNoswapZF() {

@@ -398,8 +398,6 @@ public abstract class OptFunction implements
             new Gaussian();
             new JMod();
             new LorentzLS();
-            //new LogisticA();
-            //new LogisticB();
             new ModHH();
             new Quadratic();
             new Quadratic10();

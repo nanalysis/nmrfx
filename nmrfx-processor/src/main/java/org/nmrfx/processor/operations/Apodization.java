@@ -56,7 +56,6 @@ public abstract class Apodization extends MatrixOperation {
 
             for (int i = size2; i < vector.getSize(); i++) {
                 vector.set(i, 0, 0);
-                //cvec[i] = Complex.ZERO;
             }
         } else {
             for (int i = 0; i < size2; i++) {

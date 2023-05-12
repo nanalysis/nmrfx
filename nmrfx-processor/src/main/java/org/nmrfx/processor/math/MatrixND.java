@@ -529,12 +529,6 @@ public class MatrixND implements MatrixType {
         while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
-            /*
-             for (int count : counts) {
-             System.out.print(count);
-             }
-             System.out.println("getvec");
-             */
             getVectorZF(axis, riVec, counts);
             fft(riVec);
             putVectorReal(axis, riVec, counts);
@@ -622,12 +616,6 @@ public class MatrixND implements MatrixType {
         while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
-            /*
-             for (int count : counts) {
-             System.out.print(count);
-             }
-             System.out.println("getvec");
-             */
             getVectorRI(axis, riVec, counts);
             if (Math.abs(ph1) < tol) {
                 phase(riVec, ph0, 0.0);
@@ -656,12 +644,6 @@ public class MatrixND implements MatrixType {
         while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
-            /*
-             for (int count : counts) {
-             System.out.print(count);
-             }
-             System.out.println("getvec");
-             */
             getVectorR(axis, riVec, counts);
             VecUtil.hift(riVec, riVec[0].length, fpMul);
             putVectorRI(axis, riVec, counts);
@@ -1116,7 +1098,6 @@ public class MatrixND implements MatrixType {
                         if (ok && counts[jDim] < (sizes[jDim] - 1)) {
                             int index = i + strides[jDim] * step; // 2 assumes complex                       
                             double testValue = sign * data[index];
-//                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
                             if (ptValue < testValue) {
                                 ok = false;
                                 break;
@@ -1127,10 +1108,6 @@ public class MatrixND implements MatrixType {
                             pts[kDim][2] = counts[jDim] + 1;
                             indices[kDim][2] = index;
                             intensities[kDim][2] = testValue * sign;
-                        }
-                        if (nBelowThresh == 2) {
-                            //ok = false;
-                            //break;
                         }
                     }
 

@@ -127,7 +127,6 @@ public class IstMatrix extends MatrixOperation {
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());
         }
-        //PyObject obj = interpreter.get("a");
         return this;
     }
 
@@ -146,7 +145,6 @@ public class IstMatrix extends MatrixOperation {
         } else {
             istMatrix((Matrix) matrix);
         }
-        //matrix.copyPartFrom(zfMatrix);
         return this;
     }
 
@@ -478,7 +476,6 @@ public class IstMatrix extends MatrixOperation {
             getSampleHash();
             for (int i = 0; i < msize[0] / 2; i++) {
                 for (int j = 0; j < msize[1] / 2; j++) {
-//                    int key = sampleSchedule.calcKey(j, i);  // faster?
                     if (!sampleHash.containsKey(sampleSchedule.calcKey(j, i))) {
                         in[2 * i][2 * j] = 0.0;
                         in[2 * i + 1][2 * j] = 0.0;

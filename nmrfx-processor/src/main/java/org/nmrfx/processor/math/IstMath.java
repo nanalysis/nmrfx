@@ -152,8 +152,6 @@ public class IstMath {
             orig = new Complex[len];
             VecBase.complexCopy(input, orig);
         }
-        // fixme is this necessary and does it work
-        //Vec.arrayCheckPowerOfTwo(input);
 
         Complex[] add = new Complex[len];
         for (int i = 0; i < len; i++) {
@@ -238,9 +236,7 @@ public class IstMath {
     private void calcZeroes(int vsize) {
         if (zero_samples == null) {
             int[][] samples = sampleSchedule.getSamples();
-            //zero_samples = new int[vsize / 2 - samples.length];
             zero_samples = new int[vsize - samples.length];
-            //for (i = 0, k = 0; i < vsize / 2; i++) {
             for (int i = 0, k = 0; i < vsize; i++) {
                 boolean found = false;
                 for (int[] sample : samples) {

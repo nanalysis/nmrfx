@@ -433,8 +433,6 @@ public class VecUtil {
             }
 
             sumSqVec[j] = sumsq;
-
-            //sdVec[j] = Math.sqrt(sumsq / winSize);
         }
 
         /* Estimate standard deviation from sorted vector */
@@ -490,8 +488,6 @@ public class VecUtil {
      */
     public static void reflectRoots(Complex[] roots, boolean toOutside) {
         for (int i = 0; i < roots.length; i++) {
-            //double f = -Math.atan2(roots[i].getImaginary(), roots[i].getReal());
-            //double d = 1.0 - Math.log(roots[i].abs());
             // reflect roots outside unit circle
             double dReal = roots[i].getReal();
             double dImaginary = roots[i].getImaginary();
@@ -499,8 +495,6 @@ public class VecUtil {
             if (((toOutside) && (dSqr < 1.0)) || (!toOutside && (dSqr > 1.0))) {
                 roots[i] = new Complex(dReal / dSqr, dImaginary / dSqr);
             }
-            // double fr = -Math.atan2(roots[i].getImaginary(), roots[i].getReal());
-            // double dr = 1.0 - Math.log(roots[i].abs());
         }
     }
 

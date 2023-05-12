@@ -304,7 +304,6 @@ public class PeakPicker {
                     if (testValue < threshold) {
                         if (j < minWidth[i]) {
                             widthOK[iDir] = false;
-                            //return false;
                         }
 
                         if (sideWidth[iDir] == 0.0) {

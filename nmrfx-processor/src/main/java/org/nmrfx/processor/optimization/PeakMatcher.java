@@ -340,8 +340,6 @@ public class PeakMatcher {
         for (int i = 0; i < bestMatches[0].length; i++) {
             if (bestMatches[0][i] != -1) {
                 clearPPMTols();
-                //requireValues[0][0]=i;
-                //requireValues[0][1]=bestMatches[0][i];
                 score = processTypes(types, requireValues);
                 log.info("gscore {}", score);
             }

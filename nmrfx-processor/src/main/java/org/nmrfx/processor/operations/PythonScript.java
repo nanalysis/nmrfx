@@ -110,7 +110,6 @@ public class PythonScript extends MatrixOperation {
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());
         }
-        //PyObject obj = interpreter.get("a");
         return this;
     }
 

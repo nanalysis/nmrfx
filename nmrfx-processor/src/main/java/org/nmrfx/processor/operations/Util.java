@@ -235,9 +235,6 @@ public class Util {
         Vec dVec = new Vec(vector.getSize());
         dVec.resize(vector.getSize(), vector.isComplex());
         vector.copy(dVec);
-//        if (!dVec.isComplex()) {
-//            dVec.hft();
-//        }
         Cwtd cwtd = new Cwtd(winSize);
         cwtd.eval(dVec);
         dVec.power();
@@ -420,8 +417,6 @@ public class Util {
             }
 
             sdVec[j] = sumsq;
-
-            //sdVec[j] = Math.sqrt(sumsq / winSize);
         }
 
         /* Estimate standard deviation from sorted vector */

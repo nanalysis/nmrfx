@@ -410,7 +410,6 @@ public class BrukerData implements NMRData {
     public Double getParDouble(String parname) {
         if ((parMap == null) || (parMap.get(parname) == null)) {
             return null;
-//            throw new NullPointerException();
         } else {
             return Double.parseDouble(parMap.get(parname));
         }
@@ -1087,23 +1086,23 @@ public class BrukerData implements NMRData {
                         fttype[i - 1] = "rft";
                         f1coefS[i - 1] = "real";
                         break;
-                    case 4: // f1coef[i-1] = "1 0 0 0 0 0 1 0";
+                    case 4:
                         f1coef[i - 1] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
                         f1coefS[i - 1] = "hyper-r";
                         break;
                     case 0:
-                    case 5: // f1coef[i-1] = "1 0 0 0 0 0 1 0";
+                    case 5:
                         f1coef[i - 1] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
                         complexDim[i - 1] = true;
                         fttype[i - 1] = "negate";
                         f1coefS[i - 1] = "hyper";
                         break;
-                    case 6: // f1coef[i-1] = "1 0 -1 0 0 1 0 1";
+                    case 6:
                         f1coef[i - 1] = new double[]{1, 0, -1, 0, 0, 1, 0, 1};
                         deltaPh0_2 = 90.0;
                         f1coefS[i - 1] = "echo-antiecho-r";
                         break;
-                    case 1: // f1coef[i-1] = "1 0 0 1";
+                    case 1:
                         f1coefS[i - 1] = "sep";
                         if (getValues(i - 1).size() > 0) {
                             complexDim[i - 1] = false;
@@ -1354,8 +1353,6 @@ public class BrukerData implements NMRData {
         dvec.centerFreq = getSF(0);
 
         dvec.setRefValue(getRef(0));
-        //dvec.setPh0(getPH0(1));
-        //dvec.setPh1(getPH1(1));
     }
 
     @Override
@@ -1363,7 +1360,6 @@ public class BrukerData implements NMRData {
         int shiftAmount = 0;
         if (groupDelay > 0) {
             // fixme which is correct (use ceil or not)
-            //shiftAmount = (int)Math.round(Math.ceil(groupDelay));
             shiftAmount = (int) Math.round(groupDelay);
             System.out.println(iVec + " " + groupDelay + " " + shiftAmount);
         }
@@ -1514,7 +1510,6 @@ public class BrukerData implements NMRData {
     private void readValue(int iDim, int stride, int fileIndex, int vecIndex, int xCol, byte[] dataBuf, int nPer) {
         try {
             int nread = 0;
-            //int skips = fileIndex * tbytes + xCol * 4 * 2;
             int skips = fileIndex * stride + xCol * 4 * nPer;
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * nPer, 4 * nPer);
             nread = fc.read(buf, skips);
@@ -1948,7 +1943,6 @@ public class BrukerData implements NMRData {
                         }
                         sb = 1.0;
                         sbs = Double.parseDouble(spar);
-//                      size = -1; // size = "";
                         if (sbs < 2.0) {
                             offset = 0.0;
                         } else {

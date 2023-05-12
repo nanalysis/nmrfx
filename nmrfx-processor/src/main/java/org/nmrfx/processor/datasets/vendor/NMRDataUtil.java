@@ -236,8 +236,6 @@ public final class NMRDataUtil {
         }
     }
 
-//    public static NMRData getSpectrum(String fpath) throws IOException {
-//    }
     /**
      * Guess nucleus from frequency <b>freq</b>. Nuclei searched are 1H, 13C,
      * 15N, 31P. 1H frequencies searched span 300 to 1000 MHz.

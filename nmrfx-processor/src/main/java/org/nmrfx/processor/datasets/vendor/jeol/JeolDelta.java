@@ -862,7 +862,6 @@ public class JeolDelta implements NMRData {
     }
 
     void standardize() {
-        // dumpPars();
         sw = new Double[nDim];
         sf = new Double[nDim];
         swNames = new String[nDim];
@@ -877,9 +876,6 @@ public class JeolDelta implements NMRData {
             swNames[iDim] = key;
             sf[iDim] = parMap.get(aName + "_FREQ").getDouble() / 1.0e6;
             sfNames[iDim] = aName + "_FREQ";
-//            refPoint[iDim] = 1.0;
-//            double ref = parMap.get(aName + "_OFFSET").getDouble();
-//            refValue[iDim] = ref + sw[iDim] / sf[iDim] / 2.0;
             nucleiNames[iDim] = parMap.get(aName + "_DOMAIN").string;
         }
 
@@ -924,10 +920,7 @@ public class JeolDelta implements NMRData {
             vec.checkPowerOf2(); // resize
             vec.fft();
             vec.phase(0.0, dspPh, false, false);
-//            int nTrim = (int) (vec.getSize() * dspTrim);
-//            vec.trim(nTrim, vec.getSize() - 2 * nTrim);
             vec.ifft();
-//            dimSizes[0] = origSize - 2 * nTrim;
             vec.resize(dimSizes[0], true);
             vec.setGroupDelay(0.0);
             vec.setPh0(0.0);

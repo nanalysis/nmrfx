@@ -654,7 +654,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
             dataFile = null;
         } catch (IOException e) {
-            //LOGGER.warn(e.getMessage());
+            log.warn("Unable to close dataset", e);
         }
     }
 
@@ -1354,7 +1354,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     public void writeMatrixToDatasetFile(int[] dim, Matrix matrix)
             throws IOException {
-//        setDirty(true);
         int[] point = new int[nDim];
         int[][] pt = matrix.getPt();
         double[][] mat = matrix.getMatrix();

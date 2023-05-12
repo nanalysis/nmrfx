@@ -68,14 +68,12 @@ public class LorentzGaussNDWithCatalog extends LorentzGaussND {
                     y += base;
                 }
                 double delta = intensities[iDelay][i] - y;
-                //sum += delta * delta;
                 sum += FastMath.abs(delta);
             }
 
         }
-        // double result = Math.sqrt(sum / positions.length);
+
         double result = sum / (positions.length * nDelays);
-        //dumpArray(parameters);
         if ((best == null) || (best.getValue() > result)) {
             best = new PointValuePair(pars, result);
         }

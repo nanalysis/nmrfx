@@ -49,7 +49,6 @@ public class TDCombine extends Operation {
 
     public TDCombine eval(Vec vector) {
         throw new OperationException("Cannot combine a single Vec");
-        //return this;
     }
 
     @Override
@@ -176,7 +175,6 @@ public class TDCombine extends Operation {
                 for (boolean rcVal : rcVals) {
                     if (coef[iCoef] != 0.0) {
                         for (int i = 0; i < n; i++) {
-                            //outVec[j][i] += (vectors.get(k).get(i,rcVal) * coef[iCoef] * iSign);
                             outVec[j][i] += (vectors.get(k).getRealOrImag(i, rcVal) * coef[iCoef]);
                         }
                     }

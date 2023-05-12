@@ -219,12 +219,12 @@ public class VarianData implements NMRData {
 
     @Override
     public int getNVectors() {  // number of vectors
-        return nblocks;  // getParInt("arraydim");
+        return nblocks;
     }
 
     @Override
     public int getNPoints() {  // points per vector
-        return np / 2;     // getParInt("np") / 2;
+        return np / 2;
     }
 
     public boolean isSpectrum() {
@@ -934,9 +934,6 @@ public class VarianData implements NMRData {
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
         dvec.setRefValue(getRef(0));
-
-        //dvec.setPh0(getPH0(0));
-        //dvec.setPh1(getPH1(0));
     }
 
     @Override

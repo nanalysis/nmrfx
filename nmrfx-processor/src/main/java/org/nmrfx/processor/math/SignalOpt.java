@@ -108,8 +108,6 @@ public class SignalOpt implements MultivariateFunction {
                 case 2:
                     boundaries[0][i] = parameters[i] - 0.1;
                     boundaries[1][i] = parameters[i] + 0.1;
-                    //boundaries[0][i] = 0.0;
-                    //boundaries[1][i] = parameters[i]+0.1;
                     if (boundaries[0][i] <= 0.0) {
                         boundaries[0][i] = 1.0e-8;
                     }   break;
@@ -197,29 +195,9 @@ public class SignalOpt implements MultivariateFunction {
         return sum;
     }
 
-    /*
-     private void fillVecBySignals() {
-     Z[][] Ary = new Z[n][k];
-     for (int j = 0; j < k; j++) {
-     Z z2 = new Z(Z.ONE);
-     Z z = new Z(fd[j].getReal(), fd[j].getImaginary());
-     for (int i = 0; i < start; i++) {
-     z2 = z2.Times(z2, z);
-     }
-     for (int i = 0; i < n; i++) {
-     Ary[i][j] = z2;
-     z2 = new Z(z2);
-     z2 = z2.Times(z2, z);
-     }
-     }
-     }
-     */
     public void toPar(Complex[] fd1, Complex[] pa1) {
         int nSigs = fd1.length;
         for (int i = 0; i < nSigs; i++) {
-            //parameters[i*4] = -Math.atan2(fd1[i].getImaginary(), fd1[i].getReal());  //freq
-            //parameters[i*4+1] = -1.0 * Math.log(fd1[i].abs()) * 2 * vecSize / Math.PI; //decay
-
             parameters[i * 4 + 0] = fd1[i].abs();  // decay
             parameters[i * 4 + 1] = Math.atan2(fd1[i].getImaginary(), fd1[i].getReal());  // freq
 
@@ -227,12 +205,6 @@ public class SignalOpt implements MultivariateFunction {
             parameters[i * 4 + 3] = Math.atan2(pa1[i].getImaginary(), pa1[i].getReal());  // phase
             Complex testfd = ComplexUtils.polar2Complex(parameters[i * 4], parameters[i * 4 + 1]);
             Complex testpa = ComplexUtils.polar2Complex(parameters[i * 4 + 2], parameters[i * 4 + 3]);
-            /*
-             System.out.println(fd1[i].getReal() + " " + testfd.getReal());
-             System.out.println(fd1[i].getImaginary() + " " + testfd.getImaginary());
-             System.out.println(pa1[i].getReal() + " " + testpa.getReal());
-             System.out.println(pa1[i].getImaginary() + " " + testpa.getImaginary());
-             */
         }
     }
 

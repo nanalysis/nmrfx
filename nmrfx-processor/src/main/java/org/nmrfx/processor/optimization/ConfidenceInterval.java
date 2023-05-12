@@ -65,11 +65,6 @@ public final class ConfidenceInterval {
     public String[] toTclString() {
         String[] str = new String[3];
 
-        /*str[0] = "Confidence Interval of " + percent + " for Parameter " + paramName.toString();
-         str[1] = "Lower";
-         str[2] = Double.toString(data[0]);
-         str[3] = "Upper";                TclObject resultList = TclList.newInstance();
-         str[4] = Double.toString(data[1]);*/
         str[0] = paramName + ",best," + data[0];
         str[1] = paramName + ",lower," + data[1];
         str[2] = paramName + ",upper," + data[2];

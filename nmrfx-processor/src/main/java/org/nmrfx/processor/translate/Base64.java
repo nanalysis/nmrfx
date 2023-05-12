@@ -752,8 +752,6 @@ public class Base64 {
             for (i = 0; i < len; i++) {
                 b = read();
 
-                //if( b < 0 && i == 0 )
-                //    return -1;
                 if (b >= 0) {
                     dest[off + i] = (byte) b;
                 } else if (i == 0) {

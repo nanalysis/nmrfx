@@ -84,7 +84,6 @@ public class ComplexHouseholderQRDecomposition {
             premultiplyA(U[k].getDataRef(), R.getDataRef(), k, A.getRowDimension() - 1, k + 1, A.getColumnDimension() - 1);
         }
         if (nrow > ncol) {// Chop off zeros at the bottom.
-            //R = new Array2DRowFieldMatrix<Complex>(ComplexField.getInstance(), R.getSubMatrix(0, R.getColumnDimension() - 1, 0, R.getColumnDimension() - 1).getData());
             int nCols = R.getColumnDimension();
             Complex[][] data = new Complex[nCols][nCols];
             Complex[][] dataRef = R.getDataRef();
@@ -134,47 +133,9 @@ public class ComplexHouseholderQRDecomposition {
 
         for (int k = 0; k < ntran; k++) {
             C.preMultiply(U[k]);
-            //House.premultiplyA(U[k], C, k, C.getRowDimension(), 0, C.getColumnDimension());
         }
 
         return C;
 
     }
-
-//    /**
-//     * Computes the product BQ. Throws Exception for inconsistent
-//     * dimenstions.
-//     *
-//     * @param B A Zmat
-//     * @return BQ
-//     * @exception Exception Thrown for inconsistent dimensions.
-//     */
-//    public FieldMatrix<Complex> bq(FieldMatrix<Complex> B) {
-//
-//
-//        if (B.getRowDimension() != ncol) {
-//            return null; //inconsistent dimensions;
-//        }
-//
-//
-//        return (H.o(qhb(H.o(B))));
-//    }
-//
-////    /**
-////     * Computes the product BQ<sup>H</sup>. Throws Exception for
-////     * inconsistent dimenstions.
-////     *
-////     * @param B A Zmat
-////     * @return BQ<sup>H</sup>
-////     * @exception Exception Thrown for inconsistent dimensions.
-////     */
-////    public FieldMatrix<Complex> bqh(FieldMatrix<Complex> A, FieldMatrix<Complex> B) {
-////
-////
-////        if (B.getRowDimension() != ncol) {
-////            return null; //inconsistent dimensions
-////        }
-////
-////        return (H.o(qb(H.o(B))));
-////    }
 }

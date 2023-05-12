@@ -230,10 +230,6 @@ public class GRINS {
      * @param ph phase in degrees
      */
     public void genSignal(double[] vec, double freq, double decay, double amp, double ph) {
-//            double f = freq / (1.0 / dwellTime);
-//        double d = Math.exp(-Math.PI * lw * dwellTime);
-//        
-//        Complex w = ComplexUtils.polar2Complex(d, f * Math.PI * 2.0);
         Complex w = ComplexUtils.polar2Complex(decay, freq * Math.PI);
         Complex tempC = new Complex(amp * Math.cos(ph * Math.PI / 180.0), amp * Math.sin(ph * Math.PI / 180.0));
         int size = vec.length / 2;

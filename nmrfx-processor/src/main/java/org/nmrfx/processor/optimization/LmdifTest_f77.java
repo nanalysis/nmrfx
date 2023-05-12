@@ -310,7 +310,6 @@ public class LmdifTest_f77 {
 
             lmdifFunc.fcn(m, n, a, fvec, iflag);
 
-            //lmdiftest.nfev = 0;
             Minpack_f77.lmdif1_f77(lmdifFunc, m, n, a, fvec, tol, info);
             lmdifFunc.fcn(m, n, a, fvec, iflag);
             factor *= 10.0;

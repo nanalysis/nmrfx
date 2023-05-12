@@ -105,9 +105,6 @@ public class LorentzGaussND implements MultivariateFunction {
     }
 
     public PointValuePair optimizeBOBYQA(final int nSteps, final int nInterpolationPoints) {
-        //dumpArray(unscalePar(newStart));
-        //dumpArray(unscalePar(uniformBoundaries[0]));
-        //dumpArray(unscalePar(uniformBoundaries[1]));
         best = null;
         PointValuePair result = null;
         BOBYQAOptimizer optimizer = new BOBYQAOptimizer(nInterpolationPoints, 10.0, 1.0e-2);
@@ -158,13 +155,11 @@ public class LorentzGaussND implements MultivariateFunction {
             for (int i = 0; i < positions.length; i++) {
                 double y = calculate(parameters, positions[i], iDelay);
                 double delta = intensities[iDelay][i] - y;
-                //sum += delta * delta;
                 sum += FastMath.abs(delta);
             }
         }
-        // double result = Math.sqrt(sum / positions.length);
+
         double result = sum / (positions.length * nDelays);
-        //dumpArray(parameters);
         if ((best == null) || (best.getValue() > result)) {
             best = new PointValuePair(parameters, result);
         }

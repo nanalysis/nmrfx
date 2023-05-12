@@ -55,11 +55,9 @@ public class ProcessOps implements Callable<Object> {
     private boolean isMatrix = false;
     private boolean isDataset = false;
     private boolean isUndo = false;
-//    private Matrix matrix = null;
 
     private String completionMessage;
 
-    //private HashMap<String, Vec> vectorMatMap = null; = new HashMap<String, Vec>();
     public synchronized boolean getHasFinished() {
         return hasFinished;
     }

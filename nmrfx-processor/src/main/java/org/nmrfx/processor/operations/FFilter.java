@@ -147,9 +147,6 @@ public class FFilter extends Operation {
      */
     private void simpleFilter(Vec vector) throws ProcessingException {
         firFilter.filter(vector);
-//        vector.ft();
-//        vector.phase(0.0, -360.0 * ncoefs/2, false);  // linear phase correction
-//        vector.ift();
     }
 
     /**

@@ -35,7 +35,6 @@ public class Ift extends Operation {
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
         vector.setGroupDelay(0.0);
-//        vector.ift();
         ift(vector);
         return this;
     }

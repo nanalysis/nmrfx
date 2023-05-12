@@ -122,16 +122,12 @@ public class ExtendNew extends Operation {
         Polynomial polyB = null;
         boolean tlsMode = true;
         FieldMatrix<Complex> zInv = null;
-        if (!tlsMode) {
-//            zInv = Vec.getLPPseudoInverse(vector.getCvec(), start, m, n, threshold);
-        }
         if (calculateBackward) {
             Complex[] coefB = null;
             if (tlsMode) {
                 coefB = LinearPrediction.getCoefsByTLS(vector.getCvec(), start, m, n, threshold, true);
             } else {
                 //FIXME implement this function
-//                coefB = calculateLPCoef(zInv, vector.getCvec(), start, m, n, threshold, true);
                 throw new OperationException("tls mode cannot be false");
             }
             ocoefB = new Complex[coefB.length + 1];
@@ -152,7 +148,6 @@ public class ExtendNew extends Operation {
                 coefF = LinearPrediction.getCoefsByTLS(vector.getCvec(), start, m, n, threshold, false);
             } else {
                 //FIXME implement this function
-                //coefF = calculateLPCoef(zInv, vector.getCvec(), start, m, n, threshold, false);
                 throw new OperationException("tls mode cannot be false");
             }
             ocoefF = new Complex[coefF.length + 1];

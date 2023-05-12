@@ -87,9 +87,7 @@ public class LorentzLS extends OptFunction {
                     double foffset = x - f;
                     double denom = (b * b + 4 * foffset * foffset);
 
-                    // return -(8*a * b*b) * foffset / (denom * denom);
                     return -(a * b * b * (8 * f - 8 * x)) / (denom * denom);
-
                 }
             }
         });

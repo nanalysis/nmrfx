@@ -50,7 +50,6 @@ public class Expd extends Apodization implements Invertible {
      * @throws ProcessingException
      */
     private void expd(Vec vector) throws ProcessingException {
-        //vector.resizeApod();
         if (apodVec == null || apodVec.length != vector.getSize()) {
             resize(vector.getSize());
 

@@ -582,7 +582,6 @@ public class NMRPipeData implements NMRData {
         int shiftAmount = 0;
         if (groupDelay > 0) {
             // fixme which is correct (use ceil or not)
-            //shiftAmount = (int)Math.round(Math.ceil(groupDelay));
             shiftAmount = (int) Math.round(groupDelay);
         }
         if (dvec.isComplex()) {
@@ -716,7 +715,6 @@ public class NMRPipeData implements NMRData {
     // fixme only works for 2nd dim
     private void readValue(int iDim, int stride, int fileIndex, int vecIndex, int xCol, byte[] dataBuf) {
         try {
-            //int skips = fileIndex * tbytes + xCol * 4 * 2;
             int skips = fileIndex * stride + xCol * 4 * 2;
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2, 4);
             int nread = fc.read(buf, skips);
@@ -826,21 +824,6 @@ public class NMRPipeData implements NMRData {
                 gotSchedule = true;
             }
         }
-//        if (gotSchedule) {
-//            int[] dims = sampleSchedule.getDims();
-//            for (int i = 0; i < dims.length; i++) {
-//                tdsize[i + 1] = dims[i] * 2;
-//                dim = i + 2;
-//            }
-//        } else {
-//            for (int i = 2; i <= dim; i++) {
-//                tdsize[i - 1] = 1;
-//                if ((ipar = getParInt(tdpar + i)) != null) {
-//                    tdsize[i - 1] = ipar;
-//                }
-//            }
-//        }
-
     }
 
     @Override

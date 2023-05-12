@@ -585,21 +585,12 @@ public class Minpack_f77 extends Object {
         double[] diag = new double[n + 1];
         double[] qtf = new double[n + 1];
 
-        //      double factor,ftol,gtol,xtol,zero;
         double factor;
-
-        //      double factor,ftol,gtol,xtol,zero;
         double ftol;
-
-        //      double factor,ftol,gtol,xtol,zero;
         double gtol;
-
-        //      double factor,ftol,gtol,xtol,zero;
         double xtol;
 
         factor = 1.0e+2;
-
-        //      zero = 0.0;
         info[1] = 0;
 
         // Check the input parameters for errors.
@@ -1493,74 +1484,19 @@ public class Minpack_f77 extends Object {
          */
         int l;
 
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double actred;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double delta;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double dirder;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double fnorm;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double fnorm1;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double gnorm;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double pnorm;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double prered;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double ratio;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double sum;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double temp;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double temp1;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double temp2;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double xnorm;
 
         double[] par = new double[2];
@@ -1578,13 +1514,6 @@ public class Minpack_f77 extends Object {
         delta = 0.0;
         xnorm = 0.0;
 
-        //      one = 1.0;
-        //      p1 = .1;
-        //      p5 = .5;
-        //      p25 = .25;
-        //      p75 = .75;
-        //      p0001 = .0001;
-        //      zero = 0.0;
         info[1] = 0;
         iflag[1] = 0;
         nfev[1] = 0;
@@ -2037,50 +1966,18 @@ public class Minpack_f77 extends Object {
 
          */
         int i;
-
-        //      double agiant,floatn,one,rdwarf,rgiant,s1,s2,s3,xabs,
-        //            x1max,x3max,zero;
         double agiant;
-
-        //      double agiant,floatn,one,rdwarf,rgiant,s1,s2,s3,xabs,
-        //            x1max,x3max,zero;
         double floatn;
-
-        //      double agiant,floatn,one,rdwarf,rgiant,s1,s2,s3,xabs,
-        //            x1max,x3max,zero;
         double rdwarf;
-
-        //      double agiant,floatn,one,rdwarf,rgiant,s1,s2,s3,xabs,
-        //            x1max,x3max,zero;
         double rgiant;
-
-        //      double agiant,floatn,one,rdwarf,rgiant,s1,s2,s3,xabs,
-        //            x1max,x3max,zero;
         double s1;
-
-        //      double agiant,floatn,one,rdwarf,rgiant,s1,s2,s3,xabs,
-        //            x1max,x3max,zero;
         double s2;
-
-        //      double agiant,floatn,one,rdwarf,rgiant,s1,s2,s3,xabs,
-        //            x1max,x3max,zero;
         double s3;
-
-        //      double agiant,floatn,one,rdwarf,rgiant,s1,s2,s3,xabs,
-        //            x1max,x3max,zero;
         double xabs;
-
-        //      double agiant,floatn,one,rdwarf,rgiant,s1,s2,s3,xabs,
-        //            x1max,x3max,zero;
         double x1max;
-
-        //      double agiant,floatn,one,rdwarf,rgiant,s1,s2,s3,xabs,
-        //            x1max,x3max,zero;
         double x3max;
         double enorm;
 
-        //      one = 1.0;
-        //      zero = 0.0;
         rdwarf = 3.834e-20;
         rgiant = 1.304e+19;
 
@@ -2710,29 +2607,19 @@ public class Minpack_f77 extends Object {
 
          */
         int minmn;
-
-        //      double ajnorm,one,p05,sum,temp,zero;
         double ajnorm;
-
-        //      double ajnorm,one,p05,sum,temp,zero;
         double sum;
-
-        //      double ajnorm,one,p05,sum,temp,zero;
         double temp;
         double fac;
 
         double[] tempvec = new double[m + 1];
 
-        //      one = 1.0;
-        //      p05 = .05;
-        //      zero = 0.0;
         // Compute the initial column norms and initialize several arrays.
         for (j = 1; j <= n; j++) {
             for (i = 1; i <= m; i++) {
                 tempvec[i] = a[i][j];
             }
 
-            //         acnorm[j] = Minpack_f77.enorm_f77(m,a[1][j]);
             acnorm[j] = Minpack_f77.enorm_f77(m, tempvec);
 
             rdiag[j] = acnorm[j];
@@ -2778,7 +2665,6 @@ public class Minpack_f77 extends Object {
                 tempvec[i - j + 1] = a[i][j];
             }
 
-            //         ajnorm = Minpack_f77.enorm_f77(m-j+1,a[j][j]);
             ajnorm = Minpack_f77.enorm_f77(m - j + 1, tempvec);
 
             if (ajnorm != zero) {
@@ -2822,7 +2708,6 @@ public class Minpack_f77 extends Object {
                                     tempvec[i - j] = a[i][k];
                                 }
 
-                                //                        rdiag[k] = Minpack_f77.enorm_f77(m-j,a[jp1][k]);
                                 rdiag[k] = Minpack_f77.enorm_f77(m - j, tempvec);
                                 wa[k] = rdiag[k];
                             }
@@ -3521,31 +3406,14 @@ public class Minpack_f77 extends Object {
 
          */
         int nsing;
-
-        //      double cos,cotan,p5,p25,qtbpj,sin,sum,tan,temp,zero;
         double cos;
-
-        //      double cos,cotan,p5,p25,qtbpj,sin,sum,tan,temp,zero;
         double cotan;
-
-        //      double cos,cotan,p5,p25,qtbpj,sin,sum,tan,temp,zero;
         double qtbpj;
-
-        //      double cos,cotan,p5,p25,qtbpj,sin,sum,tan,temp,zero;
         double sin;
-
-        //      double cos,cotan,p5,p25,qtbpj,sin,sum,tan,temp,zero;
         double sum;
-
-        //      double cos,cotan,p5,p25,qtbpj,sin,sum,tan,temp,zero;
         double tan;
-
-        //      double cos,cotan,p5,p25,qtbpj,sin,sum,tan,temp,zero;
         double temp;
 
-        //      p5 = .5;
-        //      p25 = .25;
-        //      zero = 0.0;
         // Copy R and (Q transpose)b to preserve input and initialize S.
         // In particular, save the diagonal elements of R in x.
         for (j = 1; j <= n; j++) {
@@ -4594,48 +4462,17 @@ public class Minpack_f77 extends Object {
 
          */
         int nsing;
-
-        //      double dxnorm,dwarf,fp,gnorm,parc,parl,paru,p1,p001,
-        //             sum,temp,zero;
         double dxnorm;
-
-        //      double dxnorm,dwarf,fp,gnorm,parc,parl,paru,p1,p001,
-        //             sum,temp,zero;
         double dwarf;
-
-        //      double dxnorm,dwarf,fp,gnorm,parc,parl,paru,p1,p001,
-        //             sum,temp,zero;
         double fp;
-
-        //      double dxnorm,dwarf,fp,gnorm,parc,parl,paru,p1,p001,
-        //             sum,temp,zero;
         double gnorm;
-
-        //      double dxnorm,dwarf,fp,gnorm,parc,parl,paru,p1,p001,
-        //             sum,temp,zero;
         double parc;
-
-        //      double dxnorm,dwarf,fp,gnorm,parc,parl,paru,p1,p001,
-        //             sum,temp,zero;
         double parl;
-
-        //      double dxnorm,dwarf,fp,gnorm,parc,parl,paru,p1,p001,
-        //             sum,temp,zero;
         double paru;
-
-        //      double dxnorm,dwarf,fp,gnorm,parc,parl,paru,p1,p001,
-        //             sum,temp,zero;
         double sum;
-
-        //      double dxnorm,dwarf,fp,gnorm,parc,parl,paru,p1,p001,
-        //             sum,temp,zero;
         double temp;
-
         boolean loop;
 
-        //      p1 = .1;
-        //      p001 = .001;
-        //      zero = 0.0;
         // dwarf is the smallest positive magnitude.
         dwarf = minmag;
 
@@ -5218,20 +5055,10 @@ public class Minpack_f77 extends Object {
 
          */
         int nprint;
-
-        //      double epsfcn,factor,ftol,gtol,xtol,zero;
         double epsfcn;
-
-        //      double epsfcn,factor,ftol,gtol,xtol,zero;
         double factor;
-
-        //      double epsfcn,factor,ftol,gtol,xtol,zero;
         double ftol;
-
-        //      double epsfcn,factor,ftol,gtol,xtol,zero;
         double gtol;
-
-        //      double epsfcn,factor,ftol,gtol,xtol,zero;
         double xtol;
 
         double[] diag = new double[n + 1];
@@ -5241,8 +5068,6 @@ public class Minpack_f77 extends Object {
         double[] qtf = new double[n + 1];
 
         factor = 10.0;
-
-        //      zero = 0.0;
         info[1] = 0;
 
         // Check the input parameters for errors.
@@ -6153,74 +5978,19 @@ public class Minpack_f77 extends Object {
          */
         int l;
 
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double actred;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double delta;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double dirder;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double fnorm;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double fnorm1;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double gnorm;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double pnorm;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double prered;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double ratio;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double sum;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double temp;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double temp1;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double temp2;
-
-        //      double actred,delta,dirder,fnorm,fnorm1,gnorm,
-        //             one,pnorm,prered,p1,p5,p25,p75,p0001,ratio,
-        //             sum,temp,temp1,temp2,xnorm,zero;
         double xnorm;
 
         double[] par = new double[2];
@@ -6239,13 +6009,6 @@ public class Minpack_f77 extends Object {
         delta = 0.0;
         xnorm = 0.0;
 
-        //      one = 1.0;
-        //      p1 = .1;
-        //      p25 = .25;
-        //      p5 = .5;
-        //      p75 = .75;
-        //      p0001 = .0001;
-        //      zero = 0.0;
         info[1] = 0;
         iflag[1] = 0;
         nfev[1] = 0;
@@ -6840,17 +6603,10 @@ public class Minpack_f77 extends Object {
 
          */
         int j;
-
-        //      double eps,h,temp,zero;
         double eps;
-
-        //      double eps,h,temp,zero;
         double h;
-
-        //      double eps,h,temp,zero;
         double temp;
 
-        //      zero = 0.0;
         eps = Math.sqrt(Math.max(epsfcn, epsmch));
 
         for (j = 1; j <= n; j++) {

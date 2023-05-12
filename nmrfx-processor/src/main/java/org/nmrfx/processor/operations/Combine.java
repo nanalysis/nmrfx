@@ -51,7 +51,6 @@ public class Combine extends Operation {
 
     public Combine eval(Vec vector) {
         throw new OperationException("Cannot combine a single Vec");
-        //return this;
     }
 
     @Override

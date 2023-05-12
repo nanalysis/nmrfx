@@ -807,7 +807,6 @@ public class Vec extends VecBase {
         int center;
         resize(size, false);
 
-        // zero ();
         for (j = 3; j < par.size; j += 4) {
             amp = par.rvec[j];
             phase = par.rvec[j + 1];
@@ -1986,7 +1985,6 @@ public class Vec extends VecBase {
      * @see FirFilter
      */
     public void multiplyByFrequency(double freq, double shift) {
-//        double scale = freq * dwellTime;  // freq / SW
         double scale = freq;
         scale *= 2 * Math.PI;
         double fpt;
@@ -2512,9 +2510,6 @@ public class Vec extends VecBase {
             for (int j = 0; j < winSize; j++) {
                 int k = i * winSize + j;
                 double value = vecY[k];
-                //if (value < 0.0) {
-                //   value = 0.0;
-                //}
 
                 if (value < minValue) {
                     minValue = value;
@@ -2590,7 +2585,6 @@ public class Vec extends VecBase {
         int m = xValues3.size();
         for (int k = 0; k < (m - 1); k++) {
             int x1 = (xValues3.get(k));
-            //  int x2 = ((Integer) xValues3.get(k + 1)).intValue();
             double y1 = (yValues3.get(k));
             w[x1 + 1] = 1;
             y[x1 + 1] = y1;
@@ -2615,9 +2609,6 @@ public class Vec extends VecBase {
             }
         } else {
             for (int i = 0; i < size; i++) {
-                //if (z[i+1] > vec[i]) {
-                //   z[i+1] = vec[i];
-                //}
                 rvec[i] -= z[i + 1];
             }
         }

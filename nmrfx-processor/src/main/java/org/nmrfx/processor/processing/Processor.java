@@ -658,7 +658,6 @@ public class Processor {
             vectorsPerProcess = maxVectorsPerProcess;
         }
 
-//        nvDataset = true;
         return true;
     }
 
@@ -710,7 +709,7 @@ public class Processor {
 
         this.pt = calcPt(dim);
 
-        totalMatrices.set(pt[pt.length - 1][1] + 1);  // pt[2][1];
+        totalMatrices.set(pt[pt.length - 1][1] + 1);
         itemsToWrite = totalMatrices.get();
         itemsToRead = itemsToWrite;
         this.vectorSize = 1 + pt[0][1] - pt[0][0];
@@ -772,7 +771,6 @@ public class Processor {
             throw new ProcessingException("Cannot open FID " + filename);
         }
 
-        //nmrDataSets.clear();
         nmrDataSets.add(nmrData);
         resetVecReadCount();
         setFidDimensions(nmrData, tdSizes);
@@ -804,7 +802,6 @@ public class Processor {
             tdSizes[i] = nmrData.getSize(i);
         }
 
-        //nmrDataSets.clear();
         nmrDataSets.add(nmrData);
         resetVecReadCount();
         setFidDimensions(nmrData, tdSizes);
@@ -1062,14 +1059,6 @@ public class Processor {
             matrix = getMatrix2DFromFile();
             fileName = "2D";
         }
-//        try {
-//            if (matrix != null) {
-//                fileName = fileName + matrix.getIndex() + ".txt";
-//                matrix.dump(fileName);
-//            }
-//        } catch (IOException ioE) {
-//
-//        }
         return matrix;
     }
 
@@ -1379,7 +1368,6 @@ public class Processor {
         }
         try {
             if (matrix != null) {
-//                printDimPt("write ", dim, matrix.getPt());  // for debug
                 dataset.writeMatrixToDatasetFile(dim, matrix);
             }
         } catch (IOException ex) {
@@ -1401,7 +1389,6 @@ public class Processor {
         }
         try {
             if (matrix != null) {
-//                printDimPt("write matrix", dim, matrix.getPt());  // for debug
                 dataset.writeMatrixNDToDatasetFile(dim, matrix);
             }
         } catch (IOException ex) {
@@ -1620,7 +1607,6 @@ public class Processor {
 
             isRunning = true;
 
-//            defaultProcess = p;
             setupPool(p);
             vecGroupsRead.set(0);
             vectorsRead.set(0);

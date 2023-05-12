@@ -315,7 +315,6 @@ public class PeakPathAnalyzer {
                         j++;
                     }
                 }
-                //    coefs[iDim] = fitPoly(xValues, yValues, 2);
                 Variogram vGram = new PowerVariogram(xValues, yValues);
                 krig[iDim] = new KrigingInterpolation(xValues,
                         yValues, vGram, weightValues);
@@ -328,7 +327,6 @@ public class PeakPathAnalyzer {
                     double sumSq = 0.0;
                     for (int iDim : peakDims) {
                         double iValue = krig[iDim].interpolate(indVars[0][jLevel]);
-                        //          double iValue = predictWithPoly(coefs[iDim], indVars[0][jLevel]);
                         double deltaDelta = iValue - peakDist.getDelta(iDim);
                         sumSq += deltaDelta * deltaDelta;
                     }

@@ -40,8 +40,6 @@ public class LoadVector extends Operation { // not currently used
 
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
-        //setupScanner(fileName, dimension);
-//        process.requestVectors();
         return this;
     }
 

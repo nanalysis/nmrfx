@@ -153,7 +153,6 @@ public class Polynomial {
                         Complex abcorr = aberth(n, i, root);
                         Complex one = new Complex(1.0, 0.0);
                         root[i] = root[i].subtract(newtonResult.corr.divide(one.subtract(newtonResult.corr.multiply(abcorr))));
-                        //root[i]=root[i]-corr/(1-corr*abcorr);
                     } else {
                         err[i] = false;
                         radius[i] = newtonResult.radius;
@@ -310,7 +309,6 @@ public class Polynomial {
                 p1 = p1.multiply(z).add(p);
                 ap = ap * az + apoly[i];
             }
-            //p = p.multiply(z).add(poly[0]);
             p = p.multiply(z);
             p = p.add(poly[0]);
             ap = ap * az + apoly[0];
@@ -742,11 +740,9 @@ public class Polynomial {
     public static void testSpecRoots() {
         double[] rvals = {1, -1, 1, 1};
         double[] ivals = {0, 1, 0, 0};
-        // double[] rvals = {-5,3,-3,1};
 
         log.info("specRoots");
 
-        // double[] ivals = new double[rvals.length];
         Complex[] polyVals = new Complex[rvals.length];
         for (int i = 0; i < rvals.length; i++) {
             polyVals[i] = new Complex(rvals[i], ivals[i]);
@@ -754,8 +750,6 @@ public class Polynomial {
         Polynomial poly = new Polynomial(polyVals.length);
         log.info("  rvals length={} polyVals length={}", rvals.length, polyVals.length);
 
-        //poly.polzeros(polyVals.length - 1, polyVals);
-        //poly.svejgardRoot();
         poly.svejgardRoot(polyVals.length, polyVals);
 
         ComplexComparator cCompare = new ComplexComparator();
@@ -774,13 +768,9 @@ public class Polynomial {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        //double[] rvals = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1e250, 0, 0, 0, 0, 0, 1};
-        // double[] rvals = {-9,0,1};
         double[] rvals = {1, -1, 1, 1};
         double[] ivals = {0, 1, 0, 0};
-        // double[] rvals = {-5,3,-3,1};
 
-        // double[] ivals = new double[rvals.length];
         Complex[] polyVals = new Complex[rvals.length];
         for (int i = 0; i < rvals.length; i++) {
             polyVals[i] = new Complex(rvals[i], ivals[i]);

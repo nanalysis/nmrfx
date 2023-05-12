@@ -234,7 +234,6 @@ public class PeakCluster {
 
     public void setPairedTo(PeakCluster otherCluster) {
         this.pairedTo = otherCluster;
-        //otherCluster.setPairedTo(this);
     }
 
     public PeakCluster getPairedTo() {
