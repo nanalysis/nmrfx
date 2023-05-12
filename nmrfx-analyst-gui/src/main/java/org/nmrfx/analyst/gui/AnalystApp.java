@@ -100,8 +100,8 @@ public class AnalystApp extends Application {
     static String appName = "NMRFx Analyst";
     static boolean isAnalyst = false;
     static Font defaultFont;
-    private static MenuBar mainMenuBar = null;
     static AnalystApp analystApp = null;
+    private static MenuBar mainMenuBar = null;
     private static FileMenuActions fileMenuActions;
     private static MoleculeMenuActions molMenuActions;
     private static PeakMenuActions peakMenuActions;
@@ -237,6 +237,94 @@ public class AnalystApp extends Application {
                 PreferencesController.getPeakShapeIndirectFactor());
     }
 
+    public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
+        moleculeMap.addListener(listener);
+    }
+
+    public static boolean isMac() {
+        return SystemUtils.IS_OS_MAC;
+    }
+
+    public static MenuBar getMenuBar() {
+        return mainApp.makeMenuBar(appName);
+    }
+
+    public static MenuBar getMainMenuBar() {
+        return mainMenuBar;
+    }
+
+    public static AnalystApp getAnalystApp() {
+        return analystApp;
+    }
+
+    public static String getAppName() {
+        return appName;
+    }
+
+    public static PreferencesController getPreferencesController() {
+        return preferencesController;
+    }
+
+    /**
+     * The main() method is ignored in correctly deployed JavaFX application.
+     * main() serves only as fallback in case the application can not be
+     * launched through deployment artifacts, e.g., in IDEs with limited FX
+     * support. NetBeans ignores main().
+     *
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    public static String getVersion() {
+        return NvUtil.getVersion();
+    }
+
+    public static void addMultipletPopOver(FXMLController controller) {
+    }
+
+    static void showDocAction(ActionEvent event) {
+        hostServices.showDocument("http://docs.nmrfx.org");
+    }
+
+    static void showWebSiteAction(ActionEvent event) {
+        hostServices.showDocument("http://nmrfx.org");
+    }
+
+    static void showMailingListAction(ActionEvent event) {
+        hostServices.showDocument("https://groups.google.com/forum/#!forum/nmrfx-processor");
+    }
+
+    static void showOpenSourceAction(ActionEvent event) {
+        hostServices.showDocument("https://nmrfx.org/downloads/oss/dependencies.html");
+    }
+
+    public static InteractiveInterpreter getInterpreter() {
+        return interpreter;
+    }
+
+    public static void writeOutput(String string) {
+        if (getConsoleController() == null) {
+            System.out.println(string);
+        } else {
+            getConsoleController().write(string);
+        }
+    }
+
+    public static ProjectBase getActive() {
+        return GUIProject.getActive();
+    }
+
+    static void showDataBrowser() {
+        if (browserController == null) {
+            browserController = DatasetBrowserController.create();
+        }
+        Stage browserStage = browserController.getStage();
+        browserStage.toFront();
+        browserStage.show();
+    }
+
     public void waitForCommit() {
         int nTries = 30;
         int iTry = 0;
@@ -308,38 +396,10 @@ public class AnalystApp extends Application {
         MoleculeFactory.setMoleculeMap(moleculeMap);
     }
 
-    public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
-        moleculeMap.addListener(listener);
-    }
-
     void pickedPeakAction(Object peakObject) {
         if (peakMenuActions != null) {
             peakMenuActions.pickedPeakAction(peakObject);
         }
-    }
-
-    public static boolean isMac() {
-        return SystemUtils.IS_OS_MAC;
-    }
-
-    public static MenuBar getMenuBar() {
-        return mainApp.makeMenuBar(appName);
-    }
-
-    public static MenuBar getMainMenuBar() {
-        return mainMenuBar;
-    }
-
-    public static AnalystApp getAnalystApp() {
-        return analystApp;
-    }
-
-    public static String getAppName() {
-        return appName;
-    }
-
-    public static PreferencesController getPreferencesController() {
-        return preferencesController;
     }
 
     private void saveDatasets() {
@@ -511,23 +571,6 @@ public class AnalystApp extends Application {
         }
     }
 
-    /**
-     * The main() method is ignored in correctly deployed JavaFX application.
-     * main() serves only as fallback in case the application can not be
-     * launched through deployment artifacts, e.g., in IDEs with limited FX
-     * support. NetBeans ignores main().
-     *
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        launch(args);
-    }
-
-    public static String getVersion() {
-        return NvUtil.getVersion();
-    }
-
-
     public void addStatusBarTools(SpectrumStatusBar statusBar) {
         addStatusBarButtons(statusBar);
         if (advancedIsActive) {
@@ -606,26 +649,6 @@ public class AnalystApp extends Application {
         controller.addTool(simplePeakRegionTool);
     }
 
-    public static void addMultipletPopOver(FXMLController controller) {
-    }
-
-
-    static void showDocAction(ActionEvent event) {
-        hostServices.showDocument("http://docs.nmrfx.org");
-    }
-
-    static void showWebSiteAction(ActionEvent event) {
-        hostServices.showDocument("http://nmrfx.org");
-    }
-
-    static void showMailingListAction(ActionEvent event) {
-        hostServices.showDocument("https://groups.google.com/forum/#!forum/nmrfx-processor");
-    }
-
-    static void showOpenSourceAction(ActionEvent event) {
-        hostServices.showDocument("https://nmrfx.org/downloads/oss/dependencies.html");
-    }
-
     public void showVersionAction(ActionEvent event) {
         String onlineVersion = WebConnect.getVersion();
         onlineVersion = onlineVersion.replace('_', '.');
@@ -656,23 +679,6 @@ public class AnalystApp extends Application {
             System.out.println("Coudn't make controller");
         }
     }
-
-    public static InteractiveInterpreter getInterpreter() {
-        return interpreter;
-    }
-
-    public static void writeOutput(String string) {
-        if (getConsoleController() == null) {
-            System.out.println(string);
-        } else {
-            getConsoleController().write(string);
-        }
-    }
-
-    public static ProjectBase getActive() {
-        return GUIProject.getActive();
-    }
-
 
     public void assignPeak(String keyStr, PolyChart chart) {
         if (peakMenuActions != null) {
@@ -804,7 +810,6 @@ public class AnalystApp extends Application {
         return  (ScannerTool) controller.getTool(ScannerTool.class);
     }
 
-
     public void showRunAboutTool() {
         System.out.println("show runabout");
         FXMLController controller = FXMLController.getActiveController();
@@ -847,7 +852,6 @@ public class AnalystApp extends Application {
         return (StripController) controller.getTool(StripController.class);
     }
 
-
     void addPrefs() {
         AnalystPrefs.addPrefs();
     }
@@ -871,15 +875,6 @@ public class AnalystApp extends Application {
         PolyChart chart = FXMLController.getActiveController().getActiveChart();
         chart.clearAnnoType(CanvasMolecule.class);
         chart.refresh();
-    }
-
-    static void showDataBrowser() {
-        if (browserController == null) {
-            browserController = DatasetBrowserController.create();
-        }
-        Stage browserStage = browserController.getStage();
-        browserStage.toFront();
-        browserStage.show();
     }
 
     public void hidePopover(boolean always) {
