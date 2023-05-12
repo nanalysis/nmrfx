@@ -325,8 +325,7 @@ public class FXMLController implements Initializable, PeakNavigable {
         return stage;
     }
 
-    @FXML
-    public void showDatasetsAction(ActionEvent event) {
+    private void showDatasetsAction(ActionEvent event) {
         if (popOver == null) {
             popOver = new PopOver();
         }
@@ -383,7 +382,6 @@ public class FXMLController implements Initializable, PeakNavigable {
         popOver.show((Node) event.getSource());
     }
 
-    @FXML
     public void openAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(getInitialDirectory());
@@ -621,24 +619,6 @@ public class FXMLController implements Initializable, PeakNavigable {
         return openDataset(nmrData, append, addDatasetToChart);
     }
 
-    @FXML
-    public void addAction(ActionEvent event) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setInitialDirectory(getInitialDirectory());
-        fileChooser.setTitle("Add NMR FID/Dataset");
-        fileChooser.getExtensionFilters().addAll(
-                FileExtensionFilterType.NMR_FID.getFilter(),
-                FileExtensionFilterType.ALL_FILES.getFilter()
-        );
-        File selectedFile = fileChooser.showOpenDialog(null);
-        if (selectedFile != null) {
-            setInitialDirectory(selectedFile.getParentFile());
-            openFile(selectedFile.toString(), true, true);
-        }
-        stage.setResizable(true);
-    }
-
-    @FXML
     public void addNoDrawAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(getInitialDirectory());
@@ -689,50 +669,20 @@ public class FXMLController implements Initializable, PeakNavigable {
         }
     }
 
-    @FXML
     public void showPeakAttrAction(ActionEvent event) {
         showPeakAttr();
         peakAttrController.initIfEmpty();
     }
 
-    @FXML
     public void showProcessorAction(ActionEvent event) {
         ProcessorController processorController = getActiveChart().getProcessorController(true);
         processorController.show();
-    }
-
-    @FXML
-    public void viewDatasetInNvJAction(ActionEvent event) {
-        if ((chartProcessor != null) && (chartProcessor.datasetFile != null)) {
-            String datasetPath = chartProcessor.datasetFile.getPath();
-            if (datasetPath.equals("")) {
-                return;
-            }
-            Runtime runTime = Runtime.getRuntime();
-
-            String osName = System.getProperty("os.name");
-            try {
-                if (osName.startsWith("Mac")) {
-                    String[] cmd = {"/usr/bin/open", datasetPath};
-                    runTime.exec(cmd);
-                } else if (osName.startsWith("Win")) {
-                    String[] cmd = {"rundll32", "url.dll,FileProtocolHandler", datasetPath};
-                    runTime.exec(cmd);
-                } else if (osName.startsWith("Lin")) {
-                    String[] cmd = {"NMRViewJ", "--files", datasetPath};
-                    runTime.exec(cmd);
-                }
-            } catch (IOException ioE) {
-                log.warn(ioE.getMessage(), ioE);
-            }
-        }
     }
 
     public Button getCancelButton() {
         return cancelButton;
     }
 
-    @FXML
     public void exportPNG(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PNG");
@@ -754,7 +704,6 @@ public class FXMLController implements Initializable, PeakNavigable {
         }
     }
 
-    @FXML
     public void exportPDFAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PDF");
@@ -789,7 +738,6 @@ public class FXMLController implements Initializable, PeakNavigable {
         stage.setResizable(true);
     }
 
-    @FXML
     public void exportSVGAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to SVG");
@@ -825,7 +773,6 @@ public class FXMLController implements Initializable, PeakNavigable {
         stage.setResizable(true);
     }
 
-    @FXML
     public void copySVGAction(ActionEvent event) {
         SVGGraphicsContext svgGC = new SVGGraphicsContext();
         try {
@@ -1643,39 +1590,8 @@ public class FXMLController implements Initializable, PeakNavigable {
         }
     }
 
-    @FXML
-    private void autoScaleAction(ActionEvent event) {
-        charts.forEach(chart -> {
-            chart.autoScale();
-            chart.layoutPlotChildren();
-        });
-    }
-
-    @FXML
-    private void fullAction(ActionEvent event) {
-        charts.forEach(chart -> {
-            chart.full();
-            chart.layoutPlotChildren();
-        });
-    }
-
-    @FXML
-    private void expandAction(ActionEvent event) {
-        charts.forEach(PolyChart::expand);
-    }
-
     private void saveAsFavorite() {
         WindowIO.saveFavorite();
-    }
-
-    @FXML
-    private void printAction(ActionEvent event) {
-        try {
-            getActiveChart().printSpectrum();
-        } catch (IOException ex) {
-            ExceptionDialog eDialog = new ExceptionDialog(ex);
-            eDialog.showAndWait();
-        }
     }
 
     /**
