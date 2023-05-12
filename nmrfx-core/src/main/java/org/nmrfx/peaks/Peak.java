@@ -877,25 +877,6 @@ public class Peak implements Comparable, PeakOrMulti {
         return (result.toString());
     }
 
-    /*
-             public void updateCouplings() {
-             if (!getFlag(5)) {
-             for (int i = 0; i < peakDim.length; i++) {
-             PeakDim pDim = peakDim[i];
-             Peak origPeak = pDim.getOrigin();
-
-             if (origPeak != null) {
-             ArrayList links = pDim.getLinkedPeakDims();
-             PeakDim.sortPeakDims(links, true);
-             pDim.adjustCouplings(origPeak);
-             }
-
-             peakDim[i].updateCouplings();
-
-             }
-             }
-             }
-         */
     public String getName() {
         return peakList.getName() + "." + getIdNum();
     }

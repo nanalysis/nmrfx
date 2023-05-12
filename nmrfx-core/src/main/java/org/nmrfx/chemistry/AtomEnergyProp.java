@@ -381,9 +381,6 @@ public class AtomEnergyProp {
                     } else if (parent2 == testAtom1.parent) {
                         rh1 -= 0.1;
                         rh2 -= 0.1;
-                    } else if (parent1 == parent2) {
-                        //  rh1 -= 0.1;
-                        //  rh2 -= 0.1;
                     }
                 }
             }

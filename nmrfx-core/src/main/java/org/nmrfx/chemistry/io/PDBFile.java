@@ -303,11 +303,8 @@ public class PDBFile {
                         residueList.add(atomParse.resName + " " + atomParse.resNum);
                     }
                     // fixme should we do anything here with MODEL
-                    //} else if (string.startsWith("MODEL ")) {
                 } else if (string.startsWith("ENDMDL")) {
                     break;
-                } else if (string.startsWith("TER   ")) {
-                    //break;
                 }
             }
             if (!listMode) {

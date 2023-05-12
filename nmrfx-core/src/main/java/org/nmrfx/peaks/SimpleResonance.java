@@ -222,10 +222,7 @@ public class SimpleResonance implements Resonance {
         } else if (n == 1) {
             result = 0.0;
         }
-        /*for (int i=0;i<peakDimContribs.size();i++) {
-         PeakDim peakDim = ((PeakDimContrib) peakDimContribs.get(i)).getPeakDim();
-         peakDims.add(peakDim);
-         }*/
+
         return result;
     }
 

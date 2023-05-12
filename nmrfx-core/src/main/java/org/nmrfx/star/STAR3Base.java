@@ -460,7 +460,6 @@ public class STAR3Base {
         for (String loopString : loopStrings) {
             chan.write(category + "." + loopString + "\n");
         }
-        // chan.write("\n\n");
     }
 
     public static void writeString(Writer chan, String s, int maxLen) throws ParseException, IOException {

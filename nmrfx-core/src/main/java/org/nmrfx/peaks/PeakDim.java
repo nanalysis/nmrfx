@@ -42,7 +42,6 @@ public class PeakDim {
     private Float decayRate = null;
     private Float decayRateError = null;
     private Multiplet multiplet = null;
-//    private Coupling coupling = null;
     private char[] error = {'+', '+'};
     private String user = "";
     private Peak myPeak = null;
@@ -59,7 +58,6 @@ public class PeakDim {
     public PeakDim(Peak peak, int iDim) {
         myPeak = peak;
         setSpectralDim(iDim);
-        //peakDimContribs = new ArrayList();
     }
 
     public PeakDim copy(Peak peak) {
@@ -279,19 +277,6 @@ public class PeakDim {
         return result.toString();
     }
 
-    /*
-        static String spectralTransitionCharStrings[] = {
-        "_Spectral_transition_char.Bounding_box_val",
-        "_Spectral_transition_char.Bounding_box_val_err",
-        "_Spectral_transition_char.Line_width_val",
-        "_Spectral_transition_char.Line_width_val_err",
-        "_Spectral_transition_char.Phase_val",
-        "_Spectral_transition_char.Phase_val_err",
-        "_Spectral_transition_char.Decay_rate_val",
-        "_Spectral_transition_char.Decay_rate_val_err",
-        "_Spectral_transition_char.Derivation_method_ID",};
-
-     */
     public String toSTAR3LoopSpectralTransitionCharString(AbsMultipletComponent comp, int specTransID) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
@@ -308,14 +293,6 @@ public class PeakDim {
         return result.toString();
     }
 
-    /*
-            "_Spectral_transition_char.Spectral_transition_ID",
-        "_Spectral_transition_general_char.Peak_ID",
-        "_Spectral_transition_general_char.Intensity_val",
-        "_Spectral_transition_general_char.Intensity_val_err",
-        "_Spectral_transition_general_char.Measurement_method",};
-
-     */
     public String toSTAR3LoopSpectralTransitionGeneralCharString(AbsMultipletComponent comp, int specTransID, boolean intensityMode) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
@@ -697,52 +674,6 @@ public class PeakDim {
         peakDimUpdated();
     }
 
-
-    /*
-     public void updateCouplings() {
-     if (!myPeak.getFlag(5)) {
-     Peak origPeak = getOrigin();
-
-     if (origPeak != null) {
-     adjustCouplings(origPeak);
-     }
-     }
-     }
-     */
- /*
-     * 
-     double[] fo = origPeak.peakDim[0].getFrequencyOffsets();
-     Arrays.sort(fo);
-     FreqIntensities fiValues = origPeak.peakDim[0].getFreqIntensitiesFromSplittings();
-     Arrays.sort(fiValues.freqs);
-        
-     double sf = myPeak.peakList.getSpectralDim(getSpectralDim()).getSf();
-
-     int nExtra = fiValues.freqs.length - fo.length;
-     if (nExtra < 0) {
-
-     return;
-     } else if (nExtra > 0) {
-     double[] amplitudeJunk = new double[fiValues.freqs.length];
-     PeakList.trimFreqs(fiValues.freqs, amplitudeJunk, nExtra);
-     }
-
-     double delta = (fiValues.freqs[iPos] * sf) - fo[iPos];
-
-
-     int iCoupling = 0;
-     double sign = 1.0;
-
-     if (iPos < (fo.length - iPos - 1)) {
-     iCoupling = iPos;
-     sign = -1;
-     } else {
-     iCoupling = (fo.length - iPos - 1);
-     sign = 1;
-     }
-
-     * 
-     */
     public int getThread() {
         // FIXME
         return 0;
@@ -750,7 +681,6 @@ public class PeakDim {
 
     public void setThread(int thread) {
         // FIXME
-        //this.thread = thread;
         peakDimUpdated();
     }
 

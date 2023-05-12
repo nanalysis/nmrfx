@@ -67,9 +67,6 @@ public class MoleculeBase implements Serializable, ITree {
             Iterator entIterator = coordSet.getEntities().values().iterator();
             while (entIterator.hasNext()) {
                 Entity entity = (Entity) entIterator.next();
-                //                if (molFilter.entityName != null && !entity.getName().equalsIgnoreCase(molFilter.entityName)) {
-                //                    continue;
-                //                };
                 Compound compound;
                 if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
                     continue;
@@ -324,7 +321,6 @@ public class MoleculeBase implements Serializable, ITree {
     Map<String, Atom> atomMap = new HashMap<>();
     protected List<Atom> atoms = new ArrayList<>();
     protected List<Bond> bonds = new ArrayList<Bond>();
-    //    ArrayList<Atom> atoms = new ArrayList<>();
     private boolean atomArrayValid = false;
     protected HashMap<String, String> propertyMap = new HashMap<String, String>();
     MolecularConstraints molecularConstraints = new MolecularConstraints(this);
@@ -398,7 +394,6 @@ public class MoleculeBase implements Serializable, ITree {
                 mNode.setAtom(atom);
                 atom.equivAtoms = null;
 
-                //mNode.atom = atom;
                 i++;
             }
         }

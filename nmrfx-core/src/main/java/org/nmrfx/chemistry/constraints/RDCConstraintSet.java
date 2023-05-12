@@ -169,23 +169,6 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
                 if (!okPoint) {
                     break;
                 }
-//                double angle = Atom.calcDihedral(pts[0], pts[1], pts[2], pts[3]) * 180.0 / Math.PI;
-//                double value = aConstraint.getValue();
-//                double err = aConstraint.getErr();
-//                boolean ok = false;
-//                if (upper > lower) {
-//                    if ((angle >= lower) && (angle <= upper)) {
-//                        ok = true;
-//                    }
-//                } else if ((angle >= lower) || (angle <= upper)) {
-//                    ok = true;
-//                }
-//                if (ok) {
-//                    nInBounds++;
-//                } else {
-//                    violStructures.set(iStruct);
-//                }
-//                sumStat.addValue(angle);
             }
             if (okPoint) {
 

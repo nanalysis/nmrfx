@@ -138,7 +138,6 @@ public class AtomResonance extends SimpleResonance {
             if ((value = NvUtil.getColumnValue(idColumn, i)) != null) {
                 idNum = NvUtil.toLong(value);
             } else {
-                //throw new TclException(interp,"Invalid id \""+value+"\"");
                 continue;
             }
 
@@ -149,20 +148,6 @@ public class AtomResonance extends SimpleResonance {
             if ((value = NvUtil.getColumnValue(nameColumn, i)) != null) {
                 resonance.setName(value);
             }
-//            if ((value = NvUtil.getColumnValue(resSetColumn, i)) != null) {
-//                long resSet = NvUtil.toLong(value);
-//                ResonanceSet resonanceSet = ResonanceSet.get(resSet);
-//                if (resonanceSet == null) {
-//                    resonanceSet = ResonanceSet.newInstance(resSet);
-//                }
-//                resonanceSet.addResonance(resonance);
-//            }
-            /* FIXME handle spinSystem
-             if ((value = NvUtil.getColumnValue(ssColumn,i)) != null) {
-             long spinSystem = NvUtil.toLong(interp,value);
-             resonance.setSpinSystem(spinSystem);
-             }
-             */
         }
 
         loop = saveframe.getLoop("_Resonance_assignment");
@@ -180,13 +165,8 @@ public class AtomResonance extends SimpleResonance {
                 if ((value = NvUtil.getColumnValue(resSetIDColumn, i)) != null) {
                     idNum = NvUtil.toLong(value);
                 } else {
-                    //throw new TclException("Invalid peak id value at row \""+i+"\"");
                     continue;
                 }
-//                ResonanceSet resonanceSet = ResonanceSet.get(idNum);
-//                if (resonanceSet == null) {
-//                    continue;
-//                }
                 String atomName = "";
                 String iRes = "";
                 String entityAssemblyID = "";
@@ -231,7 +211,6 @@ public class AtomResonance extends SimpleResonance {
                 if (atom == null) {
                     log.warn("invalid atom in assignments saveframe \"{}.{}\"", mapID, atomName);
                 } else {
-//                    resonance.setAtom(atom);
                 }
             }
         }
@@ -248,8 +227,6 @@ public class AtomResonance extends SimpleResonance {
         result.append(sep);
         if (resonanceSet == null) {
             result.append(".");
-        } else {
-            // result.append(String.valueOf(resonanceSet.getID()));
         }
         result.append(sep);
         if (ssID == null) {
