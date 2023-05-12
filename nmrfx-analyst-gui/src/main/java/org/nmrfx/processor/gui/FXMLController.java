@@ -1440,7 +1440,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         ToolBar btoolBar2 = new ToolBar();
         btoolVBox.getChildren().addAll(btoolBar, btoolBar2);
         statusBar.buildBar(btoolBar, btoolBar2);
-        AnalystApp.getMainApp().addStatusBarTools(statusBar);
+        AnalystApp.getAnalystApp().addStatusBarTools(statusBar);
 
     }
 

@@ -2,7 +2,10 @@ package org.nmrfx.analyst.gui.tools;
 
 import javafx.event.ActionEvent;
 import javafx.event.Event;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SplitMenuButton;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
@@ -441,7 +444,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         removeMolecule();
         Molecule activeMol = Molecule.getActive();
         if (activeMol == null) {
-            ((AnalystApp) AnalystApp.getMainApp()).readMolecule("mol");
+            AnalystApp.getAnalystApp().readMolecule("mol");
         }
         MoleculeUtils.addActiveMoleculeToCanvas();
     }

@@ -87,7 +87,6 @@ public class AnalystApp extends Application {
     public static InteractiveInterpreter interpreter = new InteractiveInterpreter();
     private static DatasetsController datasetController;
     private static HostServices hostServices;
-    private static AnalystApp mainApp = null;
     private static AnalystApp analystApp = null;
     private static MenuBar mainMenuBar = null;
     private static FileMenuActions fileMenuActions;
@@ -114,7 +113,6 @@ public class AnalystApp extends Application {
         if ("BASIC".equalsIgnoreCase(nmrfxAdvanced)) {
             startInAdvanced = false;
         }
-        mainApp = this;
         analystApp = this;
         FXMLController.create(stage);
 
@@ -714,10 +712,6 @@ public class AnalystApp extends Application {
         }
     }
 
-    public static AnalystApp getMainApp() {
-        return mainApp;
-    }
-
     public static void registerStage(Stage stage, FXMLController controller) {
         if (!stages.contains(stage)) {
             stages.add(stage);
@@ -767,7 +761,7 @@ public class AnalystApp extends Application {
     }
 
     public static MenuBar getMenuBar() {
-        return mainApp.makeMenuBar(appName);
+        return analystApp.makeMenuBar(appName);
     }
 
     public static AnalystApp getAnalystApp() {
