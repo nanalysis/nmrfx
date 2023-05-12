@@ -23,14 +23,15 @@
  */
 package org.nmrfx.graphicsio;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.util.ArrayList;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.util.ArrayList;
 
 /**
  *
@@ -94,21 +95,6 @@ public class SVGWriter implements GraphicsIO {
             throw new GraphicsIOException(ex.getMessage());
         }
 
-    }
-
-    @Override
-    public void drawText(String text, double x, double y) throws GraphicsIOException {
-        try {
-            writer.writeStartElement("text");
-            writer.writeAttribute("fill", "black");
-            writer.writeAttribute("x", format(x));
-            writer.writeAttribute("y", format(y));
-            writer.writeCharacters(text);
-            writer.writeEndElement();
-            writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
-        }
     }
 
     @Override
@@ -197,12 +183,6 @@ public class SVGWriter implements GraphicsIO {
     }
 
     @Override
-    public void drawPolyLine(double[] x, double[] y) throws GraphicsIOException {
-        int n = x.length;
-        drawPolyLine(x, y, n);
-    }
-
-    @Override
     public void drawPolyLine(double[] x, double[] y, int n) throws GraphicsIOException {
         //<polyline points="0,0  30,0  15,30" style="stroke:#006600;"/>   
         StringBuilder pointBuilder = new StringBuilder();
@@ -216,27 +196,6 @@ public class SVGWriter implements GraphicsIO {
             writer.writeEmptyElement("polyline");
             writer.writeAttribute("points", pointBuilder.toString());
             writer.writeAttribute("style", getStyle());
-            writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
-        }
-    }
-
-    @Override
-    public void drawPolyLine(ArrayList<Double> values) throws GraphicsIOException {
-        //<polyline points="0,0  30,0  15,30" style="stroke:#006600;"/>   
-        StringBuilder pointBuilder = new StringBuilder();
-        for (int i = 0; i < values.size(); i += 2) {
-            pointBuilder.append(format(values.get(i)));
-            pointBuilder.append(',');
-            pointBuilder.append(format(values.get(i + 1)));
-            pointBuilder.append(' ');
-        }
-        try {
-            writer.writeEmptyElement("polyline");
-            writer.writeAttribute("points", pointBuilder.toString());
-            writer.writeAttribute("style", getStyle());
-
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
             throw new GraphicsIOException(ex.getMessage());
@@ -288,20 +247,6 @@ public class SVGWriter implements GraphicsIO {
     @Override
     public void setLineWidth(double width) throws GraphicsIOException {
         lineWidth = width;
-    }
-
-    @Override
-    public void drawRect(double x, double y, double w, double h) throws GraphicsIOException {
-        try {
-            writer.writeEmptyElement("rect");
-            writer.writeAttribute("x", format(x));
-            writer.writeAttribute("y", format(y));
-            writer.writeAttribute("height", format(h));
-            writer.writeAttribute("width", format(w));
-            writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
-        }
     }
 
     @Override

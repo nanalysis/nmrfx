@@ -68,28 +68,13 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     GCCache cache = new GCCache();
 
-    static class Rotate {
-
-        final double value;
-
-        Rotate(double value) {
-            this.value = value;
-        }
+    record Rotate(double value) {
     }
 
-    static class Translate {
-
-        final double x;
-        final double y;
-
-        Translate(double x, double y) {
-            this.x = x;
-            this.y = y;
-        }
+    record Translate(double x, double y) {
     }
 
     static class GCCache {
-
         double fontSize = 12;
         String fontFamilyName = "Helvetica";
         Color fill = Color.BLACK;
@@ -185,8 +170,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     private String getTextDY() {
         double dYf = switch (textBaseline) {
-            case BASELINE -> 0.0;
-            case BOTTOM -> 0.0;
+            case BASELINE, BOTTOM -> 0.0;
             case TOP -> 1.0;
             case CENTER -> 0.5;
         };
