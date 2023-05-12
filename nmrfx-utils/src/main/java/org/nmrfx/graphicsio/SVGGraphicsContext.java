@@ -129,21 +129,20 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     }
 
-    public void create(boolean landScape, String fileName) {
-        create(landScape, 1024, 1024, fileName);
+    public void create(String fileName) {
+        create(1024, 1024, fileName);
     }
 
-    public void create(boolean landScape, double width, double height, String fileName) {
+    public void create(double width, double height, String fileName) {
         try {
             OutputStream stream = new FileOutputStream(fileName);
-            create(landScape, width, height, stream);
+            create(width, height, stream);
         } catch (FileNotFoundException ex) {
             log.warn(ex.getMessage(), ex);
         }
-
     }
 
-    public void create(boolean landScape, double width, double height, OutputStream stream) {
+    public void create(double width, double height, OutputStream stream) {
         try {
             this.pageWidth = width;
             this.pageHeight = height;

@@ -920,7 +920,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         if (fileName != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
             try {
-                svgGC.create(true, canvas.getWidth(), canvas.getHeight(), fileName);
+                svgGC.create(canvas.getWidth(), canvas.getHeight(), fileName);
                 for (PolyChart chart : charts) {
                     chart.exportVectorGraphics(svgGC);
                 }
@@ -938,7 +938,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         SVGGraphicsContext svgGC = new SVGGraphicsContext();
         try {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            svgGC.create(true, canvas.getWidth(), canvas.getHeight(), stream);
+            svgGC.create(canvas.getWidth(), canvas.getHeight(), stream);
             for (PolyChart chart : charts) {
                 chart.exportVectorGraphics(svgGC);
             }

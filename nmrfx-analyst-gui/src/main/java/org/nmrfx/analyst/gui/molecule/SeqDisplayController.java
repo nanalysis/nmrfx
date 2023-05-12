@@ -1,12 +1,5 @@
 package org.nmrfx.analyst.gui.molecule;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.event.ActionEvent;
@@ -36,24 +29,24 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
-import org.nmrfx.graphicsio.GraphicsContextInterface;
-import org.nmrfx.graphicsio.GraphicsContextProxy;
-import org.nmrfx.graphicsio.GraphicsIOException;
-import org.nmrfx.graphicsio.PDFGraphicsContext;
-import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.nmrfx.graphicsio.*;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.Protein2ndStructurePredictor;
 import org.nmrfx.structure.chemistry.predict.ProteinResidueAnalysis;
 import org.nmrfx.structure.chemistry.predict.ResidueProperties;
 import org.nmrfx.utils.GUIUtils;
-import org.nmrfx.utils.properties.BooleanOperationItem;
-import org.nmrfx.utils.properties.CheckComboOperationItem;
-import org.nmrfx.utils.properties.ChoiceOperationItem;
-import org.nmrfx.utils.properties.DoubleRangeOperationItem;
-import org.nmrfx.utils.properties.NvFxPropertyEditorFactory;
+import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.ResourceBundle;
 
 /**
  * FXML Controller class
@@ -956,7 +949,7 @@ public class SeqDisplayController implements Initializable {
     public void exportSVG(String fileName) {
         if (fileName != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
-            svgGC.create(true, seqCanvas.getWidth(), seqCanvas.getHeight(), fileName);
+            svgGC.create(seqCanvas.getWidth(), seqCanvas.getHeight(), fileName);
             drawCanvas(svgGC, CANVAS_MODE.DRAW);
             svgGC.saveFile();
         }
