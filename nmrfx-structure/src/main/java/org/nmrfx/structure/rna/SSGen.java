@@ -165,9 +165,6 @@ public class SSGen {
                 Residue res2 = res1.pairedTo;
                 Residue res1Next = res1.getNext();
                 Residue res2Before = res2.getPrevious();
-//                if ((res1.getPrevious() != null) && (res2.getNext() != null) && (res2.getNext().pairedTo == null)) {
-//                    
-//                }
                 Polymer poly1 = res1.getPolymer();
                 Polymer poly2 = res2.getPolymer();
                 int polyID1 = poly1.getIDNum();

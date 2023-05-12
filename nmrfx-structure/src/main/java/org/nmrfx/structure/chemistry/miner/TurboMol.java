@@ -54,25 +54,6 @@ public class TurboMol {
         });
     }
 
-//    public IAtom getAtom(final int index) {
-//        IAtom atom = null;
-//        if (inMolecule != null) {
-//            atom = inMolecule.getAtom(index);
-//        }
-//        return atom;
-//    }
-//
-//    public int getAtomCount(final int element) {
-//        int atomCount = 0;
-//        if (inMolecule != null) {
-//            for (IAtom atom : inMolecule.atoms()) {
-//                if (element == atom.getAtomicNumber()) {
-//                    atomCount++;
-//                }
-//            }
-//        }
-//        return atomCount;
-//    }
     public void setInputFromString(String dataString) {
         inputData = dataString;
     }

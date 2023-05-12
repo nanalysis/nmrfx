@@ -86,7 +86,6 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         energy = energy();
         putDihedrals();
         molecule.genCoords(false, null);
-        //putDihedrals();
         dihedrals.energyList.makeAtomListFast();
         energy = energy();
 
@@ -95,7 +94,7 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         report(0, nEvaluations, deltaTime, dihedrals.energyList.atomList.size(), energy);
 
         DEFAULT_RANDOMGENERATOR.setSeed(1);
-        //suggested default value for population size represented by variable 'labda'
+        //suggested default value for population size represented by variable 'lambda'
         //anglesValue.length represents the number of parameters
         int lambda = (int) (lambdaMul * Math.round(4 + 3 * Math.log(dihedrals.angleValues.length)));
         CMAESOptimizer optimizer = new CMAESOptimizer(nSteps, stopFitness, true, diagOnly, 0,
@@ -189,8 +188,6 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
                 for (Atom atom : atomArray) {
                     sumCos += Math.cos(atom.dihedralAngle);
                     sumSin += Math.sin(atom.dihedralAngle);
-
-                    //linkedValues[2][i] = atom.dihedralAngle;
                 }
                 int n = atomArray.size();
                 double avg = Math.atan2(sumSin / n, sumCos / n);

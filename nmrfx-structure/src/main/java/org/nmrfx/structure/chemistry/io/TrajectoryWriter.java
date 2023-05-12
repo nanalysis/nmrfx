@@ -70,7 +70,6 @@ public class TrajectoryWriter {
             molecule.centerStructure(2);
             String fileName = getFileName();
             molecule.writeXYZToPDB(fileName, 2);
-            //molecule.copyStructure(0,1);
             trajectoryFileNum++;
         } catch (IOException ioE) {
             System.out.println(ioE.getMessage());

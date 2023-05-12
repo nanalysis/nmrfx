@@ -742,21 +742,9 @@ public class SSLayout implements MultivariateFunction {
             double deltaX = x1 - xCenter;
             double deltaY = y1 - yCenter;
             double dis2 = (deltaX * deltaX + deltaY * deltaY);
-            //sumNBError += 0.00000001*(1000.0-dis2);
-            //sumNBError -= 0.0000001*Math.sqrt(dis2);
-            //sumNBError += 0.0000001*Math.sqrt(dis2);
         }
         double sumAngle = 0.0;
-        /*
-         for (int i=0;i<pars.length;i++) {
-         if (angleTargets[i] > -999.0) {
-         double delta = Math.abs(angleTargets[i]-pars[i]);
-         sumAngle += delta*delta;
-         }
-         }
-         */
         double value = sumPairError + sumNBError + sumAngle + nIntersections * 100.0;
-        //double value = sumPairError+sumNBError + sumAngle + nIntersections*10.0;
         return value;
     }
 
@@ -768,7 +756,6 @@ public class SSLayout implements MultivariateFunction {
         }
         double value = value(guess);
         log.info("start value {} free {}", value, nFree);
-        // dumpAngles(guess);
         PointValuePair result = null;
         if (nFree > 0) {
             int startLimit = ((nNuc % 2) == 1) ? 5 : 6;

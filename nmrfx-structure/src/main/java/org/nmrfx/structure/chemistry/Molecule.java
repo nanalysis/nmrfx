@@ -62,7 +62,6 @@ public class Molecule extends MoleculeBase {
     public static final LinkedHashSet colorTypes = new LinkedHashSet();
     public static final LinkedHashSet shapeTypes = new LinkedHashSet();
 
-    //public static MoleculeTableModel molTableModel = null;
     public Map<Atom, Map<Atom, Double>> ringClosures;
     List<List<Atom>> atomTree = null;
     HashMap<String, List> allowedSourcesMap = new HashMap<>();
@@ -97,7 +96,6 @@ public class Molecule extends MoleculeBase {
         labelTypes.put("both", Integer.valueOf(LABEL_SYMBOL_AND_NUMBER));
         labelTypes.put("ffc", Integer.valueOf(LABEL_FFC));
 
-        //labelTypes.put( "ss",Integer.valueOf(LABEL_SECONDARY_STRUCTURE));
         labelTypes.put("residue", Integer.valueOf(LABEL_RESIDUE));
         labelTypes.put("charge", Integer.valueOf(LABEL_CHARGE));
         labelTypes.put("value", Integer.valueOf(LABEL_VALUE));
@@ -116,35 +114,12 @@ public class Molecule extends MoleculeBase {
         displayTypes.add("hwire");
         displayTypes.add("bwire");
 
-        //displayTypes.add("stick");
-        //displayTypes.add("hstick");
-        //displayTypes.add("bstick");
         displayTypes.add("ball");
         displayTypes.add("pball");
         displayTypes.add("cpk");
 
-        //displayTypes.add("custom");
-        //displayTypes.add("point");
-        //colorTypes.add("solid");
         colorTypes.add("atom");
 
-        /*
-     colorTypes.add("p_atom");
-     colorTypes.add("residue");
-     colorTypes.add("p_residue");
-     colorTypes.add("segment");
-     colorTypes.add("property");
-     colorTypes.add("gcharge");
-     colorTypes.add("p_gcharge");
-     colorTypes.add("charge");
-     colorTypes.add("ffc");
-     colorTypes.add("ss");
-     colorTypes.add("amf");
-     colorTypes.add("ntoc");
-     colorTypes.add("rgb");
-     colorTypes.add("custom");
-     colorTypes.add("gproperty");
-         */
         shapeTypes.add("circle");
         shapeTypes.add("square");
         shapeTypes.add("triangle");
@@ -247,7 +222,6 @@ public class Molecule extends MoleculeBase {
     }
 
     public static void addMoleculeModel() {
-        //molTableModel = new MoleculeTableModel();
     }
 
     /**
@@ -592,8 +566,6 @@ public class Molecule extends MoleculeBase {
             AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
             atomTree = aTreeGen.genTree(this, null, null);
         }
-        //nullCoords();
-        //dumpCoordsGen();
         genVecs = CoordinateGenerator.setupCoords(atomTree);
         CoordinateGenerator.prepareAtoms(atoms, fillCoords);
     }
@@ -626,7 +598,6 @@ public class Molecule extends MoleculeBase {
     }
 
     public int genCoords(int iStructure, boolean fillCoords) throws RuntimeException {
-        //        return genCoords(iStructure, fillCoords, null);
         return genCoordsFast(null, fillCoords, iStructure);
     }
 
@@ -717,9 +688,6 @@ public class Molecule extends MoleculeBase {
 
                 Coordinates3DF coords = new Coordinates3DF(v1, v2, v3);
                 coords.setupNeRF();
-//                if (!coords.setup()) {
-//                    throw new RuntimeException("genCoords: coordinates the same for " + i + " " + genVecs[i][2]);
-//                }
                 double dihedralAngle = 0;
                 for (int j = 3; j < genVecs[i].length; j++) {
                     FastVector3D v4 = vecCoords[genVecs[i][j]];
@@ -734,12 +702,10 @@ public class Molecule extends MoleculeBase {
                     if (!ok) {
                         log.info("{} {} {}", a4.getParent(), a4.getFullName(), a4.valanceAngle);
                     }
-                    // boolean ok = coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin, v4);
                 }
             }
 
         }
-        //        updateFromVecCoords();
 
         structures.add(0);
         resetActiveStructures();
@@ -770,7 +736,6 @@ public class Molecule extends MoleculeBase {
         // fixme this is a hack because the treeAtoms are not in monotoniclly increasing order of residue number
         Map<Entity, Integer> resMap = new HashMap<>();
         for (Atom atom : atomList) {
-            //            atom.iAtom = i;
             if (resMap.containsKey(atom.entity)) {
                 resNum = resMap.get(atom.entity);
             } else {
@@ -796,7 +761,6 @@ public class Molecule extends MoleculeBase {
             atomList = treeAtoms;
         }
         for (Atom atom : atomList) {
-            //            atom.iAtom = i;
             Point3 pt = atom.getPoint();
             if (pt == null) {
                 log.warn("updateFromVecCoords null pt {} {}", atom.getFullName(), atom.eAtom);
@@ -1663,7 +1627,6 @@ public class Molecule extends MoleculeBase {
             }
         }
         RealMatrix rotMat = alignmentMat.getEigenVectors();
-//        RealMatrix rotMat = rdcEig.getVT().copy();
         if (scaleMat) {
             for (int i = 0; i < 3; i++) {
                 double scale = Math.abs(eigValues[i] / maxEig);
@@ -2946,7 +2909,6 @@ public class Molecule extends MoleculeBase {
                 mNode.setValue(atom.canonValue);
                 mNode.setAtom(atom);
 
-                //mNode.atom = atom;
                 i++;
             }
 
@@ -3274,16 +3236,14 @@ public class Molecule extends MoleculeBase {
         if (atom2 != null) {
             invalidateAtomTree();
             invalidateAtomArray();
-            //List<Atom> ats = getAtomArray();
             updateVecCoords();
             resetGenCoords();
         }
-        // setupAngles();
     }
 
     public List<Atom> createLinker(Atom atom1, Atom atom2,
             double[] linkLen, double[] valAngle, String[] aNames, double dihAngle) {
-        /**
+        /*
          * createLinker is a method to create a link between atoms in two
          * separate entities
          *
@@ -3320,12 +3280,10 @@ public class Molecule extends MoleculeBase {
         if (atom2 != null) {
             invalidateAtomTree();
             invalidateAtomArray();
-            //List<Atom> ats = getAtomArray();
             updateVecCoords();
             resetGenCoords();
         }
         return newAtoms;
-        // setupAngles();
     }
 
     @Override
@@ -3343,7 +3301,7 @@ public class Molecule extends MoleculeBase {
                 startAtom = isProtein ? residue.getAtom("CAX") : residue.getAtom("C3'X");
             }
         }
-        //molecule.updateBondArray();
+
         residue.getLastBackBoneAtom().setProperty("connector", true);
         PathIterator pI = new PathIterator(residue);
         NodeValidator nV = new NodeValidator();
