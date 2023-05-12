@@ -1,5 +1,4 @@
 from org.nmrfx.processor.gui import FXMLController
-from org.nmrfx.processor.gui import MainApp
 from org.nmrfx.processor.gui import GUIScripter
 from org.nmrfx.peaks import PeakList
 from org.nmrfx.processor.datasets import Dataset
