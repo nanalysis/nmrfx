@@ -57,9 +57,7 @@ public class VecCorrelation {
         int delta = (int) ((double) LT / exactN + 0.5) - m;
         int residual = LT - (int) ((double) LT / exactN + 0.5) * N;
         LT = LT - residual;
-        //int delta=LT/N-m;
         System.out.println(N + " " + delta);
-        // test comment
         /* Allocate memory for matrices and vectors.
          Due to memory limitations F has only two rows
          The value in F may be re-writen time and time again, until finding the optimal u for each position x.*/
@@ -350,21 +348,6 @@ public class VecCorrelation {
         return sum * (double) (n) / ((double) (n - 1) * sumW);
     }
 
-//    public static double correlation(DoubleArrayList xList, DoubleArrayList yList, DoubleArrayList wList) {
-//        double[] vecXTmp = xList.elements();
-//        double[] vecX = new double[xList.size()];
-//        System.arraycopy(vecXTmp, 0, vecX, 0, xList.size());
-//
-//        double[] vecYTmp = yList.elements();
-//        double[] vecY = new double[yList.size()];
-//        System.arraycopy(vecYTmp, 0, vecY, 0, yList.size());
-//
-//        double[] vecWTmp = wList.elements();
-//        double[] vecW = new double[wList.size()];
-//        System.arraycopy(vecWTmp, 0, vecW, 0, wList.size());
-//
-//        return correlation(vecX, vecY, vecW);
-//    }
     public static double correlation(double[] vecX, double[] vecY, double[] vecW) {
         int n = vecX.length;
         if (n != vecY.length) {

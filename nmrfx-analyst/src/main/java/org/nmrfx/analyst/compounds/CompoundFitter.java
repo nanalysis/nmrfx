@@ -293,7 +293,6 @@ public class CompoundFitter implements MultivariateFunction {
      * @return
      */
     public double score(boolean[] skipColumns, boolean nonNeg) {
-//        dumpAB("abfit.txt");
         RealMatrix AR;
         if (skipColumns == null) {
             AR = A.copy();
@@ -566,7 +565,6 @@ public class CompoundFitter implements MultivariateFunction {
                 new SearchInterval(-range, range, 0.0),
                 GoalType.MINIMIZE);
 
-        //dumpAB("optfit.txt");
         return valuePair.getPoint();
     }
 
@@ -644,8 +642,6 @@ public class CompoundFitter implements MultivariateFunction {
         int checkFeasableCount = 0;
         boolean genStat = false;
         ConvergenceChecker convergenceChecker = new SimpleValueChecker(1.0e-6, -1.0);
-        //int nInterp = 2*n+1;
-        //BOBYQAOptimizer optimizer = new BOBYQAOptimizer(nInterp);
         CMAESOptimizer optimizer = new CMAESOptimizer(maxIterations, stopFitness, isActiveCMA, nDiagOnly, checkFeasableCount, DEFAULT_RANDOMGENERATOR, genStat, convergenceChecker);
         PointValuePair result = null;
         double lambdaMul = 1.0;

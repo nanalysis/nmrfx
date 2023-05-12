@@ -244,7 +244,6 @@ public class Region {
 
     public int ppmToPt(double ppm) {
         int pt = (int) ((cData.getRef() - ppm) * cData.getSF() / cData.getSW() * cData.getN() + 0.5);
-        //int pt = cData.getRef() - ((1.0 * pt / cData.getN())) * cData.getSW() / cData.getSF();
         return pt;
     }
 
