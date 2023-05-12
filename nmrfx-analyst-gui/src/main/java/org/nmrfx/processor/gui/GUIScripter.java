@@ -15,7 +15,6 @@ import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.python.util.InteractiveInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -786,8 +785,7 @@ public class GUIScripter {
     public static void chartCommand(String keyStr, PolyChart chart) {
         PolyChart currentActive = PolyChart.getActiveChart();
         chart.setActiveChart();
-        InteractiveInterpreter interp = AnalystPythonInterpreter.getInterpreter();
-        interp.exec(keyActions.get(keyStr));
+        AnalystPythonInterpreter.exec(keyActions.get(keyStr));
         currentActive.setActiveChart();
     }
 
