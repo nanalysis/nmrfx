@@ -104,8 +104,6 @@ public class PeakListUpdater implements Updater {
             if (peakList != null) {
                 if (peakList.peakUpdated.get()) {
                     peakList.peakUpdated.set(false);
-                    // fixme should only do if necessary
-                    //peakList.sortMultiplets();
                     peakList.notifyPeakChangeListeners();
                     anyUpdated = true;
                 }

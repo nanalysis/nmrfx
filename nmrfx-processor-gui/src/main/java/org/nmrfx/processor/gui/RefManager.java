@@ -337,7 +337,7 @@ public class RefManager {
                 newItems.add(new BooleanOperationItem(boolListener, chartProcessor.getFixDSP(), dimName, "fixdsp", "Fix DSP buildup before FT"));
             }
         }
-        //newItems.add(new IntRangeOperationItem(intListener, 3, 0, 5, "op", "opname", "opDesc"));
+
         for (String propName : propNames) {
             if (propName.equals("skip")) {
                 if (dim > 0) {

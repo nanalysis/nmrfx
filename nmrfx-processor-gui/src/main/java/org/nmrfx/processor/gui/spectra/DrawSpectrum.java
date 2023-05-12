@@ -319,8 +319,6 @@ public class DrawSpectrum {
         void drawNow(Task task, DatasetAttributes fileData) throws IOException {
             float[] levels = getLevels(fileData);
             double[] offset = {0, 0};
-            //MARCH_MODE = iMode == 0 ? false : true;
-            //fileData.posColorProperty().set(iMode == 0 ? Color.BLACK : Color.RED);
             fileData.mChunk = -1;
             float[][] z = null;
 
@@ -361,7 +359,6 @@ public class DrawSpectrum {
                                         done = true;
                                         return;
                                     }
-                                    // contour.drawSquares(g2, xOff, yOff);
                                 } else {
                                     break;
                                 }
@@ -482,8 +479,6 @@ public class DrawSpectrum {
             float[] levels = getLevels(fileData);
 
             double[] offset = {0, 0};
-            //MARCH_MODE = iMode == 0 ? false : true;
-            //fileData.posColorProperty().set(iMode == 0 ? Color.BLACK : Color.RED);
             fileData.mChunk = -1;
             float[][] z = null;
             do {
@@ -577,15 +572,12 @@ public class DrawSpectrum {
         if (drawObject.count < drawSpectrum.jobCount) {
             return result;
         }
-        //g2.save();
         result = 1;
         try {
-            //  drawSpectrum.clip(g2);
             drawObject.contour.drawSquares(g2);
         } catch (Exception ex) {
             result = 0;
         } finally {
-            //g2.restore();
             return result;
         }
 
@@ -1211,7 +1203,6 @@ public class DrawSpectrum {
                     }
                     if ((i - last) > 10) {
                         if (inBase) {
-                            //bcPath.getElements().add(new LineTo(xValue, yValue));
                             last = i;
                         }
                     }
@@ -1483,8 +1474,6 @@ public class DrawSpectrum {
                 }
             }
         } else {
-            //g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-            //g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setStroke(Color.GREEN);
 
             g2.strokeLine(px1, py1 - 5, px4, py4 + 5);

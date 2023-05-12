@@ -185,7 +185,6 @@ public class MainApp extends Application {
         interpreter.exec("parseArgs(argv)");
         ConsoleController.create(interpreter, "NMRFx Console");
         ProjectBase.setPCS(new PropertyChangeSupport(this));
-        // Dataset.addObserver(this);
         if (defaultFont == null) {
             loadFont();
         }

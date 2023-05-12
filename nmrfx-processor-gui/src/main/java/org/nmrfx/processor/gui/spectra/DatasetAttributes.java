@@ -1011,7 +1011,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         if (iDim != 1) {
             int jDim = dimC[1];
             int offset = theFile.ppmToPoint(jDim, ppmy);
-            //int offset = (int) Math.round(ppmy);
             ptC[1][0] = offset;
             ptC[1][1] = offset;
         }
@@ -1021,7 +1020,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             if (theFile.getComplex(jDim)) {
                 offset *= 2;
             }
-            //int offset = (int) Math.round(ppmx);
             ptC[0][0] = offset;
             ptC[0][1] = offset;
         }
@@ -1447,9 +1445,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
             if (i > 1) {
                 chunkSize[i] = 1;
-//                if (drawList != null) {
-                //                   dimSize = drawList.length;
-                //              }
             }
             chunkOffset[i] = chunkOffset[i - 1] * (((dimSize - 1) / chunkSize[i - 1]) + 1);
         }

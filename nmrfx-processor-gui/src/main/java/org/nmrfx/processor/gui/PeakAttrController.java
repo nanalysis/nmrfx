@@ -231,20 +231,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         if (!MainApp.isAnalyst()) {
             tabPane.getTabs().remove(3);
         }
-
-//        peakListMenuButton.setOnMousePressed(e -> {
-//            updatePeakListMenu();
-//            peakListMenuButton.show();
-//        });
-//        ChangeListener<Dataset> listener = new ChangeListener<Dataset>() {
-//            @Override
-//            public void changed(ObservableValue<? extends Dataset> observable, Dataset oldValue, Dataset newValue) {
-//                PolyChart chart = PolyChart.activeChart;
-//                if (chart != null) {
-//                    setPeak(chart);
-//                }
-//            }
-//        };
     }
 
     public Stage getStage() {
