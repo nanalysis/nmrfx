@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry.relax;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
  *
  * @author mbeckwith
  */
+@PluginAPI("ring")
 public class RelaxationData implements RelaxationValues {
 
     public enum relaxTypes {

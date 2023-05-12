@@ -2,6 +2,7 @@ package org.nmrfx.peaks;
 
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
@@ -22,6 +23,7 @@ import static java.lang.Double.compare;
 import static java.util.Comparator.comparing;
 
 @PythonAPI({"dscript", "pscript"})
+@PluginAPI("ring")
 public class PeakList {
 
     static ResonanceFactory resFactory = new ResonanceFactory();

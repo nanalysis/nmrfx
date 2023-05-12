@@ -19,6 +19,7 @@ package org.nmrfx.chemistry.io;
 
 import java.io.BufferedReader;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import java.io.File;
@@ -44,6 +45,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author brucejohnson, Martha
  */
+@PluginAPI("ring")
 public class NMRNEFReader {
     private static final Logger log = LoggerFactory.getLogger(NMRNEFReader.class);
 

@@ -17,9 +17,11 @@
  */
 package org.nmrfx.chemistry;
 
+import org.nmrfx.annotations.PluginAPI;
+
 import java.io.*;
 
-
+@PluginAPI("residuegen")
 public class Bond implements IBond, Serializable {
 
     static final public int SELECT = 0;

@@ -36,6 +36,8 @@ import org.nmrfx.graphicsio.StyledCanvasText;
  *
  * @author brucejohnson
  */
+//TODO uncomment once core & utils are merged
+//@PluginAPI("ring")
 public class Axis {
     private static final double GRID_MINOR_LINE_WIDTH = 0.5;
     private static final double GRID_MAJOR_LINE_WIDTH = 1.0;

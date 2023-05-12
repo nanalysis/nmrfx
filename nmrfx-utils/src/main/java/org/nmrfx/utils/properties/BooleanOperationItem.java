@@ -31,6 +31,8 @@ import javafx.beans.value.ObservableBooleanValue;
  *
  * @author brucejohnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("ring")
 public class BooleanOperationItem extends OperationItem implements ObservableBooleanValue {
 
     boolean value;

@@ -21,6 +21,7 @@ import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.math.VecBase;
@@ -38,6 +39,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
+@PluginAPI("parametric")
 public class DatasetAttributes extends DataGenerator implements Cloneable {
     private static final Logger log = LoggerFactory.getLogger(DatasetAttributes.class);
 
@@ -441,6 +443,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public double getPosWidth() {
         return posWidthProperty().get();
     }
+
     private DoubleProperty negWidth;
 
     public DoubleProperty negWidthProperty() {
@@ -457,6 +460,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public double getNegWidth() {
         return negWidthProperty().get();
     }
+
     private DoubleProperty lvl;
 
     public DoubleProperty lvlProperty() {
@@ -597,6 +601,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public int getNlvls() {
         return nlvlsProperty().get();
     }
+
     private DoubleProperty clm;
 
     public DoubleProperty clmProperty() {
@@ -642,6 +647,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public String getFileName() {
         return fileNameProperty().get();
     }
+
     private BooleanProperty drawReal;
 
     public BooleanProperty drawRealProperty() {
@@ -1420,7 +1426,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public int getMatrixRegion(int iChunk, int maxChunk, int mode, int[][] apt,
-            double[] offset, StringBuffer chunkLabel) {
+                               double[] offset, StringBuffer chunkLabel) {
         Float extremeValue;
         boolean fastMode = false;
         chunkLabel.append(dim[0]).append(".");
@@ -1820,7 +1826,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         } else if (mode == AXMODE.PPM) {
             limit[1] = theFile.pointToPPM(dim[i], 0.0);
             limit[0] =  theFile.pointToPPM(dim[i],
-                     (theFile.getSizeReal(dim[i]) - 1));
+                    (theFile.getSizeReal(dim[i]) - 1));
         }
 
         return (limit);
@@ -1975,12 +1981,12 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
         } else {
             Platform.runLater(() -> {
-                try {
-                    PropertyUtils.setProperty(this, name, value);
-                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                    log.error(ex.getMessage(), ex);
-                }
-            }
+                        try {
+                            PropertyUtils.setProperty(this, name, value);
+                        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                            log.error(ex.getMessage(), ex);
+                        }
+                    }
             );
         }
     }
@@ -2036,33 +2042,33 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public void moveRegion(IntegralHit iHit, NMRAxis[] axes, double[] newValue) {
-            int handle = iHit.handle;
-            DatasetRegion r = iHit.getDatasetRegion();
-            double newX = axes[0].getValueForDisplay(newValue[0]).doubleValue();
-            double newY = axes[1].getValueForDisplay(newValue[1]).doubleValue();
-            switch (handle) {
-                case 1:
-                    double oldEnd = r.getRegionEndIntensity(0);
-                    double deltaEnd = oldEnd - r.getRegionStartIntensity(0);
-                    r.setRegionStartIntensity(0, newY);
-                    r.setRegionEndIntensity(0, newY + deltaEnd);
-                    measureRegion(r, "Error encountered moving region start and end intensity.");
-                    break;
-                case 2:
-                    r.setRegionEndIntensity(0, newY);
-                    measureRegion(r, "Error encountered moving region end intensity.");
-                    break;
-                case 3:
-                    r.setRegionEnd(0, newX);
-                    measureRegion(r, "Error encountered moving region end.");
-                    break;
-                case 4:
-                    r.setRegionStart(0, newX);
-                    measureRegion(r, "Error encountered moving region start.");
-                    break;
-                default:
-                    break;
-            }
+        int handle = iHit.handle;
+        DatasetRegion r = iHit.getDatasetRegion();
+        double newX = axes[0].getValueForDisplay(newValue[0]).doubleValue();
+        double newY = axes[1].getValueForDisplay(newValue[1]).doubleValue();
+        switch (handle) {
+            case 1:
+                double oldEnd = r.getRegionEndIntensity(0);
+                double deltaEnd = oldEnd - r.getRegionStartIntensity(0);
+                r.setRegionStartIntensity(0, newY);
+                r.setRegionEndIntensity(0, newY + deltaEnd);
+                measureRegion(r, "Error encountered moving region start and end intensity.");
+                break;
+            case 2:
+                r.setRegionEndIntensity(0, newY);
+                measureRegion(r, "Error encountered moving region end intensity.");
+                break;
+            case 3:
+                r.setRegionEnd(0, newX);
+                measureRegion(r, "Error encountered moving region end.");
+                break;
+            case 4:
+                r.setRegionStart(0, newX);
+                measureRegion(r, "Error encountered moving region start.");
+                break;
+            default:
+                break;
+        }
     }
 
     private void measureRegion(DatasetRegion region, String errMsg) {

@@ -12,6 +12,8 @@ import javafx.scene.layout.Pane;
  *
  * @author brucejohnson
  */
+//TODO uncomment once core & utils are merged
+//@PluginAPI("ring")
 public class XYChartPane extends Pane {
 
     Canvas canvas;

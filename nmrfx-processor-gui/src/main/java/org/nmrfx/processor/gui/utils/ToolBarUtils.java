@@ -22,11 +22,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import org.nmrfx.annotations.PluginAPI;
 
 /**
  *
  * @author brucejohnson
  */
+@PluginAPI("parametric")
 public class ToolBarUtils {
 
     public static void addFiller(ToolBar toolBar, double min, double max) {

@@ -33,6 +33,8 @@ import javafx.beans.value.ObservableStringValue;
  *
  * @author brucejohnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("ring")
 public class ChoiceOperationItem extends OperationItem implements ObservableStringValue {
 
     String defaultValue;

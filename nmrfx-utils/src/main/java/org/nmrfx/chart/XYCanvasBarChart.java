@@ -33,6 +33,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author brucejohnson
  */
+//TODO uncomment once core & utils are merged
+//@PluginAPI("ring")
 public class XYCanvasBarChart extends XYCanvasChart {
 
     private static final Logger log = LoggerFactory.getLogger(XYCanvasBarChart.class);

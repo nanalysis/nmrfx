@@ -39,6 +39,7 @@ import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.ResizableDoubleArray;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.math.VecException;
@@ -75,6 +76,7 @@ import static org.nmrfx.processor.math.VecUtil.nnlsFit;
  * @author michael
  */
 @PythonAPI({"autoscript", "dscript", "pyproc", "simfid"})
+@PluginAPI("parametric")
 public class Vec extends VecBase {
 
     public static final PyType VTYPE = PyType.fromClass(Vec.class);

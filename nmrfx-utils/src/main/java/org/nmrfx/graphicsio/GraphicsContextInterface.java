@@ -35,6 +35,8 @@ import javafx.scene.transform.Affine;
  *
  * @author brucejohnson
  */
+//TODO uncomment when core & utils are regrouped
+//@PluginAPI("ring")
 public interface GraphicsContextInterface {
 
     default void nativeCoords(boolean state) {

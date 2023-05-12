@@ -17,27 +17,28 @@
  */
 package org.nmrfx.processor.math;
 
-import static org.nmrfx.processor.math.Vec.pascalrow;
-
-import org.nmrfx.math.VecException;
-import org.nmrfx.processor.operations.Asmooth;
-import org.nmrfx.processor.optimization.NNLSMat;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.solvers.BisectionSolver;
+import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
-import java.util.Arrays;
-import org.apache.commons.math3.analysis.solvers.BisectionSolver;
-import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
-import org.apache.commons.math3.exception.MathIllegalArgumentException;
+import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.math.VecException;
+import org.nmrfx.processor.operations.Asmooth;
+import org.nmrfx.processor.optimization.NNLSMat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+
 import static org.nmrfx.processor.math.Vec.apache_ift;
+import static org.nmrfx.processor.math.Vec.pascalrow;
 
 /**
  * A compilation of static methods which do not explicitly use Vec objects but
@@ -46,6 +47,7 @@ import static org.nmrfx.processor.math.Vec.apache_ift;
  *
  * @author johnsonb
  */
+@PluginAPI("parametric")
 public class VecUtil {
 
     private static final Logger log = LoggerFactory.getLogger(VecUtil.class);

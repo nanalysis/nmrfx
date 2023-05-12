@@ -17,9 +17,12 @@
  */
 package org.nmrfx.chemistry;
 
+import org.nmrfx.annotations.PluginAPI;
+
 import java.io.Serializable;
 import java.util.*;
 
+@PluginAPI("ring")
 public class Entity implements AtomContainer, Serializable, ITree {
 
     public static String[] entityStrings = {

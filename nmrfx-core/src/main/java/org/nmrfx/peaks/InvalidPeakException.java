@@ -17,10 +17,13 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.annotations.PluginAPI;
+
 /**
  *
  * @author Bruce Johnson
  */
+@PluginAPI("ring")
 public class InvalidPeakException extends Exception {
 
     public InvalidPeakException(String message) {

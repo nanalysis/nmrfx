@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@PluginAPI("ring")
 public class PDBFile {
 
     private static final Logger log = LoggerFactory.getLogger(PDBFile.class);

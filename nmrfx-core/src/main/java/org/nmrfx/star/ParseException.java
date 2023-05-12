@@ -17,10 +17,13 @@
  */
 package org.nmrfx.star;
 
+import org.nmrfx.annotations.PluginAPI;
+
 /**
  *
  * @author Bruce Johnson
  */
+@PluginAPI("ring")
 public class ParseException extends Exception {
 
     public ParseException(String message) {

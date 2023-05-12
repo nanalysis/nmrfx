@@ -45,6 +45,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.apache.commons.lang3.Range;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.Nuclei;
@@ -88,6 +89,7 @@ import java.util.stream.Collectors;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 
+@PluginAPI("parametric")
 public class PolyChart extends Region implements PeakListener {
     private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
     static boolean listenToPeaks = true;
@@ -2135,8 +2137,8 @@ public class PolyChart extends Region implements PeakListener {
             refresh();
         } else {
             Platform.runLater(() -> {
-                refresh();
-            }
+                        refresh();
+                    }
             );
         }
     }
@@ -2344,7 +2346,7 @@ public class PolyChart extends Region implements PeakListener {
                 int n1D = datasetAttributesList.stream().filter(d -> !d.isProjection() && d.getPos())
                         .mapToInt(d -> d.getLastChunk(0) + 1).sum();
                 if (n1D > 1) {
-                    double fWidth = 0.9 * axWidth / n1D; 
+                    double fWidth = 0.9 * axWidth / n1D;
                     stackWidth = (axWidth - fWidth) * chartProps.getStackX();
                 }
             }
@@ -2756,7 +2758,7 @@ public class PolyChart extends Region implements PeakListener {
             if (dataset != null) {
                 String text = ProjectText.genText(dataset);
                 if ((parameterText == null) || (!parameterText.getText().equals(text))) {
-                     if (parameterText == null) {
+                    if (parameterText == null) {
                         double xPos = 10;
                         double yPos =   chartProps.getTicFontSize() * 2;
                         double textWidth = 200;
@@ -3969,7 +3971,7 @@ public class PolyChart extends Region implements PeakListener {
                 gC.beginPath();
                 double[][] bounds = {{xPos + leftBorder, xPos + width - rightBorder}, {yPos + topBorder, yPos + height - bottomBorder}};
                 double[][] world = {{axes[0].getUpperBound(), axes[0].getLowerBound()},
-                {axes[1].getLowerBound(), axes[1].getUpperBound()}};
+                        {axes[1].getLowerBound(), axes[1].getUpperBound()}};
                 boolean lastClipAxes = false;
 
                 for (CanvasAnnotation anno : canvasAnnotations) {

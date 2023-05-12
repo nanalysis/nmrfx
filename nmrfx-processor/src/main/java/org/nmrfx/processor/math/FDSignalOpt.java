@@ -17,20 +17,23 @@
  */
 package org.nmrfx.processor.math;
 
-import java.util.ArrayList;
-import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.MersenneTwister;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.SimpleBounds;
-import org.apache.commons.math3.optim.InitialGuess;
-import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
-import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.MathIllegalStateException;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import org.apache.commons.math3.optim.InitialGuess;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.optim.SimpleBounds;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
+import org.apache.commons.math3.random.MersenneTwister;
+import org.apache.commons.math3.random.RandomGenerator;
+import org.nmrfx.annotations.PluginAPI;
 
+import java.util.ArrayList;
+
+@PluginAPI("parametric")
 public class FDSignalOpt implements MultivariateFunction {
 
     private final double[] values;

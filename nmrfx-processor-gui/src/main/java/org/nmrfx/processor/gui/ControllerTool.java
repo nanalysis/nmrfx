@@ -17,10 +17,12 @@
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.annotations.PluginAPI;
+
 /**
- *
  * @author brucejohnson
  */
+@PluginAPI("parametric")
 public interface ControllerTool {
 
     public void close();

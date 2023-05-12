@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.ConstraintSet;
 import org.nmrfx.chemistry.relax.OrderPar;
@@ -43,6 +44,7 @@ import java.util.*;
  *
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public class NMRStarWriter {
 
     protected static final String[] entityCompIndexLoopStrings = {"_Entity_comp_index.ID", "_Entity_comp_index.Auth_seq_ID", "_Entity_comp_index.Comp_ID", "_Entity_comp_index.Comp_label", "_Entity_comp_index.Entity_ID"};

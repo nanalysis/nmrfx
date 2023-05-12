@@ -1,10 +1,13 @@
 
 package org.nmrfx.structure.chemistry.miner;
 
+import org.nmrfx.annotations.PluginAPI;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@PluginAPI("residuegen")
 public class NodeValidator implements NodeValidatorInterface {
 
      boolean[][] p;

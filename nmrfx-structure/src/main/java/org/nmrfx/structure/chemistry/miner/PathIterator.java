@@ -2,6 +2,7 @@ package org.nmrfx.structure.chemistry.miner;
 
 import java.util.*;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.AtomContainer;
 import org.nmrfx.chemistry.IAtom;
 import org.nmrfx.chemistry.IBond;
@@ -11,6 +12,7 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@PluginAPI("residuegen")
 public class PathIterator implements Iterator<List<Integer>> {
     private static final Logger log = LoggerFactory.getLogger(PathIterator.class);
 

@@ -29,6 +29,8 @@ import javafx.beans.value.ChangeListener;
  *
  * @author brucejohnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("ring")
 public class DoubleRangeOperationItem extends DoubleOperationItem {
 
     final boolean zoomable;

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
@@ -30,6 +31,7 @@ import java.util.Map;
  * @author johnsonb
  */
 @PythonAPI("pyproc")
+@PluginAPI("parametric")
 public class Sign extends Operation implements Invertible {
 
     enum ModeType {

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.relax.*;
 import org.nmrfx.chemistry.Order;
 
@@ -59,6 +60,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public class NMRStarReader {
     private static final Logger log = LoggerFactory.getLogger(NMRStarReader.class);
 

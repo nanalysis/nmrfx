@@ -23,6 +23,7 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.*;
 import org.nmrfx.math.VecBase;
@@ -62,6 +63,7 @@ import java.util.stream.IntStream;
  * @author brucejohnson
  */
 @PythonAPI({"dscript", "nustest", "simfid"})
+@PluginAPI("parametric")
 public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     private static final Logger log = LoggerFactory.getLogger(Dataset.class);

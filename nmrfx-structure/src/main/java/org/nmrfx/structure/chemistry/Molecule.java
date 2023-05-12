@@ -22,6 +22,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.Sequence;
 import org.nmrfx.chemistry.protein.ProteinHelix;
@@ -50,6 +51,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+@PluginAPI("residuegen")
 public class Molecule extends MoleculeBase {
     private static final Logger log = LoggerFactory.getLogger(Molecule.class);
 
