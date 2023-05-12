@@ -80,8 +80,7 @@ public class AnalystApp extends Application {
     private static final PopOverTools popoverTool = new PopOverTools();
     private static final List<Stage> stages = new ArrayList<>();
     private static final String appName = "NMRFx Analyst";
-    //XXX called by AnalystPrefs
-    public static PreferencesController preferencesController;
+    private static PreferencesController preferencesController;
     //XXX called by ChartProcessor's constructor
     //TODO create specific controller / singleton to hold interpreter?
     public static InteractiveInterpreter interpreter = new InteractiveInterpreter();
@@ -379,7 +378,7 @@ public class AnalystApp extends Application {
     }
 
     void addPrefs() {
-        AnalystPrefs.addPrefs();
+        AnalystPrefs.addPrefs(preferencesController);
     }
 
     private void saveDatasets() {

@@ -5,22 +5,17 @@
  */
 package org.nmrfx.analyst.gui;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.StringProperty;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.chemistry.io.PDBFile;
-
-import static org.nmrfx.analyst.gui.AnalystApp.preferencesController;
 import org.nmrfx.processor.gui.PreferencesController;
-import org.nmrfx.utils.properties.BooleanOperationItem;
-import org.nmrfx.utils.properties.DirectoryOperationItem;
-import org.nmrfx.utils.properties.DoubleRangeOperationItem;
-import org.nmrfx.utils.properties.IntRangeOperationItem;
-import org.nmrfx.utils.properties.TextOperationItem;
+import org.nmrfx.utils.properties.*;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  *
@@ -138,7 +133,7 @@ public class AnalystPrefs {
         PreferencesController.setString("LOCAL_RESIDUE_DIRECTORY", name);
     }
 
-    public static void addPrefs() {
+    public static void addPrefs(PreferencesController preferencesController) {
         PropertySheet prefSheet = preferencesController.getPrefSheet();
         IntRangeOperationItem libraryVectorSizeItem = new IntRangeOperationItem(
                 (a, b, c) -> {
