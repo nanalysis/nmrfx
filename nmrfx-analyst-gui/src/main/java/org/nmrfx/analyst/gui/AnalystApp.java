@@ -40,6 +40,7 @@ import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
 import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
 import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
 import org.nmrfx.analyst.gui.plugin.PluginLoader;
+import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
 import org.nmrfx.analyst.gui.spectra.SpectrumMenuActions;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.analyst.gui.tools.*;
@@ -61,7 +62,6 @@ import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
-import org.python.util.InteractiveInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,9 +81,6 @@ public class AnalystApp extends Application {
     private static final List<Stage> stages = new ArrayList<>();
     private static final String appName = "NMRFx Analyst";
     private static PreferencesController preferencesController;
-    //XXX called by ChartProcessor's constructor
-    //TODO create specific controller / singleton to hold interpreter?
-    public static InteractiveInterpreter interpreter = new InteractiveInterpreter();
     private static DatasetsController datasetController;
     private static HostServices hostServices;
     private static AnalystApp analystApp = null;
@@ -122,19 +119,9 @@ public class AnalystApp extends Application {
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(appName);
         }
-        Parameters parameters = getParameters();
-        System.out.println(parameters.getRaw());
 
-        interpreter.exec("import os");
-        interpreter.exec("import glob");
-        interpreter.exec("from pyproc import *\ninitLocal()");
-        interpreter.exec("from gscript_adv import *\nnw=NMRFxWindowAdvScripting()");
-        interpreter.exec("from dscript import *");
-        interpreter.exec("from mscript import *");
-        interpreter.exec("from pscript import *");
-        interpreter.set("argv", parameters.getRaw());
-        interpreter.exec("parseArgs(argv)");
-        ConsoleController.create(interpreter, "NMRFx Console");
+        AnalystPythonInterpreter.initialize(getParameters());
+        ConsoleController.create(AnalystPythonInterpreter.getInterpreter(), "NMRFx Console");
         LogConsoleController.create();
         PeakPicking.registerSinglePickAction(this::pickedPeakAction);
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
@@ -769,10 +756,6 @@ public class AnalystApp extends Application {
 
     public static String getAppName() {
         return appName;
-    }
-
-    public static InteractiveInterpreter getInterpreter() {
-        return interpreter;
     }
 
     public static ProjectBase getActive() {
