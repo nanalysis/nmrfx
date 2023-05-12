@@ -17,14 +17,16 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.Vec;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.processor.math.Vec;
 
 /**
  * Performs a Phase Operation on a Vec.
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Phase extends Operation implements Invertible {
 
     private final double p0;

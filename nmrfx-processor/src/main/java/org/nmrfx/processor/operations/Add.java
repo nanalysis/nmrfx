@@ -23,14 +23,16 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import org.apache.commons.math3.complex.Complex;
 
 /**
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Add extends Operation {
 
     private final int first;

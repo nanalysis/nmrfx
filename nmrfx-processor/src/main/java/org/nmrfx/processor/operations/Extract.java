@@ -17,14 +17,16 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.Vec;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.math.units.PPM;
+import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Extract extends Operation {
 
     private final int istart;

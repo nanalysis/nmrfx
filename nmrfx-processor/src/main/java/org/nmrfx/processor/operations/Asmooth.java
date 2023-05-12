@@ -17,15 +17,16 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import java.util.ArrayList;
 
 /**
  * Asmooth.
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Asmooth extends Operation {
 
     private final double[] w;

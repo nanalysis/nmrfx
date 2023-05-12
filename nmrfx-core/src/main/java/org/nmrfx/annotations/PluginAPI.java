@@ -1,6 +1,6 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
- * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ * NMRFx: A Program for Processing NMR Data
+ * Copyright (C) 2004-2023 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,27 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.operations;
+package org.nmrfx.annotations;
 
-import org.nmrfx.annotations.PythonAPI;
-import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.processing.ProcessingException;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * I don't think this should be a function, also accidentally implemented in Vec as well as here.
- *
- * @author johnsonb
+ * Used to explicitly declare methods and objects used from plugins.
+ * This is used to avoid changing or removing a public API by mistake.
  */
-@PythonAPI("pyproc")
-public class Merge extends Operation {
-
-    public Merge() {
-    }
-
-
-    @Override
-    public Merge eval(Vec vector) throws ProcessingException {
-        vector.merge();
-        return this;
-    }
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.METHOD)
+public @interface PluginAPI {
 }

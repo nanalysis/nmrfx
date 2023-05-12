@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -24,6 +25,7 @@ import org.nmrfx.processor.processing.ProcessingException;
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Gen extends Operation {
 
     private final double freq;

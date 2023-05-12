@@ -17,14 +17,16 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.MatrixND;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixND;
 
 /**
  * Phase a 2D Matrix.
  *
  * @author bfetler
  */
+@PythonAPI("pyproc")
 public class Phase2d extends MatrixOperation {
 
     private final double[] phase;

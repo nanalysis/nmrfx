@@ -17,14 +17,16 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.Matrix;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.Matrix;
 
 /**
  * 2D Fourier Transform.
  *
  * @author bfetler
  */
+@PythonAPI("pyproc")
 public class Ft2d extends MatrixOperation {
 
     @Override

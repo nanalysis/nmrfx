@@ -17,15 +17,17 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
-import org.apache.commons.math3.complex.Complex;
 
 /**
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Schedule extends Operation {
 
     private static SampleSchedule schedule = null;

@@ -18,22 +18,24 @@
 package org.nmrfx.processor.operations;
 
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
-import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
  * @author bfetler
  */
+@PythonAPI("pyproc")
 public class IstMatrix extends MatrixOperation {
 
     private static final Logger log = LoggerFactory.getLogger(IstMatrix.class);

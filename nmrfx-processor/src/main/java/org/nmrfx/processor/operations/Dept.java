@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.math.VecCombine;
@@ -30,6 +31,7 @@ import java.io.IOException;
  *
  * @author Bruce Johnson
  */
+@PythonAPI("pyproc")
 public class Dept extends DatasetOperation {
     private static final Logger log = LoggerFactory.getLogger(Dept.class);
 

@@ -1,25 +1,27 @@
 package org.nmrfx.peaks;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.commons.math3.exception.MaxCountExceededException;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.math.Clusters;
 import org.nmrfx.peaks.events.*;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utilities.Updater;
 import org.nmrfx.utilities.Util;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.lang.Double.compare;
 import static java.util.Comparator.comparing;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.nmrfx.utilities.Updater;
 
+@PythonAPI({"dscript", "pscript"})
 public class PeakList {
 
     static ResonanceFactory resFactory = new ResonanceFactory();
@@ -487,6 +489,7 @@ public class PeakList {
     public List<SearchDim> getSearchDims() {
         return searchDims;
     }
+
     /**
      *
      * @param oldListener
@@ -510,6 +513,7 @@ public class PeakList {
             listener.peakListChanged(new PeakCountEvent(this, size()));
         }
     }
+
     /**
      *
      * @param oldListener
@@ -533,6 +537,7 @@ public class PeakList {
             listener.peakListChanged(new PeakListEvent(this));
         }
     }
+
     /**
      *
      * @param oldListener
@@ -791,6 +796,7 @@ public class PeakList {
     public String getExperimentType() {
         return experimentType;
     }
+
     /**
      *
      * @param type
@@ -977,7 +983,7 @@ public class PeakList {
             if (!ok) {
                 throw new IllegalArgumentException(
                         "Can't find match for peak dimension \""
-                        + getSpectralDim(j).getDimName() + "\"");
+                                + getSpectralDim(j).getDimName() + "\"");
             }
         }
         return pdim;
@@ -1047,7 +1053,7 @@ public class PeakList {
      * @throws IllegalArgumentException
      */
     public static Peak getAPeak(String peakSpecifier,
-            Integer iDimInt) throws IllegalArgumentException {
+                                Integer iDimInt) throws IllegalArgumentException {
         int dot = peakSpecifier.indexOf('.');
 
         if (dot == -1) {

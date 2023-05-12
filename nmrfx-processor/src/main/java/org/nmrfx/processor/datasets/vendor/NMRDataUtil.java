@@ -17,26 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Base64.Encoder;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
 import org.nmrfx.processor.datasets.vendor.jeol.JeolDelta;
@@ -50,11 +31,24 @@ import org.nmrfx.utilities.RemoteDataset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.Base64.Encoder;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 /**
  * Utility helper class for NMRData interface.
  *
  * @author bfetler
  */
+@PythonAPI({"autoscript", "pyproc"})
 public final class NMRDataUtil {
 
     private static final Logger log = LoggerFactory.getLogger(NMRDataUtil.class);

@@ -23,16 +23,19 @@
  */
 package org.nmrfx.processor.operations;
 
-import java.util.Optional;
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.math.units.Unit;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.math.units.Unit;
+
+import java.util.Optional;
 
 /**
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class CShift extends Operation {
 
     private final int shiftValue;

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.GRINS;
 import org.nmrfx.processor.math.MatrixND;
@@ -27,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.List;
 
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
@@ -35,6 +35,7 @@ import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 /**
  * @author Bruce Johnson
  */
+@PythonAPI("pyproc")
 public class GRINSOp extends MatrixOperation {
     private static final Logger log = LoggerFactory.getLogger(GRINSOp.class);
 

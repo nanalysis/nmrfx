@@ -24,6 +24,7 @@
 package org.nmrfx.processor.operations;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -31,6 +32,7 @@ import org.nmrfx.processor.processing.ProcessingException;
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class AutoPhase extends Operation {
     
     public static AtomicDouble lastPh0 = new AtomicDouble(0.0);

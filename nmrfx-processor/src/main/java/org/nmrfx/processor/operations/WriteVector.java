@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.Processor;
 
@@ -25,6 +26,7 @@ import org.nmrfx.processor.processing.Processor;
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class WriteVector extends IO {
 
     //should I check to see if the file is writeable before this is created?

@@ -17,29 +17,24 @@
  */
 package org.nmrfx.peaks.io;
 
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.peaks.*;
+import org.python.util.PythonInterpreter;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.Measures;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.SpectralDim;
-import org.python.util.PythonInterpreter;
 
 /**
  *
  * @author Bruce Johnson
  */
+@PythonAPI("pscript")
 public class PeakReader {
 
     Map<Long, List<PeakDim>> resMap = null;

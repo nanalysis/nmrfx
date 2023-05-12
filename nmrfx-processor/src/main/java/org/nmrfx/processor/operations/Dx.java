@@ -23,9 +23,10 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import org.apache.commons.math3.complex.Complex;
 
 /**
  * Numerical derivative using Central Difference Approximation. Update a Vec, setting each point to the derivative.
@@ -33,6 +34,7 @@ import org.apache.commons.math3.complex.Complex;
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Dx extends Operation {
 
     public Dx() {

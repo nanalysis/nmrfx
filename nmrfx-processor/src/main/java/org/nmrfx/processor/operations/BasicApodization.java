@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -25,6 +26,7 @@ import java.util.Arrays;
 /**
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class BasicApodization extends Apodization implements Invertible {
 
     private static final double END = 1.0;

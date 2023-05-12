@@ -17,13 +17,14 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
-import java.util.ArrayList;
 
 /**
  *
  * @author johnsonb
  */
+@PythonAPI("pyproc")
 public class Dcfid extends Operation {
 
     private final double val;

@@ -17,9 +17,9 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import java.util.ArrayList;
 
 /**
  * Reverse points in a vector.
@@ -27,6 +27,7 @@ import java.util.ArrayList;
  * @author bfetler
  * @see Vec
  */
+@PythonAPI("pyproc")
 public class Reverse extends Operation {
 
     @Override

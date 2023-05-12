@@ -17,9 +17,11 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import org.apache.commons.math3.complex.Complex;
+
 import static org.nmrfx.processor.math.Vec.apache_ift;
 
 /**
@@ -27,6 +29,7 @@ import static org.nmrfx.processor.math.Vec.apache_ift;
  *
  * @author bfetler
  */
+@PythonAPI("pyproc")
 public class Ift extends Operation {
 
     @Override

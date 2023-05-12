@@ -1,18 +1,21 @@
 package org.nmrfx.processor.datasets.peaks;
 
-import java.io.IOException;
-import java.util.DoubleSummaryStatistics;
-import java.util.List;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 
+import java.io.IOException;
+import java.util.DoubleSummaryStatistics;
+import java.util.List;
+
 /**
  *
  * @author brucejohnson
  */
+@PythonAPI("pscript")
 public class NUSConScore {
 
     List<Peak> peaksM;

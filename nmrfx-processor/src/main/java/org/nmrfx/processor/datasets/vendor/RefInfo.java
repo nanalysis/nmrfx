@@ -5,6 +5,8 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.nmrfx.annotations.PythonAPI;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,6 +14,7 @@ import java.util.Map;
  *
  * @author Bruce Johnson
  */
+@PythonAPI("autoscript")
 public class RefInfo {
     String directRef = "";
 

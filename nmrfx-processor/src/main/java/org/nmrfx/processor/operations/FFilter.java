@@ -17,10 +17,11 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.FirFilter;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import org.apache.commons.math3.complex.Complex;
 
 /**
  * Operation for Finite Impulse Response (FIR) Filter. Works best with factor >= 3 and ncoefs >= factor * 16 + 1 (odd
@@ -42,6 +43,7 @@ import org.apache.commons.math3.complex.Complex;
  *
  * @author bfetler
  */
+@PythonAPI("pyproc")
 public class FFilter extends Operation {
 
     /**
