@@ -59,10 +59,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.time.format.DateTimeParseException;
-import java.util.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -287,12 +287,7 @@ public class RS2DData implements NMRData {
             }
 
             for (int i = 0; i < MAXDIM; i++) {
-                int dimSize;
-                if (!isFID()) {
-                    dimSize = header.get(DIMENSION_PARAMS.get(i)).intValue();
-                } else {
-                    dimSize = header.get(ACQUISITION_DIMENSION_PARAMS.get(i)).intValue();
-                }
+                int dimSize = header.get(DIMENSION_PARAMS.get(i)).intValue();
                 String nucleus = header.get(NUCLEUS_PARAMS.get(i)).stringValue();
                 if (nucleus.equals(obsNucleus)) {
                     Sf[i] = obsFreq;
