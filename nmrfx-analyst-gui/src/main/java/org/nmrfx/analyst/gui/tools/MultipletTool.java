@@ -19,6 +19,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.Multiplets;
 import org.nmrfx.datasets.DatasetRegion;
@@ -26,7 +27,6 @@ import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.IconUtilities;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -209,13 +209,13 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         multipletButtons.add(transferButton);
         for (Button button1 : peakButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
-            button1.setStyle("-fx-font-size:" + MainApp.ICON_FONT_SIZE_STR);
+            button1.setStyle("-fx-font-size:" + AnalystApp.ICON_FONT_SIZE_STR);
             button1.getStyleClass().add("toolButton");
             toolBar1.getItems().add(button1);
         }
         for (Button button1 : multipletButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
-            button1.setStyle("-fx-font-size:" + MainApp.ICON_FONT_SIZE_STR);
+            button1.setStyle("-fx-font-size:" + AnalystApp.ICON_FONT_SIZE_STR);
             button1.getStyleClass().add("toolButton");
             toolBar2.getItems().add(button1);
         }
@@ -265,7 +265,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         if (!chart.getPeakListAttributes().isEmpty()) {
             analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
-        MainApp.getShapePrefs(analyzer.getFitParameters());
+        AnalystApp.getShapePrefs(analyzer.getFitParameters());
 
         return analyzer;
     }

@@ -45,6 +45,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.apache.commons.lang3.Range;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
@@ -97,7 +98,7 @@ public class PolyChart extends Region implements PeakListener {
     public static final int VERTICAL = 1;
     public static final int CROSSHAIR_TOL = 25;
     public static final ObservableList<PolyChart> CHARTS = FXCollections.observableArrayList();
-    static final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
+    public static final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
     private static final SimpleObjectProperty<DatasetBase> currentDatasetProperty = new SimpleObjectProperty<>(null);
     static final SimpleBooleanProperty multipleCharts = new SimpleBooleanProperty(false);
     static Consumer<PeakDeleteEvent> manualPeakDeleteAction = null;
@@ -3315,13 +3316,13 @@ public class PolyChart extends Region implements PeakListener {
     public void fitPeakLists(int syncDim) {
         PeakFitParameters fitPars = new PeakFitParameters();
         fitPars.constrainDim(syncDim);
-        MainApp.getShapePrefs(fitPars);
+        AnalystApp.getShapePrefs(fitPars);
         fitPeakLists(fitPars, true);
     }
 
     public void fitPeakLists(PeakFitParameters fitPars, boolean getShapePars) {
         if (getShapePars) {
-            MainApp.getShapePrefs(fitPars);
+            AnalystApp.getShapePrefs(fitPars);
         }
         peakListAttributesList.forEach((peakListAttr) -> {
             DatasetBase datasetBase = peakListAttr.getDatasetAttributes().getDataset();

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.utils.properties.*;
 import org.nmrfx.processor.operations.NESTANMREx;
 import java.io.File;
@@ -210,7 +211,7 @@ public class PreferencesController implements Initializable {
      */
     public static File getNESTANMR() {
         if (nestaNMR == null) {
-            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
             String filePath = prefs.get("NESTA-NMR", null);
             if (filePath != null) {
                 nestaNMR = new File(filePath);
@@ -228,7 +229,7 @@ public class PreferencesController implements Initializable {
      * @param file the file or null to remove the path
      */
     public static void setNESTANMR(File file) {
-        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
         if (file != null) {
             nestaNMR = new File(file.getPath());
             NESTANMREx.setExecutable(file);
@@ -248,7 +249,7 @@ public class PreferencesController implements Initializable {
      */
     public static File getDatasetDirectory() {
         if (datasetDir == null) {
-            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
             String filePath = prefs.get("DATASET-DIR", null);
             if (filePath != null) {
                 datasetDir = new File(filePath);
@@ -265,7 +266,7 @@ public class PreferencesController implements Initializable {
      * @param file the file or null to remove the path
      */
     public static void setDatasetDirectory(File file) {
-        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
         if (file != null) {
             datasetDir = new File(file.getPath());
             prefs.put("DATASET-DIR", datasetDir.getPath());
@@ -283,7 +284,7 @@ public class PreferencesController implements Initializable {
      */
     public static String getLocation() {
         if (location == null) {
-            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
             String value = prefs.get("LOCATION-TYPE", null);
             if (value != null) {
                 location = value;
@@ -300,7 +301,7 @@ public class PreferencesController implements Initializable {
      * @param value set preference location
      */
     public static void setLocation(String value) {
-        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
         if (value != null) {
             location = value;
             prefs.put("LOCATION-TYPE", value);
@@ -343,7 +344,7 @@ public class PreferencesController implements Initializable {
     }
 
     public static void saveRecentFileItems(String fileName, String mode) {
-        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
         String recentFileString = recentMap.get(mode);
         if (recentFileString == null) {
             recentFileString = prefs.get(mode, "");
@@ -374,7 +375,7 @@ public class PreferencesController implements Initializable {
     public static List<Path> getRecentFileItem(String mode) {
         String recentFileString = recentMap.get(mode);
         if (recentFileString == null) {
-            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
             recentFileString = prefs.get(mode, "");
             recentMap.put(mode, recentFileString);
         }
@@ -398,7 +399,7 @@ public class PreferencesController implements Initializable {
      */
     public static Integer getNProcesses() {
         if (nProcesses == null) {
-            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
             String value = prefs.get("NPROCESSES", null);
             if (value != null) {
                 nProcesses = Integer.parseInt(value);
@@ -415,7 +416,7 @@ public class PreferencesController implements Initializable {
      * @param value the number of processes
      */
     public static void setNProcesses(Integer value) {
-        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
         if (value != null) {
             nProcesses = value;
             prefs.put("NPROCESSES", String.valueOf(value));
@@ -463,7 +464,7 @@ public class PreferencesController implements Initializable {
 
     public static IntegerProperty getInteger(IntegerProperty prop, String name, int defValue) {
         if (prop == null) {
-            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
             String value = prefs.get(name, null);
             if (value != null) {
                 prop = new SimpleIntegerProperty(Integer.parseInt(value));
@@ -476,7 +477,7 @@ public class PreferencesController implements Initializable {
 
     public static BooleanProperty getBoolean(BooleanProperty prop, String name, boolean defValue) {
         if (prop == null) {
-            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
             String value = prefs.get(name, null);
             if (value != null) {
                 prop = new SimpleBooleanProperty(Boolean.parseBoolean(value));
@@ -488,7 +489,7 @@ public class PreferencesController implements Initializable {
     }
 
     public static void setBoolean(String name, Boolean value) {
-        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
         if (value != null) {
             prefs.put(name, value.toString());
         } else {
@@ -500,7 +501,7 @@ public class PreferencesController implements Initializable {
 
     public static DoubleProperty getDouble(DoubleProperty prop, String name, double defValue) {
         if (prop == null) {
-            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
             String value = prefs.get(name, null);
             if (value != null) {
                 prop = new SimpleDoubleProperty(Double.parseDouble(value));
@@ -513,7 +514,7 @@ public class PreferencesController implements Initializable {
 
     public static StringProperty getString(StringProperty prop, String name, String defValue) {
         if (prop == null) {
-            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
             String value = prefs.get(name, null);
             if (value != null) {
                 prop = new SimpleStringProperty(value);
@@ -525,7 +526,7 @@ public class PreferencesController implements Initializable {
     }
 
     public static void setString(String name, String value) {
-        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
         if (value != null) {
             prefs.put(name, value);
         } else {

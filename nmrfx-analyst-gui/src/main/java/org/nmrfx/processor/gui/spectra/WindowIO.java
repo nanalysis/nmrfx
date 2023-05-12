@@ -40,9 +40,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.FileWatchListener;
 import org.nmrfx.utilities.NMRFxFileWatcher;
@@ -209,7 +209,7 @@ public class WindowIO implements FileWatchListener {
     }
 
     public static void loadWindow(File file) throws IOException {
-        final PythonInterpreter interp = MainApp.getInterpreter();
+        final PythonInterpreter interp = AnalystApp.getInterpreter();
         interp.exec("import nwyaml\\n");
         interp.set("yamlFileName", file.toString());
         interp.set("yamlFileNum", 1);
@@ -220,7 +220,7 @@ public class WindowIO implements FileWatchListener {
     public static void loadWindows(Path directory) throws IOException {
         Predicate<String> predicate = STAGE_PATTERN1.asPredicate();
         Predicate<String> predicate2 = STAGE_PATTERN2.asPredicate();
-        final PythonInterpreter interp = MainApp.getInterpreter();
+        final PythonInterpreter interp = AnalystApp.getInterpreter();
         interp.exec("import nwyaml\\n");
         if (Files.isDirectory(directory)) {
             try (Stream<Path> files = Files.list(directory)) {
@@ -263,7 +263,7 @@ public class WindowIO implements FileWatchListener {
     }
 
     public static void saveWindow(FXMLController controller, Path path) throws IOException {
-        PythonInterpreter interp = MainApp.getInterpreter();
+        PythonInterpreter interp = AnalystApp.getInterpreter();
         interp.exec("import nwyaml\\n");
         FXMLController activeController = GUIScripter.getController();
         GUIScripter.setController(controller);
@@ -277,7 +277,7 @@ public class WindowIO implements FileWatchListener {
             throw new IllegalArgumentException("Project directory not set");
         }
         cleanWindows(projectDir);
-        PythonInterpreter interp = MainApp.getInterpreter();
+        PythonInterpreter interp = AnalystApp.getInterpreter();
         int i = 0;
         interp.exec("import nwyaml\\n");
         FXMLController activeController = GUIScripter.getController();

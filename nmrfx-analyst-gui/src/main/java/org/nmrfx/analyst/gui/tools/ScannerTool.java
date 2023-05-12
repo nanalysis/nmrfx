@@ -27,6 +27,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.TablePlotGUI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
@@ -37,7 +38,6 @@ import org.nmrfx.processor.datasets.Measure.OffsetTypes;
 import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.utils.FileUtils;
@@ -93,7 +93,7 @@ public class ScannerTool implements ControllerTool {
     public void initialize(BorderPane borderPane) {
         this.borderPane = borderPane;
         scannerBar = new ToolBar();
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
         scannerBar.getItems().add(closeButton);
         borderPane.setTop(scannerBar);

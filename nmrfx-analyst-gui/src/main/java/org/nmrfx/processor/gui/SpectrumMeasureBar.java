@@ -32,6 +32,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.TextAlignment;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -86,7 +87,7 @@ public class SpectrumMeasureBar {
         ToolBar toolBar = new ToolBar();
         vBox.getChildren().add(toolBar);
         double prefWidthLabelsButtons = 35.0;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
         absModeButton = new ToggleButton("SF");
         gridModeButton = new ToggleButton("Grid");

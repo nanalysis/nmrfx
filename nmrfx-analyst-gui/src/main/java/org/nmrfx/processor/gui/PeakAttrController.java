@@ -51,6 +51,7 @@ import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.io.PeakPatternReader;
 import org.nmrfx.peaks.types.PeakListType;
@@ -224,7 +225,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             }
         }
         peakListTypeChoice.setOnAction(this::setPeakListType);
-        if (!MainApp.isAnalyst()) {
+        if (!AnalystApp.isAnalyst()) {
             tabPane.getTabs().remove(3);
         }
     }
