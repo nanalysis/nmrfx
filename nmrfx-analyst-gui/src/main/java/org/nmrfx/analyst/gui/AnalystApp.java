@@ -71,13 +71,13 @@ import java.util.List;
 import java.util.Locale;
 
 public class AnalystApp extends Application {
+    private static final Logger log = LoggerFactory.getLogger(AnalystApp.class);
     // Icon and font sizes for icon buttons
     public static final String ICON_SIZE_STR = "16px";
     public static final String ICON_FONT_SIZE_STR = "7pt";
     // The default font size
     public static final String REG_FONT_SIZE_STR = "9pt";
-    private static final Logger log = LoggerFactory.getLogger(AnalystApp.class);
-
+    private static final PopOverTools popoverTool = new PopOverTools();
     public static ArrayList<Stage> stages = new ArrayList<>();
     public static PreferencesController preferencesController;
     public static DocWindowController docWindowController;
@@ -97,187 +97,8 @@ public class AnalystApp extends Application {
     private static ViewMenuItems viewMenuActions;
     private static boolean startInAdvanced = true;
     private static boolean advancedIsActive = false;
-    private static final PopOverTools popoverTool = new PopOverTools();
     private static ObservableMap<String, MoleculeBase> moleculeMap;
     RunAboutSaveFrameProcessor runAboutSaveFrameProcessor;
-
-    /**
-     * Closes all stages and controllers except the main stage/first controller.
-     */
-    public static void closeAll() {
-        for (PolyChart chart : PolyChart.CHARTS) {
-            chart.clearDataAndPeaks();
-            chart.clearAnnotations();
-        }
-        List<FXMLController> controllers = new ArrayList<>(FXMLController.getControllers());
-        // Don't close the first controller that matches with the main stage, Note this first controller is not
-        // necessarily the active controller
-        for (int index = 1; index < controllers.size(); index++) {
-            controllers.get(index).close();
-        }
-
-        Stage mainStage = getMainStage();
-        // Since stages are removed in a separate function after calling stage.close, must make a copy of
-        // the list to avoid concurrent modification
-        List<Stage> stageCopy = new ArrayList<>(stages);
-        for (Stage stage : stageCopy) {
-            if (stage != mainStage) {
-                stage.hide();
-                removeStage(stage);
-            }
-        }
-    }
-
-    public static void setAnalyst() {
-        isAnalyst = true;
-    }
-
-    public static boolean isAnalyst() {
-        return isAnalyst;
-    }
-
-    public static AnalystApp getMainApp() {
-        return mainApp;
-    }
-
-    public static void removeStage(Stage stage) {
-        synchronized (stages) {
-            stages.remove(stage);
-            if (stages.isEmpty()) {
-                if (!isMac()) {
-                    Platform.exit();
-                    System.exit(0);
-                }
-            }
-        }
-    }
-
-    public static void registerStage(Stage stage, FXMLController controller) {
-        if (!stages.contains(stage)) {
-            stages.add(stage);
-        }
-        stage.setOnCloseRequest(e -> {
-            controller.close();
-            removeStage(stage);
-        });
-
-    }
-
-    public static Stage getMainStage() {
-        if (stages.isEmpty()) {
-            return null;
-        } else {
-            return stages.get(0);
-        }
-    }
-
-    public static List<Stage> getStages() {
-        return stages;
-    }
-
-    /**
-     * Set the default font size of the provided stage with the provided
-     * font size string.
-     * @param stage The stage to set the font for
-     * @param fontSizeStr A string font size ex. '9pt'
-     */
-    public static void setStageFontSize(Stage stage, String fontSizeStr) {
-        if (stage != null && stage.getScene() != null) {
-            stage.getScene().getRoot().setStyle("-fx-font-size: " + fontSizeStr);
-        } else {
-            log.info("Unable to set font size for stage.");
-        }
-    }
-
-    public static ConsoleController getConsoleController() {
-        return ConsoleController.getConsoleController();
-    }
-
-    public static LogConsoleController getLogConsoleController() {
-        return LogConsoleController.getLogConsoleController();
-    }
-
-    public static void getShapePrefs(PeakFitParameters fitPars) {
-        fitPars.shapeParameters(PreferencesController.getFitPeakShape(),
-                PreferencesController.getConstrainPeakShape(),
-                PreferencesController.getPeakShapeDirectFactor(),
-                PreferencesController.getPeakShapeIndirectFactor());
-    }
-
-    public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
-        moleculeMap.addListener(listener);
-    }
-
-    public static boolean isMac() {
-        return SystemUtils.IS_OS_MAC;
-    }
-
-    public static MenuBar getMenuBar() {
-        return mainApp.makeMenuBar(appName);
-    }
-
-    public static AnalystApp getAnalystApp() {
-        return analystApp;
-    }
-
-    public static String getAppName() {
-        return appName;
-    }
-
-    /**
-     * The main() method is ignored in correctly deployed JavaFX application.
-     * main() serves only as fallback in case the application can not be
-     * launched through deployment artifacts, e.g., in IDEs with limited FX
-     * support. NetBeans ignores main().
-     *
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        launch(args);
-    }
-
-    public static String getVersion() {
-        return NvUtil.getVersion();
-    }
-
-    static void showDocAction(ActionEvent event) {
-        hostServices.showDocument("http://docs.nmrfx.org");
-    }
-
-    static void showWebSiteAction(ActionEvent event) {
-        hostServices.showDocument("http://nmrfx.org");
-    }
-
-    static void showMailingListAction(ActionEvent event) {
-        hostServices.showDocument("https://groups.google.com/forum/#!forum/nmrfx-processor");
-    }
-
-    static void showOpenSourceAction(ActionEvent event) {
-        hostServices.showDocument("https://nmrfx.org/downloads/oss/dependencies.html");
-    }
-
-    public static InteractiveInterpreter getInterpreter() {
-        return interpreter;
-    }
-
-    public static ProjectBase getActive() {
-        return GUIProject.getActive();
-    }
-
-    public void waitForCommit() {
-        int nTries = 30;
-        int iTry = 0;
-        while (GUIProject.isCommitting() && (iTry < nTries)) {
-            System.out.println("committing");
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException ex) {
-                break;
-            }
-            iTry++;
-        }
-
-    }
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -335,34 +156,21 @@ public class AnalystApp extends Application {
         MoleculeFactory.setMoleculeMap(moleculeMap);
     }
 
-    void pickedPeakAction(Object peakObject) {
-        if (peakMenuActions != null) {
-            peakMenuActions.pickedPeakAction(peakObject);
-        }
-    }
-
-    private void saveDatasets() {
-        for (var controller: FXMLController.getControllers()) {
-            controller.saveDatasets();
-        }
-    }
-
-    public void quit() {
-        System.out.println("quit");
-        saveDatasets();
+    @Override
+    public void stop() {
         waitForCommit();
-        Platform.exit();
-        System.exit(0);
     }
 
-    Stage makeAbout(String appName) {
-        AboutStageBuilder aboutStageBuilder = AboutStageBuilder.start("About " + appName)
-                .withAppName(appName).withCloseOnFocusLoss().withText("Processing for NMR Data")
-                .withVersionString("Version " + getVersion()).withCopyright("Copyright \u00A9 " + Calendar
-                        .getInstance().get(Calendar.YEAR));
-        Image image = new Image(AnalystApp.class.getResourceAsStream("/images/Icon_NVFX_256.png"));
-        aboutStageBuilder = aboutStageBuilder.withImage(image);
-        return aboutStageBuilder.build();
+    public static boolean isMac() {
+        return SystemUtils.IS_OS_MAC;
+    }
+
+    public static void setAnalyst() {
+        isAnalyst = true;
+    }
+
+    public static String getVersion() {
+        return NvUtil.getVersion();
     }
 
     public MenuBar makeMenuBar(String appName) {
@@ -428,22 +236,22 @@ public class AnalystApp extends Application {
         Menu helpMenu = new Menu("Help");
 
         MenuItem webSiteMenuItem = new MenuItem("NMRFx Web Site");
-        webSiteMenuItem.setOnAction(AnalystApp::showWebSiteAction);
+        webSiteMenuItem.setOnAction(this::showWebSiteAction);
 
         MenuItem docsMenuItem = new MenuItem("Online Documentation");
-        docsMenuItem.setOnAction(AnalystApp::showDocAction);
+        docsMenuItem.setOnAction(this::showDocAction);
 
         MenuItem versionMenuItem = new MenuItem("Check Version");
         versionMenuItem.setOnAction(this::showVersionAction);
 
         MenuItem mailingListItem = new MenuItem("Mailing List Site");
-        mailingListItem.setOnAction(AnalystApp::showMailingListAction);
+        mailingListItem.setOnAction(this::showMailingListAction);
 
         MenuItem refMenuItem = new MenuItem("NMRFx Publication");
         refMenuItem.setOnAction(e -> AnalystApp.hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6"));
 
         MenuItem openSourceItem = new MenuItem("Open Source Libraries");
-        openSourceItem.setOnAction(AnalystApp::showOpenSourceAction);
+        openSourceItem.setOnAction(this::showOpenSourceAction);
 
         helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
 
@@ -470,6 +278,83 @@ public class AnalystApp extends Application {
             advanced(null);
         }
         return menuBar;
+    }
+
+    void pickedPeakAction(Object peakObject) {
+        if (peakMenuActions != null) {
+            peakMenuActions.pickedPeakAction(peakObject);
+        }
+    }
+
+    public void assignPeak(String keyStr, PolyChart chart) {
+        if (peakMenuActions != null) {
+            peakMenuActions.assignPeak();
+        }
+    }
+
+    Stage makeAbout(String appName) {
+        AboutStageBuilder aboutStageBuilder = AboutStageBuilder.start("About " + appName)
+                .withAppName(appName).withCloseOnFocusLoss().withText("Processing for NMR Data")
+                .withVersionString("Version " + getVersion()).withCopyright("Copyright \u00A9 " + Calendar
+                        .getInstance().get(Calendar.YEAR));
+        Image image = new Image(AnalystApp.class.getResourceAsStream("/images/Icon_NVFX_256.png"));
+        aboutStageBuilder = aboutStageBuilder.withImage(image);
+        return aboutStageBuilder.build();
+    }
+
+    @FXML
+    private void showPreferences(ActionEvent event) {
+        if (preferencesController == null) {
+            preferencesController = PreferencesController.create(stages.get(0));
+            addPrefs();
+        }
+        if (preferencesController != null) {
+            preferencesController.getStage().show();
+        } else {
+            System.out.println("Coudn't make controller");
+        }
+    }
+
+    public void quit() {
+        System.out.println("quit");
+        saveDatasets();
+        waitForCommit();
+        Platform.exit();
+        System.exit(0);
+    }
+
+    private void showWebSiteAction(ActionEvent event) {
+        hostServices.showDocument("http://nmrfx.org");
+    }
+
+    private void showDocAction(ActionEvent event) {
+        hostServices.showDocument("http://docs.nmrfx.org");
+    }
+
+    private void showVersionAction(ActionEvent event) {
+        String onlineVersion = WebConnect.getVersion();
+        onlineVersion = onlineVersion.replace('_', '.');
+        String currentVersion = getVersion();
+        String text;
+        if (onlineVersion.equals("")) {
+            text = "Sorry, couldn't reach web site";
+        } else if (onlineVersion.equals(currentVersion)) {
+            text = "You're running the latest version: " + currentVersion;
+        } else {
+            text = "You're running " + currentVersion;
+            text += "\nbut the latest is: " + onlineVersion;
+        }
+        Alert alert = new Alert(AlertType.INFORMATION, text);
+        alert.setTitle("NMRFx Analyst Version");
+        alert.showAndWait();
+    }
+
+    private void showMailingListAction(ActionEvent event) {
+        hostServices.showDocument("https://groups.google.com/forum/#!forum/nmrfx-processor");
+    }
+
+    private void showOpenSourceAction(ActionEvent event) {
+        hostServices.showDocument("https://nmrfx.org/downloads/oss/dependencies.html");
     }
 
     public void advanced(MenuItem startAdvancedItem) {
@@ -500,17 +385,29 @@ public class AnalystApp extends Application {
         }
     }
 
-    public void readMolecule(String type) {
-        if (molMenuActions != null) {
-            molMenuActions.readMolecule(type);
+    void addPrefs() {
+        AnalystPrefs.addPrefs();
+    }
+
+    private void saveDatasets() {
+        for (var controller: FXMLController.getControllers()) {
+            controller.saveDatasets();
         }
     }
 
-    public void addStatusBarTools(SpectrumStatusBar statusBar) {
-        addStatusBarButtons(statusBar);
-        if (advancedIsActive) {
-            addAdvancedTools(statusBar);
+    public void waitForCommit() {
+        int nTries = 30;
+        int iTry = 0;
+        while (GUIProject.isCommitting() && (iTry < nTries)) {
+            System.out.println("committing");
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ex) {
+                break;
+            }
+            iTry++;
         }
+
     }
 
     private void addAdvancedTools() {
@@ -577,53 +474,36 @@ public class AnalystApp extends Application {
 
     }
 
-    private void addStatusBarButtons(SpectrumStatusBar statusBar) {
-        var controller = statusBar.getController();
-        SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller);
-        simplePeakRegionTool.addButtons(statusBar);
-        controller.addTool(simplePeakRegionTool);
-    }
-
-    public void showVersionAction(ActionEvent event) {
-        String onlineVersion = WebConnect.getVersion();
-        onlineVersion = onlineVersion.replace('_', '.');
-        String currentVersion = getVersion();
-        String text;
-        if (onlineVersion.equals("")) {
-            text = "Sorry, couldn't reach web site";
-        } else if (onlineVersion.equals(currentVersion)) {
-            text = "You're running the latest version: " + currentVersion;
-        } else {
-            text = "You're running " + currentVersion;
-            text += "\nbut the latest is: " + onlineVersion;
-        }
-        Alert alert = new Alert(AlertType.INFORMATION, text);
-        alert.setTitle("NMRFx Analyst Version");
-        alert.showAndWait();
-    }
-
-    @FXML
-    private void showPreferences(ActionEvent event) {
-        if (preferencesController == null) {
-            preferencesController = PreferencesController.create(stages.get(0));
-            addPrefs();
-        }
-        if (preferencesController != null) {
-            preferencesController.getStage().show();
-        } else {
-            System.out.println("Coudn't make controller");
+    public void showPeakPathTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(PathTool.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            PathTool pathTool = new PathTool(controller, this::removePeakPathTool);
+            pathTool.initialize(vBox);
+            controller.addTool(pathTool);
         }
     }
 
-    public void assignPeak(String keyStr, PolyChart chart) {
-        if (peakMenuActions != null) {
-            peakMenuActions.assignPeak();
+    public void showPeakAssignTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(PeakAssignTool.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            PeakAssignTool peakAssignTool = new PeakAssignTool(controller, this::removePeakAssignTool);
+            peakAssignTool.initialize(vBox);
+            controller.addTool(peakAssignTool);
         }
     }
 
-    public void showPeakTable(PeakList peakList) {
-        if (peakMenuActions != null) {
-            PeakMenuActions.showPeakTable(peakList);
+    public void showPeakSlider() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(PeakSlider.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            PeakSlider peakSlider = new PeakSlider(controller, this::removePeakSlider);
+            peakSlider.initSlider(vBox);
+            controller.addTool(peakSlider);
         }
     }
 
@@ -636,12 +516,6 @@ public class AnalystApp extends Application {
             simMol.initialize(navBar);
             controller.addTool(simMol);
         }
-    }
-
-    public void removeMolSim(SimMolController simMolController) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(SimMolController.class);
-        controller.getBottomBox().getChildren().remove(simMolController.getToolBar());
     }
 
     public void showSpectrumFitter() {
@@ -659,64 +533,6 @@ public class AnalystApp extends Application {
         }
     }
 
-    public void removeMolFitter(SimFitMolController simMolController) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(SimFitMolController.class);
-        controller.getBottomBox().getChildren().remove(simMolController.getBox());
-    }
-
-    public void showPeakAssignTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        if (!controller.containsTool(PeakAssignTool.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            PeakAssignTool peakAssignTool = new PeakAssignTool(controller, this::removePeakAssignTool);
-            peakAssignTool.initialize(vBox);
-            controller.addTool(peakAssignTool);
-        }
-    }
-
-    public void removePeakAssignTool(PeakAssignTool peakAssignTool) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(PeakAssignTool.class);
-        controller.getBottomBox().getChildren().remove(peakAssignTool.getBox());
-    }
-
-    public void showPeakSlider() {
-        FXMLController controller = FXMLController.getActiveController();
-        if (!controller.containsTool(PeakSlider.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            PeakSlider peakSlider = new PeakSlider(controller, this::removePeakSlider);
-            peakSlider.initSlider(vBox);
-            controller.addTool(peakSlider);
-        }
-    }
-
-    public void removePeakSlider(PeakSlider peakSlider) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(PeakSlider.class);
-        controller.getBottomBox().getChildren().remove(peakSlider.getBox());
-        peakSlider.removeListeners();
-    }
-
-    public void showPeakPathTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        if (!controller.containsTool(PathTool.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            PathTool pathTool = new PathTool(controller, this::removePeakPathTool);
-            pathTool.initialize(vBox);
-            controller.addTool(pathTool);
-        }
-    }
-
-    public void removePeakPathTool(PathTool pathTool) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(PathTool.class);
-        controller.getBottomBox().getChildren().remove(pathTool.getBox());
-    }
-
     public void showScannerTool() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(ScannerTool.class)) {
@@ -726,17 +542,6 @@ public class AnalystApp extends Application {
             scannerTool.initialize(vBox);
             controller.addTool(scannerTool);
         }
-    }
-
-    public void removeScannerTool(ScannerTool scannerTool) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(ScannerTool.class);
-        controller.getBottomBox().getChildren().remove(scannerTool.getBox());
-    }
-
-    public ScannerTool getScannerTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        return  (ScannerTool) controller.getTool(ScannerTool.class);
     }
 
     public void showRunAboutTool() {
@@ -752,12 +557,6 @@ public class AnalystApp extends Application {
         }
     }
 
-    public void removeRunaboutTool(RunAboutGUI runaboutTool) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(RunAboutGUI.class);
-        controller.getBottomBox().getChildren().remove(runaboutTool.getTabPane());
-    }
-
     public StripController showStripsBar() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(StripController.class)) {
@@ -770,19 +569,89 @@ public class AnalystApp extends Application {
         return (StripController) controller.getTool(StripController.class);
     }
 
+    public void removePeakPathTool(PathTool pathTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(PathTool.class);
+        controller.getBottomBox().getChildren().remove(pathTool.getBox());
+    }
+
+    public void removePeakAssignTool(PeakAssignTool peakAssignTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(PeakAssignTool.class);
+        controller.getBottomBox().getChildren().remove(peakAssignTool.getBox());
+    }
+
+    public void removePeakSlider(PeakSlider peakSlider) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(PeakSlider.class);
+        controller.getBottomBox().getChildren().remove(peakSlider.getBox());
+        peakSlider.removeListeners();
+    }
+
+    public void removeMolSim(SimMolController simMolController) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(SimMolController.class);
+        controller.getBottomBox().getChildren().remove(simMolController.getToolBar());
+    }
+
+    public void removeMolFitter(SimFitMolController simMolController) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(SimFitMolController.class);
+        controller.getBottomBox().getChildren().remove(simMolController.getBox());
+    }
+
+    public void removeScannerTool(ScannerTool scannerTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(ScannerTool.class);
+        controller.getBottomBox().getChildren().remove(scannerTool.getBox());
+    }
+
+    public void removeRunaboutTool(RunAboutGUI runaboutTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(RunAboutGUI.class);
+        controller.getBottomBox().getChildren().remove(runaboutTool.getTabPane());
+    }
+
     public void removeStripsBar(StripController stripsController) {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(StripController.class);
         controller.getBottomBox().getChildren().remove(stripsController.getBox());
     }
 
+    public void readMolecule(String type) {
+        if (molMenuActions != null) {
+            molMenuActions.readMolecule(type);
+        }
+    }
+
+    public void addStatusBarTools(SpectrumStatusBar statusBar) {
+        addStatusBarButtons(statusBar);
+        if (advancedIsActive) {
+            addAdvancedTools(statusBar);
+        }
+    }
+
+    private void addStatusBarButtons(SpectrumStatusBar statusBar) {
+        var controller = statusBar.getController();
+        SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller);
+        simplePeakRegionTool.addButtons(statusBar);
+        controller.addTool(simplePeakRegionTool);
+    }
+
+    public void showPeakTable(PeakList peakList) {
+        if (peakMenuActions != null) {
+            PeakMenuActions.showPeakTable(peakList);
+        }
+    }
+
+    public ScannerTool getScannerTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        return  (ScannerTool) controller.getTool(ScannerTool.class);
+    }
+
     public StripController getStripsTool() {
         FXMLController controller = FXMLController.getActiveController();
         return (StripController) controller.getTool(StripController.class);
-    }
-
-    void addPrefs() {
-        AnalystPrefs.addPrefs();
     }
 
     public void hidePopover(boolean always) {
@@ -793,11 +662,6 @@ public class AnalystApp extends Application {
         popoverTool.showPopover(chart, objectBounds, hitObject);
     }
 
-    @Override
-    public void stop() {
-        waitForCommit();
-    }
-
     @FXML
     void showDatasetsTable(ActionEvent event) {
         if (datasetController == null) {
@@ -806,5 +670,140 @@ public class AnalystApp extends Application {
         datasetController.refresh();
         datasetController.getStage().show();
         datasetController.getStage().toFront();
+    }
+
+    /**
+     * Closes all stages and controllers except the main stage/first controller.
+     */
+    public static void closeAll() {
+        for (PolyChart chart : PolyChart.CHARTS) {
+            chart.clearDataAndPeaks();
+            chart.clearAnnotations();
+        }
+        List<FXMLController> controllers = new ArrayList<>(FXMLController.getControllers());
+        // Don't close the first controller that matches with the main stage, Note this first controller is not
+        // necessarily the active controller
+        for (int index = 1; index < controllers.size(); index++) {
+            controllers.get(index).close();
+        }
+
+        Stage mainStage = getMainStage();
+        // Since stages are removed in a separate function after calling stage.close, must make a copy of
+        // the list to avoid concurrent modification
+        List<Stage> stageCopy = new ArrayList<>(stages);
+        for (Stage stage : stageCopy) {
+            if (stage != mainStage) {
+                stage.hide();
+                removeStage(stage);
+            }
+        }
+    }
+
+    public static Stage getMainStage() {
+        if (stages.isEmpty()) {
+            return null;
+        } else {
+            return stages.get(0);
+        }
+    }
+
+    public static void removeStage(Stage stage) {
+        synchronized (stages) {
+            stages.remove(stage);
+            if (stages.isEmpty()) {
+                if (!isMac()) {
+                    Platform.exit();
+                    System.exit(0);
+                }
+            }
+        }
+    }
+
+    public static boolean isAnalyst() {
+        return isAnalyst;
+    }
+
+    public static AnalystApp getMainApp() {
+        return mainApp;
+    }
+
+    public static void registerStage(Stage stage, FXMLController controller) {
+        if (!stages.contains(stage)) {
+            stages.add(stage);
+        }
+        stage.setOnCloseRequest(e -> {
+            controller.close();
+            removeStage(stage);
+        });
+
+    }
+
+    public static List<Stage> getStages() {
+        return stages;
+    }
+
+    /**
+     * Set the default font size of the provided stage with the provided
+     * font size string.
+     * @param stage The stage to set the font for
+     * @param fontSizeStr A string font size ex. '9pt'
+     */
+    public static void setStageFontSize(Stage stage, String fontSizeStr) {
+        if (stage != null && stage.getScene() != null) {
+            stage.getScene().getRoot().setStyle("-fx-font-size: " + fontSizeStr);
+        } else {
+            log.info("Unable to set font size for stage.");
+        }
+    }
+
+    public static ConsoleController getConsoleController() {
+        return ConsoleController.getConsoleController();
+    }
+
+    public static LogConsoleController getLogConsoleController() {
+        return LogConsoleController.getLogConsoleController();
+    }
+
+    public static void getShapePrefs(PeakFitParameters fitPars) {
+        fitPars.shapeParameters(PreferencesController.getFitPeakShape(),
+                PreferencesController.getConstrainPeakShape(),
+                PreferencesController.getPeakShapeDirectFactor(),
+                PreferencesController.getPeakShapeIndirectFactor());
+    }
+
+    public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
+        moleculeMap.addListener(listener);
+    }
+
+    public static MenuBar getMenuBar() {
+        return mainApp.makeMenuBar(appName);
+    }
+
+    public static AnalystApp getAnalystApp() {
+        return analystApp;
+    }
+
+    public static String getAppName() {
+        return appName;
+    }
+
+    public static InteractiveInterpreter getInterpreter() {
+        return interpreter;
+    }
+
+    public static ProjectBase getActive() {
+        return GUIProject.getActive();
+    }
+
+    /**
+     * The main() method is ignored in correctly deployed JavaFX application.
+     * main() serves only as fallback in case the application can not be
+     * launched through deployment artifacts, e.g., in IDEs with limited FX
+     * support. NetBeans ignores main().
+     *
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        launch(args);
     }
 }
