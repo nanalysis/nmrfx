@@ -112,11 +112,7 @@ public class MolSpheres extends Group implements MolItem {
     }
 
     public String hit(double x, double y) {
-//        int pickIndex = pickShape(x, y);
         String pickResult = "";
-//        if (pickIndex >= 0) {
-//            pickResult = "bond " + bonds[pickIndex].getBeginAtom().getFullName() + " " + bonds[pickIndex].getEndAtom().getFullName();
-//        }
         return pickResult;
     }
 

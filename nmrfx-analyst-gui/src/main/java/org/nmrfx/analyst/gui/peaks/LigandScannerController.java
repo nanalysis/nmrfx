@@ -229,9 +229,6 @@ public class LigandScannerController implements Initializable {
     public void setupBucket() {
         List<String> chartDimNames = chart.getDimNames();
         int nDim = chartDimNames.size();
-//        if (chart.getDatasetAttributes().size() == 1) {
-//            nDim--;
-//        }
         dimNames = new String[nDim];
         mcsTols = new double[nDim];
         mcsAlphas = new double[nDim];

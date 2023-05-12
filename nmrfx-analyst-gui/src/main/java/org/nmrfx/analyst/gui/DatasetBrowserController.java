@@ -103,7 +103,6 @@ public class DatasetBrowserController implements Initializable {
         initToolBar();
         initTable();
         remoteDir = AnalystPrefs.getRemoteDirectory();
-        //  loadIndex();
     }
 
     public Stage getStage() {

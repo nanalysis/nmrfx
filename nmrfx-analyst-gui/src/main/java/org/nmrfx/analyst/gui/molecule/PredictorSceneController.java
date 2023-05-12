@@ -74,8 +74,6 @@ public class PredictorSceneController implements Initializable {
             controller.atomController = atomController;
             stage.setTitle("Predictor");
             stage.setScene(scene);
-//            stage.setMinWidth(200);
-//            stage.setMinHeight(250);
             stage.show();
             stage.toFront();
 
