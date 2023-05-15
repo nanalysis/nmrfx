@@ -121,8 +121,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     private final Set<ControllerTool> tools = new HashSet<>();
     private final SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
     private ChartProcessor chartProcessor;
-    //XXX used by GUIScripter, PolyChart
-    Stage stage = null;
+    private Stage stage = null;
     private boolean isFID = true;
     //XXX used by AttributesController, DatasetsController, GUIScripter, PolyChart, SpectrumStatusBar
     ObservableList<PolyChart> charts = FXCollections.observableArrayList();

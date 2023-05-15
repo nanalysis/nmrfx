@@ -661,7 +661,7 @@ public class GUIScripter {
     public List<Double> geometry() throws InterruptedException, ExecutionException {
         FutureTask<List<Double>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
-            Stage stage = chart.getController().stage;
+            Stage stage = chart.getController().getStage();
             double x = stage.getX();
             double y = stage.getY();
             double width = stage.getWidth();
@@ -680,7 +680,7 @@ public class GUIScripter {
     public void geometry(Double x, Double y, Double width, Double height) throws InterruptedException, ExecutionException {
         ConsoleUtil.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            Stage stage = chart.getController().stage;
+            Stage stage = chart.getController().getStage();
             if (x != null) {
                 stage.setX(x);
             }
