@@ -257,7 +257,7 @@ public class AttributesController implements Initializable {
             controller = loader.getController();
             controller.fxmlController = fxmlController;
             controller.pane = pane;
-            controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatus);
+            controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
             controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
             controller.itemChoiceState.setValue(SelectionChoice.CHART);
             controller.datasetChoiceBox.disableProperty()

@@ -121,8 +121,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     private final Set<ControllerTool> tools = new HashSet<>();
     private final SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
     private final ObservableList<PolyChart> charts = FXCollections.observableArrayList();
-    //XXX used by AttributesController, PolyChart
-    BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
+    private final BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
     //XXX used by PolyChart, ProcessorController, SpectrumStatusBar
     UndoManager undoManager = new UndoManager();
     //XXX used by Phaser, PolyChart
@@ -172,6 +171,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     public Color getBgColor() {
         return bgColorProperty().get();
     }
+
 
     private ColorProperty bgColorProperty() {
         if (bgColor == null) {
@@ -1821,6 +1821,10 @@ public class FXMLController implements Initializable, PeakNavigable {
                 stage.setWidth(previousStageRestoreWidth - previousStageRestoreProcControllerWidth);
             }
         }
+    }
+
+    public BooleanProperty sliceStatusProperty() {
+        return sliceStatus;
     }
 
     public static File getInitialDirectory() {

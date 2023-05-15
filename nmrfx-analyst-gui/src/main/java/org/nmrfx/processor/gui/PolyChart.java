@@ -4310,7 +4310,7 @@ public class PolyChart extends Region implements PeakListener {
         Bounds bounds = plotBackground.getBoundsInParent();
         boolean xOn = false;
         boolean yOn = false;
-        if (controller.sliceStatus.get() && sliceStatus.get()) {
+        if (controller.sliceStatusProperty().get() && sliceStatus.get()) {
             xOn = true;
             yOn = true;
         }
@@ -4324,7 +4324,7 @@ public class PolyChart extends Region implements PeakListener {
                 drawPivotAxis = 1;
             }
         }
-        if ((nDim > 1) && controller.sliceStatus.get() && sliceStatus.get()) {
+        if ((nDim > 1) && controller.sliceStatusProperty().get() && sliceStatus.get()) {
             if (((iOrient == HORIZONTAL) && xOn) || ((iOrient == VERTICAL) && yOn)) {
                 for (DatasetAttributes datasetAttributes : datasetAttributesList) {
                     if (datasetAttributes.getDataset().getNDim() > 1) {
