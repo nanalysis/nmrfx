@@ -63,7 +63,7 @@ public class SpectrumMenuActions extends MenuActions {
         menu.getItems().addAll(newMenuItem, deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem);
         MenuItem[] disableItems = {deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem};
         for (var item:disableItems) {
-            item.disableProperty().bind(FXMLController.activeController.isNull());
+            item.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
         }
     }
 
