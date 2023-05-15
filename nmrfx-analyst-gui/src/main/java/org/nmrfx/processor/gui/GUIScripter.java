@@ -61,7 +61,7 @@ public class GUIScripter {
     }
 
     public GUIScripter(String chartName) {
-        Optional<PolyChart> chartOpt = FXMLController.getActiveController().charts.stream().filter(c -> c.getName().equals(chartName)).findFirst();
+        Optional<PolyChart> chartOpt = FXMLController.getActiveController().getCharts().stream().filter(c -> c.getName().equals(chartName)).findFirst();
         if (chartOpt.isPresent()) {
             useChart = chartOpt.get();
         } else {
@@ -106,7 +106,7 @@ public class GUIScripter {
             return false;
         }
         ConsoleUtil.runOnFxThread(() -> {
-            List<PolyChart> charts = getActiveController().charts;
+            List<PolyChart> charts = getActiveController().getCharts();
             if (charts.size() >= index) {
                 getActiveController().setActiveChart(charts.get(index));
             } else {
@@ -124,7 +124,7 @@ public class GUIScripter {
         // fixme needs to be set on thread
         boolean success = true;
         ConsoleUtil.runOnFxThread(() -> {
-            Optional<PolyChart> chartOpt = getActiveController().charts.stream().filter(c -> c.getName().equals(chartName)).findFirst();
+            Optional<PolyChart> chartOpt = getActiveController().getCharts().stream().filter(c -> c.getName().equals(chartName)).findFirst();
             if (chartOpt.isPresent()) {
                 getActiveController().setActiveChart(chartOpt.get());
             }
@@ -509,7 +509,7 @@ public class GUIScripter {
 
     public void newStage() {
         controller = FXMLController.create();
-        PolyChart chartActive = controller.charts.get(0);
+        PolyChart chartActive = controller.getCharts().get(0);
         controller.setActiveChart(chartActive);
     }
 
@@ -531,7 +531,7 @@ public class GUIScripter {
             controller.setNCharts(nCharts);
             controller.arrange(rows);
 
-            PolyChart chartActive = controller.charts.get(0);
+            PolyChart chartActive = controller.getCharts().get(0);
             controller.setActiveChart(chartActive);
             controller.setChartDisable(false);
             controller.draw();
@@ -546,7 +546,7 @@ public class GUIScripter {
             List<Dataset> datasets = new ArrayList<>();
             controller.setNCharts(nCharts);
             controller.arrange(orient);
-            PolyChart chartActive = controller.charts.get(0);
+            PolyChart chartActive = controller.getCharts().get(0);
             controller.setActiveChart(chartActive);
             controller.setChartDisable(false);
             controller.draw();
@@ -567,7 +567,7 @@ public class GUIScripter {
             controller.arrange(orient);
             for (int i = 0; i < datasets.size(); i++) {
                 Dataset dataset = datasets.get(i);
-                PolyChart chartActive = controller.charts.get(i);
+                PolyChart chartActive = controller.getCharts().get(i);
                 controller.setActiveChart(chartActive);
                 controller.addDataset(dataset, false, false);
             }
@@ -578,7 +578,7 @@ public class GUIScripter {
     public int nCharts() throws InterruptedException, ExecutionException {
         FutureTask<Integer> future = new FutureTask(() -> {
             FXMLController controller = getActiveController();
-            return controller.charts.size();
+            return controller.getCharts().size();
         });
         ConsoleUtil.runOnFxThread(future);
         return future.get();

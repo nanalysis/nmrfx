@@ -851,7 +851,7 @@ public class SpectrumStatusBar {
     }
 
     private void dimAction(String rowName, String dimName) {
-        controller.charts.forEach(chart -> {
+        controller.getCharts().forEach(chart -> {
             if (!chart.datasetAttributesList.isEmpty()) {
                 DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
                 datasetAttr.setDim(rowName, dimName);

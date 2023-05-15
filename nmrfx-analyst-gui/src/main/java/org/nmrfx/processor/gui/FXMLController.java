@@ -120,17 +120,16 @@ public class FXMLController implements Initializable, PeakNavigable {
     private final boolean[][] crossHairStates = new boolean[2][2];
     private final Set<ControllerTool> tools = new HashSet<>();
     private final SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
-    private ChartProcessor chartProcessor;
-    private Stage stage = null;
-    private boolean isFID = true;
-    //XXX used by AttributesController, DatasetsController, GUIScripter, PolyChart, SpectrumStatusBar
-    ObservableList<PolyChart> charts = FXCollections.observableArrayList();
+    private final ObservableList<PolyChart> charts = FXCollections.observableArrayList();
     //XXX used by AttributesController, PolyChart
     BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
     //XXX used by PolyChart, ProcessorController, SpectrumStatusBar
     UndoManager undoManager = new UndoManager();
     //XXX used by Phaser, PolyChart
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
+    private ChartProcessor chartProcessor;
+    private Stage stage = null;
+    private boolean isFID = true;
     private PopOver popOver = null;
     private SpectrumStatusBar statusBar;
     private SpectrumMeasureBar measureBar = null;
@@ -233,12 +232,12 @@ public class FXMLController implements Initializable, PeakNavigable {
         }
     }
 
-    public void setChartProcessor(ChartProcessor chartProcessor) {
-        this.chartProcessor = chartProcessor;
-    }
-
     public ChartProcessor getChartProcessor() {
         return chartProcessor;
+    }
+
+    public void setChartProcessor(ChartProcessor chartProcessor) {
+        this.chartProcessor = chartProcessor;
     }
 
     public void deselectCharts() {
@@ -272,12 +271,12 @@ public class FXMLController implements Initializable, PeakNavigable {
         }
     }
 
-    public void setFIDActive(boolean isFID) {
-        this.isFID = isFID;
-    }
-
     public boolean isFIDActive() {
         return isFID;
+    }
+
+    public void setFIDActive(boolean isFID) {
+        this.isFID = isFID;
     }
 
     public PolyChart getActiveChart() {
