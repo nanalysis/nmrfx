@@ -123,8 +123,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     private final ObservableList<PolyChart> charts = FXCollections.observableArrayList();
     private final BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
     private final UndoManager undoManager = new UndoManager();
-    //XXX used by Phaser, PolyChart
-    SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
+    private final SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     private ChartProcessor chartProcessor;
     private Stage stage = null;
     private boolean isFID = true;
@@ -177,6 +176,14 @@ public class FXMLController implements Initializable, PeakNavigable {
             bgColor = new ColorProperty(this, "bgColor", null);
         }
         return bgColor;
+    }
+
+    public boolean isProcessControllerVisible() {
+        return processControllerVisible.get();
+    }
+
+    public SimpleBooleanProperty processControllerVisibleProperty() {
+        return processControllerVisible;
     }
 
     public Color getAxesColor() {
