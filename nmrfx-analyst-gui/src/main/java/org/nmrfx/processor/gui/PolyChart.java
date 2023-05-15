@@ -459,7 +459,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void focus() {
-        getController().stage.requestFocus();
+        getController().getStage().requestFocus();
     }
 
     public Cursor getCanvasCursor() {
