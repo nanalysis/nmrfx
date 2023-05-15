@@ -675,7 +675,7 @@ public class PolyChart extends Region implements PeakListener {
                         setAxis(1, adjustedLimits[0], adjustedLimits[1]);
                     }
                     ChartUndoLimits redo = new ChartUndoLimits(this);
-                    controller.undoManager.add("expand", undo, redo);
+                    controller.getUndoManager().add("expand", undo, redo);
                     refresh();
                     completed = true;
                 }
@@ -795,8 +795,7 @@ public class PolyChart extends Region implements PeakListener {
                         layoutPlotChildren();
                         ChartUndoLimits redo = new ChartUndoLimits(this);
                         String undoName = factor > 1.0 ? "zoomout" : "zoomin";
-                        controller.undoManager.add(undoName, undo, redo);
-
+                        controller.getUndoManager().add(undoName, undo, redo);
                     }
                 }
         );
@@ -969,8 +968,7 @@ public class PolyChart extends Region implements PeakListener {
                 .forEach(dataAttr -> adjustScale(dataAttr, factor));
         layoutPlotChildren();
         ChartUndoScale redo = new ChartUndoScale(this);
-        controller.undoManager.add("ascale", undo, redo);
-
+        controller.getUndoManager().add("ascale", undo, redo);
     }
 
     protected void adjustScale(DatasetAttributes dataAttr, double factor) {
@@ -1135,7 +1133,7 @@ public class PolyChart extends Region implements PeakListener {
             }
             layoutPlotChildren();
             ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
-            controller.undoManager.add("plane", undo, redo);
+            controller.getUndoManager().add("plane", undo, redo);
         }
     }
 
@@ -1154,7 +1152,7 @@ public class PolyChart extends Region implements PeakListener {
                 ChartUndoLimits undo = new ChartUndoLimits(this);
                 fullAxisLimits();
                 ChartUndoLimits redo = new ChartUndoLimits(this);
-                controller.undoManager.add("full", undo, redo);
+                controller.getUndoManager().add("full", undo, redo);
                 layoutPlotChildren();
             }
         });
@@ -1331,8 +1329,7 @@ public class PolyChart extends Region implements PeakListener {
         updateProjectionScale();
         layoutPlotChildren();
         ChartUndoScale redo = new ChartUndoScale(this);
-        controller.undoManager.add("ascale", undo, redo);
-
+        controller.getUndoManager().add("ascale", undo, redo);
     }
 
     protected void autoScale(DatasetAttributes dataAttr) {
@@ -1519,7 +1516,7 @@ public class PolyChart extends Region implements PeakListener {
         layoutPlotChildren();
         crossHairs.hideCrossHairs();
         ChartUndoLimits redo = new ChartUndoLimits(this);
-        controller.undoManager.add("expand", undo, redo);
+        controller.getUndoManager().add("expand", undo, redo);
 
     }
 
