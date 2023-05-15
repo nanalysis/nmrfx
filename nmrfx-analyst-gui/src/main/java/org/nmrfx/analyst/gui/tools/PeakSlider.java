@@ -186,13 +186,13 @@ public class PeakSlider implements ControllerTool {
         sliderToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(sliderToolBar)));
 
         // Setup listeners
-        selectedPeaksListener = event -> setActivePeaks(controller.selPeaks.get());
-        controller.selPeaks.addListener(selectedPeaksListener);
+        selectedPeaksListener = event -> setActivePeaks(controller.getSelectedPeaks());
+        controller.selectedPeaksProperty().addListener(selectedPeaksListener);
         for (PolyChart chart : controller.getCharts()) {
             addKeyBindingsToChart(chart);
         }
         ((ObservableList<PolyChart>) controller.getCharts()).addListener(chartsListener);
-   }
+    }
 
     /**
      * Add key bindings to newly added charts.
@@ -220,7 +220,7 @@ public class PeakSlider implements ControllerTool {
     }
 
     public void removeListeners() {
-        controller.selPeaks.removeListener(selectedPeaksListener);
+        controller.selectedPeaksProperty().removeListener(selectedPeaksListener);
         ((ObservableList<PolyChart>) controller.getCharts()).removeListener(chartsListener);
         for (PolyChart chart : controller.getCharts()) {
             KeyBindings keyBindings = chart.getKeyBindings();

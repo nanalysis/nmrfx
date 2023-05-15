@@ -700,7 +700,7 @@ public class PolyChart extends Region implements PeakListener {
                 for (PolyChart chart : controller.getCharts()) {
                     allSelPeaks.addAll(chart.getSelectedPeaks());
                 }
-                controller.selPeaks.set(allSelPeaks);
+                controller.selectedPeaksProperty().set(allSelPeaks);
             }
             completed = true;
 
@@ -3596,7 +3596,7 @@ public class PolyChart extends Region implements PeakListener {
             for (PolyChart chart : controller.getCharts()) {
                 allSelPeaks.addAll(chart.getSelectedPeaks());
             }
-            controller.selPeaks.set(allSelPeaks);
+            controller.selectedPeaksProperty().set(allSelPeaks);
         }
         return hitPeak;
     }

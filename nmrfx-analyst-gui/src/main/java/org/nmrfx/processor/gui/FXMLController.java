@@ -108,9 +108,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     static PeakAttrController peakAttrController = null;
     private static String docString = null;
     private static File initialDir = null;
-
-    //XXX used by PolyChart, PeakSlider, PeakAssignTool
-    public final SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
+    private final SimpleObjectProperty<List<Peak>> selectedPeaks = new SimpleObjectProperty<>();
     private final VBox phaserBox = new VBox();
     private final ListView<String> datasetListView = new ListView<>();
     private final Canvas canvas = new Canvas();
@@ -170,12 +168,19 @@ public class FXMLController implements Initializable, PeakNavigable {
         return bgColorProperty().get();
     }
 
-
     private ColorProperty bgColorProperty() {
         if (bgColor == null) {
             bgColor = new ColorProperty(this, "bgColor", null);
         }
         return bgColor;
+    }
+
+    public List<Peak> getSelectedPeaks() {
+        return selectedPeaks.get();
+    }
+
+    public SimpleObjectProperty<List<Peak>> selectedPeaksProperty() {
+        return selectedPeaks;
     }
 
     public boolean isProcessControllerVisible() {
@@ -1482,7 +1487,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     }
 
     public void addSelectedPeakListener(ChangeListener listener) {
-        selPeaks.addListener(listener);
+        selectedPeaks.addListener(listener);
 
     }
 
