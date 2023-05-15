@@ -122,8 +122,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     private final SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
     private final ObservableList<PolyChart> charts = FXCollections.observableArrayList();
     private final BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
-    //XXX used by PolyChart, ProcessorController, SpectrumStatusBar
-    UndoManager undoManager = new UndoManager();
+    private final UndoManager undoManager = new UndoManager();
     //XXX used by Phaser, PolyChart
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     private ChartProcessor chartProcessor;
@@ -1405,6 +1404,10 @@ public class FXMLController implements Initializable, PeakNavigable {
             }
         }
         return data;
+    }
+
+    public UndoManager getUndoManager() {
+        return undoManager;
     }
 
     public void undo() {

@@ -31,7 +31,6 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
-import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
@@ -41,7 +40,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.util.converter.IntegerStringConverter;
-import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.control.SegmentedButton;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
@@ -86,7 +84,6 @@ public class SpectrumStatusBar {
     static {
         formatter.setMaximumFractionDigits(2);
     }
-    public static final Cursor SEL_CURSOR = SystemUtils.IS_OS_LINUX ? Cursor.HAND : Cursor.MOVE;
     static final int MAX_SPINNERS = 4;
     CustomNumberTextField[][] crossText = new CustomNumberTextField[2][2];
     FXMLController controller;
@@ -591,7 +588,7 @@ public class SpectrumStatusBar {
                 controller.getActiveChart().setAxis(iDim, ppm1, ppm2);
                 controller.getActiveChart().refresh();
                 ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
-                controller.undoManager.add("plane", undo, redo);
+                controller.getUndoManager().add("plane", undo, redo);
             }
         }
     }
