@@ -1185,7 +1185,7 @@ public class ChartProcessor {
             int[] sizes = new int[0];
             processorController.vectorStatus(sizes, vecDim);
         } else {
-            chart.controller.isFID = true;
+            chart.controller.setFIDActive(true);
 
             loadVectors(0);
             chart.setCrossHairState(false, true, false, true);

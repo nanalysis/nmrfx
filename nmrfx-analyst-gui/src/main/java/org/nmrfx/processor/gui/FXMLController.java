@@ -124,8 +124,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     ChartProcessor chartProcessor;
     //XXX used by GUIScripter, PolyChart
     Stage stage = null;
-    //XXX used by ChartController
-    boolean isFID = true;
+    private boolean isFID = true;
     //XXX used by AttributesController, DatasetsController, GUIScripter, PolyChart, SpectrumStatusBar
     ObservableList<PolyChart> charts = FXCollections.observableArrayList();
     //XXX used by AttributesController, PolyChart
@@ -269,6 +268,10 @@ public class FXMLController implements Initializable, PeakNavigable {
                 }
             }
         }
+    }
+
+    public void setFIDActive(boolean isFID) {
+        this.isFID = isFID;
     }
 
     public boolean isFIDActive() {
