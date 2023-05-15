@@ -1,9 +1,9 @@
 package org.nmrfx.processor.gui.spectra.mousehandlers;
 
+import javafx.scene.input.MouseEvent;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
 
-import javafx.scene.input.MouseEvent;
 import java.util.Optional;
 
 public class RegionMouseHandlerHandler extends MouseHandler {
@@ -43,7 +43,7 @@ public class RegionMouseHandlerHandler extends MouseHandler {
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
         double[] dragStart = mouseBindings.getDragStart();
-        mouseBindings.getChart().dragRegion(integralHit, dragStart, x, y);
+        mouseBindings.getChart().dragRegion(integralHit, x, y);
 
     }
 }
