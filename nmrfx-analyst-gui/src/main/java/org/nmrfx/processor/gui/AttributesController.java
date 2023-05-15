@@ -627,7 +627,7 @@ public class AttributesController implements Initializable {
     @FXML
     private void updateSlices() {
         final boolean status = sliceStatusCheckBox.isSelected();
-        fxmlController.charts.forEach(c -> c.setSliceStatus(status));
+        fxmlController.getCharts().forEach(c -> c.setSliceStatus(status));
     }
 
     abstract class ChartSliderListener implements ChangeListener<Number> {

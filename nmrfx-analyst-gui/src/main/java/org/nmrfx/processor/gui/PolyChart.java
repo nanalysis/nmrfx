@@ -697,7 +697,7 @@ public class PolyChart extends Region implements PeakListener {
             }
             if (controller == FXMLController.activeController.get()) {
                 List<Peak> allSelPeaks = new ArrayList<>();
-                for (PolyChart chart : controller.charts) {
+                for (PolyChart chart : controller.getCharts()) {
                     allSelPeaks.addAll(chart.getSelectedPeaks());
                 }
                 controller.selPeaks.set(allSelPeaks);
@@ -3596,7 +3596,7 @@ public class PolyChart extends Region implements PeakListener {
         }
         if (controller == FXMLController.activeController.get()) {
             List<Peak> allSelPeaks = new ArrayList<>();
-            for (PolyChart chart : controller.charts) {
+            for (PolyChart chart : controller.getCharts()) {
                 allSelPeaks.addAll(chart.getSelectedPeaks());
             }
             controller.selPeaks.set(allSelPeaks);

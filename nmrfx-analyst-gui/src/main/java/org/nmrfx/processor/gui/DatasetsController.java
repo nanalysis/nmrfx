@@ -480,7 +480,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         controller.arrange(orient);
         for (int i = 0; i < datasets.size(); i++) {
             DatasetBase dataset = datasets.get(i);
-            PolyChart chartActive = controller.charts.get(i);
+            PolyChart chartActive = controller.getCharts().get(i);
             controller.setActiveChart(chartActive);
             controller.addDataset(dataset, false, false);
         }
