@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Orientation;
 import javafx.scene.control.*;
@@ -144,11 +143,11 @@ public class Phaser {
 
         vbox.getChildren().add(phaseMenuButton);
         phaseChoice.addListener(e -> setChartPhaseDim());
-        controller.processControllerVisible.addListener(e -> resetMenus(controller.processControllerVisible));
+        controller.processControllerVisibleProperty().addListener(e -> resetMenus());
     }
 
-    void resetMenus(SimpleBooleanProperty procVis) {
-        if (procVis.get()) {
+    void resetMenus() {
+        if (controller.isProcessControllerVisible()) {
             phaseMenuButton.getItems().setAll(processorMenuItems);
             xyPhaseChoice.setVisible(false);
         } else {
@@ -160,7 +159,7 @@ public class Phaser {
     void setChartPhaseDim() {
         PolyChart chart = controller.getActiveChart();
         chart.setPhaseDim(phaseChoice.get().equals("X") ? 0 : 1);
-        if ((controller.getChartProcessor() == null) || !controller.processControllerVisible.get()) {
+        if ((controller.getChartProcessor() == null) || !controller.isProcessControllerVisible()) {
             setPH1Slider(chart.getDataPH1());
             setPH0Slider(chart.getDataPH0());
         }
@@ -243,7 +242,7 @@ public class Phaser {
     }
 
     public void handlePh0Reset(double ph0) {
-        handlePh0Reset(ph0, controller.processControllerVisible.get());
+        handlePh0Reset(ph0, controller.isProcessControllerVisible());
     }
 
     public void handlePh0Reset(double ph0, boolean updateOp) {
@@ -274,7 +273,7 @@ public class Phaser {
     }
 
     void handlePh1Reset(double ph1) {
-        handlePh1Reset(ph1, controller.processControllerVisible.get());
+        handlePh1Reset(ph1, controller.isProcessControllerVisible());
     }
 
     void handlePh1Reset(double ph1, boolean updateOp) {

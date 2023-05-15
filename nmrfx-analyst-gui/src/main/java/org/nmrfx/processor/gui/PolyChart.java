@@ -1413,14 +1413,14 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void updatePhaseDim() {
-        if ((controller.getChartProcessor() == null) || !controller.processControllerVisible.get()) {
+        if ((controller.getChartProcessor() == null) || !controller.isProcessControllerVisible()) {
             setPhaseDim(phaseAxis);
         }
     }
 
     protected void setPhaseDim(int phaseDim) {
         String vecDimName = "";
-        if ((controller.getChartProcessor() != null) && controller.processControllerVisible.get()) {
+        if ((controller.getChartProcessor() != null) && controller.isProcessControllerVisible()) {
             vecDimName = controller.getChartProcessor().getVecDimName();
             datasetPhaseDim = controller.getChartProcessor().mapToDataset(phaseDim);
         } else {
@@ -4087,12 +4087,12 @@ public class PolyChart extends Region implements PeakListener {
     public void setPivot(Double pivot) {
         if (!datasetAttributesList.isEmpty()) {
             String vecDimName = "";
-            if ((controller.getChartProcessor() != null) && controller.processControllerVisible.get()) {
+            if ((controller.getChartProcessor() != null) && controller.isProcessControllerVisible()) {
                 vecDimName = controller.getChartProcessor().getVecDimName();
             }
             DatasetBase dataset = getDataset();
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-            int datasetDim = -1;
+            int datasetDim;
             if (is1D() || vecDimName.equals("D1")) {
                 datasetDim = datasetAttributes.dim[0];
                 if (pivot == null) {
