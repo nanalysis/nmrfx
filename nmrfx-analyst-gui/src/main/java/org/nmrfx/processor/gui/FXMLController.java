@@ -104,8 +104,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     public static final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
     private static final int PSEUDO_2D_SIZE_THRESHOLD = 100;
     private final static List<FXMLController> controllers = new ArrayList<>();
-    //XXX used by PolyChart
-    static PeakAttrController peakAttrController = null;
+    private static PeakAttrController peakAttrController = null;
     private static String docString = null;
     private static File initialDir = null;
     private final SimpleObjectProperty<List<Peak>> selectedPeaks = new SimpleObjectProperty<>();

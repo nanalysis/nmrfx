@@ -3549,9 +3549,9 @@ public class PolyChart extends Region implements PeakListener {
     public void showHitPeak(double pickX, double pickY) {
         Optional<Peak> hit = hitPeak(pickX, pickY);
         if (hit.isPresent()) {
-            FXMLController.getActiveController().showPeakAttr();
-            FXMLController.peakAttrController.gotoPeak(hit.get());
-            FXMLController.peakAttrController.getStage().toFront();
+            FXMLController.showPeakAttr();
+            FXMLController.getPeakAttrController().gotoPeak(hit.get());
+            FXMLController.getPeakAttrController().getStage().toFront();
         }
     }
 
@@ -3560,7 +3560,7 @@ public class PolyChart extends Region implements PeakListener {
             for (PolyChart chart : CHARTS) {
                 if (chart != this) {
                     boolean hadPeaks = false;
-                    for (PeakListAttributes peakListAttr : (List<PeakListAttributes>) chart.getPeakListAttributes()) {
+                    for (PeakListAttributes peakListAttr : chart.getPeakListAttributes()) {
                         if (peakListAttr.clearSelectedPeaks()) {
                             hadPeaks = true;
                         }
