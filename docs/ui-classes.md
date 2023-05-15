@@ -72,3 +72,42 @@ Corresponds to the right-side processing pane, with operations, scripts, etc.
   * created by ProcessorController.initialize()
   * used for most operations
   * shared publicly
+
+## Diagram
+
+```plantuml
+@startuml
+class FXMLController {
+    -static SimpleObjectProperty<FXMLController> activeController [created+passed]
+    -static List<FXMLController> controllers [created+passed]
+    -ChartProcessor chartProcessor [passed]
+    -ObservableList<PolyChart> charts [created]
+    -PolyChart activeChart [created]
+}
+
+class PolyChart {
+    +ObservableList<PolyChart> CHARTS
+    +SimpleObjectProperty<PolyChart> activeChart
+    -FXMLController sliceController [created]
+    FXMLController controller [passe]
+    ProcessorController processorController [created]
+}
+
+class ChartProcessor {
+    ProcessorController processorController [passed]
+    PolyChart chart [passed]
+    FXMLController fxmlController [passed]    
+}
+
+class ProcessorController {
+    ChartProcessor chartProcessor [created]
+    PolyChart chart [passed]
+}
+
+FXMLController --> ProcessorController: reads references to ChartProcessor, store locally
+ProcessorController --> ChartProcessor: create instance in initialize(), passes this\n then pass FXMLController and PolyChart instances
+ChartProcessor --> FXMLController: uses to access Phaser object
+PolyChart --> ProcessorController: create instance in getProcessorController, passes FXMLController
+ProcessorController --> PolyChart: override processorController reference with this during creation
+@enduml
+```
