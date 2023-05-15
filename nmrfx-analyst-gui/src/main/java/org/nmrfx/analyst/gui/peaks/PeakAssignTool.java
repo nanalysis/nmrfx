@@ -2,10 +2,6 @@ package org.nmrfx.analyst.gui.peaks;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-
-import java.util.*;
-import java.util.function.Consumer;
-
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -14,11 +10,7 @@ import javafx.scene.layout.VBox;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.peaks.AtomBrowser.AtomDelta;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.AtomResPattern;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
@@ -26,6 +18,9 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
+
+import java.util.*;
+import java.util.function.Consumer;
 
 /**
  *
@@ -88,7 +83,7 @@ public class PeakAssignTool implements ControllerTool {
         gridPane.setHgap(5);
         toolBar.getItems().add(gridPane);
         updateGrid(nDim);
-        controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
+        controller.selectedPeaksProperty().addListener(e -> setActivePeaks(controller.getSelectedPeaks()));
 
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
