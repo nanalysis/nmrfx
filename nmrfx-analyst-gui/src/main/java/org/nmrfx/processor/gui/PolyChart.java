@@ -106,87 +106,85 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     private static int lastId = 0;
-    static int nSyncGroups = 0;
-    public static double overlapScale = 3.0;
-    double minMove = 20;
-    ArrayList<Double> bcList = new ArrayList<>();
-    Canvas canvas;
-    Canvas peakCanvas;
-    Canvas annoCanvas;
-    Path bcPath = new Path();
-    Line[][] crossHairLines = new Line[2][2];
-    Rectangle highlightRect = new Rectangle();
-    List<Rectangle> canvasHandles = List.of(new Rectangle(), new Rectangle(), new Rectangle(), new Rectangle());
+    private static int nSyncGroups = 0;
+    private static final double OVERLAP_SCALE = 3.0;
+    private static final double MIN_MOVE = 20;
+    private final Canvas canvas;
+    private final Canvas peakCanvas;
+    private final Canvas annoCanvas;
+    private final Path bcPath = new Path();
+    private final Line[][] crossHairLines = new Line[2][2];
+    private final Rectangle highlightRect = new Rectangle();
+    private final List<Rectangle> canvasHandles = List.of(new Rectangle(), new Rectangle(), new Rectangle(), new Rectangle());
     double[][] crossHairPositions = new double[2][2];
     boolean[][] crossHairStates = new boolean[2][2];
-    int crossHairNumH = 0;
-    int crossHairNumV = 0;
+    private int crossHairNumH = 0;
+    private int crossHairNumV = 0;
     private boolean hasMiddleMouseButton = false;
     final NMRAxis xAxis;
     final NMRAxis yAxis;
     NMRAxis[] axes = new NMRAxis[2];
-    final Group plotBackground;
-    final Pane plotContent;
-    final DrawSpectrum drawSpectrum;
-    final DrawPeaks drawPeaks;
+    private final Group plotBackground;
+    private final Pane plotContent;
+    private final DrawSpectrum drawSpectrum;
+    private final DrawPeaks drawPeaks;
     SliceAttributes sliceAttributes = new SliceAttributes();
-    DatasetAttributes lastDatasetAttr = null;
-    List<CanvasAnnotation> canvasAnnotations = new ArrayList<>();
-    AnnoText parameterText = null;
+    private DatasetAttributes lastDatasetAttr = null;
+    private final List<CanvasAnnotation> canvasAnnotations = new ArrayList<>();
+    private AnnoText parameterText = null;
     private final int id;
-    double leftBorder = 0.0;
-    double rightBorder = 0.0;
-    double topBorder = 0.0;
-    double bottomBorder = 0.0;
+    private double leftBorder = 0.0;
+    private double rightBorder = 0.0;
+    private double topBorder = 0.0;
+    private double bottomBorder = 0.0;
     double minLeftBorder = 0.0;
     double minBottomBorder = 0.0;
-    double stackWidth = 0.0;
-    String fontFamily = "Liberation Sans";
-    Font peakFont = new Font(fontFamily, 12);
-    boolean disabled = false;
+    private double stackWidth = 0.0;
+    private static final String FONT_FAMILY = "Liberation Sans";
+    private Font peakFont = new Font(FONT_FAMILY, 12);
+    private boolean disabled = false;
     public ChartProperties chartProps = new ChartProperties(this);
-    FXMLController sliceController = null;
-    SimpleObjectProperty<DatasetRegion> activeRegion = new SimpleObjectProperty<>(null);
-    SimpleBooleanProperty chartSelected = new SimpleBooleanProperty(false);
-    Map<String, Object> popoverMap = new HashMap<>();
+    private FXMLController sliceController = null;
+    private final SimpleObjectProperty<DatasetRegion> activeRegion = new SimpleObjectProperty<>(null);
+    private final SimpleBooleanProperty chartSelected = new SimpleBooleanProperty(false);
+    private final Map<String, Object> popoverMap = new HashMap<>();
 
-    FileProperty datasetFileProp = new FileProperty();
-    ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
-    ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
-    ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
+    private final FileProperty datasetFileProp = new FileProperty();
+    final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
+    final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
+    final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
 
     FXMLController controller;
     ProcessorController processorController = null;
-    BooleanProperty sliceStatus = new SimpleBooleanProperty(true);
-    BooleanProperty peakStatus = new SimpleBooleanProperty(true);
-    double level = 1.0;
+    private final BooleanProperty sliceStatus = new SimpleBooleanProperty(true);
+    final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
     // fixme 15 should be set automatically and correctly
-    double[][] chartPhases = new double[2][15];
+    private final double[][] chartPhases = new double[2][15];
     int datasetPhaseDim = 0;
     int phaseAxis = 0;
-    double phaseFraction = 0.0;
-    Double[] pivotPosition = new Double[15];
-    boolean useImmediateMode = true;
+    private double phaseFraction = 0.0;
+    private final Double[] pivotPosition = new Double[15];
+    private boolean useImmediateMode = true;
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
-    Consumer<DatasetRegion> newRegionConsumer = null;
+    private Consumer<DatasetRegion> newRegionConsumer = null;
 
     public enum DISDIM {
         OneDX, OneDY, TwoD
     }
 
-    ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
-    ChartMenu specMenu;
-    ChartMenu peakMenu;
-    ChartMenu integralMenu;
-    ChartMenu regionMenu;
-    KeyBindings keyBindings;
-    MouseBindings mouseBindings;
-    GestureBindings gestureBindings;
-    DragBindings dragBindings;
-    CrossHairs crossHairs;
+    final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
+    private ChartMenu specMenu;
+    private ChartMenu peakMenu;
+    private ChartMenu integralMenu;
+    private ChartMenu regionMenu;
+    private KeyBindings keyBindings;
+    private MouseBindings mouseBindings;
+    private GestureBindings gestureBindings;
+    private DragBindings dragBindings;
+    private CrossHairs crossHairs;
 
     AXMODE[] axModes = {AXMODE.PPM, AXMODE.PPM};
-    Map<String, Integer> syncGroups = new HashMap<>();
+    private final Map<String, Integer> syncGroups = new HashMap<>();
 
     public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
         this(controller, plotContent, canvas, peakCanvas, annoCanvas,
@@ -541,7 +539,7 @@ public class PolyChart extends Region implements PeakListener {
             double yPos = getLayoutY();
             annoGC.setLineDashes(null);
             if (mouseAction == MOUSE_ACTION.DRAG_EXPAND || mouseAction == MOUSE_ACTION.DRAG_ADDREGION || mouseAction == MOUSE_ACTION.DRAG_PEAKPICK) {
-                if ((dX < minMove) || (!is1D() && (dY < minMove))) {
+                if ((dX < MIN_MOVE) || (!is1D() && (dY < MIN_MOVE))) {
                     annoGC.setLineDashes(5);
                 }
             }
@@ -625,8 +623,8 @@ public class PolyChart extends Region implements PeakListener {
         }
 
         if (mouseAction == MOUSE_ACTION.DRAG_EXPAND) {
-            if (dX > minMove) {
-                if (is1D() || (dY > minMove)) {
+            if (dX > MIN_MOVE) {
+                if (is1D() || (dY > MIN_MOVE)) {
 
                     ChartUndoLimits undo = new ChartUndoLimits(this);
                     double[] adjustedLimits = getRangeMinimalAdjustment(0, limits[0][0], limits[0][1]);
@@ -642,7 +640,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
             }
         } else if (mouseAction == MOUSE_ACTION.DRAG_ADDREGION) {
-            if (dX > minMove) {
+            if (dX > MIN_MOVE) {
                 if (is1D()) {
                     addRegion(limits[0][0], limits[0][1]);
                     refresh();
@@ -1313,7 +1311,6 @@ public class PolyChart extends Region implements PeakListener {
                         }
                     }
                     dataAttr.setLvl(value);
-                    level = value;
                 }
             }
         }
@@ -2412,7 +2409,6 @@ public class PolyChart extends Region implements PeakListener {
                             }
                             datasetAttributes.setDrawReal(false);
                         }
-                        bcList.clear();
                         drawSpectrum.setToLastChunk(datasetAttributes);
                         boolean ok;
                         do {
@@ -3301,7 +3297,7 @@ public class PolyChart extends Region implements PeakListener {
                     peakGC.clearRect(xPos, yPos, width, height);
                 }
                 if (peakFont.getSize() != PreferencesController.getPeakFontSize()) {
-                    peakFont = new Font(fontFamily, PreferencesController.getPeakFontSize());
+                    peakFont = new Font(FONT_FAMILY, PreferencesController.getPeakFontSize());
                 }
                 peakGC.setFont(peakFont);
 
@@ -3557,7 +3553,7 @@ public class PolyChart extends Region implements PeakListener {
                             overlappedPeaks.add(aPeak);
                             for (int jPeak = (iPeak + 1); jPeak < n; jPeak++) {
                                 Peak bPeak = roots.get(jPeak);
-                                if (aPeak.overlaps(bPeak, 0, overlapScale)) {
+                                if (aPeak.overlaps(bPeak, 0, OVERLAP_SCALE)) {
                                     overlappedPeaks.add(bPeak);
                                     aPeak = roots.get(jPeak);
                                     iPeak++;
