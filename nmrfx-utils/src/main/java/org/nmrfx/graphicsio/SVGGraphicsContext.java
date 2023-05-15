@@ -118,6 +118,12 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         create(1024, 1024, fileName);
     }
 
+    // still used by RingNMR with landcape=true is all calls
+    @Deprecated(forRemoval = true)
+    public void create(boolean _landscape, double width, double height, String fileName) {
+        create(width, height, fileName);
+    }
+
     public void create(double width, double height, String fileName) {
         try {
             OutputStream stream = new FileOutputStream(fileName);
