@@ -100,9 +100,8 @@ import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionIn
 public class FXMLController implements Initializable, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
     public static final int MAX_INITIAL_TRACES = 32;
-    //XXX used by many
-    public static final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
     private static final int PSEUDO_2D_SIZE_THRESHOLD = 100;
+    private static final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
     private final static List<FXMLController> controllers = new ArrayList<>();
     private static PeakAttrController peakAttrController = null;
     private static String docString = null;
@@ -1893,6 +1892,10 @@ public class FXMLController implements Initializable, PeakNavigable {
             }
         }
         return docString;
+    }
+
+    public static SimpleObjectProperty<FXMLController> activeControllerProperty() {
+        return activeController;
     }
 
     public static FXMLController getActiveController() {
