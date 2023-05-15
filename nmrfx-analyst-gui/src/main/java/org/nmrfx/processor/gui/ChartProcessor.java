@@ -222,7 +222,7 @@ public class ChartProcessor {
 
     public void setChart(PolyChart chart) {
         this.chart = chart;
-        chart.controller.chartProcessor = this;
+        chart.controller.setChartProcessor(this);
         initEmptyVecs();
         execScript("", false, false);
     }

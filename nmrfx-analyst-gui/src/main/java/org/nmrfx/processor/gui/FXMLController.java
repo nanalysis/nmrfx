@@ -120,8 +120,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     private final boolean[][] crossHairStates = new boolean[2][2];
     private final Set<ControllerTool> tools = new HashSet<>();
     private final SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
-    //XXX used by ChartProcessor, Phaser, PolyChart
-    ChartProcessor chartProcessor;
+    private ChartProcessor chartProcessor;
     //XXX used by GUIScripter, PolyChart
     Stage stage = null;
     private boolean isFID = true;
@@ -233,6 +232,10 @@ public class FXMLController implements Initializable, PeakNavigable {
                 processorController.saveOnClose();
             }
         }
+    }
+
+    public void setChartProcessor(ChartProcessor chartProcessor) {
+        this.chartProcessor = chartProcessor;
     }
 
     public ChartProcessor getChartProcessor() {
