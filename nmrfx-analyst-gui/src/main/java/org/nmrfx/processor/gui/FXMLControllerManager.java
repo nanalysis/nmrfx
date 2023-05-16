@@ -29,6 +29,21 @@ public class FXMLControllerManager {
         return Collections.unmodifiableSet(controllers);
     }
 
+    public void register(FXMLController controller, boolean setAsActive) {
+        controllers.add(controller);
+        if (setAsActive) {
+            activeController.set(controller);
+        }
+    }
+
+    public void unregister(FXMLController controller) {
+        controllers.remove(controller);
+    }
+
+    public boolean isRegistered(FXMLController controller) {
+        return controller != null && controllers.contains(controller);
+    }
+
     @Nonnull
     //XXX try to reduce calls, sometimes creating a controller would be strange
     public FXMLController getOrCreateActiveController() {
@@ -53,21 +68,6 @@ public class FXMLControllerManager {
         return activeController;
     }
 
-    public void register(FXMLController controller) {
-        register(controller, false);
-    }
-
-    public void register(FXMLController controller, boolean active) {
-        controllers.add(controller);
-        if (active) {
-            activeController.set(controller);
-        }
-    }
-
-    public void unregister(FXMLController controller) {
-        controllers.remove(controller);
-    }
-
     public void setActiveController(FXMLController controller) {
         //XXX check or add in all controllers list?
         activeController.set(controller);
@@ -81,7 +81,6 @@ public class FXMLControllerManager {
             chart.getController().setActiveChart(chart);
         }
     }
-
 
     public FXMLController newController() {
         return newController(new Stage(StageStyle.DECORATED));

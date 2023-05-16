@@ -4002,8 +4002,7 @@ public class PolyChart extends Region implements PeakListener {
                     }
                     iSlice++;
                 }
-                if ((sliceController == null)
-                        || (!AnalystApp.getFXMLControllerManager().getControllers().contains(sliceController))) {
+                if (!AnalystApp.getFXMLControllerManager().isRegistered(sliceController)) {
                     sliceController = AnalystApp.getFXMLControllerManager().newController();
                 }
                 sliceController.getStage().show();
