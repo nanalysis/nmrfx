@@ -223,10 +223,6 @@ public class ChartProcessor {
         }
     }
 
-    InteractiveInterpreter getInterpreter() {
-        return interpreter;
-    }
-
     org.nmrfx.processor.processing.processes.ProcessOps getProcess() {
         PyObject pObject = interpreter.eval("getCurrentProcess()");
         ProcessOps process = (ProcessOps) pObject.__tojava__(ProcessOps.class);
@@ -387,10 +383,6 @@ public class ChartProcessor {
             nmrData.setArraySize(dim, arraySize);
             updateCounter();
         }
-    }
-
-    public boolean getEchoAntiEcho() {
-        return (acqMode[vecDim] != null) && acqMode[vecDim].equals("ea");
     }
 
     public void setFixDSP(boolean value) {
@@ -605,13 +597,6 @@ public class ChartProcessor {
         }
     }
 
-    public void setupProcess() {
-    }
-
-    public Map<String, List<String>> getOperations() {
-        return mapOpLists;
-    }
-
     public List<String> getOperations(String dimName) {
         return mapOpLists.get(dimName);
     }
@@ -657,35 +642,6 @@ public class ChartProcessor {
         if (!processorController.isViewingDataset()) {
             chart.full();
             chart.autoScale();
-        }
-    }
-
-    void setOp(String op) {
-        setOp(op, false, -1);
-    }
-
-    void setOp(String op, boolean appendOp, int index) {
-        List<String> listItems = mapOpLists.get(vecDimName);
-        op = op.trim();
-        op = OperationInfo.fixOp(op);
-        if (op.length() != 0) {
-            int opIndex = index;
-            if (opIndex == -1) {
-                opIndex = OperationInfo.getPosition(listItems, op);
-            }
-            if (opIndex < 0) {
-                log.warn("bad op");
-            } else if (opIndex >= listItems.size()) {
-                listItems.add(op);
-            } else {
-                String curOp = OperationInfo.trimOp(listItems.get(opIndex));
-                String trimOp = OperationInfo.trimOp(op);
-                if (!appendOp && trimOp.equals(curOp)) {
-                    listItems.set(opIndex, op);
-                } else {
-                    listItems.add(opIndex, op);
-                }
-            }
         }
     }
 
@@ -766,11 +722,6 @@ public class ChartProcessor {
 
     public DatasetType getDatasetType() {
         return datasetType;
-    }
-
-    public void writeScript() throws IOException {
-        String script = buildScript();
-        writeScript(script);
     }
 
     public String getScriptFileName() {
@@ -933,77 +884,6 @@ public class ChartProcessor {
         scriptBuilder.append(processorController.refManager.getParString(nDim, indent));
         String scriptCmds = getScriptCmds(nDim, indent, true);
         scriptBuilder.append(scriptCmds);
-        return scriptBuilder.toString();
-    }
-
-    public String buildMultiScript(String baseDir, String outputDir, ArrayList<String> fileNames, boolean combineFiles) {
-        boolean useIFile = true;
-        String baseName = "data";
-        int nDim = getNMRData().getNDim();
-        String lineSep = System.lineSeparator();
-        StringBuilder scriptBuilder = new StringBuilder();
-        scriptBuilder.append("import os").append(lineSep);
-        scriptBuilder.append("from pyproc import *").append(lineSep);
-        scriptBuilder.append("getMeasureMap().clear()").append(lineSep);
-        scriptBuilder.append("fileNames=[").append(lineSep);
-        int i = 0;
-        int nPerLine = 5;
-        int last = fileNames.size() - 1;
-        for (String filePath : fileNames) {
-            if ((i % nPerLine) == 0) {
-                scriptBuilder.append("          ");
-            }
-            scriptBuilder.append("\"").append(filePath).append("\"");
-            if (i != last) {
-                scriptBuilder.append(",");
-                if ((i % nPerLine) == (nPerLine - 1)) {
-                    scriptBuilder.append(lineSep);
-                }
-            }
-            i++;
-        }
-        int nFIDs = fileNames.size();
-        scriptBuilder.append("]").append(lineSep);
-        scriptBuilder.append("setupScanTable(");
-        scriptBuilder.append("'").append(outputDir).append("/scantbl.txt')").append(lineSep);
-        String indent = "    ";
-        scriptBuilder.append("for (iFile,fileName) in enumerate(fileNames):").append(lineSep);
-        scriptBuilder.append(indent).append("(fullFileName,filePath,fullDataName,dataName)=makeDataNames(fileName,baseDir=");
-        scriptBuilder.append("'").append(baseDir).append("'");
-        scriptBuilder.append(",outDir='").append(outputDir).append("'");
-        if (useIFile) {
-            scriptBuilder.append(",iFile=").append("iFile");
-        }
-        if (baseName.length() > 0) {
-            scriptBuilder.append(",baseName=").append("'").append(baseName).append("'");
-        }
-        if (combineFiles) {
-            scriptBuilder.append(",multiMode=True");
-        }
-        scriptBuilder.append(")").append(lineSep);
-
-        scriptBuilder.append(indent).append("useProcessor()").append(lineSep);
-        scriptBuilder.append(indent).append("FID(").append("fullFileName").append(")").append(lineSep);
-        if (combineFiles) {
-            scriptBuilder.append(indent).append("CREATE(").append("fullDataName").append(",extra=").append(nFIDs).append(")").append(lineSep);
-        } else {
-            scriptBuilder.append(indent).append("CREATE(").append("fullDataName").append(")").append(lineSep);
-        }
-
-        scriptBuilder.append(processorController.refManager.getParString(nDim, indent));
-        String scriptCmds = getScriptCmds(nDim, indent, false);
-        scriptBuilder.append(scriptCmds);
-        if (combineFiles) {
-            scriptBuilder.append(indent).append("WRITE(index=iFile)").append(lineSep);
-        }
-        scriptBuilder.append(indent).append("run()").append(lineSep);
-        scriptBuilder.append(indent).append("writeToScanTable(iFile,filePath,dataName,getMeasureMap())").append(lineSep);
-        scriptBuilder.append(lineSep);
-        if (combineFiles) {
-            scriptBuilder.append("closeDataset()").append(lineSep);
-            datasetFile = new File(outputDir, "multi.nv");
-        }
-        scriptBuilder.append("closeScanTable()").append(lineSep);
         return scriptBuilder.toString();
     }
 
@@ -1200,24 +1080,6 @@ public class ChartProcessor {
         return scriptBuilder.toString();
     }
 
-    void setFlags() {
-        Map<String, Boolean> flags = new HashMap<>();
-        String flagString = processorController.getFlagString().trim();
-        String[] flagStrings = flagString.split("\\s");
-        for (String flag : flagStrings) {
-            String[] flagParts = flag.split("=");
-            if (flagParts.length == 2) {
-                if (flagParts[0].equals("mode")) {
-
-                } else {
-                    boolean flagValue = flagParts[1].equals("1");
-                    flags.put(flagParts[0], flagValue);
-                }
-            }
-        }
-        setFlags(flags);
-    }
-
     public void setFlags(Map<String, Boolean> flags) {
         getNMRData().setFidFlags(flags);
     }
@@ -1271,7 +1133,6 @@ public class ChartProcessor {
         } else {
             vectorsPerGroup = 1;
         }
-        fxmlController.updateRowDimMenu(nDim);
     }
 
     public void setData(NMRData data, boolean clearOps) {
@@ -1490,14 +1351,6 @@ public class ChartProcessor {
         PyObject pyDocObject = interpreter.eval("genScript(arrayed=" + arrayVal + ")");
         String scriptString = (String) pyDocObject.__tojava__(String.class);
         return scriptString;
-    }
-
-    public Object getInterpVariable(String name) {
-        try {
-            return interpreter.get(name);
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     public ArrayList getDocs() {

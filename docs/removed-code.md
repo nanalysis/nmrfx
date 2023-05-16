@@ -21,3 +21,18 @@ Removal dates in YYYY-MM-DD format.
 * org.nmrfx.structure.chemistry.energy.LayoutMolecule
 * org.nmrfx.structure.chemistry.miner.NanoMol
 * org.nmrfx.structure.chemistry.miner.PMol
+
+## Methods in UI classes
+
+### 2023-05-16
+
+* ChartProcessor.setOp(String op, boolean appendOp, int index)
+* ChartProcessor.buildMultiScript(String baseDir, String outputDir, ArrayList<String> fileNames, boolean combineFiles)
+* ChartProcessor.setFlags()
+* FXMLController.makeNewWinIcon()
+* FXMLController.addChart(Integer pos)
+* IconUtilities.create(char fontChar) + many char icon constants
+* SpectrumMeasureBar.makeIcon(int i, int j, boolean boundMode)
+* ConsoleUtil: everything except runOnFxThread(..)
+* GridPaneCanvas.getLocal(double x, double y)
+* GridPaneCanvas.getFraction(double x, double y)

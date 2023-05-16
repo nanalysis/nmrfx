@@ -16,9 +16,4 @@ public class PeakDeleteEvent {
     public Collection<Peak> getPeaks() {
         return peaks;
     }
-
-    public PolyChart getChart() {
-        return chart;
-    }
-
 }

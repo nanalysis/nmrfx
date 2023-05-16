@@ -212,10 +212,6 @@ public class MainApp extends Application {
         return mainApp.makeMenuBar(appName);
     }
 
-    public static MenuBar getMainMenuBar() {
-        return mainMenuBar;
-    }
-
     public void addStatusBarTools(SpectrumStatusBar statusBar) {
     }
 
@@ -566,14 +562,6 @@ public class MainApp extends Application {
 
     public static LogConsoleController getLogConsoleController() {
         return LogConsoleController.getLogConsoleController();
-    }
-
-    public static void writeOutput(String string) {
-        if (getConsoleController() == null) {
-            System.out.println(string);
-        } else {
-            getConsoleController().write(string);
-        }
     }
 
     public static ProjectBase getActive() {

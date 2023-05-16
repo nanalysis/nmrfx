@@ -181,30 +181,11 @@ public class PropertyManager {
         return currentIndex;
     }
 
-    protected String getScript() {
-        StringBuilder script = new StringBuilder();
-        for (Object obj : listItems) {
-            script.append(obj.toString());
-            script.append("\n");
-        }
-        return script.toString();
-    }
-
     public int getCurrentPosition(String op) {
         op = op.trim();
         op = OperationInfo.fixOp(op);
         int currentPos = OperationInfo.getCurrentPosition(listItems, op);
         return currentPos;
-    }
-
-    public void setOps(String[] ops) {
-        ArrayList<String> opList = new ArrayList<>();
-        for (String op : ops) {
-            op = op.trim();
-            op = OperationInfo.fixOp(op);
-            opList.add(op);
-        }
-        listItems.setAll(opList);
     }
 
     public int setOp(String op, boolean appendOp, int index) {
@@ -282,10 +263,6 @@ public class PropertyManager {
             }
         }
 
-    }
-
-    int setOp(String op, int index) {
-        return setOp(op, false, index);
     }
 
     int setOp(String op) {
@@ -430,11 +407,6 @@ public class PropertyManager {
         currentOp = trimOp;
         propertySheet.getItems().setAll(newItems);
 
-    }
-
-    public void updatePropSheet() {
-        ArrayList<PropertySheet.Item> copyItems = new ArrayList<>(propertySheet.getItems());
-        propertySheet.getItems().setAll(copyItems);
     }
 
     public static Map<String, String> parseOpString(String op) {

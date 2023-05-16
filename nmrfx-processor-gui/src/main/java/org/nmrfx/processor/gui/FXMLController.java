@@ -22,7 +22,6 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -36,7 +35,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
@@ -44,13 +42,9 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -72,7 +66,6 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
-import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
@@ -129,12 +122,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
     private Button cancelButton;
     private Button favoriteButton;
     PopOver popOver = null;
-    PopOver attributesPopOver = null;
     private VBox phaserBox = new VBox();
 
     ChartProcessor chartProcessor;
-    DocWindowController dwc = null;
-    static boolean popOverMode = false;
     static PeakAttrController peakAttrController = null;
     Stage stage = null;
     private double previousStageRestoreWidth = 0;
@@ -203,10 +193,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return bgColor;
     }
 
-    public void setBgColor(Color value) {
-        bgColorProperty().set(value);
-    }
-
     public Color getBgColor() {
         return bgColorProperty().get();
     }
@@ -218,10 +204,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
             axesColor = new ColorProperty(this, "axesColor", null);
         }
         return axesColor;
-    }
-
-    public void setAxesColor(Color value) {
-        axesColorProperty().set(value);
     }
 
     public Color getAxesColor() {
@@ -238,10 +220,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void setInitialDirectory(File file) {
         initialDir = file;
-    }
-
-    public SimpleObjectProperty<Cursor> getCursorProperty() {
-        return cursorProperty;
     }
 
     public Cursor getCursor() {
@@ -322,28 +300,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
     }
 
-
-    public void updatePhaser(boolean state) {
-        if (state) {
-            borderPane.setRight(phaserBox);
-            phaser.getPhaseOp();
-            if (chartProcessor == null) {
-                phaser.setPH1Slider(activeChart.getDataPH1());
-                phaser.setPH0Slider(activeChart.getDataPH0());
-            }
-        } else {
-            if (borderPane.getRight() == phaserBox) {
-                borderPane.setRight(null);
-            }
-        }
-    }
-
     public static List<FXMLController> getControllers() {
         return controllers;
-    }
-
-    boolean filterChart(PolyChart chart) {
-        return true;
     }
 
     public void setActiveChart(PolyChart chart) {
@@ -390,7 +348,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     @FXML
     private void autoScaleAction(ActionEvent event) {
-        charts.stream().filter(chart -> filterChart(chart)).forEach(chart -> {
+        charts.stream().forEach(chart -> {
             chart.autoScale();
             chart.layoutPlotChildren();
         });
@@ -398,7 +356,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     @FXML
     private void fullAction(ActionEvent event) {
-        charts.stream().filter(chart -> filterChart(chart)).forEach(chart -> {
+        charts.stream().forEach(chart -> {
             chart.full();
             chart.layoutPlotChildren();
         });
@@ -424,7 +382,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             datasetListView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
                 @Override
                 public ListCell<String> call(ListView<String> p) {
-                    ListCell<String> olc = new ListCell<String>() {
+                    ListCell<String> olc = new ListCell<>() {
                         @Override
                         public void updateItem(String s, boolean empty) {
                             super.updateItem(s, empty);
@@ -586,15 +544,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     NMRData nmrData = NMRDataUtil.getFID(selectedFile.toString());
                     if (nmrData instanceof NMRViewData) {
                         PreferencesController.saveRecentFiles(selectedFile.toString());
-                        NMRViewData nvData = (NMRViewData) nmrData;
-                        Dataset dataset = nvData.getDataset();
                     }
                 }
             } catch (IllegalArgumentException | IOException iaE) {
                 ExceptionDialog eDialog = new ExceptionDialog(iaE);
                 eDialog.showAndWait();
             }
-
         }
     }
 
@@ -821,7 +776,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     @FXML
     private void expandAction(ActionEvent event) {
-        charts.stream().filter(chart -> filterChart(chart)).forEach(chart -> {
+        charts.stream().forEach(chart -> {
             chart.expand();
         });
     }
@@ -1027,16 +982,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
     }
 
-    protected void updatePhaseDim(Observable observable) {
-        ReadOnlyIntegerProperty prop = (ReadOnlyIntegerProperty) observable;
-        phaser.setPhaseDim(prop.getValue());
-    }
-
     protected void setPhaseDimChoice(int phaseDim) {
         phaser.setPhaseDim(phaseDim);
-    }
-
-    void updateRowDimMenu(int nDim) {
     }
 
     protected int[] getExtractRegion(String vecDimName, int size) {
@@ -1158,17 +1105,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public SpectrumStatusBar getStatusBar() {
         return statusBar;
-    }
-
-    public void refreshPeakView(int peakNum) {
-        PolyChart chart = getActiveChart();
-        if (!chart.getPeakListAttributes().isEmpty()) {
-            PeakList peakList = chart.getPeakListAttributes().get(0).getPeakList();
-            Peak peak = peakList.getPeakByID(peakNum);
-            if (peak != null) {
-                refreshPeakView(peak);
-            }
-        }
     }
 
     public void refreshPeakView(String peakSpecifier) {
@@ -1307,11 +1243,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
         try {
             Parent parent = loader.load();
-            Scene scene = new Scene((Pane) parent);
+            Scene scene = new Scene(parent);
             stage.setScene(scene);
             scene.getStylesheets().add("/styles/Styles.css");
             MainApp.setStageFontSize(stage, MainApp.REG_FONT_SIZE_STR);
-            controller = loader.<FXMLController>getController();
+            controller = loader.getController();
             controller.stage = stage;
             FXMLController myController = controller;
             stage.focusedProperty().addListener(e -> myController.setActiveController(e));
@@ -1375,35 +1311,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
             paneAdj = ((Pane) c.getList().get(0)).getMinWidth();
         }
         stage.setWidth(stage.getWidth() + paneAdj);
-    }
-
-    public static StackPane makeNewWinIcon() {
-        StackPane stackPane = new StackPane();
-        stackPane.setPadding(Insets.EMPTY);
-        int size = 22;
-        int size2 = size / 2 - 2;
-        Rectangle rect = new Rectangle(size, size);
-        rect.setFill(Color.LIGHTGREY);
-        rect.setStroke(Color.LIGHTGREY);
-        Line line1 = new Line(0.0f, size2, size, size2);
-        Line line2 = new Line(0.0f, size2, size, size2);
-        Line line3 = new Line(size2, 0, size2, size);
-        Line line4 = new Line(size2, 0, size2, size);
-
-        line1.setTranslateY(-size2);
-        line2.setTranslateY(size2);
-        line3.setTranslateX(-size2);
-        line4.setTranslateX(size2);
-        stackPane.getChildren().add(rect);
-        stackPane.getChildren().add(line1);
-        stackPane.getChildren().add(line2);
-        stackPane.getChildren().add(line3);
-        stackPane.getChildren().add(line4);
-        line1.setStroke(Color.BLACK);
-        line2.setStroke(Color.BLACK);
-        line3.setStroke(Color.BLACK);
-        line4.setStroke(Color.BLACK);
-        return stackPane;
     }
 
     void initToolBar(ToolBar toolBar) {
@@ -1474,7 +1381,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doScale(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
-            double x = event.getDeltaX();
             double y = event.getDeltaY();
             for (PolyChart applyChart : getCharts(event.isShiftDown())) {
                 if (y < 0.0) {
@@ -1489,7 +1395,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         bButton.setOnMouseClicked(e -> doScale(e, 1.2));
 
         bButton.setOnScroll((ScrollEvent event) -> {
-            double x = event.getDeltaX();
             double y = event.getDeltaY();
             for (PolyChart applyChart : getCharts(event.isShiftDown())) {
                 if (y < 0.0) {
@@ -1502,12 +1407,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
         buttons.add(bButton);
         buttons.add(new Separator(Orientation.VERTICAL));
-
-
         buttons.add(new Separator(Orientation.VERTICAL));
-
-        Image imageIcon = new Image("/images/Icon_NVJ_16.png", true);
-        ImageView imageView = new ImageView(imageIcon);
 
         Pane filler = new Pane();
         HBox.setHgrow(filler, Priority.ALWAYS);
@@ -1616,14 +1516,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
     }
 
-    public Peak getActivePeak() {
-        Peak peak = null;
-        if (peakNavigator != null) {
-            peak = peakNavigator.getPeak();
-        }
-        return peak;
-    }
-
     public void showSpectrumComparator() {
         if (spectrumComparator == null) {
             VBox vBox = new VBox();
@@ -1662,10 +1554,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     AnalyzerBar analyzerBar = null;
 
-    public AnalyzerBar getSpectrumAnalyzerBar() {
-        return analyzerBar;
-    }
-
     public void showAnalyzerBar() {
         if (analyzerBar == null) {
             VBox vBox = new VBox();
@@ -1702,12 +1590,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         chartGroup.addCharts(chartGroup.getRows(), charts);
     }
 
-    public void removeChart() {
-        if (activeChart != null) {
-            removeChart(activeChart);
-        }
-    }
-
     public void removeChart(PolyChart chart) {
         if (chart != null) {
             chartGroup.getChildren().remove(chart);
@@ -1732,27 +1614,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         chart.setChartDisabled(true);
         chartGroup.addChart(chart);
         activeChart = chart;
-    }
-
-    public Integer addChart(Integer pos) {
-        GridPaneCanvas.ORIENTATION orient;
-        if (pos < 2) {
-            orient = GridPaneCanvas.ORIENTATION.HORIZONTAL;
-        } else {
-            orient = GridPaneCanvas.ORIENTATION.VERTICAL;
-        }
-        PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
-        charts.add(chart);
-        chart.setController(this);
-        if ((pos % 2) == 0) {
-            chartGroup.addChart(0, chart);
-        } else {
-            chartGroup.addChart(chart);
-        }
-        arrange(orient);
-        activeChart = chart;
-
-        return 0;
     }
 
     public void setChartDisable(boolean state) {
@@ -1956,7 +1817,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void alignCenters() {
-        DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
+        DatasetAttributes activeAttr = activeChart.datasetAttributesList.get(0);
         if (activeChart.peakListAttributesList.isEmpty()) {
             alignCentersWithTempLists();
         } else {
@@ -1976,7 +1837,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void alignCentersWithTempLists() {
-        DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
+        DatasetAttributes activeAttr = activeChart.datasetAttributesList.get(0);
         // any peak lists created just for alignmnent should be deleted
         PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, null, false, "refList");
         if (refList == null) {
@@ -2011,19 +1872,13 @@ public class FXMLController implements  Initializable, PeakNavigable {
                         log.info("{}", center);
                     }
                     double[] match;
-                    if (false) {
-                        PeakNetworkMatch networkMatcher = new PeakNetworkMatch(refList, movingList);
-                        networkMatcher.bpMatchPeaks(dimName1, dimName2, 0.1, 3.0, centers, true, null);
-                        match = networkMatcher.getOptOffset();
-                    } else {
-                        String[] dimNames = {dimName1, dimName2};
-                        double[] nOffset = {centers[0], centers[1]};
-                        PeakNeighbors neighbor = new PeakNeighbors(refList, movingList, 25, dimNames);
-                        neighbor.optimizeMatch(nOffset, 0.0, 1.0);
-                        match = new double[3];
-                        match[0] = nOffset[0];
-                        match[1] = nOffset[1];
-                    }
+                    String[] dimNames = {dimName1, dimName2};
+                    double[] nOffset = {centers[0], centers[1]};
+                    PeakNeighbors neighbor = new PeakNeighbors(refList, movingList, 25, dimNames);
+                    neighbor.optimizeMatch(nOffset, 0.0, 1.0);
+                    match = new double[3];
+                    match[0] = nOffset[0];
+                    match[1] = nOffset[1];
                     for (int i = 0, j = 0; i < dims.length; i++) {
                         if (dims[i] != -1) {
                             double ref = dataAttr.getDataset().getRefValue(dims[i]);
@@ -2097,10 +1952,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return bottomBox;
     }
 
-    public Set<ControllerTool> getTools() {
-        return tools;
-    }
-
     @PluginAPI("parametric")
     public void addTool(ControllerTool tool) {
         tools.add(tool);
@@ -2122,17 +1973,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         ControllerTool result = null;
         for (ControllerTool tool : tools) {
             if (tool.getClass() == classType) {
-                result = tool;
-                break;
-            }
-        }
-        return result;
-    }
-
-    public ControllerTool getTool(String className) {
-        ControllerTool result = null;
-        for (ControllerTool tool : tools) {
-            if (tool.getClass().getName().equals(className)) {
                 result = tool;
                 break;
             }

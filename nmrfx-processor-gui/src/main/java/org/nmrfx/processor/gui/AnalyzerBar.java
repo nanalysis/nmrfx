@@ -107,11 +107,6 @@ public class AnalyzerBar {
         closeAction.accept(this);
     }
 
-    public AnalyzerBar onClose(Consumer closeAction) {
-        this.closeAction = closeAction;
-        return this;
-    }
-
     private void analyze(ActionEvent event) {
         PolyChart chart = controller.getActiveChart();
         dataset = chart.getDataset();

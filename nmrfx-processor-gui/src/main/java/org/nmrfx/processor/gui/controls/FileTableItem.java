@@ -60,28 +60,8 @@ public class FileTableItem {
         this.extras.putAll(extras);
     }
 
-    public StringProperty fileNameProperty() {
-        return fileName;
-    }
-
-    public IntegerProperty groupProperty() {
-        return group;
-    }
-
-    public StringProperty datasetNameProperty() {
-        return datasetName;
-    }
-
-    public StringProperty seqNameProperty() {
-        return seqName;
-    }
-
     public String getFileName() {
         return fileName.get();
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName.set(fileName);
     }
 
     public int getGroup() {
@@ -104,16 +84,8 @@ public class FileTableItem {
         return seqName.get();
     }
 
-    public void setSeqName(String seqName) {
-        this.seqName.set(seqName);
-    }
-
     public Integer getNDim() {
         return nDim.get();
-    }
-
-    public void setNDim(int nDim) {
-        this.nDim.set(nDim);
     }
 
     public Integer getRow() {
