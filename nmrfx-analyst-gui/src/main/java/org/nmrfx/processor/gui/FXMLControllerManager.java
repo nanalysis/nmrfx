@@ -9,7 +9,6 @@ import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,9 +19,11 @@ import java.util.Set;
  * Manages instances of FXMLControllers, from creation to listing them and keeping a way to know which one is the active one.
  */
 public class FXMLControllerManager {
+    // The active controller is the last one created, or the one that has focus
     private final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
 
-    // it is important to keep insertion order: the first controller is considered the main one and is kept when closing all secondary stages
+    // A collection of all known controllers.
+    // It is important to keep insertion order: the first controller is considered the main one and is kept when closing all secondary stages
     private final Set<FXMLController> controllers = new LinkedHashSet<>();
 
     public Collection<FXMLController> getControllers() {
@@ -48,16 +49,15 @@ public class FXMLControllerManager {
     public FXMLController getOrCreateActiveController() {
         FXMLController active = activeController.get();
         if (active == null) {
+            //XXX is there actually a case where not having an active controller is a possibility?
             active = newController();
+
+            //XXX in which case could we not already be the active controller here?
+            //XXX it looks like creating a controller already sets it as active
             setActiveController(active);
         }
 
         return active;
-    }
-
-    @Nullable
-    public FXMLController getActiveController() {
-        return activeController.get();
     }
 
     public SimpleObjectProperty<FXMLController> activeControllerProperty() {
@@ -65,7 +65,10 @@ public class FXMLControllerManager {
     }
 
     public void setActiveController(FXMLController controller) {
-        //XXX check or add in all controllers list?
+        if (!controllers.contains(controller)) {
+            throw new IllegalStateException("Trying to set an unregistered controller as the active one!");
+        }
+
         activeController.set(controller);
     }
 
