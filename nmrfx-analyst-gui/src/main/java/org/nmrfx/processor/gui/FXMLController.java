@@ -878,8 +878,6 @@ public class FXMLController implements Initializable, PeakNavigable {
             chartGroup.requestLayout();
         });
 
-        //XXX this should likely be removed from here and moved to FXMLControllerManager during component creation
-        AnalystApp.getFXMLControllerManager().register(this, true);
         statusBar.setMode(1);
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {

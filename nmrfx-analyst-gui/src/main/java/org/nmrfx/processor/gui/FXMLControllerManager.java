@@ -9,6 +9,7 @@ import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,25 +27,48 @@ public class FXMLControllerManager {
     // It is important to keep insertion order: the first controller is considered the main one and is kept when closing all secondary stages
     private final Set<FXMLController> controllers = new LinkedHashSet<>();
 
+    /**
+     * Get all registered controllers, keeping the insertion order.
+     *
+     * @return an unmodifiable collection of registered controllers.
+     */
     public Collection<FXMLController> getControllers() {
         return Collections.unmodifiableSet(controllers);
     }
 
-    public void register(FXMLController controller, boolean setAsActive) {
+    /**
+     * Register a new controller and mark it as active.
+     *
+     * @param controller the controller to register
+     */
+    private void registerNewController(FXMLController controller) {
         controllers.add(controller);
-        if (setAsActive) {
-            activeController.set(controller);
-        }
+        activeController.set(controller);
     }
 
+    /**
+     * Unregister a controller. To be called when the associated stage is closed.
+     *
+     * @param controller the controller to unregister.
+     */
     public void unregister(FXMLController controller) {
         controllers.remove(controller);
     }
 
-    public boolean isRegistered(FXMLController controller) {
+    /**
+     * Check if a particular controller is already registered.
+     *
+     * @return true if the controller is known.
+     */
+    public boolean isRegistered(@Nullable FXMLController controller) {
         return controller != null && controllers.contains(controller);
     }
 
+    /**
+     * Get the active controller, creating one if necessary.
+     *
+     * @return the active controller.
+     */
     @Nonnull
     public FXMLController getOrCreateActiveController() {
         FXMLController active = activeController.get();
@@ -60,19 +84,35 @@ public class FXMLControllerManager {
         return active;
     }
 
+    /**
+     * Exposes the active controller as a property, so other components can use it as an event source.
+     *
+     * @return the active controller property.
+     */
     public SimpleObjectProperty<FXMLController> activeControllerProperty() {
         return activeController;
     }
 
-    public void setActiveController(FXMLController controller) {
-        if (!controllers.contains(controller)) {
+    /**
+     * Set the active controller or null.
+     *
+     * @param active the active controller.
+     * @throws IllegalStateException if the controller is not registered
+     */
+    public void setActiveController(@Nullable FXMLController active) {
+        if (active != null && !controllers.contains(active)) {
             throw new IllegalStateException("Trying to set an unregistered controller as the active one!");
         }
 
-        activeController.set(controller);
+        activeController.set(active);
     }
 
-    public void setActiveControllerFromChart(PolyChart chart) {
+    /**
+     * Set the active controller based on the active chart.
+     *
+     * @param chart a chart associated to a controller.
+     */
+    public void setActiveControllerFromChart(@Nullable PolyChart chart) {
         if (chart == null || chart.getController() == null) {
             setActiveController(null);
         } else {
@@ -81,10 +121,22 @@ public class FXMLControllerManager {
         }
     }
 
+    /**
+     * Create a new controller with a default stage.
+     *
+     * @return the newly created controller.
+     */
     public FXMLController newController() {
         return newController(new Stage(StageStyle.DECORATED));
     }
 
+
+    /**
+     * Create a new controller with a defined stage.
+     *
+     * @param stage the stage used to display the scene associated with this controller
+     * @return the newly created controller.
+     */
     public FXMLController newController(Stage stage) {
         FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
         FXMLController controller;
@@ -99,8 +151,7 @@ public class FXMLControllerManager {
             AnalystApp.setStageFontSize(stage, AnalystApp.REG_FONT_SIZE_STR);
             controller = loader.getController();
             controller.initAfterFxmlLoader(stage);
-
-
+            registerNewController(controller);
             AnalystApp.registerStage(stage, controller);
             stage.show();
         } catch (IOException ioE) {
