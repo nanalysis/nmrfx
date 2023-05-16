@@ -215,7 +215,7 @@ public class FXMLController implements Initializable, PeakNavigable {
             chart.close();
         }
 
-        FXMLControllerManager.getInstance().unregister(this);
+        AnalystApp.getFXMLControllerManager().unregister(this);
         PolyChart activeChart = PolyChart.getActiveChart();
         if (activeChart == null) {
             if (!PolyChart.CHARTS.isEmpty()) {
@@ -223,7 +223,7 @@ public class FXMLController implements Initializable, PeakNavigable {
             }
         }
 
-        FXMLControllerManager.getInstance().setActiveControllerFromChart(activeChart);
+        AnalystApp.getFXMLControllerManager().setActiveControllerFromChart(activeChart);
     }
 
     public void saveDatasets() {
@@ -882,7 +882,7 @@ public class FXMLController implements Initializable, PeakNavigable {
             chartGroup.requestLayout();
         });
 
-        FXMLControllerManager.getInstance().register(this, true);
+        AnalystApp.getFXMLControllerManager().register(this, true);
         statusBar.setMode(1);
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {
@@ -1789,7 +1789,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     }
 
     public void setActiveController() {
-        FXMLControllerManager.getInstance().setActiveController(this);
+        AnalystApp.getFXMLControllerManager().setActiveController(this);
         if (attributesController != null) {
             attributesController.setAttributeControls();
         }
@@ -1860,7 +1860,7 @@ public class FXMLController implements Initializable, PeakNavigable {
 
     public static List<FXMLController> getControllers() {
         //XXX inline this call
-        return FXMLControllerManager.getInstance().getControllers();
+        return AnalystApp.getFXMLControllerManager().getControllers();
     }
 
     public static PeakAttrController getPeakAttrController() {
@@ -1891,12 +1891,12 @@ public class FXMLController implements Initializable, PeakNavigable {
 
     public static SimpleObjectProperty<FXMLController> activeControllerProperty() {
         //XXX inline this call
-        return FXMLControllerManager.getInstance().activeControllerProperty();
+        return AnalystApp.getFXMLControllerManager().activeControllerProperty();
     }
 
     public static FXMLController getActiveController() {
         //XXX inline this call
-        return FXMLControllerManager.getInstance().getOrCreateActiveController();
+        return AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
     }
 
     private void setActiveController(Observable obs) {

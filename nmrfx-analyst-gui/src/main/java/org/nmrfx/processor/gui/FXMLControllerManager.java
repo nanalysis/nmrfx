@@ -8,20 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Manages instances of FXMLControllers
+ * Manages instances of FXMLControllers, from creation to listing them and keeping a way to know which one is the active one.
  */
 public class FXMLControllerManager {
-    private static FXMLControllerManager instance;
-
-    public static FXMLControllerManager getInstance() {
-        //XXX keep as singleton, or move to AnalystApp ?
-        if (instance == null) {
-            instance = new FXMLControllerManager();
-        }
-
-        return instance;
-    }
-
     private final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
     private final List<FXMLController> controllers = new ArrayList<>(); //XXX can we use a set instead?
 

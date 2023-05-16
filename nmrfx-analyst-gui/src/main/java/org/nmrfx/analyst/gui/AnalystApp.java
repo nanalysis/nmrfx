@@ -80,6 +80,8 @@ public class AnalystApp extends Application {
     private static final PopOverTools popoverTool = new PopOverTools();
     private static final List<Stage> stages = new ArrayList<>();
     private static final String appName = "NMRFx Analyst";
+
+    private static FXMLControllerManager fxmlControllerManager;
     private static PreferencesController preferencesController;
     private static DatasetsController datasetController;
     private static HostServices hostServices;
@@ -725,6 +727,14 @@ public class AnalystApp extends Application {
         } else {
             log.info("Unable to set font size for stage.");
         }
+    }
+
+    public static FXMLControllerManager getFXMLControllerManager() {
+        if (fxmlControllerManager == null) {
+            fxmlControllerManager = new FXMLControllerManager();
+        }
+
+        return fxmlControllerManager;
     }
 
     public static ConsoleController getConsoleController() {
