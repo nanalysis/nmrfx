@@ -21,15 +21,15 @@ import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.*;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.utils.FormatUtils;
 import org.python.util.InteractiveInterpreter;
 import org.slf4j.Logger;
@@ -54,11 +54,10 @@ import static org.nmrfx.utils.GUIUtils.affirm;
  * This class extends from OutputStream to redirect output to a TextArea
  *
  * @author Martha Beckwith
- *
  */
 //TODO uncomment when core & utils are regrouped
 //@PluginAPI("ring")
-public class ConsoleController extends OutputStream implements Initializable {
+public class ConsoleController extends OutputStream implements Initializable, StageBasedController {
     private static final Logger log = LoggerFactory.getLogger(ConsoleController.class);
 
     private static ConsoleController consoleController;
@@ -89,36 +88,33 @@ public class ConsoleController extends OutputStream implements Initializable {
         initializeConsole();
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public static ConsoleController getConsoleController() {
         return consoleController;
     }
 
     public static ConsoleController create(InteractiveInterpreter interpreter, String title) {
         ConsoleController.interpreter = interpreter;
-        FXMLLoader loader = new FXMLLoader(ConsoleController.class.getResource("/fxml/ConsoleScene.fxml"));
-        ConsoleController controller = null;
+
         Stage stage = new Stage(StageStyle.DECORATED);
+        stage.setTitle(title);
 
-        try {
-            Scene scene = new Scene(loader.load());
-            stage.setScene(scene);
-            controller = loader.getController();
-            controller.stage = stage;
-            stage.setTitle(title);
-            stage.show();
-            Screen screen = Screen.getPrimary();
-            Rectangle2D screenSize = screen.getBounds();
-            stage.toFront();
-            stage.setY(screenSize.getHeight() - stage.getHeight());
-            consoleController = controller;
-            stage.setOnCloseRequest(consoleController.close);
-            ConsoleController.interpreter = interpreter;
-        } catch (IOException ioE) {
-            log.error("Error creating console", ioE);
-        }
+        consoleController = Fxml.load(ConsoleController.class, "ConsoleScene.fxml")
+                .withStage(stage)
+                .getController();
 
-        return controller;
+        stage.show();
+        Screen screen = Screen.getPrimary();
+        Rectangle2D screenSize = screen.getBounds();
+        stage.toFront();
+        stage.setY(screenSize.getHeight() - stage.getHeight());
+        stage.setOnCloseRequest(consoleController.close);
 
+        return consoleController;
     }
 
     public void initializeConsole() {
