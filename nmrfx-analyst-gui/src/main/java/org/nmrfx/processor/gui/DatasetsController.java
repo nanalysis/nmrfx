@@ -105,13 +105,11 @@ public class DatasetsController implements Initializable, StageBasedController, 
     }
 
     public static DatasetsController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Datasets");
         DatasetsController controller = Fxml.load(DatasetsController.class, "DatasetsScene.fxml")
-                .withStage(stage)
+                .withNewStage("Datasets")
                 .getController();
         ProjectBase.addPropertyChangeListener(controller);
-        stage.show();
+        controller.stage.show();
         return controller;
     }
 

@@ -21,7 +21,6 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
@@ -228,12 +227,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     public static MolSceneController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Molecular Viewer");
         MolSceneController controller = Fxml.load(MolSceneController.class, "MolScene.fxml")
-                .withStage(stage)
+                .withNewStage("Molecular Viewer")
                 .getController();
-        stage.show();
+        controller.stage.show();
         return controller;
     }
 

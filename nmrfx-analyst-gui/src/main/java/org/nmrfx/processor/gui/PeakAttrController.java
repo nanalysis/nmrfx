@@ -43,7 +43,6 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.DoubleStringConverter;
@@ -233,12 +232,10 @@ public class PeakAttrController implements Initializable, StageBasedController, 
     }
 
     public static PeakAttrController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Peak Attributes");
         PeakAttrController controller = Fxml.load(PeakAttrController.class, "PeakAttrScene.fxml")
-                .withStage(stage)
+                .withNewStage("Peak Attributes")
                 .getController();
-        stage.show();
+        controller.stage.show();
         return controller;
     }
 

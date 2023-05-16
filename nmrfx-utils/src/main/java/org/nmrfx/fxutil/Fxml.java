@@ -5,6 +5,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.stage.Window;
 
 import java.io.IOException;
 
@@ -24,6 +26,7 @@ public class Fxml {
         private final FXMLLoader loader;
         private final Parent node;
         private Scene scene;
+        private Stage stage;
 
         public Builder(Class<?> klass, String fileName) {
             this.fileName = fileName;
@@ -52,7 +55,24 @@ public class Fxml {
             return this;
         }
 
+
+        public Builder withNewStage(String title) {
+            return withNewStage(title, null);
+        }
+
+        public Builder withNewStage(String title, Window owner) {
+            Stage stage = new Stage(StageStyle.DECORATED);
+            stage.setTitle(title);
+
+            if (owner != null) {
+                stage.initOwner(owner);
+            }
+
+            return withStage(stage);
+        }
+
         public Builder withStage(Stage stage) {
+            this.stage = stage;
             stage.setScene(getOrCreateScene());
 
             if (getController() instanceof StageBasedController stageBased) {
@@ -74,6 +94,10 @@ public class Fxml {
         @SuppressWarnings("unchecked")
         public <T extends Parent> T getNode() {
             return (T) node;
+        }
+
+        public Stage getStage() {
+            return stage;
         }
     }
 }

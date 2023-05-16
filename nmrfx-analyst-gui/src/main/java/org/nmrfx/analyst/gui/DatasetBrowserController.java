@@ -39,7 +39,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import org.controlsfx.control.tableview2.TableView2;
@@ -140,12 +139,10 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
     }
 
     public static DatasetBrowserController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Dataset Browser");
         DatasetBrowserController controller = Fxml.load(DatasetBrowserController.class, "DatasetBrowserScene.fxml")
-                .withStage(stage)
+                .withNewStage("Dataset Browser")
                 .getController();
-        stage.show();
+        controller.stage.show();
         return controller;
     }
 

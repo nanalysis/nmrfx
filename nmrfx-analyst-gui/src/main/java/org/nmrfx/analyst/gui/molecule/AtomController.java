@@ -39,7 +39,6 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
@@ -147,12 +146,10 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
 
     public static AtomController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Atom Attributes");
         AtomController controller = Fxml.load(AtomController.class, "AtomScene.fxml")
-                .withStage(stage)
+                .withNewStage("Atom Attributes")
                 .getController();
-        stage.show();
+        controller.stage.show();
 
         AnalystApp.addMoleculeListener(controller::moleculeMapChanged);
         return controller;
@@ -163,14 +160,6 @@ public class AtomController implements Initializable, StageBasedController, Free
             setFilterString("");
             refreshAtomTable();
         }
-    }
-
-    private void clearInsepctor() {
-        atomTableView.getItems().clear();
-        intensityField.setText("");
-        volumeField.setText("");
-        commentField.setText("");
-
     }
 
     public void refreshAtomTable() {

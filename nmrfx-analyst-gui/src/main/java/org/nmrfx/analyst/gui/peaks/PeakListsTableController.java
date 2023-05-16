@@ -5,7 +5,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
@@ -35,10 +34,8 @@ public class PeakListsTableController implements Initializable, StageBasedContro
     private Button tableButton;
 
     public static PeakListsTableController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("PeakLists");
         PeakListsTableController controller = Fxml.load(PeakListsTableController.class, "PeakListsScene.fxml")
-                .withStage(stage)
+                .withNewStage("PeakLists")
                 .getController();
 
         PeakListsTableController.peakListsTableController = controller;

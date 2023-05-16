@@ -6,7 +6,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.controlsfx.control.MasterDetailPane;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
@@ -48,16 +47,13 @@ public class LogConsoleController implements Initializable, StageBasedController
      * @return The newly created LogConsoleController
      */
     public static LogConsoleController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle(CONSOLE_TITLE);
-
         logConsoleController = Fxml.load(LogConsoleController.class, "LogConsoleScene.fxml")
-                .withStage(stage)
+                .withNewStage(CONSOLE_TITLE)
                 .getController();
         logConsoleController.logListener = logConsoleController::logPublished;
 
         // Only listen for new log messages if the log console is showing
-        stage.showingProperty().addListener((observable, oldValue, newValue) -> {
+        logConsoleController.stage.showingProperty().addListener((observable, oldValue, newValue) -> {
             if (Boolean.TRUE.equals(newValue)) {
                 logConsoleController.addLogRecords();
                 Log.addLogListener(logConsoleController.logListener);

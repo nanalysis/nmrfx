@@ -7,7 +7,6 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.InvalidMoleculeException;
@@ -60,14 +59,12 @@ public class PredictorSceneController implements Initializable, StageBasedContro
     }
 
     public static PredictorSceneController create(AtomController atomController) {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Predictor");
         PredictorSceneController controller = Fxml.load(PredictorSceneController.class, "PredictorScene.fxml")
-                .withStage(stage)
+                .withNewStage("Predictor")
                 .getController();
         controller.atomController = atomController;
-        stage.show();
-        stage.toFront();
+        controller.stage.show();
+        controller.stage.toFront();
         return controller;
     }
 

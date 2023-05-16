@@ -26,7 +26,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fxml;
@@ -155,20 +154,16 @@ public class PreferencesController implements Initializable, StageBasedControlle
         this.stage = stage;
     }
 
-    public static PreferencesController create(Stage parent) {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Preferences");
-        PreferencesController controller = Fxml.load(PreferencesController.class, "PreferencesScene.fxml")
-                .withStage(stage)
-                .getController();
-
-        stage.initOwner(parent);
-        stage.show();
-        return controller;
-    }
-
     public Stage getStage() {
         return stage;
+    }
+
+    public static PreferencesController create(Stage parent) {
+        PreferencesController controller = Fxml.load(PreferencesController.class, "PreferencesScene.fxml")
+                .withNewStage("Preferences", parent)
+                .getController();
+        controller.stage.show();
+        return controller;
     }
 
     @FXML

@@ -42,7 +42,6 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
@@ -106,12 +105,10 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     }
 
     public static PeakTableController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Peaks");
         PeakTableController controller = Fxml.load(PeakListsTableController.class, "PeakTableScene.fxml")
-                .withStage(stage)
+                .withNewStage("Peaks")
                 .getController();
-        stage.show();
+        controller.stage.show();
         return controller;
     }
 

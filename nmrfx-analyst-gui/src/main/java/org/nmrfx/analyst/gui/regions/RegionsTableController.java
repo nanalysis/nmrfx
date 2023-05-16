@@ -13,7 +13,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.tools.SimplePeakRegionTool;
 import org.nmrfx.analyst.peaks.Analyzer;
@@ -64,14 +63,11 @@ public class RegionsTableController implements Initializable, StageBasedControll
     private ChangeListener<DatasetRegion> selectedRowRegionsTableListener;
 
     public static RegionsTableController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Regions");
-        RegionsTableController controller = Fxml.load(RegionsTableController.class, "RegionsScene.fxml")
-                .withStage(stage)
+        regionsTableController = Fxml.load(RegionsTableController.class, "RegionsScene.fxml")
+                .withNewStage("Regions")
                 .getController();
 
-        RegionsTableController.regionsTableController = controller;
-        return controller;
+        return regionsTableController;
     }
 
     public void show() {

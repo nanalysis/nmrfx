@@ -34,7 +34,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chart.*;
 import org.nmrfx.fxutil.Fxml;
@@ -115,14 +114,11 @@ public class LigandScannerController implements Initializable, StageBasedControl
     }
 
     public static LigandScannerController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Ligand Scanner");
         LigandScannerController controller = Fxml.load(LigandScannerController.class, "LigandScannerScene.fxml")
-                .withStage(stage)
+                .withNewStage("Ligand Scanner")
                 .getController();
-        stage.show();
+        controller.stage.show();
         return controller;
-
     }
 
     void initMenuBar() {

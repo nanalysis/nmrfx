@@ -18,7 +18,6 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.datasets.Dataset;
@@ -640,13 +639,11 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
     }
 
     public static RNAPeakGeneratorSceneController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("RNA Label Schemes");
         RNAPeakGeneratorSceneController controller = Fxml.load(RNAPeakGeneratorSceneController.class, "RNAPeakGeneratorScene.fxml")
                 .withAdditionalStyleSheet("/styles/rnapeakgeneratorscene.css")
-                .withStage(stage)
+                .withNewStage("RNA Label Schemes")
                 .getController();
-        stage.show();
+        controller.stage.show();
         return controller;
     }
 }

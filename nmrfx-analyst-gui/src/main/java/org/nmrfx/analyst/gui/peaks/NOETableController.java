@@ -33,7 +33,6 @@ import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import org.controlsfx.control.MasterDetailPane;
 import org.controlsfx.control.PropertySheet;
@@ -164,12 +163,10 @@ public class NOETableController implements Initializable, StageBasedController {
             return null;
         }
 
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Peaks");
         NOETableController controller = Fxml.load(NOETableController.class, "NoeTableScene.fxml")
-                .withStage(stage)
+                .withNewStage("Peaks")
                 .getController();
-        stage.show();
+        controller.stage.show();
         return controller;
     }
 

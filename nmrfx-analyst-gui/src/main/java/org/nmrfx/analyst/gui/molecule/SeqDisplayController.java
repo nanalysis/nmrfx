@@ -18,7 +18,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.controlsfx.control.MasterDetailPane;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.chart.Symbol;
@@ -239,13 +238,11 @@ public class SeqDisplayController implements Initializable, StageBasedController
     }
 
     public static SeqDisplayController create() {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle("Sequence Display");
         SeqDisplayController controller = Fxml.load(SeqDisplayController.class, "SeqDisplayScene.fxml")
-                .withStage(stage)
+                .withNewStage("Sequence Display")
                 .getController();
-        stage.show();
-        stage.toFront();
+        controller.stage.show();
+        controller.stage.toFront();
         return controller;
     }
 
