@@ -276,8 +276,7 @@ public class WindowIO implements FileWatchListener {
         int i = 0;
         AnalystPythonInterpreter.exec("import nwyaml\\n");
         FXMLController activeController = GUIScripter.getController();
-        List<FXMLController> controllers = AnalystApp.getFXMLControllerManager().getControllers();
-        for (FXMLController controller : controllers) {
+        for (FXMLController controller : AnalystApp.getFXMLControllerManager().getControllers()) {
             GUIScripter.setController(controller);
             String fileName = "stage_" + i + ".yaml";
             Path path = Paths.get(projectDir.toString(), "windows", fileName);

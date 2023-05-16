@@ -11,19 +11,22 @@ import org.nmrfx.analyst.gui.AnalystApp;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Manages instances of FXMLControllers, from creation to listing them and keeping a way to know which one is the active one.
  */
 public class FXMLControllerManager {
     private final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
-    private final List<FXMLController> controllers = new ArrayList<>(); //XXX can we use a set instead?
 
-    public List<FXMLController> getControllers() {
-        //XXX see if we could make it unmodifiable here
-        return controllers;
+    // it is important to keep insertion order: the first controller is considered the main one and is kept when closing all secondary stages
+    private final Set<FXMLController> controllers = new LinkedHashSet<>();
+
+    public Collection<FXMLController> getControllers() {
+        return Collections.unmodifiableSet(controllers);
     }
 
     @Nonnull

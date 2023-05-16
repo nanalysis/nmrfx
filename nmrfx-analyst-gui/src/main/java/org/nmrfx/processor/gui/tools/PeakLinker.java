@@ -20,7 +20,6 @@ package org.nmrfx.processor.gui.tools;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.gui.FXMLController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +35,7 @@ public class PeakLinker {
 
     public static List<Peak> getSelectedPeaks() {
         List<Peak> allPeaks = new ArrayList<>();
-        List<FXMLController> controllers = AnalystApp.getFXMLControllerManager().getControllers();
-        for (var controller : controllers) {
+        for (var controller : AnalystApp.getFXMLControllerManager().getControllers()) {
             for (var chart : controller.getCharts()) {
                 List<Peak> peaks = chart.getSelectedPeaks();
                 allPeaks.addAll(peaks);
