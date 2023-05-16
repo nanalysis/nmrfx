@@ -912,7 +912,6 @@ public class FXMLController implements Initializable, PeakNavigable {
 
         stage.focusedProperty().addListener(this::setActiveController);
         stage.maximizedProperty().addListener(this::adjustSizeAfterMaximize);
-        setActiveController();
     }
 
 
