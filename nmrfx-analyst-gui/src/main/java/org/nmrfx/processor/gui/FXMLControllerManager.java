@@ -4,7 +4,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.fxutil.FxmlLoader;
+import org.nmrfx.fxutil.Fxml;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -135,9 +135,9 @@ public class FXMLControllerManager {
      * @return the newly created controller.
      */
     public FXMLController newController(Stage stage) {
-        FxmlLoader loader = new FxmlLoader(FXMLControllerManager.class, "NMRScene.fxml", stage);
-        loader.createScene();
-        FXMLController controller = loader.getController();
+        FXMLController controller = Fxml.load(FXMLControllerManager.class, "NMRScene.fxml")
+                .withStage(stage)
+                .getController();
         registerNewController(controller);
 
         AnalystApp.setStageFontSize(stage, AnalystApp.REG_FONT_SIZE_STR);
