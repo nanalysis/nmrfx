@@ -710,7 +710,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      *
      * @return the noise level
      */
-    public double guessNoiseLevel() {
+    public Double guessNoiseLevel() {
         if (noiseLevel == null) {
             int[][] pt = new int[nDim][2];
             int[] cpt = new int[nDim];
