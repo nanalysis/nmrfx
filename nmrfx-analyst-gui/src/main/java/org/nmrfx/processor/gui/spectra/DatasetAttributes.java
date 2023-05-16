@@ -17,13 +17,13 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.DatasetUtils;
 import org.nmrfx.processor.datasets.DataCoordTransformer;
@@ -1968,22 +1968,14 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public void config(String name, Object value) {
-        if (Platform.isFxApplicationThread()) {
-            try {
-                PropertyUtils.setSimpleProperty(this, name, value);
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                log.error(ex.getMessage(), ex);
-            }
-        } else {
-            Platform.runLater(() -> {
-                        try {
-                            PropertyUtils.setProperty(this, name, value);
-                        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                            log.error(ex.getMessage(), ex);
-                        }
+        Fx.runOnFxThread(() -> {
+                    try {
+                        PropertyUtils.setProperty(this, name, value);
+                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                        log.error(ex.getMessage(), ex);
                     }
-            );
-        }
+                }
+        );
     }
 
     public Map<String, Object> config() {

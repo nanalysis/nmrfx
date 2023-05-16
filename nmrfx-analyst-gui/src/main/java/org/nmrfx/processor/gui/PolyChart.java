@@ -235,11 +235,7 @@ public class PolyChart extends Region implements PeakListener {
     @Override
     public void peakListChanged(final PeakEvent peakEvent) {
         if (listenToPeaks) {
-            if (Platform.isFxApplicationThread()) {
-                respondToPeakListChange(peakEvent);
-            } else {
-                Platform.runLater(() -> respondToPeakListChange(peakEvent));
-            }
+            Fx.runOnFxThread(() -> respondToPeakListChange(peakEvent));
         }
     }
 
@@ -2025,11 +2021,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void draw() {
-        if (Platform.isFxApplicationThread()) {
-            refresh();
-        } else {
-            Platform.runLater(this::refresh);
-        }
+        Fx.runOnFxThread(this::refresh);
     }
 
     public double[] getMinBorders() {

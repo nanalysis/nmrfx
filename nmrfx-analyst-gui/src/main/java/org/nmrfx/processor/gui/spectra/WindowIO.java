@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
@@ -29,6 +28,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.project.ProjectBase;
@@ -288,14 +288,7 @@ public class WindowIO implements FileWatchListener {
     }
 
     void updateFavoritesOnFxThread() {
-        if (Platform.isFxApplicationThread()) {
-            updateFavorites();
-        } else {
-            Platform.runLater(() -> {
-                updateFavorites();
-            }
-            );
-        }
+        Fx.runOnFxThread(this::updateFavorites);
     }
 
     @Override
