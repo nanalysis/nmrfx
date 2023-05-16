@@ -918,13 +918,11 @@ public class FXMLController implements Initializable, StageBasedController, Peak
      */
     @Override
     public void setStage(Stage stage) {
-        //XXX see if we could rename as setStage() and put in an interface.
         this.stage = stage;
 
         stage.focusedProperty().addListener(this::setActiveController);
         stage.maximizedProperty().addListener(this::adjustSizeAfterMaximize);
     }
-
 
     public BorderPane getMainBox() {
         return mainBox;
