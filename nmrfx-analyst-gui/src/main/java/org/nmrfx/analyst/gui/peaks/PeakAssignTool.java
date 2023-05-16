@@ -10,8 +10,8 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.peaks.AtomBrowser.AtomDelta;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
@@ -22,7 +22,6 @@ import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -81,7 +80,7 @@ public class PeakAssignTool implements ControllerTool {
                 nDim = dataset.getNDim();
             }
         }
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
         toolBar.getItems().add(closeButton);
         toolBar.getItems().add(pickButton);

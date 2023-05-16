@@ -23,8 +23,12 @@ import javafx.geometry.Bounds;
 import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetRegion;
-import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.CanvasAnnotation;
+import org.nmrfx.processor.gui.CanvasCursor;
+import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.spectra.ChartBorder;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
@@ -112,7 +116,7 @@ public class MouseBindings {
 
     boolean isPopupTrigger(MouseEvent mouseEvent) {
         boolean popUpTrigger = mouseEvent.isPopupTrigger();
-        if (MainApp.isMac()) {
+        if (AnalystApp.isMac()) {
             popUpTrigger = popUpTrigger || mouseEvent.isControlDown();
         }
         return popUpTrigger;
@@ -137,12 +141,12 @@ public class MouseBindings {
     private void showPopOver() {
         if (waitingForPopover.get()) {
             Bounds objectBounds = chart.getCanvas().localToScreen(currentBounds);
-            MainApp.getMainApp().showPopover(chart, objectBounds, currentSelection);
+            AnalystApp.getAnalystApp().showPopover(chart, objectBounds, currentSelection);
         }
     }
 
     private void hidePopOver(boolean always) {
-        MainApp.getMainApp().hidePopover(always);
+        AnalystApp.getAnalystApp().hidePopover(always);
     }
 
     private void showAfterDelay() {

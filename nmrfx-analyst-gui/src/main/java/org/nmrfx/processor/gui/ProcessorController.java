@@ -55,6 +55,7 @@ import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
 import org.greenrobot.eventbus.EventBus;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
@@ -247,7 +248,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             controller.chartProcessor.fxmlController = fxmlController;
             controller.processorPane = processorPane;
             controller.pane = pane;
-            Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+            Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
             closeButton.setOnAction(e -> controller.hide());
             controller.toolBar.getItems().add(closeButton);
             fxmlController.processorCreated(pane);

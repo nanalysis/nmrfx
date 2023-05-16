@@ -43,6 +43,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.control.SegmentedButton;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
@@ -193,7 +194,7 @@ public class SpectrumStatusBar {
     public void buildBar(ToolBar btoolBar, ToolBar btoolBar2) {
         this.btoolBar1 = btoolBar;
         this.btoolBar2 = btoolBar2;
-        peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
+        peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
         peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
         buildCursorBar();
         setupTools();
@@ -317,16 +318,16 @@ public class SpectrumStatusBar {
     private void buildCursorBar() {
         List<ToggleButton> buttons = new ArrayList<>();
         ToggleButton crosshairButton = GlyphsDude.createIconToggleButton(CanvasCursor.CROSSHAIR.getIcon(),"Crosshair",
-                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
         crosshairButton.setUserData(CanvasCursor.CROSSHAIR);
         ToggleButton selectorButton = GlyphsDude.createIconToggleButton(CanvasCursor.SELECTOR.getIcon(),"Selector",
-                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
         selectorButton.setUserData(CanvasCursor.SELECTOR);
         ToggleButton peakButton = GlyphsDude.createIconToggleButton(CanvasCursor.PEAK.getIcon(),"Peak",
-                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
         peakButton.setUserData(CanvasCursor.PEAK);
         ToggleButton regionButton = GlyphsDude.createIconToggleButton(CanvasCursor.REGION.getIcon(),"Region",
-                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
+                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR,ContentDisplay.RIGHT);
         regionButton.setUserData(CanvasCursor.REGION);
         buttons.add(selectorButton);
         buttons.add(crosshairButton);

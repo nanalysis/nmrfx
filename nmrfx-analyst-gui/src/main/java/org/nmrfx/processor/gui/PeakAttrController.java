@@ -224,9 +224,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             }
         }
         peakListTypeChoice.setOnAction(this::setPeakListType);
-        if (!MainApp.isAnalyst()) {
-            tabPane.getTabs().remove(3);
-        }
     }
 
     public Stage getStage() {

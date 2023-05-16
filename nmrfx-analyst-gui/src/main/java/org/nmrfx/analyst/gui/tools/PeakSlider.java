@@ -18,6 +18,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.peaks.Peak;
@@ -27,7 +28,6 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -96,7 +96,7 @@ public class PeakSlider implements ControllerTool {
         vBox.getChildren().add(sliderToolBar);
 
         ArrayList<Button> buttons = new ArrayList<>();
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
         shiftFreezeButton = new Button("Shift+Freeze");

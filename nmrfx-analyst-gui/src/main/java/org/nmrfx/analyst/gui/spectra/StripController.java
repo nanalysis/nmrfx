@@ -26,6 +26,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.tools.StripsTable;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
@@ -34,7 +35,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
@@ -111,7 +111,7 @@ public class StripController implements ControllerTool {
         this.setupToolBar = new ToolBar();
         this.vBox.getChildren().addAll(toolBar, setupToolBar);
 
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
         toolBar.getItems().add(closeButton);
 

@@ -53,6 +53,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.graphicsio.GraphicsIOException;
@@ -237,7 +238,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
 
-    void close() {
+    public void close() {
         // need to make copy of charts as the call to chart.close will remove the chart from charts
         // resulting in a java.util.ConcurrentModificationException
         saveDatasets();
@@ -1134,8 +1135,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         borderPane.setLeft(null);
-        if (!MainApp.isMac()) {
-            MenuBar menuBar = MainApp.getMenuBar();
+        if (!AnalystApp.isMac()) {
+            MenuBar menuBar = AnalystApp.getMenuBar();
             topBar.getChildren().add(0, menuBar);
         }
         plotContent.setMouseTransparent(true);
@@ -1246,13 +1247,13 @@ public class FXMLController implements  Initializable, PeakNavigable {
             Scene scene = new Scene(parent);
             stage.setScene(scene);
             scene.getStylesheets().add("/styles/Styles.css");
-            MainApp.setStageFontSize(stage, MainApp.REG_FONT_SIZE_STR);
+            AnalystApp.setStageFontSize(stage, AnalystApp.REG_FONT_SIZE_STR);
             controller = loader.getController();
             controller.stage = stage;
             FXMLController myController = controller;
             stage.focusedProperty().addListener(e -> myController.setActiveController(e));
             controller.setActiveController();
-            MainApp.registerStage(stage, controller);
+            AnalystApp.registerStage(stage, controller);
             stage.show();
         } catch (IOException ioE) {
             throw new IllegalStateException("Unable to create controller", ioE);
@@ -1317,39 +1318,39 @@ public class FXMLController implements  Initializable, PeakNavigable {
         ArrayList<Node> buttons = new ArrayList<>();
 
         ButtonBase bButton;
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> showDatasetsAction(e));
         buttons.add(bButton);
-        favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         favoriteButton.setOnAction(e -> saveAsFavorite());
         // Set the initial status of the favorite button
         enableFavoriteButton();
         buttons.add(favoriteButton);
         buttons.add(new Separator(Orientation.VERTICAL));
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> getActiveChart().refresh());
         buttons.add(bButton);
-        cancelButton = GlyphsDude.createIconButton(FontAwesomeIcon.STOP, "Halt", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        cancelButton = GlyphsDude.createIconButton(FontAwesomeIcon.STOP, "Halt", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         buttons.add(cancelButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> undoManager.undo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.undoable.not());
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REPEAT, "Redo", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REPEAT, "Redo", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> undoManager.redo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.redoable.not());
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doFull(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doExpand(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "In", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "In", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doZoom(e, 1.2));
         bButton.setOnScroll((ScrollEvent event) -> {
             double y = event.getDeltaY();
@@ -1361,7 +1362,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         });
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "Out", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "Out", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doZoom(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
             double y = event.getDeltaY();
@@ -1375,10 +1376,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
         buttons.add(bButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doScale(e, 0.0));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doScale(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
             double y = event.getDeltaY();
@@ -1391,7 +1392,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         });
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doScale(e, 1.2));
 
         bButton.setOnScroll((ScrollEvent event) -> {
@@ -1439,7 +1440,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         ToolBar btoolBar2 = new ToolBar();
         btoolVBox.getChildren().addAll(btoolBar, btoolBar2);
         statusBar.buildBar(btoolBar, btoolBar2);
-        MainApp.getMainApp().addStatusBarTools(statusBar);
+        AnalystApp.getAnalystApp().addStatusBarTools(statusBar);
 
     }
 

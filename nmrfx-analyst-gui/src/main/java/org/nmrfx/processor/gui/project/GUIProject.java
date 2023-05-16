@@ -15,6 +15,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.util.FS;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -22,7 +23,6 @@ import org.nmrfx.chemistry.io.*;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.utils.PeakListUpdater;
@@ -174,7 +174,7 @@ public class GUIProject extends ProjectBase {
         clearAllMolecules();
         clearAllPeakLists();
         clearAllDatasets();
-        MainApp.closeAll();
+        AnalystApp.closeAll();
         // Clear the project directory or else a user may accidentally overwrite their previously closed project
         setProjectDir(null);
     }
