@@ -298,10 +298,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         return chartProcessor.buildScript();
     }
 
-    public ChartProcessor getChartProcessor() {
-        return chartProcessor;
-    }
-
     class UpdateTask implements Runnable {
         @Override
         public void run() {
@@ -378,9 +374,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     protected void updateLineshapeCatalog(int nDim) {
         NMRData nmrData = null;
-        if (chartProcessor == null) {
-            chartProcessor = getChartProcessor();
-        }
         if (chartProcessor != null) {
             nmrData = chartProcessor.getNMRData();
         }
@@ -1580,9 +1573,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     NMRData getNMRData() {
         NMRData nmrData = null;
-        if (chartProcessor == null) {
-            chartProcessor = getChartProcessor();
-        }
         if (chartProcessor != null) {
             nmrData = chartProcessor.getNMRData();
         }
