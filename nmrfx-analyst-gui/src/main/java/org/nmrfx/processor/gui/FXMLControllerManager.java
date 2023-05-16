@@ -1,9 +1,16 @@
 package org.nmrfx.processor.gui;
 
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import org.nmrfx.analyst.gui.AnalystApp;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,4 +78,33 @@ public class FXMLControllerManager {
         }
     }
 
+
+    public FXMLController newController() {
+        return newController(new Stage(StageStyle.DECORATED));
+    }
+
+    public FXMLController newController(Stage stage) {
+        FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
+        FXMLController controller;
+
+
+        try {
+            //XXX this could be simplified
+            Parent parent = loader.load();
+            Scene scene = new Scene(parent);
+            stage.setScene(scene);
+            scene.getStylesheets().add("/styles/Styles.css");
+            AnalystApp.setStageFontSize(stage, AnalystApp.REG_FONT_SIZE_STR);
+            controller = loader.getController();
+            controller.initAfterFxmlLoader(stage);
+
+
+            AnalystApp.registerStage(stage, controller);
+            stage.show();
+        } catch (IOException ioE) {
+            throw new IllegalStateException("Unable to create controller", ioE);
+        }
+
+        return controller;
+    }
 }

@@ -31,14 +31,11 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
@@ -46,7 +43,6 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
@@ -882,6 +878,7 @@ public class FXMLController implements Initializable, PeakNavigable {
             chartGroup.requestLayout();
         });
 
+        //XXX this should likely be removed from here and moved to FXMLControllerManager during component creation
         AnalystApp.getFXMLControllerManager().register(this, true);
         statusBar.setMode(1);
         for (int iCross = 0; iCross < 2; iCross++) {
@@ -891,16 +888,33 @@ public class FXMLController implements Initializable, PeakNavigable {
         }
         phaser = new Phaser(this, phaserBox);
         processorPane.getChildren().addListener(this::updateStageSize);
-        cursorProperty.addListener( e -> setCursor());
+        cursorProperty.addListener(e -> setCursor());
         attributesPane = new AnchorPane();
-        attributesController =  AttributesController.create(this, attributesPane);
+        attributesController = AttributesController.create(this, attributesPane);
         borderPane.heightProperty().addListener(e -> attributesController.updateScrollSize(borderPane));
 
         contentPane = new AnchorPane();
-        contentController =  ContentController.create(this, contentPane);
+        contentController = ContentController.create(this, contentPane);
         borderPane.heightProperty().addListener(e -> contentController.updateScrollSize(borderPane));
-
     }
+
+    /**
+     * Called by controller manager directly after creation by FXMLLoader.
+     * Used to pass additional parameters that can't be passed to a constructor.
+     * <p>
+     * Note that this will be called after the initialize() method.
+     *
+     * @param stage the stage managed by this controller.
+     */
+    protected void initAfterFxmlLoader(Stage stage) {
+        //XXX see if we could rename as setStage() and put in an interface.
+        this.stage = stage;
+
+        stage.focusedProperty().addListener(this::setActiveController);
+        stage.maximizedProperty().addListener(this::adjustSizeAfterMaximize);
+        setActiveController();
+    }
+
 
     public BorderPane getMainBox() {
         return mainBox;
@@ -1906,36 +1920,12 @@ public class FXMLController implements Initializable, PeakNavigable {
     }
 
     public static FXMLController create() {
-        return create(null);
+        //XXX inline this call
+        return AnalystApp.getFXMLControllerManager().newController();
     }
 
     public static FXMLController create(Stage stage) {
-        //XXX maybe move creation to FXMLControllerManager as well
-        FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
-        FXMLController controller;
-        if (stage == null) {
-            stage = new Stage(StageStyle.DECORATED);
-        }
-
-        try {
-            Parent parent = loader.load();
-            Scene scene = new Scene(parent);
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-            AnalystApp.setStageFontSize(stage, AnalystApp.REG_FONT_SIZE_STR);
-            controller = loader.getController();
-            controller.stage = stage;
-            FXMLController myController = controller;
-            stage.focusedProperty().addListener(myController::setActiveController);
-            controller.setActiveController();
-            AnalystApp.registerStage(stage, controller);
-            stage.show();
-        } catch (IOException ioE) {
-            throw new IllegalStateException("Unable to create controller", ioE);
-        }
-
-        stage.maximizedProperty().addListener(controller::adjustSizeAfterMaximize);
-
-        return controller;
+        //XXX inline this call
+        return AnalystApp.getFXMLControllerManager().newController(stage);
     }
 }
