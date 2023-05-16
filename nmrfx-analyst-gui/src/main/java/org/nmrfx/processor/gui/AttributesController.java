@@ -16,8 +16,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.controlsfx.control.RangeSlider;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
@@ -1287,7 +1287,7 @@ public class AttributesController implements Initializable {
     }
     private void updateCharts() {
         PauseTransition wait = new PauseTransition(Duration.millis(5.0));
-        wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(this::updateChartsNow));
+        wait.setOnFinished(e -> Fx.runOnFxThread(this::updateChartsNow));
         wait.play();
     }
 
@@ -1301,7 +1301,7 @@ public class AttributesController implements Initializable {
 
     private void updateSlicesAndRefresh() {
         PauseTransition wait = new PauseTransition(Duration.millis(5.0));
-        wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(this::updateSlicesAndRefreshNow));
+        wait.setOnFinished(e -> Fx.runOnFxThread(this::updateSlicesAndRefreshNow));
         wait.play();
     }
 
@@ -1322,7 +1322,7 @@ public class AttributesController implements Initializable {
     private void refreshLater(PolyChart aChart) {
         if (!aChart.isChartDisabled()) {
             PauseTransition wait = new PauseTransition(Duration.millis(5.0));
-            wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(aChart::refresh));
+            wait.setOnFinished(e -> Fx.runOnFxThread(aChart::refresh));
             wait.play();
         }
     }

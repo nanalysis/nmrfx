@@ -23,13 +23,12 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.*;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.peaks.events.PeakEvent;
-import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakListener;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.ColorTypes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
 import org.slf4j.Logger;
@@ -781,7 +780,7 @@ public class PeakListAttributes implements PeakListener {
     }
 
     public void config(String name, Object value) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             try {
                 switch (name) {
                     case "labelType":

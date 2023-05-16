@@ -37,11 +37,11 @@ import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import org.controlsfx.control.tableview2.TableView2;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.utilities.RemoteDataset;
 import org.nmrfx.utilities.RemoteDatasetAccess;
 import org.nmrfx.utilities.UnZipper;
@@ -318,7 +318,7 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
         Task<List<RemoteDataset>> task = new Task<List<RemoteDataset>>() {
             @Override
             protected List<RemoteDataset> call() throws Exception {
-                ConsoleUtil.runOnFxThread(() -> stage.setTitle("Dataset Browser: Scanning"));
+                Fx.runOnFxThread(() -> stage.setTitle("Dataset Browser: Scanning"));
 
                 List<RemoteDataset> results = NMRDataUtil.scanDirectory(scanDir, outPath);
                 Platform.runLater(new Runnable() {
@@ -329,7 +329,7 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
                         tableView.setItems(items);
                     }
                 });
-                ConsoleUtil.runOnFxThread(() -> stage.setTitle("Dataset Browser"));
+                Fx.runOnFxThread(() -> stage.setTitle("Dataset Browser"));
 
                 return results;
             }
