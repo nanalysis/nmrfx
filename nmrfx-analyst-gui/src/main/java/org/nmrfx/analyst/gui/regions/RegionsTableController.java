@@ -6,9 +6,7 @@ import javafx.beans.binding.BooleanBinding;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
@@ -21,6 +19,8 @@ import org.nmrfx.analyst.gui.tools.SimplePeakRegionTool;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.DatasetRegionsListListener;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -39,7 +39,7 @@ import java.util.ResourceBundle;
 /**
  * Controller for the Regions Table
  */
-public class RegionsTableController implements Initializable {
+public class RegionsTableController implements Initializable, StageBasedController {
     private static final Logger log = LoggerFactory.getLogger(RegionsTableController.class);
     private static RegionsTableController regionsTableController = null;
     private RegionsTable regionsTable;
@@ -61,29 +61,16 @@ public class RegionsTableController implements Initializable {
     private final ChangeListener<DatasetRegion> activeDatasetRegionListener = this::updateActiveRegion;
     private final DatasetRegionsListListener datasetRegionsListListener = this::setRegions;
 
-
     private ChangeListener<DatasetRegion> selectedRowRegionsTableListener;
 
-    private RegionsTableController() {}
-
     public static RegionsTableController create() {
-        FXMLLoader loader = new FXMLLoader(RegionsTableController.class.getResource("/fxml/RegionsScene.fxml"));
-        loader.setControllerFactory(controller -> new RegionsTableController());
-
-        RegionsTableController controller = null;
         Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene(loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
+        stage.setTitle("Regions");
+        RegionsTableController controller = Fxml.load(RegionsTableController.class, "RegionsScene.fxml")
+                .withStage(stage)
+                .getController();
 
-            controller = loader.getController();
-            controller.stage = stage;
-            RegionsTableController.regionsTableController = controller;
-            stage.setTitle("Regions");
-        } catch (IOException ioE) {
-            throw new IllegalStateException("Unable to create the RegionsTable.", ioE);
-        }
+        RegionsTableController.regionsTableController = controller;
         return controller;
     }
 
@@ -134,17 +121,23 @@ public class RegionsTableController implements Initializable {
         });
         PolyChart.getActiveChartProperty().addListener(this::activeChartUpdatedListener);
         updateActiveChartRegions();
-        selectedRowRegionsTableListener = this:: setSelectedRowRegionsTableListener;
+        selectedRowRegionsTableListener = this::setSelectedRowRegionsTableListener;
         regionsTable.getSelectionModel().selectedItemProperty().addListener(selectedRowRegionsTableListener);
         updateButtonBindings();
+    }
+
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     /**
      * Listener for PolyChart active chart property. Updates chart, button bindings, and regions. Adds and removes
      * listeners
+     *
      * @param observableValue The active chart property.
-     * @param oldChart The previously set PolyChart.
-     * @param newChart The newly set PolyChart.
+     * @param oldChart        The previously set PolyChart.
+     * @param newChart        The newly set PolyChart.
      */
     private void activeChartUpdatedListener(ObservableValue<? extends PolyChart> observableValue, PolyChart oldChart, PolyChart newChart) {
         if (chart != null) {

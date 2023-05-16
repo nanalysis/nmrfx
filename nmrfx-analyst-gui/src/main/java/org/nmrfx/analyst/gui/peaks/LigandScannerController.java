@@ -23,42 +23,22 @@
  */
 package org.nmrfx.analyst.gui.peaks;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ResourceBundle;
 import javafx.beans.Observable;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import org.controlsfx.control.PopOver;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.chart.Axis;
-import org.nmrfx.chart.DataSeries;
-import org.nmrfx.chart.XYCanvasChart;
-import org.nmrfx.chart.XYChartPane;
-import org.nmrfx.chart.XYValue;
+import org.nmrfx.chart.*;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.FileTableItem;
@@ -69,11 +49,16 @@ import org.nmrfx.structure.tools.MCSAnalysis.Hit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.ResourceBundle;
+
 /**
- *
  * @author Bruce Johnson
  */
-public class LigandScannerController implements Initializable {
+public class LigandScannerController implements Initializable, StageBasedController {
     private static final Logger log = LoggerFactory.getLogger(LigandScannerController.class);
 
     private Stage stage;
@@ -84,10 +69,7 @@ public class LigandScannerController implements Initializable {
     XYChartPane chartPane;
     @FXML
     private ToolBar menuBar;
-    PopOver popOver = new PopOver();
     ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
-    HashMap<String, String> columnTypes = new HashMap<>();
-    HashMap<String, String> columnDescriptors = new HashMap<>();
     MatrixAnalyzer matrixAnalyzer = new MatrixAnalyzer();
     String[] dimNames = null;
     double[] mcsTols = null;
@@ -123,27 +105,22 @@ public class LigandScannerController implements Initializable {
         }
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
 
     public static LigandScannerController create() {
-        FXMLLoader loader = new FXMLLoader(LigandScannerController.class.getResource("/fxml/LigandScannerScene.fxml"));
-        LigandScannerController controller = null;
         Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<LigandScannerController>getController();
-            controller.stage = stage;
-            stage.setTitle("Ligand Scanner");
-            stage.show();
-        } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
-        }
-
+        stage.setTitle("Ligand Scanner");
+        LigandScannerController controller = Fxml.load(LigandScannerController.class, "LigandScannerScene.fxml")
+                .withStage(stage)
+                .getController();
+        stage.show();
         return controller;
 
     }

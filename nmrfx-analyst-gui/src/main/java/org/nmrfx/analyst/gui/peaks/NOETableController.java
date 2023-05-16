@@ -26,10 +26,8 @@ package org.nmrfx.analyst.gui.peaks;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.*;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Side;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -47,6 +45,8 @@ import org.nmrfx.chemistry.SpatialSetGroup;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.constraints.Noe;
 import org.nmrfx.chemistry.constraints.NoeSet;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
@@ -70,10 +70,9 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
- *
  * @author johnsonb
  */
-public class NOETableController implements Initializable {
+public class NOETableController implements Initializable, StageBasedController {
 
     private static final Logger log = LoggerFactory.getLogger(NOETableController.class);
     private Stage stage;
@@ -146,6 +145,11 @@ public class NOETableController implements Initializable {
         propertySheet.getItems().addAll(modeItem, refDistanceItem, expItem, minDisItem, maxDisItem, fErrorItem);
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
@@ -153,31 +157,20 @@ public class NOETableController implements Initializable {
     private void refresh() {
         tableView.refresh();
     }
+
     public static NOETableController create() {
         if (MoleculeFactory.getActive() == null) {
-            GUIUtils.warn("NOE Table", "No active molecule");        
+            GUIUtils.warn("NOE Table", "No active molecule");
             return null;
         }
 
-        
-        FXMLLoader loader = new FXMLLoader(NOETableController.class.getResource("/fxml/NoeTableScene.fxml"));
-        NOETableController controller = null;
         Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene(loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.getController();
-            controller.stage = stage;
-            stage.setTitle("Peaks");
-            stage.show();
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
-
+        stage.setTitle("Peaks");
+        NOETableController controller = Fxml.load(NOETableController.class, "NoeTableScene.fxml")
+                .withStage(stage)
+                .getController();
+        stage.show();
         return controller;
-
     }
 
     void initToolBar() {
