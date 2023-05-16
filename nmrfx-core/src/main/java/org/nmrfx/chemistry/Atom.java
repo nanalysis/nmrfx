@@ -299,15 +299,6 @@ public class Atom implements IAtom, Comparable<Atom> {
         return Atom.compare(this, atom);
     }
 
-    public static class AtomComparator implements Comparator<Atom> {
-
-        @Override
-        public int compare(Atom atom1, Atom atom2) {
-            return Atom.compare(atom1, atom2);
-        }
-
-    }
-
     public static int compare(Atom atom1, Atom atom2) {
         if (atom1 == atom2) {
             return 0;

@@ -23,48 +23,42 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import javafx.application.Platform;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
+import javafx.geometry.Bounds;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.LineTo;
+import javafx.scene.shape.MoveTo;
+import javafx.scene.shape.Path;
+import javafx.scene.shape.Rectangle;
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.graphicsio.GraphicsContextInterface;
+import org.nmrfx.graphicsio.GraphicsContextProxy;
+import org.nmrfx.graphicsio.GraphicsIOException;
+import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
+import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.DoubleBinaryOperator;
-import javafx.application.Platform;
-import javafx.concurrent.Service;
-import javafx.concurrent.Task;
-import javafx.concurrent.Worker;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.LineTo;
-import javafx.scene.shape.MoveTo;
-import javafx.scene.shape.Path;
-import org.apache.commons.math3.complex.Complex;
-import javafx.geometry.Bounds;
-import javafx.scene.control.Button;
-import javafx.scene.shape.Rectangle;
-import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.graphicsio.GraphicsContextInterface;
-import org.nmrfx.graphicsio.GraphicsContextProxy;
-import org.nmrfx.graphicsio.GraphicsIOException;
-import org.nmrfx.datasets.DatasetRegion;
-import org.nmrfx.math.VecBase;
-import org.nmrfx.processor.gui.PolyChart.DISDIM;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -87,7 +81,6 @@ public class DrawSpectrum {
     NMRAxis[] axes;
     private boolean useThread = true;
     private SpectrumViewParameters viewPar = new SpectrumViewParameters();
-    private SpectrumColorParameters colorPar = new SpectrumColorParameters();
     static Color[] gradColors = new Color[0];
     GraphicsContextInterface g2;
     List<DatasetAttributes> dataAttrList = Collections.synchronizedList(new ArrayList<>());
