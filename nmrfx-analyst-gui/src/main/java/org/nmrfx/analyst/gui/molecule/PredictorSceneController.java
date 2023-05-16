@@ -1,34 +1,33 @@
 package org.nmrfx.analyst.gui.molecule;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Optional;
-import java.util.ResourceBundle;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.tools.MinerController;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.Predictor;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Optional;
+import java.util.ResourceBundle;
 
 /**
  * FXML Controller class
  *
  * @author brucejohnson
  */
-public class PredictorSceneController implements Initializable {
+public class PredictorSceneController implements Initializable, StageBasedController {
 
     Stage stage = null;
     AtomController atomController;
@@ -61,26 +60,20 @@ public class PredictorSceneController implements Initializable {
     }
 
     public static PredictorSceneController create(AtomController atomController) {
-        FXMLLoader loader = new FXMLLoader(MinerController.class.getResource("/fxml/PredictorScene.fxml"));
-        PredictorSceneController controller = null;
         Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((BorderPane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<PredictorSceneController>getController();
-            controller.stage = stage;
-            controller.atomController = atomController;
-            stage.setTitle("Predictor");
-            stage.setScene(scene);
-            stage.show();
-            stage.toFront();
-
-        } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
-        }
+        stage.setTitle("Predictor");
+        PredictorSceneController controller = Fxml.load(PredictorSceneController.class, "PredictorScene.fxml")
+                .withStage(stage)
+                .getController();
+        controller.atomController = atomController;
+        stage.show();
+        stage.toFront();
         return controller;
+    }
+
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     public Stage getStage() {

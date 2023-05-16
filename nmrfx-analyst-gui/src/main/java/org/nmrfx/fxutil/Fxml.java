@@ -43,6 +43,11 @@ public class Fxml {
             }
         }
 
+        public FxmlBuilder withAdditionalStyleSheet(String stylesheet) {
+            this.scene.getStylesheets().add(stylesheet);
+            return this;
+        }
+
         public FxmlBuilder withStage(Stage stage) {
             stage.setScene(scene);
 
