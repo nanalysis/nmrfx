@@ -101,8 +101,6 @@ public class FXMLController implements Initializable, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
     public static final int MAX_INITIAL_TRACES = 32;
     private static final int PSEUDO_2D_SIZE_THRESHOLD = 100;
-    private static final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
-    private final static List<FXMLController> controllers = new ArrayList<>();
     private static PeakAttrController peakAttrController = null;
     private static String docString = null;
     private static File initialDir = null;
@@ -216,19 +214,16 @@ public class FXMLController implements Initializable, PeakNavigable {
         for (PolyChart chart : tempCharts) {
             chart.close();
         }
-        controllers.remove(this);
+
+        FXMLControllerManager.getInstance().unregister(this);
         PolyChart activeChart = PolyChart.getActiveChart();
         if (activeChart == null) {
             if (!PolyChart.CHARTS.isEmpty()) {
                 activeChart = PolyChart.CHARTS.get(0);
             }
         }
-        if (activeChart != null) {
-            activeController.set(activeChart.getController());
-            activeController.get().setActiveChart(activeChart);
-        } else {
-            activeController.set(null);
-        }
+
+        FXMLControllerManager.getInstance().setActiveControllerFromChart(activeChart);
     }
 
     public void saveDatasets() {
@@ -887,9 +882,8 @@ public class FXMLController implements Initializable, PeakNavigable {
             chartGroup.requestLayout();
         });
 
-        controllers.add(this);
+        FXMLControllerManager.getInstance().register(this, true);
         statusBar.setMode(1);
-        activeController.set(this);
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {
                 crossHairStates[iCross][jOrient] = true;
@@ -1795,7 +1789,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     }
 
     public void setActiveController() {
-        activeController.set(this);
+        FXMLControllerManager.getInstance().setActiveController(this);
         if (attributesController != null) {
             attributesController.setAttributeControls();
         }
@@ -1865,7 +1859,8 @@ public class FXMLController implements Initializable, PeakNavigable {
     }
 
     public static List<FXMLController> getControllers() {
-        return controllers;
+        //XXX inline this call
+        return FXMLControllerManager.getInstance().getControllers();
     }
 
     public static PeakAttrController getPeakAttrController() {
@@ -1895,15 +1890,13 @@ public class FXMLController implements Initializable, PeakNavigable {
     }
 
     public static SimpleObjectProperty<FXMLController> activeControllerProperty() {
-        return activeController;
+        //XXX inline this call
+        return FXMLControllerManager.getInstance().activeControllerProperty();
     }
 
     public static FXMLController getActiveController() {
-        if (activeController.get() == null) {
-            FXMLController controller = FXMLController.create();
-            controller.setActiveController();
-        }
-        return activeController.get();
+        //XXX inline this call
+        return FXMLControllerManager.getInstance().getOrCreateActiveController();
     }
 
     private void setActiveController(Observable obs) {
@@ -1917,6 +1910,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     }
 
     public static FXMLController create(Stage stage) {
+        //XXX maybe move creation to FXMLControllerManager as well
         FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
         FXMLController controller;
         if (stage == null) {
