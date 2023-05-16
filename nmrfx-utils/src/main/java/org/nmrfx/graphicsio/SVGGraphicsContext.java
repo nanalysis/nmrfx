@@ -68,28 +68,13 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     GCCache cache = new GCCache();
 
-    static class Rotate {
-
-        final double value;
-
-        Rotate(double value) {
-            this.value = value;
-        }
+    record Rotate(double value) {
     }
 
-    static class Translate {
-
-        final double x;
-        final double y;
-
-        Translate(double x, double y) {
-            this.x = x;
-            this.y = y;
-        }
+    record Translate(double x, double y) {
     }
 
     static class GCCache {
-
         double fontSize = 12;
         String fontFamilyName = "Helvetica";
         Color fill = Color.BLACK;
@@ -129,21 +114,26 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     }
 
-    public void create(boolean landScape, String fileName) {
-        create(landScape, 1024, 1024, fileName);
+    public void create(String fileName) {
+        create(1024, 1024, fileName);
     }
 
-    public void create(boolean landScape, double width, double height, String fileName) {
+    // still used by RingNMR with landcape=true is all calls
+    @Deprecated(forRemoval = true)
+    public void create(boolean _landscape, double width, double height, String fileName) {
+        create(width, height, fileName);
+    }
+
+    public void create(double width, double height, String fileName) {
         try {
             OutputStream stream = new FileOutputStream(fileName);
-            create(landScape, width, height, stream);
+            create(width, height, stream);
         } catch (FileNotFoundException ex) {
             log.warn(ex.getMessage(), ex);
         }
-
     }
 
-    public void create(boolean landScape, double width, double height, OutputStream stream) {
+    public void create(double width, double height, OutputStream stream) {
         try {
             this.pageWidth = width;
             this.pageHeight = height;
@@ -186,8 +176,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     private String getTextDY() {
         double dYf = switch (textBaseline) {
-            case BASELINE -> 0.0;
-            case BOTTOM -> 0.0;
+            case BASELINE, BOTTOM -> 0.0;
             case TOP -> 1.0;
             case CENTER -> 0.5;
         };

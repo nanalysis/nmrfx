@@ -2399,7 +2399,7 @@ public class PolyChart extends Region implements PeakListener {
     protected void exportVectorGraphics(String fileName, String fileType) throws IOException {
         SVGGraphicsContext svgGC = new SVGGraphicsContext();
         try {
-            svgGC.create(true, canvas.getWidth(), canvas.getHeight(), fileName);
+            svgGC.create(canvas.getWidth(), canvas.getHeight(), fileName);
             exportVectorGraphics(svgGC);
             svgGC.saveFile();
         } catch (GraphicsIOException ex) {
