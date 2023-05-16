@@ -33,7 +33,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
@@ -54,6 +53,8 @@ import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.ColumnMath;
@@ -62,7 +63,6 @@ import org.slf4j.LoggerFactory;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
@@ -70,7 +70,7 @@ import java.util.function.DoubleUnaryOperator;
 /**
  * @author johnsonb
  */
-public class DatasetsController implements Initializable, PropertyChangeListener {
+public class DatasetsController implements Initializable, StageBasedController, PropertyChangeListener {
 
     private static final Logger log = LoggerFactory.getLogger(DatasetsController.class);
     private static final Map<String, double[]> savedValues = new HashMap<>();
@@ -93,7 +93,11 @@ public class DatasetsController implements Initializable, PropertyChangeListener
     public void initialize(URL url, ResourceBundle rb) {
         initToolBar();
         initTable();
+    }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     public Stage getStage() {
@@ -101,25 +105,14 @@ public class DatasetsController implements Initializable, PropertyChangeListener
     }
 
     public static DatasetsController create() {
-        FXMLLoader loader = new FXMLLoader(DatasetsController.class.getResource("/fxml/DatasetsScene.fxml"));
-        DatasetsController controller = null;
         Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene(loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.getController();
-            controller.stage = stage;
-            ProjectBase.addPropertyChangeListener(controller);
-            stage.setTitle("Datasets");
-            stage.show();
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
-
+        stage.setTitle("Datasets");
+        DatasetsController controller = Fxml.load(DatasetsController.class, "DatasetsScene.fxml")
+                .withStage(stage)
+                .getController();
+        ProjectBase.addPropertyChangeListener(controller);
+        stage.show();
         return controller;
-
     }
 
     void initToolBar() {

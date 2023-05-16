@@ -15,17 +15,17 @@ public class Fxml {
     private static final String FXML_RESOURCES_BASE = "/fxml/";
     private static final String DEFAULT_CSS = "/styles/Styles.css";
 
-    public static FxmlBuilder load(Class<?> klass, String fileName) {
-        return new FxmlBuilder(klass, fileName);
+    public static Builder load(Class<?> klass, String fileName) {
+        return new Builder(klass, fileName);
     }
 
-    public static class FxmlBuilder {
+    public static class Builder {
         private final String fileName;
         private final FXMLLoader loader;
         private final Parent node;
         private Scene scene;
 
-        public FxmlBuilder(Class<?> klass, String fileName) {
+        public Builder(Class<?> klass, String fileName) {
             this.fileName = fileName;
             this.loader = new FXMLLoader(klass.getResource(FXML_RESOURCES_BASE + fileName));
             this.node = load();
@@ -47,12 +47,12 @@ public class Fxml {
             return scene;
         }
 
-        public FxmlBuilder withAdditionalStyleSheet(String stylesheet) {
+        public Builder withAdditionalStyleSheet(String stylesheet) {
             getOrCreateScene().getStylesheets().add(stylesheet);
             return this;
         }
 
-        public FxmlBuilder withStage(Stage stage) {
+        public Builder withStage(Stage stage) {
             stage.setScene(getOrCreateScene());
 
             if (getController() instanceof StageBasedController stageBased) {
@@ -62,7 +62,7 @@ public class Fxml {
             return this;
         }
 
-        public FxmlBuilder withParent(Pane parent) {
+        public Builder withParent(Pane parent) {
             parent.getChildren().add(node);
             return this;
         }

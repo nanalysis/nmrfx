@@ -39,7 +39,7 @@ public class ContentController {
     MapChangeListener mapChangeListener = change -> update();
 
     public static ContentController create(FXMLController fxmlController, Pane processorPane) {
-        Fxml.FxmlBuilder builder = Fxml.load(ContentController.class, "ContentController.fxml")
+        Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml")
                 .withParent(processorPane);
         ContentController controller = builder.getController();
         controller.fxmlController = fxmlController;

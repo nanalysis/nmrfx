@@ -33,7 +33,6 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.scene.control.*;
@@ -56,6 +55,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
 import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
@@ -235,29 +235,22 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
 
     public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
-        FXMLLoader loader = new FXMLLoader(ProcessorController.class.getResource("/fxml/ProcessorScene.fxml"));
-        final ProcessorController controller;
-        try {
-            Pane pane = loader.load();
-            processorPane.getChildren().add(pane);
+        Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml")
+                .withParent(processorPane);
+        ProcessorController controller = builder.getController();
 
-            controller = loader.getController();
-            controller.chart = chart;
-            chart.setProcessorController(controller);
-            controller.chartProcessor.setChart(chart);
-            controller.chartProcessor.fxmlController = fxmlController;
-            controller.processorPane = processorPane;
-            controller.pane = pane;
-            Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
-            closeButton.setOnAction(e -> controller.hide());
-            controller.toolBar.getItems().add(closeButton);
-            fxmlController.processorCreated(pane);
+        controller.chart = chart;
+        chart.setProcessorController(controller);
+        controller.chartProcessor.setChart(chart);
+        controller.chartProcessor.fxmlController = fxmlController;
+        controller.processorPane = processorPane;
+        controller.pane = builder.getNode();
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        closeButton.setOnAction(e -> controller.hide());
+        controller.toolBar.getItems().add(closeButton);
+        fxmlController.processorCreated(controller.pane);
 
-            return controller;
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-            return null;
-        }
+        return controller;
     }
 
     public void show() {
