@@ -654,7 +654,7 @@ public class PolyChart extends Region implements PeakListener {
                 peakAttr.selectPeaksInRegion(limits);
                 drawSelectedPeaks(peakAttr);
             }
-            if (controller == FXMLController.getActiveController()) {
+            if (controller == AnalystApp.getFXMLControllerManager().getOrCreateActiveController()) {
                 List<Peak> allSelPeaks = new ArrayList<>();
                 for (PolyChart chart : controller.getCharts()) {
                     allSelPeaks.addAll(chart.getSelectedPeaks());
@@ -772,7 +772,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void popView() {
-        FXMLController newController = FXMLController.create();
+        FXMLController newController = AnalystApp.getFXMLControllerManager().newController();
         PolyChart newChart = newController.getActiveChart();
         copyTo(newChart);
         newController.getStatusBar().setMode(controller.getStatusBar().getMode());
@@ -1676,7 +1676,7 @@ public class PolyChart extends Region implements PeakListener {
             datasetAttrs.addAll(newAttributes);
         }
         if (!newAttributes.isEmpty()) {
-            FXMLController.getActiveController().updateSpectrumStatusBarOptions(false);
+            AnalystApp.getFXMLControllerManager().getOrCreateActiveController().updateSpectrumStatusBarOptions(false);
             DISDIM newDISDIM = newAttributes.get(0).getDataset().getNDim() == 1 ? DISDIM.OneDX : TwoD;
             // If the display has switched dimensions, full the chart otherwise the axis might be much larger than the current dataset
             fullChart = fullChart || newDISDIM != disDimProp.get();
@@ -3410,7 +3410,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
             }
         }
-        if (controller == FXMLController.getActiveController()) {
+        if (controller == AnalystApp.getFXMLControllerManager().getOrCreateActiveController()) {
             List<Peak> allSelPeaks = new ArrayList<>();
             for (PolyChart chart : controller.getCharts()) {
                 allSelPeaks.addAll(chart.getSelectedPeaks());
@@ -4003,8 +4003,8 @@ public class PolyChart extends Region implements PeakListener {
                     iSlice++;
                 }
                 if ((sliceController == null)
-                        || (!FXMLController.getControllers().contains(sliceController))) {
-                    sliceController = FXMLController.create();
+                        || (!AnalystApp.getFXMLControllerManager().getControllers().contains(sliceController))) {
+                    sliceController = AnalystApp.getFXMLControllerManager().newController();
                 }
                 sliceController.getStage().show();
                 sliceController.getStage().toFront();

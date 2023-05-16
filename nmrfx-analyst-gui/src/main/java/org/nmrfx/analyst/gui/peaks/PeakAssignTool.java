@@ -182,7 +182,7 @@ public class PeakAssignTool implements ControllerTool {
         removePeakOnClose = peak != null;
         double defaultTol = 0.04;
         Molecule mol = Molecule.getActive();
-        FXMLController fxmlController = FXMLController.getActiveController();
+        FXMLController fxmlController = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         PolyChart chart = fxmlController.getActiveChart();
         List<Peak> selected = chart.getSelectedPeaks();
         selPeak = null;
@@ -276,7 +276,7 @@ public class PeakAssignTool implements ControllerTool {
             if (selPeak != null) {
                 PeakList peakList = selPeak.getPeakList();
                 peakList.removePeak(selPeak);
-                FXMLController.getActiveController().getActiveChart().drawPeakLists(true);
+                AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart().drawPeakLists(true);
             }
         }
     }

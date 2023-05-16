@@ -27,10 +27,11 @@ public class FXMLControllerManager {
     }
 
     @Nonnull
+    //XXX try to reduce calls, sometimes creating a controller would be strange
     public FXMLController getOrCreateActiveController() {
         FXMLController active = activeController.get();
         if (active == null) {
-            active = FXMLController.create();
+            active = newController();
             setActiveController(active);
 
             //XXX see if this call is necessary for its side effects

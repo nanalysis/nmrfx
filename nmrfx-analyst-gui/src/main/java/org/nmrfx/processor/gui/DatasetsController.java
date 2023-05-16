@@ -52,6 +52,7 @@ import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.DoubleStringConverter;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.project.ProjectBase;
@@ -457,10 +458,10 @@ public class DatasetsController implements Initializable, PropertyChangeListener
 
     void drawDataset(ActionEvent e) {
         ObservableList<DatasetBase> datasets = tableView.getSelectionModel().getSelectedItems();
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         PolyChart chart = controller.getActiveChart();
         if ((chart != null) && chart.getDataset() != null) {
-            controller = FXMLController.create();
+            controller = AnalystApp.getFXMLControllerManager().newController();
         }
         boolean appendFile = false;
         for (DatasetBase dataset : datasets) {
@@ -471,10 +472,10 @@ public class DatasetsController implements Initializable, PropertyChangeListener
 
     void gridDataset(GridPaneCanvas.ORIENTATION orient) {
         ObservableList<DatasetBase> datasets = tableView.getSelectionModel().getSelectedItems();
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         PolyChart chart = controller.getActiveChart();
         if ((chart != null) && chart.getDataset() != null) {
-            controller = FXMLController.create();
+            controller = AnalystApp.getFXMLControllerManager().newController();
         }
         controller.setNCharts(datasets.size());
         controller.arrange(orient);

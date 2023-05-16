@@ -2,10 +2,6 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
@@ -13,24 +9,24 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayTool;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -221,7 +217,7 @@ public class PeakNavigator implements PeakListener {
     public void setPeakList() {
         if (peakList == null) {
             PeakList testList = null;
-            FXMLController controller = FXMLController.getActiveController();
+            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
             PolyChart chart = controller.getActiveChart();
             if (chart != null) {
                 ObservableList<PeakListAttributes> attr = chart.getPeakListAttributes();
@@ -290,7 +286,7 @@ public class PeakNavigator implements PeakListener {
     void updateAtomLabels(Peak peak) {
         if (showAtoms) {
             if (peak != null) {
-                FXMLController controller = FXMLController.getActiveController();
+                FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
                 PolyChart chart = controller.getActiveChart();
                 ObservableList<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
                 ObservableList<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();

@@ -7,6 +7,7 @@ package org.nmrfx.processor.gui;
 
 import javafx.collections.ObservableList;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.Peak;
@@ -236,9 +237,11 @@ public class PeakPicking {
             dialog.showAndWait();
         }
         chart.peakStatus.set(true);
-        if ((peak != null) && FXMLController.getActiveController().isPeakAttrControllerShowing()) {
-            PeakAttrController controller = FXMLController.getActiveController().getPeakAttrController();
-            controller.gotoPeak(peak);
+        if ((peak != null)) {
+            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+            if (controller.isPeakAttrControllerShowing()) {
+                controller.getPeakAttrController().gotoPeak(peak);
+            }
         }
         if ((peak != null) && (singlePickAction != null)) {
             singlePickAction.accept(peak);

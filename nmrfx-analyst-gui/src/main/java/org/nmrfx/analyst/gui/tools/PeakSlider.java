@@ -1279,7 +1279,7 @@ public class PeakSlider implements ControllerTool {
             }
         } finally {
             PolyChart.setPeakListenerState(true);
-            for (FXMLController fxmlController : FXMLController.getControllers()) {
+            for (FXMLController fxmlController : AnalystApp.getFXMLControllerManager().getControllers()) {
                 fxmlController.redrawChildren();
             }
         }

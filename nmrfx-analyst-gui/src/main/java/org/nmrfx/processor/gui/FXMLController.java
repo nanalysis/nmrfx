@@ -1872,11 +1872,6 @@ public class FXMLController implements Initializable, PeakNavigable {
         }
     }
 
-    public static List<FXMLController> getControllers() {
-        //XXX inline this call
-        return AnalystApp.getFXMLControllerManager().getControllers();
-    }
-
     public static PeakAttrController getPeakAttrController() {
         return peakAttrController;
     }
@@ -1903,29 +1898,9 @@ public class FXMLController implements Initializable, PeakNavigable {
         return docString;
     }
 
-    public static SimpleObjectProperty<FXMLController> activeControllerProperty() {
-        //XXX inline this call
-        return AnalystApp.getFXMLControllerManager().activeControllerProperty();
-    }
-
-    public static FXMLController getActiveController() {
-        //XXX inline this call
-        return AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-    }
-
     private void setActiveController(Observable obs) {
         if (stage.isFocused()) {
             setActiveController();
         }
-    }
-
-    public static FXMLController create() {
-        //XXX inline this call
-        return AnalystApp.getFXMLControllerManager().newController();
-    }
-
-    public static FXMLController create(Stage stage) {
-        //XXX inline this call
-        return AnalystApp.getFXMLControllerManager().newController(stage);
     }
 }

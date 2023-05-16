@@ -17,29 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.utils.properties.*;
-import org.nmrfx.processor.operations.NESTANMREx;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.prefs.Preferences;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -53,8 +31,18 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.control.PropertySheet;
+import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.processor.operations.NESTANMREx;
+import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.prefs.Preferences;
 
 /**
  *
@@ -322,7 +310,7 @@ public class PreferencesController implements Initializable {
             first = Math.max(first, 0);
             Path subPath = path.subpath(first, count);
             MenuItem datasetMenuItem = new MenuItem(subPath.toString());
-            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openFile(path.toString(), false, false));
+            datasetMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openFile(path.toString(), false, false));
             recentFileMenuItem.getItems().add(datasetMenuItem);
         }
     }

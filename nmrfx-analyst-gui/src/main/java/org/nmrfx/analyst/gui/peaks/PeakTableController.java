@@ -23,60 +23,52 @@
  */
 package org.nmrfx.analyst.gui.peaks;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
+import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import java.text.DecimalFormat;
-import java.text.Format;
-import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.MapChangeListener;
-import javafx.collections.ObservableList;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakMenuBar;
 import org.nmrfx.processor.gui.PeakMenuTarget;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.utils.TableUtils;
+
+import java.io.IOException;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.Format;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  *
@@ -459,9 +451,10 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     }
 
     void showPeakInfo(Peak peak) {
-        FXMLController.getActiveController().showPeakAttr();
-        FXMLController.getActiveController().getPeakAttrController().gotoPeak(peak);
-        FXMLController.getActiveController().getPeakAttrController().getStage().toFront();
+        FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+        controller.showPeakAttr();
+        controller.getPeakAttrController().gotoPeak(peak);
+        controller.getPeakAttrController().getStage().toFront();
 
     }
 

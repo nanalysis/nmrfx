@@ -27,6 +27,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
@@ -199,7 +200,7 @@ public class WindowIO implements FileWatchListener {
             Path projectDir = ProjectBase.getActive().getDirectory();
             Path path = projectDir.getFileSystem().getPath(projectDir.toString(), "windows", favName + "_fav.yaml");
             try {
-                saveWindow(FXMLController.getActiveController(), path);
+                saveWindow(AnalystApp.getFXMLControllerManager().getOrCreateActiveController(), path);
             } catch (IOException ex) {
                 GUIUtils.warn("Error saving window file", ex.getMessage());
             }
@@ -275,7 +276,7 @@ public class WindowIO implements FileWatchListener {
         int i = 0;
         AnalystPythonInterpreter.exec("import nwyaml\\n");
         FXMLController activeController = GUIScripter.getController();
-        List<FXMLController> controllers = FXMLController.getControllers();
+        List<FXMLController> controllers = AnalystApp.getFXMLControllerManager().getControllers();
         for (FXMLController controller : controllers) {
             GUIScripter.setController(controller);
             String fileName = "stage_" + i + ".yaml";

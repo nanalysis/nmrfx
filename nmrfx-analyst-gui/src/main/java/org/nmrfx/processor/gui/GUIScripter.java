@@ -33,7 +33,7 @@ public class GUIScripter {
     private static final Logger log = LoggerFactory.getLogger(GUIScripter.class);
 
     final PolyChart useChart;
-    static FXMLController controller = FXMLController.getActiveController();
+    static FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
     static Map<String, String> keyActions = new HashMap<>();
 
     public GUIScripter() {
@@ -46,22 +46,22 @@ public class GUIScripter {
     }
 
     public static void setActiveController() {
-        controller = FXMLController.getActiveController();
+        controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
     }
 
     public static FXMLController getController() {
         if (controller == null) {
-            controller = FXMLController.getActiveController();
+            controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         }
         return controller;
     }
 
     public static FXMLController getActiveController() {
-        return FXMLController.getActiveController();
+        return AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
     }
 
     public GUIScripter(String chartName) {
-        Optional<PolyChart> chartOpt = FXMLController.getActiveController().getCharts().stream().filter(c -> c.getName().equals(chartName)).findFirst();
+        Optional<PolyChart> chartOpt = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getCharts().stream().filter(c -> c.getName().equals(chartName)).findFirst();
         if (chartOpt.isPresent()) {
             useChart = chartOpt.get();
         } else {
@@ -508,7 +508,7 @@ public class GUIScripter {
     }
 
     public void newStage() {
-        controller = FXMLController.create();
+        controller = AnalystApp.getFXMLControllerManager().newController();
         PolyChart chartActive = controller.getCharts().get(0);
         controller.setActiveChart(chartActive);
     }

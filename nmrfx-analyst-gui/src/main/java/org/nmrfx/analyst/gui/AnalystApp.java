@@ -112,7 +112,7 @@ public class AnalystApp extends Application {
             startInAdvanced = false;
         }
         analystApp = this;
-        FXMLController.create(stage);
+        getFXMLControllerManager().newController(stage);
 
         Platform.setImplicitExit(true);
         hostServices = getHostServices();
@@ -131,7 +131,7 @@ public class AnalystApp extends Application {
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
         DataFormatHandlerUtil.addHandlersToController();
         ProjectBase.setPCS(new FxPropertyChangeSupport(this));
-        ProjectBase.addPropertyChangeListener(evt -> FXMLController.getControllers().forEach(FXMLController::enableFavoriteButton));
+        ProjectBase.addPropertyChangeListener(evt -> getFXMLControllerManager().getControllers().forEach(FXMLController::enableFavoriteButton));
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
         RunAboutSaveFrameProcessor runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
@@ -371,7 +371,7 @@ public class AnalystApp extends Application {
     }
 
     private void saveDatasets() {
-        for (var controller: FXMLController.getControllers()) {
+        for (var controller : getFXMLControllerManager().getControllers()) {
             controller.saveDatasets();
         }
     }
@@ -392,7 +392,7 @@ public class AnalystApp extends Application {
     }
 
     private void addAdvancedTools() {
-        for (var controller: FXMLController.getControllers()) {
+        for (var controller : getFXMLControllerManager().getControllers()) {
             addAdvancedTools(controller.getStatusBar());
         }
     }
@@ -424,11 +424,11 @@ public class AnalystApp extends Application {
 
 
         MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
-        spectrumLibraryMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
+        spectrumLibraryMenuItem.disableProperty().bind(getFXMLControllerManager().activeControllerProperty().isNull());
         spectrumLibraryMenuItem.setOnAction(e -> showSpectrumLibrary());
 
         MenuItem spectrumFitLibraryMenuItem = new MenuItem("Show Spectrum Fitter");
-        spectrumFitLibraryMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
+        spectrumFitLibraryMenuItem.disableProperty().bind(getFXMLControllerManager().activeControllerProperty().isNull());
         spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
 
         Menu libraryMenu = new Menu("Library");
@@ -456,7 +456,7 @@ public class AnalystApp extends Application {
     }
 
     public void showPeakPathTool() {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         if (!controller.containsTool(PathTool.class)) {
             VBox vBox = new VBox();
             controller.getBottomBox().getChildren().add(vBox);
@@ -467,7 +467,7 @@ public class AnalystApp extends Application {
     }
 
     public void showPeakAssignTool() {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         if (!controller.containsTool(PeakAssignTool.class)) {
             VBox vBox = new VBox();
             controller.getBottomBox().getChildren().add(vBox);
@@ -478,7 +478,7 @@ public class AnalystApp extends Application {
     }
 
     public void showPeakSlider() {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         if (!controller.containsTool(PeakSlider.class)) {
             VBox vBox = new VBox();
             controller.getBottomBox().getChildren().add(vBox);
@@ -489,7 +489,7 @@ public class AnalystApp extends Application {
     }
 
     public void showSpectrumLibrary() {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         if (!controller.containsTool(SimMolController.class)) {
             ToolBar navBar = new ToolBar();
             controller.getBottomBox().getChildren().add(navBar);
@@ -500,7 +500,7 @@ public class AnalystApp extends Application {
     }
 
     public void showSpectrumFitter() {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         if (!controller.containsTool(SimFitMolController.class)) {
             VBox vBox = new VBox();
             controller.getBottomBox().getChildren().add(vBox);
@@ -515,7 +515,7 @@ public class AnalystApp extends Application {
     }
 
     public void showScannerTool() {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         if (!controller.containsTool(ScannerTool.class)) {
             BorderPane vBox = new BorderPane();
             controller.getBottomBox().getChildren().add(vBox);
@@ -527,7 +527,7 @@ public class AnalystApp extends Application {
 
     public void showRunAboutTool() {
         System.out.println("show runabout");
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         if (!controller.containsTool(RunAboutGUI.class)) {
             TabPane tabPane = new TabPane();
             controller.getBottomBox().getChildren().add(tabPane);
@@ -539,7 +539,7 @@ public class AnalystApp extends Application {
     }
 
     public StripController showStripsBar() {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         if (!controller.containsTool(StripController.class)) {
             VBox vBox = new VBox();
             controller.getBottomBox().getChildren().add(vBox);
@@ -551,50 +551,50 @@ public class AnalystApp extends Application {
     }
 
     public void removePeakPathTool(PathTool pathTool) {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(PathTool.class);
         controller.getBottomBox().getChildren().remove(pathTool.getBox());
     }
 
     public void removePeakAssignTool(PeakAssignTool peakAssignTool) {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(PeakAssignTool.class);
         controller.getBottomBox().getChildren().remove(peakAssignTool.getBox());
     }
 
     public void removePeakSlider(PeakSlider peakSlider) {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(PeakSlider.class);
         controller.getBottomBox().getChildren().remove(peakSlider.getBox());
         peakSlider.removeListeners();
     }
 
     public void removeMolSim(SimMolController simMolController) {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(SimMolController.class);
         controller.getBottomBox().getChildren().remove(simMolController.getToolBar());
     }
 
     public void removeMolFitter(SimFitMolController simMolController) {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(SimFitMolController.class);
         controller.getBottomBox().getChildren().remove(simMolController.getBox());
     }
 
     public void removeScannerTool(ScannerTool scannerTool) {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(ScannerTool.class);
         controller.getBottomBox().getChildren().remove(scannerTool.getBox());
     }
 
     public void removeRunaboutTool(RunAboutGUI runaboutTool) {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(RunAboutGUI.class);
         controller.getBottomBox().getChildren().remove(runaboutTool.getTabPane());
     }
 
     public void removeStripsBar(StripController stripsController) {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(StripController.class);
         controller.getBottomBox().getChildren().remove(stripsController.getBox());
     }
@@ -626,12 +626,12 @@ public class AnalystApp extends Application {
     }
 
     public ScannerTool getScannerTool() {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         return  (ScannerTool) controller.getTool(ScannerTool.class);
     }
 
     public StripController getStripsTool() {
-        FXMLController controller = FXMLController.getActiveController();
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         return (StripController) controller.getTool(StripController.class);
     }
 
@@ -661,7 +661,7 @@ public class AnalystApp extends Application {
             chart.clearDataAndPeaks();
             chart.clearAnnotations();
         }
-        List<FXMLController> controllers = new ArrayList<>(FXMLController.getControllers());
+        List<FXMLController> controllers = new ArrayList<>(getFXMLControllerManager().getControllers());
         // Don't close the first controller that matches with the main stage, Note this first controller is not
         // necessarily the active controller
         for (int index = 1; index < controllers.size(); index++) {

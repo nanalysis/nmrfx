@@ -98,8 +98,9 @@ public class PeakListsTableController implements Initializable {
     void showPeakInspector() {
         PeakList peakList = peakListsTable.getSelectionModel().getSelectedItem();
         if (peakList != null) {
-            FXMLController.getActiveController().showPeakAttr();
-            FXMLController.getActiveController().getPeakAttrController().setPeakList(peakList);
+            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+            controller.showPeakAttr();
+            controller.getPeakAttrController().setPeakList(peakList);
         }
     }
 
