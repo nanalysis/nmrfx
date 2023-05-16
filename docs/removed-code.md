@@ -42,3 +42,7 @@ Removal dates in YYYY-MM-DD format.
 * GridPaneCanvas.getLocal(double x, double y)
 * GridPaneCanvas.getFraction(double x, double y)
 * Symbol.hit() + commented drawing code for triangle, cross, square diamond
+* GraphicsContextInterface, GraphicsContextProxy, PDFGraphicsContext, SVGGraphicsContext:
+    * multiple methods, most of which were also unimplemented in at least one implementing class
+* GraphicsIO, PDFWriter, SVGWriter:
+    * drawText, drawPolyLine, drawRect unused variants
