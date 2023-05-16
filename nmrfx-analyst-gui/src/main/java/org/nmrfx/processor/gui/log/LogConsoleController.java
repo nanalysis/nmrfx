@@ -2,16 +2,15 @@ package org.nmrfx.processor.gui.log;
 
 import ch.qos.logback.classic.Level;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.control.MasterDetailPane;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.ResourceBundle;
@@ -21,7 +20,7 @@ import java.util.stream.Stream;
 /**
  * Controller for the Log Console.
  */
-public class LogConsoleController implements Initializable {
+public class LogConsoleController implements Initializable, StageBasedController {
 
     private static LogConsoleController logConsoleController = null;
 
@@ -44,38 +43,29 @@ public class LogConsoleController implements Initializable {
 
     private LogTable table;
 
-    protected LogConsoleController() {}
-
     /**
      * Creates a new LogConsoleController and sets the static LogConsoleController.
      * @return The newly created LogConsoleController
      */
     public static LogConsoleController create() {
-        FXMLLoader loader = new FXMLLoader(LogConsoleController.class.getResource("/fxml/LogConsoleScene.fxml"));
-        loader.setControllerFactory(controller -> new LogConsoleController());
         Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene(loader.load());
-            stage.setScene(scene);
-            logConsoleController = loader.getController();
-            logConsoleController.stage = stage;
-            logConsoleController.logListener = logConsoleController::logPublished;
-            stage.setTitle(CONSOLE_TITLE);
-            // Only listen for new log messages if the log console is showing
-            stage.showingProperty().addListener((observable, oldValue, newValue) -> {
-                if (logConsoleController != null){
-                    if (Boolean.TRUE.equals(newValue)) {
-                        logConsoleController.addLogRecords();
-                        Log.addLogListener(logConsoleController.logListener);
-                    } else {
-                        Log.removeLogListener(logConsoleController.logListener);
-                    }
-                }
-            });
+        stage.setTitle(CONSOLE_TITLE);
 
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to create the Log Console controller.", e);
-        }
+        logConsoleController = Fxml.load(LogConsoleController.class, "LogConsoleScene.fxml")
+                .withStage(stage)
+                .getController();
+        logConsoleController.logListener = logConsoleController::logPublished;
+
+        // Only listen for new log messages if the log console is showing
+        stage.showingProperty().addListener((observable, oldValue, newValue) -> {
+            if (Boolean.TRUE.equals(newValue)) {
+                logConsoleController.addLogRecords();
+                Log.addLogListener(logConsoleController.logListener);
+            } else {
+                Log.removeLogListener(logConsoleController.logListener);
+            }
+        });
+
         return logConsoleController;
     }
 
@@ -112,6 +102,11 @@ public class LogConsoleController implements Initializable {
         table.getSelectionModel().selectedItemProperty().addListener((o, oldRow, newRow) -> logDetails.setDetails(newRow));
 
         filterTextField.textProperty().addListener((observable, oldValue, newValue) -> filterChanged());
+    }
+
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     /**

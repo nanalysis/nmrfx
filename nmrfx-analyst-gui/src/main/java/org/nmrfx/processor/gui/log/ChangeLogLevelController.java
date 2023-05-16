@@ -4,9 +4,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -15,8 +13,9 @@ import javafx.scene.control.cell.ChoiceBoxTableCell;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
@@ -24,9 +23,9 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 
-public class ChangeLogLevelController implements Initializable {
-
+public class ChangeLogLevelController implements Initializable, StageBasedController {
     private static final String TITLE = "Change log level...";
+
     private Stage stage;
     @FXML
     private TableView<Map.Entry<String, LogLevel>> changeLogLevelTable;
@@ -37,25 +36,19 @@ public class ChangeLogLevelController implements Initializable {
      * @return ChangeLogLevelController
      */
     public static ChangeLogLevelController create(Stage parentStage) {
-        FXMLLoader loader = new FXMLLoader(ChangeLogLevelController.class.getResource("/fxml/ChangeLogLevelScene.fxml"));
         Stage stage = new Stage(StageStyle.DECORATED);
-        ChangeLogLevelController controller;
-        try {
-            Scene scene = new Scene(loader.load());
-            stage.setScene(scene);
-            controller = loader.getController();
-            controller.stage = stage;
-            stage.setTitle(TITLE);
-            stage.setResizable(false);
-            stage.initOwner(parentStage);
-            stage.initModality(Modality.WINDOW_MODAL);
-            // Center the stage on the parent once its rendered
-            stage.widthProperty().addListener(((observable, oldValue, newValue) -> stage.setX(parentStage.getX() + (parentStage.getWidth() - newValue.doubleValue()) / 2)));
-            stage.heightProperty().addListener(((observable, oldValue, newValue) -> stage.setY(parentStage.getY() + (parentStage.getHeight() - newValue.doubleValue()) / 2)));
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to create the Change Log Level controller.", e);
-        }
-        return controller;
+        stage.setTitle(TITLE);
+        stage.setResizable(false);
+        stage.initOwner(parentStage);
+        stage.initModality(Modality.WINDOW_MODAL);
+
+        // Center the stage on the parent once its rendered
+        stage.widthProperty().addListener(((observable, oldValue, newValue) -> stage.setX(parentStage.getX() + (parentStage.getWidth() - newValue.doubleValue()) / 2)));
+        stage.heightProperty().addListener(((observable, oldValue, newValue) -> stage.setY(parentStage.getY() + (parentStage.getHeight() - newValue.doubleValue()) / 2)));
+
+        return Fxml.load(ChangeLogLevelController.class, "ChangeLogLevelScene.fxml")
+                .withStage(stage)
+                .getController();
     }
 
     /**
@@ -90,12 +83,18 @@ public class ChangeLogLevelController implements Initializable {
         changeLogLevelTable.setItems(FXCollections.observableArrayList(Log.getModifiedLogLevels().entrySet()));
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public void showAndWait() {
         stage.showAndWait();
     }
 
     /**
      * Listener for a cell edit event in the Log Level column that sets the new LogLevel.
+     *
      * @param event
      */
     private void logLevelChanged(TableColumn.CellEditEvent<Map.Entry<String, LogLevel>, LogLevel> event) {
