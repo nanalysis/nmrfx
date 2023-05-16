@@ -22,6 +22,11 @@ Removal dates in YYYY-MM-DD format.
 * org.nmrfx.structure.chemistry.miner.NanoMol
 * org.nmrfx.structure.chemistry.miner.PMol
 
+## 2023-05-16
+
+* org.nmrfx.chart.ChartStage
+* org.nmrfx.utils.properties.ListPropertyEditor
+
 ## Methods in UI classes
 
 ### 2023-05-16
@@ -36,3 +41,4 @@ Removal dates in YYYY-MM-DD format.
 * ConsoleUtil: everything except runOnFxThread(..)
 * GridPaneCanvas.getLocal(double x, double y)
 * GridPaneCanvas.getFraction(double x, double y)
+* Symbol.hit() + commented drawing code for triangle, cross, square diamond

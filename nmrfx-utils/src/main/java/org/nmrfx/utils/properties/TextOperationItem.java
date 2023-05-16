@@ -46,10 +46,6 @@ public class TextOperationItem extends OperationItem implements ObservableString
         this.listener = listener;
     }
 
-    void addKeyHandler() {
-
-    }
-
     public void setEditor(PropertyEditor editor) {
         this.editor = editor;
     }

@@ -16,10 +16,8 @@
  */
 package org.nmrfx.chart;
 
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
@@ -53,9 +51,6 @@ public class PlotDemo {
     static List<String> classes;
     static Map<String, Integer> classMap = new HashMap<>();
     static double[][] iris = null;
-    static double[] cow = null;
-    static double[][] six = null;
-    static double[][] zip = null;
 
     public PlotDemo(Stage stage) {
         this.stage = stage;
@@ -135,7 +130,6 @@ public class PlotDemo {
         pane.getChildren().add(canvas);
         stage.setScene(new Scene(borderPane));
         stage.show();
-        GraphicsContext gC = canvas.getGraphicsContext2D();
         gcP = new GraphicsContextProxy(canvas.getGraphicsContext2D());
         borderPane.widthProperty().addListener(e -> refresh());
         borderPane.heightProperty().addListener(e -> refresh());
@@ -242,19 +236,4 @@ public class PlotDemo {
             chart.drawChart();
         }
     }
-
-    public void showCanvas() {
-        runOnPlatform(() -> {
-            showCanvasNow();
-        });
-    }
-
-    public static void runOnPlatform(Runnable runnable) {
-        if (Platform.isFxApplicationThread()) {
-            runnable.run();
-        } else {
-            Platform.runLater(runnable);
-        }
-    }
-
 }
