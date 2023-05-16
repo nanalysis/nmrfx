@@ -23,26 +23,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.utils.properties.ListOperationItem;
-import org.nmrfx.utils.properties.ChoiceOperationItem;
-import org.nmrfx.utils.properties.IntRangeOperationItem;
-import org.nmrfx.utils.properties.IntOperationItem;
-import org.nmrfx.utils.properties.BooleanOperationItem;
-import org.nmrfx.utils.properties.FileOperationItem;
-import org.nmrfx.utils.properties.OperationItem;
-import org.nmrfx.utils.properties.DoubleRangeOperationItem;
-import org.nmrfx.utils.properties.DoubleOperationItem;
-import org.nmrfx.utils.properties.TextWaitingOperationItem;
-import org.nmrfx.utils.properties.ListOperationItemTypeSelector;
-import org.nmrfx.utils.properties.complex.ComplexOperationItem;
-import org.nmrfx.utils.properties.IntChoiceOperationItem;
-import org.nmrfx.utils.properties.TextOperationItem;
-import org.nmrfx.processor.gui.spectra.SpecRegion;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.TreeSet;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -52,9 +32,14 @@ import javafx.scene.control.TextField;
 import org.apache.commons.math3.complex.Complex;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
+import org.nmrfx.processor.gui.spectra.SpecRegion;
+import org.nmrfx.utils.properties.*;
+import org.nmrfx.utils.properties.complex.ComplexOperationItem;
 import org.python.core.PyComplex;
-import java.util.regex.*;
-import org.nmrfx.utils.properties.DoubleUnitsRangeOperationItem;
+
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -431,7 +416,7 @@ public class PropertyManager {
     }
 
     void setupItems() {
-        ArrayList pyDocs = processorController.chartProcessor.getDocs();
+        List<?> pyDocs = processorController.chartProcessor.getDocs();
         for (int i = 0; i < pyDocs.size(); i += 4) {
             String op = (String) pyDocs.get(i);
             ArrayList parList = (ArrayList) pyDocs.get(i + 2);

@@ -17,6 +17,26 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import javafx.application.Platform;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ToolBar;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
+import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.GUIScripter;
+import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utilities.FileWatchListener;
+import org.nmrfx.utilities.NMRFxFileWatcher;
+import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,27 +49,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javafx.application.Platform;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ToolBar;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.GUIScripter;
-import org.nmrfx.project.ProjectBase;
-import org.nmrfx.utilities.FileWatchListener;
-import org.nmrfx.utilities.NMRFxFileWatcher;
-import org.python.util.PythonInterpreter;
-import org.nmrfx.utils.GUIUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -209,19 +208,16 @@ public class WindowIO implements FileWatchListener {
     }
 
     public static void loadWindow(File file) throws IOException {
-        final PythonInterpreter interp = AnalystApp.getInterpreter();
-        interp.exec("import nwyaml\\n");
-        interp.set("yamlFileName", file.toString());
-        interp.set("yamlFileNum", 1);
-        interp.exec("nwyaml.loadYamlWin(yamlFileName, yamlFileNum)");
-
+        AnalystPythonInterpreter.exec("import nwyaml\\n");
+        AnalystPythonInterpreter.set("yamlFileName", file.toString());
+        AnalystPythonInterpreter.set("yamlFileNum", 1);
+        AnalystPythonInterpreter.exec("nwyaml.loadYamlWin(yamlFileName, yamlFileNum)");
     }
 
     public static void loadWindows(Path directory) throws IOException {
         Predicate<String> predicate = STAGE_PATTERN1.asPredicate();
         Predicate<String> predicate2 = STAGE_PATTERN2.asPredicate();
-        final PythonInterpreter interp = AnalystApp.getInterpreter();
-        interp.exec("import nwyaml\\n");
+        AnalystPythonInterpreter.exec("import nwyaml\\n");
         if (Files.isDirectory(directory)) {
             try (Stream<Path> files = Files.list(directory)) {
                 files.sequential().filter(path
@@ -231,9 +227,9 @@ public class WindowIO implements FileWatchListener {
                             String fileName = path.getFileName().toString();
                             Optional<Integer> fileNum = ProjectBase.getIndex(fileName);
                             if (fileNum.isPresent()) {
-                                interp.set("yamlFileName", path.toString());
-                                interp.set("yamlFileNum", fileNum.get());
-                                interp.exec("nwyaml.loadYamlWin(yamlFileName, yamlFileNum)");
+                                AnalystPythonInterpreter.set("yamlFileName", path.toString());
+                                AnalystPythonInterpreter.set("yamlFileNum", fileNum.get());
+                                AnalystPythonInterpreter.exec("nwyaml.loadYamlWin(yamlFileName, yamlFileNum)");
                             }
                         });
             }
@@ -263,31 +259,29 @@ public class WindowIO implements FileWatchListener {
     }
 
     public static void saveWindow(FXMLController controller, Path path) throws IOException {
-        PythonInterpreter interp = AnalystApp.getInterpreter();
-        interp.exec("import nwyaml\\n");
+        AnalystPythonInterpreter.exec("import nwyaml\\n");
         FXMLController activeController = GUIScripter.getController();
         GUIScripter.setController(controller);
-        interp.set("yamlFileName", path.toString());
-        interp.exec("nwyaml.dumpYamlWin(yamlFileName)");
+        AnalystPythonInterpreter.set("yamlFileName", path.toString());
+        AnalystPythonInterpreter.exec("nwyaml.dumpYamlWin(yamlFileName)");
         GUIScripter.setController(activeController);
     }
 
-    public static void saveWindows(Path projectDir) throws IOException {
+    public static void saveWindows(Path projectDir) {
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         cleanWindows(projectDir);
-        PythonInterpreter interp = AnalystApp.getInterpreter();
         int i = 0;
-        interp.exec("import nwyaml\\n");
+        AnalystPythonInterpreter.exec("import nwyaml\\n");
         FXMLController activeController = GUIScripter.getController();
         List<FXMLController> controllers = FXMLController.getControllers();
         for (FXMLController controller : controllers) {
             GUIScripter.setController(controller);
-            String fileName = "stage_" + String.valueOf(i) + ".yaml";
+            String fileName = "stage_" + i + ".yaml";
             Path path = Paths.get(projectDir.toString(), "windows", fileName);
-            interp.set("yamlFileName", path.toString());
-            interp.exec("nwyaml.dumpYamlWin(yamlFileName)");
+            AnalystPythonInterpreter.set("yamlFileName", path.toString());
+            AnalystPythonInterpreter.exec("nwyaml.dumpYamlWin(yamlFileName)");
             i++;
         }
         GUIScripter.setController(activeController);

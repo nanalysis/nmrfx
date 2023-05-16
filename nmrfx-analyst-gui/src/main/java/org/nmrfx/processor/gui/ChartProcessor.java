@@ -21,7 +21,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.FileChooser;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
@@ -36,8 +36,6 @@ import org.nmrfx.processor.processing.processes.IncompleteProcessException;
 import org.nmrfx.processor.processing.processes.ProcessOps;
 import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyException;
-import org.python.core.PyObject;
-import org.python.util.InteractiveInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,10 +84,6 @@ public class ChartProcessor {
 
     File datasetFile;
     File datasetFileTemp;
-    /**
-     * The InteractiveInterpreter in which processing commands will be executed.
-     */
-    private final InteractiveInterpreter interpreter;
     /**
      * The dimension of datasetFile that is in use for interactive processing.
      */
@@ -161,7 +155,7 @@ public class ChartProcessor {
      */
     PolyChart chart;
 
-    ArrayList pyDocs = null;
+    List<?> pyDocs;
     boolean scriptValid = false;
     int[] mapToDataset = null;
 
@@ -174,10 +168,8 @@ public class ChartProcessor {
     static double[] hyperRCoefs = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
     public ChartProcessor(ProcessorController processorController) {
-        interpreter = AnalystApp.interpreter;
         this.processorController = processorController;
-        PyObject pyDocObject = interpreter.eval("getDocs()");
-        pyDocs = (ArrayList) pyDocObject.__tojava__(java.util.ArrayList.class);
+        this.pyDocs = AnalystPythonInterpreter.eval("getDocs()", ArrayList.class);
     }
 
     class DimComparator implements Comparator {
@@ -224,10 +216,8 @@ public class ChartProcessor {
         }
     }
 
-    org.nmrfx.processor.processing.processes.ProcessOps getProcess() {
-        PyObject pObject = interpreter.eval("getCurrentProcess()");
-        ProcessOps process = (ProcessOps) pObject.__tojava__(ProcessOps.class);
-        return process;
+    ProcessOps getProcess() {
+        return AnalystPythonInterpreter.eval("getCurrentProcess()", ProcessOps.class);
     }
 
     public void setChart(PolyChart chart) {
@@ -1246,9 +1236,9 @@ public class ChartProcessor {
             if (nmrData != null) {
                 NMRDataUtil.setCurrentData(nmrData);
             }
-            interpreter.exec("useLocal()");
+            AnalystPythonInterpreter.exec("useLocal()");
             if (nmrData != null) {
-                interpreter.exec("fidInfo = makeFIDInfo()");
+                AnalystPythonInterpreter.exec("fidInfo = makeFIDInfo()");
             }
             if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
                 return;
@@ -1260,13 +1250,13 @@ public class ChartProcessor {
             processorController.clearProcessingTextLabel();
             if (nmrData != null) {
                 String parString = processorController.refManager.getParString(nmrData.getNDim(), "");
-                interpreter.exec(parString);
+                AnalystPythonInterpreter.exec(parString);
             }
             if (reloadData) {
                 loadVectors(0);
             }
             if (processorController.isViewingFID()) {
-                interpreter.exec(script);
+                AnalystPythonInterpreter.exec(script);
             }
         } catch (Exception pE) {
             if (pE instanceof IncompleteProcessException) {
@@ -1340,21 +1330,18 @@ public class ChartProcessor {
     }
 
     public void addFIDToPython() {
-        interpreter.exec("from pyproc import *");
-        interpreter.exec("useLocal()");
-        interpreter.exec("fidInfo = makeFIDInfo()");
-
+        AnalystPythonInterpreter.exec("from pyproc import *");
+        AnalystPythonInterpreter.exec("useLocal()");
+        AnalystPythonInterpreter.exec("fidInfo = makeFIDInfo()");
     }
 
     public String getGenScript(boolean arrayed) {
         addFIDToPython();
         String arrayVal = arrayed ? "True" : "False";
-        PyObject pyDocObject = interpreter.eval("genScript(arrayed=" + arrayVal + ")");
-        String scriptString = (String) pyDocObject.__tojava__(String.class);
-        return scriptString;
+        return AnalystPythonInterpreter.eval("genScript(arrayed=" + arrayVal + ")", String.class);
     }
 
-    public ArrayList getDocs() {
+    public List<?> getDocs() {
         return pyDocs;
     }
 
