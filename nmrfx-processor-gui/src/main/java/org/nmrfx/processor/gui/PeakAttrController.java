@@ -125,7 +125,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     PeakList peakList;
     Peak currentPeak;
     ToggleButton deleteButton;
-    ComboTableCell comboTableCell = new ComboTableCell();
     ObservableList<String> relationChoiceItems = FXCollections.observableArrayList("", "D1", "D2", "D3", "D4");
 
     enum PEAK_NORM {
@@ -496,14 +495,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             if (item != null) {
                 setText(String.valueOf(item));
             }
-        }
-    }
-
-    static class ComboTableCell<SpectralDim, String> extends ComboBoxTableCell<SpectralDim, String> {
-
-        @Override
-        public void updateItem(String item, boolean empty) {
-            super.updateItem(item, empty);
         }
     }
 
