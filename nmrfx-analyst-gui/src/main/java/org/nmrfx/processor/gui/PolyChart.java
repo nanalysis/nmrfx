@@ -459,7 +459,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void focus() {
-        getController().stage.requestFocus();
+        getController().getStage().requestFocus();
     }
 
     public Cursor getCanvasCursor() {
@@ -675,7 +675,7 @@ public class PolyChart extends Region implements PeakListener {
                         setAxis(1, adjustedLimits[0], adjustedLimits[1]);
                     }
                     ChartUndoLimits redo = new ChartUndoLimits(this);
-                    controller.undoManager.add("expand", undo, redo);
+                    controller.getUndoManager().add("expand", undo, redo);
                     refresh();
                     completed = true;
                 }
@@ -695,12 +695,12 @@ public class PolyChart extends Region implements PeakListener {
                 List<Peak> peaks = peakAttr.selectPeaksInRegion(limits);
                 drawSelectedPeaks(peakAttr);
             }
-            if (controller == FXMLController.activeController.get()) {
+            if (controller == FXMLController.getActiveController()) {
                 List<Peak> allSelPeaks = new ArrayList<>();
-                for (PolyChart chart : controller.charts) {
+                for (PolyChart chart : controller.getCharts()) {
                     allSelPeaks.addAll(chart.getSelectedPeaks());
                 }
-                controller.selPeaks.set(allSelPeaks);
+                controller.selectedPeaksProperty().set(allSelPeaks);
             }
             completed = true;
 
@@ -795,8 +795,7 @@ public class PolyChart extends Region implements PeakListener {
                         layoutPlotChildren();
                         ChartUndoLimits redo = new ChartUndoLimits(this);
                         String undoName = factor > 1.0 ? "zoomout" : "zoomin";
-                        controller.undoManager.add(undoName, undo, redo);
-
+                        controller.getUndoManager().add(undoName, undo, redo);
                     }
                 }
         );
@@ -969,8 +968,7 @@ public class PolyChart extends Region implements PeakListener {
                 .forEach(dataAttr -> adjustScale(dataAttr, factor));
         layoutPlotChildren();
         ChartUndoScale redo = new ChartUndoScale(this);
-        controller.undoManager.add("ascale", undo, redo);
-
+        controller.getUndoManager().add("ascale", undo, redo);
     }
 
     protected void adjustScale(DatasetAttributes dataAttr, double factor) {
@@ -1135,7 +1133,7 @@ public class PolyChart extends Region implements PeakListener {
             }
             layoutPlotChildren();
             ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
-            controller.undoManager.add("plane", undo, redo);
+            controller.getUndoManager().add("plane", undo, redo);
         }
     }
 
@@ -1154,7 +1152,7 @@ public class PolyChart extends Region implements PeakListener {
                 ChartUndoLimits undo = new ChartUndoLimits(this);
                 fullAxisLimits();
                 ChartUndoLimits redo = new ChartUndoLimits(this);
-                controller.undoManager.add("full", undo, redo);
+                controller.getUndoManager().add("full", undo, redo);
                 layoutPlotChildren();
             }
         });
@@ -1331,8 +1329,7 @@ public class PolyChart extends Region implements PeakListener {
         updateProjectionScale();
         layoutPlotChildren();
         ChartUndoScale redo = new ChartUndoScale(this);
-        controller.undoManager.add("ascale", undo, redo);
-
+        controller.getUndoManager().add("ascale", undo, redo);
     }
 
     protected void autoScale(DatasetAttributes dataAttr) {
@@ -1416,16 +1413,16 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void updatePhaseDim() {
-        if ((controller.chartProcessor == null) || !controller.processControllerVisible.get()) {
+        if ((controller.getChartProcessor() == null) || !controller.isProcessControllerVisible()) {
             setPhaseDim(phaseAxis);
         }
     }
 
     protected void setPhaseDim(int phaseDim) {
         String vecDimName = "";
-        if ((controller.chartProcessor != null) && controller.processControllerVisible.get()) {
-            vecDimName = controller.chartProcessor.getVecDimName();
-            datasetPhaseDim = controller.chartProcessor.mapToDataset(phaseDim);
+        if ((controller.getChartProcessor() != null) && controller.isProcessControllerVisible()) {
+            vecDimName = controller.getChartProcessor().getVecDimName();
+            datasetPhaseDim = controller.getChartProcessor().mapToDataset(phaseDim);
         } else {
             if (datasetAttributesList.isEmpty()) {
                 datasetPhaseDim = phaseDim;
@@ -1519,7 +1516,7 @@ public class PolyChart extends Region implements PeakListener {
         layoutPlotChildren();
         crossHairs.hideCrossHairs();
         ChartUndoLimits redo = new ChartUndoLimits(this);
-        controller.undoManager.add("expand", undo, redo);
+        controller.getUndoManager().add("expand", undo, redo);
 
     }
 
@@ -1536,11 +1533,11 @@ public class PolyChart extends Region implements PeakListener {
             return 0.0;
         }
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-        if (controller.chartProcessor == null) {
+        if (controller.getChartProcessor() == null) {
             return 0.0;
         }
-        String vecDimName = controller.chartProcessor.getVecDimName();
-        int vecDim = controller.chartProcessor.getVecDim();
+        String vecDimName = controller.getChartProcessor().getVecDimName();
+        int vecDim = controller.getChartProcessor().getVecDim();
         double position;
         double ppmPosition;
         double refPoint;
@@ -1576,11 +1573,11 @@ public class PolyChart extends Region implements PeakListener {
         }
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
 
-        if (controller.chartProcessor == null) {
+        if (controller.getChartProcessor() == null) {
             return;
         }
-        String vecDimName = controller.chartProcessor.getVecDimName();
-        int vecDim = controller.chartProcessor.getVecDim();
+        String vecDimName = controller.getChartProcessor().getVecDimName();
+        int vecDim = controller.getChartProcessor().getVecDim();
         double min;
         double max;
         int size;
@@ -1619,11 +1616,11 @@ public class PolyChart extends Region implements PeakListener {
         }
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
 
-        if (controller.chartProcessor == null) {
+        if (controller.getChartProcessor() == null) {
             return;
         }
-        String vecDimName = controller.chartProcessor.getVecDimName();
-        int vecDim = controller.chartProcessor.getVecDim();
+        String vecDimName = controller.getChartProcessor().getVecDimName();
+        int vecDim = controller.getChartProcessor().getVecDim();
         double min;
         double max;
         int size;
@@ -3552,9 +3549,9 @@ public class PolyChart extends Region implements PeakListener {
     public void showHitPeak(double pickX, double pickY) {
         Optional<Peak> hit = hitPeak(pickX, pickY);
         if (hit.isPresent()) {
-            FXMLController.getActiveController().showPeakAttr();
-            FXMLController.peakAttrController.gotoPeak(hit.get());
-            FXMLController.peakAttrController.getStage().toFront();
+            FXMLController.showPeakAttr();
+            FXMLController.getPeakAttrController().gotoPeak(hit.get());
+            FXMLController.getPeakAttrController().getStage().toFront();
         }
     }
 
@@ -3563,7 +3560,7 @@ public class PolyChart extends Region implements PeakListener {
             for (PolyChart chart : CHARTS) {
                 if (chart != this) {
                     boolean hadPeaks = false;
-                    for (PeakListAttributes peakListAttr : (List<PeakListAttributes>) chart.getPeakListAttributes()) {
+                    for (PeakListAttributes peakListAttr : chart.getPeakListAttributes()) {
                         if (peakListAttr.clearSelectedPeaks()) {
                             hadPeaks = true;
                         }
@@ -3594,12 +3591,12 @@ public class PolyChart extends Region implements PeakListener {
                 }
             }
         }
-        if (controller == FXMLController.activeController.get()) {
+        if (controller == FXMLController.getActiveController()) {
             List<Peak> allSelPeaks = new ArrayList<>();
-            for (PolyChart chart : controller.charts) {
+            for (PolyChart chart : controller.getCharts()) {
                 allSelPeaks.addAll(chart.getSelectedPeaks());
             }
-            controller.selPeaks.set(allSelPeaks);
+            controller.selectedPeaksProperty().set(allSelPeaks);
         }
         return hitPeak;
     }
@@ -4090,12 +4087,12 @@ public class PolyChart extends Region implements PeakListener {
     public void setPivot(Double pivot) {
         if (!datasetAttributesList.isEmpty()) {
             String vecDimName = "";
-            if ((controller.chartProcessor != null) && controller.processControllerVisible.get()) {
-                vecDimName = controller.chartProcessor.getVecDimName();
+            if ((controller.getChartProcessor() != null) && controller.isProcessControllerVisible()) {
+                vecDimName = controller.getChartProcessor().getVecDimName();
             }
             DatasetBase dataset = getDataset();
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-            int datasetDim = -1;
+            int datasetDim;
             if (is1D() || vecDimName.equals("D1")) {
                 datasetDim = datasetAttributes.dim[0];
                 if (pivot == null) {
@@ -4310,7 +4307,7 @@ public class PolyChart extends Region implements PeakListener {
         Bounds bounds = plotBackground.getBoundsInParent();
         boolean xOn = false;
         boolean yOn = false;
-        if (controller.sliceStatus.get() && sliceStatus.get()) {
+        if (controller.sliceStatusProperty().get() && sliceStatus.get()) {
             xOn = true;
             yOn = true;
         }
@@ -4324,7 +4321,7 @@ public class PolyChart extends Region implements PeakListener {
                 drawPivotAxis = 1;
             }
         }
-        if ((nDim > 1) && controller.sliceStatus.get() && sliceStatus.get()) {
+        if ((nDim > 1) && controller.sliceStatusProperty().get() && sliceStatus.get()) {
             if (((iOrient == HORIZONTAL) && xOn) || ((iOrient == VERTICAL) && yOn)) {
                 for (DatasetAttributes datasetAttributes : datasetAttributesList) {
                     if (datasetAttributes.getDataset().getNDim() > 1) {

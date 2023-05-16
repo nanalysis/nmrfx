@@ -17,20 +17,9 @@
  */
 package org.nmrfx.processor.gui;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Orientation;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Separator;
-import javafx.scene.control.Slider;
+import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -41,6 +30,12 @@ import org.nmrfx.processor.operations.AutoPhase;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -148,11 +143,11 @@ public class Phaser {
 
         vbox.getChildren().add(phaseMenuButton);
         phaseChoice.addListener(e -> setChartPhaseDim());
-        controller.processControllerVisible.addListener(e -> resetMenus(controller.processControllerVisible));
+        controller.processControllerVisibleProperty().addListener(e -> resetMenus());
     }
 
-    void resetMenus(SimpleBooleanProperty procVis) {
-        if (procVis.get()) {
+    void resetMenus() {
+        if (controller.isProcessControllerVisible()) {
             phaseMenuButton.getItems().setAll(processorMenuItems);
             xyPhaseChoice.setVisible(false);
         } else {
@@ -164,7 +159,7 @@ public class Phaser {
     void setChartPhaseDim() {
         PolyChart chart = controller.getActiveChart();
         chart.setPhaseDim(phaseChoice.get().equals("X") ? 0 : 1);
-        if ((controller.chartProcessor == null) || !controller.processControllerVisible.get()) {
+        if ((controller.getChartProcessor() == null) || !controller.isProcessControllerVisible()) {
             setPH1Slider(chart.getDataPH1());
             setPH0Slider(chart.getDataPH0());
         }
@@ -247,7 +242,7 @@ public class Phaser {
     }
 
     public void handlePh0Reset(double ph0) {
-        handlePh0Reset(ph0, controller.processControllerVisible.get());
+        handlePh0Reset(ph0, controller.isProcessControllerVisible());
     }
 
     public void handlePh0Reset(double ph0, boolean updateOp) {
@@ -278,7 +273,7 @@ public class Phaser {
     }
 
     void handlePh1Reset(double ph1) {
-        handlePh1Reset(ph1, controller.processControllerVisible.get());
+        handlePh1Reset(ph1, controller.isProcessControllerVisible());
     }
 
     void handlePh1Reset(double ph1, boolean updateOp) {
@@ -337,9 +332,9 @@ public class Phaser {
         double ph0 = sliders[0].getValue();
         double ph1 = sliders[1].getValue();
         String phaseDim = String.valueOf(chart.datasetPhaseDim + 1);
-        if (chart.hasData() && (controller.chartProcessor != null)) {
+        if (chart.hasData() && (controller.getChartProcessor() != null)) {
             if (chart.is1D()) {
-                List<String> listItems = controller.chartProcessor.getOperations("D" + phaseDim);
+                List<String> listItems = controller.getChartProcessor().getOperations("D" + phaseDim);
                 if (listItems != null) {
                     Map<String, String> values = null;
                     for (String s : listItems) {
@@ -358,7 +353,7 @@ public class Phaser {
                 chart.setPh0(0.0);
                 chart.setPh1(0.0);
                 chart.layoutPlotChildren();
-            } else if (phaseDim.equals(controller.chartProcessor.getVecDimName().substring(1))) {
+            } else if (phaseDim.equals(controller.getChartProcessor().getVecDimName().substring(1))) {
                 double newph0 = ph0;
                 double newph1 = ph1;
                 double deltaPH0 = ph0 - chart.getDataPH0();
@@ -386,8 +381,8 @@ public class Phaser {
         }
         DatasetBase dataset = chart.getDataset();
         String phaseDim = "D" + String.valueOf(chart.datasetPhaseDim + 1);
-        if (controller.chartProcessor != null) {
-            List<String> listItems = controller.chartProcessor.getOperations(phaseDim);
+        if (controller.getChartProcessor() != null) {
+            List<String> listItems = controller.getChartProcessor().getOperations(phaseDim);
             if (listItems != null) {
                 Map<String, String> values = null;
                 for (String s : listItems) {

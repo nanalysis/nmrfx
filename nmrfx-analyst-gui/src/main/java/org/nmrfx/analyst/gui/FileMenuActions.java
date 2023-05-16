@@ -26,16 +26,16 @@ public class FileMenuActions extends MenuActions {
         Menu graphicsMenu = new Menu("Export Graphics");
 
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
-        pdfMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        pdfMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
         pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
 
         MenuItem svgMenuItem = new MenuItem("Export SVG...");
         svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
-        svgMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        svgMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
 
         MenuItem pngMenuItem = new MenuItem("Export PNG...");
         pngMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPNG(e));
-        pngMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        pngMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
 
         graphicsMenu.getItems().addAll(svgMenuItem, pdfMenuItem, pngMenuItem);
 

@@ -524,7 +524,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         dimChoice.getSelectionModel().select(0);
         chartProcessor.setVecDim("D1");
         viewMode.setValue(DisplayMode.FID_OPS);
-        chart.controller.undoManager.clear();
+        chart.controller.getUndoManager().clear();
         chart.controller.updateSpectrumStatusBarOptions(false);
     }
 
@@ -533,7 +533,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         dimChoice.getSelectionModel().select(0);
         chartProcessor.setVecDim("D1");
         viewMode.setValue(DisplayMode.FID);
-        chart.controller.undoManager.clear();
+        chart.controller.getUndoManager().clear();
         chart.controller.updateSpectrumStatusBarOptions(false);
     }
 

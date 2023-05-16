@@ -7,7 +7,9 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ToolBar;
-import org.nmrfx.analyst.gui.*;
+import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.MenuActions;
+import org.nmrfx.analyst.gui.PeakGeneratorGUI;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
@@ -56,7 +58,7 @@ public class PeakMenuActions extends MenuActions {
         linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
 
         MenuItem ligandScannerMenuItem = new MenuItem("Show Ligand Scanner");
-        ligandScannerMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        ligandScannerMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
         ligandScannerMenuItem.setOnAction(e -> showLigandScanner());
 
         MenuItem noeTableMenuItem = new MenuItem("Show NOE Table");
@@ -67,7 +69,7 @@ public class PeakMenuActions extends MenuActions {
         assignOnPick = new CheckMenuItem("Assign on Pick");
 
         MenuItem atomBrowserMenuItem = new MenuItem("Show Atom Browser");
-        atomBrowserMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        atomBrowserMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
         atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
 
         MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");

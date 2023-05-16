@@ -422,11 +422,11 @@ public class AnalystApp extends Application {
 
 
         MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
-        spectrumLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        spectrumLibraryMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
         spectrumLibraryMenuItem.setOnAction(e -> showSpectrumLibrary());
 
         MenuItem spectrumFitLibraryMenuItem = new MenuItem("Show Spectrum Fitter");
-        spectrumFitLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        spectrumFitLibraryMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
         spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
 
         Menu libraryMenu = new Menu("Library");

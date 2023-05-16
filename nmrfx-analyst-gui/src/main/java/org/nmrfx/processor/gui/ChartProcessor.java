@@ -222,7 +222,7 @@ public class ChartProcessor {
 
     public void setChart(PolyChart chart) {
         this.chart = chart;
-        chart.controller.chartProcessor = this;
+        chart.controller.setChartProcessor(this);
         initEmptyVecs();
         execScript("", false, false);
     }
@@ -1185,7 +1185,7 @@ public class ChartProcessor {
             int[] sizes = new int[0];
             processorController.vectorStatus(sizes, vecDim);
         } else {
-            chart.controller.isFID = true;
+            chart.controller.setFIDActive(true);
 
             loadVectors(0);
             chart.setCrossHairState(false, true, false, true);
