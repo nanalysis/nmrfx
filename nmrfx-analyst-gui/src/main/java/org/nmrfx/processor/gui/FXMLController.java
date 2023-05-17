@@ -160,6 +160,11 @@ public class FXMLController implements Initializable, PeakNavigable {
         return bgColorProperty().get();
     }
 
+    @SuppressWarnings("unchecked") // called by reflection using PropertyUtils
+    public void setBgColor(Color bgColor) {
+        bgColorProperty().set(bgColor);
+    }
+
     private ColorProperty bgColorProperty() {
         if (bgColor == null) {
             bgColor = new ColorProperty(this, "bgColor", null);
@@ -185,6 +190,12 @@ public class FXMLController implements Initializable, PeakNavigable {
 
     public Color getAxesColor() {
         return axesColorProperty().get();
+    }
+
+    // called by reflection using PropertyUtils
+    @SuppressWarnings("unchecked")
+    public void setAxesColor(Color axesColor) {
+        this.axesColorProperty().set(axesColor);
     }
 
     private ColorProperty axesColorProperty() {
@@ -1194,11 +1205,11 @@ public class FXMLController implements Initializable, PeakNavigable {
         return bordersGrid;
     }
 
-    private boolean getMinBorders() {
+    public boolean getMinBorders() {
         return minBordersProperty().get();
     }
 
-    private void setMinBorders(boolean value) {
+    public void setMinBorders(boolean value) {
         minBordersProperty().set(value);
     }
 
@@ -1401,6 +1412,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     }
 
     public Map<String, Object> config() {
+        //TODO remove use of reflection/PropertyUtils here, since the property names are fixed!
         Map<String, Object> data = new HashMap<>();
         String[] beanNames = {"bgColor", "axesColor", "minBorders"};
         for (String beanName : beanNames) {
