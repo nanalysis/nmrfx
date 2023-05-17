@@ -134,6 +134,9 @@ public class PeakFitting {
         List<Peak> fitRoots = new ArrayList<>();
         List<Peak> peaks = peakList.peaks();
         for (Peak peak : peaks) {
+            peak.setFlag(4, false);
+        }
+        for (Peak peak : peaks) {
             jfitLinkedPeak(peak, fitParameters);
             if (anyFit) {
                 fitRoots.add(peak);
@@ -166,6 +169,7 @@ public class PeakFitting {
                 for (Peak peakA : peaks) {
                     peakDims.add(peakA.getPeakDim(0));
                 }
+                System.out.println("fit peak " + peak.getName() + " " + peakDims);
                 value = fitPeakDims(peakDims, bounds, fitParameters);
             } else {
                 log.warn("Unable to get bounds to fit peaks.");
@@ -269,6 +273,7 @@ public class PeakFitting {
             }
         } else {
             if (!allFit) {
+                System.out.println(fitParameters.fitMode() + " " + fitParameters.fitJMode() + " " + allPeaks);
                 anyFit = true;
                 peakFitter.setup(allPeaks);
                 if (fitParameters.fitJMode() == LFIT) {
@@ -303,6 +308,7 @@ public class PeakFitting {
                             }
                             previous = value;
 
+                            System.out.println(value + " " + iTry);
                         }
                         bicValue = peakFitter.getBIC();
                     } catch (IllegalArgumentException iaE) {

@@ -215,7 +215,7 @@ public class RegionsTableController implements Initializable {
         if (regionFile != null) {
             try {
                 Analyzer analyzer = Analyzer.getAnalyzer((Dataset) chart.getDataset());
-                MainApp.getShapePrefs(analyzer.getFitParameters());
+                MainApp.getShapePrefs(analyzer.getFitParameters(false));
                 analyzer.loadRegions(regionFile);
                 updateActiveChartRegions();
                 chart.chartProps.setIntegrals(true);

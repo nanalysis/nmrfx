@@ -642,10 +642,10 @@ public class PeakPicker {
 
     void convolutionPick(PeakList peakList) throws IOException {
         ConvolutionPickPar convolutionPickPar = peakPickPar.convolutionPickPar;
-        double widthHz = peakList.widthDStats(0).getPercentile(50);
+        double widthHz = convolutionPickPar.directWidth();
         widthHz *= convolutionPickPar.scale();
         int widthPt = (int) dataset.hzWidthToPoints(0, widthHz);
-        int n = widthPt * 4 + 1;
+        int n = widthPt * 8 + 1;
         double shapeFactor = peakList.shapeFactorDStats(0).getPercentile(50);
         System.out.println("wid " + widthHz + " " + widthPt + " " + n + " " + shapeFactor);
         ConvolutionFitter convolutionFitter = new  ConvolutionFitter(n, widthPt, shapeFactor);

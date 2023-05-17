@@ -178,7 +178,13 @@ public class PeakFitter {
             double fitShapeGuess = peakDim.getShapeFactor() == null ? 0.3 : peakDim.getShapeFactorValue();
             guessList.add(fitShapeGuess);
         }
-
+        double maxPeakIntensity = 0.0;
+        for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
+           Peak peak = peaks[iPeak];
+           if (Math.abs(peak.getIntensity()) > Math.abs(maxPeakIntensity)) {
+               maxPeakIntensity = peak.getIntensity();
+           }
+        }
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             PeakDim peakDim = peaks[iPeak].getPeakDim(0);
             Multiplet multiplet = peakDim.getMultiplet();
@@ -249,7 +255,8 @@ public class PeakFitter {
             } else {  // singlet
                 guessList.add(Math.abs(c1 - c));  // linewidth in points
                 if (fitAmps) {
-                    guessList.add(multiplet.getIntensity());
+                    double peakIntensity = Math.abs(multiplet.getIntensity()) < Math.abs(maxPeakIntensity * 0.01) ? maxPeakIntensity * 0.01 : multiplet.getIntensity();
+                    guessList.add(peakIntensity);
                 }
                 guessList.add(c);   // peak center in points
             }
@@ -380,8 +387,8 @@ public class PeakFitter {
                 }
                 guesses[iGuess] = ((Double) guessList.get(iGuess))
                         - p2[0][0];
-                lower[iGuess] = guesses[iGuess] - lineWidth;
-                upper[iGuess] = guesses[iGuess] + lineWidth;
+                lower[iGuess] = guesses[iGuess] - lineWidth / 2.0;
+                upper[iGuess] = guesses[iGuess] + lineWidth / 2.0;
                 iGuess++;
 
                 int nCouplings = splitCount[iPeak].length;
@@ -439,6 +446,21 @@ public class PeakFitter {
                 guesses[0] = guessList.get(0);
                 lower[0] = -0.2;
                 upper[0] = 1.3;
+            }
+        }
+        for (int i=0;i<guesses.length;i++) {
+            double delta = upper[i] - lower[i];
+            double min = 1.0e-6;
+            if (delta < min) {
+                lower[i] -= min;
+                upper[i] += min;
+                delta = upper[i] - lower[i];
+            }
+            if (guesses[i] < lower[i]) {
+                guesses[i] = lower[i] + delta / 10.0;
+            }
+            if (guesses[i] > upper[i]) {
+                guesses[i] = upper[i] - delta / 10.0;
             }
         }
 

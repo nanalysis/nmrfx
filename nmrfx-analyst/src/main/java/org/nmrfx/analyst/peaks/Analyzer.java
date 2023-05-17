@@ -73,8 +73,8 @@ public class Analyzer {
         return analyzer;
     }
 
-    public PeakFitParameters getFitParameters() {
-        if (peakFitParameters == null) {
+    public PeakFitParameters getFitParameters(boolean reset) {
+        if (reset || (peakFitParameters == null)) {
             peakFitParameters = new PeakFitParameters();
         }
         return peakFitParameters;
@@ -695,7 +695,7 @@ public class Analyzer {
         List<DatasetRegion> regions = getReadOnlyRegions();
         Optional<DatasetRegion> found = getRegion(regions, 0, ppm);
         List<Multiplet> result = new ArrayList<>();
-        PeakFitParameters fitParameters = getFitParameters();
+        PeakFitParameters fitParameters = getFitParameters(false);
         if (found.isPresent()) {
             DatasetRegion region = found.get();
             double start = region.getRegionStart(0);
@@ -757,7 +757,7 @@ public class Analyzer {
             Multiplet multiplet = Multiplets.linkPeaksInRegion(peakList, region);
             result = Optional.ofNullable(multiplet);
             if (multiplet != null) {
-                PeakFitParameters fitParameters = getFitParameters();
+                PeakFitParameters fitParameters = getFitParameters(false);
                 peakFitting.fitLinkedPeak(multiplet.getOrigin(), fitParameters);
                 Multiplets.analyzeMultiplet(multiplet.getOrigin());
                 peakFitting.jfitLinkedPeak(multiplet.getOrigin(), fitParameters);
@@ -769,7 +769,8 @@ public class Analyzer {
 
     public void fitLinkedPeaks() {
         PeakFitting peakFitting = new PeakFitting(dataset);
-        PeakFitParameters fitParameters = getFitParameters();
+        PeakFitParameters fitParameters = getFitParameters(false);
+        fitParameters.fitJMode(PeakFitParameters.FITJ_MODE.JFIT);
         peakFitting.fitLinkedPeaks(peakList, fitParameters);
     }
 
@@ -779,7 +780,7 @@ public class Analyzer {
             PeakFitting peakFitting = new PeakFitting(dataset);
             Peak peak = multiplet.getPeakDim().getPeak();
             peak.setFlag(4, false);
-            PeakFitParameters fitParameters = getFitParameters();
+            PeakFitParameters fitParameters = getFitParameters(false);
             double rms = peakFitting.jfitLinkedPeak(peak, fitParameters);
             result = Optional.of(rms);
         }
@@ -805,7 +806,7 @@ public class Analyzer {
                 for (PeakDim peakDim : peakDims) {
                     peakDim.getPeak().setFlag(4, false);
                 }
-                PeakFitParameters fitParameters = getFitParameters();
+                PeakFitParameters fitParameters = getFitParameters(false);
                 double rms = peakFitting.jfitRegion(region, peakDims, fitParameters, positionRestraint);
                 result = Optional.of(rms);
             }
@@ -815,7 +816,7 @@ public class Analyzer {
 
     public void jfitLinkedPeaks() {
         PeakFitting peakFitting = new PeakFitting(dataset);
-        peakFitting.jfitLinkedPeaks(peakList, getFitParameters());
+        peakFitting.jfitLinkedPeaks(peakList, getFitParameters(false));
     }
 
     private List<Peak> getPeaks(List<PeakDim> peakDims) {

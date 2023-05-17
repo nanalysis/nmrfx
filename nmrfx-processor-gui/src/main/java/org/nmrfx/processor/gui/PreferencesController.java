@@ -90,6 +90,9 @@ public class PreferencesController implements Initializable {
     static IntegerProperty convolutionPickIterationsProp = null;
     static DoubleProperty convolutionPickSquashProp = null;
     static DoubleProperty convolutionPickScaleProp = null;
+    static DoubleProperty convolutionPickDirectWidthProp = null;
+    static DoubleProperty convolutionPickIndirectWidthProp = null;
+
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -189,10 +192,23 @@ public class PreferencesController implements Initializable {
                 },
                 getConvolutionPickScale(), 0.5, 2.0, false, "Peak Picker", "ConvolutionPickScale", "Convolution Pick Scale Factor");
 
+        DoubleRangeOperationItem convolutionPickDirectWidthItem = new DoubleRangeOperationItem(
+                (a, b, c) -> {
+                    convolutionPickDirectWidthProp.setValue((Double) c);
+                },
+                getConvolutionPickDirectWidth(), 0.5, 40.0, false, "Peak Picker", "ConvolutionPickDirectWidth", "Convolution Pick Direct Width");
+
+        DoubleRangeOperationItem convolutionPickInirectWidthItem = new DoubleRangeOperationItem(
+                (a, b, c) -> {
+                    convolutionPickIndirectWidthProp.setValue((Double) c);
+                },
+                getConvolutionPickIndirectWidth(), 0.5, 40.0, false, "Peak Picker", "ConvolutionPickInirectWidth", "Convolution Pick Indirect Width");
+
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
                 nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem,
                 fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem,
-                convolutionPickItem, convolutionPickIterationsItem, convolutionPickSquashItem, convolutionPickScaleItem);
+                convolutionPickItem, convolutionPickIterationsItem, convolutionPickSquashItem, convolutionPickScaleItem,
+                convolutionPickDirectWidthItem, convolutionPickInirectWidthItem);
 
     }
 
@@ -511,13 +527,25 @@ public class PreferencesController implements Initializable {
         convolutionPickScaleProp = getDouble(convolutionPickScaleProp, "PEAK_PICK_CONVOLUTION_SCALE", 1.25);
         return convolutionPickScaleProp.getValue();
     }
+    public static Double getConvolutionPickDirectWidth() {
+        convolutionPickDirectWidthProp = getDouble(convolutionPickDirectWidthProp, "PEAK_PICK_CONVOLUTION_DIRECT_WIDTH", 2.0);
+        return convolutionPickDirectWidthProp.getValue();
+    }
+
+    public static Double getConvolutionPickIndirectWidth() {
+        convolutionPickIndirectWidthProp = getDouble(convolutionPickIndirectWidthProp, "PEAK_PICK_CONVOLUTION_InDIRECT_WIDTH", 4.0);
+        return convolutionPickIndirectWidthProp.getValue();
+    }
+
 
     public static ConvolutionPickPar getConvolutionPickPar() {
         return new ConvolutionPickPar(
                 getConvolutionPick(),
                 getConvolutionPickIterations(),
                 getConvolutionPickSquash(),
-                getConvolutionPickScale());
+                getConvolutionPickScale(),
+                getConvolutionPickDirectWidth(),
+                getConvolutionPickIndirectWidth());
     }
 
     public static IntegerProperty getInteger(IntegerProperty prop, String name, int defValue) {
@@ -542,6 +570,7 @@ public class PreferencesController implements Initializable {
             } else {
                 prop = new SimpleBooleanProperty(defValue);
             }
+            prop.addListener((a,b,c) -> setBoolean(name, c));
         }
         return prop;
     }

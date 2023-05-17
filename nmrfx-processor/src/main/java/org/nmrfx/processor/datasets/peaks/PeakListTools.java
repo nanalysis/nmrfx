@@ -1565,7 +1565,6 @@ public class PeakListTools {
         boolean[] floating = new boolean[guess.length];
         i = 0;
         for (GuessValue gVal : guessList) {
-            log.debug(gVal.toString());
             guess[i] = gVal.value;
             lower[i] = gVal.lower;
             upper[i] = gVal.upper;

@@ -265,7 +265,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         if (!chart.getPeakListAttributes().isEmpty()) {
             analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
-        MainApp.getShapePrefs(analyzer.getFitParameters());
+        MainApp.getShapePrefs(analyzer.getFitParameters(true));
 
         return analyzer;
     }

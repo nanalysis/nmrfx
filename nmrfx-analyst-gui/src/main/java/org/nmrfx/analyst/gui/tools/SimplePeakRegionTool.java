@@ -174,7 +174,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         if (!chart.getPeakListAttributes().isEmpty()) {
             analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
-        MainApp.getShapePrefs(analyzer.getFitParameters());
+        MainApp.getShapePrefs(analyzer.getFitParameters(true));
         return analyzer;
     }
 
@@ -358,7 +358,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                         return;
                     }
                 }
-                MainApp.getShapePrefs(analyzer.getFitParameters());
+                MainApp.getShapePrefs(analyzer.getFitParameters(true));
                 analyzer.setConvolutionPickPar(PreferencesController.getConvolutionPickPar());
                 analyzer.analyze();
                 PeakList peakList = analyzer.getPeakList();

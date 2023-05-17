@@ -1,19 +1,18 @@
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.LineShapes;
-import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
-import org.nmrfx.project.ProjectBase;
 
 import java.io.IOException;
 
 public class ConvolutionFitter {
-    public static final double SQRT_TWO_LN2 = Math.sqrt(2.0 * Math.log(2.0));
+    static final int SQUASH_AT = 10;
     final double[] psf;
     double[] widths;
     double squash = 0.625;
@@ -56,7 +55,7 @@ public class ConvolutionFitter {
         return result;
     }
 
-    public double[] lrIteration(double[] signal, double[] values, boolean[] skip) {
+    public PointValuePair lrIteration(double[] signal, double[] values, boolean[] skip) {
         int n = psf.length;
         int nh = n / 2;
         int size = values.length;
@@ -71,22 +70,20 @@ public class ConvolutionFitter {
                     sum += values[j + i] * psf[i];
                 }
             }
-            sum /= n;
-            if (sum > 1.0e-8 && !skip[j + nh]) {
+            if ((sum > 1.0e-8) && !skip[j + nh]) {
+                sum /= n;
                 result[j + nh] = values[j + nh] * signal[j + nh] / sum;
                 double delta = Math.abs(result[j + nh] - values[j + nh]);
                 sumDelta += delta * delta;
                 nDelta++;
             }
         }
-        double rms = Math.sqrt(sumDelta / nDelta);
-        System.out.println("rms " + rms);
-        return result;
+        double rms = nDelta > 0 ? Math.sqrt(sumDelta / nDelta) : 0.0;
+        return new PointValuePair(result, rms);
     }
 
-    void squash(double[] values, boolean[] skip) {
-        int width = (int) Math.ceil(widths[0] * squash);
-        int half = width;
+    void squashNeighbors(double[] values, boolean[] skip) {
+        int half = (int) Math.ceil(widths[0] * squash);
         for (int i = half; i < values.length - half; i++) {
             for (int j = -half; j <= half; j++) {
                 if ((i != j) && (values[i] < values[i + j])) {
@@ -109,10 +106,14 @@ public class ConvolutionFitter {
             }
         }
         for (int i = 0; i < iterations; i++) {
-            if (i == 10) {
-                squash(values, skip);
+            if (i == SQUASH_AT) {
+                squashNeighbors(values, skip);
             }
-            values = lrIteration(signal, values, skip);
+            PointValuePair pointValuePair = lrIteration(signal, values, skip);
+            values = pointValuePair.getPoint();
+            if ((i > SQUASH_AT) && (pointValuePair.getValue() < 1.0e-6)) {
+                break;
+            }
         }
         return values;
     }
@@ -130,98 +131,51 @@ public class ConvolutionFitter {
         return result;
     }
 
-    public void lr(Dataset dataset, double threshold, int iterations) throws IOException {
-        Vec vec = dataset.readVector(0, 0);
-
-        double[] signal = new double[vec.getSize()];
-        for (int i = 0; i < signal.length; i++) {
-            signal[i] = vec.getReal(i);
-        }
-        boolean[] skip = new boolean[signal.length];
-
-        double[] result = lr(signal, skip, threshold, iterations);
-        double[] sim = convolve(result, skip);
-
-        Vec vec2 = new Vec(vec.getSize());
-        vec.copy(vec2);
-
-        int nPeaks = 0;
-        for (int i = 0; i < result.length; i++) {
-            if (!skip[i]) {
-                nPeaks++;
-            }
-            vec2.setReal(i, sim[i]);
-        }
-
-        String datasetName = dataset.getName();
-        int dotIndex = datasetName.lastIndexOf(".");
-        String simName = dotIndex >= 0 ? datasetName.substring(0, dotIndex)
-                + "_sim" + datasetName.substring(dotIndex)
-                : datasetName + "_sim";
-        vec2.setName(simName);
-        String rootName = dotIndex >= 0 ? datasetName.substring(0, dotIndex) + "_sim" : datasetName + "_sim";
-        ProjectBase.getActive().removeDataset(simName);
-        Dataset simDataset = new Dataset(vec2);
-        PeakList peakList = PeakList.get(rootName);
-        if (peakList != null) {
-            peakList.remove();
-        }
-        peakList = new PeakList(rootName, 1);
-        peakList.setDatasetName(simName);
-        SpectralDim sDim = peakList.getSpectralDim(0);
-        sDim.setSf(vec.centerFreq);
-        sDim.setSw(vec.getSW());
-        sDim.setDimName(dataset.getLabel(0));
-        int psfSize = psf.length;
-        for (int i = 0; i < result.length; i++) {
-            if (!skip[i]) {
-                Peak peak = peakList.getNewPeak();
-                PeakDim peakDim = peak.getPeakDim(0);
-                double shift = vec.pointToPPM(i);
-                peakDim.setChemShiftValue((float) shift);
-                double x1 = vec.pointToPPM(i - widths[0] / 2.0);
-                double x2 = vec.pointToPPM(i + widths[0] / 2.0);
-                double dx = Math.abs(x2 - x1);
-                peakDim.setLineWidthValue((float) dx);
-                peakDim.setBoundsValue((float) (dx * 2.0));
-                double intensity = result[i] / psfSize;
-                peak.setIntensity((float) intensity);
-                double volume = intensity * dx * (Math.PI / 2.0) / 1.05;
-                peak.setVolume1((float) volume);
-            }
-        }
-        System.out.println("npeaks " + nPeaks);
-    }
     public void lr(Dataset dataset, PeakList peakList, double threshold, int iterations) throws IOException {
         Vec vec = dataset.readVector(0, 0);
-
-        double[] signal = new double[vec.getSize()];
-        for (int i = 0; i < signal.length; i++) {
-            signal[i] = vec.getReal(i);
+        var regions = dataset.getReadOnlyRegions();
+        if (regions.isEmpty()) {
+            double ppm1 = dataset.pointToPPM(0, 0);
+            double ppm2 = dataset.pointToPPM(0, dataset.getSizeReal(0) - 1.0);
+            DatasetRegion region = new DatasetRegion(ppm1, ppm2);
+            regions.add(region);
         }
-        boolean[] skip = new boolean[signal.length];
+        for (DatasetRegion region:regions) {
+            int pt1 = dataset.ppmToPoint(0, region.getRegionStart(0));
+            int pt2 = dataset.ppmToPoint(0, region.getRegionEnd(0));
+            if (pt1 > pt2) {
+                int hold = pt1;
+                pt1 = pt2;
+                pt2 = hold;
+            }
+            int size = pt2 - pt1 + 1;
 
-        double[] result = lr(signal, skip, threshold, iterations);
-        double[] sim = convolve(result, skip);
+            int psfSize = psf.length;
+            double[] signal = new double[size + 2 * psfSize];
+            for (int i = 0; i < size; i++) {
+                signal[i + psfSize] = vec.getReal(i + pt1);
+            }
+            boolean[] skip = new boolean[signal.length];
 
-        int psfSize = psf.length;
-        for (int i = 0; i < result.length; i++) {
-            if (!skip[i]) {
-                Peak peak = peakList.getNewPeak();
-                PeakDim peakDim = peak.getPeakDim(0);
-                double shift = vec.pointToPPM(i);
-                peakDim.setChemShiftValue((float) shift);
-                double x1 = vec.pointToPPM(i - widths[0] / 2.0);
-                double x2 = vec.pointToPPM(i + widths[0] / 2.0);
-                double dx = Math.abs(x2 - x1);
-                peakDim.setLineWidthValue((float) dx);
-                peakDim.setBoundsValue((float) (dx * 2.0));
-                double intensity = result[i] / psfSize;
-                peak.setIntensity((float) intensity);
-                double volume = intensity * dx * (Math.PI / 2.0) / 1.05;
-                peak.setVolume1((float) volume);
+            double[] result = lr(signal, skip, threshold, iterations);
+            int start = pt1 - psfSize;
+            for (int i = 0; i < result.length; i++) {
+                if (!skip[i]) {
+                    Peak peak = peakList.getNewPeak();
+                    PeakDim peakDim = peak.getPeakDim(0);
+                    double shift = vec.pointToPPM((double) start + i);
+                    peakDim.setChemShiftValue((float) shift);
+                    double x1 = vec.pointToPPM(start + i - widths[0] / 2.0);
+                    double x2 = vec.pointToPPM(start + i + widths[0] / 2.0);
+                    double dx = Math.abs(x2 - x1);
+                    peakDim.setLineWidthValue((float) dx);
+                    peakDim.setBoundsValue((float) (dx * 2.0));
+                    double intensity = result[i] / psfSize;
+                    peak.setIntensity((float) intensity);
+                    double volume = intensity * dx * (Math.PI / 2.0) / 1.05;
+                    peak.setVolume1((float) volume);
+                }
             }
         }
     }
-
 }
