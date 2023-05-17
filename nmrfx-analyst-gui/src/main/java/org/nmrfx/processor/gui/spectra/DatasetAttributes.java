@@ -19,368 +19,89 @@ package org.nmrfx.processor.gui.spectra;
 
 import javafx.beans.property.*;
 import javafx.scene.paint.Color;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
-import org.nmrfx.fxutil.Fx;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.DatasetUtils;
 import org.nmrfx.processor.datasets.DataCoordTransformer;
 import org.nmrfx.processor.datasets.DataGenerator;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.utils.properties.ColorProperty;
+import org.nmrfx.utils.properties.PropertiesManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 @PluginAPI("parametric")
-public class DatasetAttributes extends DataGenerator implements Cloneable {
+public class DatasetAttributes extends DataGenerator implements PropertiesManager, Cloneable {
     private static final Logger log = LoggerFactory.getLogger(DatasetAttributes.class);
 
-    private Dataset theFile;
+    private final IntegerProperty nlvls = new SimpleIntegerProperty(this, "nlvls", 20);
+    private final ColorProperty posColor = new ColorProperty(this, "posColor", Color.BLACK);
+    private final ColorProperty negColor = new ColorProperty(this, "negColor", Color.RED);
+    private final DoubleProperty posWidth = new SimpleDoubleProperty(this, "posWidth", 0.5);
+    private final DoubleProperty negWidth = new SimpleDoubleProperty(this, "negWidth", 0.5);
+    private final DoubleProperty lvl = new SimpleDoubleProperty(this, "lvl", 1.0);
+    private final DoubleProperty clm = new SimpleDoubleProperty(this, "clm", 1.2);
+    private final DoubleProperty offset = new SimpleDoubleProperty(this, "offset", 0.0);
+    private final DoubleProperty integralScale = new SimpleDoubleProperty(this, "integralScale", 100.0);
+    private final BooleanProperty pos = new SimpleBooleanProperty(this, "pos", true);
+    private final BooleanProperty neg = new SimpleBooleanProperty(this, "neg", true);
+    private final StringProperty fileName = new SimpleStringProperty(this, "fileName", "");
+    private final BooleanProperty drawReal = new SimpleBooleanProperty(this, "drawReal", true);
+
     private final Map<String, Float> extremes = new HashMap<>();
+    private final Map<Integer, Color> colorMap = new HashMap<>();
+    private final Map<Integer, Double> offsetMap = new HashMap<>();
+
     public int mChunk = 0;
-    public boolean masked = false;
-    Map<Integer, Color> colorMap = new HashMap<>();
-    Map<Integer, Double> offsetMap = new HashMap<>();
-    IntegralHit activeRegion = null;
+    public int[] dim;
+    public List<Integer> drawList = new ArrayList<>();
+    public boolean[] selectionList = null;
+    public boolean selected;
+    public boolean intSelected;
+    public String title = "";
+    int[] chunkSize;
+    int[] chunkOffset;
+    int[][] iLim;
+    int[] iSize;
+    int[] iBlkSize;
+    int[] iNBlks;
+    int[] iVecGet;
+    int[] iVecPut;
+    int[] iBlkGet;
+    int[] iBlkPut;
+    int[] iWDim;
+    private Dataset theFile;
+    private IntegralHit activeRegion = null;
 
     // used to tell if dataset has a level value already so we don't need to call autoLevel.
     // used in processing same dataset multiple times, so it's easier to compare the processing without the level changing
     private boolean hasLevel = false;
+    private int projectionAxis = -1;
 
-    public enum AXMODE {
-
-        PTS() {
-            public int getIndex(VecBase vec, double value) {
-                int index = (int) Math.round(value);
-                if (index < 0) {
-                    index = 0;
-                }
-                if (index >= vec.getSize()) {
-                    index = vec.getSize() - 1;
-                }
-                return index;
-            }
-
-            public double getIncrement(VecBase vec, double start, double end) {
-                return 1;
-            }
-
-            public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-                int index = (int) Math.round(value);
-                if (index < 0) {
-                    index = 0;
-                }
-                if (index >= dataset.getSizeReal(iDim)) {
-                    index = dataset.getSizeReal(iDim) - 1;
-                }
-                return index;
-            }
-
-            public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-                double index = value;
-                if (index < 0.0) {
-                    index = 0.0;
-                }
-                if (index >= dataset.getSizeReal(iDim)) {
-                    index = dataset.getSizeReal(iDim) - 1.0;
-                }
-                return index;
-            }
-
-            public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                if (value < 0) {
-                    value = 0;
-                }
-                if (value >= dataset.getSizeReal(iDim)) {
-                    value = dataset.getSizeReal(iDim) - 1;
-                }
-                return value;
-            }
-
-            public double getIncrement(DatasetAttributes dataAttr, int iDim, double start, double end) {
-                return 1;
-            }
-
-            public String getLabel(DatasetAttributes dataAttr, int jDim) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                return dataset.getLabel(iDim) + " (pt)";
-            }
-
-            public String getLabel(Vec vec) {
-                return "points";
-            }
-
-        },
-        PPM() {
-            public int getIndex(VecBase vec, double value) {
-                int index = vec.refToPt(value);
-                if (index < 0) {
-                    index = 0;
-                }
-                if (index >= vec.getSize()) {
-                    index = vec.getSize() - 1;
-                }
-                return index;
-            }
-
-            public double getIncrement(VecBase vec, double start, double end) {
-                int iStart = getIndex(vec, start);
-                int iEnd = getIndex(vec, end);
-                return (end - start) / (iEnd - iStart);
-            }
-
-            public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                int index = dataset.ppmToPoint(iDim, value);
-                if (index < 0) {
-                    index = 0;
-                }
-                if (index >= dataset.getSizeReal(iDim)) {
-                    index = dataset.getSizeReal(iDim) - 1;
-                }
-                return index;
-            }
-
-            public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                double index = dataset.ppmToDPoint(iDim, value);
-                if (index < 0) {
-                    index = 0.0;
-                }
-                if (index >= dataset.getSizeReal(iDim)) {
-                    index = dataset.getSizeReal(iDim) - 1.0;
-                }
-                return index;
-            }
-
-            public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                return dataset.pointToPPM(iDim, value);
-            }
-
-            public double getIncrement(DatasetAttributes dataAttr, int jDim, double start, double end) {
-                return 1;
-            }
-
-            public String getLabel(DatasetAttributes dataAttr, int jDim) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                return dataset.getDlabel(iDim) + " (ppm)";
-            }
-
-            public String getLabel(Vec vec) {
-                return "ppm";
-            }
-        },
-        HZ() {
-            public int getIndex(VecBase vec, double value) {
-                int index = (int) vec.lwToPtD(value);
-                if (index < 0) {
-                    index = 0;
-                }
-                if (index >= vec.getSize()) {
-                    index = vec.getSize() - 1;
-                }
-                return index;
-            }
-
-            public double getIncrement(VecBase vec, double start, double end) {
-                int iStart = getIndex(vec, start);
-                int iEnd = getIndex(vec, end);
-                return (end - start) / (iEnd - iStart);
-            }
-
-            public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                int index = (int) dataset.hzWidthToPoints(iDim, value);
-                if (index < 0) {
-                    index = 0;
-                }
-                if (index >= dataset.getSizeReal(iDim)) {
-                    index = dataset.getSizeReal(iDim) - 1;
-                }
-                return index;
-            }
-
-            public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                double index = dataset.hzWidthToPoints(iDim, value);
-                if (index < 0.0) {
-                    index = 0.0;
-                }
-                if (index >= dataset.getSizeReal(iDim)) {
-                    index = dataset.getSizeReal(iDim) - 1.0;
-                }
-                return index;
-            }
-
-            public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                return dataset.ptWidthToHz(iDim, value);
-            }
-
-            public double getIncrement(DatasetAttributes dataAttr, int jDim, double start, double end) {
-                return 1;
-            }
-
-            public String getLabel(DatasetAttributes dataAttr, int jDim) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                return dataset.getLabel(iDim) + " (Hz)";
-            }
-
-            public String getLabel(Vec vec) {
-                return "Hz";
-            }
-        },
-        TIME() {
-            public int getIndex(VecBase vec, double value) {
-                int index = vec.timeToPt(value);
-                if (index < 0) {
-                    index = 0;
-                }
-                if (index >= vec.getSize()) {
-                    index = vec.getSize() - 1;
-                }
-                return index;
-            }
-
-            public double getIncrement(VecBase vec, double start, double end) {
-                int iStart = getIndex(vec, start);
-                int iEnd = getIndex(vec, end);
-                return (end - start) / (iEnd - iStart);
-            }
-
-            public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                Vec vec = null;
-                if (dataset instanceof Dataset) {
-                    vec = ((Dataset) dataset).getVec();
-                }
-                if (vec != null) {
-                    return getIndex(vec, value);
-                } else {
-                    // fixme is this right or should it be 1/sw
-                    int index = (int) (value * dataset.getSw(iDim));
-                    if (index < 0) {
-                        index = 0;
-                    }
-                    if (index >= dataset.getSizeReal(iDim)) {
-                        index = dataset.getSizeReal(iDim) - 1;
-                    }
-                    return index;
-                }
-            }
-
-            public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                Vec vec = null;
-                if (dataset instanceof Dataset) {
-                    vec = ((Dataset) dataset).getVec();
-                }
-                if (vec != null) {
-                    return getIndex(vec, value);
-                } else {
-                    // fixme is this right or should it be 1/sw
-                    double index = (value * dataset.getSw(iDim));
-                    if (index < 0.0) {
-                        index = 0.0;
-                    }
-                    if (index >= dataset.getSizeReal(iDim)) {
-                        index = dataset.getSizeReal(iDim) - 1.0;
-                    }
-                    return index;
-                }
-            }
-
-            public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
-                DatasetBase dataset = dataAttr.getDataset();
-                int iDim = dataAttr.dim[jDim];
-
-                value = value / dataset.getSw(iDim);
-                return value;
-            }
-
-            public double getIncrement(DatasetAttributes dataAttr, int jDim, double start, double end) {
-                return 1;
-            }
-
-            public String getLabel(DatasetAttributes dataAttr, int jDim) {
-                return "seconds";
-            }
-
-            public String getLabel(Vec vec) {
-                return "seconds";
-            }
-        };
-
-        public abstract int getIndex(VecBase vec, double value);
-
-        public abstract double indexToValue(DatasetAttributes dataAttr, int iDim, double value);
-
-        public abstract double getIncrement(VecBase vec, double start, double end);
-
-        public abstract int getIndex(DatasetAttributes dataAttr, int iDim, double value);
-
-        public abstract double getIndexD(DatasetAttributes dataAttr, int iDim, double value);
-
-        public abstract double getIncrement(DatasetAttributes dataAttr, int iDim, double start, double end);
-
-        public abstract String getLabel(DatasetAttributes dataAttr, int iDim);
-
-        public String getDatasetLabel(DatasetAttributes dataAttr, int jDim) {
-            DatasetBase dataset = dataAttr.getDataset();
-            int iDim = dataAttr.dim[jDim];
-
-            return dataset.getLabel(iDim);
-        }
-
-        public abstract String getLabel(Vec vec);
-
+    public DatasetAttributes(DatasetBase aFile, String fileName) {
+        initialize(aFile, fileName);
     }
 
-    private ColorProperty posColor;
+    public DatasetAttributes(DatasetBase aFile) {
+        initialize(aFile, aFile.getFileName());
+    }
+
+    @Override
+    public Collection<Property<?>> getPublicProperties() {
+        // Some properties were not exposed before refactoring.
+        // It's not clear whether this was by design or by error.
+        // I've opted to keep the smallest set of properties possible exposed, so I've only kept the original list.
+        return Set.of(nlvls, clm, posColor, negColor, posWidth, negWidth, lvl, pos, neg);
+    }
 
     public ColorProperty posColorProperty() {
-        if (posColor == null) {
-            posColor = new ColorProperty(this, "+color", Color.BLACK);
-        }
         return posColor;
     }
 
@@ -392,12 +113,12 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         }
     }
 
-    public void setPosColor(Color value) {
-        posColorProperty().set(value);
-    }
-
     public Color getPosColor() {
         return posColorProperty().get();
+    }
+
+    public void setPosColor(Color value) {
+        posColorProperty().set(value);
     }
 
     public Color getPosColor(int rowIndex) {
@@ -411,119 +132,80 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return color;
     }
 
-    private ColorProperty negColor;
-
     public ColorProperty negColorProperty() {
-        if (negColor == null) {
-            negColor = new ColorProperty(this, "-color", Color.RED);
-        }
         return negColor;
-    }
-
-    public void setNegColor(Color value) {
-        negColorProperty().set(value);
     }
 
     public Color getNegColor() {
         return negColorProperty().get();
     }
 
-    private DoubleProperty posWidth;
-
-    public DoubleProperty posWidthProperty() {
-        if (posWidth == null) {
-            posWidth = new SimpleDoubleProperty(this, "+wid", 0.5);
-        }
-        return posWidth;
+    public void setNegColor(Color value) {
+        negColorProperty().set(value);
     }
 
-    public void setPosWidth(double value) {
-        posWidthProperty().set(value);
+    public DoubleProperty posWidthProperty() {
+        return posWidth;
     }
 
     public double getPosWidth() {
         return posWidthProperty().get();
     }
 
-    private DoubleProperty negWidth;
-
-    public DoubleProperty negWidthProperty() {
-        if (negWidth == null) {
-            negWidth = new SimpleDoubleProperty(this, "-wid", 0.5);
-        }
-        return negWidth;
+    public void setPosWidth(double value) {
+        posWidthProperty().set(value);
     }
 
-    public void setNegWidth(double value) {
-        negWidthProperty().set(value);
+    public DoubleProperty negWidthProperty() {
+        return negWidth;
     }
 
     public double getNegWidth() {
         return negWidthProperty().get();
     }
 
-    private DoubleProperty lvl;
-
-    public DoubleProperty lvlProperty() {
-        if (lvl == null) {
-            lvl = new SimpleDoubleProperty(this, "lvl", 1.0);
-        }
-        return lvl;
+    public void setNegWidth(double value) {
+        negWidthProperty().set(value);
     }
 
-    public void setLvl(double value) {
-        lvlProperty().set(value);
+    public DoubleProperty lvlProperty() {
+        return lvl;
     }
 
     public double getLvl() {
         return lvlProperty().get();
     }
 
-    private DoubleProperty offset;
-
-    public DoubleProperty offsetProperty() {
-        if (offset == null) {
-            offset = new SimpleDoubleProperty(this, "offset", 0.0);
-        }
-        return offset;
+    public void setLvl(double value) {
+        lvlProperty().set(value);
     }
 
-    public void setOffset(double value) {
-        offsetProperty().set(value);
+    public DoubleProperty offsetProperty() {
+        return offset;
     }
 
     public double getOffset() {
         return offsetProperty().get();
     }
 
-    private DoubleProperty integralScale;
-
-    public DoubleProperty integralScaleProperty() {
-        if (integralScale == null) {
-            integralScale = new SimpleDoubleProperty(this, "integralScale", 100.0);
-        }
-        return integralScale;
+    public void setOffset(double value) {
+        offsetProperty().set(value);
     }
 
-    public void setIntegralScale(double value) {
-        integralScaleProperty().set(value);
+    public DoubleProperty integralScaleProperty() {
+        return integralScale;
     }
 
     public double getIntegralScale() {
         return integralScaleProperty().get();
     }
 
-    private BooleanProperty pos;
-
-    public BooleanProperty posProperty() {
-        if (pos == null) {
-            pos = new SimpleBooleanProperty(this, "+on", true);
-        }
-        return pos;
+    public void setIntegralScale(double value) {
+        integralScaleProperty().set(value);
     }
 
-    public void setPos(boolean value) {
-        posProperty().set(value);
+    public BooleanProperty posProperty() {
+        return pos;
     }
 
     public void setPos(Boolean value, int row) {
@@ -543,25 +225,20 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return posProperty().get();
     }
 
+    public void setPos(boolean value) {
+        posProperty().set(value);
+    }
+
     public boolean getPos(int index) {
         if (!drawList.isEmpty()) {
-            return posProperty().get()  && drawList.contains(index);
+            return posProperty().get() && drawList.contains(index);
         } else {
             return posProperty().get();
         }
     }
 
-    private BooleanProperty neg;
-
     public BooleanProperty negProperty() {
-        if (neg == null) {
-            neg = new SimpleBooleanProperty(this, "-on", true);
-        }
         return neg;
-    }
-
-    public void setNeg(boolean value) {
-        negProperty().set(value);
     }
 
     public void setNeg(Boolean value, int row) {
@@ -578,46 +255,40 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return negProperty().get();
     }
 
+    public void setNeg(boolean value) {
+        negProperty().set(value);
+    }
+
     public boolean getNeg(int index) {
         if (!drawList.isEmpty()) {
-            return negProperty().get()  && drawList.contains(index);
+            return negProperty().get() && drawList.contains(index);
         } else {
             return negProperty().get();
         }
     }
 
-    private IntegerProperty nlvls;
-
     public IntegerProperty nlvlsProperty() {
-        if (nlvls == null) {
-            nlvls = new SimpleIntegerProperty(this, "nlevels", 20);
-        }
         return nlvls;
-    }
-
-    public void setNlvls(int value) {
-        nlvlsProperty().set(value);
     }
 
     public int getNlvls() {
         return nlvlsProperty().get();
     }
 
-    private DoubleProperty clm;
-
-    public DoubleProperty clmProperty() {
-        if (clm == null) {
-            clm = new SimpleDoubleProperty(this, "clm", 1.2);
-        }
-        return clm;
+    public void setNlvls(int value) {
+        nlvlsProperty().set(value);
     }
 
-    public void setClm(double value) {
-        clmProperty().set(value);
+    public DoubleProperty clmProperty() {
+        return clm;
     }
 
     public double getClm() {
         return clmProperty().get();
+    }
+
+    public void setClm(double value) {
+        clmProperty().set(value);
     }
 
     public void projection(int value) {
@@ -632,42 +303,80 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return projectionAxis;
     }
 
-    private StringProperty fileName;
-
     public StringProperty fileNameProperty() {
-        if (fileName == null) {
-            fileName = new SimpleStringProperty(this, "fileName", "");
-        }
         return fileName;
-    }
-
-    public void setFileName(String value) {
-        fileNameProperty().set(value);
     }
 
     public String getFileName() {
         return fileNameProperty().get();
     }
 
-    private BooleanProperty drawReal;
-
-    public BooleanProperty drawRealProperty() {
-        if (drawReal == null) {
-            drawReal = new SimpleBooleanProperty(this, "real", true);
-        }
-        return drawReal;
+    public void setFileName(String value) {
+        fileNameProperty().set(value);
     }
 
-    public void setDrawReal(boolean value) {
-        drawRealProperty().set(value);
+    public BooleanProperty drawRealProperty() {
+        return drawReal;
     }
 
     public boolean getDrawReal() {
         return drawRealProperty().get();
     }
 
+    public void setDrawReal(boolean value) {
+        drawRealProperty().set(value);
+    }
+
     public DatasetBase getDataset() {
         return theFile;
+    }
+
+    public void setDataset(DatasetBase aFile) {
+        hasLevel = false;
+        theFile = (Dataset) aFile;
+        nDim = aFile.getNDim();
+        setFileName(aFile.getFileName());
+        pt = new int[theFile.getNDim()][2];
+        ptd = new double[theFile.getNDim()][2];
+        iLim = new int[theFile.getNDim()][2];
+        iSize = new int[theFile.getNDim()];
+        iBlkSize = new int[theFile.getNDim()];
+        iNBlks = new int[theFile.getNDim()];
+        iVecGet = new int[theFile.getNDim()];
+        iBlkGet = new int[theFile.getNDim()];
+        iVecPut = new int[theFile.getNDim()];
+        iBlkPut = new int[theFile.getNDim()];
+        iWDim = new int[theFile.getNDim()];
+        title = aFile.getTitle();
+        setActiveRegion(null);
+        int i;
+
+        for (i = 0; i < theFile.getNDim(); i++) {
+            pt[i][0] = 0;
+            ptd[i][0] = 0;
+            pt[i][1] = theFile.getSizeReal(i) - 1;
+            ptd[i][1] = theFile.getSizeReal(i) - 1.0;
+        }
+
+        pt[0][0] = 0;
+        pt[0][1] = theFile.getSizeReal(0) - 1;
+
+        if (theFile.getNDim() > 1) {
+            pt[1][0] = 0;
+            ptd[1][0] = 0;
+            pt[1][1] = theFile.getSizeReal(1) - 1;
+            ptd[1][1] = theFile.getSizeReal(1) - 1.0;
+        }
+
+        chunkSize = new int[theFile.getNDim()];
+        chunkOffset = new int[theFile.getNDim()];
+        dim = new int[theFile.getNDim()];
+
+        for (i = 0; i < theFile.getNDim(); i++) {
+            dim[i] = i;
+            chunkSize[i] = 1;
+        }
+
     }
 
     public Optional<IntegralHit> getActiveRegion() {
@@ -731,38 +440,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return offset;
     }
 
-    int[] chunkSize;
-    int[] chunkOffset;
-    public int[] dim;
-    int[][] iLim;
-    int[] iSize;
-    int[] iBlkSize;
-    int[] iNBlks;
-    int[] iVecGet;
-    int[] iVecPut;
-    int[] iBlkGet;
-    int[] iBlkPut;
-    int[] iWDim;
-    public List<Integer> drawList = new ArrayList<>();
-    public boolean[] selectionList = null;
-    public boolean selected;
-    public boolean intSelected;
-    private int projectionAxis = -1;
-    public String title = "";
-
-    public DatasetAttributes(DatasetBase aFile, String fileName) {
-        initialize(aFile, fileName);
-    }
-
-    public DatasetAttributes(DatasetBase aFile) {
-        initialize(aFile, aFile.getFileName());
-    }
-
-    @Override
-    public String toString() {
-        return getDataset() != null ? getDataset().getName() : "";
-    }
-
     public void copyTo(DatasetAttributes dAttr) {
         dAttr.dim = getDims();
         dAttr.setPosColor(getPosColor());
@@ -770,13 +447,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         dAttr.setPosWidth(getPosWidth());
         dAttr.setNegWidth(getNegWidth());
         dAttr.setLvl(getLvl());
-        dAttr.clm = clm;
+        dAttr.setClm(getClm());
         dAttr.setNlvls(getNlvls());
-        dAttr.nDim = nDim;
-        dAttr.fileName = fileName;
-        dAttr.theFile = theFile;
+        dAttr.setFileName(getFileName());
         dAttr.setPos(getPos());
         dAttr.setNeg(getNeg());
+        dAttr.nDim = nDim;
+        dAttr.theFile = theFile;
         if (drawList.isEmpty()) {
             dAttr.drawList = new ArrayList<>();
         } else {
@@ -804,60 +481,17 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return dAttr;
     }
 
-    public void setHasLevel(boolean value) {
-        hasLevel = value;
+    @Override
+    public String toString() {
+        return getDataset() != null ? getDataset().getName() : "";
     }
 
     public boolean getHasLevel() {
         return hasLevel;
     }
 
-    public void setDataset(DatasetBase aFile) {
-        hasLevel = false;
-        theFile = (Dataset) aFile;
-        nDim = aFile.getNDim();
-        setFileName(aFile.getFileName());
-        pt = new int[theFile.getNDim()][2];
-        ptd = new double[theFile.getNDim()][2];
-        iLim = new int[theFile.getNDim()][2];
-        iSize = new int[theFile.getNDim()];
-        iBlkSize = new int[theFile.getNDim()];
-        iNBlks = new int[theFile.getNDim()];
-        iVecGet = new int[theFile.getNDim()];
-        iBlkGet = new int[theFile.getNDim()];
-        iVecPut = new int[theFile.getNDim()];
-        iBlkPut = new int[theFile.getNDim()];
-        iWDim = new int[theFile.getNDim()];
-        title = aFile.getTitle();
-        setActiveRegion(null);
-        int i;
-
-        for (i = 0; i < theFile.getNDim(); i++) {
-            pt[i][0] = 0;
-            ptd[i][0] = 0;
-            pt[i][1] = theFile.getSizeReal(i) - 1;
-            ptd[i][1] = theFile.getSizeReal(i) - 1.0;
-        }
-
-        pt[0][0] = 0;
-        pt[0][1] = theFile.getSizeReal(0) - 1;
-
-        if (theFile.getNDim() > 1) {
-            pt[1][0] = 0;
-            ptd[1][0] = 0;
-            pt[1][1] = theFile.getSizeReal(1) - 1;
-            ptd[1][1] = theFile.getSizeReal(1) - 1.0;
-        }
-
-        chunkSize = new int[theFile.getNDim()];
-        chunkOffset = new int[theFile.getNDim()];
-        dim = new int[theFile.getNDim()];
-
-        for (i = 0; i < theFile.getNDim(); i++) {
-            dim[i] = i;
-            chunkSize[i] = 1;
-        }
-
+    public void setHasLevel(boolean value) {
+        hasLevel = value;
     }
 
     private void initialize(DatasetBase aFile, String fileName) {
@@ -1424,6 +1058,19 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return (matrix);
     }
 
+    public float[][] readMatrix(int iChunk, String chunkLabelStr, int[][] apt, float[][] matrix) throws IOException {
+        int ny = apt[1][1] - apt[1][0] + 1;
+        int nx = apt[0][1] - apt[0][0] + 1;
+        if ((matrix == null) || (matrix.length != ny) || (matrix[0].length != nx)) {
+            matrix = new float[ny][nx];
+        }
+
+        float maxValue = theFile.readMatrix(apt, dim, matrix);
+        extremes.put(chunkLabelStr + iChunk, maxValue);
+
+        return (matrix);
+    }
+
     public int getMatrixRegion(int iChunk, int maxChunk, int mode, int[][] apt,
                                double[] offset, StringBuffer chunkLabel) {
         Float extremeValue;
@@ -1529,17 +1176,39 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return (0);
     }
 
-    public float[][] readMatrix(int iChunk, String chunkLabelStr, int[][] apt, float[][] matrix) throws IOException {
-        int ny = apt[1][1] - apt[1][0] + 1;
-        int nx = apt[0][1] - apt[0][0] + 1;
-        if ((matrix == null) || (matrix.length != ny) || (matrix[0].length != nx)) {
-            matrix = new float[ny][nx];
+    public int[][] bounds(int iChunk) {
+        return (pt);
+    }
+
+    public DataCoordTransformer setBounds(double[][] limits) {
+        for (int i = 0; ((i < theFile.getNDim()) && (i < limits.length)); i++) {
+            pt[i][0] = theFile.ppmToPoint(dim[i], limits[i][0]);
+            ptd[i][0] = theFile.ppmToDPoint(dim[i], limits[i][0]);
+            pt[i][1] = theFile.ppmToPoint(dim[i], limits[i][1]);
+            ptd[i][1] = theFile.ppmToDPoint(dim[i], limits[i][1]);
+
+            if (pt[i][0] > pt[i][1]) {
+                int hold;
+                double fhold;
+                hold = pt[i][0];
+                fhold = ptd[i][0];
+                pt[i][0] = pt[i][1];
+                ptd[i][0] = ptd[i][1];
+                pt[i][1] = hold;
+                ptd[i][1] = fhold;
+            }
+
         }
 
-        float maxValue = theFile.readMatrix(apt, dim, matrix);
-        extremes.put(chunkLabelStr + iChunk, maxValue);
+        return new DataCoordTransformer(dim, theFile);
+    }
 
-        return (matrix);
+    public int nRows(int iChunk) {
+        return (32);
+    }
+
+    public int nCols(int iChunk) {
+        return (32);
     }
 
     public String getLabel(int iDim) {
@@ -1687,33 +1356,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         ptData[0] = ptd[iDim][0];
         ptData[1] = ptd[iDim][1];
         return ptData;
-    }
-
-    public int[][] bounds(int iChunk) {
-        return (pt);
-    }
-
-    public DataCoordTransformer setBounds(double[][] limits) {
-        for (int i = 0; ((i < theFile.getNDim()) && (i < limits.length)); i++) {
-            pt[i][0] = theFile.ppmToPoint(dim[i], limits[i][0]);
-            ptd[i][0] = theFile.ppmToDPoint(dim[i], limits[i][0]);
-            pt[i][1] = theFile.ppmToPoint(dim[i], limits[i][1]);
-            ptd[i][1] = theFile.ppmToDPoint(dim[i], limits[i][1]);
-
-            if (pt[i][0] > pt[i][1]) {
-                int hold;
-                double fhold;
-                hold = pt[i][0];
-                fhold = ptd[i][0];
-                pt[i][0] = pt[i][1];
-                ptd[i][0] = ptd[i][1];
-                pt[i][1] = hold;
-                ptd[i][1] = fhold;
-            }
-
-        }
-
-        return new DataCoordTransformer(dim, theFile);
     }
 
     public double[][] setPtBounds(int[][] ilimits, double[][] dLimits, double[][] limits) {
@@ -1865,14 +1507,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return (limit);
     }
 
-    public int nRows(int iChunk) {
-        return (32);
-    }
-
-    public int nCols(int iChunk) {
-        return (32);
-    }
-
     public int scanGet() {
         int i;
 
@@ -1902,15 +1536,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             return (0);
         } else {
             return (1);
-        }
-    }
-
-    public void setSelected(boolean state) {
-        selected = state;
-        if (!state) {
-            if (selectionList != null) {
-                selectionList = new boolean[selectionList.length];
-            }
         }
     }
 
@@ -1950,6 +1575,15 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return selected;
     }
 
+    public void setSelected(boolean state) {
+        selected = state;
+        if (!state) {
+            if (selectionList != null) {
+                selectionList = new boolean[selectionList.length];
+            }
+        }
+    }
+
     public boolean isSelected(int iElem) {
         boolean value;
         if ((selectionList != null) && (iElem < selectionList.length) && (iElem >= 0)) {
@@ -1960,44 +1594,12 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return value;
     }
 
-    public void setIntegralSelected(boolean state) {
-        intSelected = state;
-    }
-
     public boolean getIntegralSelected() {
         return intSelected;
     }
 
-    public void config(String name, Object value) {
-        Fx.runOnFxThread(() -> {
-                    try {
-                        PropertyUtils.setProperty(this, name, value);
-                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                        log.error(ex.getMessage(), ex);
-                    }
-                }
-        );
-    }
-
-    public Map<String, Object> config() {
-        Map<String, Object> data = new HashMap<>();
-        String[] beanNames = {"nlvls", "clm", "posColor", "negColor", "posWidth", "negWidth", "lvl", "pos", "neg"};
-        for (String beanName : beanNames) {
-            try {
-                if (beanName.contains("Color")) {
-                    Object colObj = PropertyUtils.getSimpleProperty(this, beanName);
-                    if (colObj instanceof Color) {
-                        String colorName = GUIScripter.toRGBCode((Color) colObj);
-                        data.put(beanName, colorName);
-                    }
-                } else {
-                    data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
-                }
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                log.error(ex.getMessage(), ex);
-            }
-        }
-        return data;
+    public void setIntegralSelected(boolean state) {
+        intSelected = state;
     }
 
     public double[] getRegionAsArray() {
@@ -2110,6 +1712,325 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
         }
         return dimMatches;
+    }
+
+    public enum AXMODE {
+
+        PTS() {
+            public int getIndex(VecBase vec, double value) {
+                int index = (int) Math.round(value);
+                if (index < 0) {
+                    index = 0;
+                }
+                if (index >= vec.getSize()) {
+                    index = vec.getSize() - 1;
+                }
+                return index;
+            }
+
+            public double getIncrement(VecBase vec, double start, double end) {
+                return 1;
+            }
+
+            public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+                int index = (int) Math.round(value);
+                if (index < 0) {
+                    index = 0;
+                }
+                if (index >= dataset.getSizeReal(iDim)) {
+                    index = dataset.getSizeReal(iDim) - 1;
+                }
+                return index;
+            }
+
+            public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+                double index = value;
+                if (index < 0.0) {
+                    index = 0.0;
+                }
+                if (index >= dataset.getSizeReal(iDim)) {
+                    index = dataset.getSizeReal(iDim) - 1.0;
+                }
+                return index;
+            }
+
+            public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                if (value < 0) {
+                    value = 0;
+                }
+                if (value >= dataset.getSizeReal(iDim)) {
+                    value = dataset.getSizeReal(iDim) - 1;
+                }
+                return value;
+            }
+
+            public double getIncrement(DatasetAttributes dataAttr, int iDim, double start, double end) {
+                return 1;
+            }
+
+            public String getLabel(DatasetAttributes dataAttr, int jDim) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                return dataset.getLabel(iDim) + " (pt)";
+            }
+
+            public String getLabel(Vec vec) {
+                return "points";
+            }
+
+        },
+        PPM() {
+            public int getIndex(VecBase vec, double value) {
+                int index = vec.refToPt(value);
+                if (index < 0) {
+                    index = 0;
+                }
+                if (index >= vec.getSize()) {
+                    index = vec.getSize() - 1;
+                }
+                return index;
+            }
+
+            public double getIncrement(VecBase vec, double start, double end) {
+                int iStart = getIndex(vec, start);
+                int iEnd = getIndex(vec, end);
+                return (end - start) / (iEnd - iStart);
+            }
+
+            public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                int index = dataset.ppmToPoint(iDim, value);
+                if (index < 0) {
+                    index = 0;
+                }
+                if (index >= dataset.getSizeReal(iDim)) {
+                    index = dataset.getSizeReal(iDim) - 1;
+                }
+                return index;
+            }
+
+            public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                double index = dataset.ppmToDPoint(iDim, value);
+                if (index < 0) {
+                    index = 0.0;
+                }
+                if (index >= dataset.getSizeReal(iDim)) {
+                    index = dataset.getSizeReal(iDim) - 1.0;
+                }
+                return index;
+            }
+
+            public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                return dataset.pointToPPM(iDim, value);
+            }
+
+            public double getIncrement(DatasetAttributes dataAttr, int jDim, double start, double end) {
+                return 1;
+            }
+
+            public String getLabel(DatasetAttributes dataAttr, int jDim) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                return dataset.getDlabel(iDim) + " (ppm)";
+            }
+
+            public String getLabel(Vec vec) {
+                return "ppm";
+            }
+        },
+        HZ() {
+            public int getIndex(VecBase vec, double value) {
+                int index = (int) vec.lwToPtD(value);
+                if (index < 0) {
+                    index = 0;
+                }
+                if (index >= vec.getSize()) {
+                    index = vec.getSize() - 1;
+                }
+                return index;
+            }
+
+            public double getIncrement(VecBase vec, double start, double end) {
+                int iStart = getIndex(vec, start);
+                int iEnd = getIndex(vec, end);
+                return (end - start) / (iEnd - iStart);
+            }
+
+            public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                int index = (int) dataset.hzWidthToPoints(iDim, value);
+                if (index < 0) {
+                    index = 0;
+                }
+                if (index >= dataset.getSizeReal(iDim)) {
+                    index = dataset.getSizeReal(iDim) - 1;
+                }
+                return index;
+            }
+
+            public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                double index = dataset.hzWidthToPoints(iDim, value);
+                if (index < 0.0) {
+                    index = 0.0;
+                }
+                if (index >= dataset.getSizeReal(iDim)) {
+                    index = dataset.getSizeReal(iDim) - 1.0;
+                }
+                return index;
+            }
+
+            public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                return dataset.ptWidthToHz(iDim, value);
+            }
+
+            public double getIncrement(DatasetAttributes dataAttr, int jDim, double start, double end) {
+                return 1;
+            }
+
+            public String getLabel(DatasetAttributes dataAttr, int jDim) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                return dataset.getLabel(iDim) + " (Hz)";
+            }
+
+            public String getLabel(Vec vec) {
+                return "Hz";
+            }
+        },
+        TIME() {
+            public int getIndex(VecBase vec, double value) {
+                int index = vec.timeToPt(value);
+                if (index < 0) {
+                    index = 0;
+                }
+                if (index >= vec.getSize()) {
+                    index = vec.getSize() - 1;
+                }
+                return index;
+            }
+
+            public double getIncrement(VecBase vec, double start, double end) {
+                int iStart = getIndex(vec, start);
+                int iEnd = getIndex(vec, end);
+                return (end - start) / (iEnd - iStart);
+            }
+
+            public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                Vec vec = null;
+                if (dataset instanceof Dataset) {
+                    vec = ((Dataset) dataset).getVec();
+                }
+                if (vec != null) {
+                    return getIndex(vec, value);
+                } else {
+                    // fixme is this right or should it be 1/sw
+                    int index = (int) (value * dataset.getSw(iDim));
+                    if (index < 0) {
+                        index = 0;
+                    }
+                    if (index >= dataset.getSizeReal(iDim)) {
+                        index = dataset.getSizeReal(iDim) - 1;
+                    }
+                    return index;
+                }
+            }
+
+            public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                Vec vec = null;
+                if (dataset instanceof Dataset) {
+                    vec = ((Dataset) dataset).getVec();
+                }
+                if (vec != null) {
+                    return getIndex(vec, value);
+                } else {
+                    // fixme is this right or should it be 1/sw
+                    double index = (value * dataset.getSw(iDim));
+                    if (index < 0.0) {
+                        index = 0.0;
+                    }
+                    if (index >= dataset.getSizeReal(iDim)) {
+                        index = dataset.getSizeReal(iDim) - 1.0;
+                    }
+                    return index;
+                }
+            }
+
+            public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
+                DatasetBase dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                value = value / dataset.getSw(iDim);
+                return value;
+            }
+
+            public double getIncrement(DatasetAttributes dataAttr, int jDim, double start, double end) {
+                return 1;
+            }
+
+            public String getLabel(DatasetAttributes dataAttr, int jDim) {
+                return "seconds";
+            }
+
+            public String getLabel(Vec vec) {
+                return "seconds";
+            }
+        };
+
+        public abstract int getIndex(VecBase vec, double value);
+
+        public abstract double indexToValue(DatasetAttributes dataAttr, int iDim, double value);
+
+        public abstract double getIncrement(VecBase vec, double start, double end);
+
+        public abstract int getIndex(DatasetAttributes dataAttr, int iDim, double value);
+
+        public abstract double getIndexD(DatasetAttributes dataAttr, int iDim, double value);
+
+        public abstract double getIncrement(DatasetAttributes dataAttr, int iDim, double start, double end);
+
+        public abstract String getLabel(DatasetAttributes dataAttr, int iDim);
+
+        public String getDatasetLabel(DatasetAttributes dataAttr, int jDim) {
+            DatasetBase dataset = dataAttr.getDataset();
+            int iDim = dataAttr.dim[jDim];
+
+            return dataset.getLabel(iDim);
+        }
+
+        public abstract String getLabel(Vec vec);
+
     }
 
 }
