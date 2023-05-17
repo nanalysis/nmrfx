@@ -51,6 +51,7 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.datasets.RegionData;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
@@ -65,7 +66,6 @@ import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.gui.annotations.AnnoText;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
 import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
@@ -235,11 +235,7 @@ public class PolyChart extends Region implements PeakListener {
     @Override
     public void peakListChanged(final PeakEvent peakEvent) {
         if (listenToPeaks) {
-            if (Platform.isFxApplicationThread()) {
-                respondToPeakListChange(peakEvent);
-            } else {
-                Platform.runLater(() -> respondToPeakListChange(peakEvent));
-            }
+            Fx.runOnFxThread(() -> respondToPeakListChange(peakEvent));
         }
     }
 
@@ -724,21 +720,20 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void zoom(double factor) {
-        ConsoleUtil.runOnFxThread(() -> {
-                    DatasetBase dataset = getDataset();
-                    if (dataset != null) {
-                        ChartUndoLimits undo = new ChartUndoLimits(this);
-                        xZoom(factor);
-                        if (!is1D()) {
-                            yZoom(factor);
-                        }
-                        layoutPlotChildren();
-                        ChartUndoLimits redo = new ChartUndoLimits(this);
-                        String undoName = factor > 1.0 ? "zoomout" : "zoomin";
-                        controller.getUndoManager().add(undoName, undo, redo);
-                    }
+        Fx.runOnFxThread(() -> {
+            DatasetBase dataset = getDataset();
+            if (dataset != null) {
+                ChartUndoLimits undo = new ChartUndoLimits(this);
+                xZoom(factor);
+                if (!is1D()) {
+                    yZoom(factor);
                 }
-        );
+                layoutPlotChildren();
+                ChartUndoLimits redo = new ChartUndoLimits(this);
+                String undoName = factor > 1.0 ? "zoomout" : "zoomin";
+                controller.getUndoManager().add(undoName, undo, redo);
+            }
+        });
     }
 
     protected void xZoom(double factor) {
@@ -1076,7 +1071,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void full() {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             if (!datasetAttributesList.isEmpty()) {
                 ChartUndoLimits undo = new ChartUndoLimits(this);
                 fullAxisLimits();
@@ -2026,11 +2021,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void draw() {
-        if (Platform.isFxApplicationThread()) {
-            refresh();
-        } else {
-            Platform.runLater(this::refresh);
-        }
+        Fx.runOnFxThread(this::refresh);
     }
 
     public double[] getMinBorders() {

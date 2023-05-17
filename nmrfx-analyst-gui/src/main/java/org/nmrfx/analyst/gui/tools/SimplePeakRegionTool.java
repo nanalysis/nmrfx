@@ -21,12 +21,12 @@ import org.nmrfx.analyst.peaks.JournalFormatPeaks;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -432,7 +432,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             if (chart.hasAnnoType(AnnoJournalFormat.class)) {
                 showJournalFormatOnChart();

@@ -26,6 +26,7 @@ Removal dates in YYYY-MM-DD format.
 
 * org.nmrfx.chart.ChartStage
 * org.nmrfx.utils.properties.ListPropertyEditor
+* org.nmrfx.processor.gui.controls.ConsoleUtil
 
 ## Methods in UI classes
 
@@ -38,7 +39,6 @@ Removal dates in YYYY-MM-DD format.
 * FXMLController.addChart(Integer pos)
 * IconUtilities.create(char fontChar) + many char icon constants
 * SpectrumMeasureBar.makeIcon(int i, int j, boolean boundMode)
-* ConsoleUtil: everything except runOnFxThread(..)
 * GridPaneCanvas.getLocal(double x, double y)
 * GridPaneCanvas.getFraction(double x, double y)
 * Symbol.hit() + commented drawing code for triangle, cross, square diamond

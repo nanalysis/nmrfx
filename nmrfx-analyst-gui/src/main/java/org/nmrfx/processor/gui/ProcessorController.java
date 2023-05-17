@@ -55,6 +55,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
 import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
@@ -64,7 +65,6 @@ import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
@@ -300,7 +300,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 startTimer();
             } else if (needToFireEvent.get()) {
                 needToFireEvent.set(false);
-                ConsoleUtil.runOnFxThread(() -> saveDataset(saveObject.getAndSet(null)));
+                Fx.runOnFxThread(() -> saveDataset(saveObject.getAndSet(null)));
                 if (aListUpdated.get()) {
                     startTimer();
                 }
@@ -318,11 +318,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void updateProgress(double f) {
-        ConsoleUtil.runOnFxThread(() -> statusBar.setProgress(f));
+        Fx.runOnFxThread(() -> statusBar.setProgress(f));
     }
 
     public void updateStatus(String s) {
-        ConsoleUtil.runOnFxThread(() -> setProcessingStatus(s, true));
+        Fx.runOnFxThread(() -> setProcessingStatus(s, true));
     }
 
     void updateFileButton() {
@@ -928,7 +928,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     void finishProcessing(Dataset dataset) {
-        ConsoleUtil.runOnFxThread(() -> finishOnPlatform(dataset));
+        Fx.runOnFxThread(() -> finishOnPlatform(dataset));
     }
 
     void finishOnPlatform(Dataset dataset) {
@@ -1023,7 +1023,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void saveOnClose() {
-        ConsoleUtil.runOnFxThread(() -> saveDataset(saveObject.getAndSet(null)));
+        Fx.runOnFxThread(() -> saveDataset(saveObject.getAndSet(null)));
     }
 
     private void setSaveState(Dataset dataset) {
@@ -1106,7 +1106,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void setProcessingStatus(String s, boolean ok, Throwable throwable) {
-        ConsoleUtil.runOnFxThread(() -> updateProcessingStatus(s, ok, throwable));
+        Fx.runOnFxThread(() -> updateProcessingStatus(s, ok, throwable));
     }
 
     private void updateProcessingStatus(String s, boolean ok, Throwable throwable) {

@@ -2,7 +2,6 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -12,6 +11,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
@@ -590,11 +590,7 @@ public class PeakNavigator implements PeakListener {
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
         if (peakEvent.getSource() instanceof PeakList sourceList && sourceList == peakList) {
-            if (Platform.isFxApplicationThread()) {
-                handlePeakListChangedEvent();
-            } else {
-                Platform.runLater(this::handlePeakListChangedEvent);
-            }
+            Fx.runOnFxThread(this::handlePeakListChangedEvent);
         }
     }
 }

@@ -17,10 +17,10 @@
  */
 package org.nmrfx.processor.gui;
 
-import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -453,22 +453,14 @@ public class ChartProperties {
     }
 
     public void config(String name, Object value) {
-        if (Platform.isFxApplicationThread()) {
-            try {
-                PropertyUtils.setSimpleProperty(this, name, value);
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                log.error(ex.getMessage(), ex);
-            }
-        } else {
-            Platform.runLater(() -> {
-                        try {
-                            PropertyUtils.setProperty(this, name, value);
-                        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                            log.error(ex.getMessage(), ex);
-                        }
+        Fx.runOnFxThread(() -> {
+                    try {
+                        PropertyUtils.setProperty(this, name, value);
+                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                        log.error(ex.getMessage(), ex);
                     }
-            );
-        }
+                }
+        );
     }
 
     public Map<String, Object> config() {

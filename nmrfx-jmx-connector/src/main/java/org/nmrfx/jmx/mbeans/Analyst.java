@@ -21,11 +21,11 @@ import javafx.stage.Stage;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.jmx.NotificationType;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.gui.ChartProcessor;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
 
 import javax.management.Notification;
 import javax.management.NotificationBroadcasterSupport;
@@ -45,7 +45,7 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
     public void open(String path) {
         DatasetType preferredProcessedFormat = DatasetType.typeFromFile(new File(path)).orElse(DatasetType.NMRFX);
 
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openFile(path, false, true, preferredProcessedFormat);
             sendNotification(NotificationType.MESSAGE, "File opened", path);
         });
@@ -53,7 +53,7 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
 
     @Override
     public void setWindowOnFront() {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             Stage stage = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getStage();
             stage.toFront();
             stage.requestFocus();
@@ -62,9 +62,9 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
 
     @Override
     public void generateAutoScript(boolean isPseudo2D) {
-        ConsoleUtil.runOnFxThread(() -> {
-            // getting the chart processor must be done in fx thread, because otherwise, a client calling
-            // open() then generateAutoScript() could try to access the chart processor before its creation.
+        // getting the chart processor must be done in fx thread, because otherwise, a client calling
+        // open() then generateAutoScript() could try to access the chart processor before its creation.
+        Fx.runOnFxThread(() -> {
             ChartProcessor chartProcessor = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getChartProcessor();
             String script = chartProcessor.getGenScript(isPseudo2D);
             chartProcessor.getProcessorController().parseScript(script);

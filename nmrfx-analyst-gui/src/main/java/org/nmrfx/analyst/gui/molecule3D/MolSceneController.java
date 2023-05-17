@@ -1,6 +1,5 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.concurrent.Service;
@@ -26,6 +25,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.analyst.gui.molecule.SSViewer;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
@@ -970,15 +970,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     @Override
     public void updateStatus(String s) {
-        if (Platform.isFxApplicationThread()) {
+        Fx.runOnFxThread(() -> {
             setProcessingStatus(s, true);
             updateView();
-        } else {
-            Platform.runLater(() -> {
-                setProcessingStatus(s, true);
-                updateView();
-            });
-        }
+        });
     }
 
     void updateView() {

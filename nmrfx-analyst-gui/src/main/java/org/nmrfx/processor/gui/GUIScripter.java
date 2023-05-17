@@ -6,11 +6,11 @@ import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
 import org.nmrfx.processor.gui.annotations.AnnoShape;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
@@ -78,7 +78,8 @@ public class GUIScripter {
         if (useChart != null) {
             return false;
         }
-        ConsoleUtil.runOnFxThread(() -> {
+        // fixme throwing from fx thread
+        Fx.runOnFxThread(() -> {
             List<PolyChart> charts = getActiveController().getCharts();
             if (charts.size() >= index) {
                 getActiveController().setActiveChart(charts.get(index));
@@ -96,17 +97,17 @@ public class GUIScripter {
         }
         // fixme needs to be set on thread
         boolean success = true;
-        ConsoleUtil.runOnFxThread(() -> {
-            Optional<PolyChart> chartOpt = getActiveController().getCharts().stream().filter(c -> c.getName().equals(chartName)).findFirst();
-            if (chartOpt.isPresent()) {
-                getActiveController().setActiveChart(chartOpt.get());
-            }
+        Fx.runOnFxThread(() -> {
+            getActiveController().getCharts().stream()
+                    .filter(c -> c.getName().equals(chartName))
+                    .findFirst()
+                    .ifPresent(polyChart -> getActiveController().setActiveChart(polyChart));
         });
         return success;
     }
 
     public void zoom(double factor) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             getChart().zoom(factor);
         });
     }
@@ -116,7 +117,7 @@ public class GUIScripter {
     }
 
     public void full(int dimNum) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             if (dimNum < 0) {
                 getChart().full();
             } else {
@@ -126,13 +127,13 @@ public class GUIScripter {
     }
 
     public void expand() {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             getChart().expand();
         });
     }
 
     public void center(Double[] positions) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             if ((positions == null) || (positions.length == 0)) {
                 Double[] crossPositions = getChart().getCrossHairs().getCrossHairPositions();
                 getChart().moveTo(crossPositions);
@@ -145,7 +146,7 @@ public class GUIScripter {
 
     public double[] ppm(String axis) {
         double[] result = new double[2];
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             result[0] = chart.xAxis.getLowerBound();
             result[1] = chart.xAxis.getUpperBound();
@@ -154,7 +155,7 @@ public class GUIScripter {
     }
 
     public void ppm(String axis, double ppm1, double ppm2) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             chart.xAxis.setLowerBound(ppm1);
             chart.xAxis.setUpperBound(ppm2);
@@ -163,7 +164,7 @@ public class GUIScripter {
     }
 
     public void limit(String dimName, double v1, double v2) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             int axNum = chart.getAxisNum(dimName);
             if (v1 < v2) {
@@ -175,7 +176,7 @@ public class GUIScripter {
     }
 
     public void limit(int axNum, double v1, double v2) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             if (v1 < v2) {
                 chart.setAxis(axNum, v1, v2);
@@ -188,7 +189,7 @@ public class GUIScripter {
     public Map<String, List<Double>> limit() {
         Map<String, List<Double>> result = new HashMap<>();
         String dimChars = "xyzabcdefghijk";
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             int nAxes = chart.axes.length;
             for (int i = 0; i < nAxes; i++) {
@@ -205,20 +206,20 @@ public class GUIScripter {
     }
 
     public void draw() {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             chart.refresh();
         });
     }
 
     public void drawAll() {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             getActiveController().draw();
         });
     }
 
     public void colorMap(String datasetName, int index, String colorName) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttts) {
@@ -230,7 +231,7 @@ public class GUIScripter {
     }
 
     public void colorMap(String datasetName, List<Integer> indices, String colorName) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttts) {
@@ -244,7 +245,7 @@ public class GUIScripter {
     }
 
     public void offsetMap(String datasetName, int index, double offset) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttts) {
@@ -256,7 +257,7 @@ public class GUIScripter {
     }
 
     public void offsetMap(String datasetName, List<Integer> indices, double offset) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttts) {
@@ -270,7 +271,7 @@ public class GUIScripter {
     }
 
     public void rows(String datasetName, List<Integer> indices) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttts) {
@@ -286,7 +287,7 @@ public class GUIScripter {
     }
 
     public void config(String datasetName, String key, Object value) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttts) {
@@ -298,7 +299,7 @@ public class GUIScripter {
     }
 
     public void config(List<String> datasetNames, Map<String, Object> map) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
             map.entrySet().stream().forEach(entry -> {
@@ -337,7 +338,7 @@ public class GUIScripter {
             return new HashMap<>();
 
         });
-        ConsoleUtil.runOnFxThread(future);
+        Fx.runOnFxThread(future);
         return future.get();
     }
 
@@ -353,12 +354,12 @@ public class GUIScripter {
             return new HashMap<>();
 
         });
-        ConsoleUtil.runOnFxThread(future);
+        Fx.runOnFxThread(future);
         return future.get();
     }
 
     public void setDims(String datasetName, int[] dims) throws InterruptedException, ExecutionException {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrs) {
@@ -388,13 +389,13 @@ public class GUIScripter {
             return new HashMap<>();
 
         });
-        ConsoleUtil.runOnFxThread(future);
+        Fx.runOnFxThread(future);
         return future.get();
 
     }
 
     public void pconfig(List<String> peakListNames, Map<String, Object> map) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
             map.entrySet().stream().forEach(entry -> {
@@ -416,7 +417,7 @@ public class GUIScripter {
     }
 
     public void cconfig(Map<String, Object> map) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             map.entrySet().stream().forEach(entry -> {
                 String key = entry.getKey();
@@ -437,12 +438,12 @@ public class GUIScripter {
             return chart.config();
 
         });
-        ConsoleUtil.runOnFxThread(future);
+        Fx.runOnFxThread(future);
         return future.get();
     }
 
     public void sconfig(Map<String, Object> map) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             map.entrySet().stream().forEach(entry -> {
                 String key = entry.getKey();
                 Object value = entry.getValue();
@@ -461,7 +462,7 @@ public class GUIScripter {
             return getActiveController().config();
 
         });
-        ConsoleUtil.runOnFxThread(future);
+        Fx.runOnFxThread(future);
         return future.get();
     }
 
@@ -476,7 +477,7 @@ public class GUIScripter {
             return result;
 
         });
-        ConsoleUtil.runOnFxThread(future);
+        Fx.runOnFxThread(future);
         return future.get();
     }
 
@@ -488,7 +489,7 @@ public class GUIScripter {
 
     public void grid(String orientName) {
         GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.parseOrientationFromString(orientName);
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             controller.arrange(orient);
             controller.draw();
         });
@@ -497,54 +498,54 @@ public class GUIScripter {
     public void grid(int rows, int columns) {
         int nCharts = rows * columns;
         GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.parseOrientationFromString("grid");
-        ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = getActiveController();
-            PolyChart chart = controller.getActiveChart();
+        Fx.runOnFxThread(() -> {
+            FXMLController controller1 = getActiveController();
+            PolyChart chart = controller1.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
-            controller.setNCharts(nCharts);
-            controller.arrange(rows);
+            controller1.setNCharts(nCharts);
+            controller1.arrange(rows);
 
-            PolyChart chartActive = controller.getCharts().get(0);
-            controller.setActiveChart(chartActive);
-            controller.setChartDisable(false);
-            controller.draw();
+            PolyChart chartActive = controller1.getCharts().get(0);
+            controller1.setActiveChart(chartActive);
+            controller1.setChartDisable(false);
+            controller1.draw();
         });
     }
 
     public void grid(int nCharts, String orientName) {
         GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.parseOrientationFromString(orientName);
-        ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = getActiveController();
-            PolyChart chart = controller.getActiveChart();
+        Fx.runOnFxThread(() -> {
+            FXMLController controller1 = getActiveController();
+            PolyChart chart = controller1.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
-            controller.setNCharts(nCharts);
-            controller.arrange(orient);
-            PolyChart chartActive = controller.getCharts().get(0);
-            controller.setActiveChart(chartActive);
-            controller.setChartDisable(false);
-            controller.draw();
+            controller1.setNCharts(nCharts);
+            controller1.arrange(orient);
+            PolyChart chartActive = controller1.getCharts().get(0);
+            controller1.setActiveChart(chartActive);
+            controller1.setChartDisable(false);
+            controller1.draw();
         });
     }
 
     public void grid(List<String> datasetNames, String orientName) {
         GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.parseOrientationFromString(orientName);
-        ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = getActiveController();
-            PolyChart chart = controller.getActiveChart();
+        Fx.runOnFxThread(() -> {
+            FXMLController controller1 = getActiveController();
+            PolyChart chart = controller1.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
-            controller.setNCharts(datasetNames.size());
+            controller1.setNCharts(datasetNames.size());
             for (int i = 0; i < datasetNames.size(); i++) {
                 Dataset dataset = Dataset.getDataset(datasetNames.get(i));
                 datasets.add(dataset);
             }
-            controller.arrange(orient);
+            controller1.arrange(orient);
             for (int i = 0; i < datasets.size(); i++) {
                 Dataset dataset = datasets.get(i);
-                PolyChart chartActive = controller.getCharts().get(i);
-                controller.setActiveChart(chartActive);
-                controller.addDataset(dataset, false, false);
+                PolyChart chartActive = controller1.getCharts().get(i);
+                controller1.setActiveChart(chartActive);
+                controller1.addDataset(dataset, false, false);
             }
-            controller.setChartDisable(false);
+            controller1.setChartDisable(false);
         });
     }
 
@@ -553,7 +554,7 @@ public class GUIScripter {
             FXMLController controller = getActiveController();
             return controller.getCharts().size();
         });
-        ConsoleUtil.runOnFxThread(future);
+        Fx.runOnFxThread(future);
         return future.get();
     }
 
@@ -564,7 +565,7 @@ public class GUIScripter {
             List<String> datasetNames = dataAttrs.stream().map(d -> d.getFileName()).collect(Collectors.toList());
             return datasetNames;
         });
-        ConsoleUtil.runOnFxThread(future);
+        Fx.runOnFxThread(future);
         return future.get();
     }
 
@@ -575,28 +576,28 @@ public class GUIScripter {
     }
 
     public void addDataset(Dataset dataset) {
-        ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = getActiveController();
-            controller.addDataset(dataset, true, false);
+        Fx.runOnFxThread(() -> {
+            FXMLController controller1 = getActiveController();
+            controller1.addDataset(dataset, true, false);
         });
     }
 
     public void openFID(String fidName) {
-        ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = getActiveController();
-            controller.openFile(fidName, true, false);
+        Fx.runOnFxThread(() -> {
+            FXMLController controller1 = getActiveController();
+            controller1.openFile(fidName, true, false);
         });
     }
 
     public void datasets(List<String> datasetNames) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             chart.updateDatasets(datasetNames);
         });
     }
 
     public void gridDatasets(List<String> datasetNames) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
             if (dataAttrs.size() != datasetNames.size()) {
@@ -620,12 +621,12 @@ public class GUIScripter {
             List<String> peakListNames = peakAttrs.stream().map(p -> p.getPeakListName()).collect(Collectors.toList());
             return peakListNames;
         });
-        ConsoleUtil.runOnFxThread(future);
+        Fx.runOnFxThread(future);
         return future.get();
     }
 
     public void peakLists(List<String> peakListNames) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             chart.updatePeakLists(peakListNames);
         });
@@ -646,12 +647,12 @@ public class GUIScripter {
             result.add(height);
             return result;
         });
-        ConsoleUtil.runOnFxThread(future);
+        Fx.runOnFxThread(future);
         return future.get();
     }
 
     public void geometry(Double x, Double y, Double width, Double height) throws InterruptedException, ExecutionException {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             Stage stage = chart.getController().getStage();
             if (x != null) {
@@ -670,7 +671,7 @@ public class GUIScripter {
     }
 
     public void export(String fileName) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             FXMLController activeController = getActiveController();
             if (fileName.endsWith(".svg")) {
                 activeController.exportSVG(fileName);
@@ -698,32 +699,32 @@ public class GUIScripter {
         FutureTask<Cursor> future = new FutureTask(() -> {
             return getActiveController().getActiveChart().getCanvasCursor();
         });
-        ConsoleUtil.runOnFxThread(future);
+        Fx.runOnFxThread(future);
         return future.get();
     }
 
     public void setCursor(String name) {
         Cursor cursor = Cursor.cursor(name);
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             getActiveController().setCursor(cursor);
         });
     }
 
     public void setTitle(String title) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             getActiveController().getStage().setTitle(title);
         });
     }
 
     public static void showPeak(String peakSpecifier) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             FXMLController activeController = getActiveController();
             activeController.refreshPeakView(peakSpecifier);
         });
     }
 
     public static void showPeak(Peak peak) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             FXMLController activeController = getActiveController();
             activeController.refreshPeakView(peak);
         });
@@ -739,7 +740,7 @@ public class GUIScripter {
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         shape.setStroke(stroke);
         shape.setLineWidth(lineWidth);
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             getChart().addAnnotation(shape);
             getChart().refresh();
         });
@@ -749,7 +750,7 @@ public class GUIScripter {
     }
 
     public void bindKeys(String keyStr, String actionStr) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             KeyBindings.registerGlobalKeyAction(keyStr, GUIScripter::chartCommand);
             keyActions.put(keyStr, actionStr);
         });

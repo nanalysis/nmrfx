@@ -19,7 +19,6 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -51,6 +50,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.PDFGraphicsContext;
@@ -1393,22 +1393,14 @@ public class FXMLController implements Initializable, StageBasedController, Peak
     }
 
     public void config(String name, Object value) {
-        if (Platform.isFxApplicationThread()) {
-            try {
-                PropertyUtils.setSimpleProperty(this, name, value);
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                log.error(ex.getMessage(), ex);
-            }
-        } else {
-            Platform.runLater(() -> {
-                        try {
-                            PropertyUtils.setProperty(this, name, value);
-                        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                            log.error(ex.getMessage(), ex);
-                        }
+        Fx.runOnFxThread(() -> {
+                    try {
+                        PropertyUtils.setProperty(this, name, value);
+                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                        log.error(ex.getMessage(), ex);
                     }
-            );
-        }
+                }
+        );
     }
 
     public Map<String, Object> config() {

@@ -23,7 +23,6 @@
  */
 package org.nmrfx.analyst.gui.molecule;
 
-import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -49,6 +48,7 @@ import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.io.PPMFiles;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
@@ -249,14 +249,7 @@ public class AtomController implements Initializable, StageBasedController, Free
 
     @Override
     public void freezeHappened(Peak peak, boolean state) {
-        if (Platform.isFxApplicationThread()) {
-            atomTableView.refresh();
-        } else {
-            Platform.runLater(() -> {
-                atomTableView.refresh();
-            }
-            );
-        }
+        Fx.runOnFxThread(atomTableView::refresh);
     }
 
     class DoubleStringConverter4 extends DoubleStringConverter {

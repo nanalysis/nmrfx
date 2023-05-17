@@ -28,6 +28,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.*;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.utils.FormatUtils;
@@ -151,27 +152,17 @@ public class ConsoleController extends OutputStream implements Initializable, St
 
     public void writeAndRun(String text) {
         KeyEvent dummy = new KeyEvent(null, Event.NULL_SOURCE_TARGET, KeyEvent.KEY_TYPED, "\n", text, KeyCode.ENTER, false, false, false, false);
-        if (Platform.isFxApplicationThread()) {
+        Fx.runOnFxThread(() -> {
             textArea.appendText(text);
             filterEnter(dummy);
-        } else {
-            Platform.runLater(() -> {
-                textArea.appendText(text);
-                filterEnter(dummy);
-            });
-        }
+        });
     }
 
     public void write(String text) {
-        if (Platform.isFxApplicationThread()) {
+        Fx.runOnFxThread(() -> {
             textArea.appendText(text);
             textArea.appendText("");
-        } else {
-            Platform.runLater(() -> {
-                textArea.appendText(text);
-                textArea.appendText("");
-            });
-        }
+        });
         startTimer();
     }
 
@@ -184,22 +175,18 @@ public class ConsoleController extends OutputStream implements Initializable, St
     public void flush() throws IOException {
         byte[] byteArray = new byte[bytes.size()];
         int i = 0;
-        for (Byte b: bytes) {
+        for (Byte b : bytes) {
             byteArray[i] = b;
             i++;
         }
         bytes.clear();
         String newText = new String(byteArray, StandardCharsets.UTF_8);
         super.flush();
-        if (Platform.isFxApplicationThread()) {
+
+        Fx.runOnFxThread(() -> {
             textArea.appendText(newText);
             textArea.appendText("");
-        } else {
-            Platform.runLater(() -> {
-                textArea.appendText(newText);
-                textArea.appendText("");
-            });
-        }
+        });
         startTimer();
     }
 
@@ -364,23 +351,14 @@ public class ConsoleController extends OutputStream implements Initializable, St
     }
 
     class UpdateTask implements Runnable {
-
         @Override
         public void run() {
-            if (Platform.isFxApplicationThread()) {
+            Fx.runOnFxThread(() -> {
                 if (!isPromptPresent()) {
                     textArea.appendText("\n> ");
                     textArea.end();
                 }
-            } else {
-                Platform.runLater(() -> {
-                    if (!isPromptPresent()) {
-                        textArea.appendText("\n> ");
-                        textArea.end();
-                    }
-                });
-            }
-
+            });
         }
     }
 
