@@ -21,7 +21,6 @@ import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.*;
@@ -32,10 +31,10 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.ColorTypes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
 import org.nmrfx.utils.properties.ColorProperty;
+import org.nmrfx.utils.properties.PropertiesManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,11 +42,28 @@ import static org.nmrfx.processor.gui.spectra.DrawPeaks.minHitSize;
 import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.Number;
 
 /**
- *
  * @author Bruce Johnson
  */
-public class PeakListAttributes implements PeakListener {
+public class PeakListAttributes implements PeakListener, PropertiesManager {
     private static final Logger log = LoggerFactory.getLogger(PeakListAttributes.class);
+    public static final String LABEL_TYPE = "labelType";
+    public static final String DISPLAY_TYPE = "displayType";
+    public static final String SIM_PEAKS = "simPeaks";
+    public static final String NPLANES = "nplanes";
+    public static final String DRAW_PEAKS = "drawPeaks";
+    public static final String ON_COLOR = "onColor";
+    public static final String OFF_COLOR = "offColor";
+
+    private final IntegerProperty nplanes = new SimpleIntegerProperty(this, NPLANES, 0);
+    private final ColorProperty onColor = new ColorProperty(this, ON_COLOR, Color.BLACK);
+    private final ColorProperty offColor = new ColorProperty(this, OFF_COLOR, Color.RED);
+    private final BooleanProperty drawPeaks = new SimpleBooleanProperty(this, DRAW_PEAKS, true);
+    private final BooleanProperty simPeaks = new SimpleBooleanProperty(this, SIM_PEAKS, false);
+    private final BooleanProperty drawLinks = new SimpleBooleanProperty(this, "drawLinks", false);
+    private final ObjectProperty<PeakDisplayParameters.LabelTypes> peakLabelType = new SimpleObjectProperty<>(this, "peakLabelType", Number);
+    private final ObjectProperty<PeakDisplayParameters.DisplayTypes> displayType = new SimpleObjectProperty<>(this, DISPLAY_TYPE, DisplayTypes.Peak);
+    private final ObjectProperty<PeakDisplayParameters.ColorTypes> colorType = new SimpleObjectProperty<>(this, "colorType", ColorTypes.Plane);
+    private final StringProperty peakListName = new SimpleStringProperty(this, "peakListName", "");
 
     PeakList peakList;
     final DatasetAttributes dataAttr;
@@ -60,12 +76,7 @@ public class PeakListAttributes implements PeakListener {
     NMRAxis yAxis = null;
     double[][] foldLimits = null;
 
-    private IntegerProperty nplanes;
-
     public IntegerProperty nplanesProperty() {
-        if (nplanes == null) {
-            nplanes = new SimpleIntegerProperty(this, "nplanes", 0);
-        }
         return nplanes;
     }
 
@@ -77,12 +88,8 @@ public class PeakListAttributes implements PeakListener {
         return nplanesProperty().get();
     }
 
-    private ColorProperty onColor;
 
     public ColorProperty onColorProperty() {
-        if (onColor == null) {
-            onColor = new ColorProperty(this, "+color", Color.BLACK);
-        }
         return onColor;
     }
 
@@ -93,12 +100,8 @@ public class PeakListAttributes implements PeakListener {
     public Color getOnColor() {
         return onColorProperty().get();
     }
-    private ColorProperty offColor;
 
     public ColorProperty offColorProperty() {
-        if (offColor == null) {
-            offColor = new ColorProperty(this, "-color", Color.RED);
-        }
         return offColor;
     }
 
@@ -110,12 +113,7 @@ public class PeakListAttributes implements PeakListener {
         return offColorProperty().get();
     }
 
-    private BooleanProperty drawPeaks;
-
     public BooleanProperty drawPeaksProperty() {
-        if (drawPeaks == null) {
-            drawPeaks = new SimpleBooleanProperty(this, "on", true);
-        }
         return drawPeaks;
     }
 
@@ -127,12 +125,7 @@ public class PeakListAttributes implements PeakListener {
         return drawPeaksProperty().get();
     }
 
-    private BooleanProperty simPeaks;
-
     public BooleanProperty simPeaksProperty() {
-        if (simPeaks == null) {
-            simPeaks = new SimpleBooleanProperty(this, "sim", false);
-        }
         return simPeaks;
     }
 
@@ -143,12 +136,8 @@ public class PeakListAttributes implements PeakListener {
     public boolean getSimPeaks() {
         return simPeaksProperty().get();
     }
-    private BooleanProperty drawLinks;
 
     public BooleanProperty drawLinksProperty() {
-        if (drawLinks == null) {
-            drawLinks = new SimpleBooleanProperty(this, "on", false);
-        }
         return drawLinks;
     }
 
@@ -160,12 +149,8 @@ public class PeakListAttributes implements PeakListener {
         return drawLinksProperty().get();
     }
 
-    private ObjectProperty<PeakDisplayParameters.LabelTypes> peakLabelType;
 
     public final ObjectProperty<PeakDisplayParameters.LabelTypes> labelTypeProperty() {
-        if (peakLabelType == null) {
-            peakLabelType = new SimpleObjectProperty<PeakDisplayParameters.LabelTypes>(Number);
-        }
         return this.peakLabelType;
     }
 
@@ -181,12 +166,8 @@ public class PeakListAttributes implements PeakListener {
         this.labelTypeProperty().set(PeakDisplayParameters.LabelTypes.valueOf(type));
     }
 
-    private ObjectProperty<PeakDisplayParameters.DisplayTypes> displayType;
 
     public final ObjectProperty<PeakDisplayParameters.DisplayTypes> displayTypeProperty() {
-        if (displayType == null) {
-            displayType = new SimpleObjectProperty<PeakDisplayParameters.DisplayTypes>(DisplayTypes.Peak);
-        }
         return this.displayType;
     }
 
@@ -202,12 +183,7 @@ public class PeakListAttributes implements PeakListener {
         this.displayTypeProperty().set(PeakDisplayParameters.DisplayTypes.valueOf(type));
     }
 
-    private ObjectProperty<PeakDisplayParameters.ColorTypes> colorType;
-
     public final ObjectProperty<PeakDisplayParameters.ColorTypes> colorTypeProperty() {
-        if (colorType == null) {
-            colorType = new SimpleObjectProperty<PeakDisplayParameters.ColorTypes>(ColorTypes.Plane);
-        }
         return this.colorType;
     }
 
@@ -237,12 +213,8 @@ public class PeakListAttributes implements PeakListener {
     public PeakList getPeakList() {
         return peakList;
     }
-    private StringProperty peakListName;
 
     public StringProperty peakListNameProperty() {
-        if (peakListName == null) {
-            peakListName = new SimpleStringProperty(this, "peakListName", "");
-        }
         return peakListName;
     }
 
@@ -780,60 +752,61 @@ public class PeakListAttributes implements PeakListener {
         peakAttr.setOnColor(getOnColor());
     }
 
+    @Override
+    public Collection<Property<?>> getPublicProperties() {
+        return Set.of(onColor, offColor, drawPeaks, nplanes, simPeaks, peakLabelType, displayType);
+    }
+
+    /**
+     * Set a property from its name and value.
+     * The default implementation can't be used here: some strings are converted to specific enumerations
+     *
+     * @param name  the property name
+     * @param value the new value
+     */
+    @Override
     public void config(String name, Object value) {
         Fx.runOnFxThread(() -> {
-            try {
-                switch (name) {
-                    case "labelType":
-                        setLabelType(value.toString());
-                        break;
-                    case "displayType":
-                        setDisplayType(value.toString());
-                        break;
-                    case "simPeaks":
-                        setSimPeaks(Boolean.valueOf(value.toString()));
-                        break;
-                    case "nplanes":
-                        setNplanes(Integer.valueOf(value.toString()));
-                        break;
-                    case "drawPeaks":
-                        setDrawPeaks(Boolean.valueOf(value.toString()));
-                        break;
-                    default:
-                        PropertyUtils.setSimpleProperty(this, name, value);
-                        break;
-                }
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                log.error(ex.getMessage(), ex);
+            switch (name) {
+                case LABEL_TYPE -> setLabelType(value.toString());
+                case DISPLAY_TYPE -> setDisplayType(value.toString());
+                case SIM_PEAKS -> setSimPeaks(Boolean.parseBoolean(value.toString()));
+                case NPLANES -> setNplanes(Integer.valueOf(value.toString()));
+                case DRAW_PEAKS -> setDrawPeaks(Boolean.parseBoolean(value.toString()));
+                case ON_COLOR -> onColorProperty().set((Color) value);
+                case OFF_COLOR -> offColorProperty().set((Color) value);
+                default -> log.warn("Trying to set {} to {} but property isn't publicly exposed", name, value);
             }
         });
-
     }
 
+    /**
+     * Get a map of all public properties name and their current value.
+     * The default implementation can't be used here: enumeration properties are converted to string
+     *
+     * @return public properties and their values
+     */
+    @Override
     public Map<String, Object> config() {
-        Map<String, Object> data = new HashMap<>();
-        String[] beanNames = {"onColor", "offColor", "drawPeaks", "nplanes", "simPeaks", "labelType", "displayType"};
-        for (String beanName : beanNames) {
-            try {
-                if (beanName.contains("Color")) {
-                    Object colObj = PropertyUtils.getSimpleProperty(this, beanName);
-                    if (colObj instanceof Color) {
-                        String colorName = colObj.toString();
-                        data.put(beanName, colorName);
-                    }
-                } else {
-                    Object obj = PropertyUtils.getSimpleProperty(this, beanName);
-                    if (obj == null) {
-                        data.put(beanName, null);
-                    } else {
-                        data.put(beanName, obj.toString());
-                    }
+        Map<String, Object> map = new HashMap<>();
+        for (var property : getPublicProperties()) {
+            if (property instanceof ColorProperty colorProperty) {
+                // special conversion for colors
+                String colorName = colorProperty.getColorAsRGB();
+                if (colorName != null) {
+                    map.put(property.getName(), colorName);
                 }
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                log.error(ex.getMessage(), ex);
+            } else {
+                // This differs from the default implementation: data is converted to string.
+                // Not sure if this actually makes any difference.
+                Object obj = property.getValue();
+                if (obj == null) {
+                    map.put(property.getName(), null);
+                } else {
+                    map.put(property.getName(), obj.toString());
+                }
             }
         }
-        return data;
+        return map;
     }
-
 }
