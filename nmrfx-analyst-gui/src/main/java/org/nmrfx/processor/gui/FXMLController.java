@@ -99,9 +99,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public static final int MAX_INITIAL_TRACES = 32;
 
     private static final int PSEUDO_2D_SIZE_THRESHOLD = 100;
-    public static final String MIN_BORDERS_PROPERTY = "minBorders";
-    public static final String BACKGROUND_COLOR_PROPERTY = "bgColor";
-    public static final String AXES_COLOR_PROPERTY = "axesColor";
 
     private static PeakAttrController peakAttrController = null;
     private static String docString = null;
