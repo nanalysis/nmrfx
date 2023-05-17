@@ -15,6 +15,7 @@ import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.utils.properties.ColorProperty;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -682,12 +683,7 @@ public class GUIScripter {
     }
 
     public static String toRGBCode(Color color) {
-        return String.format("#%02X%02X%02X%02X",
-                (int) (color.getRed() * 255),
-                (int) (color.getGreen() * 255),
-                (int) (color.getBlue() * 255),
-                (int) (color.getOpacity() * 255)
-        );
+        return ColorProperty.toRGBCode(color);
     }
 
     public static Color getColor(String colorString) {

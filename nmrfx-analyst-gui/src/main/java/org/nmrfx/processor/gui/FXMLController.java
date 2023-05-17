@@ -21,6 +21,7 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -76,6 +77,7 @@ import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
+import org.nmrfx.utils.properties.PropertiesManager;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
@@ -90,10 +92,9 @@ import java.nio.file.Files;
 import java.util.*;
 
 import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionInput;
-import static org.nmrfx.utils.MapUtil.newMapWithoutNulls;
 
 @PluginAPI("parametric")
-public class FXMLController implements Initializable, StageBasedController, PeakNavigable {
+public class FXMLController implements Initializable, StageBasedController, PropertiesManager, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
     public static final int MAX_INITIAL_TRACES = 32;
 
@@ -157,9 +158,9 @@ public class FXMLController implements Initializable, StageBasedController, Peak
     private boolean previousStageRestoreProcControllerVisible = false;
     private PolyChart activeChart = null;
     private GridPaneCanvas chartGroup;
-    private final BooleanProperty minBorders = new SimpleBooleanProperty(this, MIN_BORDERS_PROPERTY, false);
-    private final ColorProperty bgColor = new ColorProperty(this, BACKGROUND_COLOR_PROPERTY, null);
-    private final ColorProperty axesColor = new ColorProperty(this, AXES_COLOR_PROPERTY, null);
+    private final BooleanProperty minBorders = new SimpleBooleanProperty(this, "minBorders", false);
+    private final ColorProperty bgColor = new ColorProperty(this, "bgColor", null);
+    private final ColorProperty axesColor = new ColorProperty(this, "axesColor", null);
 
     public Color getBgColor() {
         return bgColor.get();
@@ -1356,22 +1357,9 @@ public class FXMLController implements Initializable, StageBasedController, Peak
         PeakList.remove("refList");
     }
 
-    //XXX put in interface and take a list of properties instead? it seems like they are all Property objects with a name
-    //XXX depending on usage in other classes
-    public void config(String name, Object value) {
-        switch (name) {
-            case MIN_BORDERS_PROPERTY -> minBorders.set(Boolean.TRUE.equals(value));
-            case BACKGROUND_COLOR_PROPERTY -> bgColor.set((Color) value);
-            case AXES_COLOR_PROPERTY -> axesColor.set((Color) value);
-            default -> log.warn("Trying to set {} to {} but property isn't publicly exposed", name, value);
-        }
-    }
-
-    public Map<String, Object> config() {
-        return newMapWithoutNulls(
-                MIN_BORDERS_PROPERTY, minBorders.get(),
-                BACKGROUND_COLOR_PROPERTY, bgColor.get(),
-                AXES_COLOR_PROPERTY, axesColor.get());
+    @Override
+    public Collection<Property<?>> getPublicProperties() {
+        return Set.of(minBorders, bgColor, axesColor);
     }
 
     public UndoManager getUndoManager() {
