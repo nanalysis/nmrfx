@@ -16,22 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.processor.gui;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import org.nmrfx.fxutil.Fxml;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,46 +32,32 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 /**
- *
  * @author johnsonb
  */
 public class DocWindowController implements Initializable {
-
     private static final Logger log = LoggerFactory.getLogger(DocWindowController.class);
 
-    Stage stage = null;
-    @FXML
-    Button closeButton;
+    private Stage stage = null;
 
     @FXML
-    WebView webView;
+    private Button closeButton;
+
+    @FXML
+    private WebView webView;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        System.out.println("initializing doc window controller");
-        System.out.println("init ");
-
         webView.getEngine().loadContent(FXMLController.getHTMLDocs());
     }
 
     public void load() {
-        System.out.println("load docview");
         try {
-            if (stage != null) {
-                stage.show();
-            } else {
-                Parent root = FXMLLoader.load(DocWindowController.class.getResource("/fxml/DocScene.fxml"));
-                System.out.println("made root");
-
-                Scene scene = new Scene(root);
-                scene.getStylesheets().add("/styles/Styles.css");
-
+            if (stage == null) {
                 stage = new Stage();
-
                 stage.setTitle("Documentation");
-                stage.setScene(scene);
-                stage.show();
+                Fxml.load(DocWindowController.class, "DocScene.fxml").withStage(stage);
             }
+            stage.show();
         } catch (Exception e) {
             log.warn("Load error! {}", e.getMessage(), e);
         }

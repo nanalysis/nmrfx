@@ -5,13 +5,12 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
 import org.controlsfx.control.ListSelectionView;
+import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -19,7 +18,6 @@ import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 
 public class ContentController {
@@ -35,30 +33,20 @@ public class ContentController {
 
     DatasetView datasetViewController;
     FXMLController fxmlController;
-    Pane pane;
     PolyChart chart;
     ListChangeListener<String> peakTargetListener;
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
     MapChangeListener mapChangeListener = change -> update();
 
     public static ContentController create(FXMLController fxmlController, Pane processorPane) {
-        FXMLLoader loader = new FXMLLoader(ContentController.class.getResource("/fxml/ContentController.fxml"));
-        final ContentController controller;
-        try {
-            Pane pane = loader.load();
-            processorPane.getChildren().add(pane);
-
-            controller = loader.getController();
-            controller.fxmlController = fxmlController;
-            controller.pane = pane;
-            controller.datasetViewController = new DatasetView(fxmlController, controller);
-            pane.visibleProperty().addListener(e -> controller.updatePeakView());
-            controller.update();
-            return controller;
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-            return null;
-        }
+        Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml")
+                .withParent(processorPane);
+        ContentController controller = builder.getController();
+        controller.fxmlController = fxmlController;
+        controller.datasetViewController = new DatasetView(fxmlController, controller);
+        builder.getNode().visibleProperty().addListener(e -> controller.updatePeakView());
+        controller.update();
+        return controller;
     }
 
     @FXML

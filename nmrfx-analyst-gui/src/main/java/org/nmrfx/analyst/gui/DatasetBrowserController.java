@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,11 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.analyst.gui;
 
 import com.jcraft.jsch.JSchException;
@@ -32,20 +27,18 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import org.controlsfx.control.tableview2.TableView2;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
@@ -64,10 +57,9 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 /**
- *
  * @author brucejohnson
  */
-public class DatasetBrowserController implements Initializable {
+public class DatasetBrowserController implements Initializable, StageBasedController {
 
     private static final Logger log = LoggerFactory.getLogger(DatasetBrowserController.class);
 
@@ -95,6 +87,11 @@ public class DatasetBrowserController implements Initializable {
         initToolBar();
         initTable();
         remoteDir = AnalystPrefs.getRemoteDirectory();
+    }
+
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     public Stage getStage() {
@@ -137,24 +134,11 @@ public class DatasetBrowserController implements Initializable {
     }
 
     public static DatasetBrowserController create() {
-        FXMLLoader loader = new FXMLLoader(DatasetBrowserController.class.getResource("/fxml/DatasetBrowserScene.fxml"));
-        DatasetBrowserController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<DatasetBrowserController>getController();
-            controller.stage = stage;
-            stage.setTitle("Dataset Browser");
-            stage.show();
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
-
+        DatasetBrowserController controller = Fxml.load(DatasetBrowserController.class, "DatasetBrowserScene.fxml")
+                .withNewStage("Dataset Browser")
+                .getController();
+        controller.stage.show();
         return controller;
-
     }
 
     void initToolBar() {

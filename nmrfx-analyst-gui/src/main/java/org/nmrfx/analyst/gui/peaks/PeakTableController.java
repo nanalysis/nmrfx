@@ -29,9 +29,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -42,14 +40,14 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -62,7 +60,6 @@ import org.nmrfx.processor.gui.PeakMenuTarget;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.utils.TableUtils;
 
-import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.Format;
@@ -71,10 +68,9 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 /**
- *
  * @author johnsonb
  */
-public class PeakTableController implements PeakMenuTarget, PeakListener, Initializable {
+public class PeakTableController implements PeakMenuTarget, PeakListener, Initializable, StageBasedController {
 
     static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.RED, null, null));
     private Stage stage;
@@ -89,9 +85,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
     private int currentDims = 0;
     PeakMenuBar peakMenuBar;
-    Button valueButton;
-    Button saveParButton;
-    Button closeButton;
     MenuButton peakListMenuButton;
     private final KeyCodeCombination copyKeyCodeCombination = new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN);
 
@@ -100,7 +93,11 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     public void initialize(URL url, ResourceBundle rb) {
         initToolBar();
         initTable();
+    }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     public Stage getStage() {
@@ -108,28 +105,14 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     }
 
     public static PeakTableController create() {
-        FXMLLoader loader = new FXMLLoader(PeakTableController.class.getResource("/fxml/PeakTableScene.fxml"));
-        PeakTableController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<PeakTableController>getController();
-            controller.stage = stage;
-            stage.setTitle("Peaks");
-            stage.show();
-        } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
-        }
-
+        PeakTableController controller = Fxml.load(PeakListsTableController.class, "PeakTableScene.fxml")
+                .withNewStage("Peaks")
+                .getController();
+        controller.stage.show();
         return controller;
-
     }
 
     void initToolBar() {
-
         peakListMenuButton = new MenuButton("List");
         toolBar.getItems().add(peakListMenuButton);
         updatePeakListMenu();

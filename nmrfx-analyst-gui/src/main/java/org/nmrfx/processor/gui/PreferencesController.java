@@ -22,33 +22,29 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.operations.NESTANMREx;
 import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.prefs.Preferences;
 
 /**
- *
  * @author johnsonb
  */
-public class PreferencesController implements Initializable {
+public class PreferencesController implements Initializable, StageBasedController {
 
     private static final Logger log = LoggerFactory.getLogger(PreferencesController.class);
 
@@ -151,34 +147,23 @@ public class PreferencesController implements Initializable {
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
                 nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem,
                 fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem);
-
     }
 
-    public static PreferencesController create(Stage parent) {
-        FXMLLoader loader = new FXMLLoader(PreferencesController.class.getResource("/fxml/PreferencesScene.fxml"));
-        PreferencesController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<PreferencesController>getController();
-            stage.setTitle("Preferences");
-
-            stage.initOwner(parent);
-            controller.stage = stage;
-            stage.show();
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
-
-        return controller;
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     public Stage getStage() {
         return stage;
+    }
+
+    public static PreferencesController create(Stage parent) {
+        PreferencesController controller = Fxml.load(PreferencesController.class, "PreferencesScene.fxml")
+                .withNewStage("Preferences", parent)
+                .getController();
+        controller.stage.show();
+        return controller;
     }
 
     @FXML

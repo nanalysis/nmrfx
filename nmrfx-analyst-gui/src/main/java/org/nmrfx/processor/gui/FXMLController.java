@@ -51,6 +51,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.PDFGraphicsContext;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
@@ -93,7 +94,7 @@ import java.util.*;
 import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionInput;
 
 @PluginAPI("parametric")
-public class FXMLController implements Initializable, PeakNavigable {
+public class FXMLController implements Initializable, StageBasedController, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
     public static final int MAX_INITIAL_TRACES = 32;
     private static final int PSEUDO_2D_SIZE_THRESHOLD = 100;
@@ -915,14 +916,13 @@ public class FXMLController implements Initializable, PeakNavigable {
      *
      * @param stage the stage managed by this controller.
      */
-    protected void initAfterFxmlLoader(Stage stage) {
-        //XXX see if we could rename as setStage() and put in an interface.
+    @Override
+    public void setStage(Stage stage) {
         this.stage = stage;
 
         stage.focusedProperty().addListener(this::setActiveController);
         stage.maximizedProperty().addListener(this::adjustSizeAfterMaximize);
     }
-
 
     public BorderPane getMainBox() {
         return mainBox;

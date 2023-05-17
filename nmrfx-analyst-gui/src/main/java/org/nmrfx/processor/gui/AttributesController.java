@@ -6,7 +6,6 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.event.Event;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
@@ -17,6 +16,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.controlsfx.control.RangeSlider;
+import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
@@ -27,7 +27,6 @@ import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -245,34 +244,25 @@ public class AttributesController implements Initializable {
     PolyChart boundChart = null;
 
     FXMLController fxmlController;
-    Pane pane;
 
     public static AttributesController create(FXMLController fxmlController, Pane processorPane) {
-        FXMLLoader loader = new FXMLLoader(AttributesController.class.getResource("/fxml/AttributesController.fxml"));
-        final AttributesController controller;
-        try {
-            Pane pane = loader.load();
-            processorPane.getChildren().add(pane);
+        AttributesController controller = Fxml.load(AttributesController.class, "AttributesController.fxml")
+                .withParent(processorPane)
+                .getController();
 
-            controller = loader.getController();
-            controller.fxmlController = fxmlController;
-            controller.pane = pane;
-            controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
-            controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
-            controller.itemChoiceState.setValue(SelectionChoice.CHART);
-            controller.datasetChoiceBox.disableProperty()
-                    .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
-            controller.peakListChoiceBox.disableProperty()
-                    .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
-            controller.setChart(fxmlController.getActiveChart());
-            controller.datasetChoiceBox.valueProperty().addListener(e -> controller.datasetChoiceChanged());
-            controller.peakListChoiceBox.valueProperty().addListener(e -> controller.peakListChoiceChanged());
+        controller.fxmlController = fxmlController;
+        controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
+        controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
+        controller.itemChoiceState.setValue(SelectionChoice.CHART);
+        controller.datasetChoiceBox.disableProperty()
+                .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
+        controller.peakListChoiceBox.disableProperty()
+                .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
+        controller.setChart(fxmlController.getActiveChart());
+        controller.datasetChoiceBox.valueProperty().addListener(e -> controller.datasetChoiceChanged());
+        controller.peakListChoiceBox.valueProperty().addListener(e -> controller.peakListChoiceChanged());
 
-            return controller;
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-            return null;
-        }
+        return controller;
     }
 
     @Override

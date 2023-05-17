@@ -27,9 +27,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.ScatterChart;
 import javafx.scene.chart.XYChart;
@@ -43,14 +41,14 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.io.PeakPatternReader;
 import org.nmrfx.peaks.types.PeakListType;
@@ -69,10 +67,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author johnsonb
  */
-public class PeakAttrController implements Initializable, PeakNavigable, PeakMenuTarget {
+public class PeakAttrController implements Initializable, StageBasedController, PeakNavigable, PeakMenuTarget {
 
     private static final Logger log = LoggerFactory.getLogger(PeakAttrController.class);
 
@@ -124,7 +121,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     PeakList peakList;
     Peak currentPeak;
-    ToggleButton deleteButton;
     ObservableList<String> relationChoiceItems = FXCollections.observableArrayList("", "D1", "D2", "D3", "D4");
 
     enum PEAK_NORM {
@@ -226,29 +222,21 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         peakListTypeChoice.setOnAction(this::setPeakListType);
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
 
     public static PeakAttrController create() {
-        FXMLLoader loader = new FXMLLoader(PeakAttrController.class.getResource("/fxml/PeakAttrScene.fxml"));
-        PeakAttrController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<PeakAttrController>getController();
-            controller.stage = stage;
-            stage.setTitle("Peak Attributes");
-            stage.show();
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
-
+        PeakAttrController controller = Fxml.load(PeakAttrController.class, "PeakAttrScene.fxml")
+                .withNewStage("Peak Attributes")
+                .getController();
+        controller.stage.show();
         return controller;
-
     }
 
     public void selectTab(String tabName) {
