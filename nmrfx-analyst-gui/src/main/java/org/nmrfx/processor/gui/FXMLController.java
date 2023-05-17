@@ -43,14 +43,12 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.PDFGraphicsContext;
@@ -85,19 +83,24 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.*;
 
 import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionInput;
+import static org.nmrfx.utils.MapUtil.newMapWithoutNulls;
 
 @PluginAPI("parametric")
 public class FXMLController implements Initializable, StageBasedController, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
     public static final int MAX_INITIAL_TRACES = 32;
+
     private static final int PSEUDO_2D_SIZE_THRESHOLD = 100;
+    public static final String MIN_BORDERS_PROPERTY = "minBorders";
+    public static final String BACKGROUND_COLOR_PROPERTY = "bgColor";
+    public static final String AXES_COLOR_PROPERTY = "axesColor";
+
     private static PeakAttrController peakAttrController = null;
     private static String docString = null;
     private static File initialDir = null;
@@ -153,24 +156,12 @@ public class FXMLController implements Initializable, StageBasedController, Peak
     private boolean previousStageRestoreProcControllerVisible = false;
     private PolyChart activeChart = null;
     private GridPaneCanvas chartGroup;
-    private BooleanProperty minBorders;
-    private ColorProperty bgColor;
-    private ColorProperty axesColor;
+    private final BooleanProperty minBorders = new SimpleBooleanProperty(this, MIN_BORDERS_PROPERTY, false);
+    private final ColorProperty bgColor = new ColorProperty(this, BACKGROUND_COLOR_PROPERTY, null);
+    private final ColorProperty axesColor = new ColorProperty(this, AXES_COLOR_PROPERTY, null);
 
     public Color getBgColor() {
-        return bgColorProperty().get();
-    }
-
-    @SuppressWarnings("unchecked") // called by reflection using PropertyUtils
-    public void setBgColor(Color bgColor) {
-        bgColorProperty().set(bgColor);
-    }
-
-    private ColorProperty bgColorProperty() {
-        if (bgColor == null) {
-            bgColor = new ColorProperty(this, "bgColor", null);
-        }
-        return bgColor;
+        return bgColor.get();
     }
 
     public List<Peak> getSelectedPeaks() {
@@ -190,20 +181,7 @@ public class FXMLController implements Initializable, StageBasedController, Peak
     }
 
     public Color getAxesColor() {
-        return axesColorProperty().get();
-    }
-
-    // called by reflection using PropertyUtils
-    @SuppressWarnings("unchecked")
-    public void setAxesColor(Color axesColor) {
-        this.axesColorProperty().set(axesColor);
-    }
-
-    private ColorProperty axesColorProperty() {
-        if (axesColor == null) {
-            axesColor = new ColorProperty(this, "axesColor", null);
-        }
-        return axesColor;
+        return axesColor.get();
     }
 
     public Cursor getCursor() {
@@ -334,7 +312,7 @@ public class FXMLController implements Initializable, StageBasedController, Peak
     }
 
     public boolean isContentPaneShowing() {
-        return borderPane.getRight() ==contentPane;
+        return borderPane.getRight() == contentPane;
     }
 
     public Stage getStage() {
@@ -495,13 +473,13 @@ public class FXMLController implements Initializable, StageBasedController, Peak
                 String suggestedName = brukerData.suggestName(new File(brukerData.getFilePath()));
                 String datasetName = GUIUtils.input("Dataset name", suggestedName);
                 dataset = brukerData.toDataset(datasetName);
-            } else if (nmrData instanceof  RS2DData rs2dData) {
+            } else if (nmrData instanceof RS2DData rs2dData) {
                 PreferencesController.saveRecentFiles(selectedFile.toString());
                 String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
                 dataset = rs2dData.toDataset(suggestedName);
             } else if (nmrData instanceof JCAMPData jcampData) {
                 PreferencesController.saveRecentFiles(selectedFile.toString());
-                String suggestedName = jcampData.suggestName(new File (jcampData.getFilePath()));
+                String suggestedName = jcampData.suggestName(new File(jcampData.getFilePath()));
                 dataset = jcampData.toDataset(suggestedName);
             }
         } catch (IOException | DatasetException ex) {
@@ -884,7 +862,7 @@ public class FXMLController implements Initializable, StageBasedController, Peak
         annoCanvas.setManaged(false);
         plotContent.setManaged(false);
         mainBox.layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
-            if (arg2.getWidth()  < 1.0 || arg2.getHeight() < 1.0) {
+            if (arg2.getWidth() < 1.0 || arg2.getHeight() < 1.0) {
                 return;
             }
             chartGroup.requestLayout();
@@ -1129,16 +1107,9 @@ public class FXMLController implements Initializable, StageBasedController, Peak
     }
 
     public void setBorderState(boolean state) {
-        setMinBorders(state);
+        minBorders.set(state);
         chartGroup.updateConstraints();
         chartGroup.layoutChildren();
-    }
-
-    private BooleanProperty minBordersProperty() {
-        if (minBorders == null) {
-            minBorders = new SimpleBooleanProperty(this, "minBorders", false);
-        }
-        return minBorders;
     }
 
     public double[][] prepareChildren(int nRows, int nCols) {
@@ -1156,7 +1127,7 @@ public class FXMLController implements Initializable, StageBasedController, Peak
         for (PolyChart chart : charts) {
             int iRow = iChild / nCols;
             int iCol = iChild % nCols;
-            if (getMinBorders()) {
+            if (minBorders.get()) {
                 chart.setAxisState(iCol == 0, iRow == (nRows - 1));
             } else {
                 chart.setAxisState(true, true);
@@ -1173,7 +1144,7 @@ public class FXMLController implements Initializable, StageBasedController, Peak
             double ppmX1 = chart.getXAxis().getUpperBound();
             double ppmY0 = chart.getYAxis().getLowerBound();
             double ppmY1 = chart.getYAxis().getUpperBound();
-            if (getMinBorders()) {
+            if (minBorders.get()) {
                 double nucScaleX = 1.0;
                 double nucScaleY = 1.0;
                 if (!chart.getDatasetAttributes().isEmpty()) {
@@ -1203,14 +1174,6 @@ public class FXMLController implements Initializable, StageBasedController, Peak
         }
 
         return bordersGrid;
-    }
-
-    public boolean getMinBorders() {
-        return minBordersProperty().get();
-    }
-
-    public void setMinBorders(boolean value) {
-        minBordersProperty().set(value);
     }
 
     public List<PolyChart> getCharts() {
@@ -1392,37 +1355,22 @@ public class FXMLController implements Initializable, StageBasedController, Peak
         PeakList.remove("refList");
     }
 
+    //XXX put in interface and take a list of properties instead? it seems like they are all Property objects with a name
+    //XXX depending on usage in other classes
     public void config(String name, Object value) {
-        Fx.runOnFxThread(() -> {
-                    try {
-                        PropertyUtils.setProperty(this, name, value);
-                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                        log.error(ex.getMessage(), ex);
-                    }
-                }
-        );
+        switch (name) {
+            case MIN_BORDERS_PROPERTY -> minBorders.set(Boolean.TRUE.equals(value));
+            case BACKGROUND_COLOR_PROPERTY -> bgColor.set((Color) value);
+            case AXES_COLOR_PROPERTY -> axesColor.set((Color) value);
+            default -> log.warn("Trying to set {} to {} but property isn't publicly exposed", name, value);
+        }
     }
 
     public Map<String, Object> config() {
-        //TODO remove use of reflection/PropertyUtils here, since the property names are fixed!
-        Map<String, Object> data = new HashMap<>();
-        String[] beanNames = {"bgColor", "axesColor", "minBorders"};
-        for (String beanName : beanNames) {
-            try {
-                if (beanName.contains("Color")) {
-                    Object colObj = PropertyUtils.getSimpleProperty(this, beanName);
-                    if (colObj instanceof Color) {
-                        String colorName = GUIScripter.toRGBCode((Color) colObj);
-                        data.put(beanName, colorName);
-                    }
-                } else {
-                    data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
-                }
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                log.error(ex.getMessage(), ex);
-            }
-        }
-        return data;
+        return newMapWithoutNulls(
+                MIN_BORDERS_PROPERTY, minBorders.get(),
+                BACKGROUND_COLOR_PROPERTY, bgColor.get(),
+                AXES_COLOR_PROPERTY, axesColor.get());
     }
 
     public UndoManager getUndoManager() {

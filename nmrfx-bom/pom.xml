@@ -356,6 +356,7 @@
                 <version>0.40</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
+            <!-- TODO NMR-6904 try to remove this dependency -->
             <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
