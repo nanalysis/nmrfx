@@ -10,19 +10,34 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.LineShapes;
 
 import java.io.IOException;
+import java.util.Random;
 
 public class ConvolutionFitter {
-    static final int SQUASH_AT = 10;
+    static Random rand = new Random();
+    static final int SQUASH_AT = 20;
     final double[] psf;
+    double psfMax;
     double[] widths;
+    double[] sim;
     double squash = 0.625;
+    double threshold = 0.0;
 
     double[] makePSF(int n, double width, double shapeFactor) {
         double[] yValues = new double[n];
+        double sum = 0.0;
+        double max = 0.0;
         for (int i = 0; i < n; i++) {
-            double x = -n / 2.0 + i;
+            double x = -(n - 1) / 2.0 + i;
             yValues[i] = LineShapes.G_LORENTZIAN.calculate(x, 1.0, 0.0, width, shapeFactor);
+            sum += yValues[i];
         }
+        for (int i = 0; i < n; i++) {
+            yValues[i] /= sum;
+            if (yValues[i] > max) {
+                max = yValues[i];
+            }
+        }
+        psfMax = max;
         return yValues;
     }
 
@@ -32,48 +47,75 @@ public class ConvolutionFitter {
         widths[0] = width;
     }
 
+    public double[] makeSignalVector(int n) {
+        return new double[n];
+    }
+
+    public void addSignal(double[] vec, int range, double amplitude, double center, double width, double shapeFactor) {
+        for (int i = 0;i<vec.length;i++ ) {
+            double y = LineShapes.G_LORENTZIAN.calculate(i, amplitude, center, width, shapeFactor);
+            vec[i] += y;
+        }
+    }
+
+    public void addNoise(double[] vec, double scale) {
+        for (int i = 0;i<vec.length;i++ ) {
+            vec[i] += rand.nextGaussian() * scale;
+        }
+    }
+
+    public double[] getPSF() {
+        return psf;
+    }
+
+    public double[] getSim() {
+        return sim;
+    }
+
     public void squash(double value) {
         this.squash = value;
     }
 
     public double[] convolve(double[] values, boolean[] skip) {
-        int n = psf.length;
-        int nh = n / 2;
+        int psfSize = psf.length;
+        int nh = psfSize / 2;
         int size = values.length;
-        int end = size - n;
+        int end = size - psfSize;
         double[] result = new double[size];
-        for (int j = 0; j < end; j++) {
+        for (int i = nh; i < end; i++) {
             double sum = 0.0;
-            for (int i = 0; i < n; i++) {
-                if (!skip[j + i]) {
-                    sum += values[j + i] * psf[i];
+            for (int k = 0; k < psfSize; k++) {
+                int index = i - nh + k;
+                if (!skip[index]) {
+                    sum += values[index] * psf[k];
                 }
             }
-            sum /= n;
-            result[j + nh] = sum;
+            result[i] = sum ;
         }
         return result;
     }
 
     public PointValuePair lrIteration(double[] signal, double[] values, boolean[] skip) {
-        int n = psf.length;
-        int nh = n / 2;
+        int psfSize = psf.length;
+        int nh = psfSize / 2;
         int size = values.length;
-        int end = size - n;
+        int end = size - nh;
         double[] result = new double[size];
         double sumDelta = 0.0;
         int nDelta = 0;
-        for (int j = 0; j < end; j++) {
+        double[] temp = convolve(values, skip);
+
+        for (int j = nh; j < end; j++) {
             double sum = 0.0;
-            for (int i = 0; i < n; i++) {
-                if (!skip[j + i]) {
-                    sum += values[j + i] * psf[i];
+            for (int k = 0; k < psfSize; k++) {
+                int index = j - nh + k;
+                if ((signal[index] > threshold) && (temp[index] > 1.0e-6)) {
+                    sum += signal[index] / temp[index] * psf[k];
                 }
             }
-            if ((sum > 1.0e-8) && !skip[j + nh]) {
-                sum /= n;
-                result[j + nh] = values[j + nh] * signal[j + nh] / sum;
-                double delta = Math.abs(result[j + nh] - values[j + nh]);
+            if (!skip[j]) {
+                result[j] = values[j] * sum;
+                double delta = result[j] - values[j];
                 sumDelta += delta * delta;
                 nDelta++;
             }
@@ -93,7 +135,11 @@ public class ConvolutionFitter {
         }
     }
 
-    double[] lr(double[] signal, boolean[] skip, double threshold, int iterations) {
+    public double[] lr(double[] signal, boolean[] skip, double threshold, int iterations) {
+        if (skip == null) {
+            skip = new boolean[signal.length];
+        }
+        this.threshold = threshold;
         DescriptiveStatistics summaryStatistics = new DescriptiveStatistics(signal);
         double mean = summaryStatistics.getMean();
         double[] values = new double[signal.length];
@@ -115,6 +161,7 @@ public class ConvolutionFitter {
                 break;
             }
         }
+        sim = convolve(values, skip);
         return values;
     }
 
@@ -170,7 +217,7 @@ public class ConvolutionFitter {
                     double dx = Math.abs(x2 - x1);
                     peakDim.setLineWidthValue((float) dx);
                     peakDim.setBoundsValue((float) (dx * 2.0));
-                    double intensity = result[i] / psfSize;
+                    double intensity = result[i] / psfMax;
                     peak.setIntensity((float) intensity);
                     double volume = intensity * dx * (Math.PI / 2.0) / 1.05;
                     peak.setVolume1((float) volume);
