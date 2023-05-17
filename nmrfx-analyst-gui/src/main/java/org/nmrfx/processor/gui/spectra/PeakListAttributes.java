@@ -31,6 +31,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.ColorTypes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
+import org.nmrfx.utils.properties.ColorProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

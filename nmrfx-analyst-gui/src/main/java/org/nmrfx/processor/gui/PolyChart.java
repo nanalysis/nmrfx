@@ -76,6 +76,7 @@ import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.project.ProjectText;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.properties.FileProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

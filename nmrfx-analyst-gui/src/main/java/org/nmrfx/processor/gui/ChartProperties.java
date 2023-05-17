@@ -21,7 +21,7 @@ import javafx.beans.property.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.fxutil.Fx;
-import org.nmrfx.processor.gui.spectra.ColorProperty;
+import org.nmrfx.utils.properties.ColorProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

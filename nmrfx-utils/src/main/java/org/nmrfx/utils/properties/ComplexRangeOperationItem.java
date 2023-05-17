@@ -21,31 +21,27 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.spectra;
+package org.nmrfx.utils.properties;
 
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.paint.Color;
+import javafx.beans.value.ChangeListener;
+import org.apache.commons.math3.complex.Complex;
 
 /**
  *
- * @author brucejohnson
+ * @author johnsonb
  */
-public class ColorProperty extends SimpleObjectProperty<Color> {
+public class ComplexRangeOperationItem extends ComplexOperationItem {
 
-    public ColorProperty(Object object, String name, Color color) {
-        super(object, name, color);
+    public ComplexRangeOperationItem(ChangeListener listener, Complex defaultValue, String category, String name, String description) {
+        super(listener, defaultValue, category, name, description);
     }
 
-    public void setColor(Color color) {
-        set(color);
-    }
-
-    public Color getColor() {
-        return get();
+    public ComplexRangeOperationItem(ChangeListener listener, Complex defaultValue, Complex min, Complex max, String category, String name, String description) {
+        super(listener, defaultValue, min, max, category, name, description);
     }
 
     @Override
-    public String toString() {
-        return super.toString() + " " + get();
+    public Class<?> getType() {
+        return ComplexRangeOperationItem.class;
     }
 }

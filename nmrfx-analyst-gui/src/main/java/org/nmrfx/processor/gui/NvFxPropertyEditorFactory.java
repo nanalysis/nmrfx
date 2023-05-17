@@ -23,21 +23,13 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.utils.properties.CustomIntegerTextField;
-import org.nmrfx.utils.properties.CustomNumberTextField;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.List;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
-import javafx.scene.control.Slider;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -47,30 +39,14 @@ import org.controlsfx.property.editor.AbstractPropertyEditor;
 import org.controlsfx.property.editor.DefaultPropertyEditorFactory;
 import org.controlsfx.property.editor.Editors;
 import org.controlsfx.property.editor.PropertyEditor;
-import org.nmrfx.utils.properties.MenuTextField;
-import org.nmrfx.utils.properties.MenuTextFieldEditor;
-import org.nmrfx.utils.properties.PropertySliderEditor;
-import org.nmrfx.utils.properties.ZoomSlider;
-import org.nmrfx.utils.properties.BooleanOperationItem;
-import org.nmrfx.utils.properties.ChoiceOperationItem;
-import org.nmrfx.utils.properties.complex.ComplexOperationItem;
-import org.nmrfx.utils.properties.DirectoryOperationItem;
-import org.nmrfx.utils.properties.DoubleOperationItem;
-import org.nmrfx.utils.properties.DoubleRangeOperationItem;
-import org.nmrfx.utils.properties.DoubleUnitsRangeOperationItem;
-import org.nmrfx.utils.properties.EditableChoiceOperationItem;
-import org.nmrfx.utils.properties.FileOperationItem;
-import org.nmrfx.utils.properties.IntChoiceOperationItem;
-import org.nmrfx.utils.properties.IntOperationItem;
-import org.nmrfx.utils.properties.IntPropertySliderEditor;
-import org.nmrfx.utils.properties.IntRangeOperationItem;
-import org.nmrfx.utils.properties.IntSlider;
-import org.nmrfx.utils.properties.ListOperationItem;
-import org.nmrfx.utils.properties.MenuTextOperationItem;
-import org.nmrfx.utils.properties.TextOperationItem;
-import org.nmrfx.utils.properties.TextWaitingOperationItem;
+import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  *

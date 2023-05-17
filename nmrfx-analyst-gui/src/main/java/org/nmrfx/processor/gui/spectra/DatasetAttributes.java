@@ -32,6 +32,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import org.nmrfx.processor.math.Vec;
+import org.nmrfx.utils.properties.ColorProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

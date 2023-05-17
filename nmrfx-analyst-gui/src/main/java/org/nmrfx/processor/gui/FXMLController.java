@@ -75,6 +75,7 @@ import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.properties.ColorProperty;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;

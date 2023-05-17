@@ -23,6 +23,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.utils.properties.ColorProperty;
 
 /**
  *
