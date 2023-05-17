@@ -98,10 +98,10 @@ public class GUIScripter {
         // fixme needs to be set on thread
         boolean success = true;
         Fx.runOnFxThread(() -> {
-            Optional<PolyChart> chartOpt = getActiveController().getCharts().stream().filter(c -> c.getName().equals(chartName)).findFirst();
-            if (chartOpt.isPresent()) {
-                getActiveController().setActiveChart(chartOpt.get());
-            }
+            getActiveController().getCharts().stream()
+                    .filter(c -> c.getName().equals(chartName))
+                    .findFirst()
+                    .ifPresent(polyChart -> getActiveController().setActiveChart(polyChart));
         });
         return success;
     }

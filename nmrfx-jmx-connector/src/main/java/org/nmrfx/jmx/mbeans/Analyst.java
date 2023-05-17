@@ -65,8 +65,6 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
         // getting the chart processor must be done in fx thread, because otherwise, a client calling
         // open() then generateAutoScript() could try to access the chart processor before its creation.
         Fx.runOnFxThread(() -> {
-            // getting the chart processor must be done in fx thread, because otherwise, a client calling
-            // open() then generateAutoScript() could try to access the chart processor before its creation.
             ChartProcessor chartProcessor = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getChartProcessor();
             String script = chartProcessor.getGenScript(isPseudo2D);
             chartProcessor.getProcessorController().parseScript(script);
