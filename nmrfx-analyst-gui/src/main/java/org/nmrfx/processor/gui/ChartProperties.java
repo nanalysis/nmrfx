@@ -20,14 +20,14 @@ package org.nmrfx.processor.gui;
 import javafx.beans.property.*;
 import javafx.scene.paint.Color;
 import org.nmrfx.utils.properties.ColorProperty;
-import org.nmrfx.utils.properties.PropertiesManager;
+import org.nmrfx.utils.properties.PublicPropertyContainer;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ChartProperties implements PropertiesManager {
+public class ChartProperties implements PublicPropertyContainer {
     public static final int PROJECTION_BORDER_DEFAULT_SIZE = 150;
     public static final int EMPTY_BORDER_DEFAULT_SIZE = 5;
 

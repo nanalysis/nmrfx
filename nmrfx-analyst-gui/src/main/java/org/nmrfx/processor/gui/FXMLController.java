@@ -77,7 +77,7 @@ import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
-import org.nmrfx.utils.properties.PropertiesManager;
+import org.nmrfx.utils.properties.PublicPropertyContainer;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
@@ -94,7 +94,7 @@ import java.util.*;
 import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionInput;
 
 @PluginAPI("parametric")
-public class FXMLController implements Initializable, StageBasedController, PropertiesManager, PeakNavigable {
+public class FXMLController implements Initializable, StageBasedController, PublicPropertyContainer, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
     public static final int MAX_INITIAL_TRACES = 32;
 

@@ -212,6 +212,10 @@ public class PolyChart extends Region implements PeakListener {
         setVisible(false);
     }
 
+    public ChartProperties getChartProperties() {
+        return chartProps;
+    }
+
     /**
      * @param hasMiddleMouseButton the hasMiddleMouseButton to set
      */
@@ -4345,14 +4349,6 @@ public class PolyChart extends Region implements PeakListener {
         }
         double[] value = dataset instanceof Dataset ? ((Dataset) dataset).getPercentile(p, pt, dim) : null;
         return value;
-    }
-
-    public void config(String name, Object value) {
-        chartProps.config(name, value);
-    }
-
-    public Map<String, Object> config() {
-        return chartProps.config();
     }
 
     public static void registerPeakDeleteAction(Consumer<PeakDeleteEvent> func) {

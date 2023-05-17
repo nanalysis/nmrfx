@@ -31,7 +31,7 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.ColorTypes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
 import org.nmrfx.utils.properties.ColorProperty;
-import org.nmrfx.utils.properties.PropertiesManager;
+import org.nmrfx.utils.properties.PublicPropertyContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,7 @@ import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.N
 /**
  * @author Bruce Johnson
  */
-public class PeakListAttributes implements PeakListener, PropertiesManager {
+public class PeakListAttributes implements PeakListener, PublicPropertyContainer {
     private static final Logger log = LoggerFactory.getLogger(PeakListAttributes.class);
     public static final String LABEL_TYPE = "labelType";
     public static final String DISPLAY_TYPE = "displayType";
@@ -765,7 +765,7 @@ public class PeakListAttributes implements PeakListener, PropertiesManager {
      * @param value the new value
      */
     @Override
-    public void config(String name, Object value) {
+    public void setPublicPropertyValue(String name, Object value) {
         Fx.runOnFxThread(() -> {
             switch (name) {
                 case LABEL_TYPE -> setLabelType(value.toString());
@@ -787,7 +787,7 @@ public class PeakListAttributes implements PeakListener, PropertiesManager {
      * @return public properties and their values
      */
     @Override
-    public Map<String, Object> config() {
+    public Map<String, Object> getPublicPropertiesValues() {
         Map<String, Object> map = new HashMap<>();
         for (var property : getPublicProperties()) {
             if (property instanceof ColorProperty colorProperty) {

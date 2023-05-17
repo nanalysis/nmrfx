@@ -30,7 +30,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.utils.properties.ColorProperty;
-import org.nmrfx.utils.properties.PropertiesManager;
+import org.nmrfx.utils.properties.PublicPropertyContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ import java.io.IOException;
 import java.util.*;
 
 @PluginAPI("parametric")
-public class DatasetAttributes extends DataGenerator implements PropertiesManager, Cloneable {
+public class DatasetAttributes extends DataGenerator implements PublicPropertyContainer, Cloneable {
     private static final Logger log = LoggerFactory.getLogger(DatasetAttributes.class);
 
     private final IntegerProperty nlvls = new SimpleIntegerProperty(this, "nlvls", 20);
