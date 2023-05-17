@@ -7,7 +7,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
-import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.WindowIO;
@@ -35,42 +34,42 @@ public class SpectrumMenuActions extends MenuActions {
 
 
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
-        deleteItem.setOnAction(e -> FXMLController.getActiveController().removeSelectedChart());
+        deleteItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().removeSelectedChart());
         MenuItem syncMenuItem = new MenuItem("Sync Axes");
         syncMenuItem.setOnAction(e -> PolyChart.getActiveChart().syncSceneMates());
 
         Menu arrangeMenu = new Menu("Arrange");
         MenuItem createGridItem = new MenuItem("Add Grid...");
-        createGridItem.setOnAction(e -> FXMLController.getActiveController().addGrid());
+        createGridItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().addGrid());
         MenuItem horizItem = new MenuItem("Horizontal");
-        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.HORIZONTAL));
+        horizItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().arrange(GridPaneCanvas.ORIENTATION.HORIZONTAL));
         MenuItem vertItem = new MenuItem("Vertical");
-        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.VERTICAL));
+        vertItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().arrange(GridPaneCanvas.ORIENTATION.VERTICAL));
         MenuItem gridItem = new MenuItem("Grid");
-        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.GRID));
+        gridItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().arrange(GridPaneCanvas.ORIENTATION.GRID));
         MenuItem overlayItem = new MenuItem("Overlay");
-        overlayItem.setOnAction(e -> FXMLController.getActiveController().overlay());
+        overlayItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().overlay());
         MenuItem minimizeItem = new MenuItem("Minimize Borders");
-        minimizeItem.setOnAction(e -> FXMLController.getActiveController().setBorderState(true));
+        minimizeItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().setBorderState(true));
         MenuItem normalizeItem = new MenuItem("Normal Borders");
-        normalizeItem.setOnAction(e -> FXMLController.getActiveController().setBorderState(false));
+        normalizeItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().setBorderState(false));
 
         arrangeMenu.getItems().addAll(createGridItem, horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
         MenuItem favoritesMenuItem = new MenuItem("Favorites");
         favoritesMenuItem.setOnAction(e -> showFavorites());
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG");
-        copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
+        copyItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().copySVGAction(e));
         menu.getItems().addAll(newMenuItem, deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem);
         MenuItem[] disableItems = {deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem};
         for (var item:disableItems) {
-            item.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
+            item.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
         }
     }
 
     @Override
     protected void advanced() {
         MenuItem alignMenuItem = new MenuItem("Align Spectra");
-        alignMenuItem.setOnAction(e -> FXMLController.getActiveController().alignCenters());
+        alignMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().alignCenters());
 
         menu.getItems().addAll(
                 alignMenuItem);
@@ -101,6 +100,6 @@ public class SpectrumMenuActions extends MenuActions {
     private void newGraphics(ActionEvent event) {
         Stage stage = new Stage(StageStyle.DECORATED);
         stage.setTitle(AnalystApp.getAppName() + " " + AnalystApp.getVersion());
-        FXMLController.create(stage);
+        AnalystApp.getFXMLControllerManager().newController(stage);
     }
 }

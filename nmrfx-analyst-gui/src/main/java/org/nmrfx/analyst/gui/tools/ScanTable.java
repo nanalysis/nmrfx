@@ -43,6 +43,7 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
@@ -50,7 +51,6 @@ import org.nmrfx.processor.datasets.DatasetMerger;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.ChartProcessor;
-import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.controls.FileTableItem;
@@ -192,7 +192,7 @@ public class ScanTable {
                 Dataset dataset = Dataset.getDataset(datasetName);
                 if (dataset == null) {
                     File datasetFile = new File(scanDir, datasetPath);
-                    FXMLController.getActiveController().openDataset(datasetFile, false, true);
+                    AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(datasetFile, false, true);
                 }
             }
         }
@@ -467,7 +467,7 @@ public class ScanTable {
                     // After merging, remove the 1D files
                     for (String fileName : fileNames) {
                         File file = new File(fileName);
-                        FXMLController.getActiveController().closeFile(file);
+                        AnalystApp.getFXMLControllerManager().getOrCreateActiveController().closeFile(file);
                         Files.deleteIfExists(file.toPath());
                         String parFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".par";
                         File parFile = new File(parFileName);
@@ -475,7 +475,7 @@ public class ScanTable {
                     }
 
                     // load merged dataset
-                    FXMLController.getActiveController().openDataset(mergedFile, false, true);
+                    AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(mergedFile, false, true);
                     List<Integer> rows = new ArrayList<>();
                     rows.add(0);
                     chart.setDrawlist(rows);
@@ -486,7 +486,7 @@ public class ScanTable {
             } else {
                 // load first output dataset
                 File datasetFile = new File(scanOutputDir, fileRoot + 1 + ".nv");
-                FXMLController.getActiveController().openDataset(datasetFile, false, true);
+                AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(datasetFile, false, true);
             }
             chart.full();
             chart.autoScale();
@@ -755,7 +755,7 @@ public class ScanTable {
                 File parentDir = file.getParentFile();
                 Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
                 if (path.toFile().exists()) {
-                    Dataset firstDataset = FXMLController.getActiveController().openDataset(path.toFile(), false, true);
+                    Dataset firstDataset = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(path.toFile(), false, true);
                     // If there is only one unique dataset name, assume an arrayed experiment
                     List<String> uniqueDatasetNames = new ArrayList<>(fileListItems.stream().map(FileTableItem::getDatasetName).collect(Collectors.toSet()));
                     if (uniqueDatasetNames.size() == 1 && uniqueDatasetNames.get(0) != null && !uniqueDatasetNames.get(0).equals("")) {

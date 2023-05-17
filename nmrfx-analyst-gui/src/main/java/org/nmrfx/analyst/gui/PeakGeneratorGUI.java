@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
 import org.nmrfx.analyst.peaks.PeakGenerator;
+import org.nmrfx.analyst.peaks.PeakGenerator.PeakGeneratorTypes;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
@@ -24,8 +25,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.nmrfx.analyst.peaks.PeakGenerator.PeakGeneratorTypes;
 
 import static org.nmrfx.analyst.peaks.PeakGenerator.PeakGeneratorTypes.*;
 
@@ -471,7 +470,8 @@ public class PeakGeneratorGUI {
     }
 
     void showPeakInspector() {
-        FXMLController.getActiveController().showPeakAttr();
-        FXMLController.getActiveController().getPeakAttrController().setPeakList(peakListProperty.get());
+        FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+        controller.showPeakAttr();
+        controller.getPeakAttrController().setPeakList(peakListProperty.get());
     }
 }

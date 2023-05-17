@@ -37,7 +37,7 @@ public class PeakMenuActions extends MenuActions {
     @Override
     public void basic() {
         MenuItem peakAttrMenuItem = new MenuItem("Show Peak Tool");
-        peakAttrMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakAttrAction(e));
+        peakAttrMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().showPeakAttrAction(e));
 
         MenuItem peakTableMenuItem = new MenuItem("Show Peak Table");
         peakTableMenuItem.setOnAction(e -> showPeakTable());
@@ -55,10 +55,10 @@ public class PeakMenuActions extends MenuActions {
         peakGeneratorMenuItem.setOnAction(e -> showPeakGeneratorGUI());
 
         MenuItem linkPeakDimsMenuItem = new MenuItem("Link by Labels");
-        linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
+        linkPeakDimsMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().linkPeakDims());
 
         MenuItem ligandScannerMenuItem = new MenuItem("Show Ligand Scanner");
-        ligandScannerMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
+        ligandScannerMenuItem.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
         ligandScannerMenuItem.setOnAction(e -> showLigandScanner());
 
         MenuItem noeTableMenuItem = new MenuItem("Show NOE Table");
@@ -69,7 +69,7 @@ public class PeakMenuActions extends MenuActions {
         assignOnPick = new CheckMenuItem("Assign on Pick");
 
         MenuItem atomBrowserMenuItem = new MenuItem("Show Atom Browser");
-        atomBrowserMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
+        atomBrowserMenuItem.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
         atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
 
         MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
@@ -146,7 +146,7 @@ public class PeakMenuActions extends MenuActions {
     public void showAtomBrowser() {
         if (atomBrowser == null) {
             ToolBar navBar = new ToolBar();
-            FXMLController controller = FXMLController.getActiveController();
+            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
             controller.getBottomBox().getChildren().add(navBar);
             atomBrowser = new AtomBrowser(controller, this::removeAtomBrowser);
             atomBrowser.initSlider(navBar);
@@ -155,7 +155,7 @@ public class PeakMenuActions extends MenuActions {
 
     public void removeAtomBrowser(Object o) {
         if (atomBrowser != null) {
-            FXMLController controller = FXMLController.getActiveController();
+            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
             controller.getBottomBox().getChildren().remove(atomBrowser.getToolBar());
             atomBrowser = null;
         }
@@ -164,7 +164,7 @@ public class PeakMenuActions extends MenuActions {
         if (assignOnPick.isSelected()) {
             Peak peak = (Peak) peakObject;
             System.out.println(peak.getName());
-            PolyChart chart = FXMLController.getActiveController().getActiveChart();
+            PolyChart chart = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart();
             double x = chart.getMouseX();
             double y = chart.getMouseY();
             Canvas canvas = chart.getCanvas();

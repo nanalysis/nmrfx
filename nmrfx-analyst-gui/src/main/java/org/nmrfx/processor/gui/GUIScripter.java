@@ -15,8 +15,6 @@ import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -29,11 +27,8 @@ import java.util.stream.Collectors;
  */
 @PythonAPI("gscript")
 public class GUIScripter {
-
-    private static final Logger log = LoggerFactory.getLogger(GUIScripter.class);
-
     final PolyChart useChart;
-    static FXMLController controller = FXMLController.getActiveController();
+    static FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
     static Map<String, String> keyActions = new HashMap<>();
 
     public GUIScripter() {
@@ -46,22 +41,23 @@ public class GUIScripter {
     }
 
     public static void setActiveController() {
-        controller = FXMLController.getActiveController();
+        controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
     }
 
     public static FXMLController getController() {
-        if (controller == null) {
-            controller = FXMLController.getActiveController();
+        // controller may have been closed and unregistered without GUIScripter being notified
+        if (!AnalystApp.getFXMLControllerManager().isRegistered(controller)) {
+            controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         }
         return controller;
     }
 
     public static FXMLController getActiveController() {
-        return FXMLController.getActiveController();
+        return AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
     }
 
     public GUIScripter(String chartName) {
-        Optional<PolyChart> chartOpt = FXMLController.getActiveController().getCharts().stream().filter(c -> c.getName().equals(chartName)).findFirst();
+        Optional<PolyChart> chartOpt = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getCharts().stream().filter(c -> c.getName().equals(chartName)).findFirst();
         if (chartOpt.isPresent()) {
             useChart = chartOpt.get();
         } else {
@@ -70,34 +66,11 @@ public class GUIScripter {
     }
 
     PolyChart getChart() {
-        PolyChart chart;
-        if (useChart != null) {
-            chart = useChart;
-        } else {
-            if (getActiveController() == null) {
-                try {
-                    FutureTask<Boolean> future = new FutureTask(() -> {
-                        newStage();
-                        return true;
-                    });
-                    ConsoleUtil.runOnFxThread(future);
-                    future.get();
-                } catch (InterruptedException | ExecutionException iE) {
-                    log.warn(iE.getMessage(), iE);
-                }
-            }
-            chart = getActiveController().getActiveChart();
-        }
-        return chart;
+        return useChart != null ? useChart : getActiveController().getActiveChart();
     }
 
     public String active() {
-        PolyChart chart;
-        if (useChart != null) {
-            chart = useChart;
-        } else {
-            chart = PolyChart.getActiveChart();
-        }
+        PolyChart chart = useChart != null ? useChart : PolyChart.getActiveChart();
         return chart.getName();
     }
 
@@ -508,7 +481,7 @@ public class GUIScripter {
     }
 
     public void newStage() {
-        controller = FXMLController.create();
+        controller = AnalystApp.getFXMLControllerManager().newController();
         PolyChart chartActive = controller.getCharts().get(0);
         controller.setActiveChart(chartActive);
     }

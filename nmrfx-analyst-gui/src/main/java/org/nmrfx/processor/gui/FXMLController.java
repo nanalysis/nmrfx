@@ -31,14 +31,11 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
@@ -46,7 +43,6 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
@@ -101,8 +97,6 @@ public class FXMLController implements Initializable, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
     public static final int MAX_INITIAL_TRACES = 32;
     private static final int PSEUDO_2D_SIZE_THRESHOLD = 100;
-    private static final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
-    private final static List<FXMLController> controllers = new ArrayList<>();
     private static PeakAttrController peakAttrController = null;
     private static String docString = null;
     private static File initialDir = null;
@@ -166,6 +160,11 @@ public class FXMLController implements Initializable, PeakNavigable {
         return bgColorProperty().get();
     }
 
+    @SuppressWarnings("unchecked") // called by reflection using PropertyUtils
+    public void setBgColor(Color bgColor) {
+        bgColorProperty().set(bgColor);
+    }
+
     private ColorProperty bgColorProperty() {
         if (bgColor == null) {
             bgColor = new ColorProperty(this, "bgColor", null);
@@ -193,6 +192,12 @@ public class FXMLController implements Initializable, PeakNavigable {
         return axesColorProperty().get();
     }
 
+    // called by reflection using PropertyUtils
+    @SuppressWarnings("unchecked")
+    public void setAxesColor(Color axesColor) {
+        this.axesColorProperty().set(axesColor);
+    }
+
     private ColorProperty axesColorProperty() {
         if (axesColor == null) {
             axesColor = new ColorProperty(this, "axesColor", null);
@@ -216,19 +221,16 @@ public class FXMLController implements Initializable, PeakNavigable {
         for (PolyChart chart : tempCharts) {
             chart.close();
         }
-        controllers.remove(this);
+
+        AnalystApp.getFXMLControllerManager().unregister(this);
         PolyChart activeChart = PolyChart.getActiveChart();
         if (activeChart == null) {
             if (!PolyChart.CHARTS.isEmpty()) {
                 activeChart = PolyChart.CHARTS.get(0);
             }
         }
-        if (activeChart != null) {
-            activeController.set(activeChart.getController());
-            activeController.get().setActiveChart(activeChart);
-        } else {
-            activeController.set(null);
-        }
+
+        AnalystApp.getFXMLControllerManager().setActiveControllerFromChart(activeChart);
     }
 
     public void saveDatasets() {
@@ -887,9 +889,7 @@ public class FXMLController implements Initializable, PeakNavigable {
             chartGroup.requestLayout();
         });
 
-        controllers.add(this);
         statusBar.setMode(1);
-        activeController.set(this);
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {
                 crossHairStates[iCross][jOrient] = true;
@@ -897,16 +897,32 @@ public class FXMLController implements Initializable, PeakNavigable {
         }
         phaser = new Phaser(this, phaserBox);
         processorPane.getChildren().addListener(this::updateStageSize);
-        cursorProperty.addListener( e -> setCursor());
+        cursorProperty.addListener(e -> setCursor());
         attributesPane = new AnchorPane();
-        attributesController =  AttributesController.create(this, attributesPane);
+        attributesController = AttributesController.create(this, attributesPane);
         borderPane.heightProperty().addListener(e -> attributesController.updateScrollSize(borderPane));
 
         contentPane = new AnchorPane();
-        contentController =  ContentController.create(this, contentPane);
+        contentController = ContentController.create(this, contentPane);
         borderPane.heightProperty().addListener(e -> contentController.updateScrollSize(borderPane));
-
     }
+
+    /**
+     * Called by controller manager directly after creation by FXMLLoader.
+     * Used to pass additional parameters that can't be passed to a constructor.
+     * <p>
+     * Note that this will be called after the initialize() method.
+     *
+     * @param stage the stage managed by this controller.
+     */
+    protected void initAfterFxmlLoader(Stage stage) {
+        //XXX see if we could rename as setStage() and put in an interface.
+        this.stage = stage;
+
+        stage.focusedProperty().addListener(this::setActiveController);
+        stage.maximizedProperty().addListener(this::adjustSizeAfterMaximize);
+    }
+
 
     public BorderPane getMainBox() {
         return mainBox;
@@ -1189,11 +1205,11 @@ public class FXMLController implements Initializable, PeakNavigable {
         return bordersGrid;
     }
 
-    private boolean getMinBorders() {
+    public boolean getMinBorders() {
         return minBordersProperty().get();
     }
 
-    private void setMinBorders(boolean value) {
+    public void setMinBorders(boolean value) {
         minBordersProperty().set(value);
     }
 
@@ -1396,6 +1412,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     }
 
     public Map<String, Object> config() {
+        //TODO remove use of reflection/PropertyUtils here, since the property names are fixed!
         Map<String, Object> data = new HashMap<>();
         String[] beanNames = {"bgColor", "axesColor", "minBorders"};
         for (String beanName : beanNames) {
@@ -1795,7 +1812,7 @@ public class FXMLController implements Initializable, PeakNavigable {
     }
 
     public void setActiveController() {
-        activeController.set(this);
+        AnalystApp.getFXMLControllerManager().setActiveController(this);
         if (attributesController != null) {
             attributesController.setAttributeControls();
         }
@@ -1864,10 +1881,6 @@ public class FXMLController implements Initializable, PeakNavigable {
         }
     }
 
-    public static List<FXMLController> getControllers() {
-        return controllers;
-    }
-
     public static PeakAttrController getPeakAttrController() {
         return peakAttrController;
     }
@@ -1894,54 +1907,9 @@ public class FXMLController implements Initializable, PeakNavigable {
         return docString;
     }
 
-    public static SimpleObjectProperty<FXMLController> activeControllerProperty() {
-        return activeController;
-    }
-
-    public static FXMLController getActiveController() {
-        if (activeController.get() == null) {
-            FXMLController controller = FXMLController.create();
-            controller.setActiveController();
-        }
-        return activeController.get();
-    }
-
     private void setActiveController(Observable obs) {
         if (stage.isFocused()) {
             setActiveController();
         }
-    }
-
-    public static FXMLController create() {
-        return create(null);
-    }
-
-    public static FXMLController create(Stage stage) {
-        FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
-        FXMLController controller;
-        if (stage == null) {
-            stage = new Stage(StageStyle.DECORATED);
-        }
-
-        try {
-            Parent parent = loader.load();
-            Scene scene = new Scene(parent);
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-            AnalystApp.setStageFontSize(stage, AnalystApp.REG_FONT_SIZE_STR);
-            controller = loader.getController();
-            controller.stage = stage;
-            FXMLController myController = controller;
-            stage.focusedProperty().addListener(myController::setActiveController);
-            controller.setActiveController();
-            AnalystApp.registerStage(stage, controller);
-            stage.show();
-        } catch (IOException ioE) {
-            throw new IllegalStateException("Unable to create controller", ioE);
-        }
-
-        stage.maximizedProperty().addListener(controller::adjustSizeAfterMaximize);
-
-        return controller;
     }
 }

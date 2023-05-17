@@ -17,11 +17,12 @@
  */
 package org.nmrfx.processor.gui.tools;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.gui.FXMLController;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -34,8 +35,7 @@ public class PeakLinker {
 
     public static List<Peak> getSelectedPeaks() {
         List<Peak> allPeaks = new ArrayList<>();
-        List<FXMLController> controllers = FXMLController.getControllers();
-        for (var controller : controllers) {
+        for (var controller : AnalystApp.getFXMLControllerManager().getControllers()) {
             for (var chart : controller.getCharts()) {
                 List<Peak> peaks = chart.getSelectedPeaks();
                 allPeaks.addAll(peaks);
@@ -45,7 +45,7 @@ public class PeakLinker {
     }
 
     public static String getPeakDim(int iDim) {
-        var activeChart = FXMLController.getActiveController().getActiveChart();
+        var activeChart = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart();
         var refList = activeChart.getPeakListAttributes().get(0).getPeakList();
         var refSpectralDim = refList.getSpectralDim(iDim);
         var refDimName = refSpectralDim.getDimName();

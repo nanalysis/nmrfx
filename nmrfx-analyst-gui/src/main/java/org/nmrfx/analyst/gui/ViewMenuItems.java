@@ -6,7 +6,6 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.processor.gui.DatasetsController;
-import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.project.Project;
 
@@ -21,7 +20,7 @@ public class ViewMenuItems extends MenuActions {
     @Override
     public void basic() {
         MenuItem procMenuItem = new MenuItem(PROCESSOR_MENU_TEXT);
-        procMenuItem.setOnAction(e -> FXMLController.getActiveController().showProcessorAction(e));
+        procMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().showProcessorAction(e));
 
         MenuItem dataMenuItem = new MenuItem("Show Datasets");
         dataMenuItem.setOnAction(this::showDatasetsTable);
@@ -43,7 +42,7 @@ public class ViewMenuItems extends MenuActions {
     private void verifyMenuItems() {
         for(MenuItem menuItem: menu.getItems()) {
             if (PROCESSOR_MENU_TEXT.equals(menuItem.getText())) {
-                menuItem.setDisable(!FXMLController.getActiveController().isProcessorControllerAvailable());
+                menuItem.setDisable(!AnalystApp.getFXMLControllerManager().getOrCreateActiveController().isProcessorControllerAvailable());
             }
         }
     }

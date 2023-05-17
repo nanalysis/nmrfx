@@ -3,7 +3,6 @@ package org.nmrfx.analyst.gui;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
-import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PreferencesController;
 
 public class FileMenuActions extends MenuActions {
@@ -15,7 +14,7 @@ public class FileMenuActions extends MenuActions {
     @Override
     public void basic() {
         MenuItem openMenuItem = new MenuItem("Open...");
-        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openAction(e));
+        openMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openAction(e));
 
         Menu recentFilesMenuItem = new Menu("Recent Files");
         menu.setOnShowing(e -> {
@@ -26,16 +25,16 @@ public class FileMenuActions extends MenuActions {
         Menu graphicsMenu = new Menu("Export Graphics");
 
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
-        pdfMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
-        pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
+        pdfMenuItem.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
+        pdfMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().exportPDFAction(e));
 
         MenuItem svgMenuItem = new MenuItem("Export SVG...");
-        svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
-        svgMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
+        svgMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().exportSVGAction(e));
+        svgMenuItem.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
 
         MenuItem pngMenuItem = new MenuItem("Export PNG...");
-        pngMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPNG(e));
-        pngMenuItem.disableProperty().bind(FXMLController.activeControllerProperty().isNull());
+        pngMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().exportPNG(e));
+        pngMenuItem.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
 
         graphicsMenu.getItems().addAll(svgMenuItem, pdfMenuItem, pngMenuItem);
 
@@ -57,7 +56,7 @@ public class FileMenuActions extends MenuActions {
     @Override
     protected void advanced() {
         MenuItem addMenuItem = new MenuItem("Open Dataset (No Display) ...");
-        addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
+        addMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().addNoDrawAction(e));
         menu.getItems().addAll(addMenuItem);
 
     }

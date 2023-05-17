@@ -1276,7 +1276,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     public void setPeakList() {
         if (navigationPeakList == null) {
             PeakList testList = null;
-            FXMLController controller = FXMLController.getActiveController();
+            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
             PolyChart chart = controller.getActiveChart();
             if (chart != null) {
                 ObservableList<PeakListAttributes> attr = chart.getPeakListAttributes();
@@ -1764,7 +1764,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     void showRefChart() {
         if (runAbout.isActive()) {
-            refController = FXMLController.create();
+            refController = AnalystApp.getFXMLControllerManager().newController();
             PeakList refList = runAbout.getPeakLists().get(0);
             String datasetName = refList.getDatasetName();
             Dataset dataset = Dataset.getDataset(datasetName);

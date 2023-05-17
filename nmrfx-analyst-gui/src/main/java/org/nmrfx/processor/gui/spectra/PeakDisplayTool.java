@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui.spectra;
 
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
@@ -30,12 +31,10 @@ public class PeakDisplayTool {
     }
 
     private static Optional<PolyChart> checkActiveChart(Peak peak) {
-        FXMLController activeController = FXMLController.getActiveController();
-        if (activeController != null) {
-            PolyChart chart = activeController.getActiveChart();
-            if ((chart != null) && (chartHasPeakList(chart, peak.getPeakList()))) {
-                return Optional.of(chart);
-            }
+        FXMLController activeController = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+        PolyChart chart = activeController.getActiveChart();
+        if ((chart != null) && (chartHasPeakList(chart, peak.getPeakList()))) {
+            return Optional.of(chart);
         }
         return Optional.empty();
     }
@@ -56,10 +55,10 @@ public class PeakDisplayTool {
         if (optChart.isPresent()) {
             return optChart;
         } else {
-            FXMLController activeController = FXMLController.getActiveController();
+            FXMLController activeController = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
             optChart = checkController(activeController, peak);
             if (optChart.isEmpty()) {
-                for (var controller : FXMLController.getControllers()) {
+                for (var controller : AnalystApp.getFXMLControllerManager().getControllers()) {
                     optChart = checkController(controller, peak);
                     if (optChart.isPresent()) {
                         controller.getStage().toFront();
@@ -157,7 +156,7 @@ public class PeakDisplayTool {
             if ((datasetName != null) && !datasetName.isBlank()) {
                 Dataset dataset = Dataset.getDataset(datasetName);
                 if (dataset != null) {
-                    FXMLController controller  = FXMLController.create();
+                    FXMLController controller = AnalystApp.getFXMLControllerManager().newController();
                     controller.addDataset(dataset, false, false);
                     PolyChart chart = controller.getActiveChart();
                     chart.updatePeakLists(List.of(peakList.getName()));
