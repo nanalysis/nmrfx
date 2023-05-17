@@ -356,13 +356,6 @@
                 <version>0.40</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
-            <!-- TODO NMR-6904 try to remove this dependency -->
-            <dependency>
-                <groupId>commons-beanutils</groupId>
-                <artifactId>commons-beanutils</artifactId>
-                <version>1.9.4</version>
-                <!-- license: Apache License, Version 2.0 -->
-            </dependency>
             <dependency>
                 <groupId>org.fxmisc.richtext</groupId>
                 <artifactId>richtextfx</artifactId>

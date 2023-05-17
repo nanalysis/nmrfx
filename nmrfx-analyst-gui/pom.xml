@@ -40,11 +40,6 @@
             <artifactId>nmrfx-plugin-api</artifactId>
             <version>11.3.4-SNAPSHOT</version>
         </dependency>
-        <!-- TODO NMR-6904 try to remove this dependency -->
-        <dependency>
-            <groupId>commons-beanutils</groupId>
-            <artifactId>commons-beanutils</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.fxmisc.richtext</groupId>
             <artifactId>richtextfx</artifactId>
