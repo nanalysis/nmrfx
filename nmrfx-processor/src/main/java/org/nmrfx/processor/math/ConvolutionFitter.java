@@ -19,6 +19,8 @@ public class ConvolutionFitter {
     double psfMax;
     double[] widths;
     double[] sim;
+    double[] signal;
+    boolean[] skip;
     double squash = 0.625;
     double threshold = 0.0;
 
@@ -47,41 +49,55 @@ public class ConvolutionFitter {
         widths[0] = width;
     }
 
-    public double[] makeSignalVector(int n) {
-        return new double[n];
+    // used from Python for testing
+    public void signalVector(int n) {
+         signal = new double[n];
     }
 
-    public void addSignal(double[] vec, int range, double amplitude, double center, double width, double shapeFactor) {
+    // used from Python for testing
+    public void addSignal(double[] vec, double amplitude, double center, double width, double shapeFactor) {
         for (int i = 0;i<vec.length;i++ ) {
             double y = LineShapes.G_LORENTZIAN.calculate(i, amplitude, center, width, shapeFactor);
             vec[i] += y;
         }
     }
 
+    // used from Python for testing
     public void addNoise(double[] vec, double scale) {
         for (int i = 0;i<vec.length;i++ ) {
             vec[i] += rand.nextGaussian() * scale;
         }
     }
 
-    public double[] getPSF() {
+    // used from Python for testing
+    public double[] psf() {
         return psf;
     }
 
-    public double[] getSim() {
+    public double[] simVector() {
         return sim;
+    }
+
+    public double[] signalVector() {
+        return signal;
+    }
+
+    public boolean[] skipVector() {
+        return skip;
     }
 
     public void squash(double value) {
         this.squash = value;
     }
 
-    public double[] convolve(double[] values, boolean[] skip) {
+    public void convolve(double[] values, boolean[] skip) {
         int psfSize = psf.length;
         int nh = psfSize / 2;
         int size = values.length;
         int end = size - psfSize;
-        double[] result = new double[size];
+        if ((sim == null) || (signal.length != size)) {
+             sim = new double[size];
+        }
         for (int i = nh; i < end; i++) {
             double sum = 0.0;
             for (int k = 0; k < psfSize; k++) {
@@ -90,38 +106,38 @@ public class ConvolutionFitter {
                     sum += values[index] * psf[k];
                 }
             }
-            result[i] = sum ;
+            sim[i] = sum ;
         }
-        return result;
     }
 
-    public PointValuePair lrIteration(double[] signal, double[] values, boolean[] skip) {
+    public double lrIteration(double[] values) {
         int psfSize = psf.length;
         int nh = psfSize / 2;
         int size = values.length;
         int end = size - nh;
-        double[] result = new double[size];
         double sumDelta = 0.0;
         int nDelta = 0;
-        double[] temp = convolve(values, skip);
+        convolve(values, skip);
 
         for (int j = nh; j < end; j++) {
             double sum = 0.0;
             for (int k = 0; k < psfSize; k++) {
                 int index = j - nh + k;
-                if ((signal[index] > threshold) && (temp[index] > 1.0e-6)) {
-                    sum += signal[index] / temp[index] * psf[k];
+                if ((signal[index] > threshold) && (sim[index] > 1.0e-6)) {
+                    sum += signal[index] / sim[index] * psf[k];
                 }
             }
             if (!skip[j]) {
-                result[j] = values[j] * sum;
-                double delta = result[j] - values[j];
+                double oldValue = values[j];
+                values[j] = values[j] * sum;
+                double delta = values[j] - oldValue;
                 sumDelta += delta * delta;
                 nDelta++;
+            } else {
+                values[j] = 0.0;
             }
         }
-        double rms = nDelta > 0 ? Math.sqrt(sumDelta / nDelta) : 0.0;
-        return new PointValuePair(result, rms);
+        return nDelta > 0 ? Math.sqrt(sumDelta / nDelta) : 0.0;
     }
 
     void squashNeighbors(double[] values, boolean[] skip) {
@@ -130,12 +146,18 @@ public class ConvolutionFitter {
             for (int j = -half; j <= half; j++) {
                 if ((i != j) && (values[i] < values[i + j])) {
                     skip[i] = true;
+                    break;
                 }
             }
         }
     }
 
-    public double[] lr(double[] signal, boolean[] skip, double threshold, int iterations) {
+    public double[] lr(double[] signal, double threshold, int iterations) {
+        this.signal = signal;
+        return lr(threshold, iterations);
+    }
+
+    public double[] lr(double threshold, int iterations) {
         if (skip == null) {
             skip = new boolean[signal.length];
         }
@@ -155,23 +177,22 @@ public class ConvolutionFitter {
             if (i == SQUASH_AT) {
                 squashNeighbors(values, skip);
             }
-            PointValuePair pointValuePair = lrIteration(signal, values, skip);
-            values = pointValuePair.getPoint();
-            if ((i > SQUASH_AT) && (pointValuePair.getValue() < 1.0e-6)) {
+            double rms = lrIteration(values);
+            if ((i > SQUASH_AT) && (rms < 1.0e-6)) {
                 break;
             }
         }
-        sim = convolve(values, skip);
+        convolve(values, skip);
         return values;
     }
 
-    public double[] lr(Vec vec, boolean[] skip, double threshold, int iterations) {
-        double[] signal = new double[vec.getSize()];
+    public double[] lr(Vec vec,  double threshold, int iterations) {
+        signal = new double[vec.getSize()];
         for (int i = 0; i < signal.length; i++) {
             signal[i] = vec.getReal(i);
         }
-        double[] result = lr(signal, skip, threshold, iterations);
-        double[] sim = convolve(result, skip);
+        double[] result = lr(threshold, iterations);
+        convolve(result, skip);
         for (int i = 0; i < signal.length; i++) {
             vec.setReal(i, sim[i]);
         }
@@ -198,13 +219,13 @@ public class ConvolutionFitter {
             int size = pt2 - pt1 + 1;
 
             int psfSize = psf.length;
-            double[] signal = new double[size + 2 * psfSize];
+            signal = new double[size + 2 * psfSize];
+            skip = new boolean[signal.length];
             for (int i = 0; i < size; i++) {
                 signal[i + psfSize] = vec.getReal(i + pt1);
             }
-            boolean[] skip = new boolean[signal.length];
 
-            double[] result = lr(signal, skip, threshold, iterations);
+            double[] result = lr(threshold, iterations);
             int start = pt1 - psfSize;
             for (int i = 0; i < result.length; i++) {
                 if (!skip[i]) {
