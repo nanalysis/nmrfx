@@ -102,19 +102,9 @@ public class FXMLControllerManager {
         }
 
         activeController.set(active);
-    }
 
-    /**
-     * Set the active controller based on the active chart.
-     *
-     * @param chart a chart associated to a controller.
-     */
-    public void setActiveControllerFromChart(@Nullable PolyChart chart) {
-        if (chart == null || chart.getController() == null) {
-            setActiveController(null);
-        } else {
-            setActiveController(chart.getController());
-            chart.getController().setActiveChart(chart);
+        if (active != null) {
+            active.refreshAttributes();
         }
     }
 
@@ -141,9 +131,43 @@ public class FXMLControllerManager {
         registerNewController(controller);
 
         AnalystApp.setStageFontSize(stage, AnalystApp.REG_FONT_SIZE_STR);
-        AnalystApp.registerStage(stage, controller);
+        AnalystApp.registerStage(stage);
+
+        stage.focusedProperty().addListener(observable -> focusChanged(controller));
+        stage.setOnCloseRequest(e -> closeController(controller));
         stage.show();
 
         return controller;
+    }
+
+    /**
+     * Close and unregister a controller. The active controller will be replaced (even if the closed one wasn't the active one).
+     *
+     * @param controller the controller to close.
+     */
+    public void closeController(FXMLController controller) {
+        controller.close();
+        unregister(controller);
+        setActiveControllerFromChart();
+    }
+
+    private void setActiveControllerFromChart() {
+        PolyChart activeChart = PolyChart.getActiveChart();
+        if (activeChart == null && !PolyChart.CHARTS.isEmpty()) {
+            activeChart = PolyChart.CHARTS.get(0);
+        }
+
+        if (activeChart == null || activeChart.getController() == null) {
+            setActiveController(null);
+        } else {
+            setActiveController(activeChart.getController());
+            activeChart.getController().setActiveChart(activeChart);
+        }
+    }
+
+    private void focusChanged(FXMLController controller) {
+        if (controller.getStage().isFocused()) {
+            setActiveController(controller);
+        }
     }
 }

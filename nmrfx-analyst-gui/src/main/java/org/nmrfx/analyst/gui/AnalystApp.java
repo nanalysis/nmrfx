@@ -665,7 +665,7 @@ public class AnalystApp extends Application {
         // Don't close the first controller that matches with the main stage, Note this first controller is not
         // necessarily the active controller
         for (int index = 1; index < controllers.size(); index++) {
-            controllers.get(index).close();
+            getFXMLControllerManager().closeController(controllers.get(index));
         }
 
         Stage mainStage = getMainStage();
@@ -700,15 +700,10 @@ public class AnalystApp extends Application {
         }
     }
 
-    public static void registerStage(Stage stage, FXMLController controller) {
+    public static void registerStage(Stage stage) {
         if (!stages.contains(stage)) {
             stages.add(stage);
         }
-        stage.setOnCloseRequest(e -> {
-            controller.close();
-            removeStage(stage);
-        });
-
     }
 
     public static List<Stage> getStages() {

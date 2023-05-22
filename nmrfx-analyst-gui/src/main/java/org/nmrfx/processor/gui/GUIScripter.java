@@ -37,7 +37,7 @@ public class GUIScripter {
     }
 
     public static void setController(FXMLController controllerValue) {
-        controllerValue.setActiveController();
+        AnalystApp.getFXMLControllerManager().setActiveController(controllerValue);
         controller = controllerValue;
     }
 

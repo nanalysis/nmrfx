@@ -19,7 +19,6 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -191,7 +190,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         cursorProperty.set(cursor);
     }
 
-    public void close() {
+    protected void close() {
         // need to make copy of charts as the call to chart.close will remove the chart from charts
         // resulting in a java.util.ConcurrentModificationException
         saveDatasets();
@@ -199,16 +198,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         for (PolyChart chart : tempCharts) {
             chart.close();
         }
-
-        AnalystApp.getFXMLControllerManager().unregister(this);
-        PolyChart activeChart = PolyChart.getActiveChart();
-        if (activeChart == null) {
-            if (!PolyChart.CHARTS.isEmpty()) {
-                activeChart = PolyChart.CHARTS.get(0);
-            }
-        }
-
-        AnalystApp.getFXMLControllerManager().setActiveControllerFromChart(activeChart);
     }
 
     public void saveDatasets() {
@@ -897,7 +886,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void setStage(Stage stage) {
         this.stage = stage;
 
-        stage.focusedProperty().addListener(this::setActiveController);
         stage.maximizedProperty().addListener(this::adjustSizeAfterMaximize);
     }
 
@@ -1737,8 +1725,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
-    public void setActiveController() {
-        AnalystApp.getFXMLControllerManager().setActiveController(this);
+    protected void refreshAttributes() {
         if (attributesController != null) {
             attributesController.setAttributeControls();
         }
@@ -1831,11 +1818,5 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             }
         }
         return docString;
-    }
-
-    private void setActiveController(Observable obs) {
-        if (stage.isFocused()) {
-            setActiveController();
-        }
     }
 }
