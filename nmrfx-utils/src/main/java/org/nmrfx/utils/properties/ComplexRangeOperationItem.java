@@ -21,34 +21,27 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.utils.properties;
 
-import java.io.File;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import org.apache.commons.math3.complex.Complex;
 
 /**
  *
- * @author brucejohnson
+ * @author johnsonb
  */
-public class FileProperty extends SimpleObjectProperty<File> {
+public class ComplexRangeOperationItem extends ComplexOperationItem {
 
-    File file = null;
+    public ComplexRangeOperationItem(ChangeListener listener, Complex defaultValue, String category, String name, String description) {
+        super(listener, defaultValue, category, name, description);
+    }
 
-    @Override
-    public File get() {
-        return file;
+    public ComplexRangeOperationItem(ChangeListener listener, Complex defaultValue, Complex min, Complex max, String category, String name, String description) {
+        super(listener, defaultValue, min, max, category, name, description);
     }
 
     @Override
-    public void setValue(File file) {
-        this.file = file;
-        this.fireValueChangedEvent();
+    public Class<?> getType() {
+        return ComplexRangeOperationItem.class;
     }
-
-    @Override
-    public void set(File file) {
-        this.file = file;
-        this.fireValueChangedEvent();
-    }
-
 }

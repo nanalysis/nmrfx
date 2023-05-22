@@ -76,6 +76,7 @@ import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.project.ProjectText;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.properties.FileProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -209,6 +210,10 @@ public class PolyChart extends Region implements PeakListener {
         initChart();
         drawPeaks = new DrawPeaks(this, peakCanvas);
         setVisible(false);
+    }
+
+    public ChartProperties getChartProperties() {
+        return chartProps;
     }
 
     /**
@@ -4344,14 +4349,6 @@ public class PolyChart extends Region implements PeakListener {
         }
         double[] value = dataset instanceof Dataset ? ((Dataset) dataset).getPercentile(p, pt, dim) : null;
         return value;
-    }
-
-    public void config(String name, Object value) {
-        chartProps.config(name, value);
-    }
-
-    public Map<String, Object> config() {
-        return chartProps.config();
     }
 
     public static void registerPeakDeleteAction(Consumer<PeakDeleteEvent> func) {

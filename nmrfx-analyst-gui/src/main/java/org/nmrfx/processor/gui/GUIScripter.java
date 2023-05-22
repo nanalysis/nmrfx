@@ -15,6 +15,7 @@ import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.utils.properties.ColorProperty;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -292,7 +293,7 @@ public class GUIScripter {
             List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttts) {
                 if ((datasetName == null) || datasetName.equals(dataAttr.getFileName())) {
-                    dataAttr.config(key, value);
+                    dataAttr.setPublicPropertyValue(key, value);
                 }
             }
         });
@@ -311,7 +312,7 @@ public class GUIScripter {
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     String testName = dataAttr.getFileName();
                     if ((datasetNames == null) || datasetNames.contains(testName)) {
-                        dataAttr.config(key, value);
+                        dataAttr.setPublicPropertyValue(key, value);
                     }
                 }
             });
@@ -332,7 +333,7 @@ public class GUIScripter {
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrs) {
                 if ((datasetName == null) || dataAttr.getFileName().equals(datasetName)) {
-                    return dataAttr.config();
+                    return dataAttr.getPublicPropertiesValues();
                 }
             }
             return new HashMap<>();
@@ -383,7 +384,7 @@ public class GUIScripter {
             List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
             for (PeakListAttributes peakAttr : peakAttrs) {
                 if ((peakListName == null) || peakAttr.getPeakListName().equals(peakListName)) {
-                    return peakAttr.config();
+                    return peakAttr.getPublicPropertiesValues();
                 }
             }
             return new HashMap<>();
@@ -407,7 +408,7 @@ public class GUIScripter {
                 for (PeakListAttributes peakAttr : peakAttrs) {
                     String testName = peakAttr.getPeakListName();
                     if ((peakListNames == null) || peakListNames.contains(testName)) {
-                        peakAttr.config(key, value);
+                        peakAttr.setPublicPropertyValue(key, value);
                     }
                 }
             });
@@ -425,7 +426,7 @@ public class GUIScripter {
                 if (key.contains("Color") && (value != null)) {
                     value = getColor(value.toString());
                 }
-                chart.config(key, value);
+                chart.getChartProperties().setPublicPropertyValue(key, value);
 
             });
             chart.refresh();
@@ -435,7 +436,7 @@ public class GUIScripter {
     public Map<String, Object> cconfig() throws InterruptedException, ExecutionException {
         FutureTask<Map<String, Object>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
-            return chart.config();
+            return chart.getChartProperties().getPublicPropertiesValues();
 
         });
         Fx.runOnFxThread(future);
@@ -450,7 +451,7 @@ public class GUIScripter {
                 if (key.contains("Color") && (value != null)) {
                     value = getColor(value.toString());
                 }
-                getActiveController().config(key, value);
+                getActiveController().setPublicPropertyValue(key, value);
 
             });
             getActiveController().draw();
@@ -459,7 +460,7 @@ public class GUIScripter {
 
     public Map<String, Object> sconfig() throws InterruptedException, ExecutionException {
         FutureTask<Map<String, Object>> future = new FutureTask(() -> {
-            return getActiveController().config();
+            return getActiveController().getPublicPropertiesValues();
 
         });
         Fx.runOnFxThread(future);
@@ -682,12 +683,7 @@ public class GUIScripter {
     }
 
     public static String toRGBCode(Color color) {
-        return String.format("#%02X%02X%02X%02X",
-                (int) (color.getRed() * 255),
-                (int) (color.getGreen() * 255),
-                (int) (color.getBlue() * 255),
-                (int) (color.getOpacity() * 255)
-        );
+        return ColorProperty.toRGBCode(color);
     }
 
     public static Color getColor(String colorString) {

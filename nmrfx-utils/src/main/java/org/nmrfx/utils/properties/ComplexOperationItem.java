@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.utils.properties.complex;
+package org.nmrfx.utils.properties;
 
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
@@ -29,7 +29,6 @@ import javafx.beans.value.ObservableObjectValue;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexFormat;
 import org.apache.commons.math3.exception.MathParseException;
-import org.nmrfx.utils.properties.OperationItem;
 import org.python.core.PyComplex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

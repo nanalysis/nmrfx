@@ -34,7 +34,6 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.processor.gui.spectra.SpecRegion;
 import org.nmrfx.utils.properties.*;
-import org.nmrfx.utils.properties.complex.ComplexOperationItem;
 import org.python.core.PyComplex;
 
 import java.util.*;

@@ -16,36 +16,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package org.nmrfx.processor.gui.spectra;
+package org.nmrfx.utils.properties;
 
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.paint.Color;
+
+import java.io.File;
 
 /**
  *
  * @author brucejohnson
  */
-public class ColorProperty extends SimpleObjectProperty<Color> {
+public class FileProperty extends SimpleObjectProperty<File> {
 
-    public ColorProperty(Object object, String name, Color color) {
-        super(object, name, color);
-    }
+    File file = null;
 
-    public void setColor(Color color) {
-        set(color);
-    }
-
-    public Color getColor() {
-        return get();
+    @Override
+    public File get() {
+        return file;
     }
 
     @Override
-    public String toString() {
-        return super.toString() + " " + get();
+    public void setValue(File file) {
+        this.file = file;
+        this.fireValueChangedEvent();
     }
+
+    @Override
+    public void set(File file) {
+        this.file = file;
+        this.fireValueChangedEvent();
+    }
+
 }
