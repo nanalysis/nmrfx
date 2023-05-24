@@ -19,6 +19,7 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -65,12 +66,15 @@ import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
+import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.FormatUtils;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.properties.BooleanOperationItem;
+import org.nmrfx.utils.properties.OperationItem;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,12 +91,24 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
     private static final String[] basicOps = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] commonOps = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
+    private static String patternString = "(\\w+)=((\\[[^\\[]*\\])|(\"[^\"]*\")|('[^']*')|([^,]+))";
+
+    static Map<String, String> longNameMap = Map.of(
+            "FT", "Fourier Transform",
+            "ZF", "Zero Fill",
+            "APODIZE", "Apodization",
+            "TDCOMB", "Phase Sensitive Mode",
+            "BC", "Baseline Correction",
+            "SUPPRESS", "Signal Suppression"
+            );
 
     private enum DisplayMode {
         FID("FID"),
@@ -136,6 +152,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private MenuItem openOperations;
     @FXML
     private MenuItem saveOperations;
+    @FXML
+    private Accordion accordion;
+    @FXML
+    ToolBar opBox;
     @FXML
     private ListView<String> scriptView;
     @FXML
@@ -209,7 +229,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     TextField nLSCatFracField;
     TextField[][] lsTextFields;
     List<RadioButton> vectorDimButtons = new ArrayList<>();
-
+    ToggleButton sortButton;
+    ToggleButton detailButton;
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
     PolyChart chart;
@@ -610,6 +631,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             } else {
                 scriptView.getSelectionModel().select(index);
             }
+            updateAccordionList();
             if (operationList.isEmpty()) {
                 propertyManager.clearPropSheet();
                 if (!chartProcessor.getAreOperationListsValidProperty().get()) {
@@ -664,6 +686,118 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
         }
 
+    }
+
+    private boolean opPresent(String op) {
+        String trimOp = OperationInfo.trimOp(op);
+        return accordion.getPanes().stream().anyMatch(p -> p.getText().equals(trimOp));
+    }
+
+
+    private void updateTitledPane(TitledPane titledPane, String op) {
+        String trimOp = OperationInfo.trimOp(op);
+        String title = detailButton.isSelected() ? op : longNameMap.getOrDefault(trimOp, trimOp);
+        titledPane.setText(title);
+        PropertySheet opPropertySheet = (PropertySheet) titledPane.getProperties().get("PropSheet");
+        CheckBox activeBox = (CheckBox) titledPane.getProperties().get("CheckBox");
+        opPropertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory(this));
+        opPropertySheet.setMode(PropertySheet.Mode.NAME);
+        opPropertySheet.setModeSwitcherVisible(false);
+        opPropertySheet.setSearchBoxVisible(false);
+       BooleanOperationItem boolItem = setPropSheet(opPropertySheet, activeBox, 0, op);
+//        if (boolItem != null) {
+//            titledPane.textFillProperty().bind(Bindings.when(boolItem).then(Color.GRAY).otherwise(Color.BLUE));
+//        }
+    }
+
+    private void newTitledPane(String op) {
+        String trimOp = OperationInfo.trimOp(op);
+        TitledPane titledPane = new TitledPane();
+        PropertySheet opPropertySheet = new PropertySheet();
+        VBox vBox = new VBox();
+        HBox hBox = new HBox();
+        CheckBox activeBox = new CheckBox("Disabled");
+        hBox.getChildren().add(activeBox);
+        titledPane.textFillProperty().bind(Bindings.when(activeBox.selectedProperty()).then(Color.GRAY).otherwise(Color.BLUE));
+        vBox.getChildren().addAll(hBox, opPropertySheet);
+        titledPane.setContent(vBox);
+        titledPane.getProperties().put("PropSheet", opPropertySheet);
+        titledPane.getProperties().put("CheckBox", activeBox);
+        updateTitledPane(titledPane, op);
+        accordion.getPanes().add(titledPane);
+    }
+
+    BooleanOperationItem  setPropSheet(PropertySheet opPropertySheet, CheckBox activeBox, int scriptIndex, String op) {
+        String trimOp = OperationInfo.trimOp(op);
+        Pattern pattern = null;
+        String opPars = "";
+        if (!op.equals("")) {
+            opPars = op.substring(op.indexOf('(') + 1, op.length() - 1);
+            pattern = Pattern.compile(patternString);
+        }
+        BooleanOperationItem boolItem = null;
+        ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
+        ObservableList<PropertySheet.Item> propItems = propertyManager.getItems();
+        for (PropertySheet.Item item : propItems) {
+            if (item == null) {
+                System.out.println("item null");
+            } else if (item.getCategory().equals(trimOp) && (pattern != null)) {
+                boolean foundIt = false;
+                Matcher matcher = pattern.matcher(opPars);
+                while (matcher.find()) {
+                    if (matcher.groupCount() > 1) {
+                        String parName = matcher.group(1);
+                        if (item.getName().equals(parName)) {
+                            String parValue = matcher.group(2);
+                            foundIt = true;
+                            ((OperationItem) item).setFromString(parValue);
+                        }
+                    }
+                }
+                if (!foundIt) {
+                    ((OperationItem) item).setToDefault();
+                }
+                if (item.getName().equals("disabled")) {
+                    boolItem = (BooleanOperationItem) item;
+                    System.out.println("disabl " + boolItem.getValue());
+                }
+                newItems.add(item);
+            }
+        }
+        opPropertySheet.getItems().setAll(newItems);
+        return boolItem;
+    }
+
+    private boolean paneUsed(TitledPane pane) {
+        String title = pane.getText();
+        boolean found = false;
+        for (String op : operationList) {
+            String trimOp = OperationInfo.trimOp(op);
+            if (title.equals(trimOp)) {
+                found = true;
+                break;
+            }
+        }
+        return found;
+    }
+
+    private void updateAccordionList() {
+        var panes = accordion.getPanes();
+        int nOps = operationList.size();
+        int nDiff = nOps - panes.size();
+        int nTest = nOps;
+        if (nDiff > 0) {
+            nTest = panes.size();
+            for (int i = 0; i < nDiff; i++) {
+                newTitledPane(operationList.get(i + nTest));
+            }
+        } else if (nDiff < 0) {
+            panes.remove(nOps, panes.size());
+        }
+        for (int i = 0;i<nTest;i++) {
+            TitledPane pane = panes.get(i);
+            updateTitledPane(pane, operationList.get(i));
+        }
     }
 
     @FXML
@@ -1233,6 +1367,13 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         scanMaxN.getItems().addAll(5, 10, 20, 50, 100, 200);
         scanMaxN.setValue(50);
         viewMode.getItems().addAll(DisplayMode.values());
+        sortButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.SORT, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        detailButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.INFO, "",
+                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        opBox.getItems().add(ToolBarUtils.makeFiller(20));
+        opBox.getItems().addAll(sortButton, detailButton);
+        sortButton.setOnAction(e -> updateAccordionList());
+        detailButton.setOnAction(e -> updateAccordionList());
 
         initTable();
         setupListeners();
@@ -1246,6 +1387,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         opListListener = change -> {
             OperationListCell.updateCells();
             chartProcessor.updateOpList();
+            updateAccordionList();
         };
         operationList.addListener(opListListener);
 

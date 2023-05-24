@@ -174,6 +174,10 @@ public class PropertyManager {
 
     }
 
+    public ObservableList<PropertySheet.Item> getItems() {
+        return propItems;
+    }
+
     public void removeScriptListener() {
         scriptView.getSelectionModel().selectedIndexProperty().removeListener(scriptOpListener);
     }
@@ -462,6 +466,8 @@ public class PropertyManager {
         }
         return values;
     }
+
+
 
     void setupItems() {
         ArrayList pyDocs = processorController.chartProcessor.getDocs();

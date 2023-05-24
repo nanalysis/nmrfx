@@ -57,19 +57,28 @@
             <Tab closable="false" text="Operations">
                 <VBox>
                     <children>
-                        <HBox VBox.vgrow="NEVER">
-                            <children>
-                                <MenuButton fx:id="opMenuButton" mnemonicParsing="false" text="Add">
-                                    <items>
-                                    </items>
-                                </MenuButton>
-                                <TextField fx:id="opTextField" onAction="#handleNewOp" onKeyReleased="#handleOpKey"
-                                           HBox.hgrow="ALWAYS"/>
+                        <ToolBar fx:id="opBox" VBox.vgrow="NEVER">
+                            <items>
+                                <Label text="Operations:"/>
+                                <MenuButton fx:id="opMenuButton" mnemonicParsing="false" text="Add"/>
                                 <Button fx:id="opDeleteButton" onAction="#deleteOp" text="Delete"/>
                                 <Button fx:id="opDocButton" onAction="#showOpDoc" text="Docs"/>
+                            </items>
+                        </ToolBar>
+
+                        <Accordion fx:id="accordion"/>
+                    </children>
+                </VBox>
+            </Tab>
+            <Tab closable="true" text="Old">
+                <VBox>
+                    <children>
+                        <HBox VBox.vgrow="NEVER">
+                            <children>
                             </children>
                         </HBox>
-                        <ListView fx:id="scriptView" minHeight="0.0" onKeyReleased="#handleScriptKey" prefHeight="0.0"
+                        <ListView fx:id="scriptView" minHeight="0.0" onKeyReleased="#handleScriptKey"
+                                  prefHeight="0.0"
                                   VBox.vgrow="ALWAYS"/>
                         <PropertySheet fx:id="propertySheet" minHeight="0.0" minWidth="300.0" prefHeight="0.0"
                                        VBox.vgrow="ALWAYS"/>
@@ -122,11 +131,16 @@
                                         <content>
                                             <GridPane BorderPane.alignment="CENTER" hgap="5">
                                                 <rowConstraints>
-                                                    <RowConstraints minHeight="10.0" prefHeight="30.0" maxHeight="30.0"/>
-                                                    <RowConstraints minHeight="10.0" prefHeight="30.0" maxHeight="30.0"/>
-                                                    <RowConstraints minHeight="10.0" prefHeight="30.0" maxHeight="30.0"/>
-                                                    <RowConstraints minHeight="10.0" prefHeight="30.0" maxHeight="30.0"/>
-                                                    <RowConstraints minHeight="10.0" prefHeight="30.0" maxHeight="30.0"/>
+                                                    <RowConstraints minHeight="10.0" prefHeight="30.0"
+                                                                    maxHeight="30.0"/>
+                                                    <RowConstraints minHeight="10.0" prefHeight="30.0"
+                                                                    maxHeight="30.0"/>
+                                                    <RowConstraints minHeight="10.0" prefHeight="30.0"
+                                                                    maxHeight="30.0"/>
+                                                    <RowConstraints minHeight="10.0" prefHeight="30.0"
+                                                                    maxHeight="30.0"/>
+                                                    <RowConstraints minHeight="10.0" prefHeight="30.0"
+                                                                    maxHeight="30.0"/>
                                                 </rowConstraints>
                                                 <children>
                                                     <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
@@ -163,15 +177,18 @@
                                                     />
                                                     <Label
                                                             text="Max number of hits: "
-                                                            GridPane.columnIndex="2" GridPane.rowIndex="1"  GridPane.columnSpan="2"
+                                                            GridPane.columnIndex="2" GridPane.rowIndex="1"
+                                                            GridPane.columnSpan="2"
                                                     />
-                                                    <ChoiceBox  fx:id="scanMaxN"
-                                                              prefWidth="60"
-                                                              GridPane.columnIndex="3" GridPane.rowIndex="2" GridPane.columnSpan="1"
+                                                    <ChoiceBox fx:id="scanMaxN"
+                                                               prefWidth="60"
+                                                               GridPane.columnIndex="3" GridPane.rowIndex="2"
+                                                               GridPane.columnSpan="1"
                                                     />
                                                     <Label
                                                             text=" Minimum SDev Ratio: "
-                                                            GridPane.columnIndex="2" GridPane.rowIndex="3" GridPane.columnSpan="2"
+                                                            GridPane.columnIndex="2" GridPane.rowIndex="3"
+                                                            GridPane.columnSpan="2"
                                                     />
                                                     <ChoiceBox fx:id="scanRatio" prefWidth="60"
                                                                GridPane.columnIndex="3" GridPane.rowIndex="4"
