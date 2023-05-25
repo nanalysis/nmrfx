@@ -9,6 +9,7 @@ import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.chemistry.io.NMRNEFReader;
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.NMRStarWriter;
 import org.nmrfx.peaks.InvalidPeakException;
@@ -52,6 +53,9 @@ public class ProjectMenuActions extends MenuActions {
         MenuItem saveSTARMenuItem = new MenuItem("Save STAR3...");
         saveSTARMenuItem.setOnAction(this::writeSTAR);
 
+        MenuItem openNEFMenuItem = new MenuItem("Open NEF...");
+        openNEFMenuItem.setOnAction(this::readNEF);
+
         List<Path> recentProjects = PreferencesController.getRecentProjects();
         for (Path path : recentProjects) {
             int count = path.getNameCount();
@@ -66,7 +70,7 @@ public class ProjectMenuActions extends MenuActions {
 
         menu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem,
                 projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem,
-                openSTARMenuItem, saveSTARMenuItem);
+                openSTARMenuItem, saveSTARMenuItem, openNEFMenuItem);
 
     }
 
@@ -184,6 +188,21 @@ public class ProjectMenuActions extends MenuActions {
             }
         }
     }
+
+    void readNEF(ActionEvent event) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Read NEF File");
+        File nefFile = chooser.showOpenDialog(null);
+        if (nefFile != null) {
+            try {
+                NMRNEFReader.read(nefFile);
+            } catch (ParseException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
+    }
+
 
     void readSparkyProject() {
         FileChooser chooser = new FileChooser();
