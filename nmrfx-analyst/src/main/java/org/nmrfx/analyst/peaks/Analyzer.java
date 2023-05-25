@@ -2,6 +2,7 @@ package org.nmrfx.analyst.peaks;
 
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.Precision;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.*;
@@ -31,6 +32,7 @@ import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FIT_MODE.RMS;
 /**
  * @author Bruce Johnson
  */
+@PluginAPI("parametric")
 public class Analyzer {
     private static final Logger log = LoggerFactory.getLogger(Analyzer.class);
 

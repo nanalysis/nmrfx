@@ -18,7 +18,9 @@
 
 package org.nmrfx.math.units;
 
-@SuppressWarnings("unused") // used by pyproc.py
+import org.nmrfx.annotations.PythonAPI;
+
+@PythonAPI("pyproc")
 public class UnitFactory {
 
     /**

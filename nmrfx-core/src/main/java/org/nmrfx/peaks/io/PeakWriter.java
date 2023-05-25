@@ -17,27 +17,20 @@
  */
 package org.nmrfx.peaks.io;
 
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.peaks.*;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
-import org.nmrfx.peaks.AbsMultipletComponent;
-import org.nmrfx.peaks.ComplexCoupling;
-import org.nmrfx.peaks.Coupling;
-import org.nmrfx.peaks.CouplingPattern;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.Resonance;
-import org.nmrfx.peaks.SpectralDim;
 
 /**
  *
  * @author Bruce Johnson
  */
+@PythonAPI("pscript")
 public class PeakWriter {
 
     static final String[] XPKDIMSTRINGS = {

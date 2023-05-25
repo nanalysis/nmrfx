@@ -190,10 +190,6 @@ public class CanvasMolecule implements CanvasAnnotation {
     public void setNanoBytes(String byteString, boolean useString) {
         if (useString) {
             nanoBytes = new byte[2048];
-
-            //nBytes = Molecule.uuDecode(byteString,  nanoBytes);
-            //molPrims = new MoleculePrimitives();
-            //molPrims.unCompXYZToArray(nanoBytes,nBytes);
         }
     }
 
@@ -254,25 +250,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public void rotate(char axis, double angle) {
-        /*
-         m4Temp.setIdentity();
-         float angleDeg = (float) (angle/180.0*Math.PI);
-         switch (axis) {
-         case 'x':
-         m4Temp.rotX(angleDeg);
-         break;
-         case 'y':
-         m4Temp.rotY(angleDeg);
-         break;
-         case 'z':
-         m4Temp.rotZ(angleDeg);
-         break;
-         default:
-         return;
-         }
-         rotMat.mul(m4Temp,rotMat);
-         transformValid = false;
-         */
+
     }
 
     public void setupTransform() {
@@ -302,7 +280,6 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     private boolean getCoordSystemTransform() {
-        //AffineTransform shapeTransform = new AffineTransform();
         return true;
     }
 

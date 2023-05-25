@@ -206,7 +206,6 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         final double s6 = s3 * s3;
         double eV = weight * ((a * s3 - b) * s6);
         double eE = eWeight < 0.0 ? 0.0 : weight * (c * s);
-//        Atom[] atoms = eCoords.atoms;
         return eV + eE;
 
     }

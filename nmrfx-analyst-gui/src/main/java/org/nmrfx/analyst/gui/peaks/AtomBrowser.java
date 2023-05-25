@@ -37,6 +37,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.Util;
@@ -48,7 +49,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.project.Project;
@@ -105,7 +105,7 @@ public class AtomBrowser {
         this.browserToolBar = toolBar;
         toolBar.setPrefWidth(900.0);
 
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
 
         toolBar.getItems().add(closeButton);
@@ -253,13 +253,8 @@ public class AtomBrowser {
                 datasetList.add(item.dataset.getName());
                 List<String> peakListList = new ArrayList<>();
                 peakListList.add(item.peakList.getName());
-                // fixme chart.setTitle(item.dataset.getTitle());
                 chart.updateDatasets(datasetList);
                 chart.updatePeakLists(peakListList);
-                // fixme
-//                chart.getChildrenUnmodifiable().stream().filter((node) -> (node instanceof Label)).forEachOrdered((node) -> {
-//                    node.setOnMouseClicked(e -> System.out.println("Clicked node " + item.dataset.getName()));
-//                });
 
                 Double ppm = item.getShift();
                 double delta = 0.1;

@@ -17,11 +17,13 @@
  */
 package org.nmrfx.chemistry;
 
+import org.nmrfx.annotations.PluginAPI;
+
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
 
-
+@PluginAPI("ring")
 public class Polymer extends Entity {
 
     /**

@@ -65,9 +65,6 @@ public class HosePrediction {
             }
             return code1.compareTo(code2);
         }
-//        public boolean equals(Object i1) {
-        //            return false;
-        //      }
     }
 
     public static class HOSEPPM {

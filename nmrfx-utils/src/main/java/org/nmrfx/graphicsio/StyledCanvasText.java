@@ -39,11 +39,8 @@ public class StyledCanvasText {
 
     static double drawSuper(GraphicsContextInterface gC, StringBuilder sBuilder, double x, double y, boolean measure) {
         Font defFont = gC.getFont();
-        Font scriptFont = null;
         double fontSize = defFont.getSize();
-        if (scriptFont == null) {
-            scriptFont = new Font(fontSize * 0.75);
-        }
+        Font scriptFont = new Font(fontSize * 0.75);
         gC.setFont(scriptFont);
         x = drawCurrent(gC, sBuilder, x, y, measure);
         x += fontSize * 0.75 * 0.25;

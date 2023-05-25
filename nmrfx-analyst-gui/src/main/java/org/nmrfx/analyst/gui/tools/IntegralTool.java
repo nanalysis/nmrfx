@@ -1,7 +1,5 @@
 package org.nmrfx.analyst.gui.tools;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -14,13 +12,11 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.PopOver;
 import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.IconUtilities;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
@@ -76,7 +72,7 @@ public class IntegralTool {
         buttons.add(deleteItem);
         for (Button button1 : buttons) {
             button1.setContentDisplay(ContentDisplay.TOP);
-            button1.setStyle("-fx-font-size:" + MainApp.ICON_FONT_SIZE_STR);
+            button1.setStyle("-fx-font-size:" + AnalystApp.ICON_FONT_SIZE_STR);
             button1.getStyleClass().add("toolButton");
             buttonBar.getItems().add(button1);
         }

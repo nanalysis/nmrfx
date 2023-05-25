@@ -358,56 +358,6 @@ public class NonLinearConjugateGradientOptimizer
         }
     }
 
-    // Class is not used anymore (cf. MATH-1092). However, it might
-    // be interesting to create a class similar to "LineSearch", but
-    // that will take advantage that the model's gradient is available.
-//     /**
-//      * Internal class for line search.
-//      * <p>
-//      * The function represented by this class is the dot product of
-//      * the objective function gradient and the search direction. Its
-//      * value is zero when the gradient is orthogonal to the search
-//      * direction, i.e. when the objective function value is a local
-//      * extremum along the search direction.
-//      * </p>
-//      */
-//     private class LineSearchFunction implements UnivariateFunction {
-//         /** Current point. */
-//         private final double[] currentPoint;
-//         /** Search direction. */
-//         private final double[] searchDirection;
-
-//         /**
-//          * @param point Current point.
-//          * @param direction Search direction.
-//          */
-//         public LineSearchFunction(double[] point,
-//                                   double[] direction) {
-//             currentPoint = point.clone();
-//             searchDirection = direction.clone();
-//         }
-
-//         /** {@inheritDoc} */
-//         public double value(double x) {
-//             // current point in the search direction
-//             final double[] shiftedPoint = currentPoint.clone();
-//             for (int i = 0; i < shiftedPoint.length; ++i) {
-//                 shiftedPoint[i] += x * searchDirection[i];
-//             }
-
-//             // gradient of the objective function
-//             final double[] gradient = computeObjectiveGradient(shiftedPoint);
-
-//             // dot product with the search direction
-//             double dotProduct = 0;
-//             for (int i = 0; i < gradient.length; ++i) {
-//                 dotProduct += gradient[i] * searchDirection[i];
-//             }
-
-//             return dotProduct;
-//         }
-//     }
-
     /**
      * @throws MathUnsupportedOperationException if bounds were passed to the
      * {@link #optimize(OptimizationData[]) optimize} method.

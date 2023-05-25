@@ -18,6 +18,8 @@
 
 package org.nmrfx.chemistry.utilities;
 
+import org.nmrfx.annotations.PluginAPI;
+
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
@@ -27,6 +29,7 @@ import java.util.regex.*;
  * Does NOT use the "CSV" class defined in the Java CookBook.
  * RE Pattern from Chapter 7, Mastering Regular Expressions (p. 205, first edn.)
  */
+@PluginAPI("ring")
 public class CSVRE {
 
     /**
@@ -61,13 +64,7 @@ public class CSVRE {
     }
 
     static Pattern makePattern(String sepStr) {
-        //       return Pattern.compile(
-
-        //    "\"(([^\"])|(\"\"))+\""+sepStr+"?|([^"+sepStr+"]+)"+sepStr+"?|"+sepStr);
         return Pattern.compile("\"(([^\"])|(\"\"))+\"(" + sepStr + "|$)|([^" + sepStr + "]+)" + sepStr + "?|" + sepStr);
-
-        // return Pattern.compile(
-        // "\"(([^\"])|(\"\"))+\""+sepStr+"|([^"+sepStr2+"]+)"+sepStr);
     }
 
     static Pattern makePatternMulti(String sepStr) {
@@ -77,10 +74,7 @@ public class CSVRE {
 
     static Pattern makePattern2(String sepStr) {
         // remove extra quotes and sepStr at end of field
-        //return Pattern.compile("(^\")|(\"" + sepStr + "$)|(\"$)|(" + sepStr + "$)");
         return Pattern.compile("(" + sepStr + "$)");
-
-        //   return Pattern.compile("(^\")|(\""+sepStr+"$)|(\"$)|("+sepStr+"$)");
     }
 
     public static void main(String[] argv) throws IOException {

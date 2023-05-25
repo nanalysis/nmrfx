@@ -16,18 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
  *
  * @author brucejohnson
  */
 package org.nmrfx.graphicsio;
 
+//TODO uncomment when core & utils are regrouped
+//@PluginAPI("ring")
 public class GraphicsIOException extends Exception {
 
     public GraphicsIOException(String message) {

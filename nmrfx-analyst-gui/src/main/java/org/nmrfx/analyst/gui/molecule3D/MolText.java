@@ -56,7 +56,6 @@ public class MolText extends Group implements MolItem {
         Xform xform = new Xform();
         Text textItem = new Text(text);
         textItem.setCache(false);
-        //textItem.setCacheHint(CacheHint.SPEED);
         textItem.setFont(font);
         textItem.setTranslateX(p3d.getX());
         textItem.setTranslateY(p3d.getY());

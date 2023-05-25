@@ -641,8 +641,7 @@ public class SpatialSet {
             seqCode = String.valueOf(((Residue) atom.entity).getIDNum());
         } else if (atom.entity instanceof Compound) {
             group = "HETATM";
-//            String[] labelSplit = atom.entity.label.split(",");
-            resName = atom.entity.label;//labelSplit[0];
+            resName = atom.entity.label;
             chainID = ((Compound) atom.entity).getName().charAt(0);
             entityID = ((Compound) atom.entity).getIDNum();
             String number = ((Compound) atom.entity).getNumber(); 

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.relax.*;
 import org.nmrfx.chemistry.Order;
 
@@ -59,6 +60,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public class NMRStarReader {
     private static final Logger log = LoggerFactory.getLogger(NMRStarReader.class);
 
@@ -73,7 +75,6 @@ public class NMRStarReader {
     public NMRStarReader(final File starFile, final STAR3 star3) {
         this.star3 = star3;
         this.starFile = starFile;
-//        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
     public static STAR3 read(String starFileName) throws ParseException {
@@ -288,9 +289,7 @@ public class NMRStarReader {
                 updateFromSTAR3ChemComp(ccSaveframe, residue);
             } else {
                 try {
-                    if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, resPos, "", false)) {
-                        // throw new ParseException("Can't find residue \"" + resName + "\" in residue libraries or STAR file");
-                    }
+                    sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, resPos, "", false);
                 } catch (MoleculeIOException psE) {
                     throw new ParseException(psE.getMessage());
                 }
@@ -611,7 +610,6 @@ public class NMRStarReader {
             String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
             Compound compound1 = compoundMap.get(mapID);
             if (compound1 != null) {
-                //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
                 if ((atomName.charAt(0) == 'Q') || (atomName.charAt(0) == 'M')) {
                     Atom[] pseudoAtoms = ((Residue) compound1).getPseudo(atomName);
                     spg = new SpatialSetGroup(pseudoAtoms);
@@ -803,7 +801,7 @@ public class NMRStarReader {
                     if ((value = NvUtil.getColumnValue(peakidColumn, i)) != null) {
                         idNum = NvUtil.toInt(value);
                     } else {
-                        //throw new TclException("Invalid peak id value at row \""+i+"\"");
+                        //Invalid peak id value
                         continue;
                     }
                     Peak peak = peakList.getPeakByID(idNum);
@@ -893,7 +891,7 @@ public class NMRStarReader {
                         if ((value = NvUtil.getColumnValue(peakidColumn, i)) != null) {
                             idNum = NvUtil.toInt(value);
                         } else {
-                            //throw new TclException("Invalid peak id value at row \""+i+"\"");
+                            //Invalid peak id value
                             continue;
                         }
                         int sDim;
@@ -974,7 +972,6 @@ public class NMRStarReader {
                 Map<Integer, Double> intMap = new HashMap<>();
                 Map<Integer, Double> volMap = new HashMap<>();
                 idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
-//                peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
                 List<Double> intensityColumn = loop.getColumnAsDoubleList("Intensity_val", null);
                 List<String> methodColumn = loop.getColumnAsList("Measurement_method");
 
@@ -1527,7 +1524,6 @@ public class NMRStarReader {
         if (loop == null) {
             throw new ParseException("No \"_RDC\" loop");
         }
-        //saveframe.getTagsIgnoreMissing(tagCategory);
         List<String>[] entityAssemblyIDColumns = new ArrayList[2];
         List<String>[] entityIDColumns = new ArrayList[2];
         List<String>[] compIdxIDColumns = new ArrayList[2];
@@ -1690,7 +1686,6 @@ public class NMRStarReader {
                 noeSet.add(noe);
             }
         }
-        //  noeSet.updateNPossible(null);
         noeSet.setCalibratable(false);
     }
 

@@ -5,6 +5,7 @@
  */
 package org.nmrfx.project;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.datasets.DatasetBase;
@@ -42,6 +43,7 @@ import static java.util.Objects.requireNonNullElse;
  *
  * @author brucejohnson
  */
+@PluginAPI("parametric")
 public class ProjectBase {
     private static final Logger log = LoggerFactory.getLogger(ProjectBase.class);
 

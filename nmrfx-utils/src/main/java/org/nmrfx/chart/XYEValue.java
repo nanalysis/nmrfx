@@ -21,6 +21,8 @@ package org.nmrfx.chart;
  *
  * @author brucejohnson
  */
+//TODO uncomment once core & utils are merged
+//@PluginAPI("ring")
 public class XYEValue extends XYValue {
 
     final double e;

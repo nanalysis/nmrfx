@@ -116,8 +116,6 @@ public class MolViewer extends Pane {
         light.setTranslateZ(camera.getTranslateZ());
         cameraTransform.getChildren().add(light);
 
-        //text = new Text("HA");
-        //root.getChildren().add(text);
         molGroup.setId("molGroup");
         selGroup.setId("selGroup");
 
@@ -133,11 +131,6 @@ public class MolViewer extends Pane {
             }
         };
         molGroup.getChildren().addListener(listener);
-//        Tessellation tessellation = new Tessellation();
-//        tessellation.makeGrannyTube();
-//        TriangleMesh mesh = tessellation.makeMesh();
-//        MeshView meshView = new MeshView(mesh);
-//        root.getChildren().addAll(meshView);
         twoDPane.setMouseTransparent(true);
         try {
             drawMol();
@@ -257,10 +250,6 @@ public class MolViewer extends Pane {
                     double z = camera.getTranslateZ();
                     double newZ = z + mouseDeltaX * modifierFactor * modifier;
                     camera.setTranslateZ(newZ);
-                } else if (me.isMiddleButtonDown()) {
-//                cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3); // -
-//                cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3); // -
-
                 }
                 showLabels();
             }
@@ -278,7 +267,6 @@ public class MolViewer extends Pane {
         twoDPane.getChildren().clear();
         for (LabelNode labelNode : labelNodes) {
             Point3D coordinates = labelNode.node.localToScene(javafx.geometry.Point3D.ZERO, true);
-            // coordinates = SceneUtils.subSceneToScene(subScene, coordinates);  got rid of this by using true above
             double x = coordinates.getX();
             double y = coordinates.getY();
             Point2D pt2 = twoDPane.sceneToLocal(0, 0);
@@ -288,7 +276,6 @@ public class MolViewer extends Pane {
     }
 
     public void deleteItems(String mode, String type) {
-//        Group molGroup = (Group) root.getChildren().get(1);
         if (mode.equals("delete")) {
             final Iterator<Node> iter = molGroup.getChildren().iterator();
             while (iter.hasNext()) {
@@ -674,7 +661,6 @@ public class MolViewer extends Pane {
             color = Color.BLUE;
         }
         aCalc.genVectors(initialVec);
-        //aCalc.makeSphere(n, 1.0, 1.0);
         List<Vector3D> vecs = aCalc.getVectors();
         Spheres spheres = new Spheres(tag, vecs, color, 0.3, center, radius + 3.0, tag);
         molGroup.getChildren().add(spheres);
@@ -807,7 +793,6 @@ public class MolViewer extends Pane {
         }
         if (node != null) {
             selGroup.getChildren().add(node);
-            //drawText("hi", node);
         }
     }
 

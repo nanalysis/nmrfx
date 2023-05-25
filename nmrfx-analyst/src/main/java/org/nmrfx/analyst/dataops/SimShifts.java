@@ -72,7 +72,6 @@ public class SimShifts {
         }
         getMatrices(shifts, couplings);
         EigenDecomposition_F64 eigDec = DecompositionFactory_DDRM.eig(ham.getNumCols(), true);
-        //dump(ham);
         eigDec.decompose(ham);
         int nEig = eigDec.getNumberOfEigenvalues();
         DMatrixRMaj eValues = new DMatrixRMaj(1, nEig);
@@ -95,7 +94,6 @@ public class SimShifts {
         double max = CommonOps_DDRM.elementMax(eVecs);
         double threshold = max * 0.01;
         absThreshold(eVecs, threshold);
-        //dump(eVecs);
         SimpleMatrix vS = SimpleMatrix.wrap(eVecs);
         SimpleMatrix obsS = SimpleMatrix.wrap(obs);
         SimpleMatrix stateS = SimpleMatrix.wrap(state);
@@ -104,7 +102,6 @@ public class SimShifts {
         threshold = max * 0.01;
         absThreshold(arS.getDDRM(), threshold);
 
-        //dump(arS.getDDRM());
         BMatrixRMaj bmat = CommonOps_DDRM.elementMoreThan(arS.getDDRM(), 1.0e-6, null);
         int nR = arS.getDDRM().getNumRows();
         int nC = arS.getDDRM().getNumCols();

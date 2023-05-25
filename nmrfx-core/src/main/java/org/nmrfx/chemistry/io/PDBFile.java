@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@PluginAPI("ring")
 public class PDBFile {
 
     private static final Logger log = LoggerFactory.getLogger(PDBFile.class);
@@ -301,11 +303,8 @@ public class PDBFile {
                         residueList.add(atomParse.resName + " " + atomParse.resNum);
                     }
                     // fixme should we do anything here with MODEL
-                    //} else if (string.startsWith("MODEL ")) {
                 } else if (string.startsWith("ENDMDL")) {
                     break;
-                } else if (string.startsWith("TER   ")) {
-                    //break;
                 }
             }
             if (!listMode) {

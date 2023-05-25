@@ -317,7 +317,7 @@ public class DatasetHeaderIO {
             lay.dimDataset();
             d.setDataType(0);
         } catch (IOException e) {
-            //LOGGER.error("Can't read header ", e);
+            log.error("Can't read header ", e);
             return null;
         }
 

@@ -23,50 +23,42 @@
  */
 package org.nmrfx.graphicsio;
 
-import java.util.ArrayList;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
+import java.util.ArrayList;
+
 /**
- *
  * @author brucejohnson
  */
 public interface GraphicsIO {
 
-    public void create(boolean landScape, double width, double height, String fileName) throws GraphicsIOException;
+    void create(boolean landScape, double width, double height, String fileName) throws GraphicsIOException;
 
-    public void create(boolean landScape, String fileName) throws GraphicsIOException;
+    void create(boolean landScape, String fileName) throws GraphicsIOException;
 
-    public void drawText(String text, double x, double y) throws GraphicsIOException;
+    void drawText(String text, double x, double y, String anchor, double rotate) throws GraphicsIOException;
 
-    public void drawText(String text, double x, double y, String anchor, double rotate) throws GraphicsIOException;
+    void drawLine(double x1, double y1, double x2, double y2) throws GraphicsIOException;
 
-    public void drawLine(double x1, double y1, double x2, double y2) throws GraphicsIOException;
+    void drawPolyLine(double[] x, double[] y, int n) throws GraphicsIOException;
 
-    public void drawPolyLine(double[] x, double[] y) throws GraphicsIOException;
-    
-    public void drawPolyLine(double[] x, double[] y, int n) throws GraphicsIOException;
+    void drawPolyLines(ArrayList<Double> values) throws GraphicsIOException;
 
-    public void drawPolyLine(ArrayList<Double> values) throws GraphicsIOException;
+    void setFont(Font font) throws GraphicsIOException;
 
-    public void drawPolyLines(ArrayList<Double> values) throws GraphicsIOException;
+    void setStroke(Color color) throws GraphicsIOException;
 
-    public void setFont(Font font) throws GraphicsIOException;
+    void setFill(Color color) throws GraphicsIOException;
 
-    public void setStroke(Color color) throws GraphicsIOException;
+    void setLineWidth(double width) throws GraphicsIOException;
 
-    public void setFill(Color color) throws GraphicsIOException;
+    void saveFile() throws GraphicsIOException;
 
-    public void setLineWidth(double width) throws GraphicsIOException;
+    void clipRect(double x, double y, double w, double h) throws GraphicsIOException;
 
-    public void drawRect(double x, double y, double w, double h) throws GraphicsIOException;
+    double getWidth();
 
-    public void saveFile() throws GraphicsIOException;
-
-    public void clipRect(double x, double y, double w, double h) throws GraphicsIOException;
-
-    public double getWidth();
-
-    public double getHeight();
+    double getHeight();
 
 }

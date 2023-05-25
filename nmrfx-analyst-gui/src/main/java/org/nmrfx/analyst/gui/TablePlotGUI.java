@@ -22,13 +22,10 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -411,7 +408,7 @@ public class TablePlotGUI {
         if (selectedFile != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
             Canvas canvas = activeChart.getCanvas();
-            svgGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+            svgGC.create(canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
             exportChart(svgGC);
             svgGC.saveFile();
         }

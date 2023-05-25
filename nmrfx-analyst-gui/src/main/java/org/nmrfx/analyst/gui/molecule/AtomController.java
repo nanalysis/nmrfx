@@ -23,26 +23,21 @@
  */
 package org.nmrfx.analyst.gui.molecule;
 
-import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
@@ -53,6 +48,9 @@ import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.io.PPMFiles;
+import org.nmrfx.fxutil.Fx;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
@@ -69,17 +67,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.text.DecimalFormat;
 import java.util.*;
 
 /**
- *
  * @author johnsonb
  */
-public class AtomController implements Initializable, FreezeListener {
+public class AtomController implements Initializable, StageBasedController, FreezeListener {
     private static final Logger log = LoggerFactory.getLogger(AtomController.class);
 
-    static final DecimalFormat formatter = new DecimalFormat();
     static final Map<String, String> filterMap = new HashMap<>();
     PredictorSceneController predictorController = null;
 
@@ -120,8 +115,6 @@ public class AtomController implements Initializable, FreezeListener {
     ChoiceBox<Integer> refSetChoice;
     ObservableList<Atom> atoms = FXCollections.observableArrayList();
 
-    Atom currentAtom;
-
     MolFilter molFilter = new MolFilter("*.C*,H*,N*");
 
     @Override
@@ -143,30 +136,23 @@ public class AtomController implements Initializable, FreezeListener {
         updateView();
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
 
     public static AtomController create() {
-        FXMLLoader loader = new FXMLLoader(AtomController.class.getResource("/fxml/AtomScene.fxml"));
-        AtomController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
+        AtomController controller = Fxml.load(AtomController.class, "AtomScene.fxml")
+                .withNewStage("Atom Attributes")
+                .getController();
+        controller.stage.show();
 
-            controller = loader.<AtomController>getController();
-            controller.stage = stage;
-            stage.setTitle("Atom Attributes");
-            stage.show();
-            AnalystApp.addMoleculeListener(controller::moleculeMapChanged);
-        } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
-        }
-
+        AnalystApp.addMoleculeListener(controller::moleculeMapChanged);
         return controller;
-
     }
 
     private void moleculeMapChanged(MapChangeListener.Change<? extends String,? extends MoleculeBase> change) {
@@ -174,14 +160,6 @@ public class AtomController implements Initializable, FreezeListener {
             setFilterString("");
             refreshAtomTable();
         }
-    }
-
-    private void clearInsepctor() {
-        atomTableView.getItems().clear();
-        intensityField.setText("");
-        volumeField.setText("");
-        commentField.setText("");
-
     }
 
     public void refreshAtomTable() {
@@ -271,14 +249,7 @@ public class AtomController implements Initializable, FreezeListener {
 
     @Override
     public void freezeHappened(Peak peak, boolean state) {
-        if (Platform.isFxApplicationThread()) {
-            atomTableView.refresh();
-        } else {
-            Platform.runLater(() -> {
-                atomTableView.refresh();
-            }
-            );
-        }
+        Fx.runOnFxThread(atomTableView::refresh);
     }
 
     class DoubleStringConverter4 extends DoubleStringConverter {

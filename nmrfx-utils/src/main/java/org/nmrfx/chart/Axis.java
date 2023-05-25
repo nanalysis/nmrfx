@@ -36,6 +36,8 @@ import org.nmrfx.graphicsio.StyledCanvasText;
  *
  * @author brucejohnson
  */
+//TODO uncomment once core & utils are merged
+//@PluginAPI("ring")
 public class Axis {
     private static final double GRID_MINOR_LINE_WIDTH = 0.5;
     private static final double GRID_MAJOR_LINE_WIDTH = 1.0;
@@ -51,11 +53,6 @@ public class Axis {
     private BooleanProperty reverseProp;
     private String label = "";
     private String ticFormatString = "%.1f";
-//    private double minorTickSpace;
-//    private double majorTickSpace;
-//    private double minorTickStart;
-//    private double majorTickStart;
-//    private boolean centerTick = false;
     private boolean zeroIncluded = false;
     private double xOrigin = 100.0;
     private double yOrigin = 800.0;
@@ -307,11 +304,6 @@ public class Axis {
     }
 
     public void setMinMax(double min, double max) {
-        /*
-                lowerBoundProperty().setValue(min);
-        upperBoundProperty().setValue(max);
-
-         */
         lowerBoundProperty().set(min);
         upperBoundProperty().set(max);
     }
@@ -528,7 +520,6 @@ public class Axis {
                 }
             }
             StyledCanvasText.drawStyledText(gC, label, xOrigin + width / 2, labelTop);
-            //gC.drawText(label, leftBorder + width / 2, labelTop, "n", 0.0);
         }
 
     }
@@ -594,11 +585,8 @@ public class Axis {
             gC.rotate(270);
             gC.nativeCoords(true);
             StyledCanvasText.drawStyledText(gC, label, 0, 0);
-            // gC.fillText(label, 0, 0);
             gC.nativeCoords(false);
             gC.restore();
-
-            //gC.drawText(label, labelRight, bottomBorder - height / 2, "s", 90.0);
         }
     }
 

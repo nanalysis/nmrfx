@@ -1,6 +1,5 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.concurrent.Service;
@@ -9,10 +8,8 @@ import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
-import javafx.scene.Scene;
 import javafx.scene.SubScene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -23,13 +20,14 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.molecule.AtomController;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.analyst.gui.molecule.SSViewer;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.fxutil.Fx;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
@@ -47,13 +45,12 @@ import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
 import static org.nmrfx.analyst.gui.molecule3D.MolSceneController.StructureCalculator.StructureMode.*;
 
-public class MolSceneController implements Initializable, MolSelectionListener, FreezeListener, ProgressUpdater {
+public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
 
     private Stage stage;
@@ -212,7 +209,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
 
     private void updateAtoms() {
         List<String> atomNames = new ArrayList<>();
-        for (var menuItem: atomCheckItems) {
+        for (var menuItem : atomCheckItems) {
             if (menuItem.isSelected()) {
                 atomNames.add(menuItem.getText());
             }
@@ -220,29 +217,21 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         ssViewer.updateAtoms(atomNames);
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
 
     public static MolSceneController create() {
-        FXMLLoader loader = new FXMLLoader(AtomController.class.getResource("/fxml/MolScene.fxml"));
-        MolSceneController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<MolSceneController>getController();
-            controller.stage = stage;
-            stage.setTitle("Molecular Viewer");
-            stage.show();
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
-
+        MolSceneController controller = Fxml.load(MolSceneController.class, "MolScene.fxml")
+                .withNewStage("Molecular Viewer")
+                .getController();
+        controller.stage.show();
         return controller;
-
     }
 
     @FXML
@@ -414,7 +403,6 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                         mol.setDotBracket(dotBracket);
                         layoutSS();
                     }
-                    //dotBracketField.clear();
                 }
             }
         } catch (InvalidMoleculeException ex) {
@@ -982,15 +970,10 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
 
     @Override
     public void updateStatus(String s) {
-        if (Platform.isFxApplicationThread()) {
+        Fx.runOnFxThread(() -> {
             setProcessingStatus(s, true);
             updateView();
-        } else {
-            Platform.runLater(() -> {
-                setProcessingStatus(s, true);
-                updateView();
-            });
-        }
+        });
     }
 
     void updateView() {

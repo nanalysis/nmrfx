@@ -52,6 +52,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author brucejohnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("ring")
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
 
     private static final Logger log = LoggerFactory.getLogger(NvFxPropertyEditorFactory.class);
@@ -146,39 +148,10 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
 
             ListOperationItem loi = (ListOperationItem) item;
             return Editors.createTextEditor(loi);
-//            return Editors.createCustomEditor(loi).get();
         }
         return super.call(item);
-//        if (/*type != null &&*/ type == String.class) {
-//            return Editors.createTextEditor(item);
-//        }
-//
-//        if (/*type != null &&*/ isNumber(type)) {
-//            return Editors.createNumericEditor(item);
-//        }
-//
-//        if (/*type != null &&*/(type == boolean.class || type == Boolean.class)) {
-//            return Editors.createCheckEditor(item);
-//        }
-//
-//        if (/*type != null &&*/type == LocalDate.class) {
-//            return Editors.createDateEditor(item);
-//        }
-//
-//        if (/*type != null &&*/type == Color.class) {
-//            return Editors.createColorEditor(item);
-//        }
-//
-//        if (type != null && type.isEnum()) {
-//            return Editors.createChoiceEditor(item, Arrays.<Object>asList(type.getEnumConstants()));
-//        }
-//
-//        if (/*type != null &&*/type == Font.class) {
-//            return Editors.createFontEditor(item);
-//        }
-//
-//        return null;
     }
+
     private static Class<?>[] numericTypes = new Class[]{
         byte.class, Byte.class,
         short.class, Short.class,

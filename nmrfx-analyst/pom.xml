@@ -13,11 +13,6 @@
     <artifactId>nmrfx-analyst</artifactId>
     <packaging>jar</packaging>
 
-    <properties>
-        <mainClass>com.onemoonsci.datachord.nvfx.MainApp</mainClass>
-    </properties>
-
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -33,13 +28,38 @@
     <dependencies>
         <dependency>
             <groupId>org.nmrfx</groupId>
-            <artifactId>nmrfx-processor</artifactId>
+            <artifactId>nmrfx-core</artifactId>
+            <version>11.3.4-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.nmrfx</groupId>
+            <artifactId>nmrfx-utils</artifactId>
             <version>11.3.4-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-structure</artifactId>
             <version>11.3.4-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.nanalysis</groupId>
+            <artifactId>spinlab-dataset</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nanalysis</groupId>
+            <artifactId>jcamp-parser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.ejml</groupId>
+            <artifactId>ejml-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jnr</groupId>
+            <artifactId>jnr-posix</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -51,15 +71,51 @@
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.ejml</groupId>
-            <artifactId>ejml-all</artifactId>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.haifengl</groupId>
+            <artifactId>smile-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.haifengl</groupId>
+            <artifactId>smile-interpolation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.haifengl</groupId>
+            <artifactId>smile-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacpp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>openblas-platform</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>arpack-ng-platform</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.python</groupId>
+            <artifactId>jython-slim</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

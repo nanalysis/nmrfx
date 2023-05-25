@@ -2,7 +2,10 @@ package org.nmrfx.analyst.gui.tools;
 
 import javafx.event.ActionEvent;
 import javafx.event.Event;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SplitMenuButton;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
@@ -18,12 +21,12 @@ import org.nmrfx.analyst.peaks.JournalFormatPeaks;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -174,7 +177,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         if (!chart.getPeakListAttributes().isEmpty()) {
             analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
-        MainApp.getShapePrefs(analyzer.getFitParameters());
+        AnalystApp.getShapePrefs(analyzer.getFitParameters());
         return analyzer;
     }
 
@@ -357,7 +360,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                         return;
                     }
                 }
-                MainApp.getShapePrefs(analyzer.getFitParameters());
+                AnalystApp.getShapePrefs(analyzer.getFitParameters());
                 analyzer.analyze();
                 PeakList peakList = analyzer.getPeakList();
                 List<String> peakListNames = new ArrayList<>();
@@ -429,7 +432,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
-        ConsoleUtil.runOnFxThread(() -> {
+        Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             if (chart.hasAnnoType(AnnoJournalFormat.class)) {
                 showJournalFormatOnChart();
@@ -441,7 +444,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         removeMolecule();
         Molecule activeMol = Molecule.getActive();
         if (activeMol == null) {
-            ((AnalystApp) AnalystApp.getMainApp()).readMolecule("mol");
+            AnalystApp.getAnalystApp().readMolecule("mol");
         }
         MoleculeUtils.addActiveMoleculeToCanvas();
     }

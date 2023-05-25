@@ -17,12 +17,15 @@
  */
 package org.nmrfx.chemistry.relax;
 
+import org.nmrfx.annotations.PluginAPI;
+
 import java.util.Map;
 
 /**
  *
  * @author mbeckwith
  */
+@PluginAPI("ring")
 public class RelaxationRex extends RelaxationData {
 
     Double RexValue;

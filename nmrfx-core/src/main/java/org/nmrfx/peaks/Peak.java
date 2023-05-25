@@ -1,112 +1,116 @@
 package org.nmrfx.peaks;
 
+import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
 import org.nmrfx.utilities.ColorUtil;
 import org.nmrfx.utilities.Format;
+import org.nmrfx.utilities.NMRFxColor;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 
 import static java.util.Comparator.comparing;
-import org.nmrfx.utilities.NMRFxColor;
 
+@PythonAPI("pscript")
+@PluginAPI("ring")
 public class Peak implements Comparable, PeakOrMulti {
 
     static String peakStrings[] = {
-        "_Peak.ID",
-        "_Peak.Figure_of_merit",
-        "_Peak.Details",
-        "_Peak.Type",
-        "_Peak.Status",
-        "_Peak.Color",
-        "_Peak.Flag",
-        "_Peak.Label_corner",};
+            "_Peak.ID",
+            "_Peak.Figure_of_merit",
+            "_Peak.Details",
+            "_Peak.Type",
+            "_Peak.Status",
+            "_Peak.Color",
+            "_Peak.Flag",
+            "_Peak.Label_corner",};
     static String peakGeneralCharStrings[] = {
-        "_Peak_general_char.Peak_ID",
-        "_Peak_general_char.Intensity_val",
-        "_Peak_general_char.Intensity_val_err",
-        "_Peak_general_char.Measurement_method",};
+            "_Peak_general_char.Peak_ID",
+            "_Peak_general_char.Intensity_val",
+            "_Peak_general_char.Intensity_val_err",
+            "_Peak_general_char.Measurement_method",};
     static String peakCharStrings[] = {
-        "_Peak_char.Peak_ID",
-        "_Peak_char.Peak_contribution_ID",
-        "_Peak_char.Spectral_dim_ID",
-        "_Peak_char.Chem_shift_val",
-        "_Peak_char.Chem_shift_val_err",
-        "_Peak_char.Bounding_box_val",
-        "_Peak_char.Bounding_box_val_err",
-        "_Peak_char.Line_width_val",
-        "_Peak_char.Line_width_val_err",
-        "_Peak_char.Shape_factor_val",
-        "_Peak_char.Shape_factor_val_err",
-        "_Peak_char.Phase_val",
-        "_Peak_char.Phase_val_err",
-        "_Peak_char.Decay_rate_val",
-        "_Peak_char.Decay_rate_val_err",
-        "_Peak_char.Derivation_method_ID",
-        "_Peak_char.Peak_error",
-        "_Peak_char.Detail",
-        "_Peak_char.Coupling_detail",
-        "_Peak_char.Frozen"};
+            "_Peak_char.Peak_ID",
+            "_Peak_char.Peak_contribution_ID",
+            "_Peak_char.Spectral_dim_ID",
+            "_Peak_char.Chem_shift_val",
+            "_Peak_char.Chem_shift_val_err",
+            "_Peak_char.Bounding_box_val",
+            "_Peak_char.Bounding_box_val_err",
+            "_Peak_char.Line_width_val",
+            "_Peak_char.Line_width_val_err",
+            "_Peak_char.Shape_factor_val",
+            "_Peak_char.Shape_factor_val_err",
+            "_Peak_char.Phase_val",
+            "_Peak_char.Phase_val_err",
+            "_Peak_char.Decay_rate_val",
+            "_Peak_char.Decay_rate_val_err",
+            "_Peak_char.Derivation_method_ID",
+            "_Peak_char.Peak_error",
+            "_Peak_char.Detail",
+            "_Peak_char.Coupling_detail",
+            "_Peak_char.Frozen"};
 
     static String spectralTransitionStrings[] = {
-        "_Spectral_transition.ID",
-        "_Spectral_transition.Peak_ID",
-        "_Spectral_transition.Figure_of_merit",
-        "_Spectral_transition.Details",};
+            "_Spectral_transition.ID",
+            "_Spectral_transition.Peak_ID",
+            "_Spectral_transition.Figure_of_merit",
+            "_Spectral_transition.Details",};
 
     static String spectralTransitionGeneralCharStrings[] = {
-        "_Spectral_transition_general_char.Spectral_transition_ID",
-        "_Spectral_transition_general_char.Peak_ID",
-        "_Spectral_transition_general_char.Intensity_val",
-        "_Spectral_transition_general_char.Intensity_val_err",
-        "_Spectral_transition_general_char.Measurement_method",};
+            "_Spectral_transition_general_char.Spectral_transition_ID",
+            "_Spectral_transition_general_char.Peak_ID",
+            "_Spectral_transition_general_char.Intensity_val",
+            "_Spectral_transition_general_char.Intensity_val_err",
+            "_Spectral_transition_general_char.Measurement_method",};
 
     static String spectralTransitionCharStrings[] = {
-        "_Spectral_transition_char.Spectral_transition_ID",
-        "_Spectral_transition_char.Peak_ID",
-        "_Spectral_transition_char.Spectral_dim_ID",
-        "_Spectral_transition_char.Chem_shift_val",
-        "_Spectral_transition_char.Chem_shift_val_err",
-        "_Spectral_transition_char.Bounding_box_val",
-        "_Spectral_transition_char.Bounding_box_val_err",
-        "_Spectral_transition_char.Line_width_val",
-        "_Spectral_transition_char.Line_width_val_err",
-        "_Spectral_transition_char.Phase_val",
-        "_Spectral_transition_char.Phase_val_err",
-        "_Spectral_transition_char.Decay_rate_val",
-        "_Spectral_transition_char.Decay_rate_val_err",
-        "_Spectral_transition_char.Derivation_method_ID",};
+            "_Spectral_transition_char.Spectral_transition_ID",
+            "_Spectral_transition_char.Peak_ID",
+            "_Spectral_transition_char.Spectral_dim_ID",
+            "_Spectral_transition_char.Chem_shift_val",
+            "_Spectral_transition_char.Chem_shift_val_err",
+            "_Spectral_transition_char.Bounding_box_val",
+            "_Spectral_transition_char.Bounding_box_val_err",
+            "_Spectral_transition_char.Line_width_val",
+            "_Spectral_transition_char.Line_width_val_err",
+            "_Spectral_transition_char.Phase_val",
+            "_Spectral_transition_char.Phase_val_err",
+            "_Spectral_transition_char.Decay_rate_val",
+            "_Spectral_transition_char.Decay_rate_val_err",
+            "_Spectral_transition_char.Derivation_method_ID",};
 
     static String peakComplexCouplingStrings[] = {
-        "_Peak_complex_multiplet.ID",
-        "_Peak_complex_multiplet.Peak_ID",
-        "_Peak_complex_multiplet.Spectral_dim_ID",
-        "_Peak_complex_multiplet.Multiplet_component_ID",
-        "_Peak_complex_multiplet.Offset_val",
-        "_Peak_complex_multiplet.Offset_val_err",
-        "_Peak_complex_multiplet.Intensity_val",
-        "_Peak_complex_multiplet.Intensity_val_err",
-        "_Peak_complex_multiplet.Volume_val",
-        "_Peak_complex_multiplet.Volume_val_err",
-        "_Peak_complex_multiplet.Line_width_val",
-        "_Peak_complex_multiplet.Line_width_val_err"};
+            "_Peak_complex_multiplet.ID",
+            "_Peak_complex_multiplet.Peak_ID",
+            "_Peak_complex_multiplet.Spectral_dim_ID",
+            "_Peak_complex_multiplet.Multiplet_component_ID",
+            "_Peak_complex_multiplet.Offset_val",
+            "_Peak_complex_multiplet.Offset_val_err",
+            "_Peak_complex_multiplet.Intensity_val",
+            "_Peak_complex_multiplet.Intensity_val_err",
+            "_Peak_complex_multiplet.Volume_val",
+            "_Peak_complex_multiplet.Volume_val_err",
+            "_Peak_complex_multiplet.Line_width_val",
+            "_Peak_complex_multiplet.Line_width_val_err"};
     static String peakCouplingPatternStrings[] = {
-        "_Peak_coupling.ID",
-        "_Peak_coupling.Peak_ID",
-        "_Peak_coupling.Spectral_dim_ID",
-        "_Peak_coupling.Multiplet_component_ID",
-        "_Peak_coupling.Type",
-        "_Peak_coupling.Coupling_val",
-        "_Peak_coupling.Coupling_val_err",
-        "_Peak_coupling.Strong_coupling_effect_val",
-        "_Peak_coupling.Strong_coupling_effect_err",
-        "_Peak_coupling.Intensity_val",
-        "_Peak_coupling.Intensity_val_err",
-        "_Peak_coupling.Partner_Peak_coupling_ID"
+            "_Peak_coupling.ID",
+            "_Peak_coupling.Peak_ID",
+            "_Peak_coupling.Spectral_dim_ID",
+            "_Peak_coupling.Multiplet_component_ID",
+            "_Peak_coupling.Type",
+            "_Peak_coupling.Coupling_val",
+            "_Peak_coupling.Coupling_val_err",
+            "_Peak_coupling.Strong_coupling_effect_val",
+            "_Peak_coupling.Strong_coupling_effect_err",
+            "_Peak_coupling.Intensity_val",
+            "_Peak_coupling.Intensity_val_err",
+            "_Peak_coupling.Partner_Peak_coupling_ID"
     };
     static final public int NFLAGS = 16;
     static final public int COMPOUND = 1;
@@ -121,6 +125,7 @@ public class Peak implements Comparable, PeakOrMulti {
     static final public int[][] FREEZE_COLORS = {{255, 165, 0}, {255, 0, 255}, {255, 0, 0}};
     protected static final int N_TYPES = 9;
     protected static String[] peakTypes = new String[N_TYPES];
+
     static {
         int j = 1;
 
@@ -872,25 +877,6 @@ public class Peak implements Comparable, PeakOrMulti {
         return (result.toString());
     }
 
-    /*
-             public void updateCouplings() {
-             if (!getFlag(5)) {
-             for (int i = 0; i < peakDim.length; i++) {
-             PeakDim pDim = peakDim[i];
-             Peak origPeak = pDim.getOrigin();
-
-             if (origPeak != null) {
-             ArrayList links = pDim.getLinkedPeakDims();
-             PeakDim.sortPeakDims(links, true);
-             pDim.adjustCouplings(origPeak);
-             }
-
-             peakDim[i].updateCouplings();
-
-             }
-             }
-             }
-         */
     public String getName() {
         return peakList.getName() + "." + getIdNum();
     }

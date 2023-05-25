@@ -1,10 +1,13 @@
 
 package org.nmrfx.structure.chemistry.miner;
 
+import org.nmrfx.annotations.PluginAPI;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@PluginAPI("residuegen")
 public class NodeValidator implements NodeValidatorInterface {
 
      boolean[][] p;
@@ -1122,24 +1125,7 @@ break;
     public boolean[][] getProperties() {
         return p;
     }
-/*
-    public void dumpProps() {
-        for (int i = 0; i < propertyNames.length; i++) {
-            System.out.print(propertyNames[i] + " ");
-        }
-        System.out.println("");
-        for (int i = 0; i < p.length; i++) { 
-            for (int j = 0; j < p[i].length; j++) {
-                if (p[i][j]) {
-                    System.out.print(propertyNames[j] + " ");
-                }
-            }
-            System.out.println("");
-         
-        }
-    }
-*/
-    
+
     public boolean ringClosed(final int[] currentPath,final int bondOrder, final int atomIndex, final int ringIndex, Map bondMap) {
         String key = currentPath[ringIndex] + " " + atomIndex;
         Integer order = (Integer) bondMap.get(key);

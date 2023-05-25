@@ -16,10 +16,8 @@
  */
 package org.nmrfx.chart;
 
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
@@ -53,9 +51,6 @@ public class PlotDemo {
     static List<String> classes;
     static Map<String, Integer> classMap = new HashMap<>();
     static double[][] iris = null;
-    static double[] cow = null;
-    static double[][] six = null;
-    static double[][] zip = null;
 
     public PlotDemo(Stage stage) {
         this.stage = stage;
@@ -135,7 +130,6 @@ public class PlotDemo {
         pane.getChildren().add(canvas);
         stage.setScene(new Scene(borderPane));
         stage.show();
-        GraphicsContext gC = canvas.getGraphicsContext2D();
         gcP = new GraphicsContextProxy(canvas.getGraphicsContext2D());
         borderPane.widthProperty().addListener(e -> refresh());
         borderPane.heightProperty().addListener(e -> refresh());
@@ -143,16 +137,6 @@ public class PlotDemo {
     }
 
     public void addLinePlot() {
-//        double[] y = {2.0, 4.0, 0.5, 7.0, 1.4};
-//        LinePlot lPlot = LinePlot.of(y);
-//        smileCanvas = null;
-//        if (smileCanvas == null) {
-//            smileCanvas = lPlot.canvas();
-//        } else {
-//            smileCanvas.clear();
-//            smileCanvas.add(lPlot);
-//        }
-//        refresh();
     }
 
     public void addScatterPlot() {
@@ -236,24 +220,9 @@ public class PlotDemo {
     }
 
     public void addBarPlot() {
-//        double[] z = {1.0, 2.0, 4.0, 0.0, 1.0};
-//
-//        BarPlot barPlot = BarPlot.of(z);
-//        smileCanvas = null;
-//        if (smileCanvas == null) {
-//            smileCanvas = barPlot.canvas();
-//        } else {
-//            smileCanvas.clear();
-//            smileCanvas.add(barPlot);
-//        }
-//        refresh();
     }
 
     public void addPlotGrid() {
-//        if (loadIRIS() == null) {
-//            return;
-//        }
-//        refresh();
     }
 
     void refresh() {
@@ -266,24 +235,5 @@ public class PlotDemo {
             chart.setHeight(height);
             chart.drawChart();
         }
-//        if (smileCanvas != null) {
-//            smileCanvas.resetAxis();
-//            smileCanvas.paint(gcP, (int) width, (int) height);
-//        }
     }
-
-    public void showCanvas() {
-        runOnPlatform(() -> {
-            showCanvasNow();
-        });
-    }
-
-    public static void runOnPlatform(Runnable runnable) {
-        if (Platform.isFxApplicationThread()) {
-            runnable.run();
-        } else {
-            Platform.runLater(runnable);
-        }
-    }
-
 }

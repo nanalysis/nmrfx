@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.relax.OrderPar;
 import org.nmrfx.chemistry.relax.RelaxationData;
 import org.nmrfx.chemistry.constraints.AngleConstraint;
@@ -32,6 +33,7 @@ import org.nmrfx.chemistry.relax.SpectralDensity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@PluginAPI({"residuegen", "ring"})
 public class Atom implements IAtom, Comparable<Atom> {
 
     private static final Logger log = LoggerFactory.getLogger(Atom.class);
@@ -295,15 +297,6 @@ public class Atom implements IAtom, Comparable<Atom> {
     @Override
     public int compareTo(Atom atom) {
         return Atom.compare(this, atom);
-    }
-
-    public static class AtomComparator implements Comparator<Atom> {
-
-        @Override
-        public int compare(Atom atom1, Atom atom2) {
-            return Atom.compare(atom1, atom2);
-        }
-
     }
 
     public static int compare(Atom atom1, Atom atom2) {

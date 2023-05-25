@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry.relax;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -33,6 +34,7 @@ import java.util.Map;
  *
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public class OrderPar implements RelaxationValues {
 
     static final String[] PAR_NAMES = {"S2", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2", "model", "rms"};

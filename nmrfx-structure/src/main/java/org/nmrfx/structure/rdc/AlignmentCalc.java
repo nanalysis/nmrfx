@@ -428,7 +428,6 @@ public class AlignmentCalc {
         globalScale = scale * constrainedSize / (constrainedSize + freeSize);
 
         nFreePositions = n - nAllOverlap - nConstrainedPositions;
-        // double globalScale = 0.5 * (double) nConstrainedPositions / (nConstrainedPositions + nFreePositions);
         System.out.println("n " + n + " nPos " + nAllOverlap + " nFree "
                 + nFreePositions + " nConstr " + nConstrainedPositions
                 + " ggs " + globalScale);
@@ -446,7 +445,6 @@ public class AlignmentCalc {
         for (AngleMinimum aMin : angleMinimums) {
             double scale = (nConstrainedPositions - aMin.getCount()) / total;
             double scaleUniform = 1.0 / angleMinimums.size();
-            // scale = 1.0;
             double[] dots = new double[3];
             for (int i = 0; i < 3; i++) {
                 dots[i] = aMin.vecs[i].dotProduct(BVEC);// * aMin.scale;
@@ -461,14 +459,9 @@ public class AlignmentCalc {
             sumDots[0] += dots[0] * dots[0];
             sumDots[1] += dots[1] * dots[1];
             sumDots[2] += dots[2] * dots[2];
-//            for (int i = 0; i < 3; i++) {
-//                for (int j = i + 1; j < 3; j++) {
-//                    sMat[j][i] = sMat[i][j];
-//                }
-//            }
             totalScale += scale;
         }
-//        double globalScale = 0.5 * (double) nConstrainedPositions / (nConstrainedPositions + nFreePositions);
+
         RealMatrix saupeMat2 = new Array2DRowRealMatrix(sMat2);
         RealMatrix saupeMat = new Array2DRowRealMatrix(sMat);
         saupeMat = saupeMat.subtract(saupeMat2);

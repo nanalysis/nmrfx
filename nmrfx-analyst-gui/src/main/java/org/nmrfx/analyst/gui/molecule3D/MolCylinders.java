@@ -92,9 +92,6 @@ public class MolCylinders extends Group implements MolItem {
                         result = "bond " + bond.getBeginAtom().getFullName() + " " + bond.getEndAtom().getFullName();
                         break;
                 }
-            } else {
-                //result = "bond " + bond.getBeginAtom().getFullName() + " " + bond.getEndAtom().getFullName();
-
             }
         }
         return result;
@@ -161,10 +158,6 @@ public class MolCylinders extends Group implements MolItem {
                     center2[2] = selPoint2.getZ();
                     selNode = new MolCylinder(center1, center2, selRadius, Color.GOLD, "selection");
                 }
-
-            } else {
-                //result = "bond " + bond.getBeginAtom().getFullName() + " " + bond.getEndAtom().getFullName();
-
             }
         }
         return selNode;
@@ -237,12 +230,7 @@ public class MolCylinders extends Group implements MolItem {
     }
 
     public String hit(double x, double y) {
-//        int pickIndex = pickShape(x, y);
         String pickResult = "";
-//        if (pickIndex >= 0) {
-//            pickResult = "bond " + bonds[pickIndex].getBeginAtom().getFullName() + " " + bonds[pickIndex].getEndAtom().getFullName();
-//        }
-
         return pickResult;
     }
 
@@ -358,8 +346,6 @@ public class MolCylinders extends Group implements MolItem {
                 material.setSpecularColor(Color.WHITE);
 
                 Cylinder cyl = new Cylinder(0.05, length, 6);
-//                box.setDrawMode(DrawMode.LINE);
-
                 Translate translate = new Translate(center.x, center.y, center.z);
                 cyl.getTransforms().addAll(translate, transform);
                 cyl.setMaterial(material);
@@ -381,7 +367,7 @@ public class MolCylinders extends Group implements MolItem {
 
         // calculate height of object and unit vector along cylinder axis
         Vector3d unit = new Vector3d();
-        unit.sub(apex, base); // unit = apex - base;
+        unit.sub(apex, base);
 
         unit.normalize();
 
@@ -441,8 +427,6 @@ public class MolCylinders extends Group implements MolItem {
         // rotate the cylinder into correct orientation
         Transform transform = rotateMatrix.createConcatenation(rotateFix);
         return transform;
-//        Translate translate = new Translate(center.x, center.y, center.position);
-//        return transform.createConcatenation(translate);
     }
 
 }

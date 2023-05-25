@@ -51,7 +51,6 @@ public class IntSlider extends GridPane {
         this.slider = slider;
         this.amin = amin;
         this.amax = amax;
-        //downButton.setBorder(Border.EMPTY);
         textField.setFont(new Font(11));
         textField.setPrefWidth(60);
         addControls();

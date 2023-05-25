@@ -25,6 +25,8 @@ import javafx.scene.paint.Color;
 /**
  * @author brucejohnson
  */
+//TODO uncomment once core & utils are merged
+//@PluginAPI("ring")
 public class DataSeries {
 
     private final ObservableList<XYValue> values = FXCollections.observableArrayList();

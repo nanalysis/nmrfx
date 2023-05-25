@@ -31,12 +31,14 @@ import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Optional;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.Nuclei;
 
 /**
  *
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public class SpectralDim {
 
     static String loopStrings[] = {

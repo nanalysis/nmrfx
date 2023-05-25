@@ -1,5 +1,6 @@
 package org.nmrfx.structure.chemistry.energy;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
@@ -15,6 +16,7 @@ import java.util.*;
  *
  * @author Bruce Johnson
  */
+@PluginAPI("residuegen")
 public class AngleTreeGenerator {
     private static final Logger log = LoggerFactory.getLogger(AngleTreeGenerator.class);
 
@@ -170,10 +172,6 @@ public class AngleTreeGenerator {
                 parent.setValue(parent.getValue() + mNode.getValue());
             }
         }
-        // fixme should we sort
-        //        for (MNode mNode : pathNodes) {
-        //            mNode.sortNodesDescending();
-        //        }
 
         mTree.broad_path(startIndex);
         pathNodes = mTree.getPathNodes();
@@ -467,7 +465,6 @@ public class AngleTreeGenerator {
             }
         }
         // Sorting the shellNodes results in errors calculating dihedral angles
-        //        Collections.sort(shellNodes, MNode::compareByParValue);
         return shellNodes;
     }
 

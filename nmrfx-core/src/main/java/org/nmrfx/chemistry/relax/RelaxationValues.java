@@ -17,10 +17,13 @@
  */
 package org.nmrfx.chemistry.relax;
 
+import org.nmrfx.annotations.PluginAPI;
+
 /**
  *
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public interface RelaxationValues {
 
     Double getValue();

@@ -82,7 +82,6 @@ public class AtomDistancePair {
     }
 
     public double getDistance() {
-//        return getDistanceToClosest();
         return getSumAvgDistance();
     }
 
@@ -126,7 +125,7 @@ public class AtomDistancePair {
                     }
                 }
             }
-            //distance = closestDistance-methylCorrection*1.0;
+
             closestDistance -= methylCorrection;
             if (closestDistance < 0.01) {
                 closestDistance = 0.01;
