@@ -279,7 +279,7 @@ public class MouseBindings {
                     BoxMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
                 } else {
                     if (CanvasCursor.isCrosshair(chart.getCanvasCursor()) || mouseEvent.isMetaDown()) {
-                        chart.getCrossHairs().setCrossHairState(true);
+                        chart.getCrossHairs().setAllStates(true);
                     }
                     CrossHairMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
                 }

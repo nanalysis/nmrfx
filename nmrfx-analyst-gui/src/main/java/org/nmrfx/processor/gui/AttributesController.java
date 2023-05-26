@@ -1137,7 +1137,7 @@ public class AttributesController implements Initializable {
         getCharts(allCharts()).forEach(aChart -> {
             aChart.sliceAttributes.setSlice1Color(slice1ColorPicker.getValue());
             aChart.sliceAttributes.setSlice2Color(slice2ColorPicker.getValue());
-            aChart.getCrossHairs().refreshCrossHairs();
+            aChart.getCrossHairs().refresh();
         });
     }
 
@@ -1285,7 +1285,7 @@ public class AttributesController implements Initializable {
     }
 
     private void refreshSlices(PolyChart aChart) {
-        aChart.getCrossHairs().refreshCrossHairs();
+        aChart.getCrossHairs().refresh();
     }
     private void updateCharts() {
         PauseTransition wait = new PauseTransition(Duration.millis(5.0));

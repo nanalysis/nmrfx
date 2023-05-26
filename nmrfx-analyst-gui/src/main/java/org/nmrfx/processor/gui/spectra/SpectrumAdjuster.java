@@ -17,18 +17,8 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -36,6 +26,8 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
+
+import java.util.*;
 
 /**
  *
@@ -145,7 +137,7 @@ public class SpectrumAdjuster {
     }
 
     public static void processReference(PolyChart chart, int iDim, double newPos, boolean shiftPeaks) {
-        Double[] cPos = chart.getCrossHairs().getCrossHairPositions(0);
+        Double[] cPos = chart.getCrossHairs().getPositions(0);
         double oldPos = cPos[iDim];
         double delta = newPos - oldPos;
         undoChartName = chart.getName();
@@ -186,16 +178,16 @@ public class SpectrumAdjuster {
         if (chart.getNDim() > 1) {
             nDim = 2;
         }
-        Double[] c0 = crossHairs.getCrossHairPositions(0);
-        Double[] c1 = crossHairs.getCrossHairPositions(1);
+        Double[] c0 = crossHairs.getPositions(0);
+        Double[] c1 = crossHairs.getPositions(1);
 
         double[] deltas = {0.0, 0.0};
         boolean gotShifts = false;
-        if (crossHairs.hasCrosshairState("||") || delXOpt.isPresent()) {
+        if (crossHairs.hasState("||") || delXOpt.isPresent()) {
             deltas[0] = delXOpt.isPresent() ? delXOpt.get() : c1[0] - c0[0];
             gotShifts = true;
         }
-        if ((nDim > 1) && (crossHairs.hasCrosshairState("=") || delYOpt.isPresent())) {
+        if ((nDim > 1) && (crossHairs.hasState("=") || delYOpt.isPresent())) {
             deltas[1] = delYOpt.isPresent() ? delXOpt.get() : c1[1] - c0[1];
             gotShifts = true;
         }
@@ -238,12 +230,12 @@ public class SpectrumAdjuster {
             return;
         }
         CrossHairs crossHairs = chart.getCrossHairs();
-        if (!crossHairs.hasCrosshairState("|_")) {
+        if (!crossHairs.hasState("|_")) {
             Alert alert = new Alert(Alert.AlertType.WARNING, "Need a vertical and horizontal crosshair");
             alert.showAndWait();
             return;
         }
-        Double[] pos = crossHairs.getCrossHairPositions();
+        Double[] pos = crossHairs.getPositions();
 
         double delta = pos[0] - pos[1];
         boolean ok = true;

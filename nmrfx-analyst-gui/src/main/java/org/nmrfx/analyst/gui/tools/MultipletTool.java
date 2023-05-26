@@ -417,7 +417,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     public void split() {
         CrossHairs crossHairs = chart.getCrossHairs();
-        if (crossHairs.hasCrosshairState("v0")) {
+        if (crossHairs.hasState("v0")) {
             splitMultipletRegion();
         } else {
             if (getAnalyzer().getPeakList() != null) {
@@ -478,7 +478,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         if (analyzer != null) {
             double ppm0;
             double ppm1;
-            if (chart.getCrossHairs().hasCrosshairState("||")) {
+            if (chart.getCrossHairs().hasState("||")) {
                 ppm0 = chart.getCrossHairs().getVerticalPositions()[0];
                 ppm1 = chart.getCrossHairs().getVerticalPositions()[1];
             } else {

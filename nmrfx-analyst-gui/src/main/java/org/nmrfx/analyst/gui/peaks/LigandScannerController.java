@@ -207,7 +207,7 @@ public class LigandScannerController implements Initializable, StageBasedControl
         mcsAlphas = new double[nDim];
         double[][] ppms = new double[nDim][2];
         int[] deltas = new int[nDim];
-        if (!chart.getCrossHairs().hasCrosshairRegion()) {
+        if (!chart.getCrossHairs().hasRegion()) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("No crosshair region");
             alert.showAndWait();
@@ -217,8 +217,8 @@ public class LigandScannerController implements Initializable, StageBasedControl
         for (int i = 0; i < nDim; i++) {
             dimNames[i] = chartDimNames.get(i);
             deltas[i] = 10;
-            Double[] positions0 = chart.getCrossHairs().getCrossHairPositions(0);
-            Double[] positions1 = chart.getCrossHairs().getCrossHairPositions(1);
+            Double[] positions0 = chart.getCrossHairs().getPositions(0);
+            Double[] positions1 = chart.getCrossHairs().getPositions(1);
             ppms[i][0] = positions0[i];
             ppms[i][1] = positions1[i];
             // fixm need to set based on nucleus and/or in gui

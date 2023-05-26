@@ -317,7 +317,6 @@ public class PolyChart extends Region implements PeakListener {
         axes[1] = yAxis;
 
         crossHairs = new CrossHairs(this);
-        crossHairs.init();
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) {
                 plotContent.getChildren().add(crossHairs.getLine(i, j));
@@ -502,10 +501,10 @@ public class PolyChart extends Region implements PeakListener {
             crossHairNumV = crossNums[1];
         }
         if (crossHairNumH >= 0) {
-            crossHairs.moveCrosshair(crossHairNumH, HORIZONTAL, mEvent.getY());
+            crossHairs.move(crossHairNumH, HORIZONTAL, mEvent.getY());
         }
         if (crossHairNumV >= 0) {
-            crossHairs.moveCrosshair(crossHairNumV, VERTICAL, mEvent.getX());
+            crossHairs.move(crossHairNumV, VERTICAL, mEvent.getX());
         }
     }
 
@@ -1406,7 +1405,7 @@ public class PolyChart extends Region implements PeakListener {
             }
         }
         layoutPlotChildren();
-        crossHairs.hideCrossHairs();
+        crossHairs.hideAll();
         ChartUndoLimits redo = new ChartUndoLimits(this);
         controller.getUndoManager().add("expand", undo, redo);
 
@@ -1779,7 +1778,7 @@ public class PolyChart extends Region implements PeakListener {
             datasetFileProp.setValue(null);
         }
 
-        crossHairs.hideCrossHairs();
+        crossHairs.hideAll();
         return datasetAttributes;
     }
 
@@ -2211,7 +2210,7 @@ public class PolyChart extends Region implements PeakListener {
                 drawPeakLists(true);
             }
             drawAnnotations(gCPeaks);
-            crossHairs.refreshCrossHairs();
+            crossHairs.refresh();
             gC.restore();
             highlightChart();
             getFXMLController().updateDatasetAttributeControls();
@@ -3835,7 +3834,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void setSliceStatus(boolean state) {
-        crossHairs.refreshCrossHairs();
+        crossHairs.refresh();
     }
 
     public void drawSlices() {

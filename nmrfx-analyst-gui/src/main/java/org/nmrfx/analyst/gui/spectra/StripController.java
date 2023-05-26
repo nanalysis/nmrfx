@@ -556,7 +556,7 @@ public class StripController implements ControllerTool {
             if (item.dataset != null) {
                 if (init) {
                     controller.addDataset(item.dataset, false, false);
-                    chart.getCrossHairs().setCrossHairState(0, 0, true);
+                    chart.getCrossHairs().setState(0, 0, true);
                 }
                 chart.setDataset(item.dataset);
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);

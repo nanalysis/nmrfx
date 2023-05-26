@@ -126,7 +126,7 @@ public class IntegralTool {
     public void splitRegion() {
         CrossHairs crossHairs = chart.getCrossHairs();
 
-        if (crossHairs.hasCrosshairState("v0")) {
+        if (crossHairs.hasState("v0")) {
             double ppm = chart.getCrossHairs().getVerticalPositions()[0];
             try {
                 Analyzer.getAnalyzer((Dataset) chart.getDataset()).splitRegion(ppm);
