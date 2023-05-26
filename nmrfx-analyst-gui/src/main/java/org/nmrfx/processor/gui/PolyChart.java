@@ -101,7 +101,6 @@ public class PolyChart extends Region implements PeakListener {
     private static final String FONT_FAMILY = "Liberation Sans";
     private static boolean listenToPeaks = true;
     private static Consumer<PeakDeleteEvent> manualPeakDeleteAction = null;
-    private static int lastId = 0;
     private static int nSyncGroups = 0;
     final NMRAxis xAxis;
     final NMRAxis yAxis;
@@ -121,7 +120,7 @@ public class PolyChart extends Region implements PeakListener {
     private final DrawSpectrum drawSpectrum;
     private final DrawPeaks drawPeaks;
     private final List<CanvasAnnotation> canvasAnnotations = new ArrayList<>();
-    private final int id;
+    private final String name;
     private final SimpleObjectProperty<DatasetRegion> activeRegion = new SimpleObjectProperty<>(null);
     private final SimpleBooleanProperty chartSelected = new SimpleBooleanProperty(false);
     private final Map<String, Object> popoverMap = new HashMap<>();
@@ -168,17 +167,17 @@ public class PolyChart extends Region implements PeakListener {
     private DragBindings dragBindings;
     private CrossHairs crossHairs;
 
-    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
+    public PolyChart(FXMLController controller, String name, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
+        this.controller = controller;
+        this.name = name;
         this.canvas = canvas;
         this.peakCanvas = peakCanvas;
         this.annoCanvas = annoCanvas;
-        this.controller = controller;
         xAxis = new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50);
         yAxis = new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200);
         plotBackground = new Group();
         this.plotContent = plotContent;
         drawSpectrum = new DrawSpectrum(axes, canvas);
-        id = getNextId();
 
         initChart();
         drawPeaks = new DrawPeaks(this, peakCanvas);
@@ -300,9 +299,7 @@ public class PolyChart extends Region implements PeakListener {
                         .and(PolyChartManager.getInstance().multipleChartsProperty())
                         .or(chartSelected));
         plotContent.getChildren().add(highlightRect);
-        for (var canvasHanndle : canvasHandles) {
-            canvasHanndle.visibleProperty().bind(chartSelected);
-        }
+        canvasHandles.forEach(handle -> handle.visibleProperty().bind(chartSelected));
         plotContent.getChildren().addAll(canvasHandles);
         loadData();
         xAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 0, 0));
@@ -325,13 +322,9 @@ public class PolyChart extends Region implements PeakListener {
         canvas.requestFocus();
     }
 
-    private synchronized int getNextId() {
-        lastId++;
-        return (lastId);
-    }
 
     public String getName() {
-        return String.valueOf(id);
+        return name;
     }
 
     public Canvas getCanvas() {

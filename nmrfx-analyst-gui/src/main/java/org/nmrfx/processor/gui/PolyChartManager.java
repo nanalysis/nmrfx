@@ -5,6 +5,8 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.layout.Pane;
 import org.codehaus.commons.nullanalysis.Nullable;
 import org.nmrfx.datasets.DatasetBase;
 
@@ -24,9 +26,21 @@ public class PolyChartManager {
     private final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
     private final SimpleBooleanProperty multipleCharts = new SimpleBooleanProperty(false);
     private final SimpleObjectProperty<DatasetBase> currentDataset = new SimpleObjectProperty<>(null);
+    private int lastId = 0;
 
     public PolyChartManager() {
         allCharts.addListener((ListChangeListener) (e -> multipleCharts.set(allCharts.size() > 1)));
+    }
+
+    public PolyChart create(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
+        PolyChart chart = new PolyChart(controller, generateNextName(), plotContent, canvas, peakCanvas, annoCanvas);
+        //TODO move registration here
+        return chart;
+    }
+
+    private synchronized String generateNextName() {
+        lastId++;
+        return String.valueOf(lastId);
     }
 
     public void registerNewChart(PolyChart chart) {

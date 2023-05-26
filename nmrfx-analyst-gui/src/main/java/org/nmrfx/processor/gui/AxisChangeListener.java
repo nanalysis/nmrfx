@@ -57,10 +57,8 @@ public class AxisChangeListener implements ChangeListener<Number> {
     public void changed(ObservableValue observable, Number oldValue, Number newValue) {
         if (axNum < chart.getNDim()) {
             chart.updateDatasetAttributeBounds();
-            Double oldBound = (Double) oldValue;
             double newBound = newValue.doubleValue();
             if (chart == PolyChartManager.getInstance().getActiveChart()) {
-                FXMLController fxmlController = chart.getFXMLController();
                 if (axNum >= 2) {
                     DatasetAttributes datasetAttributes = chart.getDatasetAttributes().get(0);
                     NMRAxis axis = chart.axes[axNum];
