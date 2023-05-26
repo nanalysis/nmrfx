@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -168,21 +168,14 @@ public class PolyChart extends Region implements PeakListener {
     private GestureBindings gestureBindings;
     private DragBindings dragBindings;
     private CrossHairs crossHairs;
+
     public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
-        this(controller, plotContent, canvas, peakCanvas, annoCanvas,
-                new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50),
-                new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200)
-        );
-
-    }
-
-    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas, final NMRAxis... AXIS) {
         this.canvas = canvas;
         this.peakCanvas = peakCanvas;
         this.annoCanvas = annoCanvas;
         this.controller = controller;
-        xAxis = AXIS[0];
-        yAxis = AXIS[1];
+        xAxis = new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50);
+        yAxis = new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200);
         plotBackground = new Group();
         this.plotContent = plotContent;
         drawSpectrum = new DrawSpectrum(axes, canvas);
@@ -493,8 +486,8 @@ public class PolyChart extends Region implements PeakListener {
                     annoGC.strokeLine(dragStart[0], y - 20, dragStart[0], y + 20);
                     annoGC.strokeLine(dragStart[0], y, x, y);
                 } else {
-                    annoGC.strokeLine(x, yPos + topBorder, x, yPos + getHeight()-bottomBorder);
-                    annoGC.strokeLine(dragStart[0], yPos + topBorder, dragStart[0], yPos + getHeight()-bottomBorder);
+                    annoGC.strokeLine(x, yPos + topBorder, x, yPos + getHeight() - bottomBorder);
+                    annoGC.strokeLine(dragStart[0], yPos + topBorder, dragStart[0], yPos + getHeight() - bottomBorder);
                 }
             } else {
                 annoGC.strokeRect(startX, startY, dX, dY);
@@ -2390,6 +2383,7 @@ public class PolyChart extends Region implements PeakListener {
      * Check whether the axis of the dataset attributes are compatible with the first element of the provided attributes
      * list. Incompatible attributes are removed from the list and the range is adjusted based on the remaining
      * attributes.
+     *
      * @param attributes The attributes list to remove incompatible datasets from.
      */
     private void removeIncompatibleDatasetAttributes(List<DatasetAttributes> attributes) {
@@ -2432,14 +2426,15 @@ public class PolyChart extends Region implements PeakListener {
      * Counts the number of matches of the DatasetAttributes nucleus number names to the provided list of nucleus number
      * names and returns true if they have matching nuclei for all the axis names. Attributes that are projections are
      * considered to not be incompatible since they will not be displayed in the chart centre and will return false
-     * @param axisNamesToMatch The axis nucleus names for the x and y axis.
+     *
+     * @param axisNamesToMatch  The axis nucleus names for the x and y axis.
      * @param attributesToMatch The DatasetAttributes to check the compatibility of
      * @return true if the dataset is incompatible
      */
     private boolean isDatasetAttributesIncompatible(List<String> axisNamesToMatch, DatasetAttributes attributesToMatch) {
         List<String> nucleusNames = new ArrayList<>(axisNamesToMatch);
         int numberOfMatches = 0;
-        for (int dim: attributesToMatch.getDims()) {
+        for (int dim : attributesToMatch.getDims()) {
             String attributeNucleusName = attributesToMatch.getDataset().getNucleus(dim).getNumberName();
             if (nucleusNames.contains(attributeNucleusName)) {
                 nucleusNames.remove(attributeNucleusName);
@@ -2451,8 +2446,9 @@ public class PolyChart extends Region implements PeakListener {
 
     /**
      * Checks the current axis is within provided range.
+     *
      * @param limits The limits of the new range, lower bound at index 0, upper bound at index 1
-     * @param axis The axis to check
+     * @param axis   The axis to check
      * @return true if the axis range is within the provided range
      */
     private boolean currentRangeWithinNewRange(double[] limits, int axis) {
@@ -2613,6 +2609,7 @@ public class PolyChart extends Region implements PeakListener {
 
     /**
      * Gets the max absolute value of the region integrals.
+     *
      * @param regions The regions to search.
      * @return The max integral value.
      */
@@ -2651,8 +2648,8 @@ public class PolyChart extends Region implements PeakListener {
                             double x = xy[0][i];
                             double y = xy[1][i];
                             if ((Math.abs(pickX - x) < hitRange) && (Math.abs(pickY - y) < hitRange)) {
-                                int handle = i < nPoints /2 ? -1 : -2;
-                                Bounds bounds = new BoundingBox(xy[0][0], xy[1][nPoints-1],xy[0][nPoints-1]-xy[0][0],xy[1][0]-xy[1][nPoints-1]);
+                                int handle = i < nPoints / 2 ? -1 : -2;
+                                Bounds bounds = new BoundingBox(xy[0][0], xy[1][nPoints - 1], xy[0][nPoints - 1] - xy[0][0], xy[1][0] - xy[1][nPoints - 1]);
                                 hit = Optional.of(new IntegralHit(datasetAttr, region, handle, bounds));
                                 break;
                             }
@@ -2728,7 +2725,7 @@ public class PolyChart extends Region implements PeakListener {
         hit.ifPresentOrElse(iHit -> {
             iHit.getDatasetAttr().setActiveRegion(iHit);
             activeRegion.set(iHit.getDatasetRegion());
-        }, () ->activeRegion.set(null));
+        }, () -> activeRegion.set(null));
         return hit;
 
     }
@@ -4263,21 +4260,22 @@ public class PolyChart extends Region implements PeakListener {
                         initialDatasetAttr.get().getProjection((Dataset) projectionDimAttr.get().getDataset(), projectionVec, projectionDim);
                         OptionalDouble maxValue = Arrays.stream(projectionVec.getReal()).max();
                         if (maxValue.isPresent()) {
-                            double scaleValue =  maxValue.getAsDouble() / (borders.get(i) * 0.95);
+                            double scaleValue = maxValue.getAsDouble() / (borders.get(i) * 0.95);
                             projectionDimAttr.get().setLvl(scaleValue);
                         }
                     }
                 }
             } catch (IOException e) {
-                log.warn("Unable to update projection scale. {}",e.getMessage(), e);
+                log.warn("Unable to update projection scale. {}", e.getMessage(), e);
             }
         }
     }
 
     /**
      * Updates the projection scale value by adding the scaleDelta value for the provided chart border.
+     *
      * @param chartBorder Which chart border to adjust the scale for
-     * @param scaleDelta The amount to adjust the scale
+     * @param scaleDelta  The amount to adjust the scale
      */
     public void updateProjectionScale(ChartBorder chartBorder, double scaleDelta) {
         double scalingFactor = calculateScaleYFactor(scaleDelta);
@@ -4286,7 +4284,8 @@ public class PolyChart extends Region implements PeakListener {
             projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setLvl(Math.max(0, datasetAttributes.getLvl() * scalingFactor)));
         } else if (chartBorder == ChartBorder.RIGHT) {
             Optional<DatasetAttributes> projectionAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == 1).findFirst();
-            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setLvl(Math.max(0, datasetAttributes.getLvl() * scalingFactor)));}
+            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setLvl(Math.max(0, datasetAttributes.getLvl() * scalingFactor)));
+        }
     }
 
     /**
