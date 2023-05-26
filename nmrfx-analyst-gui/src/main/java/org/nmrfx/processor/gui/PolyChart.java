@@ -68,6 +68,7 @@ import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
+import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
 import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings.MOUSE_ACTION;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
@@ -501,10 +502,10 @@ public class PolyChart extends Region implements PeakListener {
             crossHairNumV = crossNums[1];
         }
         if (crossHairNumH >= 0) {
-            crossHairs.move(crossHairNumH, HORIZONTAL, mEvent.getY());
+            crossHairs.move(crossHairNumH, Orientation.HORIZONTAL, mEvent.getY());
         }
         if (crossHairNumV >= 0) {
-            crossHairs.move(crossHairNumV, VERTICAL, mEvent.getX());
+            crossHairs.move(crossHairNumV, Orientation.VERTICAL, mEvent.getX());
         }
     }
 

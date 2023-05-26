@@ -26,6 +26,7 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 
 import java.util.*;
 
