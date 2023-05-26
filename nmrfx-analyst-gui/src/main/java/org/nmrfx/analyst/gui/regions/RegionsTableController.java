@@ -85,8 +85,8 @@ public class RegionsTableController implements Initializable, StageBasedControll
         if (chart.getDataset() != null) {
             chart.getDataset().addDatasetRegionsListListener(datasetRegionsListListener);
         }
-        PolyChart.getCurrentDatasetProperty().addListener((observable, oldValue, newValue) -> {
-            if( oldValue != null) {
+        PolyChartManager.getInstance().currentDatasetProperty().addListener((observable, oldValue, newValue) -> {
+            if (oldValue != null) {
                 oldValue.removeDatasetRegionsListListener(datasetRegionsListListener);
             }
             if (newValue != null) {
@@ -165,7 +165,10 @@ public class RegionsTableController implements Initializable, StageBasedControll
         addRegionButton.disableProperty().unbind();
         autoIntegrateButton.disableProperty().unbind();
         removeAllButton.disableProperty().unbind();
-        BooleanBinding disableButtonBinding = Bindings.createBooleanBinding(() -> PolyChart.getCurrentDatasetProperty().get() == null || PolyChart.getCurrentDatasetProperty().get().getNDim() > 1, PolyChart.getCurrentDatasetProperty());
+        BooleanBinding disableButtonBinding = Bindings.createBooleanBinding(() -> {
+            if (PolyChartManager.getInstance().currentDatasetProperty().get() == null) return true;
+            return PolyChartManager.getInstance().currentDatasetProperty().get().getNDim() > 1;
+        }, PolyChartManager.getInstance().currentDatasetProperty());
         fileMenuButton.disableProperty().bind(disableButtonBinding);
         addRegionButton.disableProperty().bind(disableButtonBinding);
         autoIntegrateButton.disableProperty().bind(disableButtonBinding);

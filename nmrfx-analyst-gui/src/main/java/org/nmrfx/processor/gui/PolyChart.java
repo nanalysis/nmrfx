@@ -96,7 +96,6 @@ public class PolyChart extends Region implements PeakListener {
     private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
-    private static final SimpleObjectProperty<DatasetBase> currentDatasetProperty = new SimpleObjectProperty<>(null);
     private static final double OVERLAP_SCALE = 3.0;
     private static final double MIN_MOVE = 20;
     private static final String FONT_FAMILY = "Liberation Sans";
@@ -417,9 +416,6 @@ public class PolyChart extends Region implements PeakListener {
 
     public void setActiveChart() {
         PolyChartManager.getInstance().setActiveChart(this);
-        //XXX move those to PolyChartManager as well?
-        controller.setActiveChart(this);
-        currentDatasetProperty.set(getDataset());
     }
 
     public FXMLController getController() {
@@ -1526,7 +1522,7 @@ public class PolyChart extends Region implements PeakListener {
         }
         if (updated) {
             sortDatasetsByDimensions(newList);
-            currentDatasetProperty.set(getDataset());
+            PolyChartManager.getInstance().currentDatasetProperty().set(getDataset());
         }
     }
 
@@ -1706,7 +1702,7 @@ public class PolyChart extends Region implements PeakListener {
             updateAxisType(true);
             datasetFileProp.set(dataset.getFile());
             datasetAttributes.drawList.clear();
-            currentDatasetProperty.set(dataset);
+            PolyChartManager.getInstance().currentDatasetProperty().set(dataset);
         } else {
             setSliceStatus(false);
 
@@ -3246,7 +3242,7 @@ public class PolyChart extends Region implements PeakListener {
 
     public boolean selectPeaks(double pickX, double pickY, boolean append) {
         if (!append) {
-            for (PolyChart chart : PolyChartManager.getInstance().getCharts()) {
+            for (PolyChart chart : PolyChartManager.getInstance().getAllCharts()) {
                 if (chart != this) {
                     boolean hadPeaks = false;
                     for (PeakListAttributes peakListAttr : chart.getPeakListAttributes()) {
@@ -4100,7 +4096,7 @@ public class PolyChart extends Region implements PeakListener {
 
     List<PolyChart> getSceneMates(boolean includeThis) {
         List<PolyChart> sceneMates = new ArrayList<>();
-        for (PolyChart chart : PolyChartManager.getInstance().getCharts()) {
+        for (PolyChart chart : PolyChartManager.getInstance().getAllCharts()) {
             if (chart.canvas == canvas) {
                 if (includeThis || (chart != this)) {
                     sceneMates.add(chart);
@@ -4302,10 +4298,6 @@ public class PolyChart extends Region implements PeakListener {
 
     public static void setPeakListenerState(boolean state) {
         listenToPeaks = state;
-    }
-
-    public static SimpleObjectProperty<DatasetBase> getCurrentDatasetProperty() {
-        return currentDatasetProperty;
     }
 
     public static int getNSyncGroups() {

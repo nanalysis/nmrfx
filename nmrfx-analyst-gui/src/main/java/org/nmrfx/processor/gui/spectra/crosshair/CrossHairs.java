@@ -429,7 +429,7 @@ public class CrossHairs {
     }
 
     private static void updateAllCharts(PolyChart source, int index, double position, String dimLabel) {
-        PolyChartManager.getInstance().getCharts().stream()
+        PolyChartManager.getInstance().getAllCharts().stream()
                 .filter(c -> c != source)
                 .forEach(c -> c.getCrossHairs().sync(index, dimLabel, position));
     }
