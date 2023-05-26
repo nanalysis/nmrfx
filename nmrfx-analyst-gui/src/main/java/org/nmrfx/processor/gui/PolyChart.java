@@ -318,11 +318,8 @@ public class PolyChart extends Region implements PeakListener {
         axes[1] = yAxis;
 
         crossHairs = new CrossHairs(this);
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                plotContent.getChildren().add(crossHairs.getLine(i, j));
-            }
-        }
+        plotContent.getChildren().addAll(crossHairs.getAllGraphicalLines());
+
         highlightRect.setVisible(false);
         highlightRect.setStroke(Color.BLUE);
         highlightRect.setStrokeWidth(1.0);
@@ -393,11 +390,8 @@ public class PolyChart extends Region implements PeakListener {
 
 
     public void close() {
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                plotContent.getChildren().remove(crossHairs.getLine(i, j));
-            }
-        }
+        plotContent.getChildren().removeAll(crossHairs.getAllGraphicalLines());
+
         highlightRect.visibleProperty().unbind();
         plotContent.getChildren().remove(highlightRect);
         for (var canvasHandle : canvasHandles) {
@@ -1337,7 +1331,8 @@ public class PolyChart extends Region implements PeakListener {
         if (dataset == null) {
             setPivot(null);
         } else {
-            setPivot(crossHairs.getPosition(0, (phaseAxis + 1) % 2));
+            Orientation orientation = phaseAxis + 1 % 2 == 0 ? Orientation.HORIZONTAL : Orientation.VERTICAL;
+            setPivot(crossHairs.getPosition(0, orientation));
         }
     }
 
@@ -1382,27 +1377,24 @@ public class PolyChart extends Region implements PeakListener {
         });
     }
 
-    protected void expand(int cNum) {
+    protected void expand(Orientation orientation) {
         if (!datasetAttributesList.isEmpty()) {
-            int dNum = 1;
-            if (cNum == 1) {
-                dNum = 0;
-            }
+            int dNum = orientation == Orientation.VERTICAL ? 0 : 1;
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
             double[] limits = datasetAttributes.checkLimits(axModes[dNum], dNum,
-                    crossHairs.getPosition(0, cNum),
-                    crossHairs.getPosition(1, cNum));
+                    crossHairs.getPosition(0, orientation),
+                    crossHairs.getPosition(1, orientation));
             setAxis(dNum, limits[0], limits[1]);
         }
     }
 
     public void expand() {
         ChartUndoLimits undo = new ChartUndoLimits(this);
-        expand(VERTICAL);
+        expand(Orientation.VERTICAL);
         DatasetBase dataset = getDataset();
         if (dataset != null) {
             if (disDimProp.get() == DISDIM.TwoD) {
-                expand(HORIZONTAL);
+                expand(Orientation.HORIZONTAL);
             }
         }
         layoutPlotChildren();
@@ -1430,14 +1422,14 @@ public class PolyChart extends Region implements PeakListener {
         int size;
         double centerPPM;
         if (is1D() || vecDimName.equals("D1")) {
-            position = axModes[0].getIndex(datasetAttributes, 0, crossHairs.getPosition(0, 1));
+            position = axModes[0].getIndex(datasetAttributes, 0, crossHairs.getPosition(0, Orientation.VERTICAL));
             size = dataset.getSizeReal(datasetAttributes.dim[0]);
             refPoint = dataset.getRefPt(datasetAttributes.dim[0]);
             refPPM = dataset.getRefValue(datasetAttributes.dim[0]);
             ppmPosition = dataset.pointToPPM(0, position);
             centerPPM = dataset.pointToPPM(0, size / 2);
         } else {
-            position = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairs.getPosition(0, 0));
+            position = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairs.getPosition(0, Orientation.HORIZONTAL));
             size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
             refPoint = dataset.getRefPt(datasetAttributes.dim[0]);
             refPPM = dataset.getRefValue(datasetAttributes.dim[0]);
@@ -1467,12 +1459,12 @@ public class PolyChart extends Region implements PeakListener {
         double max;
         int size;
         if (is1D() || vecDimName.equals("D1")) {
-            min = axModes[0].getIndex(datasetAttributes, 0, crossHairs.getPosition(0, 1));
-            max = axModes[0].getIndex(datasetAttributes, 0, crossHairs.getPosition(1, 1));
+            min = axModes[0].getIndex(datasetAttributes, 0, crossHairs.getPosition(0, Orientation.VERTICAL));
+            max = axModes[0].getIndex(datasetAttributes, 0, crossHairs.getPosition(1, Orientation.VERTICAL));
             size = dataset.getSizeReal(datasetAttributes.dim[0]);
         } else {
-            min = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairs.getPosition(0, 0));
-            max = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairs.getPosition(1, 0));
+            min = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairs.getPosition(0, Orientation.HORIZONTAL));
+            max = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairs.getPosition(1, Orientation.HORIZONTAL));
             size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
         }
         int[] currentRegion = controller.getExtractRegion(vecDimName, size);
@@ -1510,12 +1502,12 @@ public class PolyChart extends Region implements PeakListener {
         double max;
         int size;
         if (is1D() || vecDimName.equals("D1")) {
-            min = axModes[0].getIndex(datasetAttributes, 0, crossHairs.getPosition(0, 1));
-            max = axModes[0].getIndex(datasetAttributes, 0, crossHairs.getPosition(1, 1));
+            min = axModes[0].getIndex(datasetAttributes, 0, crossHairs.getPosition(0, Orientation.VERTICAL));
+            max = axModes[0].getIndex(datasetAttributes, 0, crossHairs.getPosition(1, Orientation.VERTICAL));
             size = dataset.getSizeReal(datasetAttributes.dim[0]);
         } else {
-            min = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairs.getPosition(0, 0));
-            max = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairs.getPosition(1, 0));
+            min = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairs.getPosition(0, Orientation.HORIZONTAL));
+            max = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairs.getPosition(1, Orientation.HORIZONTAL));
             size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
         }
 
@@ -3926,8 +3918,8 @@ public class PolyChart extends Region implements PeakListener {
                     sliceVec.setName(dataset.getName() + "_slice_" + iSlice);
                     try {
                         dataAttr.getSlice(sliceVec, iOrient,
-                                crossHairs.getPosition(iCross, VERTICAL),
-                                crossHairs.getPosition(iCross, HORIZONTAL));
+                                crossHairs.getPosition(iCross, Orientation.VERTICAL),
+                                crossHairs.getPosition(iCross, Orientation.HORIZONTAL));
                         Dataset sliceDataset = new Dataset(sliceVec);
                         sliceDataset.setLabel(0, dataset.getLabel(dataAttr.dim[iOrient]));
                         sliceDatasets.add(sliceDataset.getName());
@@ -3997,13 +3989,13 @@ public class PolyChart extends Region implements PeakListener {
                     if (datasetAttributes.getDataset().getNDim() > 1) {
                         if (iOrient == HORIZONTAL) {
                             drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, HORIZONTAL,
-                                    crossHairs.getPosition(iCross, VERTICAL),
-                                    crossHairs.getPosition(iCross, HORIZONTAL),
+                                    crossHairs.getPosition(iCross, Orientation.VERTICAL),
+                                    crossHairs.getPosition(iCross, Orientation.HORIZONTAL),
                                     bounds, getPh0(0), getPh1(0));
                         } else {
                             drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, VERTICAL,
-                                    crossHairs.getPosition(iCross, VERTICAL),
-                                    crossHairs.getPosition(iCross, HORIZONTAL),
+                                    crossHairs.getPosition(iCross, Orientation.VERTICAL),
+                                    crossHairs.getPosition(iCross, Orientation.HORIZONTAL),
                                     bounds, getPh0(1), getPh1(1));
                         }
                         double[][] xy = drawSpectrum.getXY();
@@ -4056,8 +4048,8 @@ public class PolyChart extends Region implements PeakListener {
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
 
             int nDim = dataset.getNDim();
-            double cross1x = crossHairs.getPosition(0, VERTICAL);
-            double cross1y = crossHairs.getPosition(0, HORIZONTAL);
+            double cross1x = crossHairs.getPosition(0, Orientation.VERTICAL);
+            double cross1y = crossHairs.getPosition(0, Orientation.HORIZONTAL);
             if (nDim == 3) {
                 int[][] pt = new int[nDim][2];
                 int[] cpt = new int[nDim];
@@ -4107,7 +4099,7 @@ public class PolyChart extends Region implements PeakListener {
         return crossHairs;
     }
 
-    DoubleFunction getCrossHairUpdateFunction(int crossHairNum, int orientation) {
+    DoubleFunction getCrossHairUpdateFunction(int crossHairNum, Orientation orientation) {
         return value -> {
             crossHairs.updatePosition(crossHairNum, orientation, value);
             return null;
@@ -4228,7 +4220,7 @@ public class PolyChart extends Region implements PeakListener {
         for (int iDim = 0; iDim < nDim; iDim++) {
             int[] limits = new int[2];
             if (iDim < 2) {
-                int orientation = iDim == 0 ? PolyChart.VERTICAL : PolyChart.HORIZONTAL;
+                Orientation orientation = iDim == 0 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
                 limits[0] = axModes[iDim].getIndex(dataAttr, iDim, crossHairs.getPosition(0, orientation));
                 limits[1] = axModes[iDim].getIndex(dataAttr, iDim, crossHairs.getPosition(1, orientation));
             } else {

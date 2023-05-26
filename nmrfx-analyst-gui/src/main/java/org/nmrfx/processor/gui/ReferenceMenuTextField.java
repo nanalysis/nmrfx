@@ -24,6 +24,7 @@
 package org.nmrfx.processor.gui;
 
 import javafx.event.ActionEvent;
+import javafx.geometry.Orientation;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
@@ -102,15 +103,13 @@ public class ReferenceMenuTextField extends MenuTextField {
         double b = 5.011718;
         double ppm = a * (temp - 273.15) + b;
         return ppm;
-
     }
 
     private void crossHairMenuAction(ActionEvent event) {
         MenuItem menuItem = (MenuItem) event.getSource();
         String menuLabel = menuItem.getText();
         PolyChart chart = processorController.chartProcessor.chart;
-        NMRData nmrData = processorController.chartProcessor.getNMRData();
-        double ppm = chart.getCrossHairs().getPosition(0, 1);
+        double ppm = chart.getCrossHairs().getPosition(0, Orientation.VERTICAL);
         System.out.println(ppm);
         double newCenter = 0.0;
         if (menuLabel.equals("0.0")) {

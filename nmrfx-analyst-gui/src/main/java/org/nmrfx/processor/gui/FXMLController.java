@@ -928,8 +928,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return phaser;
     }
 
-    public boolean getCrossHairState(int iCross, int jOrient) {
-        return crossHairStates[iCross][jOrient];
+    public boolean getCrossHairState(int index, Orientation orientation) {
+        return crossHairStates[index][orientation.ordinal()];
     }
 
     public void enableFavoriteButton() {

@@ -31,6 +31,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
@@ -196,24 +197,23 @@ public class SpectrumStatusBar {
         buildCursorBar();
         setupTools();
 
-        for (int i = 0; i < 2; i++) {
-            for (int j = 1; j >= 0; j--) {
-                crossText[i][j] = new CustomNumberTextField();
-                crossText[i][j].setPrefWidth(75.0);
+        for (int index = 0; index < 2; index++) {
+            for (int orientation = 1; orientation >= 0; orientation--) {
+                crossText[index][orientation] = new CustomNumberTextField();
+                crossText[index][orientation].setPrefWidth(75.0);
+                crossText[index][orientation].setFunction(controller.getActiveChart().getCrossHairUpdateFunction(index, Orientation.values()[orientation]));
 
-                crossText[i][j].setFunction(controller.getActiveChart().getCrossHairUpdateFunction(i, j));
+                btoolBar.getItems().add(crossText[index][orientation]);
+                StackPane stackPane = makeIcon(index, orientation, false);
+                crossTextIcons[index][orientation] = stackPane;
+                crossText[index][orientation].setRight(stackPane);
+                StackPane stackPane2 = makeIcon(index, orientation, true);
+                limitTextIcons[index][orientation] = stackPane2;
 
-                btoolBar.getItems().add(crossText[i][j]);
-                StackPane stackPane = makeIcon(i, j, false);
-                crossTextIcons[i][j] = stackPane;
-                crossText[i][j].setRight(stackPane);
-                StackPane stackPane2 = makeIcon(i, j, true);
-                limitTextIcons[i][j] = stackPane2;
-
-                if (i == 1) {
-                    crossText[i][j].setStyle("-fx-text-inner-color: red;");
+                if (index == 1) {
+                    crossText[index][orientation].setStyle("-fx-text-inner-color: red;");
                 } else {
-                    crossText[i][j].setStyle("-fx-text-inner-color: black;");
+                    crossText[index][orientation].setStyle("-fx-text-inner-color: black;");
                 }
 
             }
@@ -598,9 +598,9 @@ public class SpectrumStatusBar {
         controller.getActiveChart().layoutPlotChildren();
     }
 
-    public void setCrossTextRange(int iCross, int jOrient, double min, double max) {
-        crossText[iCross][jOrient].setMin(min);
-        crossText[iCross][jOrient].setMax(max);
+    public void setCrossTextRange(int index, Orientation orientation, double min, double max) {
+        crossText[index][orientation.ordinal()].setMin(min);
+        crossText[index][orientation.ordinal()].setMax(max);
     }
 
     public void setPlaneRanges(int iDim, int max) {
@@ -735,18 +735,18 @@ public class SpectrumStatusBar {
         setPlaneRanges();
     }
 
-    public void setCrossText(int iOrient, int iCross, Double value, boolean iconState) {
+    public void setCrossText(Orientation orientation, int index, Double value, boolean iconState) {
         String strValue = "";
         if (value != null) {
             strValue = String.format("%.3f", value);
         }
-        crossText[iCross][iOrient].setText(strValue);
-        if (iconState != iconStates[iCross][iOrient]) {
-            iconStates[iCross][iOrient] = iconState;
+        crossText[index][orientation.ordinal()].setText(strValue);
+        if (iconState != iconStates[index][orientation.ordinal()]) {
+            iconStates[index][orientation.ordinal()] = iconState;
             if (iconState) {
-                crossText[iCross][iOrient].setRight(limitTextIcons[iCross][iOrient]);
+                crossText[index][orientation.ordinal()].setRight(limitTextIcons[index][orientation.ordinal()]);
             } else {
-                crossText[iCross][iOrient].setRight(crossTextIcons[iCross][iOrient]);
+                crossText[index][orientation.ordinal()].setRight(crossTextIcons[index][orientation.ordinal()]);
             }
         }
     }

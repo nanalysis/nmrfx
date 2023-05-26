@@ -28,6 +28,7 @@ import org.nmrfx.processor.gui.SpectrumStatusBar;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -92,12 +93,13 @@ public class CrossHairs {
         return getCrossHair(index).getLine(orientation);
     }
 
-    private CrossHairLine getCrossHairLine(int index, int orientation) {
-        return getCrossHairLine(index, orientationFromInt(orientation));
-    }
-
-    public Line getLine(int index, int orientation) {
-        return getCrossHairLine(index, orientation).getLine();
+    public Collection<Line> getAllGraphicalLines() {
+        return List.of(
+                primary.getLine(Orientation.HORIZONTAL).getLine(),
+                primary.getLine(Orientation.VERTICAL).getLine(),
+                secondary.getLine(Orientation.HORIZONTAL).getLine(),
+                secondary.getLine(Orientation.VERTICAL).getLine()
+        );
     }
 
     public Double[] getPositions() {
@@ -123,7 +125,7 @@ public class CrossHairs {
         getCrossHairLine(index, orientation).setVisible(false);
         int iAxis = orientation == Orientation.HORIZONTAL ? 1 : 0;
         double value = index == 1 ? chart.getAxis(iAxis).getLowerBound() : chart.getAxis(iAxis).getUpperBound();
-        statusBar.setCrossText(orientation.ordinal(), index, value, true);
+        statusBar.setCrossText(orientation, index, value, true);
     }
 
     public void setStates(boolean h1, boolean v1, boolean h2, boolean v2) {
@@ -135,8 +137,8 @@ public class CrossHairs {
 
     public void setAllStates(boolean value) {
         Stream.of(primary, secondary).forEach(c -> {
-            c.setHorizontalActive(value && getController().getCrossHairState(c.getId(), Orientation.HORIZONTAL.ordinal()));
-            c.setVerticalActive(value && getController().getCrossHairState(c.getId(), Orientation.VERTICAL.ordinal()));
+            c.setHorizontalActive(value && getController().getCrossHairState(c.getId(), Orientation.HORIZONTAL));
+            c.setVerticalActive(value && getController().getCrossHairState(c.getId(), Orientation.VERTICAL));
         });
 
         if (!value) {
@@ -144,25 +146,26 @@ public class CrossHairs {
         }
     }
 
+    //TODO remove this index-based access remaining from FXMLController
     public void setState(int index, int orientationIndex, boolean value) {
         Orientation orientation = orientationFromInt(orientationIndex);
-        getCrossHairLine(index, orientation).setActive(value && getController().getCrossHairState(index, orientation.ordinal()));
+        getCrossHairLine(index, orientation).setActive(value && getController().getCrossHairState(index, orientation));
 
         if (!value) {
             hide(index, orientation);
         }
     }
 
-    public boolean getState(int index, int orientation) {
+    public boolean getState(int index, Orientation orientation) {
         return getCrossHairLine(index, orientation).isActive();
     }
 
     public void refresh() {
         SpectrumStatusBar statusBar = getController().getStatusBar();
         for (int index = 0; index < 2; index++) {
-            for (int orientation = 0; orientation < 2; orientation++) {
+            for (Orientation orientation : Orientation.values()) {
                 CrossHairLine line = getCrossHairLine(index, orientation);
-                int iAxis = orientation == 0 ? 1 : 0;
+                int iAxis = orientation == Orientation.HORIZONTAL ? 1 : 0;
                 NMRAxis axis = chart.getAxis(iAxis);
                 if (!isInRange(index, line.getOrientation())) {
                     line.setVisible(false);
@@ -180,7 +183,7 @@ public class CrossHairs {
         chart.drawSlices();
     }
 
-    public double getPosition(int index, int orientation) {
+    public double getPosition(int index, Orientation orientation) {
         return getCrossHairLine(index, orientation).getPosition();
     }
 
@@ -202,7 +205,7 @@ public class CrossHairs {
         secondary.setColor(secondaryColor);
     }
 
-    public void updatePosition(int index, int orientation, double value) {
+    public void updatePosition(int index, Orientation orientation, double value) {
         getCrossHairLine(index, orientation).setPosition(value);
         refresh();
     }
@@ -413,7 +416,7 @@ public class CrossHairs {
 
         if (line.isActive()) {
             double value = line.getPosition();
-            getController().getStatusBar().setCrossText(orientation.ordinal(), index, value, false);
+            getController().getStatusBar().setCrossText(orientation, index, value, false);
             updateMeasureBar(dataset, orientation);
             if (orientation == Orientation.HORIZONTAL) {
                 value = yAxis.getDisplayPosition(value);
@@ -434,13 +437,13 @@ public class CrossHairs {
             CrossHairLine secondary = getCrossHairLine(1, orientation);
             Double value0 = primary.getNullablePosition();
             Double value1 = secondary.getNullablePosition();
-            measureBar.setCrossText(chart, dataset, orientation.ordinal(), value0, value1);
+            measureBar.setCrossText(chart, dataset, orientation, value0, value1);
         }
     }
 
     private static void updateAllCharts(PolyChart source, int index, double position, String dimLabel) {
-        PolyChart.CHARTS.stream().filter((c) -> (c != source)).forEach((c) -> {
-            c.getCrossHairs().sync(index, dimLabel, position);
-        });
+        PolyChart.CHARTS.stream()
+                .filter(c -> c != source)
+                .forEach(c -> c.getCrossHairs().sync(index, dimLabel, position));
     }
 }
