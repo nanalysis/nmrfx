@@ -1,6 +1,6 @@
 /*
  * NMRFx Processor : A Program for Processing NMR Data
- * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ * Copyright (C) 2004-2023 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 import static org.nmrfx.processor.gui.utils.ColorUtils.chooseBlackWhite;
 
 /**
- * @author Bruce Johnson
+ * Cross-hair cursor management, used by PolyChart.
  */
 public class CrossHairs {
     private static final int SELECTION_TOLERANCE = 25;
@@ -71,14 +71,6 @@ public class CrossHairs {
 
     private FXMLController getController() {
         return controller;
-    }
-
-    private Orientation orientationFromInt(int index) {
-        return switch (index) {
-            case 0 -> Orientation.HORIZONTAL;
-            case 1 -> Orientation.VERTICAL;
-            default -> throw new IllegalArgumentException("Unknown orientation: " + index);
-        };
     }
 
     private CrossHair getCrossHair(int index) {
@@ -146,9 +138,7 @@ public class CrossHairs {
         }
     }
 
-    //TODO remove this index-based access remaining from FXMLController
-    public void setState(int index, int orientationIndex, boolean value) {
-        Orientation orientation = orientationFromInt(orientationIndex);
+    public void setState(int index, Orientation orientation, boolean value) {
         getCrossHairLine(index, orientation).setActive(value && getController().getCrossHairState(index, orientation));
 
         if (!value) {

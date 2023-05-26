@@ -198,22 +198,23 @@ public class SpectrumStatusBar {
         setupTools();
 
         for (int index = 0; index < 2; index++) {
-            for (int orientation = 1; orientation >= 0; orientation--) {
-                crossText[index][orientation] = new CustomNumberTextField();
-                crossText[index][orientation].setPrefWidth(75.0);
-                crossText[index][orientation].setFunction(controller.getActiveChart().getCrossHairUpdateFunction(index, Orientation.values()[orientation]));
+            for (int orientationIndex = 1; orientationIndex >= 0; orientationIndex--) {
+                Orientation orientation = Orientation.values()[orientationIndex];
+                crossText[index][orientationIndex] = new CustomNumberTextField();
+                crossText[index][orientationIndex].setPrefWidth(75.0);
+                crossText[index][orientationIndex].setFunction(controller.getActiveChart().getCrossHairUpdateFunction(index, orientation));
 
-                btoolBar.getItems().add(crossText[index][orientation]);
+                btoolBar.getItems().add(crossText[index][orientationIndex]);
                 StackPane stackPane = makeIcon(index, orientation, false);
-                crossTextIcons[index][orientation] = stackPane;
-                crossText[index][orientation].setRight(stackPane);
+                crossTextIcons[index][orientationIndex] = stackPane;
+                crossText[index][orientationIndex].setRight(stackPane);
                 StackPane stackPane2 = makeIcon(index, orientation, true);
-                limitTextIcons[index][orientation] = stackPane2;
+                limitTextIcons[index][orientationIndex] = stackPane2;
 
                 if (index == 1) {
-                    crossText[index][orientation].setStyle("-fx-text-inner-color: red;");
+                    crossText[index][orientationIndex].setStyle("-fx-text-inner-color: red;");
                 } else {
-                    crossText[index][orientation].setStyle("-fx-text-inner-color: black;");
+                    crossText[index][orientationIndex].setStyle("-fx-text-inner-color: black;");
                 }
 
             }
@@ -384,14 +385,14 @@ public class SpectrumStatusBar {
         addToToolMenu(specToolMenu);
     }
 
-    private StackPane makeIcon(int i, int j, boolean boundMode) {
+    private StackPane makeIcon(int i, Orientation orientation, boolean boundMode) {
         StackPane stackPane = new StackPane();
         stackPane.setPadding(Insets.EMPTY);
         Rectangle rect = new Rectangle(10, 10);
         rect.setFill(Color.LIGHTGREY);
         rect.setStroke(Color.LIGHTGREY);
         Line line = new Line();
-        if (j == 0) {
+        if (orientation == Orientation.HORIZONTAL) {
             line.setStartX(0.0f);
             line.setStartY(8.0f);
             line.setEndX(10.0f);
@@ -401,7 +402,6 @@ public class SpectrumStatusBar {
                     line.setTranslateY(4);
                 } else {
                     line.setTranslateY(-4);
-
                 }
             }
         } else {
@@ -414,7 +414,6 @@ public class SpectrumStatusBar {
                     line.setTranslateX(-4);
                 } else {
                     line.setTranslateX(4);
-
                 }
             }
         }
@@ -428,7 +427,7 @@ public class SpectrumStatusBar {
         rect.setMouseTransparent(true);
         line.setMouseTransparent(true);
         stackPane.setOnMouseClicked(e -> {
-            controller.toggleCrossHairState(i, j);
+            controller.toggleCrossHairState(i, orientation);
             e.consume();
         });
         return stackPane;
@@ -751,17 +750,16 @@ public class SpectrumStatusBar {
         }
     }
 
-    public void setIconState(int iCross, int jOrient, boolean state) {
+    public void setIconState(int iCross, Orientation orientation, boolean state) {
         Rectangle rect;
         Line line;
-        StackPane pane = (StackPane) crossText[iCross][jOrient].getRight();
+        StackPane pane = (StackPane) crossText[iCross][orientation.ordinal()].getRight();
         rect = (Rectangle) pane.getChildren().get(0);
         line = (Line) pane.getChildren().get(1);
         Color color = state ? Color.LIGHTGRAY : Color.BLACK;
         rect.setFill(color);
         color = state && (iCross == 1) ? Color.RED : Color.BLACK;
         line.setStroke(color);
-
     }
 
     private void dimMenuAction(ActionEvent event, int iAxis) {

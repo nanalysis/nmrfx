@@ -1410,14 +1410,15 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return result;
     }
 
-    public void toggleCrossHairState(int iCross, int jOrient) {
-        crossHairStates[iCross][jOrient] = !crossHairStates[iCross][jOrient];
-        boolean state = crossHairStates[iCross][jOrient];
+    public void toggleCrossHairState(int index, Orientation orientation) {
+        int orientationIndex = orientation.ordinal();
+        crossHairStates[index][orientationIndex] = !crossHairStates[index][orientationIndex];
+        boolean state = crossHairStates[index][orientationIndex];
         for (PolyChart chart : charts) {
             CrossHairs crossHairs = chart.getCrossHairs();
-            crossHairs.setState(iCross, jOrient, state);
+            crossHairs.setState(index, orientation, state);
         }
-        statusBar.setIconState(iCross, jOrient, state);
+        statusBar.setIconState(index, orientation, state);
     }
 
     public void addSelectedPeakListener(ChangeListener listener) {
