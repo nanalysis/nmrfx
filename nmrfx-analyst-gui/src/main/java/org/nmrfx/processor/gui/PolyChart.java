@@ -89,7 +89,7 @@ import java.util.function.DoubleFunction;
 import java.util.stream.Collectors;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
-import static org.nmrfx.processor.gui.utils.ColorUtils.chooseBlackWhite;
+import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 
 @PluginAPI("parametric")
 public class PolyChart extends Region implements PeakListener {
@@ -2129,7 +2129,7 @@ public class PolyChart extends Region implements PeakListener {
             if (axesColorLocal == null) {
                 axesColorLocal = controller.getAxesColor();
                 if (axesColorLocal == null) {
-                    axesColorLocal = chooseBlackWhite(fillColor);
+                    axesColorLocal = toBlackOrWhite(fillColor);
 
                 }
             }
@@ -2233,7 +2233,7 @@ public class PolyChart extends Region implements PeakListener {
         if (axesColorLocal == null) {
             axesColorLocal = controller.getAxesColor();
             if (axesColorLocal == null) {
-                axesColorLocal = chooseBlackWhite(fillColor);
+                axesColorLocal = toBlackOrWhite(fillColor);
             }
         }
         if (is1D()) {

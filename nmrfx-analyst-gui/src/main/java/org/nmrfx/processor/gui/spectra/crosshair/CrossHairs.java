@@ -32,7 +32,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.nmrfx.processor.gui.utils.ColorUtils.chooseBlackWhite;
+import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 
 /**
  * Cross-hair cursor management, used by PolyChart.
@@ -186,7 +186,7 @@ public class CrossHairs {
 
     public void setLineColors(Color fillColor, Color primaryColor, Color secondaryColor) {
         if (primaryColor == null) {
-            primaryColor = chooseBlackWhite(fillColor);
+            primaryColor = toBlackOrWhite(fillColor);
         }
         if (secondaryColor == null) {
             secondaryColor = primaryColor == Color.BLACK ? Color.RED : Color.MAGENTA;
