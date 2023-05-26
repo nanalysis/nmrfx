@@ -29,12 +29,12 @@ public class PolyChartManager {
     private int lastId = 0;
 
     public PolyChartManager() {
-        allCharts.addListener((ListChangeListener) (e -> multipleCharts.set(allCharts.size() > 1)));
+        allCharts.addListener((ListChangeListener<PolyChart>) e -> multipleCharts.set(allCharts.size() > 1));
     }
 
     public PolyChart create(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
         PolyChart chart = new PolyChart(controller, generateNextName(), plotContent, canvas, peakCanvas, annoCanvas);
-        //TODO move registration here
+        registerNewChart(chart);
         return chart;
     }
 
