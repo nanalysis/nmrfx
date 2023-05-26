@@ -23,14 +23,15 @@
  */
 package org.nmrfx.processor.gui;
 
-import java.util.Optional;
-import org.nmrfx.utils.properties.MenuTextField;
-import org.nmrfx.processor.datasets.vendor.NMRData;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputDialog;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.utils.properties.MenuTextField;
+
+import java.util.Optional;
 
 /**
  *
@@ -109,7 +110,7 @@ public class ReferenceMenuTextField extends MenuTextField {
         String menuLabel = menuItem.getText();
         PolyChart chart = processorController.chartProcessor.chart;
         NMRData nmrData = processorController.chartProcessor.getNMRData();
-        double ppm = chart.crossHairPositions[0][1];
+        double ppm = chart.getCrossHairs().getPosition(0, 1);
         System.out.println(ppm);
         double newCenter = 0.0;
         if (menuLabel.equals("0.0")) {

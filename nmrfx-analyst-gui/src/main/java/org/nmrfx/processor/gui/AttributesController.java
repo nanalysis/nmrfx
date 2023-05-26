@@ -34,6 +34,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import static org.nmrfx.processor.gui.utils.ColorUtils.chooseBlackWhite;
+
 public class AttributesController implements Initializable {
     private static final Logger log = LoggerFactory.getLogger(AttributesController.class);
     static final DecimalFormat FORMATTER = new DecimalFormat();
@@ -1215,7 +1217,7 @@ public class AttributesController implements Initializable {
                     diff += Math.abs(posColor.getGreen() - color.getGreen());
                     diff += Math.abs(posColor.getBlue() - color.getBlue());
                     if (diff < 0.05) {
-                        dataAttr.setPosColor(PolyChart.chooseBlackWhite(color));
+                        dataAttr.setPosColor(chooseBlackWhite(color));
                     }
                 }
             }

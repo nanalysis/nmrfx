@@ -100,8 +100,8 @@ public class PeakPicking {
         if (level == null) {
             level = dataAttr.getLvl();
             if (nDim == 1) {
-                if (chart.crossHairStates[0][PolyChart.HORIZONTAL]) {
-                    level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
+                if (chart.getCrossHairs().getCrossHairState(0, PolyChart.HORIZONTAL)) {
+                    level = chart.getCrossHairs().getPosition(0, PolyChart.HORIZONTAL);
                 } else {
                     level /= 10.0;
                 }
@@ -127,8 +127,8 @@ public class PeakPicking {
                 } else if (useCrossHairs) {
                     int orientation = iDim == 0 ? PolyChart.VERTICAL : PolyChart.HORIZONTAL;
                     peakPickPar.limit(jDim,
-                            chart.crossHairPositions[0][orientation],
-                            chart.crossHairPositions[1][orientation]);
+                            chart.getCrossHairs().getPosition(0, orientation),
+                            chart.getCrossHairs().getPosition(1, orientation));
                 } else {
                     peakPickPar.limit(jDim, chart.axes[iDim].getLowerBound(), chart.axes[iDim].getUpperBound());
                 }

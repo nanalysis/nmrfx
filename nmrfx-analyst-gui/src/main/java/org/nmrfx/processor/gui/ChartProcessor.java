@@ -1181,14 +1181,14 @@ public class ChartProcessor {
         if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
             NMRViewData nvData = (NMRViewData) nmrData;
             chart.setDataset(nvData.getDataset());
-            chart.setCrossHairState(true, true, true, true);
+            chart.getCrossHairs().setState(true, true, true, true);
             int[] sizes = new int[0];
             processorController.vectorStatus(sizes, vecDim);
         } else {
             chart.controller.setFIDActive(true);
 
             loadVectors(0);
-            chart.setCrossHairState(false, true, false, true);
+            chart.getCrossHairs().setState(false, true, false, true);
             try {
                 ProcessOps process = getProcess();
                 process.exec();

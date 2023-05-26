@@ -525,7 +525,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
 
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
-        getActiveChart().setCrossHairState(true, true, true, true);
+        PolyChart polyChart = getActiveChart();
+        polyChart.getCrossHairs().setState(true, true, true, true);
         getActiveChart().clearAnnotations();
         getActiveChart().clearPopoverTools();
         getActiveChart().removeProjections();

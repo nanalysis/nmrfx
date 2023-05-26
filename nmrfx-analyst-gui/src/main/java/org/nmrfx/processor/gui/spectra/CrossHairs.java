@@ -17,39 +17,39 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import java.util.List;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
-import static org.nmrfx.processor.gui.PolyChart.CROSSHAIR_TOL;
-import static org.nmrfx.processor.gui.PolyChart.HORIZONTAL;
-import static org.nmrfx.processor.gui.PolyChart.VERTICAL;
 import org.nmrfx.processor.gui.SpectrumMeasureBar;
 import org.nmrfx.processor.gui.SpectrumStatusBar;
+
+import java.util.List;
+
+import static org.nmrfx.processor.gui.PolyChart.HORIZONTAL;
+import static org.nmrfx.processor.gui.PolyChart.VERTICAL;
+import static org.nmrfx.processor.gui.utils.ColorUtils.chooseBlackWhite;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class CrossHairs {
+    private static final int CROSSHAIR_TOL = 25;
 
     final PolyChart chart;
     FXMLController controller = null;
     final NMRAxis xAxis;
     final NMRAxis yAxis;
-    double[][] crossHairPositions;
-    boolean[][] crossHairStates;
-    Line[][] crossHairLines = new Line[2][2];
+    double[][] crossHairPositions = new double[2][2];
+    boolean[][] crossHairStates = new boolean[2][2];
+    private final Line[][] crossHairLines = new Line[2][2];
 
-    public CrossHairs(PolyChart chart, double[][] crossHairPositions, boolean[][] crossHairStates, Line[][] crossHairLines) {
+    public CrossHairs(PolyChart chart) {
         this.chart = chart;
         xAxis = chart.getAxis(0);
         yAxis = chart.getAxis(1);
-        this.crossHairPositions = crossHairPositions;
-        this.crossHairStates = crossHairStates;
-        this.crossHairLines = crossHairLines;
     }
 
     private FXMLController getController() {
@@ -57,6 +57,10 @@ public class CrossHairs {
             controller = chart.getController();
         }
         return controller;
+    }
+
+    public Line getLine(int i, int j) {
+        return crossHairLines[i][j];
     }
 
     public Double[] getCrossHairPositions() {
@@ -84,6 +88,13 @@ public class CrossHairs {
         int iAxis = jOrient == 0 ? 1 : 0;
         double value = iCross == 1 ? chart.getAxis(iAxis).getLowerBound() : chart.getAxis(iAxis).getUpperBound();
         statusBar.setCrossText(jOrient, iCross, value, true);
+    }
+
+    public void setState(boolean h1, boolean v1, boolean h2, boolean v2) {
+        crossHairStates[0][0] = h1;
+        crossHairStates[0][1] = v1;
+        crossHairStates[1][0] = h2;
+        crossHairStates[1][1] = v2;
     }
 
     public void setCrossHairState(boolean value) {
@@ -128,6 +139,75 @@ public class CrossHairs {
             }
         }
         chart.drawSlices();
+    }
+
+    public double getPosition(int i, int j) {
+        return crossHairPositions[i][j];
+    }
+
+    public double[] getVerticalPositions() {
+        double[] positions = new double[2];
+        positions[0] = crossHairPositions[0][1];
+        positions[1] = crossHairPositions[1][1];
+        return positions;
+    }
+
+    public void setLineColors(Color fillColor, Color cross0Color, Color cross1Color) {
+        Color color0 = cross0Color;
+        if (color0 == null) {
+            color0 = chooseBlackWhite(fillColor);
+        }
+
+        Color color1 = cross1Color;
+        if (color1 == null) {
+            if (color0 == Color.BLACK) {
+                color1 = Color.RED;
+            } else {
+                color1 = Color.MAGENTA;
+            }
+        }
+
+        setLineColors(color0, color1);
+    }
+
+    private void setLineColors(Color color0, Color color1) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                if (i == 0) {
+                    crossHairLines[i][j].setStroke(color0);
+                } else {
+                    crossHairLines[i][j].setStroke(color1);
+                }
+            }
+        }
+    }
+
+    public void updatePosition(int crossHairNum, int orientation, double value) {
+        crossHairPositions[crossHairNum][orientation] = value;
+        refreshCrossHairs();
+    }
+
+    public void init() {
+        crossHairLines[0][0] = new Line(0, 50, 400, 50);
+        crossHairLines[0][1] = new Line(100, 0, 100, 400);
+        crossHairLines[1][0] = new Line(0, 50, 400, 50);
+        crossHairLines[1][1] = new Line(100, 0, 100, 400);
+        crossHairStates[0][0] = false;
+        crossHairStates[0][1] = true;
+        crossHairStates[1][0] = false;
+        crossHairStates[1][1] = true;
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                crossHairLines[i][j].setVisible(false);
+                crossHairLines[i][j].setStrokeWidth(0.5);
+                crossHairLines[i][j].setMouseTransparent(true);
+                if (i == 0) {
+                    crossHairLines[i][j].setStroke(Color.BLACK);
+                } else {
+                    crossHairLines[i][j].setStroke(Color.RED);
+                }
+            }
+        }
     }
 
     private static void updateAllCharts(PolyChart source, int iCross, int iOrient, double position, String dimLabel) {

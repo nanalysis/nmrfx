@@ -2,11 +2,7 @@ package org.nmrfx.analyst.gui.tools;
 
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
-import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -131,7 +127,7 @@ public class IntegralTool {
         CrossHairs crossHairs = chart.getCrossHairs();
 
         if (crossHairs.hasCrosshairState("v0")) {
-            double ppm = chart.getVerticalCrosshairPositions()[0];
+            double ppm = chart.getCrossHairs().getVerticalPositions()[0];
             try {
                 Analyzer.getAnalyzer((Dataset) chart.getDataset()).splitRegion(ppm);
             } catch (IOException e) {

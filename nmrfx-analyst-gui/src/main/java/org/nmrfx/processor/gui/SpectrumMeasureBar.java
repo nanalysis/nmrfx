@@ -171,8 +171,8 @@ public class SpectrumMeasureBar {
     public void update() {
         if (chart != null) {
             for (int iOrient = 0; iOrient < 2; iOrient++) {
-                Double value0 = chart.crossHairStates[0][iOrient] ? chart.crossHairPositions[0][iOrient] : null;
-                Double value1 = chart.crossHairStates[1][iOrient] ? chart.crossHairPositions[1][iOrient] : null;
+                Double value0 = chart.getCrossHairs().getCrossHairState(0, iOrient) ? chart.getCrossHairs().getPosition(0, iOrient) : null;
+                Double value1 = chart.getCrossHairs().getCrossHairState(1, iOrient) ? chart.getCrossHairs().getPosition(1, iOrient) : null;
                 setCrossText(chart, dataset, iOrient, value0, value1);
             }
         }
@@ -191,7 +191,7 @@ public class SpectrumMeasureBar {
                 int pt2 = (int) chart.axes[i].getUpperBound();
                 pts[disDim0] = (pt1 + pt2) / 2;
             } else {
-                value = chart.crossHairStates[iCross][jOrient] ? chart.crossHairPositions[iCross][jOrient] : null;
+                value = chart.getCrossHairs().getCrossHairState(iCross, jOrient) ? chart.getCrossHairs().getPosition(iCross, jOrient) : null;
                 if (value == null) {
                     ok = false;
                     break;

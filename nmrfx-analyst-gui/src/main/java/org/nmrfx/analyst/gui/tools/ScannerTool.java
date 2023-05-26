@@ -303,7 +303,7 @@ public class ScannerTool implements ControllerTool {
                     return;
                 }
             }
-            double[] ppms = chart.getVerticalCrosshairPositions();
+            double[] ppms = chart.getCrossHairs().getVerticalPositions();
             double[] wppms = new double[2];
             wppms[0] = chart.getAxis(0).getLowerBound();
             wppms[1] = chart.getAxis(0).getUpperBound();
@@ -357,7 +357,7 @@ public class ScannerTool implements ControllerTool {
 
     private void measureSearchBins() {
         int nBins = 100;
-        double[] ppms = chart.getVerticalCrosshairPositions();
+        double[] ppms = chart.getCrossHairs().getVerticalPositions();
         double[] wppms = new double[2];
         wppms[0] = chart.getAxis(0).getLowerBound();
         wppms[1] = chart.getAxis(0).getUpperBound();
