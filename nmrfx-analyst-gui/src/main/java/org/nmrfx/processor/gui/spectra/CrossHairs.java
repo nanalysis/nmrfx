@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import javafx.geometry.Orientation;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import org.nmrfx.datasets.DatasetBase;
@@ -26,9 +27,8 @@ import org.nmrfx.processor.gui.SpectrumMeasureBar;
 import org.nmrfx.processor.gui.SpectrumStatusBar;
 
 import java.util.List;
+import java.util.stream.Stream;
 
-import static org.nmrfx.processor.gui.PolyChart.HORIZONTAL;
-import static org.nmrfx.processor.gui.PolyChart.VERTICAL;
 import static org.nmrfx.processor.gui.utils.ColorUtils.chooseBlackWhite;
 
 /**
@@ -37,13 +37,56 @@ import static org.nmrfx.processor.gui.utils.ColorUtils.chooseBlackWhite;
 public class CrossHairs {
     private static final int SELECTION_TOLERANCE = 25;
 
+    class CrossHairLine {
+        private final Line line = new Line(0, 0, 0, 0);
+        private final Orientation orientation;
+        private boolean enabled;
+        private double position;
+
+        public CrossHairLine(Orientation orientation) {
+            this.orientation = orientation;
+
+            line.setVisible(false);
+            line.setStrokeWidth(0.5);
+            line.setMouseTransparent(true);
+        }
+
+        public void setLine(double startX, double startY, double endX, double endY) {
+            line.setStartX(startX);
+            line.setStartY(startY);
+            line.setEndX(endX);
+            line.setEndY(endY);
+        }
+
+        public boolean isDisplayed() {
+            return enabled && line.isVisible();
+        }
+    }
+
+    class CrossHair {
+        // XXX temporary, for compatibility with code working with cursor indexes
+        private final int id;
+
+        private final CrossHairLine horizontal = new CrossHairLine(Orientation.HORIZONTAL);
+        private final CrossHairLine vertical = new CrossHairLine(Orientation.VERTICAL);
+
+        public CrossHair(int id) {
+            this.id = id;
+        }
+
+        public void setColor(Color color) {
+            horizontal.line.setStroke(color);
+            vertical.line.setStroke(color);
+        }
+    }
+
     private final PolyChart chart;
     private final FXMLController controller;
     private final NMRAxis xAxis;
     private final NMRAxis yAxis;
-    private final double[][] positions = new double[2][2];
-    private final boolean[][] states = new boolean[2][2];
-    private final Line[][] lines = new Line[2][2];
+
+    private final CrossHair primary = new CrossHair(0);
+    private final CrossHair secondary = new CrossHair(1);
 
     public CrossHairs(PolyChart chart) {
         this.chart = chart;
@@ -55,26 +98,15 @@ public class CrossHairs {
     }
 
     private void initialize() {
-        lines[0][0] = new Line(0, 50, 400, 50);
-        lines[0][1] = new Line(100, 0, 100, 400);
-        lines[1][0] = new Line(0, 50, 400, 50);
-        lines[1][1] = new Line(100, 0, 100, 400);
-        states[0][0] = false;
-        states[0][1] = true;
-        states[1][0] = false;
-        states[1][1] = true;
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                lines[i][j].setVisible(false);
-                lines[i][j].setStrokeWidth(0.5);
-                lines[i][j].setMouseTransparent(true);
-                if (i == 0) {
-                    lines[i][j].setStroke(Color.BLACK);
-                } else {
-                    lines[i][j].setStroke(Color.RED);
-                }
-            }
-        }
+        primary.setColor(Color.BLACK);
+        primary.horizontal.setLine(0, 50, 400, 50);
+        primary.vertical.setLine(100, 0, 100, 400);
+        primary.vertical.enabled = true;
+
+        primary.setColor(Color.RED);
+        secondary.horizontal.setLine(0, 50, 400, 50);
+        secondary.vertical.setLine(100, 0, 100, 400);
+        secondary.vertical.enabled = true;
     }
 
 
@@ -82,177 +114,190 @@ public class CrossHairs {
         return controller;
     }
 
-    public Line getLine(int i, int j) {
-        return lines[i][j];
+    private Orientation orientationFromInt(int index) {
+        return switch (index) {
+            case 0 -> Orientation.HORIZONTAL;
+            case 1 -> Orientation.VERTICAL;
+            default -> throw new IllegalArgumentException("Unknown orientation: " + index);
+        };
+    }
+
+    private CrossHair getCrossHair(int index) {
+        return switch (index) {
+            case 0 -> primary;
+            case 1 -> secondary;
+            default -> throw new IllegalArgumentException("Unknown crosshair: " + index);
+        };
+    }
+
+    private CrossHairLine getCrossHairLine(int index, Orientation orientation) {
+        return switch (orientation) {
+            case HORIZONTAL -> getCrossHair(index).horizontal;
+            case VERTICAL -> getCrossHair(index).vertical;
+        };
+    }
+
+    private CrossHairLine getCrossHairLine(int index, int orientation) {
+        return getCrossHairLine(index, orientationFromInt(orientation));
+    }
+
+    public Line getLine(int index, int orientation) {
+        return getCrossHairLine(index, orientation).line;
     }
 
     public Double[] getPositions() {
         return getPositions(0);
     }
 
-    public Double[] getPositions(int iCross) {
-        Double x = states[iCross][VERTICAL] ? positions[iCross][VERTICAL] : null;
-        Double y = states[iCross][HORIZONTAL] ? positions[iCross][HORIZONTAL] : null;
+    public Double[] getPositions(int index) {
+        CrossHair crossHair = getCrossHair(index);
+        Double x = crossHair.vertical.enabled ? crossHair.vertical.position : null;
+        Double y = crossHair.horizontal.enabled ? crossHair.horizontal.position : null;
         return new Double[]{x, y};
     }
 
     public void hideAll() {
-        for (int iCross = 0; iCross < 2; iCross++) {
-            for (int jOrient = 0; jOrient < 2; jOrient++) {
-                hide(iCross, jOrient);
-            }
+        for (int index = 0; index < 2; index++) {
+            hide(index, Orientation.HORIZONTAL);
+            hide(index, Orientation.VERTICAL);
         }
     }
 
-    public void hide(int iCross, int jOrient) {
+    private void hide(int index, Orientation orientation) {
         SpectrumStatusBar statusBar = getController().getStatusBar();
-        lines[iCross][jOrient].setVisible(false);
-        int iAxis = jOrient == 0 ? 1 : 0;
-        double value = iCross == 1 ? chart.getAxis(iAxis).getLowerBound() : chart.getAxis(iAxis).getUpperBound();
-        statusBar.setCrossText(jOrient, iCross, value, true);
+        getCrossHairLine(index, orientation).line.setVisible(false);
+        int iAxis = orientation == Orientation.HORIZONTAL ? 1 : 0;
+        double value = index == 1 ? chart.getAxis(iAxis).getLowerBound() : chart.getAxis(iAxis).getUpperBound();
+        statusBar.setCrossText(orientation.ordinal(), index, value, true);
     }
 
     public void setStates(boolean h1, boolean v1, boolean h2, boolean v2) {
-        states[0][0] = h1;
-        states[0][1] = v1;
-        states[1][0] = h2;
-        states[1][1] = v2;
+        primary.horizontal.enabled = h1;
+        primary.vertical.enabled = v1;
+        secondary.horizontal.enabled = h2;
+        secondary.vertical.enabled = v2;
     }
 
     public void setAllStates(boolean value) {
-        for (int iCross = 0; iCross < 2; iCross++) {
-            for (int jOrient = 0; jOrient < 2; jOrient++) {
-                states[iCross][jOrient] = getController().getCrossHairState(iCross, jOrient) && value;
-            }
-        }
+        Stream.of(primary, secondary).forEach(c -> {
+            c.horizontal.enabled = value && getController().getCrossHairState(c.id, Orientation.HORIZONTAL.ordinal());
+            c.vertical.enabled = value && getController().getCrossHairState(c.id, Orientation.VERTICAL.ordinal());
+        });
+
         if (!value) {
             hideAll();
         }
     }
 
-    public void setState(int iCross, int jOrient, boolean value) {
-        states[iCross][jOrient] = getController().getCrossHairState(iCross, jOrient) && value;
+    public void setState(int index, int orientationIndex, boolean value) {
+        Orientation orientation = orientationFromInt(orientationIndex);
+        getCrossHairLine(index, orientation).enabled = value && getController().getCrossHairState(index, orientation.ordinal());
+
         if (!value) {
-            hide(iCross, jOrient);
+            hide(index, orientation);
         }
     }
 
-    public boolean getState(int iCross, int jOrient) {
-        return states[iCross][jOrient];
+    public boolean getState(int index, int orientation) {
+        return getCrossHairLine(index, orientation).enabled;
     }
 
     public void refresh() {
         SpectrumStatusBar statusBar = getController().getStatusBar();
-        for (int iCross = 0; iCross < 2; iCross++) {
-            for (int jOrient = 0; jOrient < 2; jOrient++) {
-                int iAxis = jOrient == 0 ? 1 : 0;
+        for (int index = 0; index < 2; index++) {
+            for (int orientation = 0; orientation < 2; orientation++) {
+                CrossHairLine line = getCrossHairLine(index, orientation);
+                int iAxis = orientation == 0 ? 1 : 0;
                 NMRAxis axis = chart.getAxis(iAxis);
-                if (!isInRange(iCross, jOrient)) {
-                    lines[iCross][jOrient].setVisible(false);
-                    double value = iCross == 1 ? axis.getLowerBound() : axis.getUpperBound();
-                    statusBar.setCrossText(jOrient, iCross, value, true);
-                } else if (states[iCross][jOrient] && lines[iCross][jOrient].isVisible()) {
-                    draw(iCross, jOrient);
+                if (!isInRange(index, line.orientation)) {
+                    line.line.setVisible(false);
+                    double value = index == 1 ? axis.getLowerBound() : axis.getUpperBound();
+                    statusBar.setCrossText(orientation, index, value, true);
+                } else if (line.isDisplayed()) {
+                    draw(index, line.orientation);
                 } else {
-                    double value = iCross == 1 ? axis.getLowerBound() : axis.getUpperBound();
-                    statusBar.setCrossText(jOrient, iCross, value, true);
+                    double value = index == 1 ? axis.getLowerBound() : axis.getUpperBound();
+                    statusBar.setCrossText(orientation, index, value, true);
                 }
-                statusBar.setCrossTextRange(iCross, jOrient, axis.getLowerBound(), axis.getUpperBound());
+                statusBar.setCrossTextRange(index, orientation, axis.getLowerBound(), axis.getUpperBound());
             }
         }
         chart.drawSlices();
     }
 
-    public double getPosition(int i, int j) {
-        return positions[i][j];
+    public double getPosition(int index, int orientation) {
+        return getCrossHairLine(index, orientation).position;
     }
 
     public double[] getVerticalPositions() {
-        double[] positions = new double[2];
-        positions[0] = this.positions[0][1];
-        positions[1] = this.positions[1][1];
-        return positions;
+        return new double[]{
+                primary.vertical.position,
+                secondary.vertical.position,
+        };
     }
 
-    public void setLineColors(Color fillColor, Color cross0Color, Color cross1Color) {
-        Color color0 = cross0Color;
-        if (color0 == null) {
-            color0 = chooseBlackWhite(fillColor);
+    public void setLineColors(Color fillColor, Color primaryColor, Color secondaryColor) {
+        if (primaryColor == null) {
+            primaryColor = chooseBlackWhite(fillColor);
         }
-
-        Color color1 = cross1Color;
-        if (color1 == null) {
-            if (color0 == Color.BLACK) {
-                color1 = Color.RED;
-            } else {
-                color1 = Color.MAGENTA;
-            }
+        if (secondaryColor == null) {
+            secondaryColor = primaryColor == Color.BLACK ? Color.RED : Color.MAGENTA;
         }
-
-        setLineColors(color0, color1);
+        primary.setColor(primaryColor);
+        secondary.setColor(secondaryColor);
     }
 
-    private void setLineColors(Color color0, Color color1) {
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                if (i == 0) {
-                    lines[i][j].setStroke(color0);
-                } else {
-                    lines[i][j].setStroke(color1);
-                }
-            }
-        }
-    }
-
-    public void updatePosition(int crossHairNum, int orientation, double value) {
-        positions[crossHairNum][orientation] = value;
+    public void updatePosition(int index, int orientation, double value) {
+        getCrossHairLine(index, orientation).position = value;
         refresh();
     }
 
-    public void move(int iCross, int iOrient, double value) {
+    public void move(int index, int orientationIndex, double value) {
         List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         if (dataAttrs.isEmpty()) {
             return;
         }
-        value = valueInRange(iCross, iOrient, value);
-        setPosition(iCross, iOrient, value);
-        draw(iCross, iOrient);
-        double aValue = positions[iCross][iOrient];
+
+        Orientation orientation = orientationFromInt(orientationIndex);
+        value = valueInRange(index, orientation, value);
+        setPosition(index, orientation, value);
+        draw(index, orientation);
         DatasetAttributes dataAttr = dataAttrs.get(0);
-        String label;
-        int axisDim = iOrient == VERTICAL ? 0 : 1;
-        label = dataAttr.getLabel(axisDim);
-        updateAllCharts(chart, iCross, iOrient, aValue, label);
+        int axisDim = orientation == Orientation.VERTICAL ? 0 : 1;
+        String label = dataAttr.getLabel(axisDim);
+
+        double position = getCrossHairLine(index, orientationIndex).position;
+        updateAllCharts(chart, index, orientationIndex, position, label);
         chart.drawSlices();
     }
 
-    public void sync(int iCross, int iOrient, String dimLabel, double value) {
+    private void sync(int index, int ignoredOrientation, String dimLabel, double value) {
         List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         if (dataAttrs.isEmpty()) {
             return;
         }
         DatasetAttributes dataAttr = dataAttrs.get(0);
-        int jOrient = -1;
+        Orientation orientation = null;
         if (dataAttr.getLabel(0).equals(dimLabel)) {
             if (value >= xAxis.getLowerBound() && (value <= xAxis.getUpperBound())) {
-                jOrient = VERTICAL;
+                orientation = Orientation.VERTICAL;
             }
         } else if (dataAttr.getLabel(1).equals(dimLabel)) {
             if (value >= yAxis.getLowerBound() && (value <= yAxis.getUpperBound())) {
-                jOrient = HORIZONTAL;
+                orientation = Orientation.HORIZONTAL;
             }
         }
-        if (jOrient >= 0) {
-            positions[iCross][jOrient] = value;
-            draw(iCross, jOrient);
-            if (iCross == 0) {
+        if (orientation != null) {
+            getCrossHairLine(index, orientation).position = value;
+            draw(index, orientation);
+            if (index == 0) {
                 chart.drawSlices();
             }
         }
     }
 
-    public boolean isInRange(int iCross, int iOrient) {
-        double value = positions[iCross][iOrient];
+    private boolean isInRange(int index, Orientation orientation) {
+        double value = getCrossHairLine(index, orientation).position;
 
         double width = xAxis.getWidth();
         double height = yAxis.getHeight();
@@ -260,7 +305,7 @@ public class CrossHairs {
         double yOrigin = xAxis.getYOrigin();
         boolean ok = true;
 
-        if (iOrient == HORIZONTAL) {
+        if (orientation == Orientation.HORIZONTAL) {
             value = yAxis.getDisplayPosition(value);
             if (value > yOrigin) {
                 ok = false;
@@ -279,7 +324,7 @@ public class CrossHairs {
 
     }
 
-    private double valueInRange(int iCross, int iOrient, double value) {
+    private double valueInRange(int ignoredIndex, Orientation orientation, double value) {
         if (value < 0) {
             value = 1;
         }
@@ -288,7 +333,7 @@ public class CrossHairs {
         double xOrigin = xAxis.getXOrigin();
         double yOrigin = xAxis.getYOrigin();
 
-        if (iOrient == HORIZONTAL) {
+        if (orientation == Orientation.HORIZONTAL) {
             if (value > yOrigin) {
                 value = yOrigin - 1;
             } else if (value < (yOrigin - height)) {
@@ -305,75 +350,47 @@ public class CrossHairs {
 
     }
 
-    public void setPosition(int iCross, int iOrient, double value) {
-        if (iOrient == HORIZONTAL) {
-            value = yAxis.getValueForDisplay(value).doubleValue();
-        } else {
-            value = xAxis.getValueForDisplay(value).doubleValue();
-        }
-        positions[iCross][iOrient] = value;
+    private void setPosition(int index, Orientation orientation, double value) {
+        NMRAxis axis = orientation == Orientation.HORIZONTAL ? yAxis : xAxis;
+        value = axis.getValueForDisplay(value).doubleValue();
+        getCrossHairLine(index, orientation).position = value;
     }
 
     public boolean hasRegion() {
-        boolean horizontalRegion = states[0][VERTICAL] && lines[0][VERTICAL].isVisible()
-                && states[1][VERTICAL] && lines[1][VERTICAL].isVisible();
-        boolean verticalRegion = states[0][HORIZONTAL] && lines[0][HORIZONTAL].isVisible()
-                && states[1][HORIZONTAL] && lines[1][HORIZONTAL].isVisible();
-        boolean hasRegion;
-        if (chart.is1D()) {
-            hasRegion = horizontalRegion;
-        } else {
-            hasRegion = horizontalRegion && verticalRegion;
-        }
-        return hasRegion;
+        boolean horizontalRegion = primary.vertical.isDisplayed() && secondary.vertical.isDisplayed();
+        boolean verticalRegion = primary.horizontal.isDisplayed() && secondary.horizontal.isDisplayed();
+        return horizontalRegion && (verticalRegion || chart.is1D());
     }
 
     public boolean hasState(String state) {
-        boolean v0 = states[0][VERTICAL] && lines[0][VERTICAL].isVisible();
-        boolean v1 = states[1][VERTICAL] && lines[1][VERTICAL].isVisible();
-        boolean h0 = states[0][HORIZONTAL] && lines[0][HORIZONTAL].isVisible();
-        boolean h1 = states[1][HORIZONTAL] && lines[1][HORIZONTAL].isVisible();
-        boolean result;
+        boolean v0 = primary.vertical.isDisplayed();
+        boolean v1 = secondary.vertical.isDisplayed();
+        boolean h0 = primary.horizontal.isDisplayed();
+        boolean h1 = secondary.horizontal.isDisplayed();
+
         if (state.equals("region")) {
             state = chart.is1D() ? "||" : "[]";
         }
-        switch (state) {
-            case "||":
-                result = v0 & v1;
-                break;
-            case "=":
-                result = h0 & h1;
-                break;
-            case "|_":
-                result = h0 & v0;
-                break;
-            case "[]":
-                result = h0 & v0 & h1 & v1;
-                break;
-            case "v0":
-                result = v0;
-                break;
-            case "h0":
-                result = h0;
-                break;
-            case "v1":
-                result = v1;
-                break;
-            case "h1":
-                result = h1;
-                break;
-            default:
-                result = false;
-        }
-        return result;
+
+        return switch (state) {
+            case "||" -> v0 & v1;
+            case "=" -> h0 & h1;
+            case "|_" -> h0 & v0;
+            case "[]" -> h0 & v0 & h1 & v1;
+            case "v0" -> v0;
+            case "h0" -> h0;
+            case "v1" -> v1;
+            case "h1" -> h1;
+            default -> false;
+        };
     }
 
-    public int[] getCrossHairNum(double x, double y, boolean hasMiddleMouseButton, boolean middleButton) {
+    //TODO return crosshair instance instead of index
+    public int[] findAtPosition(double x, double y, boolean hasMiddleMouseButton, boolean middleButton) {
         int[] srch0 = {0};
         int[] srch1 = {1};
         int[] srch01 = {0, 1};
         int[] searchCrosshairs;
-        int[] orients = {HORIZONTAL, VERTICAL};
         if (hasMiddleMouseButton) {
             searchCrosshairs = middleButton ? srch1 : srch0;
         } else {
@@ -385,48 +402,52 @@ public class CrossHairs {
         int[] result = {-1, -1};
         int[] closest = {-1, -1};
 
-        for (int orient : orients) {
+        for (Orientation orientation : Orientation.values()) {
             for (int i : searchCrosshairs) {
-                Line line = lines[i][orient];
-                double value = orient == HORIZONTAL ? line.getStartY() : line.getStartX();
-                double ref = orient == HORIZONTAL ? y : x;
-                if (states[i][orient] && lines[i][orient].isVisible()) {
-                    deltas[i][orient] = Math.abs(value - ref);
+                CrossHairLine crossHairLine = getCrossHairLine(i, orientation);
+                Line line = crossHairLine.line;
+                double value = orientation == Orientation.HORIZONTAL ? line.getStartY() : line.getStartX();
+                double ref = orientation == Orientation.HORIZONTAL ? y : x;
+
+                if (crossHairLine.isDisplayed()) {
+                    deltas[i][orientation.ordinal()] = Math.abs(value - ref);
                 }
             }
-            if (Double.isFinite(deltas[0][orient]) && (deltas[0][orient] < deltas[1][orient])) {
-                closest[orient] = 0;
-                if (deltas[0][orient] < SELECTION_TOLERANCE) {
-                    result[orient] = 0;
+            if (Double.isFinite(deltas[0][orientation.ordinal()]) && (deltas[0][orientation.ordinal()] < deltas[1][orientation.ordinal()])) {
+                closest[orientation.ordinal()] = 0;
+                if (deltas[0][orientation.ordinal()] < SELECTION_TOLERANCE) {
+                    result[orientation.ordinal()] = 0;
                 }
 
-            } else if (Double.isFinite(deltas[1][orient])) {
-                closest[orient] = 1;
-                if (deltas[1][orient] < SELECTION_TOLERANCE) {
-                    result[orient] = 1;
+            } else if (Double.isFinite(deltas[1][orientation.ordinal()])) {
+                closest[orientation.ordinal()] = 1;
+                if (deltas[1][orientation.ordinal()] < SELECTION_TOLERANCE) {
+                    result[orientation.ordinal()] = 1;
                 }
             }
         }
+
         if ((result[0] == -1) && (result[1] == -1)) {
-            if (!lines[0][HORIZONTAL].isVisible()) {
-                result[HORIZONTAL] = 0;
-            } else if (!lines[1][HORIZONTAL].isVisible()) {
-                result[HORIZONTAL] = 1;
+            if (!primary.horizontal.isDisplayed()) {
+                result[Orientation.HORIZONTAL.ordinal()] = 0;
+            } else if (!secondary.horizontal.isDisplayed()) {
+                result[Orientation.HORIZONTAL.ordinal()] = 1;
             } else if (closest[0] != -1) {
-                result[HORIZONTAL] = closest[0];
+                result[Orientation.HORIZONTAL.ordinal()] = closest[0];
             }
-            if (!lines[0][VERTICAL].isVisible()) {
-                result[VERTICAL] = 0;
-            } else if (!lines[1][VERTICAL].isVisible()) {
-                result[VERTICAL] = 1;
+            if (!primary.vertical.isDisplayed()) {
+                result[Orientation.VERTICAL.ordinal()] = 0;
+            } else if (!secondary.vertical.isDisplayed()) {
+                result[Orientation.VERTICAL.ordinal()] = 1;
             } else if (closest[1] != -1) {
-                result[VERTICAL] = closest[1];
+                result[Orientation.VERTICAL.ordinal()] = closest[1];
             }
         }
+
         return result;
     }
 
-    public void draw(int iCross, int iOrient) {
+    private void draw(int index, Orientation orientation) {
         DatasetBase dataset = chart.getDataset();
         if (dataset == null) {
             return;
@@ -435,34 +456,33 @@ public class CrossHairs {
         double height = yAxis.getHeight();
         double xOrigin = xAxis.getXOrigin();
         double yOrigin = yAxis.getYOrigin();
-        if (states[iCross][iOrient]) {
-            double value = positions[iCross][iOrient];
-            getController().getStatusBar().setCrossText(iOrient, iCross, value, false);
-            updateMeasureBar(dataset, iOrient);
-            if (iOrient == HORIZONTAL) {
+
+        CrossHairLine line = getCrossHairLine(index, orientation);
+
+        if (line.enabled) {
+            double value = line.position;
+            getController().getStatusBar().setCrossText(orientation.ordinal(), index, value, false);
+            updateMeasureBar(dataset, orientation);
+            if (orientation == Orientation.HORIZONTAL) {
                 value = yAxis.getDisplayPosition(value);
-                lines[iCross][iOrient].setStartX(xOrigin);
-                lines[iCross][iOrient].setEndX(xOrigin + width);
-                lines[iCross][iOrient].setStartY(value);
-                lines[iCross][iOrient].setEndY(value);
+                line.setLine(xOrigin, value, xOrigin + width, value);
             } else {
                 value = xAxis.getDisplayPosition(value);
-                lines[iCross][iOrient].setStartY(yOrigin);
-                lines[iCross][iOrient].setEndY(yOrigin - height);
-                lines[iCross][iOrient].setStartX(value);
-                lines[iCross][iOrient].setEndX(value);
+                line.setLine(value, yOrigin, value, yOrigin - height);
             }
-            lines[iCross][iOrient].setVisible(true);
-            lines[iCross][iOrient].setVisible(true);
+
+            line.line.setVisible(true);
         }
     }
 
-    public void updateMeasureBar(DatasetBase dataset, int iOrient) {
+    private void updateMeasureBar(DatasetBase dataset, Orientation orientation) {
         SpectrumMeasureBar measureBar = getController().getSpectrumMeasureBar();
         if (measureBar != null) {
-            Double value0 = states[0][iOrient] ? positions[0][iOrient] : null;
-            Double value1 = states[1][iOrient] ? positions[1][iOrient] : null;
-            measureBar.setCrossText(chart, dataset, iOrient, value0, value1);
+            CrossHairLine primary = getCrossHairLine(0, orientation);
+            CrossHairLine secondary = getCrossHairLine(1, orientation);
+            Double value0 = primary.enabled ? primary.position : null;
+            Double value1 = secondary.enabled ? secondary.position : null;
+            measureBar.setCrossText(chart, dataset, orientation.ordinal(), value0, value1);
         }
     }
 

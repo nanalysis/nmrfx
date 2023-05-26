@@ -495,7 +495,7 @@ public class PolyChart extends Region implements PeakListener {
                 hasMiddleMouseButton = true;
             }
 
-            int[] crossNums = crossHairs.getCrossHairNum(mEvent.getX(),
+            int[] crossNums = crossHairs.findAtPosition(mEvent.getX(),
                     mEvent.getY(), hasMiddleMouseButton, mEvent.isMiddleButtonDown());
             crossHairNumH = crossNums[0];
             crossHairNumV = crossNums[1];
