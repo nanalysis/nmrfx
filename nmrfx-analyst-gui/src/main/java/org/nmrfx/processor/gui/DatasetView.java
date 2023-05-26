@@ -49,7 +49,7 @@ public class DatasetView {
         };
         datasetView.getTargetItems().addListener(datasetTargetListener);
         this.fxmlController.getActiveChart().getDatasetAttributes().addListener(datasetAttributesListChangeListener);
-        PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> {
+        PolyChartManager.getInstance().activeChartProperty().addListener((observable, oldValue, newValue) -> {
 
             if (oldValue != null && this.fxmlController.getCharts().contains(oldValue)) {
                 oldValue.getDatasetAttributes().removeListener(datasetAttributesListChangeListener);

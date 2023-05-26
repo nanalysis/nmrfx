@@ -22,6 +22,7 @@ import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.utils.GUIUtils;
@@ -79,7 +80,7 @@ public class RegionsTableController implements Initializable, StageBasedControll
     public void initialize(URL location, ResourceBundle rb) {
         regionsTable = new RegionsTable();
         regionsBorderPane.setCenter(regionsTable);
-        chart = PolyChart.getActiveChart();
+        chart = PolyChartManager.getInstance().getActiveChart();
         chart.addRegionListener(activeDatasetRegionListener);
         if (chart.getDataset() != null) {
             chart.getDataset().addDatasetRegionsListListener(datasetRegionsListListener);
@@ -115,7 +116,7 @@ public class RegionsTableController implements Initializable, StageBasedControll
                 peakRegionTool.clearAnalysis(false);
             }
         });
-        PolyChart.getActiveChartProperty().addListener(this::activeChartUpdatedListener);
+        PolyChartManager.getInstance().activeChartProperty().addListener(this::activeChartUpdatedListener);
         updateActiveChartRegions();
         selectedRowRegionsTableListener = this::setSelectedRowRegionsTableListener;
         regionsTable.getSelectionModel().selectedItemProperty().addListener(selectedRowRegionsTableListener);

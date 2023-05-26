@@ -96,10 +96,7 @@ public class PolyChart extends Region implements PeakListener {
     private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
-    public static final ObservableList<PolyChart> CHARTS = FXCollections.observableArrayList();
-    public static final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
     private static final SimpleObjectProperty<DatasetBase> currentDatasetProperty = new SimpleObjectProperty<>(null);
-    private static final SimpleBooleanProperty multipleCharts = new SimpleBooleanProperty(false);
     private static final double OVERLAP_SCALE = 3.0;
     private static final double MIN_MOVE = 20;
     private static final String FONT_FAMILY = "Liberation Sans";
@@ -107,11 +104,6 @@ public class PolyChart extends Region implements PeakListener {
     private static Consumer<PeakDeleteEvent> manualPeakDeleteAction = null;
     private static int lastId = 0;
     private static int nSyncGroups = 0;
-
-    static {
-        CHARTS.addListener((ListChangeListener) (e -> multipleCharts.set(CHARTS.size() > 1)));
-    }
-
     final NMRAxis xAxis;
     final NMRAxis yAxis;
     final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
@@ -176,12 +168,12 @@ public class PolyChart extends Region implements PeakListener {
     private GestureBindings gestureBindings;
     private DragBindings dragBindings;
     private CrossHairs crossHairs;
-
     public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
         this(controller, plotContent, canvas, peakCanvas, annoCanvas,
                 new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50),
                 new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200)
         );
+
     }
 
     public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas, final NMRAxis... AXIS) {
@@ -311,7 +303,10 @@ public class PolyChart extends Region implements PeakListener {
         highlightRect.setStroke(Color.BLUE);
         highlightRect.setStrokeWidth(1.0);
         highlightRect.setFill(null);
-        highlightRect.visibleProperty().bind(activeChart.isEqualTo(this).and(multipleCharts).or(chartSelected));
+        highlightRect.visibleProperty().bind(
+                PolyChartManager.getInstance().activeChartProperty().isEqualTo(this)
+                        .and(PolyChartManager.getInstance().multipleChartsProperty())
+                        .or(chartSelected));
         plotContent.getChildren().add(highlightRect);
         for (var canvasHanndle : canvasHandles) {
             canvasHanndle.visibleProperty().bind(chartSelected);
@@ -322,8 +317,7 @@ public class PolyChart extends Region implements PeakListener {
         xAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 0, 1));
         yAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 1, 0));
         yAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 1, 1));
-        CHARTS.add(this);
-        activeChart.set(this);
+        PolyChartManager.getInstance().registerNewChart(this);
         canvas.setCursor(CanvasCursor.SELECTOR.getCursor());
         MapChangeListener<String, PeakList> mapChangeListener = change -> purgeInvalidPeakListAttributes();
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
@@ -337,7 +331,6 @@ public class PolyChart extends Region implements PeakListener {
         integralMenu = new IntegralMenu(this);
         setDragHandlers(canvas);
         canvas.requestFocus();
-
     }
 
     private synchronized int getNextId() {
@@ -375,15 +368,7 @@ public class PolyChart extends Region implements PeakListener {
             plotContent.visibleProperty().unbind();
         }
 
-        CHARTS.remove(this);
-        controller.removeChart(this);
-        if (this == activeChart.get()) {
-            if (CHARTS.isEmpty()) {
-                activeChart.set(null);
-            } else {
-                activeChart.set(CHARTS.get(0));
-            }
-        }
+        PolyChartManager.getInstance().unregisterChart(this);
         drawSpectrum.clearThreads();
     }
 
@@ -438,7 +423,8 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void setActiveChart() {
-        activeChart.set(this);
+        PolyChartManager.getInstance().setActiveChart(this);
+        //XXX move those to PolyChartManager as well?
         controller.setActiveChart(this);
         currentDatasetProperty.set(getDataset());
     }
@@ -3263,7 +3249,7 @@ public class PolyChart extends Region implements PeakListener {
 
     public boolean selectPeaks(double pickX, double pickY, boolean append) {
         if (!append) {
-            for (PolyChart chart : CHARTS) {
+            for (PolyChart chart : PolyChartManager.getInstance().getCharts()) {
                 if (chart != this) {
                     boolean hadPeaks = false;
                     for (PeakListAttributes peakListAttr : chart.getPeakListAttributes()) {
@@ -4117,7 +4103,7 @@ public class PolyChart extends Region implements PeakListener {
 
     List<PolyChart> getSceneMates(boolean includeThis) {
         List<PolyChart> sceneMates = new ArrayList<>();
-        for (PolyChart chart : CHARTS) {
+        for (PolyChart chart : PolyChartManager.getInstance().getCharts()) {
             if (chart.canvas == canvas) {
                 if (includeThis || (chart != this)) {
                     sceneMates.add(chart);
@@ -4317,24 +4303,6 @@ public class PolyChart extends Region implements PeakListener {
 
     public static void setPeakListenerState(boolean state) {
         listenToPeaks = state;
-    }
-
-    public static Optional<PolyChart> getChart(String name) {
-        Optional<PolyChart> result = Optional.empty();
-        for (PolyChart chart : CHARTS) {
-            if (chart.getName().equals(name)) {
-                result = Optional.of(chart);
-            }
-        }
-        return result;
-    }
-
-    public static PolyChart getActiveChart() {
-        return activeChart.get();
-    }
-
-    public static SimpleObjectProperty<PolyChart> getActiveChartProperty() {
-        return activeChart;
     }
 
     public static SimpleObjectProperty<DatasetBase> getCurrentDatasetProperty() {

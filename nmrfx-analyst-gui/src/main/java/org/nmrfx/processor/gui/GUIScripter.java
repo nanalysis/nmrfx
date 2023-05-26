@@ -71,7 +71,8 @@ public class GUIScripter {
     }
 
     public String active() {
-        PolyChart chart = useChart != null ? useChart : PolyChart.getActiveChart();
+        PolyChart chart;
+        chart = useChart != null ? useChart : PolyChartManager.getInstance().getActiveChart();
         return chart.getName();
     }
 
@@ -753,7 +754,7 @@ public class GUIScripter {
     }
 
     public static void chartCommand(String keyStr, PolyChart chart) {
-        PolyChart currentActive = PolyChart.getActiveChart();
+        PolyChart currentActive = PolyChartManager.getInstance().getActiveChart();
         chart.setActiveChart();
         AnalystPythonInterpreter.exec(keyActions.get(keyStr));
         currentActive.setActiveChart();

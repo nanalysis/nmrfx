@@ -273,7 +273,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         deselectCharts();
         isFID = false;
         activeChart = chart;
-        PolyChart.activeChart.set(chart);
+        PolyChartManager.getInstance().setActiveChart(chart);
         ProcessorController processorController = chart.getProcessorController(false);
         processorPane.getChildren().clear();
         // The chart has a processor controller setup, and can be in FID or Dataset mode.

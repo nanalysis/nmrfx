@@ -37,6 +37,7 @@ import org.nmrfx.chart.*;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.math.TRACTSimFit;
 import org.slf4j.Logger;
@@ -70,7 +71,7 @@ public class TRACTGUI {
 
     public TRACTGUI(ScannerTool scannerTool) {
         this.scannerTool = scannerTool;
-        chart = PolyChart.getActiveChart();
+        chart = PolyChartManager.getInstance().getActiveChart();
     }
 
     public void showMCplot() {

@@ -310,7 +310,7 @@ public class SpectrumStatusBar {
         complexStatus.setOnAction(this::complexStatus);
 
         controller.getActiveChart().disDimProp.addListener(displayedDimensionsListener);
-        PolyChart.getActiveChartProperty().addListener(this::setChart);
+        PolyChartManager.getInstance().activeChartProperty().addListener(this::setChart);
     }
 
     private void buildCursorBar() {

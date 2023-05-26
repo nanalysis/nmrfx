@@ -17,12 +17,14 @@
  */
 package org.nmrfx.processor.gui.undo;
 
+import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
 /**
  *
@@ -44,7 +46,7 @@ public class ChartUndoScale extends ChartUndo {
 
     @Override
     public boolean execute() {
-        Optional<PolyChart> optChart = PolyChart.getChart(name);
+        Optional<PolyChart> optChart = PolyChartManager.getInstance().findChartByName(name);
         optChart.ifPresent(c -> {
             setScales(c);
         });

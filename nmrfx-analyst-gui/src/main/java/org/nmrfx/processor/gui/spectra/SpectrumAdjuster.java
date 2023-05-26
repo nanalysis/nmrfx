@@ -26,6 +26,7 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 
 import java.util.*;
@@ -41,7 +42,7 @@ public class SpectrumAdjuster {
     static String undoChartName;
 
     public static void showRefInput() {
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         int nDim = 1;
         if (chart.getNDim() > 1) {
             nDim = 2;
@@ -125,7 +126,7 @@ public class SpectrumAdjuster {
     }
 
     public static void writePars() {
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         writePars(chart);
     }
 
@@ -173,7 +174,7 @@ public class SpectrumAdjuster {
 
     public static void adjustDatasetRef(Optional<Double> delXOpt,
             Optional<Double> delYOpt, boolean shiftDataset, boolean alwaysShiftPeaks) {
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         CrossHairs crossHairs = chart.getCrossHairs();
         int nDim = 1;
         if (chart.getNDim() > 1) {
@@ -226,7 +227,7 @@ public class SpectrumAdjuster {
     }
 
     public static void adjustDiagonalReference() {
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         if (chart.getNDim() < 2) {
             return;
         }
@@ -276,7 +277,7 @@ public class SpectrumAdjuster {
     }
 
     public static void undo() {
-        Optional<PolyChart> chartOpt = PolyChart.getChart(undoChartName);
+        Optional<PolyChart> chartOpt = PolyChartManager.getInstance().findChartByName(undoChartName);
         if (chartOpt.isPresent()) {
             for (Map.Entry<String, Double> entry : datasetUndo.entrySet()) {
                 String[] fields = entry.getKey().split(":");

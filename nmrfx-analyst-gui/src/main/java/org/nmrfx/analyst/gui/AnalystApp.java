@@ -657,10 +657,7 @@ public class AnalystApp extends Application {
      * Closes all stages and controllers except the main stage/first controller.
      */
     public static void closeAll() {
-        for (PolyChart chart : PolyChart.CHARTS) {
-            chart.clearDataAndPeaks();
-            chart.clearAnnotations();
-        }
+        PolyChartManager.getInstance().closeAll();
         List<FXMLController> controllers = new ArrayList<>(getFXMLControllerManager().getControllers());
         // Don't close the first controller that matches with the main stage, Note this first controller is not
         // necessarily the active controller

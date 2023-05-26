@@ -17,8 +17,10 @@
  */
 package org.nmrfx.processor.gui.undo;
 
-import java.util.Optional;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
+
+import java.util.Optional;
 
 /**
  *
@@ -40,7 +42,7 @@ public class ChartUndoLimits extends ChartUndo {
 
     @Override
     public boolean execute() {
-        Optional<PolyChart> optChart = PolyChart.getChart(name);
+        Optional<PolyChart> optChart = PolyChartManager.getInstance().findChartByName(name);
         optChart.ifPresent(c -> {
             setLimits(c);
         });
