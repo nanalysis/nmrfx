@@ -406,15 +406,15 @@ public class AttributesController implements Initializable {
     }
 
     private void unBindChart(PolyChart polyChart) {
-        offsetTrackingCheckBox.selectedProperty().unbindBidirectional(polyChart.sliceAttributes.offsetTrackingProperty());
-        useDatasetColorCheckBox.selectedProperty().unbindBidirectional(polyChart.sliceAttributes.useDatasetColorProperty());
-        slice1StateCheckBox.selectedProperty().unbindBidirectional(polyChart.sliceAttributes.slice1StateProperty());
-        slice2StateCheckBox.selectedProperty().unbindBidirectional(polyChart.sliceAttributes.slice2StateProperty());
-        xOffsetSlider.valueProperty().unbindBidirectional(polyChart.sliceAttributes.offsetXValueProperty());
-        yOffsetSlider.valueProperty().unbindBidirectional(polyChart.sliceAttributes.offsetYValueProperty());
-        scaleSlider.valueProperty().unbindBidirectional(polyChart.sliceAttributes.scaleValueProperty());
-        slice1ColorPicker.valueProperty().unbindBidirectional(polyChart.sliceAttributes.slice1ColorProperty());
-        slice2ColorPicker.valueProperty().unbindBidirectional(polyChart.sliceAttributes.slice2ColorProperty());
+        offsetTrackingCheckBox.selectedProperty().unbindBidirectional(polyChart.getSliceAttributes().offsetTrackingProperty());
+        useDatasetColorCheckBox.selectedProperty().unbindBidirectional(polyChart.getSliceAttributes().useDatasetColorProperty());
+        slice1StateCheckBox.selectedProperty().unbindBidirectional(polyChart.getSliceAttributes().slice1StateProperty());
+        slice2StateCheckBox.selectedProperty().unbindBidirectional(polyChart.getSliceAttributes().slice2StateProperty());
+        xOffsetSlider.valueProperty().unbindBidirectional(polyChart.getSliceAttributes().offsetXValueProperty());
+        yOffsetSlider.valueProperty().unbindBidirectional(polyChart.getSliceAttributes().offsetYValueProperty());
+        scaleSlider.valueProperty().unbindBidirectional(polyChart.getSliceAttributes().scaleValueProperty());
+        slice1ColorPicker.valueProperty().unbindBidirectional(polyChart.getSliceAttributes().slice1ColorProperty());
+        slice2ColorPicker.valueProperty().unbindBidirectional(polyChart.getSliceAttributes().slice2ColorProperty());
 
         intensityAxisCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.intensityAxisProperty());
         ticFontSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.ticFontSizeProperty());
@@ -455,15 +455,15 @@ public class AttributesController implements Initializable {
             }
         }
         boundChart = polyChart;
-        offsetTrackingCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.offsetTrackingProperty());
-        useDatasetColorCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.useDatasetColorProperty());
-        slice1StateCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.slice1StateProperty());
-        slice2StateCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.slice2StateProperty());
-        xOffsetSlider.valueProperty().bindBidirectional(polyChart.sliceAttributes.offsetXValueProperty());
-        yOffsetSlider.valueProperty().bindBidirectional(polyChart.sliceAttributes.offsetYValueProperty());
-        scaleSlider.valueProperty().bindBidirectional(polyChart.sliceAttributes.scaleValueProperty());
-        slice1ColorPicker.valueProperty().bindBidirectional(polyChart.sliceAttributes.slice1ColorProperty());
-        slice2ColorPicker.valueProperty().bindBidirectional(polyChart.sliceAttributes.slice2ColorProperty());
+        offsetTrackingCheckBox.selectedProperty().bindBidirectional(polyChart.getSliceAttributes().offsetTrackingProperty());
+        useDatasetColorCheckBox.selectedProperty().bindBidirectional(polyChart.getSliceAttributes().useDatasetColorProperty());
+        slice1StateCheckBox.selectedProperty().bindBidirectional(polyChart.getSliceAttributes().slice1StateProperty());
+        slice2StateCheckBox.selectedProperty().bindBidirectional(polyChart.getSliceAttributes().slice2StateProperty());
+        xOffsetSlider.valueProperty().bindBidirectional(polyChart.getSliceAttributes().offsetXValueProperty());
+        yOffsetSlider.valueProperty().bindBidirectional(polyChart.getSliceAttributes().offsetYValueProperty());
+        scaleSlider.valueProperty().bindBidirectional(polyChart.getSliceAttributes().scaleValueProperty());
+        slice1ColorPicker.valueProperty().bindBidirectional(polyChart.getSliceAttributes().slice1ColorProperty());
+        slice2ColorPicker.valueProperty().bindBidirectional(polyChart.getSliceAttributes().slice2ColorProperty());
 
         if (chart.chartProps.getAxesColor() == null) {
             axisColorCheckBox.setSelected(false);
@@ -1135,8 +1135,8 @@ public class AttributesController implements Initializable {
     @FXML
     private void sliceAction() {
         getCharts(allCharts()).forEach(aChart -> {
-            aChart.sliceAttributes.setSlice1Color(slice1ColorPicker.getValue());
-            aChart.sliceAttributes.setSlice2Color(slice2ColorPicker.getValue());
+            aChart.getSliceAttributes().setSlice1Color(slice1ColorPicker.getValue());
+            aChart.getSliceAttributes().setSlice2Color(slice2ColorPicker.getValue());
             aChart.getCrossHairs().refresh();
         });
     }

@@ -131,11 +131,11 @@ public class PolyChart extends Region implements PeakListener {
     private final double[][] chartPhases = new double[2][15];
     private final Double[] pivotPosition = new Double[15];
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
+    private final SliceAttributes sliceAttributes = new SliceAttributes();
 
     //XXX use accessor instead
     public ChartProperties chartProps = new ChartProperties(this);
     NMRAxis[] axes = new NMRAxis[2];
-    SliceAttributes sliceAttributes = new SliceAttributes();
     double minLeftBorder = 0.0;
     double minBottomBorder = 0.0;
     FXMLController controller;
