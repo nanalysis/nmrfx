@@ -309,7 +309,7 @@ public class SpectrumStatusBar {
         btoolBar.getItems().add(complexStatus);
         complexStatus.setOnAction(this::complexStatus);
 
-        controller.getActiveChart().disDimProp.addListener(displayedDimensionsListener);
+        controller.getActiveChart().getDisDimProperty().addListener(displayedDimensionsListener);
         PolyChartManager.getInstance().activeChartProperty().addListener(this::setChart);
     }
 
@@ -435,11 +435,11 @@ public class SpectrumStatusBar {
 
     public void setChart(ObservableValue<? extends PolyChart> observable, PolyChart oldChart, PolyChart newChart) {
         if (controller.getCharts().contains(oldChart)) {
-            oldChart.disDimProp.removeListener(displayedDimensionsListener);
+            oldChart.getDisDimProperty().removeListener(displayedDimensionsListener);
         }
         else if (controller.getCharts().contains(newChart)) {
-            newChart.disDimProp.removeListener(displayedDimensionsListener);
-            newChart.disDimProp.addListener(displayedDimensionsListener);
+            newChart.getDisDimProperty().removeListener(displayedDimensionsListener);
+            newChart.getDisDimProperty().addListener(displayedDimensionsListener);
             if (!newChart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = newChart.getDatasetAttributes().get(0);
                 for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
@@ -811,7 +811,7 @@ public class SpectrumStatusBar {
                 log.warn("Unable to update display mode. No rows set.");
                 return;
             }
-            chart.disDimProp.set(PolyChart.DISDIM.OneDX);
+            chart.getDisDimProperty().set(PolyChart.DISDIM.OneDX);
             if (maxRows.getAsInt() > FXMLController.MAX_INITIAL_TRACES) {
                 chart.setDrawlist(0);
             }
@@ -828,7 +828,7 @@ public class SpectrumStatusBar {
             }
             set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
         } else if (selected == DisplayMode.CONTOURS) {
-            chart.disDimProp.set(PolyChart.DISDIM.TwoD);
+            chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
             chart.getDatasetAttributes().get(0).drawList.clear();
             chart.updateProjections();
             chart.updateProjectionScale();

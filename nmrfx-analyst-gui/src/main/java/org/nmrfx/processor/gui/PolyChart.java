@@ -109,7 +109,7 @@ public class PolyChart extends Region implements PeakListener {
     private final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
     private final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
     private final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
-    final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
+    private final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
     private final Canvas canvas;
     private final Canvas peakCanvas;
     private final Canvas annoCanvas;
@@ -131,6 +131,8 @@ public class PolyChart extends Region implements PeakListener {
     private final double[][] chartPhases = new double[2][15];
     private final Double[] pivotPosition = new Double[15];
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
+
+    //XXX use accessor instead
     public ChartProperties chartProps = new ChartProperties(this);
     NMRAxis[] axes = new NMRAxis[2];
     SliceAttributes sliceAttributes = new SliceAttributes();
@@ -141,6 +143,7 @@ public class PolyChart extends Region implements PeakListener {
     int datasetPhaseDim = 0;
     int phaseAxis = 0;
     AXMODE[] axModes = {AXMODE.PPM, AXMODE.PPM};
+
     private int crossHairNumH = 0;
     private int crossHairNumV = 0;
     private boolean hasMiddleMouseButton = false;
