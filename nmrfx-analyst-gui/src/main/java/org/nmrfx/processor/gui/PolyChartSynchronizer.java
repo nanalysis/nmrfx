@@ -43,7 +43,7 @@ public class PolyChartSynchronizer {
             }
         }
         // add sync names from other charts if not already added
-        for (PolyChart chart : getSceneMates(false)) {
+        for (PolyChart chart : getSceneMates()) {
             chart.getDimNames().forEach(name -> {
                 int iSync = chart.getSynchronizer().getSyncGroup(name);
                 if (iSync != 0) {
@@ -61,7 +61,7 @@ public class PolyChartSynchronizer {
             }
             addSync(name, syncMap.get(name));
         }
-        for (PolyChart mate : getSceneMates(false)) {
+        for (PolyChart mate : getSceneMates()) {
             for (String name : chart.getDimNames()) {
                 if (mate.getDimNames().contains(name)) {
                     int group = getSyncGroup(name);
@@ -71,13 +71,16 @@ public class PolyChartSynchronizer {
         }
     }
 
-    List<PolyChart> getSceneMates(boolean includeThis) {
+    /**
+     * Find all charts that share the same canvas as the reference one.
+     *
+     * @return a list of charts sharing the same canvas.
+     */
+    private List<PolyChart> getSceneMates() {
         List<PolyChart> sceneMates = new ArrayList<>();
         for (PolyChart potential : PolyChartManager.getInstance().getAllCharts()) {
-            if (potential.getCanvas() == chart.getCanvas()) {
-                if (includeThis || (potential != chart)) {
-                    sceneMates.add(potential);
-                }
+            if (potential != chart && potential.getCanvas() == chart.getCanvas()) {
+                sceneMates.add(potential);
             }
         }
         return sceneMates;
