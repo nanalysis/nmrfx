@@ -47,6 +47,7 @@ import org.apache.commons.lang3.Range;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.Nuclei;
@@ -300,10 +301,10 @@ public class PolyChart extends Region implements PeakListener {
         canvasHandles.forEach(handle -> handle.visibleProperty().bind(chartSelected));
         plotContent.getChildren().addAll(canvasHandles);
         loadData();
-        xAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 0, 0));
-        xAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 0, 1));
-        yAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 1, 0));
-        yAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 1, 1));
+        xAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 0, Axis.Bound.Lower));
+        xAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 0, Axis.Bound.Upper));
+        yAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 1, Axis.Bound.Lower));
+        yAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 1, Axis.Bound.Upper));
         canvas.setCursor(CanvasCursor.SELECTOR.getCursor());
         MapChangeListener<String, PeakList> mapChangeListener = change -> purgeInvalidPeakListAttributes();
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
@@ -1835,8 +1836,8 @@ public class PolyChart extends Region implements PeakListener {
                     } else {
                         axModes[i] = AXMODE.PTS;
                     }
-                    axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
-                    axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, 1));
+                    axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, Axis.Bound.Lower));
+                    axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, Axis.Bound.Upper));
                 }
             }
             drawSpectrum.setAxes(axes);
@@ -1868,8 +1869,8 @@ public class PolyChart extends Region implements PeakListener {
                 } else {
                     axModes[i] = AXMODE.PTS;
                 }
-                axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
-                axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, 1));
+                axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, Axis.Bound.Lower));
+                axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, Axis.Bound.Upper));
 
             }
             drawSpectrum.setAxes(axes);

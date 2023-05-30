@@ -17,28 +17,34 @@
  */
 package org.nmrfx.chart;
 
-import java.io.InputStream;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.geometry.Orientation;
-import static javafx.geometry.Orientation.VERTICAL;
-import static javafx.geometry.Orientation.HORIZONTAL;
-import javafx.geometry.VPos;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.TextAlignment;
-import org.nmrfx.graphicsio.GraphicsContextInterface;
-import org.nmrfx.graphicsio.GraphicsIOException;
-import org.nmrfx.graphicsio.StyledCanvasText;
+ import javafx.beans.property.BooleanProperty;
+ import javafx.beans.property.DoubleProperty;
+ import javafx.beans.property.SimpleDoubleProperty;
+ import javafx.geometry.Orientation;
+ import javafx.geometry.VPos;
+ import javafx.scene.paint.Color;
+ import javafx.scene.text.Font;
+ import javafx.scene.text.TextAlignment;
+ import org.nmrfx.graphicsio.GraphicsContextInterface;
+ import org.nmrfx.graphicsio.GraphicsIOException;
+ import org.nmrfx.graphicsio.StyledCanvasText;
+
+ import java.io.InputStream;
+
+ import static javafx.geometry.Orientation.HORIZONTAL;
+ import static javafx.geometry.Orientation.VERTICAL;
 
 /**
- *
  * @author brucejohnson
  */
 //TODO uncomment once core & utils are merged
 //@PluginAPI("ring")
 public class Axis {
+
+    public enum Bound {
+        Lower, Upper
+    }
+
     private static final double GRID_MINOR_LINE_WIDTH = 0.5;
     private static final double GRID_MAJOR_LINE_WIDTH = 1.0;
     private static final double GRID_DASHES = 1;

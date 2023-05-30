@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.chart.Axis;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,11 +46,10 @@ public class PolyChartSynchronizer {
      *
      * @param chart     the chart whose axis have been moved
      * @param axisIndex the index of the moved axis
-     * @param endNum    which axis bound has been moved
+     * @param bound     which axis bound has been moved (upper/lower)
      * @param newBound  the new upper or lower bound for this axis
      */
-    //TODO replace endNum with an enum
-    public void syncAxes(PolyChart chart, int axisIndex, int endNum, double newBound) {
+    public void syncAxes(PolyChart chart, int axisIndex, Axis.Bound bound, double newBound) {
         if (groups.isEmpty()) {
             return;
         }
@@ -68,7 +68,7 @@ public class PolyChartSynchronizer {
                 .forEach(toSync -> {
                     var axis = findAxis(toSync, dimensionName);
                     if (axis != null) {
-                        if (endNum == 0) {
+                        if (bound == Axis.Bound.Lower) {
                             axis.setLowerBound(newBound);
                         } else {
                             axis.setUpperBound(newBound);
@@ -116,11 +116,6 @@ public class PolyChartSynchronizer {
                 .orElse(null);
     }
 
-    /**
-     * Find all charts that share the same canvas as the reference one.
-     *
-     * @return a list of charts sharing the same canvas.
-     */
     private List<PolyChart> findChartsWithSameCanvas(PolyChart chart) {
         return PolyChartManager.getInstance().getAllCharts().stream()
                 .filter(potential -> potential.getCanvas() == chart.getCanvas())
