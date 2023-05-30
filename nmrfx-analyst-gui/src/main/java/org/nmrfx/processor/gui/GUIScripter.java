@@ -23,7 +23,6 @@ import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author Bruce Johnson
  */
 @PythonAPI("gscript")
@@ -71,8 +70,7 @@ public class GUIScripter {
     }
 
     public String active() {
-        PolyChart chart;
-        chart = useChart != null ? useChart : PolyChartManager.getInstance().getActiveChart();
+        PolyChart chart = useChart != null ? useChart : PolyChartManager.getInstance().getActiveChart();
         return chart.getName();
     }
 
