@@ -148,8 +148,8 @@ public class GUIScripter {
         double[] result = new double[2];
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            result[0] = chart.xAxis.getLowerBound();
-            result[1] = chart.xAxis.getUpperBound();
+            result[0] = chart.getXAxis().getLowerBound();
+            result[1] = chart.getXAxis().getUpperBound();
         });
         return result;
     }
@@ -157,8 +157,8 @@ public class GUIScripter {
     public void ppm(String axis, double ppm1, double ppm2) {
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            chart.xAxis.setLowerBound(ppm1);
-            chart.xAxis.setUpperBound(ppm2);
+            chart.getXAxis().setLowerBound(ppm1);
+            chart.getXAxis().setUpperBound(ppm2);
             chart.refresh();
         });
     }

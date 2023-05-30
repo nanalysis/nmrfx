@@ -1218,10 +1218,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         setChartDisable(true);
         if (charts.size() == 1) {
             PolyChart chart = charts.get(0);
-            double xLower = chart.xAxis.getLowerBound();
-            double xUpper = chart.xAxis.getUpperBound();
-            double yLower = chart.yAxis.getLowerBound();
-            double yUpper = chart.yAxis.getUpperBound();
+            double xLower = chart.getXAxis().getLowerBound();
+            double xUpper = chart.getXAxis().getUpperBound();
+            double yLower = chart.getYAxis().getLowerBound();
+            double yUpper = chart.getYAxis().getUpperBound();
             List<DatasetAttributes> datasetAttrs = chart.getDatasetAttributes();
             if (datasetAttrs.size() > 1) {
                 List<DatasetAttributes> current = new ArrayList<>(datasetAttrs);
@@ -1238,10 +1238,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 setChartDisable(true);
                 for (int i = 0; i < charts.size(); i++) {
                     PolyChart iChart = charts.get(i);
-                    iChart.xAxis.setLowerBound(xLower);
-                    iChart.xAxis.setUpperBound(xUpper);
-                    iChart.yAxis.setLowerBound(yLower);
-                    iChart.yAxis.setUpperBound(yUpper);
+                    iChart.getXAxis().setLowerBound(xLower);
+                    iChart.getXAxis().setUpperBound(xUpper);
+                    iChart.getYAxis().setLowerBound(yLower);
+                    iChart.getYAxis().setUpperBound(yUpper);
                     iChart.getCrossHairs().setAllStates(true);
                 }
                 setChartDisable(false);

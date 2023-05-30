@@ -102,8 +102,9 @@ public class PolyChart extends Region implements PeakListener {
     private static final String FONT_FAMILY = "Liberation Sans";
     private static boolean listenToPeaks = true;
     private static Consumer<PeakDeleteEvent> manualPeakDeleteAction = null;
-    final NMRAxis xAxis;
-    final NMRAxis yAxis;
+
+    private final NMRAxis xAxis = new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50);
+    private final NMRAxis yAxis = new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200);
     final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
     final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
     final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
@@ -172,8 +173,6 @@ public class PolyChart extends Region implements PeakListener {
         this.canvas = canvas;
         this.peakCanvas = peakCanvas;
         this.annoCanvas = annoCanvas;
-        xAxis = new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50);
-        yAxis = new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200);
         plotBackground = new Group();
         this.plotContent = plotContent;
         drawSpectrum = new DrawSpectrum(axes, canvas);
