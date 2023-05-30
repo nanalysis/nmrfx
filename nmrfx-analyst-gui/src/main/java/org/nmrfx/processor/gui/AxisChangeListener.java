@@ -29,7 +29,6 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 
 import java.text.DecimalFormat;
-import java.util.List;
 
 /**
  *
@@ -50,7 +49,6 @@ public class AxisChangeListener implements ChangeListener<Number> {
         this.chart = chart;
         this.axNum = axNum;
         this.endNum = endNum;
-
     }
 
     @Override
@@ -68,32 +66,9 @@ public class AxisChangeListener implements ChangeListener<Number> {
                     chart.controller.getStatusBar().updatePlaneSpinner(indexL, axNum, 0);
                     chart.controller.getStatusBar().updatePlaneSpinner(indexU, axNum, 1);
                 }
-                if (PolyChartSynchronizer.getNSyncGroups() > 0) {
-                    List<String> names = chart.getDimNames();
-                    String name = names.get(axNum);
-                    int syncGroup = chart.getSynchronizer().getSyncGroup(name);
 
-                    PolyChartManager.getInstance().getAllCharts().stream().filter((otherChart) -> (otherChart != chart)).forEach((otherChart) -> {
-                        List<String> otherNames = otherChart.getDimNames();
-                        int i = 0;
-                        for (String otherName : otherNames) {
-                            if (otherName.equals(name)) {
-                                int otherGroup = otherChart.getSynchronizer().getSyncGroup(otherName);
-                                if ((otherGroup > 0) && (syncGroup == otherGroup)) {
-                                    if (endNum == 0) {
-                                        otherChart.axes[i].setLowerBound(newBound);
-                                    } else {
-                                        otherChart.axes[i].setUpperBound(newBound);
-                                    }
-                                    otherChart.refresh();
-                                }
-                            }
-                            i++;
-                        }
-                    });
-                }
+                chart.getSynchronizer().syncAxes(axNum, endNum, newBound);
             }
         }
     }
-
 }

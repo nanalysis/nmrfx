@@ -17,11 +17,10 @@ public class PolyChartSynchronizer {
         this.chart = chart;
     }
 
-    public static int getNSyncGroups() {
-        return nSyncGroups;
-    }
-
     public void addSync(String name, int group) {
+        //XXX we never remove sync groups?!
+        //even when charts get removed apparently. Maybe that's why maps were stored in charts, but the counter would be wrong
+
         if (chart.getDimNames().contains(name)) {
             syncGroups.put(name, group);
         }
@@ -80,5 +79,35 @@ public class PolyChartSynchronizer {
                 .filter(potential -> potential != chart)
                 .filter(potential -> potential.getCanvas() == chart.getCanvas())
                 .toList();
+    }
+
+
+    public void syncAxes(int axNum, int endNum, double newBound) {
+        if (nSyncGroups <= 0) {
+            return;
+        }
+
+        List<String> names = chart.getDimNames();
+        String name = names.get(axNum);
+        int syncGroup = chart.getSynchronizer().getSyncGroup(name);
+
+        PolyChartManager.getInstance().getAllCharts().stream().filter((otherChart) -> (otherChart != chart)).forEach((otherChart) -> {
+            List<String> otherNames = otherChart.getDimNames();
+            int i = 0;
+            for (String otherName : otherNames) {
+                if (otherName.equals(name)) {
+                    int otherGroup = otherChart.getSynchronizer().getSyncGroup(otherName);
+                    if ((otherGroup > 0) && (syncGroup == otherGroup)) {
+                        if (endNum == 0) {
+                            otherChart.axes[i].setLowerBound(newBound);
+                        } else {
+                            otherChart.axes[i].setUpperBound(newBound);
+                        }
+                        otherChart.refresh();
+                    }
+                }
+                i++;
+            }
+        });
     }
 }
