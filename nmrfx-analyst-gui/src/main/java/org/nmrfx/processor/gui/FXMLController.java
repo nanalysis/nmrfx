@@ -1271,17 +1271,17 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
 
         DatasetAttributes activeAttr = firstAttributes.get();
-        if (activeChart.peakListAttributesList.isEmpty()) {
+        if (activeChart.getPeakListAttributes().isEmpty()) {
             alignCentersWithTempLists();
         } else {
-            PeakList refList = activeChart.peakListAttributesList.get(0).getPeakList();
+            PeakList refList = activeChart.getPeakListAttributes().get(0).getPeakList();
             List<String> dimNames = new ArrayList<>();
             dimNames.add(activeAttr.getLabel(0));
             dimNames.add(activeAttr.getLabel(1));
             List<PeakList> movingLists = new ArrayList<>();
             for (PolyChart chart : charts) {
                 if (chart != activeChart) {
-                    PeakList movingList = chart.peakListAttributesList.get(0).getPeakList();
+                    PeakList movingList = chart.getPeakListAttributes().get(0).getPeakList();
                     movingLists.add(movingList);
                 }
             }
