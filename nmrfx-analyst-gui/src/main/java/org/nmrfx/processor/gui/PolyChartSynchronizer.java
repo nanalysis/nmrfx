@@ -1,6 +1,5 @@
 package org.nmrfx.processor.gui;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,12 +76,9 @@ public class PolyChartSynchronizer {
      * @return a list of charts sharing the same canvas.
      */
     private List<PolyChart> getSceneMates() {
-        List<PolyChart> sceneMates = new ArrayList<>();
-        for (PolyChart potential : PolyChartManager.getInstance().getAllCharts()) {
-            if (potential != chart && potential.getCanvas() == chart.getCanvas()) {
-                sceneMates.add(potential);
-            }
-        }
-        return sceneMates;
+        return PolyChartManager.getInstance().getAllCharts().stream()
+                .filter(potential -> potential != chart)
+                .filter(potential -> potential.getCanvas() == chart.getCanvas())
+                .toList();
     }
 }
