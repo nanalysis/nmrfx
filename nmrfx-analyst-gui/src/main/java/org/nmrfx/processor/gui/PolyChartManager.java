@@ -26,6 +26,7 @@ public class PolyChartManager {
     private final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
     private final SimpleBooleanProperty multipleCharts = new SimpleBooleanProperty(false);
     private final SimpleObjectProperty<DatasetBase> currentDataset = new SimpleObjectProperty<>(null);
+    private final PolyChartSynchronizer synchronizer = new PolyChartSynchronizer();
     private int lastId = 0;
 
     public PolyChartManager() {
@@ -105,5 +106,9 @@ public class PolyChartManager {
 
     public SimpleObjectProperty<DatasetBase> currentDatasetProperty() {
         return currentDataset;
+    }
+
+    public PolyChartSynchronizer getSynchronizer() {
+        return synchronizer;
     }
 }

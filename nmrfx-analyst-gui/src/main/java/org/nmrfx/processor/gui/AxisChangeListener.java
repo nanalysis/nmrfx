@@ -67,7 +67,7 @@ public class AxisChangeListener implements ChangeListener<Number> {
                     chart.controller.getStatusBar().updatePlaneSpinner(indexU, axNum, 1);
                 }
 
-                chart.getSynchronizer().syncAxes(axNum, endNum, newBound);
+                PolyChartManager.getInstance().getSynchronizer().syncAxes(chart, axNum, endNum, newBound);
             }
         }
     }

@@ -129,7 +129,6 @@ public class PolyChart extends Region implements PeakListener {
     private final double[][] chartPhases = new double[2][15];
     private final Double[] pivotPosition = new Double[15];
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
-    private final PolyChartSynchronizer synchronizer = new PolyChartSynchronizer(this);
     public ChartProperties chartProps = new ChartProperties(this);
     NMRAxis[] axes = new NMRAxis[2];
     SliceAttributes sliceAttributes = new SliceAttributes();
@@ -4035,10 +4034,6 @@ public class PolyChart extends Region implements PeakListener {
             crossHairs.updatePosition(crossHairNum, orientation, value);
             return null;
         };
-    }
-
-    public PolyChartSynchronizer getSynchronizer() {
-        return synchronizer;
     }
 
     public void adjustLabels() {

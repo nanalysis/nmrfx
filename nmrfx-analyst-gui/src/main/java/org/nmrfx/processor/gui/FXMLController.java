@@ -1234,7 +1234,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                     iChart.setDataset(datasetAttr.getDataset());
                     iChart.setDatasetAttr(datasetAttr);
                 }
-                chart.getSynchronizer().syncSceneMates();
+                PolyChartManager.getInstance().getSynchronizer().syncSceneMates(chart);
                 setChartDisable(true);
                 for (int i = 0; i < charts.size(); i++) {
                     PolyChart iChart = charts.get(i);
