@@ -1264,7 +1264,13 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void alignCenters() {
-        DatasetAttributes activeAttr = activeChart.datasetAttributesList.get(0);
+        Optional<DatasetAttributes> firstAttributes = activeChart.getFirstDatasetAttributes();
+        if (firstAttributes.isEmpty()) {
+            log.warn("No dataset attributes on active chart!");
+            return;
+        }
+
+        DatasetAttributes activeAttr = firstAttributes.get();
         if (activeChart.peakListAttributesList.isEmpty()) {
             alignCentersWithTempLists();
         } else {
@@ -1284,7 +1290,13 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     private void alignCentersWithTempLists() {
-        DatasetAttributes activeAttr = activeChart.datasetAttributesList.get(0);
+        Optional<DatasetAttributes> firstAttributes = activeChart.getFirstDatasetAttributes();
+        if (firstAttributes.isEmpty()) {
+            log.warn("No dataset attributes on active chart!");
+            return;
+        }
+
+        DatasetAttributes activeAttr = firstAttributes.get();
         // any peak lists created just for alignmnent should be deleted
         PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, null, false, "refList");
         if (refList == null) {

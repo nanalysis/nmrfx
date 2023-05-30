@@ -847,9 +847,8 @@ public class SpectrumStatusBar {
 
     private void dimAction(String rowName, String dimName) {
         controller.getCharts().forEach(chart -> {
-            if (!chart.datasetAttributesList.isEmpty()) {
-                DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
-                datasetAttr.setDim(rowName, dimName);
+            chart.getFirstDatasetAttributes().ifPresent(attr -> {
+                attr.setDim(rowName, dimName);
                 setPlaneRanges();
                 chart.updateProjections();
                 chart.updateProjectionBorders();
@@ -858,19 +857,18 @@ public class SpectrumStatusBar {
                     // fixme  should be able to swap existing limits, not go to full
                     chart.full(i);
                 }
-            }
+            });
         });
     }
 
     private void updateXYMenu(MenuButton dimMenu, int iAxis) {
         PolyChart chart = controller.getActiveChart();
         dimMenu.getItems().clear();
-        if (!chart.datasetAttributesList.isEmpty()) {
-            DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
-            int nDim = datasetAttr.nDim;
+        chart.getFirstDatasetAttributes().ifPresent(attr -> {
+            int nDim = attr.nDim;
             String rowName = dimNames[iAxis];
             for (int iDim = 0; iDim < nDim; iDim++) {
-                String dimName = datasetAttr.getDataset().getLabel(iDim);
+                String dimName = attr.getDataset().getLabel(iDim);
                 MenuItem menuItem = new MenuItem(iDim + 1 + ":" + dimName);
                 menuItem.addEventHandler(ActionEvent.ACTION, event -> dimAction(rowName, dimName));
                 dimMenu.getItems().add(menuItem);
@@ -878,6 +876,6 @@ public class SpectrumStatusBar {
                     chart.updatePhaseDim();
                 }
             }
-        }
+        });
     }
 }

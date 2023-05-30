@@ -96,7 +96,7 @@ import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 public class PolyChart extends Region implements PeakListener {
     private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
     public static final int HORIZONTAL = 0;
-    public static final int VERTICAL = 1;
+    private static final int VERTICAL = 1;
     private static final double OVERLAP_SCALE = 3.0;
     private static final double MIN_MOVE = 20;
     private static final String FONT_FAMILY = "Liberation Sans";
@@ -105,7 +105,7 @@ public class PolyChart extends Region implements PeakListener {
 
     private final NMRAxis xAxis = new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50);
     private final NMRAxis yAxis = new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200);
-    final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
+    private final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
     final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
     final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
     final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
