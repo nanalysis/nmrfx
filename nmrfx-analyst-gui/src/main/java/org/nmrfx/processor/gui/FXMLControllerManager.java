@@ -152,9 +152,9 @@ public class FXMLControllerManager {
     }
 
     private void setActiveControllerFromChart() {
-        PolyChart activeChart = PolyChart.getActiveChart();
-        if (activeChart == null && !PolyChart.CHARTS.isEmpty()) {
-            activeChart = PolyChart.CHARTS.get(0);
+        PolyChart activeChart = PolyChartManager.getInstance().getActiveChart();
+        if (activeChart == null) {
+            activeChart = PolyChartManager.getInstance().getFirstChart();
         }
 
         if (activeChart == null || activeChart.getController() == null) {

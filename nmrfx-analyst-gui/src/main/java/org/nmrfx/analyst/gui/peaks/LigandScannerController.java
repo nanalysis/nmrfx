@@ -40,6 +40,7 @@ import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.tools.LigandScannerInfo;
 import org.nmrfx.processor.tools.MatrixAnalyzer;
@@ -75,7 +76,7 @@ public class LigandScannerController implements Initializable, StageBasedControl
     double[] mcsAlphas = null;
     double mcsTol = 0.0;
     int refIndex = 0;
-    PolyChart chart = PolyChart.getActiveChart();
+    PolyChart chart = PolyChartManager.getInstance().getActiveChart();
     XYCanvasChart activeChart = null;
     ChoiceBox<String> xArrayChoice;
     ChoiceBox<String> yArrayChoice;

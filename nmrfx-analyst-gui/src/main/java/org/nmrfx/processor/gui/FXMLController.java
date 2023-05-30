@@ -273,7 +273,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         deselectCharts();
         isFID = false;
         activeChart = chart;
-        PolyChart.activeChart.set(chart);
+        PolyChartManager.getInstance().setActiveChart(chart);
         ProcessorController processorController = chart.getProcessorController(false);
         processorPane.getChildren().clear();
         // The chart has a processor controller setup, and can be in FID or Dataset mode.
@@ -838,12 +838,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             topBar.getChildren().add(0, menuBar);
         }
         plotContent.setMouseTransparent(true);
-        PolyChart chart1 = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
-        activeChart = chart1;
+        activeChart = PolyChartManager.getInstance().create(this, plotContent, canvas, peakCanvas, annoCanvas);
         new CanvasBindings(this, canvas).setHandlers();
         initToolBar(toolBar);
-        charts.add(chart1);
-        chart1.setController(this);
+        charts.add(activeChart);
+        activeChart.setController(this);
 
         chartGroup = new GridPaneCanvas(this, canvas);
         chartGroup.addCharts(1, charts);
@@ -1091,7 +1090,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void addChart() {
-        PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
+        PolyChart chart = PolyChartManager.getInstance().create(this, plotContent, canvas, peakCanvas, annoCanvas);
         charts.add(chart);
         chart.setChartDisabled(true);
         chartGroup.addChart(chart);

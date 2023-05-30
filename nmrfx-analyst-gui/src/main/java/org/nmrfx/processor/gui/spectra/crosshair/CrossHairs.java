@@ -21,10 +21,7 @@ import javafx.geometry.Orientation;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.SpectrumMeasureBar;
-import org.nmrfx.processor.gui.SpectrumStatusBar;
+import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 
@@ -432,7 +429,7 @@ public class CrossHairs {
     }
 
     private static void updateAllCharts(PolyChart source, int index, double position, String dimLabel) {
-        PolyChart.CHARTS.stream()
+        PolyChartManager.getInstance().getAllCharts().stream()
                 .filter(c -> c != source)
                 .forEach(c -> c.getCrossHairs().sync(index, dimLabel, position));
     }

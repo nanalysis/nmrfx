@@ -217,7 +217,7 @@ public class PropertyManager {
     }
 
     void updatePhases(PropertySheet.Item item, Number oldValue, Number newValue) {
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         if (chart != null) {
             if (item.getName().equals("ph1")) {
                 adjustPhasePivot(propertySheet.getItems(), oldValue, newValue);
@@ -234,7 +234,7 @@ public class PropertyManager {
                 filter(e -> e.getName().equals("ph0")).findFirst().get();
         double deltaPH1 = newValue.doubleValue() - oldValue.doubleValue();
         double oldPH0 = ph0Item.doubleValue();
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         if (chart != null) {
             double pivotFraction = chart.getPivotFraction();
             if (pivotFraction != 0.0) {

@@ -23,13 +23,13 @@
  */
 package org.nmrfx.processor.gui;
 
-import java.text.DecimalFormat;
-import java.util.List;
-
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
+
+import java.text.DecimalFormat;
+import java.util.List;
 
 /**
  *
@@ -57,10 +57,8 @@ public class AxisChangeListener implements ChangeListener<Number> {
     public void changed(ObservableValue observable, Number oldValue, Number newValue) {
         if (axNum < chart.getNDim()) {
             chart.updateDatasetAttributeBounds();
-            Double oldBound = (Double) oldValue;
             double newBound = newValue.doubleValue();
-            if (chart == PolyChart.getActiveChart()) {
-                FXMLController fxmlController = chart.getFXMLController();
+            if (chart == PolyChartManager.getInstance().getActiveChart()) {
                 if (axNum >= 2) {
                     DatasetAttributes datasetAttributes = chart.getDatasetAttributes().get(0);
                     NMRAxis axis = chart.axes[axNum];
@@ -75,7 +73,7 @@ public class AxisChangeListener implements ChangeListener<Number> {
                     String name = names.get(axNum);
                     int syncGroup = chart.getSyncGroup(name);
 
-                    PolyChart.CHARTS.stream().filter((otherChart) -> (otherChart != chart)).forEach((otherChart) -> {
+                    PolyChartManager.getInstance().getAllCharts().stream().filter((otherChart) -> (otherChart != chart)).forEach((otherChart) -> {
                         List<String> otherNames = otherChart.getDimNames();
                         int i = 0;
                         for (String otherName : otherNames) {

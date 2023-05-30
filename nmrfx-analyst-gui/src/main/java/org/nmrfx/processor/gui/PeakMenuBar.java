@@ -1,5 +1,18 @@
 package org.nmrfx.processor.gui;
 
+import javafx.scene.control.*;
+import javafx.stage.FileChooser;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.io.PeakReader;
+import org.nmrfx.peaks.io.PeakWriter;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakListTools;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.utils.GUIUtils;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -12,23 +25,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Consumer;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextInputDialog;
-import javafx.scene.control.ToolBar;
-import javafx.stage.FileChooser;
-import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.io.PeakReader;
-import org.nmrfx.peaks.io.PeakWriter;
-import org.nmrfx.processor.datasets.peaks.PeakListTools;
-import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.utils.GUIUtils;
 
 /**
  *
@@ -189,7 +185,7 @@ public class PeakMenuBar {
         boolean ok = false;
         String datasetName = getPeakList().getDatasetName();
         if ((datasetName == null) || datasetName.equals("")) {
-            PolyChart chart = PolyChart.getActiveChart();
+            PolyChart chart = PolyChartManager.getInstance().getActiveChart();
             DatasetBase dataset = chart.getDataset();
             if (dataset != null) {
                 for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
@@ -303,7 +299,7 @@ public class PeakMenuBar {
     }
 
     void measureEVolumesMulti() {
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         var datasets = new ArrayList<Dataset>();
         for (var dataAttr : chart.getDatasetAttributes()) {
             datasets.add((Dataset) dataAttr.getDataset());

@@ -7,7 +7,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.project.ProjectBase;
@@ -36,7 +36,7 @@ public class SpectrumMenuActions extends MenuActions {
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
         deleteItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().removeSelectedChart());
         MenuItem syncMenuItem = new MenuItem("Sync Axes");
-        syncMenuItem.setOnAction(e -> PolyChart.getActiveChart().syncSceneMates());
+        syncMenuItem.setOnAction(e -> PolyChartManager.getInstance().getActiveChart().syncSceneMates());
 
         Menu arrangeMenu = new Menu("Arrange");
         MenuItem createGridItem = new MenuItem("Add Grid...");

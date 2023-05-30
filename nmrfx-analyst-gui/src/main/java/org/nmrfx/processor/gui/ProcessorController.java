@@ -804,7 +804,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             String scriptString = new String(encoded);
             parseScript(scriptString);
             chartProcessor.execScriptList(true);
-            PolyChart.getActiveChart().refresh();
+            PolyChartManager.getInstance().getActiveChart().refresh();
         } catch (IOException ioe) {
             log.warn("Can't read script {}", ioe.getMessage(), ioe);
         }

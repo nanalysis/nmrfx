@@ -22,6 +22,7 @@ import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.utils.GUIUtils;
@@ -79,13 +80,13 @@ public class RegionsTableController implements Initializable, StageBasedControll
     public void initialize(URL location, ResourceBundle rb) {
         regionsTable = new RegionsTable();
         regionsBorderPane.setCenter(regionsTable);
-        chart = PolyChart.getActiveChart();
+        chart = PolyChartManager.getInstance().getActiveChart();
         chart.addRegionListener(activeDatasetRegionListener);
         if (chart.getDataset() != null) {
             chart.getDataset().addDatasetRegionsListListener(datasetRegionsListListener);
         }
-        PolyChart.getCurrentDatasetProperty().addListener((observable, oldValue, newValue) -> {
-            if( oldValue != null) {
+        PolyChartManager.getInstance().currentDatasetProperty().addListener((observable, oldValue, newValue) -> {
+            if (oldValue != null) {
                 oldValue.removeDatasetRegionsListListener(datasetRegionsListListener);
             }
             if (newValue != null) {
@@ -115,7 +116,7 @@ public class RegionsTableController implements Initializable, StageBasedControll
                 peakRegionTool.clearAnalysis(false);
             }
         });
-        PolyChart.getActiveChartProperty().addListener(this::activeChartUpdatedListener);
+        PolyChartManager.getInstance().activeChartProperty().addListener(this::activeChartUpdatedListener);
         updateActiveChartRegions();
         selectedRowRegionsTableListener = this::setSelectedRowRegionsTableListener;
         regionsTable.getSelectionModel().selectedItemProperty().addListener(selectedRowRegionsTableListener);
@@ -164,7 +165,10 @@ public class RegionsTableController implements Initializable, StageBasedControll
         addRegionButton.disableProperty().unbind();
         autoIntegrateButton.disableProperty().unbind();
         removeAllButton.disableProperty().unbind();
-        BooleanBinding disableButtonBinding = Bindings.createBooleanBinding(() -> PolyChart.getCurrentDatasetProperty().get() == null || PolyChart.getCurrentDatasetProperty().get().getNDim() > 1, PolyChart.getCurrentDatasetProperty());
+        BooleanBinding disableButtonBinding = Bindings.createBooleanBinding(() -> {
+            if (PolyChartManager.getInstance().currentDatasetProperty().get() == null) return true;
+            return PolyChartManager.getInstance().currentDatasetProperty().get().getNDim() > 1;
+        }, PolyChartManager.getInstance().currentDatasetProperty());
         fileMenuButton.disableProperty().bind(disableButtonBinding);
         addRegionButton.disableProperty().bind(disableButtonBinding);
         autoIntegrateButton.disableProperty().bind(disableButtonBinding);
