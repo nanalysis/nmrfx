@@ -94,84 +94,79 @@ import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 @PluginAPI("parametric")
 public class PolyChart extends Region implements PeakListener {
     private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
-    private static boolean listenToPeaks = true;
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
     public static final ObservableList<PolyChart> CHARTS = FXCollections.observableArrayList();
     public static final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
     private static final SimpleObjectProperty<DatasetBase> currentDatasetProperty = new SimpleObjectProperty<>(null);
     private static final SimpleBooleanProperty multipleCharts = new SimpleBooleanProperty(false);
+    private static final double OVERLAP_SCALE = 3.0;
+    private static final double MIN_MOVE = 20;
+    private static final String FONT_FAMILY = "Liberation Sans";
+    private static boolean listenToPeaks = true;
     private static Consumer<PeakDeleteEvent> manualPeakDeleteAction = null;
+    private static int lastId = 0;
+    private static int nSyncGroups = 0;
 
     static {
         CHARTS.addListener((ListChangeListener) (e -> multipleCharts.set(CHARTS.size() > 1)));
     }
 
-    private static int lastId = 0;
-    private static int nSyncGroups = 0;
-    private static final double OVERLAP_SCALE = 3.0;
-    private static final double MIN_MOVE = 20;
+    final NMRAxis xAxis;
+    final NMRAxis yAxis;
+    final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
+    final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
+    final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
+    final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
+    final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
     private final Canvas canvas;
     private final Canvas peakCanvas;
     private final Canvas annoCanvas;
     private final Path bcPath = new Path();
     private final Rectangle highlightRect = new Rectangle();
     private final List<Rectangle> canvasHandles = List.of(new Rectangle(), new Rectangle(), new Rectangle(), new Rectangle());
-    private int crossHairNumH = 0;
-    private int crossHairNumV = 0;
-    private boolean hasMiddleMouseButton = false;
-    final NMRAxis xAxis;
-    final NMRAxis yAxis;
-    NMRAxis[] axes = new NMRAxis[2];
     private final Group plotBackground;
     private final Pane plotContent;
     private final DrawSpectrum drawSpectrum;
     private final DrawPeaks drawPeaks;
-    SliceAttributes sliceAttributes = new SliceAttributes();
-    private DatasetAttributes lastDatasetAttr = null;
     private final List<CanvasAnnotation> canvasAnnotations = new ArrayList<>();
-    private AnnoText parameterText = null;
     private final int id;
+    private final SimpleObjectProperty<DatasetRegion> activeRegion = new SimpleObjectProperty<>(null);
+    private final SimpleBooleanProperty chartSelected = new SimpleBooleanProperty(false);
+    private final Map<String, Object> popoverMap = new HashMap<>();
+    private final FileProperty datasetFileProp = new FileProperty();
+    private final BooleanProperty sliceStatus = new SimpleBooleanProperty(true);
+    // fixme 15 should be set automatically and correctly
+    private final double[][] chartPhases = new double[2][15];
+    private final Double[] pivotPosition = new Double[15];
+    private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
+    private final Map<String, Integer> syncGroups = new HashMap<>();
+    public ChartProperties chartProps = new ChartProperties(this);
+    NMRAxis[] axes = new NMRAxis[2];
+    SliceAttributes sliceAttributes = new SliceAttributes();
+    double minLeftBorder = 0.0;
+    double minBottomBorder = 0.0;
+    FXMLController controller;
+    ProcessorController processorController = null;
+    int datasetPhaseDim = 0;
+    int phaseAxis = 0;
+    AXMODE[] axModes = {AXMODE.PPM, AXMODE.PPM};
+    private int crossHairNumH = 0;
+    private int crossHairNumV = 0;
+    private boolean hasMiddleMouseButton = false;
+    private DatasetAttributes lastDatasetAttr = null;
+    private AnnoText parameterText = null;
     private double leftBorder = 0.0;
     private double rightBorder = 0.0;
     private double topBorder = 0.0;
     private double bottomBorder = 0.0;
-    double minLeftBorder = 0.0;
-    double minBottomBorder = 0.0;
     private double stackWidth = 0.0;
-    private static final String FONT_FAMILY = "Liberation Sans";
     private Font peakFont = new Font(FONT_FAMILY, 12);
     private boolean disabled = false;
-    public ChartProperties chartProps = new ChartProperties(this);
     private FXMLController sliceController = null;
-    private final SimpleObjectProperty<DatasetRegion> activeRegion = new SimpleObjectProperty<>(null);
-    private final SimpleBooleanProperty chartSelected = new SimpleBooleanProperty(false);
-    private final Map<String, Object> popoverMap = new HashMap<>();
-
-    private final FileProperty datasetFileProp = new FileProperty();
-    final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
-    final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
-    final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
-
-    FXMLController controller;
-    ProcessorController processorController = null;
-    private final BooleanProperty sliceStatus = new SimpleBooleanProperty(true);
-    final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
-    // fixme 15 should be set automatically and correctly
-    private final double[][] chartPhases = new double[2][15];
-    int datasetPhaseDim = 0;
-    int phaseAxis = 0;
     private double phaseFraction = 0.0;
-    private final Double[] pivotPosition = new Double[15];
     private boolean useImmediateMode = true;
-    private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
     private Consumer<DatasetRegion> newRegionConsumer = null;
-
-    public enum DISDIM {
-        OneDX, OneDY, TwoD
-    }
-
-    final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
     private ChartMenu specMenu;
     private ChartMenu peakMenu;
     private ChartMenu integralMenu;
@@ -182,15 +177,11 @@ public class PolyChart extends Region implements PeakListener {
     private DragBindings dragBindings;
     private CrossHairs crossHairs;
 
-    AXMODE[] axModes = {AXMODE.PPM, AXMODE.PPM};
-    private final Map<String, Integer> syncGroups = new HashMap<>();
-
     public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
         this(controller, plotContent, canvas, peakCanvas, annoCanvas,
                 new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50),
                 new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200)
         );
-
     }
 
     public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas, final NMRAxis... AXIS) {
@@ -240,10 +231,6 @@ public class PolyChart extends Region implements PeakListener {
         if (listenToPeaks) {
             Fx.runOnFxThread(() -> respondToPeakListChange(peakEvent));
         }
-    }
-
-    public static void setPeakListenerState(boolean state) {
-        listenToPeaks = state;
     }
 
     public void updateSelectedMultiplets() {
@@ -366,16 +353,6 @@ public class PolyChart extends Region implements PeakListener {
         return canvas;
     }
 
-    public static Optional<PolyChart> getChart(String name) {
-        Optional<PolyChart> result = Optional.empty();
-        for (PolyChart chart : CHARTS) {
-            if (chart.getName().equals(name)) {
-                result = Optional.of(chart);
-            }
-        }
-        return result;
-    }
-
     public FXMLController getFXMLController() {
         return controller;
     }
@@ -387,7 +364,6 @@ public class PolyChart extends Region implements PeakListener {
     public NMRAxis getYAxis() {
         return axes[1];
     }
-
 
     public void close() {
         plotContent.getChildren().removeAll(crossHairs.getAllGraphicalLines());
@@ -451,7 +427,7 @@ public class PolyChart extends Region implements PeakListener {
         return regionMenu;
     }
 
-    final protected void setDragHandlers(Node mouseNode) {
+    private void setDragHandlers(Node mouseNode) {
         mouseNode.setOnDragOver((DragEvent event) -> dragBindings.mouseDragOver(event));
         mouseNode.setOnDragDropped((DragEvent event) -> dragBindings.mouseDragDropped(event));
         mouseNode.setOnDragExited((DragEvent event) -> mouseNode.setStyle("-fx-border-color: #C6C6C6;"));
@@ -467,20 +443,13 @@ public class PolyChart extends Region implements PeakListener {
         currentDatasetProperty.set(getDataset());
     }
 
-    public static PolyChart getActiveChart() {
-        return activeChart.get();
-    }
-
-    public static SimpleObjectProperty<PolyChart> getActiveChartProperty() {
-        return activeChart;
-    }
-
-    public static SimpleObjectProperty<DatasetBase> getCurrentDatasetProperty() {
-        return currentDatasetProperty;
-    }
-
     public FXMLController getController() {
         return controller;
+    }
+
+    public void setController(FXMLController controller) {
+        this.controller = controller;
+        drawSpectrum.setController(controller);
     }
 
     //TODO move to CrossHairMouseHandler? CrossHairs?
@@ -653,11 +622,6 @@ public class PolyChart extends Region implements PeakListener {
         return iDim < axModes.length ? axModes[iDim] : null;
     }
 
-    public void setController(FXMLController controller) {
-        this.controller = controller;
-        drawSpectrum.setController(controller);
-    }
-
     public void setProcessorController(ProcessorController controller) {
         this.processorController = controller;
     }
@@ -676,6 +640,10 @@ public class PolyChart extends Region implements PeakListener {
             dataset = datasetAttributesList.get(0).getDataset();
         }
         return dataset;
+    }
+
+    public void setDataset(DatasetBase dataset) {
+        setDataset(dataset, false, false);
     }
 
     void removeAllDatasets() {
@@ -1210,7 +1178,6 @@ public class PolyChart extends Region implements PeakListener {
         return nDim;
     }
 
-
     public void autoScale() {
         ChartUndoScale undo = new ChartUndoScale(this);
         datasetAttributesList.forEach(this::autoScale);
@@ -1693,10 +1660,6 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    public void setDataset(DatasetBase dataset) {
-        setDataset(dataset, false, false);
-    }
-
     public boolean containsDataset(DatasetBase dataset) {
         boolean result = false;
         for (DatasetAttributes dataAttr : datasetAttributesList) {
@@ -2058,12 +2021,12 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    public void setChartDisabled(boolean state) {
-        disabled = state;
-    }
-
     public boolean isChartDisabled() {
         return disabled;
+    }
+
+    public void setChartDisabled(boolean state) {
+        disabled = state;
     }
 
     void highlightChart() {
@@ -2437,7 +2400,6 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-
     /**
      * Check whether the axis of the dataset attributes are compatible with the first element of the provided attributes
      * list. Incompatible attributes are removed from the list and the range is adjusted based on the remaining
@@ -2479,7 +2441,6 @@ public class PolyChart extends Region implements PeakListener {
             }
         }
     }
-
 
     /**
      * Counts the number of matches of the DatasetAttributes nucleus number names to the provided list of nucleus number
@@ -2720,16 +2681,16 @@ public class PolyChart extends Region implements PeakListener {
         return hit;
     }
 
-    public void setActiveRegion(DatasetRegion region) {
-        activeRegion.set(region);
-    }
-
     public Optional<DatasetRegion> getActiveRegion() {
         Optional<DatasetRegion> region = Optional.empty();
         if (activeRegion.get() != null) {
             region = Optional.of(activeRegion.get());
         }
         return region;
+    }
+
+    public void setActiveRegion(DatasetRegion region) {
+        activeRegion.set(region);
     }
 
     public boolean selectRegion(boolean controls, double pickX, double pickY) {
@@ -3455,7 +3416,7 @@ public class PolyChart extends Region implements PeakListener {
                         }
                     });
                 }
-                if (dim.length == 1) { // only draw multiples for 1D 
+                if (dim.length == 1) { // only draw multiples for 1D
                     List<Peak> roots = new ArrayList<>();
                     drawPeaks.clear1DBounds();
                     peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
@@ -3723,18 +3684,6 @@ public class PolyChart extends Region implements PeakListener {
         return value;
     }
 
-    public void setPh0(double ph0) {
-        if (datasetPhaseDim != -1) {
-            chartPhases[0][datasetPhaseDim] = ph0;
-        }
-    }
-
-    public void setPh1(double ph1) {
-        if (datasetPhaseDim != -1) {
-            chartPhases[1][datasetPhaseDim] = ph1;
-        }
-    }
-
     public double getPh0() {
         double value = 0.0;
         if (datasetPhaseDim != -1) {
@@ -3743,12 +3692,24 @@ public class PolyChart extends Region implements PeakListener {
         return value;
     }
 
+    public void setPh0(double ph0) {
+        if (datasetPhaseDim != -1) {
+            chartPhases[0][datasetPhaseDim] = ph0;
+        }
+    }
+
     public double getPh1() {
         double value = 0.0;
         if (datasetPhaseDim != -1) {
             value = chartPhases[1][datasetPhaseDim];
         }
         return value;
+    }
+
+    public void setPh1(double ph1) {
+        if (datasetPhaseDim != -1) {
+            chartPhases[1][datasetPhaseDim] = ph1;
+        }
     }
 
     public double getPh0(int iDim) {
@@ -4117,10 +4078,6 @@ public class PolyChart extends Region implements PeakListener {
         return result == null ? 0 : result;
     }
 
-    public static int getNSyncGroups() {
-        return nSyncGroups;
-    }
-
     public void syncSceneMates() {
         Map<String, Integer> syncMap = new HashMap<>();
         // get sync names for this chart
@@ -4270,10 +4227,6 @@ public class PolyChart extends Region implements PeakListener {
         return value;
     }
 
-    public static void registerPeakDeleteAction(Consumer<PeakDeleteEvent> func) {
-        manualPeakDeleteAction = func;
-    }
-
     public ProcessorController getProcessorController(boolean createIfNull) {
         if ((processorController == null) && createIfNull) {
             processorController = ProcessorController.create(getFXMLController(), getFXMLController().getProcessorPane(), this);
@@ -4360,5 +4313,43 @@ public class PolyChart extends Region implements PeakListener {
             chartProps.setRightBorderSize(ChartProperties.EMPTY_BORDER_DEFAULT_SIZE);
             refresh();
         }
+    }
+
+    public static void setPeakListenerState(boolean state) {
+        listenToPeaks = state;
+    }
+
+    public static Optional<PolyChart> getChart(String name) {
+        Optional<PolyChart> result = Optional.empty();
+        for (PolyChart chart : CHARTS) {
+            if (chart.getName().equals(name)) {
+                result = Optional.of(chart);
+            }
+        }
+        return result;
+    }
+
+    public static PolyChart getActiveChart() {
+        return activeChart.get();
+    }
+
+    public static SimpleObjectProperty<PolyChart> getActiveChartProperty() {
+        return activeChart;
+    }
+
+    public static SimpleObjectProperty<DatasetBase> getCurrentDatasetProperty() {
+        return currentDatasetProperty;
+    }
+
+    public static int getNSyncGroups() {
+        return nSyncGroups;
+    }
+
+    public static void registerPeakDeleteAction(Consumer<PeakDeleteEvent> func) {
+        manualPeakDeleteAction = func;
+    }
+
+    public enum DISDIM {
+        OneDX, OneDY, TwoD
     }
 }
