@@ -26,6 +26,7 @@ package org.nmrfx.processor.gui;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.geometry.HPos;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -170,10 +171,10 @@ public class SpectrumMeasureBar {
 
     public void update() {
         if (chart != null) {
-            for (int iOrient = 0; iOrient < 2; iOrient++) {
-                Double value0 = chart.crossHairStates[0][iOrient] ? chart.crossHairPositions[0][iOrient] : null;
-                Double value1 = chart.crossHairStates[1][iOrient] ? chart.crossHairPositions[1][iOrient] : null;
-                setCrossText(chart, dataset, iOrient, value0, value1);
+            for (Orientation orientation : Orientation.values()) {
+                Double value0 = chart.getCrossHairs().getState(0, orientation) ? chart.getCrossHairs().getPosition(0, orientation) : null;
+                Double value1 = chart.getCrossHairs().getState(1, orientation) ? chart.getCrossHairs().getPosition(1, orientation) : null;
+                setCrossText(chart, dataset, orientation, value0, value1);
             }
         }
     }
@@ -184,14 +185,14 @@ public class SpectrumMeasureBar {
         boolean ok = true;
         for (int i = 0; i < dataset.getNDim(); i++) {
             int disDim0 = chart.getDatasetAttributes().get(0).getDim(i);
-            int jOrient = i == 0 ? 1 : 0;
+            Orientation orientation = i == 0 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
             Double value = null;
             if (i > 1) {
                 int pt1 = (int) chart.axes[i].getLowerBound();
                 int pt2 = (int) chart.axes[i].getUpperBound();
                 pts[disDim0] = (pt1 + pt2) / 2;
             } else {
-                value = chart.crossHairStates[iCross][jOrient] ? chart.crossHairPositions[iCross][jOrient] : null;
+                value = chart.getCrossHairs().getState(iCross, orientation) ? chart.getCrossHairs().getPosition(iCross, orientation) : null;
                 if (value == null) {
                     ok = false;
                     break;
@@ -217,7 +218,7 @@ public class SpectrumMeasureBar {
         }
     }
 
-    public void setCrossText(PolyChart chart, DatasetBase dataset, int iOrient, Double... values) {
+    public void setCrossText(PolyChart chart, DatasetBase dataset, Orientation orientation, Double... values) {
         this.chart = chart;
         this.dataset = dataset;
         double[] pts = new double[2];
@@ -229,7 +230,7 @@ public class SpectrumMeasureBar {
         for (int iCross = 0; iCross < 3; iCross++) {
             String strValue = "";
             String strPtValue = "";
-            int chartDim = iOrient == 0 ? 1 : 0;
+            int chartDim = orientation == Orientation.HORIZONTAL ? 1 : 0;
             if ((chartDim == 0) || (chart.getNDim() > 1)) {
                 int disDim = chart.getDatasetAttributes().get(0).getDim(chartDim);
                 boolean freqMode = dataset.getFreqDomain(disDim);
@@ -271,8 +272,8 @@ public class SpectrumMeasureBar {
                     }
                 }
             }
-            crossText[iCross][iOrient][0].setText(strPtValue);
-            crossText[iCross][iOrient][1].setText(strValue);
+            crossText[iCross][orientation.ordinal()][0].setText(strPtValue);
+            crossText[iCross][orientation.ordinal()][1].setText(strValue);
         }
         getIntensity(chart, dataset, 0);
         getIntensity(chart, dataset, 1);

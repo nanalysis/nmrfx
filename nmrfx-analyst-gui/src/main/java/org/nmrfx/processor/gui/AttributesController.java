@@ -34,6 +34,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
+
 public class AttributesController implements Initializable {
     private static final Logger log = LoggerFactory.getLogger(AttributesController.class);
     static final DecimalFormat FORMATTER = new DecimalFormat();
@@ -1135,7 +1137,7 @@ public class AttributesController implements Initializable {
         getCharts(allCharts()).forEach(aChart -> {
             aChart.sliceAttributes.setSlice1Color(slice1ColorPicker.getValue());
             aChart.sliceAttributes.setSlice2Color(slice2ColorPicker.getValue());
-            aChart.getCrossHairs().refreshCrossHairs();
+            aChart.getCrossHairs().refresh();
         });
     }
 
@@ -1215,7 +1217,7 @@ public class AttributesController implements Initializable {
                     diff += Math.abs(posColor.getGreen() - color.getGreen());
                     diff += Math.abs(posColor.getBlue() - color.getBlue());
                     if (diff < 0.05) {
-                        dataAttr.setPosColor(PolyChart.chooseBlackWhite(color));
+                        dataAttr.setPosColor(toBlackOrWhite(color));
                     }
                 }
             }
@@ -1283,7 +1285,7 @@ public class AttributesController implements Initializable {
     }
 
     private void refreshSlices(PolyChart aChart) {
-        aChart.getCrossHairs().refreshCrossHairs();
+        aChart.getCrossHairs().refresh();
     }
     private void updateCharts() {
         PauseTransition wait = new PauseTransition(Duration.millis(5.0));

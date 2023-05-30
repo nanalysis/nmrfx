@@ -26,7 +26,7 @@ public class CrossHairMouseHandlerHandler extends MouseHandler {
         mouseBindings.getChart().handleCrossHair(mouseEvent, false);
         PolyChart chart = mouseBindings.getChart();
         if (!chart.getCanvasCursor().toString().equals("CROSSHAIR")) {
-            chart.getCrossHairs().setCrossHairState(false);
+            chart.getCrossHairs().setAllStates(false);
         }
 
     }

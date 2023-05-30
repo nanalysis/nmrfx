@@ -6,6 +6,7 @@
 package org.nmrfx.processor.gui;
 
 import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
@@ -48,7 +49,7 @@ public class PeakPicking {
         PolyChart chart = fxmlController.getActiveChart();
         ObservableList<DatasetAttributes> dataList = chart.getDatasetAttributes();
         dataList.stream().filter(dataAttr -> !dataAttr.isProjection())
-                .forEach((DatasetAttributes dataAttr) -> peakPickActive(chart, dataAttr, chart.getCrossHairs().hasCrosshairRegion(), refineLS, level, false, null));
+                .forEach((DatasetAttributes dataAttr) -> peakPickActive(chart, dataAttr, chart.getCrossHairs().hasRegion(), refineLS, level, false, null));
         chart.refresh();
     }
 
@@ -100,8 +101,8 @@ public class PeakPicking {
         if (level == null) {
             level = dataAttr.getLvl();
             if (nDim == 1) {
-                if (chart.crossHairStates[0][PolyChart.HORIZONTAL]) {
-                    level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
+                if (chart.getCrossHairs().getState(0, Orientation.HORIZONTAL)) {
+                    level = chart.getCrossHairs().getPosition(0, Orientation.HORIZONTAL);
                 } else {
                     level /= 10.0;
                 }
@@ -125,10 +126,10 @@ public class PeakPicking {
                         peakPickPar.limit(jDim, row, row);
                     }
                 } else if (useCrossHairs) {
-                    int orientation = iDim == 0 ? PolyChart.VERTICAL : PolyChart.HORIZONTAL;
+                    Orientation orientation = iDim == 0 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
                     peakPickPar.limit(jDim,
-                            chart.crossHairPositions[0][orientation],
-                            chart.crossHairPositions[1][orientation]);
+                            chart.getCrossHairs().getPosition(0, orientation),
+                            chart.getCrossHairs().getPosition(1, orientation));
                 } else {
                     peakPickPar.limit(jDim, chart.axes[iDim].getLowerBound(), chart.axes[iDim].getUpperBound());
                 }

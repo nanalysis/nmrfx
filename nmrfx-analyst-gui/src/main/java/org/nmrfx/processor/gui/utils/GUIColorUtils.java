@@ -31,4 +31,13 @@ public class GUIColorUtils {
         return color;
     }
 
+    /**
+     * Select black or white equivalent for a color, based on its brightness
+     *
+     * @param color any color
+     * @return BLACK or WHITE
+     */
+    public static Color toBlackOrWhite(Color color) {
+        return color.getBrightness() > 0.5 ? Color.BLACK : Color.WHITE;
+    }
 }

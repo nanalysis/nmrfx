@@ -27,7 +27,7 @@ import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.spectra.CrossHairs;
+import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
@@ -251,11 +251,11 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         if (analyzer != null) {
             PolyChart chart = getChart();
             CrossHairs crossHairs = chart.getCrossHairs();
-            if (!crossHairs.hasCrosshairState("h0")) {
+            if (!crossHairs.hasState("h0")) {
                 warn("Threshold", "Must have horizontal crosshair");
                 return;
             }
-            Double[] pos = crossHairs.getCrossHairPositions(0);
+            Double[] pos = crossHairs.getPositions(0);
             analyzer.setThreshold(pos[1]);
         }
     }

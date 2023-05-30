@@ -120,7 +120,7 @@ public class DatasetView {
         chart.updateDatasets(datasetTargets);
         if (datasetTargets.isEmpty()) {
             chart.removeProjections();
-            chart.getCrossHairs().hideCrossHairs();
+            chart.getCrossHairs().hideAll();
         } else {
             chart.updateProjections();
             chart.updateProjectionBorders();

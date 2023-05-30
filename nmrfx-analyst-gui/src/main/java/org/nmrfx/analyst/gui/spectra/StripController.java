@@ -23,6 +23,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
@@ -556,7 +557,7 @@ public class StripController implements ControllerTool {
             if (item.dataset != null) {
                 if (init) {
                     controller.addDataset(item.dataset, false, false);
-                    chart.getCrossHairs().setCrossHairState(0, 0, true);
+                    chart.getCrossHairs().setState(0, Orientation.HORIZONTAL, true);
                 }
                 chart.setDataset(item.dataset);
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);

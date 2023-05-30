@@ -68,7 +68,11 @@ import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
-import org.nmrfx.processor.gui.spectra.*;
+import org.nmrfx.processor.gui.spectra.CanvasBindings;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.PeakDisplayTool;
+import org.nmrfx.processor.gui.spectra.WindowIO;
+import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
@@ -525,7 +529,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
 
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
-        getActiveChart().setCrossHairState(true, true, true, true);
+        PolyChart polyChart = getActiveChart();
+        polyChart.getCrossHairs().setStates(true, true, true, true);
         getActiveChart().clearAnnotations();
         getActiveChart().clearPopoverTools();
         getActiveChart().removeProjections();
@@ -905,7 +910,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         Cursor cursor = cursorProperty.getValue();
         canvas.setCursor(cursor);
         for (PolyChart chart : charts) {
-            chart.getCrossHairs().setCrossHairState(CanvasCursor.isCrosshair(cursor));
+            chart.getCrossHairs().setAllStates(CanvasCursor.isCrosshair(cursor));
         }
         statusBar.updateCursorBox();
     }
@@ -923,8 +928,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return phaser;
     }
 
-    public boolean getCrossHairState(int iCross, int jOrient) {
-        return crossHairStates[iCross][jOrient];
+    public boolean getCrossHairState(int index, Orientation orientation) {
+        return crossHairStates[index][orientation.ordinal()];
     }
 
     public void enableFavoriteButton() {
@@ -1238,7 +1243,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                     iChart.xAxis.setUpperBound(xUpper);
                     iChart.yAxis.setLowerBound(yLower);
                     iChart.yAxis.setUpperBound(yUpper);
-                    iChart.getCrossHairs().setCrossHairState(true);
+                    iChart.getCrossHairs().setAllStates(true);
                 }
                 setChartDisable(false);
                 chartGroup.layoutChildren();
@@ -1405,14 +1410,15 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return result;
     }
 
-    public void toggleCrossHairState(int iCross, int jOrient) {
-        crossHairStates[iCross][jOrient] = !crossHairStates[iCross][jOrient];
-        boolean state = crossHairStates[iCross][jOrient];
+    public void toggleCrossHairState(int index, Orientation orientation) {
+        int orientationIndex = orientation.ordinal();
+        crossHairStates[index][orientationIndex] = !crossHairStates[index][orientationIndex];
+        boolean state = crossHairStates[index][orientationIndex];
         for (PolyChart chart : charts) {
             CrossHairs crossHairs = chart.getCrossHairs();
-            crossHairs.setCrossHairState(iCross, jOrient, state);
+            crossHairs.setState(index, orientation, state);
         }
-        statusBar.setIconState(iCross, jOrient, state);
+        statusBar.setIconState(index, orientation, state);
     }
 
     public void addSelectedPeakListener(ChangeListener listener) {

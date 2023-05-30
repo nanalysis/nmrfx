@@ -196,7 +196,7 @@ public class Phaser {
             chart.layoutPlotChildren();
         } else {
             chart.setPh0(deltaPH0);
-            chart.getCrossHairs().refreshCrossHairs();
+            chart.getCrossHairs().refresh();
         }
     }
 
@@ -232,7 +232,7 @@ public class Phaser {
         } else {
             chart.setPh0(deltaPH0);
             chart.setPh1(deltaPH1);
-            chart.getCrossHairs().refreshCrossHairs();
+            chart.getCrossHairs().refresh();
         }
     }
 
@@ -365,7 +365,7 @@ public class Phaser {
                 }
                 chart.setPh0(deltaPH0);
                 chart.setPh1(deltaPH1);
-                chart.getCrossHairs().refreshCrossHairs();
+                chart.getCrossHairs().refresh();
             }
         }
     }

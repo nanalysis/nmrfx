@@ -264,7 +264,7 @@ public class RegionsTableController implements Initializable, StageBasedControll
      */
     public void addRegion() {
         Dataset dataset = (Dataset) chart.getDataset();
-        double[] ppms = chart.getVerticalCrosshairPositions();
+        double[] ppms = chart.getCrossHairs().getVerticalPositions();
         DatasetRegion region = new DatasetRegion(ppms[0], ppms[1]);
         try {
             region.measure(dataset);

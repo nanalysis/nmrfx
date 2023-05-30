@@ -136,7 +136,7 @@ public class GUIScripter {
     public void center(Double[] positions) {
         Fx.runOnFxThread(() -> {
             if ((positions == null) || (positions.length == 0)) {
-                Double[] crossPositions = getChart().getCrossHairs().getCrossHairPositions();
+                Double[] crossPositions = getChart().getCrossHairs().getPositions();
                 getChart().moveTo(crossPositions);
             } else {
                 getChart().moveTo(positions);
