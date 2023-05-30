@@ -101,7 +101,6 @@ public class PolyChart extends Region implements PeakListener {
     private static final String FONT_FAMILY = "Liberation Sans";
     private static boolean listenToPeaks = true;
     private static Consumer<PeakDeleteEvent> manualPeakDeleteAction = null;
-    private static int nSyncGroups = 0;
     final NMRAxis xAxis;
     final NMRAxis yAxis;
     final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
@@ -130,7 +129,7 @@ public class PolyChart extends Region implements PeakListener {
     private final double[][] chartPhases = new double[2][15];
     private final Double[] pivotPosition = new Double[15];
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
-    private final Map<String, Integer> syncGroups = new HashMap<>();
+    private final PolyChartSynchronizer synchronizer = new PolyChartSynchronizer(this);
     public ChartProperties chartProps = new ChartProperties(this);
     NMRAxis[] axes = new NMRAxis[2];
     SliceAttributes sliceAttributes = new SliceAttributes();
@@ -167,7 +166,7 @@ public class PolyChart extends Region implements PeakListener {
     private DragBindings dragBindings;
     private CrossHairs crossHairs;
 
-    public PolyChart(FXMLController controller, String name, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
+    protected PolyChart(FXMLController controller, String name, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
         this.controller = controller;
         this.name = name;
         this.canvas = canvas;
@@ -4038,64 +4037,8 @@ public class PolyChart extends Region implements PeakListener {
         };
     }
 
-    public void addSync(String name, int group) {
-        if (getDimNames().contains(name)) {
-            syncGroups.put(name, group);
-        }
-    }
-
-    public int getSyncGroup(String name) {
-        Integer result = syncGroups.get(name);
-        return result == null ? 0 : result;
-    }
-
-    public void syncSceneMates() {
-        Map<String, Integer> syncMap = new HashMap<>();
-        // get sync names for this chart
-        for (String name : getDimNames()) {
-            int iSync = getSyncGroup(name);
-            if (iSync != 0) {
-                syncMap.put(name, iSync);
-            }
-        }
-        // add sync names from other charts if not already added
-        for (PolyChart chart : getSceneMates(false)) {
-            chart.getDimNames().forEach(name -> {
-                int iSync = chart.getSyncGroup(name);
-                if (iSync != 0) {
-                    if (!syncMap.containsKey(name)) {
-                        syncMap.put(name, iSync);
-                    }
-                }
-            });
-        }
-        // now add new group for any missing names
-        for (String name : getDimNames()) {
-            if (!syncMap.containsKey(name)) {
-                nSyncGroups++;
-                syncMap.put(name, nSyncGroups);
-            }
-            addSync(name, syncMap.get(name));
-        }
-        for (PolyChart chart : getSceneMates(false)) {
-            for (String name : getDimNames()) {
-                if (chart.getDimNames().contains(name)) {
-                    chart.addSync(name, getSyncGroup(name));
-                }
-            }
-        }
-    }
-
-    List<PolyChart> getSceneMates(boolean includeThis) {
-        List<PolyChart> sceneMates = new ArrayList<>();
-        for (PolyChart chart : PolyChartManager.getInstance().getAllCharts()) {
-            if (chart.canvas == canvas) {
-                if (includeThis || (chart != this)) {
-                    sceneMates.add(chart);
-                }
-            }
-        }
-        return sceneMates;
+    public PolyChartSynchronizer getSynchronizer() {
+        return synchronizer;
     }
 
     public void adjustLabels() {
@@ -4290,10 +4233,6 @@ public class PolyChart extends Region implements PeakListener {
 
     public static void setPeakListenerState(boolean state) {
         listenToPeaks = state;
-    }
-
-    public static int getNSyncGroups() {
-        return nSyncGroups;
     }
 
     public static void registerPeakDeleteAction(Consumer<PeakDeleteEvent> func) {

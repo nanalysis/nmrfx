@@ -36,7 +36,7 @@ public class SpectrumMenuActions extends MenuActions {
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
         deleteItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().removeSelectedChart());
         MenuItem syncMenuItem = new MenuItem("Sync Axes");
-        syncMenuItem.setOnAction(e -> PolyChartManager.getInstance().getActiveChart().syncSceneMates());
+        syncMenuItem.setOnAction(e -> PolyChartManager.getInstance().getActiveChart().getSynchronizer().syncSceneMates());
 
         Menu arrangeMenu = new Menu("Arrange");
         MenuItem createGridItem = new MenuItem("Add Grid...");
