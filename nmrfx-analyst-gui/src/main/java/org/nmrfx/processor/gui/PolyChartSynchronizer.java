@@ -16,6 +16,7 @@ import java.util.Objects;
  */
 public class PolyChartSynchronizer {
     private static final Logger log = LoggerFactory.getLogger(PolyChartSynchronizer.class);
+    private static final int MINIMAL_GROUP_SIZE = 2;
 
     // use weak references to keep PolyChart instance free for the garbage collector
     record SyncGroup(List<WeakReference<PolyChart>> refs, String dimensionName) {
@@ -27,18 +28,39 @@ public class PolyChartSynchronizer {
     // not using a Map with dimension name as a key, because the same dimension could be used for different independent groups.
     private final List<SyncGroup> groups = new ArrayList<>();
 
-    //FIXME groups are added but never removed
-    //we should add a way to remove obsolete groups or stop synchronizing them
-
     /**
      * Synchronize charts that share the same canvas as the entry point.
      *
      * @param chart the reference chart to use to find related charts to synchronize.
      */
-    public void syncSceneMates(PolyChart chart) {
+    public synchronized void syncSceneMates(PolyChart chart) {
         for (String dimension : chart.getDimNames()) {
             addToSyncGroup(chart, dimension);
         }
+    }
+
+    /**
+     * Remove synchronization groups that have only one (or even zero) chart active.
+     * Called each time a chart is unregistered.
+     */
+    public synchronized void clearObsoleteSynchronizations() {
+        if (groups.isEmpty()) {
+            return;
+        }
+
+        List<SyncGroup> obsolete = new ArrayList<>();
+        for (SyncGroup group : groups) {
+            long remaining = group.refs.stream()
+                    .map(WeakReference::get)
+                    .filter(Objects::nonNull) // exclude references to garbage-collected charts
+                    .filter(PolyChartManager.getInstance().getAllCharts()::contains) // excludes unregistered charts (even if not yet garbaged)
+                    .count();
+
+            if (remaining < MINIMAL_GROUP_SIZE) {
+                obsolete.add(group);
+            }
+        }
+        groups.removeAll(obsolete);
     }
 
     /**
@@ -49,7 +71,7 @@ public class PolyChartSynchronizer {
      * @param bound     which axis bound has been moved (upper/lower)
      * @param newBound  the new upper or lower bound for this axis
      */
-    public void syncAxes(PolyChart chart, int axisIndex, Axis.Bound bound, double newBound) {
+    public synchronized void syncAxes(PolyChart chart, int axisIndex, Axis.Bound bound, double newBound) {
         if (groups.isEmpty()) {
             return;
         }
@@ -93,11 +115,14 @@ public class PolyChartSynchronizer {
             groups.remove(group);
         }
 
-        // create a new group including the current chart
-        List<WeakReference<PolyChart>> refs = relatedCharts.stream()
-                .map(WeakReference::new)
-                .toList();
-        groups.add(new SyncGroup(refs, dimensionName));
+        if (relatedCharts.size() >= MINIMAL_GROUP_SIZE) {
+            // create a new group including the current chart
+            // only if at least two charts needs to be synchronized
+            List<WeakReference<PolyChart>> refs = relatedCharts.stream()
+                    .map(WeakReference::new)
+                    .toList();
+            groups.add(new SyncGroup(refs, dimensionName));
+        }
     }
 
     @Nullable
