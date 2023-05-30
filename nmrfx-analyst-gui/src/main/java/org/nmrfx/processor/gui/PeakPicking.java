@@ -169,7 +169,7 @@ public class PeakPicking {
             ExceptionDialog dialog = new ExceptionDialog(ioE);
             dialog.showAndWait();
         }
-        chart.peakStatus.set(true);
+        chart.setPeakStatus(true);
         return peakList;
     }
 
@@ -237,7 +237,7 @@ public class PeakPicking {
             ExceptionDialog dialog = new ExceptionDialog(ioE);
             dialog.showAndWait();
         }
-        chart.peakStatus.set(true);
+        chart.setPeakStatus(true);
         if ((peak != null)) {
             FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
             if (controller.isPeakAttrControllerShowing()) {

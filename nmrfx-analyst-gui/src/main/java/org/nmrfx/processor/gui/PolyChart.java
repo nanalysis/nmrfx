@@ -107,8 +107,8 @@ public class PolyChart extends Region implements PeakListener {
     private final NMRAxis yAxis = new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200);
     private final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
     private final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
-    final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
-    final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
+    private final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
+    private final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
     final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
     private final Canvas canvas;
     private final Canvas peakCanvas;
