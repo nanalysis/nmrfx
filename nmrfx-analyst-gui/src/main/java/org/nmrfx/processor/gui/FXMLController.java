@@ -32,6 +32,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
@@ -1123,13 +1124,13 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             } else {
                 chart.setAxisState(true, true);
             }
-            double[] borders = chart.getMinBorders();
-            bordersGrid[0][iCol] = Math.max(bordersGrid[0][iCol], borders[0]);
-            bordersGrid[1][iCol] = Math.max(bordersGrid[1][iCol], borders[1]);
-            bordersGrid[2][iRow] = Math.max(bordersGrid[2][iRow], borders[2]);
-            bordersGrid[3][iRow] = Math.max(bordersGrid[3][iRow], borders[3]);
-            maxBorderX = Math.max(maxBorderX, borders[0]);
-            maxBorderY = Math.max(maxBorderY, borders[2]);
+            Insets borders = chart.getMinBorders();
+            bordersGrid[0][iCol] = Math.max(bordersGrid[0][iCol], borders.getLeft());
+            bordersGrid[1][iCol] = Math.max(bordersGrid[1][iCol], borders.getRight());
+            bordersGrid[2][iRow] = Math.max(bordersGrid[2][iRow], borders.getBottom());
+            bordersGrid[3][iRow] = Math.max(bordersGrid[3][iRow], borders.getTop());
+            maxBorderX = Math.max(maxBorderX, borders.getLeft());
+            maxBorderY = Math.max(maxBorderY, borders.getBottom());
 
             double ppmX0 = chart.getXAxis().getLowerBound();
             double ppmX1 = chart.getXAxis().getUpperBound();

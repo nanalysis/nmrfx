@@ -1917,41 +1917,39 @@ public class PolyChart extends Region implements PeakListener {
         Fx.runOnFxThread(this::refresh);
     }
 
-    //XXX return insets directly
-    public double[] getMinBorders() {
+    public Insets getMinBorders() {
+        // A bit misleading: this also sets axis font sizes.
+        // necessary because axis border size depends on font size...
         xAxis.setTickFontSize(chartProps.getTicFontSize());
         xAxis.setLabelFontSize(chartProps.getLabelFontSize());
-        double[] borders = new double[4];
-
         yAxis.setTickFontSize(chartProps.getTicFontSize());
         yAxis.setLabelFontSize(chartProps.getLabelFontSize());
 
-        borders[0] = is1D() && !chartProps.getIntensityAxis() ? 8 : yAxis.getBorderSize();
-        borders[2] = xAxis.getBorderSize();
-
-        borders[1] = borders[0] / 4;
-        borders[3] = borders[2] / 4;
-        borders[3] = chartProps.getTopBorderSize();
-        borders[1] = chartProps.getRightBorderSize();
-        return borders;
+        double top = chartProps.getTopBorderSize();
+        double right = chartProps.getRightBorderSize();
+        double bottom = xAxis.getBorderSize();
+        double left = is1D() && !chartProps.getIntensityAxis() ? 8 : yAxis.getBorderSize();
+        return new Insets(top, right, bottom, left);
     }
 
-    //XXX return insets directly
-    private double[] getUseBorders() {
-        double[] borders = getMinBorders();
-        borders[0] = Math.max(borders[0], minLeftBorder);
-        borders[0] = Math.max(borders[0], chartProps.getLeftBorderSize());
-        borders[2] = Math.max(borders[2], minBottomBorder);
-        borders[2] = Math.max(borders[2], chartProps.getBottomBorderSize());
+    private Insets getUseBorders() {
+        Insets min = getMinBorders();
+        double left = Math.max(min.getLeft(), minLeftBorder);
+        left = Math.max(left, chartProps.getLeftBorderSize());
+        double bottom = Math.max(min.getBottom(), minBottomBorder);
+        bottom = Math.max(bottom, chartProps.getBottomBorderSize());
+        Insets borders = new Insets(min.getTop(), min.getRight(), bottom, left);
         if (chartProps.getAspect() && !is1D()) {
-            adjustAspect(borders);
+            borders = adjustAspect(borders);
         }
         return borders;
     }
 
-    void adjustAspect(double[] borders) {
+    private Insets adjustAspect(Insets borders) {
         double width = getWidth();
         double height = getHeight();
+        double adjustedTop = borders.getTop();
+        double adjustedRight = borders.getRight();
         if ((axModes[0] == AXMODE.PPM) && (axModes[1] == AXMODE.PPM)) {
             if (!datasetAttributesList.isEmpty()) {
                 DatasetAttributes dAttr = datasetAttributesList.get(0);
@@ -1969,20 +1967,22 @@ public class PolyChart extends Region implements PeakListener {
                         double ppmRatioF = fRatio1 / fRatio0;
                         double chartAspectRatio = chartProps.getAspectRatio();
                         double aspectRatio = chartAspectRatio * (ppmRatio / ppmRatioF);
-                        double dX = width - borders[0] - borders[1];
-                        double dY = height - (borders[2] + borders[3]);
+                        double dX = width - borders.getLeft() - adjustedRight;
+                        double dY = height - (borders.getBottom() + adjustedTop);
                         double newDX = dY * aspectRatio;
 
                         if (newDX > dX) {
                             double newDY = dX / aspectRatio;
-                            borders[3] = height - borders[2] - newDY;
+                            adjustedTop = height - borders.getBottom() - newDY;
                         } else {
-                            borders[1] = width - borders[0] - newDX;
+                            adjustedRight = width - borders.getLeft() - newDX;
                         }
                     }
                 }
             }
         }
+
+        return new Insets(adjustedTop, adjustedRight, borders.getBottom(), borders.getLeft());
     }
 
     public boolean isChartDisabled() {
@@ -2066,9 +2066,7 @@ public class PolyChart extends Region implements PeakListener {
 
             yAxis.setTickFontSize(chartProps.getTicFontSize());
             yAxis.setLabelFontSize(chartProps.getLabelFontSize());
-            double[] borderArray = getUseBorders();
-            //top, right, bottom, left
-            borders = new Insets(borderArray[3], borderArray[1], borderArray[2], borderArray[0]);
+            borders = getUseBorders();
             stackWidth = 0.0;
             double axWidth = width - borders.getLeft() - borders.getRight();
             if (disDimProp.get() != DISDIM.TwoD) {
