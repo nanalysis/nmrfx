@@ -1899,7 +1899,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         List<PolyChart> charts = controller.getCharts();
         int iChart = 0;
         for (PolyChart chart : charts) {
-            chart.chartProps.setTitles(true);
+            chart.getChartProperties().setTitles(true);
             if (!chart.getPeakListAttributes().isEmpty()) {
                 PeakListAttributes peakAttr = chart.getPeakListAttributes().get(0);
                 peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.Number);
@@ -1926,8 +1926,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         spinStatus.showScore(spinSystems);
 
         for (PolyChart chart : charts) {
-            chart.chartProps.setTopBorderSize(25);
-            chart.chartProps.setTitles(true);
+            chart.getChartProperties().setTopBorderSize(25);
+            chart.getChartProperties().setTitles(true);
             int iCol = iChart % resOffsets.length;
             iCol = iCol >= spinSystems.size() ? 0 : iCol;
             SpinSystem spinSystem = spinSystems.get(iCol);

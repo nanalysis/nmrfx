@@ -103,7 +103,7 @@ public class ChartProperties implements PublicPropertyContainer {
     }
 
     public void copyTo(PolyChart destChart) {
-        ChartProperties destProps = destChart.chartProps;
+        ChartProperties destProps = destChart.getChartProperties();
         destProps.setLeftBorderSize(getLeftBorderSize());
         destProps.setRightBorderSize(getRightBorderSize());
         destProps.setTopBorderSize(getTopBorderSize());

@@ -503,8 +503,8 @@ public class ScannerTool implements ControllerTool {
             }
         }
         dataset.setRegions(regions);
-        chart.chartProps.setRegions(true);
-        chart.chartProps.setIntegrals(false);
+        chart.getChartProperties().setRegions(true);
+        chart.getChartProperties().setIntegrals(false);
         chart.refresh();
     }
 
@@ -513,7 +513,7 @@ public class ScannerTool implements ControllerTool {
         List<DatasetRegion> regions = new ArrayList<>();
 
         dataset.setRegions(regions);
-        chart.chartProps.setRegions(false);
+        chart.getChartProperties().setRegions(false);
         chart.refresh();
     }
 
