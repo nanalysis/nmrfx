@@ -139,9 +139,9 @@ public class PolyChart extends Region implements PeakListener {
     ProcessorController processorController = null;
     int datasetPhaseDim = 0;
     int phaseAxis = 0;
-    AXMODE[] axModes = {AXMODE.PPM, AXMODE.PPM};
 
     private NMRAxis[] axes = new NMRAxis[2];
+    private AXMODE[] axModes = {AXMODE.PPM, AXMODE.PPM};
     private int crossHairNumH = 0;
     private int crossHairNumV = 0;
     private boolean hasMiddleMouseButton = false;

@@ -134,8 +134,8 @@ public class PeakPicking {
                     peakPickPar.limit(jDim, chart.getAxis(iDim).getLowerBound(), chart.getAxis(iDim).getUpperBound());
                 }
             } else {
-                int p1 = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.getAxis(iDim).getLowerBound());
-                int p2 = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.getAxis(iDim).getUpperBound());
+                int p1 = chart.getAxMode(iDim).getIndex(dataAttr, iDim, chart.getAxis(iDim).getLowerBound());
+                int p2 = chart.getAxMode(iDim).getIndex(dataAttr, iDim, chart.getAxis(iDim).getUpperBound());
                 if (dataAttr.drawList.isEmpty()) {
                     peakPickPar.limit(jDim, p1, p2);
                 } else {
@@ -207,7 +207,7 @@ public class PeakPicking {
                 double pos = iDim == 0 ? x : y;
                 peakPickPar.limit(jDim, pos, pos);
             } else {
-                if (chart.axModes[iDim] == DatasetAttributes.AXMODE.PTS) {
+                if (chart.getAxMode(iDim) == DatasetAttributes.AXMODE.PTS) {
                     peakPickPar.limit(jDim, (int) chart.getAxis(iDim).getLowerBound(), (int) chart.getAxis(iDim).getUpperBound());
                 } else {
                     peakPickPar.limit(jDim, chart.getAxis(iDim).getLowerBound(), chart.getAxis(iDim).getUpperBound());

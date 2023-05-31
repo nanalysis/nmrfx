@@ -298,8 +298,8 @@ public class SpectrumMeasureBar {
             int[] width = new int[nDim];
             for (int iDim = 0; iDim < nDim; iDim++) {
                 int[] limits = new int[2];
-                limits[0] = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.getAxis(iDim).getLowerBound());
-                limits[1] = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.getAxis(iDim).getUpperBound());
+                limits[0] = chart.getAxMode(iDim).getIndex(dataAttr, iDim, chart.getAxis(iDim).getLowerBound());
+                limits[1] = chart.getAxMode(iDim).getIndex(dataAttr, iDim, chart.getAxis(iDim).getUpperBound());
 
                 if (limits[0] < limits[1]) {
                     pt[iDim][0] = limits[0];

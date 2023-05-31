@@ -606,8 +606,8 @@ public class AttributesController implements Initializable {
             double upper = axis.getUpperBound();
             if (i > 1 && !chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                int lowPt = chart.axModes[i].getIndex(dataAttr, i, lower);
-                int upPt = chart.axModes[i].getIndex(dataAttr, i, upper);
+                int lowPt = chart.getAxMode(i).getIndex(dataAttr, i, lower);
+                int upPt = chart.getAxMode(i).getIndex(dataAttr, i, upper);
 
                 chart.controller.getStatusBar().updatePlaneSpinner(lowPt, i, 0);
                 chart.controller.getStatusBar().updatePlaneSpinner(upPt, i, 1);

@@ -43,8 +43,8 @@ public class AxisChangeListener implements ChangeListener<Number> {
                 if (axisIndex >= 2) {
                     DatasetAttributes datasetAttributes = chart.getDatasetAttributes().get(0);
                     NMRAxis axis = chart.getAxis(axisIndex);
-                    int indexL = chart.axModes[axisIndex].getIndex(datasetAttributes, axisIndex, axis.getLowerBound());
-                    int indexU = chart.axModes[axisIndex].getIndex(datasetAttributes, axisIndex, axis.getUpperBound());
+                    int indexL = chart.getAxMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getLowerBound());
+                    int indexU = chart.getAxMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getUpperBound());
 
                     chart.controller.getStatusBar().updatePlaneSpinner(indexL, axisIndex, 0);
                     chart.controller.getStatusBar().updatePlaneSpinner(indexU, axisIndex, 1);

@@ -444,8 +444,8 @@ public class SpectrumStatusBar {
                 DatasetAttributes dataAttr = newChart.getDatasetAttributes().get(0);
                 for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
                     NMRAxis axis = newChart.getAxis(axNum);
-                    int indexL = newChart.axModes[axNum].getIndex(dataAttr, axNum, axis.getLowerBound());
-                    int indexU = newChart.axModes[axNum].getIndex(dataAttr, axNum, axis.getUpperBound());
+                    int indexL = newChart.getAxMode(axNum).getIndex(dataAttr, axNum, axis.getLowerBound());
+                    int indexU = newChart.getAxMode(axNum).getIndex(dataAttr, axNum, axis.getUpperBound());
                     int dDim = dataAttr.dim[axNum];
                     int size = dataAttr.getDataset().getSizeReal(dDim);
                     setPlaneRanges(axNum, size);
@@ -573,16 +573,16 @@ public class SpectrumStatusBar {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 NMRAxis axis = chart.getAxis(iDim);
                 int[] pts = new int[2];
-                pts[0] = chart.axModes[iDim].getIndex(dataAttr, iDim, axis.getLowerBound());
-                pts[1] = chart.axModes[iDim].getIndex(dataAttr, iDim, axis.getUpperBound());
+                pts[0] = chart.getAxMode(iDim).getIndex(dataAttr, iDim, axis.getLowerBound());
+                pts[1] = chart.getAxMode(iDim).getIndex(dataAttr, iDim, axis.getUpperBound());
                 int other = iSpin == 0 ? 1 : 0;
                 int delta = pts[other] - pts[iSpin];
                 pts[iSpin] = plane;
                 if (!shiftDown) {
                     pts[other] = pts[iSpin] + delta;
                 }
-                double ppm1 = chart.axModes[iDim].indexToValue(dataAttr, iDim, pts[0]);
-                double ppm2 = chart.axModes[iDim].indexToValue(dataAttr, iDim, pts[1]);
+                double ppm1 = chart.getAxMode(iDim).indexToValue(dataAttr, iDim, pts[0]);
+                double ppm2 = chart.getAxMode(iDim).indexToValue(dataAttr, iDim, pts[1]);
                 ChartUndoLimits undo = new ChartUndoLimits(controller.getActiveChart());
                 controller.getActiveChart().setAxis(iDim, ppm1, ppm2);
                 controller.getActiveChart().refresh();
