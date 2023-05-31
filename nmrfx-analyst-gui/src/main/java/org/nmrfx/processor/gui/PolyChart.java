@@ -24,10 +24,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.*;
-import javafx.geometry.BoundingBox;
-import javafx.geometry.Bounds;
-import javafx.geometry.Orientation;
-import javafx.geometry.VPos;
+import javafx.geometry.*;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -149,10 +146,7 @@ public class PolyChart extends Region implements PeakListener {
     private boolean hasMiddleMouseButton = false;
     private DatasetAttributes lastDatasetAttr = null;
     private AnnoText parameterText = null;
-    private double leftBorder = 0.0;
-    private double rightBorder = 0.0;
-    private double topBorder = 0.0;
-    private double bottomBorder = 0.0;
+    private Insets borders = Insets.EMPTY;
     private double stackWidth = 0.0;
     private Font peakFont = new Font(FONT_FAMILY, 12);
     private boolean disabled = false;
@@ -475,8 +469,8 @@ public class PolyChart extends Region implements PeakListener {
                     annoGC.strokeLine(dragStart[0], y - 20, dragStart[0], y + 20);
                     annoGC.strokeLine(dragStart[0], y, x, y);
                 } else {
-                    annoGC.strokeLine(x, yPos + topBorder, x, yPos + getHeight() - bottomBorder);
-                    annoGC.strokeLine(dragStart[0], yPos + topBorder, dragStart[0], yPos + getHeight() - bottomBorder);
+                    annoGC.strokeLine(x, yPos + borders.getTop(), x, yPos + getHeight() - borders.getBottom());
+                    annoGC.strokeLine(dragStart[0], yPos + borders.getTop(), dragStart[0], yPos + getHeight() - borders.getBottom());
                 }
             } else {
                 annoGC.strokeRect(startX, startY, dX, dY);
@@ -1923,6 +1917,7 @@ public class PolyChart extends Region implements PeakListener {
         Fx.runOnFxThread(this::refresh);
     }
 
+    //XXX return insets directly
     public double[] getMinBorders() {
         xAxis.setTickFontSize(chartProps.getTicFontSize());
         xAxis.setLabelFontSize(chartProps.getLabelFontSize());
@@ -1941,7 +1936,8 @@ public class PolyChart extends Region implements PeakListener {
         return borders;
     }
 
-    public double[] getUseBorders() {
+    //XXX return insets directly
+    private double[] getUseBorders() {
         double[] borders = getMinBorders();
         borders[0] = Math.max(borders[0], minLeftBorder);
         borders[0] = Math.max(borders[0], chartProps.getLeftBorderSize());
@@ -2070,13 +2066,11 @@ public class PolyChart extends Region implements PeakListener {
 
             yAxis.setTickFontSize(chartProps.getTicFontSize());
             yAxis.setLabelFontSize(chartProps.getLabelFontSize());
-            double[] borders = getUseBorders();
-            leftBorder = borders[0];
-            rightBorder = borders[1];
-            bottomBorder = borders[2];
-            topBorder = borders[3];
+            double[] borderArray = getUseBorders();
+            //top, right, bottom, left
+            borders = new Insets(borderArray[3], borderArray[1], borderArray[2], borderArray[0]);
             stackWidth = 0.0;
-            double axWidth = width - leftBorder - rightBorder;
+            double axWidth = width - borders.getLeft() - borders.getRight();
             if (disDimProp.get() != DISDIM.TwoD) {
                 int n1D = datasetAttributesList.stream().filter(d -> !d.isProjection() && d.getPos())
                         .mapToInt(d -> d.getLastChunk(0) + 1).sum();
@@ -2087,12 +2081,12 @@ public class PolyChart extends Region implements PeakListener {
             }
 
             xAxis.setWidth(axWidth - stackWidth);
-            xAxis.setHeight(bottomBorder);
-            xAxis.setOrigin(xPos + leftBorder, yPos + getHeight() - bottomBorder);
+            xAxis.setHeight(borders.getBottom());
+            xAxis.setOrigin(xPos + borders.getLeft(), yPos + getHeight() - borders.getBottom());
 
-            yAxis.setHeight(height - bottomBorder - topBorder);
-            yAxis.setWidth(leftBorder);
-            yAxis.setOrigin(xPos + leftBorder, yPos + getHeight() - bottomBorder);
+            yAxis.setHeight(height - borders.getBottom() - borders.getTop());
+            yAxis.setWidth(borders.getLeft());
+            yAxis.setOrigin(xPos + borders.getLeft(), yPos + getHeight() - borders.getBottom());
 
             gC.setStroke(axesColorLocal);
             xAxis.setColor(axesColorLocal);
@@ -2119,8 +2113,8 @@ public class PolyChart extends Region implements PeakListener {
             xAxis.draw(gC);
             if (!is1D() || chartProps.getIntensityAxis()) {
                 yAxis.draw(gC);
-                gC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
-                gC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
+                gC.strokeLine(xPos + borders.getLeft(), yPos + borders.getTop(), xPos + width - borders.getRight(), yPos + borders.getTop());
+                gC.strokeLine(xPos + width - borders.getRight(), yPos + borders.getTop(), xPos + width - borders.getRight(), yPos + height - borders.getBottom());
             }
 
             peakCanvas.setWidth(canvas.getWidth());
@@ -2185,8 +2179,8 @@ public class PolyChart extends Region implements PeakListener {
         xAxis.draw(svgGC);
         if (!is1D() || chartProps.getIntensityAxis()) {
             yAxis.draw(svgGC);
-            svgGC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
-            svgGC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
+            svgGC.strokeLine(xPos + borders.getLeft(), yPos + borders.getTop(), xPos + width - borders.getRight(), yPos + borders.getTop());
+            svgGC.strokeLine(xPos + width - borders.getRight(), yPos + borders.getTop(), xPos + width - borders.getRight(), yPos + height - borders.getBottom());
         }
         drawDatasets(svgGC);
         drawSlices(svgGC);
@@ -2250,7 +2244,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
                 gC.save();
                 double clipExtra = 1;
-                drawSpectrum.setClipRect(xPos + leftBorder + clipExtra, yPos + topBorder + clipExtra,
+                drawSpectrum.setClipRect(xPos + borders.getLeft() + clipExtra, yPos + borders.getTop() + clipExtra,
                         xAxis.getWidth() - 2 * clipExtra + stackWidth, yAxis.getHeight() - 2 * clipExtra);
 
                 drawSpectrum.clip(gC);
@@ -2351,14 +2345,14 @@ public class PolyChart extends Region implements PeakListener {
         double fontSize = chartProps.getTicFontSize();
         gC.setFont(Font.font(fontSize));
         gC.setTextAlign(TextAlignment.LEFT);
-        double textX = xPos + leftBorder + 10.0;
+        double textX = xPos + borders.getLeft() + 10.0;
         double textY;
-        if (fontSize > (topBorder - 2)) {
+        if (fontSize > (borders.getTop() - 2)) {
             gC.setTextBaseline(VPos.TOP);
-            textY = yPos + topBorder + 2;
+            textY = yPos + borders.getTop() + 2;
         } else {
             gC.setTextBaseline(VPos.BOTTOM);
-            textY = yPos + topBorder - 2;
+            textY = yPos + borders.getTop() - 2;
         }
         for (DatasetAttributes datasetAttributes : draw2DList) {
             gC.setFill(datasetAttributes.getPosColor());
@@ -2453,18 +2447,18 @@ public class PolyChart extends Region implements PeakListener {
         double textY;
         double xPos = getLayoutX();
         double yPos = getLayoutY();
-        if ((nTitles > 1) || fontSize > (topBorder - 2)) {
+        if ((nTitles > 1) || fontSize > (borders.getTop() - 2)) {
             gC.setTextBaseline(VPos.TOP);
-            textY = yPos + topBorder + 2;
+            textY = yPos + borders.getTop() + 2;
             double offset = (nTitles - index - 1) * fontSize;
             textY += offset;
         } else {
             gC.setTextBaseline(VPos.BOTTOM);
-            textY = yPos + topBorder - 2;
+            textY = yPos + borders.getTop() - 2;
         }
         gC.setTextAlign(TextAlignment.LEFT);
         gC.fillText(datasetAttributes.getDataset().getTitle(),
-                xPos + leftBorder + 10, textY);
+                xPos + borders.getLeft() + 10, textY);
     }
 
     void drawParameters(boolean state) {
@@ -2497,12 +2491,12 @@ public class PolyChart extends Region implements PeakListener {
         double yPos = getLayoutY();
         double width = getWidth();
         double height = getHeight();
-        boolean leftX = (x > xPos) && (x < xPos + leftBorder);
-        boolean centerX = (x > (leftBorder + xPos) && (x < xPos + width - rightBorder));
-        boolean rightX = (x > xPos + width - rightBorder) && (x < xPos + width);
-        boolean topY = (y > yPos) && (y < yPos + topBorder);
-        boolean centerY = (y > yPos + topBorder) && (y < yPos + height - bottomBorder);
-        boolean bottomY = (y > yPos + height - bottomBorder) && (y < yPos + height);
+        boolean leftX = (x > xPos) && (x < xPos + borders.getLeft());
+        boolean centerX = (x > (borders.getLeft() + xPos) && (x < xPos + width - borders.getRight()));
+        boolean rightX = (x > xPos + width - borders.getRight()) && (x < xPos + width);
+        boolean topY = (y > yPos) && (y < yPos + borders.getTop());
+        boolean centerY = (y > yPos + borders.getTop()) && (y < yPos + height - borders.getBottom());
+        boolean bottomY = (y > yPos + height - borders.getBottom()) && (y < yPos + height);
         if (leftX && centerY) {
             border = ChartBorder.LEFT;
         } else if (bottomY && centerX) {
@@ -2536,7 +2530,7 @@ public class PolyChart extends Region implements PeakListener {
             } else {
                 gC.setFill(Color.LIGHTYELLOW);
             }
-            gC.fillRect(x1, getLayoutY() + topBorder + 1, x2 - x1, chartHeight - 2);
+            gC.fillRect(x1, getLayoutY() + borders.getTop() + 1, x2 - x1, chartHeight - 2);
 
         }
     }
@@ -2936,7 +2930,7 @@ public class PolyChart extends Region implements PeakListener {
         double yPos = getLayoutY();
         double width = getWidth();
         double height = getHeight();
-        double[][] bounds = {{xPos + leftBorder, xPos + width - rightBorder}, {yPos + topBorder, yPos + height - bottomBorder}};
+        double[][] bounds = {{xPos + borders.getLeft(), xPos + width - borders.getRight()}, {yPos + borders.getTop(), yPos + height - borders.getBottom()}};
         double[][] world = {{axes[0].getUpperBound(), axes[0].getLowerBound()},
                 {axes[1].getLowerBound(), axes[1].getUpperBound()}};
         double[] dragPos = {x, y};
@@ -3343,7 +3337,7 @@ public class PolyChart extends Region implements PeakListener {
             gC.save();
             try {
                 gC.beginPath();
-                gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+                gC.rect(xPos + borders.getLeft(), yPos + borders.getTop(), xAxis.getWidth(), yAxis.getHeight());
                 gC.clip();
                 gC.beginPath();
                 DatasetAttributes dataAttr = peakListAttr.getDatasetAttributes();
@@ -3455,7 +3449,7 @@ public class PolyChart extends Region implements PeakListener {
             GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
             gC.save();
             gC.beginPath();
-            gC.rect(getLayoutX() + leftBorder, getLayoutY() + topBorder, xAxis.getWidth(), yAxis.getHeight());
+            gC.rect(getLayoutX() + borders.getLeft(), getLayoutY() + borders.getTop(), xAxis.getWidth(), yAxis.getHeight());
             gC.clip();
             gC.beginPath();
             peakPaths.forEach(lPeaks -> drawPeakPaths(lPeaks, gC));
@@ -3578,10 +3572,10 @@ public class PolyChart extends Region implements PeakListener {
             gC.save();
             try {
                 gC.beginPath();
-                gC.rect(xPos, yPos, xAxis.getWidth() + leftBorder + rightBorder, yAxis.getHeight() + topBorder + bottomBorder);
+                gC.rect(xPos, yPos, xAxis.getWidth() + borders.getLeft() + borders.getRight(), yAxis.getHeight() + borders.getTop() + borders.getBottom());
                 gC.clip();
                 gC.beginPath();
-                double[][] bounds = {{xPos + leftBorder, xPos + width - rightBorder}, {yPos + topBorder, yPos + height - bottomBorder}};
+                double[][] bounds = {{xPos + borders.getLeft(), xPos + width - borders.getRight()}, {yPos + borders.getTop(), yPos + height - borders.getBottom()}};
                 double[][] world = {{axes[0].getUpperBound(), axes[0].getLowerBound()},
                         {axes[1].getLowerBound(), axes[1].getUpperBound()}};
                 boolean lastClipAxes = false;
@@ -3589,7 +3583,7 @@ public class PolyChart extends Region implements PeakListener {
                 for (CanvasAnnotation anno : canvasAnnotations) {
                     if (anno.getClipInAxes() && !lastClipAxes) {
                         gC.save();
-                        gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+                        gC.rect(xPos + borders.getLeft(), yPos + borders.getTop(), xAxis.getWidth(), yAxis.getHeight());
                         gC.clip();
                         lastClipAxes = true;
                     } else if (!anno.getClipInAxes() && lastClipAxes) {
@@ -3951,12 +3945,12 @@ public class PolyChart extends Region implements PeakListener {
             int dataDim = datasetAttributesList.get(0).dim[0];
             if (pivotPosition[dataDim] != null) {
                 double dispPos = axes[0].getDisplayPosition(pivotPosition[dataDim]);
-                if ((dispPos > 1) && (dispPos < leftBorder + axes[0].getWidth())) {
+                if ((dispPos > 1) && (dispPos < borders.getLeft() + axes[0].getWidth())) {
                     gC.setStroke(Color.GREEN);
-                    gC.strokeLine(dispPos - 10, topBorder, dispPos, topBorder + 20);
-                    gC.strokeLine(dispPos + 10, topBorder, dispPos, topBorder + 20);
-                    gC.strokeLine(dispPos, topBorder + axes[1].getHeight() - 20, dispPos - 10, topBorder + axes[1].getHeight());
-                    gC.strokeLine(dispPos, topBorder + axes[1].getHeight() - 20, dispPos + 10, topBorder + axes[1].getHeight());
+                    gC.strokeLine(dispPos - 10, borders.getTop(), dispPos, borders.getTop() + 20);
+                    gC.strokeLine(dispPos + 10, borders.getTop(), dispPos, borders.getTop() + 20);
+                    gC.strokeLine(dispPos, borders.getTop() + axes[1].getHeight() - 20, dispPos - 10, borders.getTop() + axes[1].getHeight());
+                    gC.strokeLine(dispPos, borders.getTop() + axes[1].getHeight() - 20, dispPos + 10, borders.getTop() + axes[1].getHeight());
                 }
             }
 
@@ -3964,12 +3958,12 @@ public class PolyChart extends Region implements PeakListener {
             int dataDim = datasetAttributesList.get(0).dim[1];
             if (pivotPosition[dataDim] != null) {
                 double dispPos = axes[1].getDisplayPosition(pivotPosition[dataDim]);
-                if ((dispPos > 1) && (dispPos < topBorder + axes[1].getHeight())) {
+                if ((dispPos > 1) && (dispPos < borders.getTop() + axes[1].getHeight())) {
                     gC.setStroke(Color.GREEN);
-                    gC.strokeLine(leftBorder, dispPos - 10, leftBorder + 20, dispPos);
-                    gC.strokeLine(leftBorder, dispPos + 10, leftBorder + 20, dispPos);
-                    gC.strokeLine(leftBorder + axes[0].getWidth(), dispPos + 10, leftBorder + axes[0].getWidth() - 20, dispPos);
-                    gC.strokeLine(leftBorder + axes[0].getWidth(), dispPos - 10, leftBorder + axes[0].getWidth() - 20, dispPos);
+                    gC.strokeLine(borders.getLeft(), dispPos - 10, borders.getLeft() + 20, dispPos);
+                    gC.strokeLine(borders.getLeft(), dispPos + 10, borders.getLeft() + 20, dispPos);
+                    gC.strokeLine(borders.getLeft() + axes[0].getWidth(), dispPos + 10, borders.getLeft() + axes[0].getWidth() - 20, dispPos);
+                    gC.strokeLine(borders.getLeft() + axes[0].getWidth(), dispPos - 10, borders.getLeft() + axes[0].getWidth() - 20, dispPos);
                 }
             }
         }
