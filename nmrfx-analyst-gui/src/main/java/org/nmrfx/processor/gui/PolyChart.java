@@ -47,6 +47,7 @@ import org.apache.commons.lang3.Range;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.Nuclei;
@@ -101,7 +102,6 @@ public class PolyChart extends Region implements PeakListener {
     private static final String FONT_FAMILY = "Liberation Sans";
     private static boolean listenToPeaks = true;
     private static Consumer<PeakDeleteEvent> manualPeakDeleteAction = null;
-    private static int nSyncGroups = 0;
     final NMRAxis xAxis;
     final NMRAxis yAxis;
     final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
@@ -130,7 +130,6 @@ public class PolyChart extends Region implements PeakListener {
     private final double[][] chartPhases = new double[2][15];
     private final Double[] pivotPosition = new Double[15];
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
-    private final Map<String, Integer> syncGroups = new HashMap<>();
     public ChartProperties chartProps = new ChartProperties(this);
     NMRAxis[] axes = new NMRAxis[2];
     SliceAttributes sliceAttributes = new SliceAttributes();
@@ -167,7 +166,7 @@ public class PolyChart extends Region implements PeakListener {
     private DragBindings dragBindings;
     private CrossHairs crossHairs;
 
-    public PolyChart(FXMLController controller, String name, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
+    protected PolyChart(FXMLController controller, String name, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
         this.controller = controller;
         this.name = name;
         this.canvas = canvas;
@@ -302,10 +301,10 @@ public class PolyChart extends Region implements PeakListener {
         canvasHandles.forEach(handle -> handle.visibleProperty().bind(chartSelected));
         plotContent.getChildren().addAll(canvasHandles);
         loadData();
-        xAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 0, 0));
-        xAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 0, 1));
-        yAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 1, 0));
-        yAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 1, 1));
+        xAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 0, Axis.Bound.Lower));
+        xAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 0, Axis.Bound.Upper));
+        yAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 1, Axis.Bound.Lower));
+        yAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 1, Axis.Bound.Upper));
         canvas.setCursor(CanvasCursor.SELECTOR.getCursor());
         MapChangeListener<String, PeakList> mapChangeListener = change -> purgeInvalidPeakListAttributes();
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
@@ -1837,8 +1836,8 @@ public class PolyChart extends Region implements PeakListener {
                     } else {
                         axModes[i] = AXMODE.PTS;
                     }
-                    axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
-                    axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, 1));
+                    axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, Axis.Bound.Lower));
+                    axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, Axis.Bound.Upper));
                 }
             }
             drawSpectrum.setAxes(axes);
@@ -1870,8 +1869,8 @@ public class PolyChart extends Region implements PeakListener {
                 } else {
                     axModes[i] = AXMODE.PTS;
                 }
-                axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
-                axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, 1));
+                axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, Axis.Bound.Lower));
+                axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, Axis.Bound.Upper));
 
             }
             drawSpectrum.setAxes(axes);
@@ -4038,66 +4037,6 @@ public class PolyChart extends Region implements PeakListener {
         };
     }
 
-    public void addSync(String name, int group) {
-        if (getDimNames().contains(name)) {
-            syncGroups.put(name, group);
-        }
-    }
-
-    public int getSyncGroup(String name) {
-        Integer result = syncGroups.get(name);
-        return result == null ? 0 : result;
-    }
-
-    public void syncSceneMates() {
-        Map<String, Integer> syncMap = new HashMap<>();
-        // get sync names for this chart
-        for (String name : getDimNames()) {
-            int iSync = getSyncGroup(name);
-            if (iSync != 0) {
-                syncMap.put(name, iSync);
-            }
-        }
-        // add sync names from other charts if not already added
-        for (PolyChart chart : getSceneMates(false)) {
-            chart.getDimNames().forEach(name -> {
-                int iSync = chart.getSyncGroup(name);
-                if (iSync != 0) {
-                    if (!syncMap.containsKey(name)) {
-                        syncMap.put(name, iSync);
-                    }
-                }
-            });
-        }
-        // now add new group for any missing names
-        for (String name : getDimNames()) {
-            if (!syncMap.containsKey(name)) {
-                nSyncGroups++;
-                syncMap.put(name, nSyncGroups);
-            }
-            addSync(name, syncMap.get(name));
-        }
-        for (PolyChart chart : getSceneMates(false)) {
-            for (String name : getDimNames()) {
-                if (chart.getDimNames().contains(name)) {
-                    chart.addSync(name, getSyncGroup(name));
-                }
-            }
-        }
-    }
-
-    List<PolyChart> getSceneMates(boolean includeThis) {
-        List<PolyChart> sceneMates = new ArrayList<>();
-        for (PolyChart chart : PolyChartManager.getInstance().getAllCharts()) {
-            if (chart.canvas == canvas) {
-                if (includeThis || (chart != this)) {
-                    sceneMates.add(chart);
-                }
-            }
-        }
-        return sceneMates;
-    }
-
     public void adjustLabels() {
         if (!datasetAttributesList.isEmpty()) {
             String[] dimNames;
@@ -4290,10 +4229,6 @@ public class PolyChart extends Region implements PeakListener {
 
     public static void setPeakListenerState(boolean state) {
         listenToPeaks = state;
-    }
-
-    public static int getNSyncGroups() {
-        return nSyncGroups;
     }
 
     public static void registerPeakDeleteAction(Consumer<PeakDeleteEvent> func) {
