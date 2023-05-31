@@ -416,31 +416,31 @@ public class AttributesController implements Initializable {
         slice1ColorPicker.valueProperty().unbindBidirectional(polyChart.getSliceAttributes().slice1ColorProperty());
         slice2ColorPicker.valueProperty().unbindBidirectional(polyChart.getSliceAttributes().slice2ColorProperty());
 
-        intensityAxisCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.intensityAxisProperty());
-        ticFontSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.ticFontSizeProperty());
-        labelFontSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.labelFontSizeProperty());
+        intensityAxisCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().intensityAxisProperty());
+        ticFontSizeComboBox.valueProperty().unbindBidirectional(polyChart.getChartProperties().ticFontSizeProperty());
+        labelFontSizeComboBox.valueProperty().unbindBidirectional(polyChart.getChartProperties().labelFontSizeProperty());
 
-        leftBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.leftBorderSizeProperty());
-        rightBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.rightBorderSizeProperty());
-        topBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.topBorderSizeProperty());
-        bottomBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.bottomBorderSizeProperty());
+        leftBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.getChartProperties().leftBorderSizeProperty());
+        rightBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.getChartProperties().rightBorderSizeProperty());
+        topBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.getChartProperties().topBorderSizeProperty());
+        bottomBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.getChartProperties().bottomBorderSizeProperty());
 
 
-        gridCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.gridProperty());
-        regionCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.regionsProperty());
-        integralCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.integralsProperty());
+        gridCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().gridProperty());
+        regionCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().regionsProperty());
+        integralCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().integralsProperty());
 
-        integralPosSlider.lowValueProperty().unbindBidirectional(polyChart.chartProps.integralLowPosProperty());
-        integralPosSlider.highValueProperty().unbindBidirectional(polyChart.chartProps.integralHighPosProperty());
+        integralPosSlider.lowValueProperty().unbindBidirectional(polyChart.getChartProperties().integralLowPosProperty());
+        integralPosSlider.highValueProperty().unbindBidirectional(polyChart.getChartProperties().integralHighPosProperty());
 
-        titlesCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.titlesProperty());
-        parametersCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.parametersProperty());
+        titlesCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().titlesProperty());
+        parametersCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().parametersProperty());
 
-        stackXSlider.valueProperty().unbindBidirectional(polyChart.chartProps.stackXProperty());
-        stackYSlider.valueProperty().unbindBidirectional(polyChart.chartProps.stackYProperty());
+        stackXSlider.valueProperty().unbindBidirectional(polyChart.getChartProperties().stackXProperty());
+        stackYSlider.valueProperty().unbindBidirectional(polyChart.getChartProperties().stackYProperty());
 
-        aspectSlider.valueProperty().unbindBidirectional(polyChart.chartProps.aspectRatioProperty());
-        aspectCheckBox.selectedProperty().unbindBidirectional((polyChart.chartProps.aspectProperty()));
+        aspectSlider.valueProperty().unbindBidirectional(polyChart.getChartProperties().aspectRatioProperty());
+        aspectCheckBox.selectedProperty().unbindBidirectional((polyChart.getChartProperties().aspectProperty()));
         chart.getDatasetAttributes().removeListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
         chart.getPeakListAttributes().removeListener((ListChangeListener<? super PeakListAttributes>) e -> peakListsChanged());
 
@@ -465,53 +465,53 @@ public class AttributesController implements Initializable {
         slice1ColorPicker.valueProperty().bindBidirectional(polyChart.getSliceAttributes().slice1ColorProperty());
         slice2ColorPicker.valueProperty().bindBidirectional(polyChart.getSliceAttributes().slice2ColorProperty());
 
-        if (chart.chartProps.getAxesColor() == null) {
+        if (chart.getChartProperties().getAxesColor() == null) {
             axisColorCheckBox.setSelected(false);
         } else {
-            axisColorPicker.setValue(polyChart.chartProps.axesColorProperty().get());
+            axisColorPicker.setValue(polyChart.getChartProperties().axesColorProperty().get());
         }
-        if (chart.chartProps.getBgColor() == null) {
+        if (chart.getChartProperties().getBgColor() == null) {
             bgColorCheckBox.setSelected(false);
         } else {
-            bgColorPicker.setValue(polyChart.chartProps.bgColorProperty().get());
+            bgColorPicker.setValue(polyChart.getChartProperties().bgColorProperty().get());
         }
-        if (chart.chartProps.getCross0Color() == null) {
+        if (chart.getChartProperties().getCross0Color() == null) {
             cross0ColorCheckBox.setSelected(false);
         } else {
-            cross0ColorPicker.setValue(polyChart.chartProps.cross0ColorProperty().get());
+            cross0ColorPicker.setValue(polyChart.getChartProperties().cross0ColorProperty().get());
         }
-        if (chart.chartProps.getCross1Color() == null) {
+        if (chart.getChartProperties().getCross1Color() == null) {
             cross1ColorCheckBox.setSelected(false);
         } else {
-            cross1ColorPicker.setValue(polyChart.chartProps.cross1ColorProperty().get());
+            cross1ColorPicker.setValue(polyChart.getChartProperties().cross1ColorProperty().get());
         }
 
 
-        intensityAxisCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.intensityAxisProperty());
-        ticFontSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.ticFontSizeProperty());
-        labelFontSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.labelFontSizeProperty());
+        intensityAxisCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().intensityAxisProperty());
+        ticFontSizeComboBox.valueProperty().bindBidirectional(polyChart.getChartProperties().ticFontSizeProperty());
+        labelFontSizeComboBox.valueProperty().bindBidirectional(polyChart.getChartProperties().labelFontSizeProperty());
 
-        leftBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.leftBorderSizeProperty());
-        rightBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.rightBorderSizeProperty());
-        topBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.topBorderSizeProperty());
-        bottomBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.bottomBorderSizeProperty());
+        leftBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.getChartProperties().leftBorderSizeProperty());
+        rightBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.getChartProperties().rightBorderSizeProperty());
+        topBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.getChartProperties().topBorderSizeProperty());
+        bottomBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.getChartProperties().bottomBorderSizeProperty());
 
 
-        gridCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.gridProperty());
-        regionCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.regionsProperty());
-        integralCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.integralsProperty());
+        gridCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().gridProperty());
+        regionCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().regionsProperty());
+        integralCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().integralsProperty());
 
-        integralPosSlider.lowValueProperty().bindBidirectional(polyChart.chartProps.integralLowPosProperty());
-        integralPosSlider.highValueProperty().bindBidirectional(polyChart.chartProps.integralHighPosProperty());
+        integralPosSlider.lowValueProperty().bindBidirectional(polyChart.getChartProperties().integralLowPosProperty());
+        integralPosSlider.highValueProperty().bindBidirectional(polyChart.getChartProperties().integralHighPosProperty());
 
-        titlesCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.titlesProperty());
-        parametersCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.parametersProperty());
+        titlesCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().titlesProperty());
+        parametersCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().parametersProperty());
 
-        stackXSlider.valueProperty().bindBidirectional(polyChart.chartProps.stackXProperty());
-        stackYSlider.valueProperty().bindBidirectional(polyChart.chartProps.stackYProperty());
+        stackXSlider.valueProperty().bindBidirectional(polyChart.getChartProperties().stackXProperty());
+        stackYSlider.valueProperty().bindBidirectional(polyChart.getChartProperties().stackYProperty());
 
-        aspectSlider.valueProperty().bindBidirectional(polyChart.chartProps.aspectRatioProperty());
-        aspectCheckBox.selectedProperty().bindBidirectional((polyChart.chartProps.aspectProperty()));
+        aspectSlider.valueProperty().bindBidirectional(polyChart.getChartProperties().aspectRatioProperty());
+        aspectCheckBox.selectedProperty().bindBidirectional((polyChart.getChartProperties().aspectProperty()));
 
         chart.getDatasetAttributes().addListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
         chart.getPeakListAttributes().addListener((ListChangeListener<? super PeakListAttributes>) e -> peakListsChanged());
@@ -642,13 +642,13 @@ public class AttributesController implements Initializable {
 
     public class StackXSliderListener extends ChartSliderListener {
         void update(PolyChart aChart, double value) {
-            aChart.chartProps.setStackX(value);
+            aChart.getChartProperties().setStackX(value);
         }
     }
 
     public class StackYSliderListener extends ChartSliderListener {
         void update(PolyChart aChart, double value) {
-            aChart.chartProps.setStackY(value);
+            aChart.getChartProperties().setStackY(value);
         }
     }
 
@@ -661,11 +661,11 @@ public class AttributesController implements Initializable {
     }
 
     void setStackXSlider() {
-        setChartSlider(stackXListener, stackXSlider, chart.chartProps.getStackX());
+        setChartSlider(stackXListener, stackXSlider, chart.getChartProperties().getStackX());
     }
 
     void setStackYSlider() {
-        setChartSlider(stackYListener, stackYSlider, chart.chartProps.getStackY());
+        setChartSlider(stackYListener, stackYSlider, chart.getChartProperties().getStackY());
     }
 
     abstract class ParSliderListener implements ChangeListener<Number> {
@@ -1233,24 +1233,24 @@ public class AttributesController implements Initializable {
     private void updateChartProperties() {
         for (var aChart: getCharts(allCharts())) {
             if (bgColorCheckBox.isSelected()) {
-                aChart.chartProps.setBgColor(bgColorPicker.getValue());
+                aChart.getChartProperties().setBgColor(bgColorPicker.getValue());
             } else {
-                aChart.chartProps.setBgColor(null);
+                aChart.getChartProperties().setBgColor(null);
             }
             if (axisColorCheckBox.isSelected()) {
-                aChart.chartProps.setAxesColor(axisColorPicker.getValue());
+                aChart.getChartProperties().setAxesColor(axisColorPicker.getValue());
             } else {
-                aChart.chartProps.setAxesColor(null);
+                aChart.getChartProperties().setAxesColor(null);
             }
             if (cross0ColorCheckBox.isSelected()) {
-                aChart.chartProps.setCross0Color(cross0ColorPicker.getValue());
+                aChart.getChartProperties().setCross0Color(cross0ColorPicker.getValue());
             } else {
-                aChart.chartProps.setCross0Color(null);
+                aChart.getChartProperties().setCross0Color(null);
             }
             if (cross1ColorCheckBox.isSelected()) {
-                aChart.chartProps.setCross1Color(cross1ColorPicker.getValue());
+                aChart.getChartProperties().setCross1Color(cross1ColorPicker.getValue());
             } else {
-                aChart.chartProps.setCross1Color(null);
+                aChart.getChartProperties().setCross1Color(null);
             }
         }
     }
@@ -1276,9 +1276,9 @@ public class AttributesController implements Initializable {
     void updateAspectRatio() {
         List<PolyChart> applyCharts = getCharts(allCharts());
         for (PolyChart applyChart : applyCharts) {
-            applyChart.chartProps.setAspect(aspectCheckBox.isSelected());
+            applyChart.getChartProperties().setAspect(aspectCheckBox.isSelected());
             double aspectRatio = aspectSlider.getValue();
-            applyChart.chartProps.setAspectRatio(aspectRatio);
+            applyChart.getChartProperties().setAspectRatio(aspectRatio);
             aspectRatioValue.setText(String.format("%.2f", aspectRatio));
             applyChart.refresh();
         }
@@ -1296,7 +1296,7 @@ public class AttributesController implements Initializable {
     private void updateChartsNow() {
         for (var aChart:getCharts(allCharts())) {
             if (aChart != chart) {
-                chart.chartProps.copyTo(aChart);
+                chart.getChartProperties().copyTo(aChart);
             }
         }
     }

@@ -3,23 +3,12 @@ package org.nmrfx.analyst.gui.tools;
 /*
  * @author Bruce Johnson
  */
+
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
@@ -35,6 +24,10 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
 
 public class SimMolController implements ControllerTool {
 
@@ -163,7 +156,7 @@ public class SimMolController implements ControllerTool {
 
     void updateColors(PolyChart chart) {
         if (chart.getDatasetAttributes().size() > 1) {
-            chart.chartProps.setTitles(true);
+            chart.getChartProperties().setTitles(true);
             int nData = chart.getDatasetAttributes().size() - 1;
             String colScheme = (nData <= 10) ? "category10" : "category20";
             List<Color> colors = ColorSchemes.getColors(colScheme, nData);
