@@ -96,19 +96,20 @@ import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 public class PolyChart extends Region implements PeakListener {
     private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
     public static final int HORIZONTAL = 0;
-    public static final int VERTICAL = 1;
+    private static final int VERTICAL = 1;
     private static final double OVERLAP_SCALE = 3.0;
     private static final double MIN_MOVE = 20;
     private static final String FONT_FAMILY = "Liberation Sans";
     private static boolean listenToPeaks = true;
     private static Consumer<PeakDeleteEvent> manualPeakDeleteAction = null;
-    final NMRAxis xAxis;
-    final NMRAxis yAxis;
-    final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
-    final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
-    final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
-    final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
-    final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
+
+    private final NMRAxis xAxis = new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50);
+    private final NMRAxis yAxis = new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200);
+    private final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
+    private final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
+    private final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
+    private final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
+    private final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
     private final Canvas canvas;
     private final Canvas peakCanvas;
     private final Canvas annoCanvas;
@@ -130,9 +131,11 @@ public class PolyChart extends Region implements PeakListener {
     private final double[][] chartPhases = new double[2][15];
     private final Double[] pivotPosition = new Double[15];
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
+    private final SliceAttributes sliceAttributes = new SliceAttributes();
+
+    //XXX use accessor instead
     public ChartProperties chartProps = new ChartProperties(this);
     NMRAxis[] axes = new NMRAxis[2];
-    SliceAttributes sliceAttributes = new SliceAttributes();
     double minLeftBorder = 0.0;
     double minBottomBorder = 0.0;
     FXMLController controller;
@@ -140,6 +143,7 @@ public class PolyChart extends Region implements PeakListener {
     int datasetPhaseDim = 0;
     int phaseAxis = 0;
     AXMODE[] axModes = {AXMODE.PPM, AXMODE.PPM};
+
     private int crossHairNumH = 0;
     private int crossHairNumV = 0;
     private boolean hasMiddleMouseButton = false;
@@ -172,8 +176,6 @@ public class PolyChart extends Region implements PeakListener {
         this.canvas = canvas;
         this.peakCanvas = peakCanvas;
         this.annoCanvas = annoCanvas;
-        xAxis = new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50);
-        yAxis = new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200);
         plotBackground = new Group();
         this.plotContent = plotContent;
         drawSpectrum = new DrawSpectrum(axes, canvas);

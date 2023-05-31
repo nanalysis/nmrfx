@@ -1218,10 +1218,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         setChartDisable(true);
         if (charts.size() == 1) {
             PolyChart chart = charts.get(0);
-            double xLower = chart.xAxis.getLowerBound();
-            double xUpper = chart.xAxis.getUpperBound();
-            double yLower = chart.yAxis.getLowerBound();
-            double yUpper = chart.yAxis.getUpperBound();
+            double xLower = chart.getXAxis().getLowerBound();
+            double xUpper = chart.getXAxis().getUpperBound();
+            double yLower = chart.getYAxis().getLowerBound();
+            double yUpper = chart.getYAxis().getUpperBound();
             List<DatasetAttributes> datasetAttrs = chart.getDatasetAttributes();
             if (datasetAttrs.size() > 1) {
                 List<DatasetAttributes> current = new ArrayList<>(datasetAttrs);
@@ -1238,10 +1238,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 setChartDisable(true);
                 for (int i = 0; i < charts.size(); i++) {
                     PolyChart iChart = charts.get(i);
-                    iChart.xAxis.setLowerBound(xLower);
-                    iChart.xAxis.setUpperBound(xUpper);
-                    iChart.yAxis.setLowerBound(yLower);
-                    iChart.yAxis.setUpperBound(yUpper);
+                    iChart.getXAxis().setLowerBound(xLower);
+                    iChart.getXAxis().setUpperBound(xUpper);
+                    iChart.getYAxis().setLowerBound(yLower);
+                    iChart.getYAxis().setUpperBound(yUpper);
                     iChart.getCrossHairs().setAllStates(true);
                 }
                 setChartDisable(false);
@@ -1264,18 +1264,24 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void alignCenters() {
-        DatasetAttributes activeAttr = activeChart.datasetAttributesList.get(0);
-        if (activeChart.peakListAttributesList.isEmpty()) {
+        Optional<DatasetAttributes> firstAttributes = activeChart.getFirstDatasetAttributes();
+        if (firstAttributes.isEmpty()) {
+            log.warn("No dataset attributes on active chart!");
+            return;
+        }
+
+        DatasetAttributes activeAttr = firstAttributes.get();
+        if (activeChart.getPeakListAttributes().isEmpty()) {
             alignCentersWithTempLists();
         } else {
-            PeakList refList = activeChart.peakListAttributesList.get(0).getPeakList();
+            PeakList refList = activeChart.getPeakListAttributes().get(0).getPeakList();
             List<String> dimNames = new ArrayList<>();
             dimNames.add(activeAttr.getLabel(0));
             dimNames.add(activeAttr.getLabel(1));
             List<PeakList> movingLists = new ArrayList<>();
             for (PolyChart chart : charts) {
                 if (chart != activeChart) {
-                    PeakList movingList = chart.peakListAttributesList.get(0).getPeakList();
+                    PeakList movingList = chart.getPeakListAttributes().get(0).getPeakList();
                     movingLists.add(movingList);
                 }
             }
@@ -1284,7 +1290,13 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     private void alignCentersWithTempLists() {
-        DatasetAttributes activeAttr = activeChart.datasetAttributesList.get(0);
+        Optional<DatasetAttributes> firstAttributes = activeChart.getFirstDatasetAttributes();
+        if (firstAttributes.isEmpty()) {
+            log.warn("No dataset attributes on active chart!");
+            return;
+        }
+
+        DatasetAttributes activeAttr = firstAttributes.get();
         // any peak lists created just for alignmnent should be deleted
         PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, null, false, "refList");
         if (refList == null) {
