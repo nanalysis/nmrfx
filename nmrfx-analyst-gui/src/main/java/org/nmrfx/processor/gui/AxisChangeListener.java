@@ -42,7 +42,7 @@ public class AxisChangeListener implements ChangeListener<Number> {
             if (chart == PolyChartManager.getInstance().getActiveChart()) {
                 if (axisIndex >= 2) {
                     DatasetAttributes datasetAttributes = chart.getDatasetAttributes().get(0);
-                    NMRAxis axis = chart.axes[axisIndex];
+                    NMRAxis axis = chart.getAxis(axisIndex);
                     int indexL = chart.axModes[axisIndex].getIndex(datasetAttributes, axisIndex, axis.getLowerBound());
                     int indexU = chart.axModes[axisIndex].getIndex(datasetAttributes, axisIndex, axis.getUpperBound());
 

@@ -188,8 +188,8 @@ public class SpectrumMeasureBar {
             Orientation orientation = i == 0 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
             Double value = null;
             if (i > 1) {
-                int pt1 = (int) chart.axes[i].getLowerBound();
-                int pt2 = (int) chart.axes[i].getUpperBound();
+                int pt1 = (int) chart.getAxis(i).getLowerBound();
+                int pt2 = (int) chart.getAxis(i).getUpperBound();
                 pts[disDim0] = (pt1 + pt2) / 2;
             } else {
                 value = chart.getCrossHairs().getState(iCross, orientation) ? chart.getCrossHairs().getPosition(iCross, orientation) : null;
@@ -298,8 +298,8 @@ public class SpectrumMeasureBar {
             int[] width = new int[nDim];
             for (int iDim = 0; iDim < nDim; iDim++) {
                 int[] limits = new int[2];
-                limits[0] = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getLowerBound());
-                limits[1] = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getUpperBound());
+                limits[0] = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.getAxis(iDim).getLowerBound());
+                limits[1] = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.getAxis(iDim).getUpperBound());
 
                 if (limits[0] < limits[1]) {
                     pt[iDim][0] = limits[0];

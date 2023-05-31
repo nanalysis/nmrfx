@@ -443,7 +443,7 @@ public class SpectrumStatusBar {
             if (!newChart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = newChart.getDatasetAttributes().get(0);
                 for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
-                    NMRAxis axis = newChart.axes[axNum];
+                    NMRAxis axis = newChart.getAxis(axNum);
                     int indexL = newChart.axModes[axNum].getIndex(dataAttr, axNum, axis.getLowerBound());
                     int indexU = newChart.axModes[axNum].getIndex(dataAttr, axNum, axis.getUpperBound());
                     int dDim = dataAttr.dim[axNum];
@@ -571,7 +571,7 @@ public class SpectrumStatusBar {
 
             if (!chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                NMRAxis axis = chart.axes[iDim];
+                NMRAxis axis = chart.getAxis(iDim);
                 int[] pts = new int[2];
                 pts[0] = chart.axModes[iDim].getIndex(dataAttr, iDim, axis.getLowerBound());
                 pts[1] = chart.axModes[iDim].getIndex(dataAttr, iDim, axis.getUpperBound());

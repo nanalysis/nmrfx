@@ -191,7 +191,7 @@ public class GUIScripter {
         String dimChars = "xyzabcdefghijk";
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            int nAxes = chart.axes.length;
+            int nAxes = chart.getAxisCount();
             for (int i = 0; i < nAxes; i++) {
                 double v1 = chart.getAxis(i).getLowerBound();
                 double v2 = chart.getAxis(i).getUpperBound();

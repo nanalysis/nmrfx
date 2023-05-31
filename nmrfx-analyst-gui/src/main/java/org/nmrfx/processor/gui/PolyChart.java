@@ -131,8 +131,8 @@ public class PolyChart extends Region implements PeakListener {
     private final SliceAttributes sliceAttributes = new SliceAttributes();
     private final ChartProperties chartProps = new ChartProperties(this);
 
+
     //XXX use accessor instead
-    NMRAxis[] axes = new NMRAxis[2];
     double minLeftBorder = 0.0;
     double minBottomBorder = 0.0;
     FXMLController controller;
@@ -141,6 +141,7 @@ public class PolyChart extends Region implements PeakListener {
     int phaseAxis = 0;
     AXMODE[] axModes = {AXMODE.PPM, AXMODE.PPM};
 
+    private NMRAxis[] axes = new NMRAxis[2];
     private int crossHairNumH = 0;
     private int crossHairNumV = 0;
     private boolean hasMiddleMouseButton = false;
@@ -172,6 +173,9 @@ public class PolyChart extends Region implements PeakListener {
         this.annoCanvas = annoCanvas;
         plotBackground = new Group();
         this.plotContent = plotContent;
+
+        // Warning: axes is not final!
+        // we must ensure it is replicated properly in drawSpectrum when the array instance is replaced.
         drawSpectrum = new DrawSpectrum(axes, canvas);
 
         initChart();
@@ -576,10 +580,17 @@ public class PolyChart extends Region implements PeakListener {
         return completed;
     }
 
+    //XXX extract axis managment?
+    public int getAxisCount() {
+        return axes.length;
+    }
+
+    //XXX extract axis managment?
     public NMRAxis getAxis(int iDim) {
         return iDim < axes.length ? axes[iDim] : null;
     }
 
+    //XXX extract axis managment?
     public AXMODE getAxMode(int iDim) {
         return iDim < axModes.length ? axModes[iDim] : null;
     }
