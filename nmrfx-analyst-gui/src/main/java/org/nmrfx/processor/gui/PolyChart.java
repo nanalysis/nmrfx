@@ -168,10 +168,7 @@ public class PolyChart extends Region implements PeakListener {
         this.annoCanvas = annoCanvas;
         plotBackground = new Group();
         this.plotContent = plotContent;
-
-        // Warning: axes array is not final!
-        // we must ensure it is replicated properly in drawSpectrum when the array instance is replaced.
-        drawSpectrum = new DrawSpectrum(axes.axisArray(), canvas);
+        drawSpectrum = new DrawSpectrum(axes, canvas);
 
         initChart();
         drawPeaks = new DrawPeaks(this, peakCanvas);
@@ -1648,7 +1645,6 @@ public class PolyChart extends Region implements PeakListener {
         datasetAttributesList.add(datasetAttrs);
         if (axes.count() != nAxes) {
             axes.resetFrom(this, datasetAttrs, nAxes);
-            drawSpectrum.setAxes(axes.axisArray());
         }
     }
 
@@ -1662,7 +1658,6 @@ public class PolyChart extends Region implements PeakListener {
         int[] dims = datasetAttributes.getDims();
         if (alwaysUpdate || (axes.count() != nAxes)) {
             axes.updateAxisType(this, datasetAttributes, nAxes);
-            drawSpectrum.setAxes(axes.axisArray());
         }
         if (dataset.getFreqDomain(dims[0])) {
             axes.setMode(0, AXMODE.PPM);
@@ -2118,13 +2113,13 @@ public class PolyChart extends Region implements PeakListener {
             }
             if (gC instanceof GraphicsContextProxy) {
                 if (useImmediateMode) {
-                    finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList, axes.modeArray());
+                    finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList);
                     useImmediateMode = finished;
                 } else {
-                    drawSpectrum.drawSpectrum(draw2DList, axes.modeArray(), false);
+                    drawSpectrum.drawSpectrum(draw2DList, false);
                 }
             } else {
-                finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList, axes.modeArray());
+                finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList);
             }
         }
         return finished;

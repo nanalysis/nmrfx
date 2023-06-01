@@ -45,6 +45,7 @@ import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartAxes;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
 import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
@@ -80,9 +81,8 @@ public class DrawSpectrum {
     private final DrawContours drawContours;
     private final double[][] xy = new double[2][];
     private final ArrayBlockingQueue<DrawObject> contourQueue = new ArrayBlockingQueue<>(4);
-    private Axis[] axes;
+    private final PolyChartAxes axes;
     private GraphicsContextInterface g2;
-    private AXMODE[] axModes;
     private double stackWidth = 0.0;
     private double stackY = 0.0;
     private int nPoints = 0;
@@ -92,7 +92,7 @@ public class DrawSpectrum {
     private long startTime = 0;
     private Rectangle clipRect = null;
 
-    public DrawSpectrum(Axis[] axes, Canvas canvas) {
+    public DrawSpectrum(PolyChartAxes axes, Canvas canvas) {
         this.axes = axes;
         if (canvas != null) {
             GraphicsContext g2C = canvas.getGraphicsContext2D();
@@ -112,15 +112,11 @@ public class DrawSpectrum {
         cancelButton.disableProperty().bind((makeContours.worker).stateProperty().isNotEqualTo(Task.State.RUNNING));
     }
 
-    public void setAxes(Axis[] axes) {
-        this.axes = axes;
-    }
-
     public void setClipRect(double x, double y, double width, double height) {
         clipRect = new Rectangle(x, y, width, height);
     }
 
-    public void drawSpectrum(ArrayList<DatasetAttributes> dataGenerators, AXMODE[] axModes, boolean pick) {
+    public void drawSpectrum(ArrayList<DatasetAttributes> dataGenerators, boolean pick) {
         cancelled = false;
 
         if (pick) {
@@ -137,8 +133,6 @@ public class DrawSpectrum {
         if (drawExec instanceof ThreadPoolExecutor tPool) {
             tPool.purge();
         }
-        this.axModes = new AXMODE[axModes.length];
-        System.arraycopy(axModes, 0, this.axModes, 0, axModes.length);
         dataAttrList.clear();
         dataAttrList.addAll(dataGenerators);
         contourQueue.clear();
@@ -153,11 +147,9 @@ public class DrawSpectrum {
         drawContours.worker.cancel();
     }
 
-    public boolean drawSpectrumImmediate(GraphicsContextInterface g2I, ArrayList<DatasetAttributes> dataGenerators, AXMODE[] axModes) {
+    public boolean drawSpectrumImmediate(GraphicsContextInterface g2I, ArrayList<DatasetAttributes> dataGenerators) {
         cancelled = false;
 
-        this.axModes = new AXMODE[axModes.length];
-        System.arraycopy(axModes, 0, this.axModes, 0, axModes.length);
         dataAttrList.clear();
         dataAttrList.addAll(dataGenerators);
         contourQueue.clear();
@@ -184,16 +176,9 @@ public class DrawSpectrum {
         return levels;
     }
 
-    AXMODE[] getAxModes() {
-        AXMODE[] modes = new AXMODE[axModes.length];
-        System.arraycopy(axModes, 0, modes, 0, modes.length);
-        return modes;
-    }
-
-    Axis[] getAxes() {
-        Axis[] tempAxes = new Axis[axes.length];
-        System.arraycopy(axes, 0, tempAxes, 0, axes.length);
-        return tempAxes;
+    PolyChartAxes getAxes() {
+        //XXX previous implementation was making a copy of the backing array: is that necessary due to multithreading?
+        return axes;
     }
 
     private static class DrawObject {
@@ -215,8 +200,7 @@ public class DrawSpectrum {
 
         DrawSpectrum drawSpectrum;
         List<DatasetAttributes> dataAttrList;
-        AXMODE[] axModes;
-        Axis[] axes;
+        PolyChartAxes axes;
         float[] levels;
         boolean done = false;
 
@@ -234,7 +218,6 @@ public class DrawSpectrum {
                                 dataAttrList.addAll(drawSpectrum.dataAttrList);
                                 for (DatasetAttributes fileData : dataAttrList) {
                                     levels = getLevels(fileData);
-                                    axModes = drawSpectrum.getAxModes();
                                     axes = drawSpectrum.getAxes();
                                     drawNow(this, fileData);
                                     if (done) {
@@ -264,7 +247,7 @@ public class DrawSpectrum {
                     break;
                 }
                 int iChunk = fileData.mChunk + 1;
-                double[][] pix = getPix(axes[0], axes[1], fileData);
+                double[][] pix = getPix(axes.getX(), axes.getY(), fileData);
 
                 try {
                     z = getData(fileData, iChunk, offset, z);
@@ -393,7 +376,7 @@ public class DrawSpectrum {
 
                 }
                 int iChunk = fileData.mChunk + 1;
-                double[][] pix = getPix(axes[0], axes[1], fileData);
+                double[][] pix = getPix(axes.getX(), axes.getY(), fileData);
                 final Contour[] contours = new Contour[2];
                 contours[0] = new Contour(fileData.ptd, pix);
                 contours[1] = new Contour(fileData.ptd, pix);
@@ -532,15 +515,15 @@ public class DrawSpectrum {
             datasetAttr.getProjection((Dataset) projectionDatasetAttributes.getDataset(), sliceVec, sliceDim);
             double lvlMult = projectionDatasetAttributes.getLvl();
             if (sliceDim == 0) {
-                double offset = axes[0].getYOrigin() - axes[1].getHeight() * 1.005;
+                double offset = axes.getX().getYOrigin() - axes.getY().getHeight() * 1.005;
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, 0.0, 0.0, null,
-                        (index, intensity) -> axes[0].getDisplayPosition(index),
+                        (index, intensity) -> axes.getX().getDisplayPosition(index),
                         (index, intensity) -> -intensity / lvlMult + offset, false);
             } else {
-                double offset = axes[0].getXOrigin() + axes[0].getWidth() * 1.005;
+                double offset = axes.getX().getXOrigin() + axes.getX().getWidth() * 1.005;
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, 0.0, 0.0, null,
                         (index, intensity) -> intensity / lvlMult + offset,
-                        (index, intensity) -> axes[1].getDisplayPosition(index), false);
+                        (index, intensity) -> axes.getY().getDisplayPosition(index), false);
             }
         } catch (IOException ioE) {
             log.warn(ioE.getMessage(), ioE);
@@ -559,23 +542,23 @@ public class DrawSpectrum {
             if (sliceDim == 0) {
                 double offset;
                 if (offsetTracking) {
-                    offset = axes[1].getDisplayPosition(slicePosY);
+                    offset = axes.getY().getDisplayPosition(slicePosY);
                 } else {
-                    offset = axes[0].getYOrigin() - axes[1].getHeight() * sliceAttr.getOffsetYValue();
+                    offset = axes.getX().getYOrigin() - axes.getY().getHeight() * sliceAttr.getOffsetYValue();
                 }
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, ph0, ph1, null,
-                        (index, intensity) -> axes[0].getDisplayPosition(index),
+                        (index, intensity) -> axes.getX().getDisplayPosition(index),
                         (index, intensity) -> intensity * scale + offset, false);
             } else {
                 double offset;
                 if (offsetTracking) {
-                    offset = axes[0].getDisplayPosition(slicePosX);
+                    offset = axes.getX().getDisplayPosition(slicePosX);
                 } else {
-                    offset = axes[0].getXOrigin() + axes[0].getWidth() * sliceAttr.getOffsetXValue();
+                    offset = axes.getX().getXOrigin() + axes.getX().getWidth() * sliceAttr.getOffsetXValue();
                 }
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, ph0, ph1, null,
                         (index, intensity) -> -intensity * scale + offset,
-                        (index, intensity) -> axes[1].getDisplayPosition(index), false);
+                        (index, intensity) -> axes.getY().getDisplayPosition(index), false);
             }
         } catch (IOException ioE) {
             log.warn(ioE.getMessage(), ioE);
@@ -623,8 +606,8 @@ public class DrawSpectrum {
         double[] offsets = getOffset(dataAttributes, firstOffset, i1D, n1D);
         double lvlMult = dataAttributes.getLvl() / firstLvl;
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
-                (index, intensity) -> axes[0].getDisplayPosition(index) + offsets[0],
-                (index, intensity) -> axes[1].getDisplayPosition(intensity / lvlMult) - offsets[1], offsetMode);
+                (index, intensity) -> axes.getX().getDisplayPosition(index) + offsets[0],
+                (index, intensity) -> axes.getY().getDisplayPosition(intensity / lvlMult) - offsets[1], offsetMode);
 
         return iChunk >= 0;
     }
@@ -646,7 +629,7 @@ public class DrawSpectrum {
     }
 
     public double[] getOffset(DatasetAttributes dataAttributes, double firstOffset, int i1D, int n1D) {
-        double height = axes[1].getHeight();
+        double height = axes.getY().getHeight();
         double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
         double dataOffset = height * (dataAttributes.getOffset() - firstOffset);
         double fraction = getOffsetFraction(i1D, n1D);
@@ -675,10 +658,10 @@ public class DrawSpectrum {
         }
         Double integralValue = specVec.getReal(specVec.getSize() - 1);
         result = Optional.of(integralValue);
-        double height = axes[1].getHeight();
-        double yOrigin = axes[1].getYOrigin();
+        double height = axes.getY().getHeight();
+        double yOrigin = axes.getY().getYOrigin();
         drawSubVector(specVec, 0,
-                (index, intensity) -> axes[0].getDisplayPosition(index),
+                (index, intensity) -> axes.getX().getDisplayPosition(index),
                 (index, intensity) -> yOrigin - height + (1.0 - high) * height + (high - low) * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
         return result;
     }
@@ -697,7 +680,7 @@ public class DrawSpectrum {
     public void drawVector(VecBase vec, int orientation, int dataOffset, AXMODE axMode, boolean drawReal, double ph0, double ph1, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec) {
         int size = vec.getSize();
         double phase1Delta = ph1 / (size - 1);
-        Axis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
+        Axis indexAxis = orientation == PolyChart.HORIZONTAL ? axes.getX() : axes.getY();
 
         int vecStartPoint;
         int vecEndPoint;
@@ -852,7 +835,7 @@ public class DrawSpectrum {
         nPoints = 0;
         if (dataset.getVec() != null) {
             VecBase vec = dataset.getVec();
-            Axis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
+            Axis indexAxis = orientation == PolyChart.HORIZONTAL ? axes.getX() : axes.getY();
             int vecStartPoint = axMode.getIndex(vec, indexAxis.getLowerBound());
             int vecEndPoint = axMode.getIndex(vec, indexAxis.getUpperBound());
 
@@ -873,11 +856,11 @@ public class DrawSpectrum {
     }
 
     public int drawScaledLine(double[] ve, int start, int annoEnd, int end) {
-        double width = axes[0].getWidth();
-        double height = axes[1].getHeight();
+        double width = axes.getX().getWidth();
+        double height = axes.getY().getHeight();
         double delta = width / (end - start);
-        double xOrigin = axes[0].getXOrigin();
-        double yOrigin = axes[1].getYOrigin();
+        double xOrigin = axes.getX().getXOrigin();
+        double yOrigin = axes.getY().getYOrigin();
 
         return drawFullLine(ve, start, annoEnd, 0.0, delta, xy,
                 (index, intensity) -> xOrigin + index,
@@ -997,37 +980,37 @@ public class DrawSpectrum {
             ry1 = region.getRegionStart(1);
             ry2 = region.getRegionEnd(1);
         } else {
-            ry2 = axes[1].getUpperBound();
-            ry1 = axes[1].getLowerBound();
+            ry2 = axes.getY().getUpperBound();
+            ry1 = axes.getY().getLowerBound();
         }
 
-        double px1 = axes[0].getDisplayPosition(rx1);
-        double py1 = axes[1].getDisplayPosition(ry1);
+        double px1 = axes.getX().getDisplayPosition(rx1);
+        double py1 = axes.getY().getDisplayPosition(ry1);
 
-        double px2 = axes[0].getDisplayPosition(rx2);
-        double py2 = axes[1].getDisplayPosition(ry1);
+        double px2 = axes.getX().getDisplayPosition(rx2);
+        double py2 = axes.getY().getDisplayPosition(ry1);
 
-        double pxb1 = axes[0].getDisplayPosition(rx1);
-        double pyb1 = axes[1].getDisplayPosition(ryB1);
+        double pxb1 = axes.getX().getDisplayPosition(rx1);
+        double pyb1 = axes.getY().getDisplayPosition(ryB1);
 
-        double pxb2 = axes[0].getDisplayPosition(rx2);
-        double pyb2 = axes[1].getDisplayPosition(ryB2);
+        double pxb2 = axes.getX().getDisplayPosition(rx2);
+        double pyb2 = axes.getY().getDisplayPosition(ryB2);
 
-        double pxb1p = axes[0].getDisplayPosition(rx1);
-        double pyb1p = axes[1].getDisplayPosition(ryB1) - 25;
-        double pxb2p = axes[0].getDisplayPosition(rx2);
-        double pyb2p = axes[1].getDisplayPosition(ryB2) - 25;
+        double pxb1p = axes.getX().getDisplayPosition(rx1);
+        double pyb1p = axes.getY().getDisplayPosition(ryB1) - 25;
+        double pxb2p = axes.getX().getDisplayPosition(rx2);
+        double pyb2p = axes.getY().getDisplayPosition(ryB2) - 25;
 
         if ((px2 - px1) < 2) {
             px1 = px1 - 1;
             px2 = px2 + 1;
         }
 
-        double px3 = axes[0].getDisplayPosition(rx2);
-        double py3 = axes[1].getDisplayPosition(ry2);
+        double px3 = axes.getX().getDisplayPosition(rx2);
+        double py3 = axes.getY().getDisplayPosition(ry2);
 
-        double px4 = axes[0].getDisplayPosition(rx1);
-        double py4 = axes[1].getDisplayPosition(ry2);
+        double px4 = axes.getX().getDisplayPosition(rx1);
+        double py4 = axes.getY().getDisplayPosition(ry2);
 
         if ((px4 - px3) < 2) {
             px3 = px3 - 1;
