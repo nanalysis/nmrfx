@@ -313,11 +313,11 @@ public class Phaser {
             chart.setPhaseDim(phaseDim);
             getPhaseOp();
         } else {
-            chart.datasetPhaseDim = 0;
+            chart.resetPhaseDim();
             handlePh1Reset(0.0);
             handlePh0Reset(0.0);
         }
-        phaseChoice.set(chart.phaseAxis == 0 ? "X" : "Y");
+        phaseChoice.set(chart.getPhaseAxis() == PolyChartAxes.X_INDEX ? "X" : "Y");
     }
 
     public void setPhaseOp(String opString) {
@@ -330,12 +330,11 @@ public class Phaser {
         PolyChart chart = controller.getActiveChart();
         double ph0 = sliders[0].getValue();
         double ph1 = sliders[1].getValue();
-        String phaseDim = String.valueOf(chart.datasetPhaseDim + 1);
+        String phaseDim = String.valueOf(chart.getPhaseDim() + 1);
         if (chart.hasData() && (controller.getChartProcessor() != null)) {
             if (chart.is1D()) {
                 List<String> listItems = controller.getChartProcessor().getOperations("D" + phaseDim);
                 if (listItems != null) {
-                    Map<String, String> values = null;
                     for (String s : listItems) {
                         if (s.contains("AUTOPHASE")) {
                             double aph0 = AutoPhase.lastPh0.get();
@@ -378,8 +377,7 @@ public class Phaser {
         if (!chart.hasData()) {
             return;
         }
-        DatasetBase dataset = chart.getDataset();
-        String phaseDim = "D" + String.valueOf(chart.datasetPhaseDim + 1);
+        String phaseDim = "D" + (chart.getPhaseDim() + 1);
         if (controller.getChartProcessor() != null) {
             List<String> listItems = controller.getChartProcessor().getOperations(phaseDim);
             if (listItems != null) {
@@ -448,7 +446,7 @@ public class Phaser {
         DatasetBase datasetBase = chart.getDataset();
         Dataset dataset = (Dataset) datasetBase;
         try {
-            int iDim = chart.datasetPhaseDim;
+            int iDim = chart.getPhaseDim();
             double ph0 = chart.getPh0();
             double ph1 = chart.getPh1();
             dataset.phaseDim(iDim, ph0, ph1);
@@ -472,14 +470,14 @@ public class Phaser {
     private void autoPhaseDataset(boolean firstOrder) {
         PolyChart chart = controller.getActiveChart();
         DatasetBase datasetBase = chart.getDataset();
-        if (!(datasetBase instanceof Dataset)) {
-
+        if (!(datasetBase instanceof Dataset dataset)) {
+            throw new IllegalStateException("Dataset isn't a valid instance!");
         }
-        Dataset dataset = (Dataset) datasetBase;
+
         double ratio = 25.0;
         IDBaseline2.ThreshMode threshMode = IDBaseline2.ThreshMode.SDEV;
 
-        int iDim = chart.datasetPhaseDim;
+        int iDim = chart.getPhaseDim();
         int winSize = 2;
         double ph1Limit = 90.0;
         try {

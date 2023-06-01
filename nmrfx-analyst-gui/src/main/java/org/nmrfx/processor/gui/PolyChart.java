@@ -129,11 +129,6 @@ public class PolyChart extends Region implements PeakListener {
     private final ChartProperties chartProps = new ChartProperties(this);
     private final PolyChartAxes axes = new PolyChartAxes(datasetAttributesList);
 
-    //XXX use accessor instead
-    int datasetPhaseDim = 0;
-    int phaseAxis = 0;
-
-
     private ProcessorController processorController = null;
     private int crossHairNumH = 0;
     private int crossHairNumV = 0;
@@ -147,6 +142,8 @@ public class PolyChart extends Region implements PeakListener {
     private Font peakFont = new Font(FONT_FAMILY, 12);
     private boolean disabled = false;
     private FXMLController sliceController = null;
+    private int phaseAxis = PolyChartAxes.X_INDEX;
+    private int datasetPhaseDim = 0;
     private double phaseFraction = 0.0;
     private boolean useImmediateMode = true;
     private Consumer<DatasetRegion> newRegionConsumer = null;
@@ -1075,10 +1072,22 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
+    protected int getPhaseAxis() {
+        return phaseAxis;
+    }
+
     public void updatePhaseDim() {
         if ((controller.getChartProcessor() == null) || !controller.isProcessControllerVisible()) {
             setPhaseDim(phaseAxis);
         }
+    }
+
+    protected int getPhaseDim() {
+        return datasetPhaseDim;
+    }
+
+    protected void resetPhaseDim() {
+        datasetPhaseDim = 0;
     }
 
     protected void setPhaseDim(int phaseDim) {
@@ -1095,11 +1104,11 @@ public class PolyChart extends Region implements PeakListener {
             }
         }
 
-        phaseAxis = 0;
+        phaseAxis = PolyChartAxes.X_INDEX;
         if (is1D() || vecDimName.equals("D1")) {
-            phaseAxis = 0;
+            phaseAxis = PolyChartAxes.X_INDEX;
         } else if (phaseDim > 0) {
-            phaseAxis = 1;
+            phaseAxis = PolyChartAxes.Y_INDEX;
         }
     }
 
@@ -3675,7 +3684,7 @@ public class PolyChart extends Region implements PeakListener {
         }
         int drawPivotAxis = -1;
         if (controller.isPhaseSliderVisible()) {
-            if ((phaseAxis == 0) || (nDim == 1)) {
+            if ((phaseAxis == PolyChartAxes.X_INDEX) || (nDim == 1)) {
                 yOn = false;
                 drawPivotAxis = 0;
             } else {
