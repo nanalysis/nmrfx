@@ -483,7 +483,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             ProcessorController processorController = getActiveChart().getProcessorController(false);
             if (processorController != null && (!dataset.getFile().equals(chartProcessor.datasetFile))) {
                 processorPane.getChildren().clear();
-                getActiveChart().processorController = null;
+                getActiveChart().setProcessorController(null);
                 processorController.cleanUp();
             }
             if (addDatasetToChart) {
@@ -535,7 +535,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         getActiveChart().clearAnnotations();
         getActiveChart().clearPopoverTools();
         getActiveChart().removeProjections();
-        ProcessorController processorController = getActiveChart().processorController;
+        ProcessorController processorController = getActiveChart().getProcessorController();
         if (processorController != null) {
             processorController.viewingDataset(true);
         }

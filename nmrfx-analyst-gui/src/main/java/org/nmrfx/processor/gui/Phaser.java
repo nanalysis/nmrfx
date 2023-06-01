@@ -322,8 +322,8 @@ public class Phaser {
 
     public void setPhaseOp(String opString) {
         PolyChart chart = controller.getActiveChart();
-        int opIndex = chart.processorController.propertyManager.setOp(opString);
-        chart.processorController.propertyManager.setPropSheet(opIndex, opString);
+        int opIndex = chart.getProcessorController().propertyManager.setOp(opString);
+        chart.getProcessorController().propertyManager.setPropSheet(opIndex, opString);
     }
 
     public void setPhaseOp() {
@@ -346,7 +346,7 @@ public class Phaser {
                     }
                 }
                 String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", ph0, ph1, delImagString);
-                if (chart.processorController != null) {
+                if (chart.getProcessorController() != null) {
                     setPhaseOp(opString);
                 }
                 chart.setPh0(0.0);
@@ -359,7 +359,7 @@ public class Phaser {
                 double deltaPH1 = ph1 - chart.getDataPH1();
 
                 String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", newph0, newph1, delImagString);
-                if (chart.processorController != null) {
+                if (chart.getProcessorController() != null) {
                     setPhaseOp(opString);
                 }
                 chart.setPh0(deltaPH0);

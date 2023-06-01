@@ -130,11 +130,11 @@ public class PolyChart extends Region implements PeakListener {
 
     //XXX use accessor instead
     FXMLController controller;
-    ProcessorController processorController = null;
     int datasetPhaseDim = 0;
     int phaseAxis = 0;
 
 
+    private ProcessorController processorController = null;
     private int crossHairNumH = 0;
     private int crossHairNumV = 0;
     private boolean hasMiddleMouseButton = false;
@@ -564,6 +564,10 @@ public class PolyChart extends Region implements PeakListener {
 
     public void setProcessorController(ProcessorController controller) {
         this.processorController = controller;
+    }
+
+    public ProcessorController getProcessorController() {
+        return processorController;
     }
 
     public Optional<DatasetAttributes> getFirstDatasetAttributes() {
