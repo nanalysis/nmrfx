@@ -1,13 +1,13 @@
 package org.nmrfx.processor.gui.spectra.mousehandlers;
 
 import javafx.scene.input.MouseEvent;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
 
 import java.util.List;
 import java.util.Optional;
@@ -52,8 +52,8 @@ public class PeakPickHandler extends MouseHandler {
             double dX = Math.abs(x - mouseBindings.dragStart[0]);
             double minMove = 20;
             if ((dX > minMove) && !chart.getDatasetAttributes().isEmpty()) {
-                NMRAxis xAxis = chart.getAxes().getX();
-                NMRAxis yAxis = chart.getAxes().getY();
+                Axis xAxis = chart.getAxes().getX();
+                Axis yAxis = chart.getAxes().getY();
                 if (chart.is1D()) {
                     double xLim0 = xAxis.getValueForDisplay(mouseBindings.dragStart[0]).doubleValue();
                     double xLim1 = xAxis.getValueForDisplay(x).doubleValue();

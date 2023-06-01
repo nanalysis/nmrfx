@@ -20,6 +20,7 @@ package org.nmrfx.processor.gui.spectra;
 import javafx.beans.property.*;
 import javafx.scene.paint.Color;
 import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.math.VecBase;
@@ -722,7 +723,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return rowIndex;
     }
 
-    public void updateBounds(AXMODE[] axModes, NMRAxis[] axes, DISDIM disDim) {
+    public void updateBounds(AXMODE[] axModes, Axis[] axes, DISDIM disDim) {
         int[][] localPt;
         double[][] limits;
         localPt = new int[nDim][2];
@@ -1631,7 +1632,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return offsets;
     }
 
-    public void moveRegion(IntegralHit iHit, NMRAxis[] axes, double[] newValue) {
+    public void moveRegion(IntegralHit iHit, Axis[] axes, double[] newValue) {
         int handle = iHit.handle;
         DatasetRegion r = iHit.getDatasetRegion();
         double newX = axes[0].getValueForDisplay(newValue[0]).doubleValue();

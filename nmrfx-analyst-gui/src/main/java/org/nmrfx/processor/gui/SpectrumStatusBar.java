@@ -44,8 +44,8 @@ import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.SegmentedButton;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.utils.properties.CustomNumberTextField;
@@ -443,7 +443,7 @@ public class SpectrumStatusBar {
             if (!newChart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = newChart.getDatasetAttributes().get(0);
                 for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
-                    NMRAxis axis = newChart.getAxes().get(axNum);
+                    Axis axis = newChart.getAxes().get(axNum);
                     int indexL = newChart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getLowerBound());
                     int indexU = newChart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getUpperBound());
                     int dDim = dataAttr.dim[axNum];
@@ -571,7 +571,7 @@ public class SpectrumStatusBar {
 
             if (!chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                NMRAxis axis = chart.getAxes().get(iDim);
+                Axis axis = chart.getAxes().get(iDim);
                 int[] pts = new int[2];
                 pts[0] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getLowerBound());
                 pts[1] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getUpperBound());

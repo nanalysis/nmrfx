@@ -17,9 +17,9 @@
  */
 package org.nmrfx.processor.gui.undo;
 
+import org.nmrfx.chart.Axis;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartManager;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
 
 import java.util.Optional;
 
@@ -36,7 +36,7 @@ public class ChartUndoLimits extends ChartUndo {
         int nDim = chart.getNDim();
         limits = new double[nDim][2];
         for (int i = 0; i < nDim; i++) {
-            NMRAxis axis = chart.getAxes().get(i);
+            Axis axis = chart.getAxes().get(i);
             limits[i][0] = axis != null ? axis.getLowerBound() : Double.NaN;
             limits[i][1] = axis != null ? axis.getUpperBound() : Double.NaN;
         }

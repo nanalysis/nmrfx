@@ -22,7 +22,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
 
 public class AxisChangeListener implements ChangeListener<Number> {
     private final PolyChart chart;
@@ -42,7 +41,7 @@ public class AxisChangeListener implements ChangeListener<Number> {
             if (chart == PolyChartManager.getInstance().getActiveChart()) {
                 if (axisIndex >= 2) {
                     DatasetAttributes datasetAttributes = chart.getDatasetAttributes().get(0);
-                    NMRAxis axis = chart.getAxes().get(axisIndex);
+                    Axis axis = chart.getAxes().get(axisIndex);
                     int indexL = chart.getAxes().getMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getLowerBound());
                     int indexU = chart.getAxes().getMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getUpperBound());
 
