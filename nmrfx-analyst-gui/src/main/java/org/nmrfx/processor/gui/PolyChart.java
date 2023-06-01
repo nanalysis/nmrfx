@@ -129,8 +129,6 @@ public class PolyChart extends Region implements PeakListener {
     private final PolyChartAxes axes = new PolyChartAxes(datasetAttributesList);
 
     //XXX use accessor instead
-    double minLeftBorder = 0.0;
-    double minBottomBorder = 0.0;
     FXMLController controller;
     ProcessorController processorController = null;
     int datasetPhaseDim = 0;
@@ -142,6 +140,8 @@ public class PolyChart extends Region implements PeakListener {
     private boolean hasMiddleMouseButton = false;
     private DatasetAttributes lastDatasetAttr = null;
     private AnnoText parameterText = null;
+    private double minLeftBorder = 0.0;
+    private double minBottomBorder = 0.0;
     private Insets borders = Insets.EMPTY;
     private double stackWidth = 0.0;
     private Font peakFont = new Font(FONT_FAMILY, 12);
@@ -1701,6 +1701,11 @@ public class PolyChart extends Region implements PeakListener {
 
     public void draw() {
         Fx.runOnFxThread(this::refresh);
+    }
+
+    public void setMinBorders(double bottom, double left) {
+        minLeftBorder = left;
+        minBottomBorder = bottom;
     }
 
     public Insets getMinBorders() {

@@ -1160,8 +1160,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         for (PolyChart chart : charts) {
             int iRow = iChild / nCols;
             int iCol = iChild % nCols;
-            chart.minLeftBorder = bordersGrid[0][iCol];
-            chart.minBottomBorder = bordersGrid[2][iRow];
+            double minLeftBorder = bordersGrid[0][iCol];
+            double minBottomBorder = bordersGrid[2][iRow];
+            chart.setMinBorders(minBottomBorder, minLeftBorder);
+
             iChild++;
         }
 
