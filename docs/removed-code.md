@@ -28,6 +28,10 @@ Removal dates in YYYY-MM-DD format.
 * org.nmrfx.utils.properties.ListPropertyEditor
 * org.nmrfx.processor.gui.controls.ConsoleUtil
 
+## 2023-06-01
+
+* org.nmrfx.processor.gui.spectra.SpectrumWriter
+
 ## Methods in UI classes
 
 ### 2023-05-16
