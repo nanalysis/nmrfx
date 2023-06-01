@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -57,6 +57,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.DoubleBinaryOperator;
 
 /**
@@ -78,8 +79,9 @@ public class DrawSpectrum {
     private final List<DatasetAttributes> dataAttrList = Collections.synchronizedList(new ArrayList<>());
     private final DrawTask makeContours;
     private final DrawContours drawContours;
+    private final AtomicLong activeJobId = new AtomicLong(0);
     private final double[][] xy = new double[2][];
-    private final ArrayBlockingQueue<DrawObject> contourQueue = new ArrayBlockingQueue<>(4);
+    private final ArrayBlockingQueue<QueuedContour> contourQueue = new ArrayBlockingQueue<>(4);
     private final PolyChartAxes axes;
     private GraphicsContextInterface g2;
     private double stackWidth = 0.0;
@@ -87,7 +89,6 @@ public class DrawSpectrum {
     private int nPoints = 0;
     private int iChunk = 0;
     private int rowIndex = -1;
-    private volatile long jobCount = 0;
     private long startTime = 0;
     private Rectangle clipRect = null;
 
@@ -121,7 +122,7 @@ public class DrawSpectrum {
         if (pick) {
             return;
         }
-        jobCount++;
+        activeJobId.incrementAndGet();
         makeContours.worker.cancel();
         drawContours.worker.cancel();
         Executor makeExec = makeContours.worker.getExecutor();
@@ -694,13 +695,13 @@ public class DrawSpectrum {
         return levels;
     }
 
-    private static void drawSquares(DrawSpectrum drawSpectrum, DrawObject drawObject, GraphicsContextInterface g2) {
-        if (cancelled || drawObject.count < drawSpectrum.jobCount) {
+    private static void drawSquares(DrawSpectrum drawSpectrum, QueuedContour queuedContour, GraphicsContextInterface g2) {
+        if (cancelled || queuedContour.jobId != drawSpectrum.activeJobId.get()) {
             return;
         }
 
         try {
-            drawObject.contour.drawSquares(g2);
+            queuedContour.contour.drawSquares(g2);
         } catch (Exception ex) {
             log.warn("Exception while drawing square", ex);
         }
@@ -958,15 +959,14 @@ public class DrawSpectrum {
         return iLine;
     }
 
-    //XXX replace with record and see where it is used
-    private static class DrawObject {
-        private final Contour contour;
-        private final long count;
-
-        DrawObject(Contour contour, long count) {
-            this.contour = contour;
-            this.count = count;
-        }
+    /**
+     * A way to store a contour for asynchronous drawing. The contour is stored in a queue when computed, while an asynchronous tasks is polling the queue to actually draw them.
+     * The job identifier is used to avoid drawing contours generated for a previous drawing request.
+     *
+     * @param contour the contour to draw asynchronously
+     * @param jobId   the job identifier for this drawing request
+     */
+    private record QueuedContour(Contour contour, long jobId) {
     }
 
     private static class DrawTask {
@@ -1042,8 +1042,7 @@ public class DrawSpectrum {
                                 int[][] cells = new int[z.length][z[0].length];
                                 if (!contour.marchSquares(sign * level, z, cells)) {
                                     try {
-                                        DrawObject drawObject = new DrawObject(contour, drawSpectrum.jobCount);
-                                        drawSpectrum.contourQueue.put(drawObject);
+                                        drawSpectrum.contourQueue.put(new QueuedContour(contour, drawSpectrum.activeJobId.get()));
                                     } catch (InterruptedException ex) {
                                         done = true;
                                         return;
@@ -1090,11 +1089,6 @@ public class DrawSpectrum {
             worker.setExecutor(DRAW_CONTOUR_SERVICE);
         }
 
-        private void drawContourObject(DrawObject drawObject) throws InterruptedException, ExecutionException {
-            GraphicsContextInterface g2 = drawSpectrum.g2;
-            Fx.runOnFxThreadAndWait(() -> drawSquares(drawSpectrum, drawObject, g2));
-        }
-
         private void drawAllContours(Task<Void> task) {
             boolean interrupted = false;
             try {
@@ -1111,16 +1105,11 @@ public class DrawSpectrum {
                     }
 
                     try {
-                        DrawObject drawObject = drawSpectrum.contourQueue.poll(10, TimeUnit.SECONDS);
-                        if (drawObject == null) {
+                        if (!drawNextContour()) {
                             break;
                         }
-
-                        try {
-                            drawContourObject(drawObject);
-                        } catch (ExecutionException ex) {
-                            log.warn(ex.getMessage(), ex);
-                        }
+                    } catch (ExecutionException ex) {
+                        log.warn(ex.getMessage(), ex);
                     } catch (InterruptedException ex) {
                         interrupted = true;
                         break;
@@ -1131,6 +1120,22 @@ public class DrawSpectrum {
                     Thread.currentThread().interrupt();
                 }
             }
+        }
+
+        /**
+         * Poll a contour from the queue, draw it on JavaFX's thread, and wait until termination.
+         *
+         * @return false if the queue is empty
+         */
+        private boolean drawNextContour() throws InterruptedException, ExecutionException {
+            QueuedContour queuedContour = drawSpectrum.contourQueue.poll(10, TimeUnit.SECONDS);
+            if (queuedContour == null) {
+                return false;
+            }
+
+            GraphicsContextInterface g2 = drawSpectrum.g2;
+            Fx.runOnFxThreadAndWait(() -> drawSquares(drawSpectrum, queuedContour, g2));
+            return true;
         }
     }
 }
