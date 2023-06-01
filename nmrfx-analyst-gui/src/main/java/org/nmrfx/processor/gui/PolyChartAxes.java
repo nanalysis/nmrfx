@@ -240,11 +240,11 @@ public class PolyChartAxes {
     }
 
     public void setAxisState(boolean leftEdge, boolean bottomEdge) {
-        xAxis.setShowTicsAndLabels(bottomEdge);
+        xAxis.setTicksAndLabelsVisible(bottomEdge);
         xAxis.setTickLabelsVisible(bottomEdge);
         xAxis.setTickMarksVisible(bottomEdge);
         xAxis.setLabelVisible(bottomEdge);
-        yAxis.setShowTicsAndLabels(leftEdge);
+        yAxis.setTicksAndLabelsVisible(leftEdge);
         yAxis.setTickLabelsVisible(leftEdge);
         yAxis.setTickMarksVisible(leftEdge);
         yAxis.setLabelVisible(leftEdge);

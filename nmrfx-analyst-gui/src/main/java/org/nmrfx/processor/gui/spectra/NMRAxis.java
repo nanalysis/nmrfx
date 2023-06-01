@@ -22,25 +22,8 @@ import javafx.geometry.Orientation;
 import org.nmrfx.chart.Axis;
 
 public class NMRAxis extends Axis {
-    private boolean showTicsAndLabels = true;
-
     public NMRAxis(Orientation orientation, double lowerBound, double upperBound, double width, double height) {
         super(orientation, lowerBound, upperBound, width, height);
     }
 
-    public void setShowTicsAndLabels(boolean state) {
-        showTicsAndLabels = state;
-    }
-
-    public void updateStateAndLabel(String label) {
-        setTickLabelsVisible(showTicsAndLabels);
-        setTickMarksVisible(showTicsAndLabels);
-        setLabelVisible(showTicsAndLabels);
-
-        if (!showTicsAndLabels) {
-            setLabel("");
-        } else if (!label.equals(getLabel())) {
-            setLabel(label);
-        }
-    }
 }

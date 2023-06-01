@@ -609,6 +609,20 @@ public class Axis implements AxisLimits {
         return labelVisible;
     }
 
+    public void setTicksAndLabelsVisible(boolean visible) {
+        setTickLabelsVisible(visible);
+        setTickMarksVisible(visible);
+        setLabelVisible(visible);
+    }
+
+    public void updateLabel(String label) {
+        if (!isLabelVisible()) {
+            setLabel("");
+        } else if (!label.equals(getLabel())) {
+            setLabel(label);
+        }
+    }
+
     public void copyTo(Axis newAxis) {
         newAxis.setColor(getColor());
         newAxis.setLabel(getLabel());
