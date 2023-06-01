@@ -186,12 +186,10 @@ public class DrawSpectrum {
     //XXX replace with record and see where it is used
     private static class DrawObject {
         private final Contour contour;
-        private final DatasetAttributes dataAttr;
         private final long count;
 
-        DrawObject(DatasetAttributes dataAttr, Contour contour, long count) {
+        DrawObject(Contour contour, long count) {
             this.contour = contour;
-            this.dataAttr = dataAttr;
             this.count = count;
         }
     }
@@ -201,7 +199,6 @@ public class DrawSpectrum {
         private final DrawSpectrum drawSpectrum;
         private List<DatasetAttributes> dataAttrList;
         private PolyChartAxes axes;
-        private float[] levels;
         private boolean done = false;
 
         private DrawTask(DrawSpectrum drawSpectrum) {
@@ -217,7 +214,6 @@ public class DrawSpectrum {
                                 dataAttrList = new ArrayList<>();
                                 dataAttrList.addAll(drawSpectrum.dataAttrList);
                                 for (DatasetAttributes fileData : dataAttrList) {
-                                    levels = getLevels(fileData);
                                     axes = drawSpectrum.getAxes();
                                     drawNow(this, fileData);
                                     if (done) {
@@ -271,7 +267,7 @@ public class DrawSpectrum {
                                 int[][] cells = new int[z.length][z[0].length];
                                 if (!contour.marchSquares(sign * level, z, cells)) {
                                     try {
-                                        DrawObject drawObject = new DrawObject(fileData, contour, drawSpectrum.jobCount);
+                                        DrawObject drawObject = new DrawObject(contour, drawSpectrum.jobCount);
                                         drawSpectrum.contourQueue.put(drawObject);
                                     } catch (InterruptedException ex) {
                                         done = true;
