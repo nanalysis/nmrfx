@@ -68,20 +68,20 @@ public class DrawSpectrum {
     private static final double DEG_TO_RAD = Math.PI / 180.0;
     private static final long MAX_TIME = 2000;
 
-    private static final ExecutorService MAKE_CONTOUR_SERVICE = Executors.newFixedThreadPool(30);
-    private static final ExecutorService DRAW_CONTOUR_SERVICE = Executors.newFixedThreadPool(100);
+    private static final ExecutorService CONTOUR_GENERATION_EXECUTOR = Executors.newFixedThreadPool(30);
+    private static final ExecutorService CONTOUR_DRAWING_EXECUTOR = Executors.newFixedThreadPool(100);
     private static boolean cancelled = false;
 
     static {
-        ((ThreadPoolExecutor) DRAW_CONTOUR_SERVICE).setKeepAliveTime(10, TimeUnit.SECONDS);
+        ((ThreadPoolExecutor) CONTOUR_DRAWING_EXECUTOR).setKeepAliveTime(10, TimeUnit.SECONDS);
     }
 
     private final List<DatasetAttributes> dataAttrList = Collections.synchronizedList(new ArrayList<>());
-    private final DrawTask makeContours;
-    private final DrawContours drawContours;
-    private final AtomicLong activeJobId = new AtomicLong(0);
+    private final AtomicLong contourDrawingRequestId = new AtomicLong(0);
+    private final ArrayBlockingQueue<ContourDrawingRequest> contourQueue = new ArrayBlockingQueue<>(4);
+    private final ContourGenerationService contoursGeneration;
+    private final ContoursDrawingService contoursDrawing;
     private final double[][] xy = new double[2][];
-    private final ArrayBlockingQueue<QueuedContour> contourQueue = new ArrayBlockingQueue<>(4);
     private final PolyChartAxes axes;
     private GraphicsContextInterface g2;
     private double stackWidth = 0.0;
@@ -98,18 +98,18 @@ public class DrawSpectrum {
             GraphicsContext g2C = canvas.getGraphicsContext2D();
             g2 = new GraphicsContextProxy(g2C);
         }
-        makeContours = new DrawTask(this);
-        drawContours = new DrawContours(this);
+        contoursGeneration = new ContourGenerationService(this);
+        contoursDrawing = new ContoursDrawingService(this);
     }
 
     public void setController(FXMLController controller) {
         Button cancelButton = controller.getCancelButton();
         cancelButton.setOnAction(actionEvent -> {
             cancelled = true;
-            makeContours.worker.cancel();
-            drawContours.worker.cancel();
+            contoursGeneration.cancel();
+            contoursDrawing.cancel();
         });
-        cancelButton.disableProperty().bind((makeContours.worker).stateProperty().isNotEqualTo(Task.State.RUNNING));
+        cancelButton.disableProperty().bind(contoursGeneration.stateProperty().isNotEqualTo(Task.State.RUNNING));
     }
 
     public void setClipRect(double x, double y, double width, double height) {
@@ -122,11 +122,11 @@ public class DrawSpectrum {
         if (pick) {
             return;
         }
-        activeJobId.incrementAndGet();
-        makeContours.worker.cancel();
-        drawContours.worker.cancel();
-        Executor makeExec = makeContours.worker.getExecutor();
-        Executor drawExec = drawContours.worker.getExecutor();
+        contourDrawingRequestId.incrementAndGet();
+        contoursGeneration.cancel();
+        contoursDrawing.cancel();
+        Executor makeExec = contoursGeneration.getExecutor();
+        Executor drawExec = contoursDrawing.getExecutor();
         if (makeExec instanceof ThreadPoolExecutor tPool) {
             tPool.purge();
         }
@@ -138,13 +138,13 @@ public class DrawSpectrum {
         contourQueue.clear();
         startTime = System.currentTimeMillis();
 
-        makeContours.worker.restart();
-        drawContours.worker.restart();
+        contoursGeneration.restart();
+        contoursDrawing.restart();
     }
 
     public void clearThreads() {
-        makeContours.worker.cancel();
-        drawContours.worker.cancel();
+        contoursGeneration.cancel();
+        contoursDrawing.cancel();
     }
 
     public boolean drawSpectrumImmediate(GraphicsContextInterface g2I, ArrayList<DatasetAttributes> dataGenerators) {
@@ -695,18 +695,6 @@ public class DrawSpectrum {
         return levels;
     }
 
-    private static void drawSquares(DrawSpectrum drawSpectrum, QueuedContour queuedContour, GraphicsContextInterface g2) {
-        if (cancelled || queuedContour.jobId != drawSpectrum.activeJobId.get()) {
-            return;
-        }
-
-        try {
-            queuedContour.contour.drawSquares(g2);
-        } catch (Exception ex) {
-            log.warn("Exception while drawing square", ex);
-        }
-    }
-
     private static double[][] getPix(Axis xAxis, Axis yAxis, DatasetAttributes dataAttr) {
         DatasetBase dataset = dataAttr.getDataset();
         double xPoint1 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][0]);
@@ -963,50 +951,51 @@ public class DrawSpectrum {
      * A way to store a contour for asynchronous drawing. The contour is stored in a queue when computed, while an asynchronous tasks is polling the queue to actually draw them.
      * The job identifier is used to avoid drawing contours generated for a previous drawing request.
      *
-     * @param contour the contour to draw asynchronously
-     * @param jobId   the job identifier for this drawing request
+     * @param contour   the contour to draw asynchronously
+     * @param requestId the job identifier for this drawing request
      */
-    private record QueuedContour(Contour contour, long jobId) {
+    private record ContourDrawingRequest(Contour contour, long requestId) {
     }
 
-    private static class DrawTask {
-        private final Service<Void> worker;
+    /**
+     * The service responsible for computing contours and adding them to the shared queue.
+     */
+    private static class ContourGenerationService extends Service<Void> {
         private final DrawSpectrum drawSpectrum;
         private List<DatasetAttributes> dataAttrList;
         private PolyChartAxes axes;
         private boolean done = false;
 
-        private DrawTask(DrawSpectrum drawSpectrum) {
+        private ContourGenerationService(DrawSpectrum drawSpectrum) {
             this.drawSpectrum = drawSpectrum;
-            worker = new Service<>() {
-                @Override
-                protected Task<Void> createTask() {
-                    return new Task<>() {
-                        @Override
-                        protected Void call() {
-                            try {
-                                done = false;
-                                dataAttrList = new ArrayList<>();
-                                dataAttrList.addAll(drawSpectrum.dataAttrList);
-                                for (DatasetAttributes fileData : dataAttrList) {
-                                    axes = drawSpectrum.getAxes();
-                                    drawNow(this, fileData);
-                                    if (done) {
-                                        break;
-                                    }
-                                }
-                            } catch (IOException e) {
-                                log.warn(e.getMessage(), e);
-                            }
-                            return null;
-                        }
-                    };
-                }
-            };
-            worker.setExecutor(MAKE_CONTOUR_SERVICE);
+            setExecutor(CONTOUR_GENERATION_EXECUTOR);
         }
 
-        private void drawNow(Task<Void> task, DatasetAttributes fileData) throws IOException {
+        @Override
+        protected Task<Void> createTask() {
+            return new Task<>() {
+                @Override
+                protected Void call() {
+                    try {
+                        done = false;
+                        dataAttrList = new ArrayList<>();
+                        dataAttrList.addAll(drawSpectrum.dataAttrList);
+                        for (DatasetAttributes fileData : dataAttrList) {
+                            axes = drawSpectrum.getAxes();
+                            generateDrawingRequests(this, fileData);
+                            if (done) {
+                                break;
+                            }
+                        }
+                    } catch (IOException e) {
+                        log.warn(e.getMessage(), e);
+                    }
+                    return null;
+                }
+            };
+        }
+
+        private void generateDrawingRequests(Task<Void> task, DatasetAttributes fileData) throws IOException {
             float[] levels = getLevels(fileData);
             double[] offset = {0, 0};
             fileData.mChunk = -1;
@@ -1042,7 +1031,8 @@ public class DrawSpectrum {
                                 int[][] cells = new int[z.length][z[0].length];
                                 if (!contour.marchSquares(sign * level, z, cells)) {
                                     try {
-                                        drawSpectrum.contourQueue.put(new QueuedContour(contour, drawSpectrum.activeJobId.get()));
+                                        ContourDrawingRequest request = new ContourDrawingRequest(contour, drawSpectrum.contourDrawingRequestId.get());
+                                        drawSpectrum.contourQueue.put(request);
                                     } catch (InterruptedException ex) {
                                         done = true;
                                         return;
@@ -1059,34 +1049,33 @@ public class DrawSpectrum {
                     throw new IOException(ex.getMessage());
                 }
             } while (true);
-
         }
     }
 
-    private static class DrawContours {
+    /**
+     * The service responsible for polling contour drawing request from the queue and actually drawing them.
+     */
+    private static class ContoursDrawingService extends Service<Void> {
         private final DrawSpectrum drawSpectrum;
-        private final Service<Void> worker;
 
-        //XXX TODO rework service/task mechanism, used several times in DrawSpectrum
-        private DrawContours(DrawSpectrum drawSpectrum) {
+        private ContoursDrawingService(DrawSpectrum drawSpectrum) {
             this.drawSpectrum = drawSpectrum;
-            worker = new Service<>() {
+            setExecutor(CONTOUR_DRAWING_EXECUTOR);
+        }
+
+        @Override
+        protected Task<Void> createTask() {
+            return new Task<>() {
                 @Override
-                protected Task<Void> createTask() {
-                    return new Task<>() {
-                        @Override
-                        protected Void call() {
-                            try {
-                                drawAllContours(this);
-                            } catch (Exception e) {
-                                log.warn(e.getMessage(), e);
-                            }
-                            return null;
-                        }
-                    };
+                protected Void call() {
+                    try {
+                        drawAllContours(this);
+                    } catch (Exception e) {
+                        log.warn(e.getMessage(), e);
+                    }
+                    return null;
                 }
             };
-            worker.setExecutor(DRAW_CONTOUR_SERVICE);
         }
 
         private void drawAllContours(Task<Void> task) {
@@ -1128,14 +1117,25 @@ public class DrawSpectrum {
          * @return false if the queue is empty
          */
         private boolean drawNextContour() throws InterruptedException, ExecutionException {
-            QueuedContour queuedContour = drawSpectrum.contourQueue.poll(10, TimeUnit.SECONDS);
+            ContourDrawingRequest queuedContour = drawSpectrum.contourQueue.poll(10, TimeUnit.SECONDS);
             if (queuedContour == null) {
                 return false;
             }
 
-            GraphicsContextInterface g2 = drawSpectrum.g2;
-            Fx.runOnFxThreadAndWait(() -> drawSquares(drawSpectrum, queuedContour, g2));
+            Fx.runOnFxThreadAndWait(() -> drawSquares(drawSpectrum, queuedContour));
             return true;
+        }
+
+        private static void drawSquares(DrawSpectrum drawSpectrum, ContourDrawingRequest request) {
+            if (DrawSpectrum.cancelled || request.requestId != drawSpectrum.contourDrawingRequestId.get()) {
+                return;
+            }
+
+            try {
+                request.contour.drawSquares(drawSpectrum.g2);
+            } catch (Exception ex) {
+                log.warn("Exception while drawing square", ex);
+            }
         }
     }
 }
