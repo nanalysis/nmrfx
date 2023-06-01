@@ -26,7 +26,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.*;
 import javafx.geometry.*;
 import javafx.scene.Cursor;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -110,7 +109,6 @@ public class PolyChart extends Region implements PeakListener {
     private final Path bcPath = new Path();
     private final Rectangle highlightRect = new Rectangle();
     private final List<Rectangle> canvasHandles = List.of(new Rectangle(), new Rectangle(), new Rectangle(), new Rectangle());
-    private final Group plotBackground;
     private final Pane plotContent;
     private final DrawSpectrum drawSpectrum;
     private final DrawPeaks drawPeaks;
@@ -163,7 +161,6 @@ public class PolyChart extends Region implements PeakListener {
         this.canvas = canvas;
         this.peakCanvas = peakCanvas;
         this.annoCanvas = annoCanvas;
-        plotBackground = new Group();
         this.plotContent = plotContent;
         drawSpectrum = new DrawSpectrum(axes, canvas);
         drawSpectrum.setupHaltButton(controller.getHaltButton());
@@ -532,6 +529,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
             }
         } else if (mouseAction == MOUSE_ACTION.DRAG_PEAKPICK) {
+            // nothing
         } else {
             drawPeakLists(false);
             for (PeakListAttributes peakAttr : peakListAttributesList) {
@@ -2448,7 +2446,7 @@ public class PolyChart extends Region implements PeakListener {
         Optional<IntegralHit> hit = hitRegion(controls, pickX, pickY);
         hit.ifPresentOrElse(iHit -> {
             iHit.getDatasetAttr().setActiveRegion(iHit);
-            activeRegion.set(hit.get().getDatasetRegion());
+            activeRegion.set(iHit.getDatasetRegion());
         }, () -> activeRegion.set(null));
 
         return hit.isPresent();
@@ -2467,19 +2465,18 @@ public class PolyChart extends Region implements PeakListener {
             datasetAttr.setActiveRegion(null);
         }
         setActiveRegion(null);
-        Optional<IntegralHit> hit = Optional.empty();
         if (datasetRegion != null) {
             for (DatasetAttributes datasetAttr : datasetAttributesList) {
                 if (datasetAttr.getDataset().getReadOnlyRegions().contains(datasetRegion)) {
                     IntegralHit newHit = new IntegralHit(datasetAttr, datasetRegion, -1);
                     datasetAttr.setActiveRegion(newHit);
                     setActiveRegion(datasetRegion);
-                    hit = Optional.of(newHit);
-                    break;
+                    return Optional.of(newHit);
                 }
             }
         }
-        return hit;
+
+        return Optional.empty();
     }
 
     public Optional<IntegralHit> selectIntegral(double pickX, double pickY) {
@@ -2492,7 +2489,6 @@ public class PolyChart extends Region implements PeakListener {
             activeRegion.set(iHit.getDatasetRegion());
         }, () -> activeRegion.set(null));
         return hit;
-
     }
 
     public boolean hasActiveRegion() {
@@ -3336,9 +3332,9 @@ public class PolyChart extends Region implements PeakListener {
         Iterator<CanvasAnnotation> iter = canvasAnnotations.iterator();
         while (iter.hasNext()) {
             CanvasAnnotation anno = iter.next();
-            if (anno.getClass() == annoClass) {
+            if (anno != null && anno.getClass() == annoClass) {
                 iter.remove();
-                if ((anno != null) && (anno == parameterText)) {
+                if (anno == parameterText) {
                     parameterText = null;
                 }
             }
@@ -3599,13 +3595,11 @@ public class PolyChart extends Region implements PeakListener {
 
     public void drawProjection(GraphicsContextInterface gC, int iAxis, DatasetAttributes projectionDatasetAttributes) {
         DatasetAttributes dataAttr = datasetAttributesList.get(0);
-        Bounds bounds = plotBackground.getBoundsInParent();
         drawSpectrum.drawProjection(projectionDatasetAttributes, dataAttr, iAxis);
         double[][] xy = drawSpectrum.getXY();
         int nPoints = drawSpectrum.getNPoints();
         gC.setStroke(dataAttr.getPosColor());
         gC.strokePolyline(xy[0], xy[1], nPoints);
-
     }
 
     public void extractSlice(int iOrient) {
@@ -3675,7 +3669,6 @@ public class PolyChart extends Region implements PeakListener {
             return;
         }
         int nDim = dataset.getNDim();
-        Bounds bounds = plotBackground.getBoundsInParent();
         boolean xOn = false;
         boolean yOn = false;
         if (controller.sliceStatusProperty().get() && sliceStatus.get()) {
