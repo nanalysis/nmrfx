@@ -59,6 +59,8 @@ import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.function.DoubleBinaryOperator;
 
+// TODO reduce method visibility
+
 /**
  * @author brucejohnson
  */
@@ -164,7 +166,7 @@ public class DrawSpectrum {
         return finished;
     }
 
-    public static float[] getLevels(DatasetAttributes fileData) {
+    private static float[] getLevels(DatasetAttributes fileData) {
         int nLevels = fileData.getNlvls();
         double clm = fileData.getClm();
 
@@ -176,16 +178,16 @@ public class DrawSpectrum {
         return levels;
     }
 
-    PolyChartAxes getAxes() {
+    private PolyChartAxes getAxes() {
         //XXX previous implementation was making a copy of the backing array: is that necessary due to multithreading?
         return axes;
     }
 
+    //XXX replace with record and see where it is used
     private static class DrawObject {
-
-        Contour contour;
-        DatasetAttributes dataAttr;
-        long count;
+        private final Contour contour;
+        private final DatasetAttributes dataAttr;
+        private final long count;
 
         DrawObject(DatasetAttributes dataAttr, Contour contour, long count) {
             this.contour = contour;
@@ -195,14 +197,12 @@ public class DrawSpectrum {
     }
 
     private static class DrawTask {
-
-        public Service<Void> worker;
-
-        DrawSpectrum drawSpectrum;
-        List<DatasetAttributes> dataAttrList;
-        PolyChartAxes axes;
-        float[] levels;
-        boolean done = false;
+        private final Service<Void> worker;
+        private final DrawSpectrum drawSpectrum;
+        private List<DatasetAttributes> dataAttrList;
+        private PolyChartAxes axes;
+        private float[] levels;
+        private boolean done = false;
 
         private DrawTask(DrawSpectrum drawSpectrum) {
             this.drawSpectrum = drawSpectrum;
@@ -235,7 +235,7 @@ public class DrawSpectrum {
             worker.setExecutor(MAKE_CONTOUR_SERVICE);
         }
 
-        void drawNow(Task<Void> task, DatasetAttributes fileData) throws IOException {
+        private void drawNow(Task<Void> task, DatasetAttributes fileData) throws IOException {
             float[] levels = getLevels(fileData);
             double[] offset = {0, 0};
             fileData.mChunk = -1;
@@ -294,9 +294,10 @@ public class DrawSpectrum {
     }
 
     private static class DrawContours {
-        DrawSpectrum drawSpectrum;
-        public Service<Void> worker;
+        private final DrawSpectrum drawSpectrum;
+        private final Service<Void> worker;
 
+        //XXX TODO rework service/task mechanism, used several times in DrawSpectrum
         private DrawContours(DrawSpectrum drawSpectrum) {
             this.drawSpectrum = drawSpectrum;
             worker = new Service<>() {
@@ -318,12 +319,12 @@ public class DrawSpectrum {
             worker.setExecutor(DRAW_CONTOUR_SERVICE);
         }
 
-        public void drawContourObject(DrawObject drawObject) throws InterruptedException, ExecutionException {
+        private void drawContourObject(DrawObject drawObject) throws InterruptedException, ExecutionException {
             GraphicsContextInterface g2 = drawSpectrum.g2;
             Fx.runOnFxThreadAndWait(() -> drawSquares(drawSpectrum, drawObject, g2));
         }
 
-        public void drawAllContours(Task<Void> task) {
+        private void drawAllContours(Task<Void> task) {
             boolean interrupted = false;
             try {
                 while (true) {
@@ -362,7 +363,7 @@ public class DrawSpectrum {
         }
     }
 
-    public boolean drawNow(GraphicsContextInterface g2I) throws IOException {
+    private boolean drawNow(GraphicsContextInterface g2I) throws IOException {
         for (DatasetAttributes fileData : dataAttrList) {
             float[] levels = getLevels(fileData);
 
@@ -428,7 +429,7 @@ public class DrawSpectrum {
         }
     }
 
-    static void drawSquares(DrawSpectrum drawSpectrum, DrawObject drawObject, GraphicsContextInterface g2) {
+    private static void drawSquares(DrawSpectrum drawSpectrum, DrawObject drawObject, GraphicsContextInterface g2) {
         if (cancelled || drawObject.count < drawSpectrum.jobCount) {
             return;
         }
@@ -440,7 +441,7 @@ public class DrawSpectrum {
         }
     }
 
-    static double[][] getPix(Axis xAxis, Axis yAxis, DatasetAttributes dataAttr) {
+    private static double[][] getPix(Axis xAxis, Axis yAxis, DatasetAttributes dataAttr) {
         DatasetBase dataset = dataAttr.getDataset();
         double xPoint1 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][0]);
         double xPoint2 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][1]);
@@ -454,7 +455,7 @@ public class DrawSpectrum {
         return pix;
     }
 
-    static float[][] getData(DatasetAttributes dataAttr, int iChunk, double[] offset, float[][] z) throws IOException {
+    private static float[][] getData(DatasetAttributes dataAttr, int iChunk, double[] offset, float[][] z) throws IOException {
         StringBuffer chunkLabel = new StringBuffer();
         chunkLabel.setLength(0);
         int[][] apt = new int[dataAttr.getDataset().getNDim()][2];
@@ -466,7 +467,7 @@ public class DrawSpectrum {
         return dataAttr.readMatrix(dataAttr.mChunk, chunkLabel.toString(), apt, z);
     }
 
-    static boolean setContext(Contour contour, DatasetAttributes dataAttr, int iPosNeg) throws GraphicsIOException {
+    private static boolean setContext(Contour contour, DatasetAttributes dataAttr, int iPosNeg) throws GraphicsIOException {
         final boolean ok;
         if (iPosNeg == 0) {
             ok = dataAttr.getPos();
@@ -612,7 +613,7 @@ public class DrawSpectrum {
         return iChunk >= 0;
     }
 
-    public double getOffsetFraction(int i1D, int n1D) {
+    private double getOffsetFraction(int i1D, int n1D) {
         double fraction = 0.0;
         if (n1D > 1) {
             fraction = (n1D - i1D - 1.0) / (n1D - 1.0);
@@ -628,7 +629,7 @@ public class DrawSpectrum {
         stackY = Math.min(1.00, Math.max(0.0, value));
     }
 
-    public double[] getOffset(DatasetAttributes dataAttributes, double firstOffset, int i1D, int n1D) {
+    private double[] getOffset(DatasetAttributes dataAttributes, double firstOffset, int i1D, int n1D) {
         double height = axes.getY().getHeight();
         double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
         double dataOffset = height * (dataAttributes.getOffset() - firstOffset);
@@ -666,8 +667,8 @@ public class DrawSpectrum {
         return result;
     }
 
-    public void drawSubVector(Vec vec, int dataOffset,
-                              DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, double ppm1, double ppm2) {
+    private void drawSubVector(Vec vec, int dataOffset,
+                               DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, double ppm1, double ppm2) {
         int size = vec.getSize();
 
         double indexAxisDelta = (ppm1 - ppm2) / vec.getSize();
@@ -677,7 +678,7 @@ public class DrawSpectrum {
                 yFunction, 0, vec.getSize() - 1, size, dValue, 0.0, indexAxisDelta);
     }
 
-    public void drawVector(VecBase vec, int orientation, int dataOffset, AXMODE axMode, boolean drawReal, double ph0, double ph1, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec) {
+    private void drawVector(VecBase vec, int orientation, int dataOffset, AXMODE axMode, boolean drawReal, double ph0, double ph1, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec) {
         int size = vec.getSize();
         double phase1Delta = ph1 / (size - 1);
         Axis indexAxis = orientation == PolyChart.HORIZONTAL ? axes.getX() : axes.getY();
@@ -855,7 +856,7 @@ public class DrawSpectrum {
         }
     }
 
-    public int drawScaledLine(double[] ve, int start, int annoEnd, int end) {
+    private int drawScaledLine(double[] ve, int start, int annoEnd, int end) {
         double width = axes.getX().getWidth();
         double height = axes.getY().getHeight();
         double delta = width / (end - start);
@@ -868,7 +869,7 @@ public class DrawSpectrum {
 
     }
 
-    public int drawFullLine(double[] ve, int start, int end, double dValue, double delta, double[][] xy, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction) {
+    private int drawFullLine(double[] ve, int start, int end, double dValue, double delta, double[][] xy, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction) {
         nPoints = 0;
         int maxPoints = end - start + 1;
         if ((xy[0] == null) || (xy[0].length < maxPoints)) {
@@ -888,7 +889,7 @@ public class DrawSpectrum {
         return iLine;
     }
 
-    static int speedSpectrum(double[] ve, int vStart, int start, int end, double dValue, double delta, int nIncr, double[][] xy, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction) {
+    private static int speedSpectrum(double[] ve, int vStart, int start, int end, double dValue, double delta, int nIncr, double[][] xy, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction) {
         double minValue = Double.MAX_VALUE;
         double maxValue = Double.NEGATIVE_INFINITY;
         double pxmin;
@@ -968,7 +969,7 @@ public class DrawSpectrum {
         return result;
     }
 
-    public Optional<IntegralHit> drawActiveRegion(GraphicsContextInterface g2, DatasetAttributes datasetAttr, DatasetRegion region, boolean pick, boolean pickControls, double pickX, double pickY) throws GraphicsIOException {
+    private Optional<IntegralHit> drawActiveRegion(GraphicsContextInterface g2, DatasetAttributes datasetAttr, DatasetRegion region, boolean pick, boolean pickControls, double pickX, double pickY) throws GraphicsIOException {
         Optional<IntegralHit> result = Optional.empty();
         double rx2 = region.getRegionStart(0);
         double rx1 = region.getRegionEnd(0);
@@ -1076,7 +1077,7 @@ public class DrawSpectrum {
         return result;
     }
 
-    void drawHandleV(GraphicsContextInterface g2, double x, double y) {
+    private void drawHandleV(GraphicsContextInterface g2, double x, double y) {
         int handleSize = 6;
         int handleSize2 = 9;
 
@@ -1107,7 +1108,7 @@ public class DrawSpectrum {
         g2.stroke();
     }
 
-    void drawHandleH(GraphicsContextInterface g2, double x, double y) {
+    private void drawHandleH(GraphicsContextInterface g2, double x, double y) {
         int handleSize = 6;
         int handleSize2 = 9;
         g2.beginPath();
