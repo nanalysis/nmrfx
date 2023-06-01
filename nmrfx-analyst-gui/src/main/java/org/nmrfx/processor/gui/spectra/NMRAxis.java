@@ -37,7 +37,6 @@ public class NMRAxis extends Axis {
         setTickMarksVisible(showTicsAndLabels);
         setLabelVisible(showTicsAndLabels);
 
-        setVisible(true);
         if (!showTicsAndLabels) {
             setLabel("");
         } else if (!label.equals(getLabel())) {
