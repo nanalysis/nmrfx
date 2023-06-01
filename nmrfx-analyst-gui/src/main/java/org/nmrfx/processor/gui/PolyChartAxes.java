@@ -249,4 +249,15 @@ public class PolyChartAxes {
         yAxis.setTickMarksVisible(leftEdge);
         yAxis.setLabelVisible(leftEdge);
     }
+
+    public void setYAxisByLevel() {
+        if (!datasetAttributesList.isEmpty()) {
+            DatasetAttributes dataAttr = datasetAttributesList.get(0);
+            double delta = dataAttr.getLvl();
+            double fOffset = dataAttr.getOffset();
+            double min = -fOffset * delta;
+            double max = min + delta;
+            yAxis.setMinMax(min, max);
+        }
+    }
 }

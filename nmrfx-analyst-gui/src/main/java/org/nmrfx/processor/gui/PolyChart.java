@@ -711,7 +711,7 @@ public class PolyChart extends Region implements PeakListener {
                     fOffset -= y / getHeight();
                     dataAttr.setOffset(fOffset);
                 });
-                setYAxisByLevel();
+                axes.setYAxisByLevel();
             }
         } else {
             center -= y / scale;
@@ -737,7 +737,7 @@ public class PolyChart extends Region implements PeakListener {
             double oldLevel = dataAttr.getLvl();
             double newLevel = oldLevel * factor;
             dataAttr.setLvl(newLevel);
-            setYAxisByLevel();
+            axes.setYAxisByLevel();
         } else if (dataset != null) {
             double scale = factor;
             if (scale > 2.0) {
@@ -775,7 +775,7 @@ public class PolyChart extends Region implements PeakListener {
                     if (is1D()) {
                         double oldLevel = dataAttr.getLvl();
                         dataAttr.setLvl(oldLevel * scale);
-                        setYAxisByLevel();
+                        axes.setYAxisByLevel();
                     } else if (dataset != null) {
                         double oldLevel = dataAttr.getLvl();
                         dataAttr.setLvl(oldLevel * scale);
@@ -1057,7 +1057,7 @@ public class PolyChart extends Region implements PeakListener {
             double fOffset = (0.0 - min) / delta;
             dataAttr.setOffset(fOffset);
             dataAttr.setLvl(delta);
-            setYAxisByLevel();
+            axes.setYAxisByLevel();
         } else {
             DatasetBase datasetBase = dataAttr.getDataset();
             if (datasetBase instanceof Dataset dataset) {
@@ -1080,18 +1080,6 @@ public class PolyChart extends Region implements PeakListener {
                 }
             }
         }
-    }
-
-    protected void setYAxisByLevel() {
-        if (!datasetAttributesList.isEmpty()) {
-            DatasetAttributes dataAttr = datasetAttributesList.get(0);
-            double delta = dataAttr.getLvl();
-            double fOffset = dataAttr.getOffset();
-            double min = -fOffset * delta;
-            double max = min + delta;
-            axes.getY().setMinMax(min, max);
-        }
-
     }
 
     public void updatePhaseDim() {
@@ -1840,7 +1828,7 @@ public class PolyChart extends Region implements PeakListener {
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         GraphicsContextInterface gCPeaks = new GraphicsContextProxy(peakCanvas.getGraphicsContext2D());
         if (is1D()) {
-            setYAxisByLevel();
+            axes.setYAxisByLevel();
         }
         try {
             gC.save();
@@ -1965,7 +1953,7 @@ public class PolyChart extends Region implements PeakListener {
             }
         }
         if (is1D()) {
-            setYAxisByLevel();
+            axes.setYAxisByLevel();
         }
         svgGC.setStroke(axesColorLocal);
         axes.getX().setColor(axesColorLocal);
