@@ -59,8 +59,6 @@ import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.function.DoubleBinaryOperator;
 
-// TODO reduce method visibility
-
 /**
  * @author brucejohnson
  */
@@ -71,12 +69,11 @@ public class DrawSpectrum {
 
     private static final ExecutorService MAKE_CONTOUR_SERVICE = Executors.newFixedThreadPool(30);
     private static final ExecutorService DRAW_CONTOUR_SERVICE = Executors.newFixedThreadPool(100);
+    private static boolean cancelled = false;
 
     static {
         ((ThreadPoolExecutor) DRAW_CONTOUR_SERVICE).setKeepAliveTime(10, TimeUnit.SECONDS);
     }
-
-    private static boolean cancelled = false;
 
     private final List<DatasetAttributes> dataAttrList = Collections.synchronizedList(new ArrayList<>());
     private final DrawTask makeContours;
@@ -166,197 +163,9 @@ public class DrawSpectrum {
         return finished;
     }
 
-    private static float[] getLevels(DatasetAttributes fileData) {
-        int nLevels = fileData.getNlvls();
-        double clm = fileData.getClm();
-
-        float[] levels = new float[nLevels];
-        levels[0] = (float) fileData.lvlProperty().get();
-        for (int i = 1; i < nLevels; i++) {
-            levels[i] = (float) (levels[i - 1] * clm);
-        }
-        return levels;
-    }
-
     private PolyChartAxes getAxes() {
         //XXX previous implementation was making a copy of the backing array: is that necessary due to multithreading?
         return axes;
-    }
-
-    //XXX replace with record and see where it is used
-    private static class DrawObject {
-        private final Contour contour;
-        private final long count;
-
-        DrawObject(Contour contour, long count) {
-            this.contour = contour;
-            this.count = count;
-        }
-    }
-
-    private static class DrawTask {
-        private final Service<Void> worker;
-        private final DrawSpectrum drawSpectrum;
-        private List<DatasetAttributes> dataAttrList;
-        private PolyChartAxes axes;
-        private boolean done = false;
-
-        private DrawTask(DrawSpectrum drawSpectrum) {
-            this.drawSpectrum = drawSpectrum;
-            worker = new Service<>() {
-                @Override
-                protected Task<Void> createTask() {
-                    return new Task<>() {
-                        @Override
-                        protected Void call() {
-                            try {
-                                done = false;
-                                dataAttrList = new ArrayList<>();
-                                dataAttrList.addAll(drawSpectrum.dataAttrList);
-                                for (DatasetAttributes fileData : dataAttrList) {
-                                    axes = drawSpectrum.getAxes();
-                                    drawNow(this, fileData);
-                                    if (done) {
-                                        break;
-                                    }
-                                }
-                            } catch (IOException e) {
-                                log.warn(e.getMessage(), e);
-                            }
-                            return null;
-                        }
-                    };
-                }
-            };
-            worker.setExecutor(MAKE_CONTOUR_SERVICE);
-        }
-
-        private void drawNow(Task<Void> task, DatasetAttributes fileData) throws IOException {
-            float[] levels = getLevels(fileData);
-            double[] offset = {0, 0};
-            fileData.mChunk = -1;
-            float[][] z = null;
-
-            do {
-                if (task.isCancelled()) {
-                    done = true;
-                    break;
-                }
-                int iChunk = fileData.mChunk + 1;
-                double[][] pix = getPix(axes.getX(), axes.getY(), fileData);
-
-                try {
-                    z = getData(fileData, iChunk, offset, z);
-                    if (z != null) {
-                        double xOff = offset[0];
-                        double yOff = offset[1];
-
-                        for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
-                            float sign = iPosNeg == 0 ? 1.0f : -1.0f;
-                            for (float level : levels) {
-                                if (!checkLevels(z, iPosNeg, sign * level)) {
-                                    break;
-                                }
-                                Contour contour = new Contour(fileData.ptd, pix);
-                                if (!setContext(contour, fileData, iPosNeg)) {
-                                    continue;
-                                }
-                                contour.xOffset = xOff;
-                                contour.yOffset = yOff;
-
-                                int[][] cells = new int[z.length][z[0].length];
-                                if (!contour.marchSquares(sign * level, z, cells)) {
-                                    try {
-                                        DrawObject drawObject = new DrawObject(contour, drawSpectrum.jobCount);
-                                        drawSpectrum.contourQueue.put(drawObject);
-                                    } catch (InterruptedException ex) {
-                                        done = true;
-                                        return;
-                                    }
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-                    } else {
-                        break;
-                    }
-                } catch (GraphicsIOException ex) {
-                    throw new IOException(ex.getMessage());
-                }
-            } while (true);
-
-        }
-    }
-
-    private static class DrawContours {
-        private final DrawSpectrum drawSpectrum;
-        private final Service<Void> worker;
-
-        //XXX TODO rework service/task mechanism, used several times in DrawSpectrum
-        private DrawContours(DrawSpectrum drawSpectrum) {
-            this.drawSpectrum = drawSpectrum;
-            worker = new Service<>() {
-                @Override
-                protected Task<Void> createTask() {
-                    return new Task<>() {
-                        @Override
-                        protected Void call() {
-                            try {
-                                drawAllContours(this);
-                            } catch (Exception e) {
-                                log.warn(e.getMessage(), e);
-                            }
-                            return null;
-                        }
-                    };
-                }
-            };
-            worker.setExecutor(DRAW_CONTOUR_SERVICE);
-        }
-
-        private void drawContourObject(DrawObject drawObject) throws InterruptedException, ExecutionException {
-            GraphicsContextInterface g2 = drawSpectrum.g2;
-            Fx.runOnFxThreadAndWait(() -> drawSquares(drawSpectrum, drawObject, g2));
-        }
-
-        private void drawAllContours(Task<Void> task) {
-            boolean interrupted = false;
-            try {
-                while (true) {
-                    if (task.isCancelled()) {
-                        break;
-                    }
-                    if (Thread.currentThread().isInterrupted()) {
-                        interrupted = true;
-                        break;
-                    }
-                    if (DrawSpectrum.cancelled) {
-                        return;
-                    }
-
-                    try {
-                        DrawObject drawObject = drawSpectrum.contourQueue.poll(10, TimeUnit.SECONDS);
-                        if (drawObject == null) {
-                            break;
-                        }
-
-                        try {
-                            drawContourObject(drawObject);
-                        } catch (ExecutionException ex) {
-                            log.warn(ex.getMessage(), ex);
-                        }
-                    } catch (InterruptedException ex) {
-                        interrupted = true;
-                        break;
-                    }
-                }
-            } finally {
-                if (interrupted) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }
     }
 
     private boolean drawNow(GraphicsContextInterface g2I) throws IOException {
@@ -423,85 +232,6 @@ public class DrawSpectrum {
         } catch (Exception ex) {
             log.warn(ex.getMessage(), ex);
         }
-    }
-
-    private static void drawSquares(DrawSpectrum drawSpectrum, DrawObject drawObject, GraphicsContextInterface g2) {
-        if (cancelled || drawObject.count < drawSpectrum.jobCount) {
-            return;
-        }
-
-        try {
-            drawObject.contour.drawSquares(g2);
-        } catch (Exception ex) {
-            log.warn("Exception while drawing square", ex);
-        }
-    }
-
-    private static double[][] getPix(Axis xAxis, Axis yAxis, DatasetAttributes dataAttr) {
-        DatasetBase dataset = dataAttr.getDataset();
-        double xPoint1 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][0]);
-        double xPoint2 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][1]);
-        double yPoint1 = dataset.pointToPPM(dataAttr.dim[1], dataAttr.ptd[1][0]);
-        double yPoint2 = dataset.pointToPPM(dataAttr.dim[1], dataAttr.ptd[1][1]);
-        double[][] pix = new double[2][2];
-        pix[0][0] = xAxis.getDisplayPosition(xPoint1);
-        pix[0][1] = xAxis.getDisplayPosition(xPoint2);
-        pix[1][0] = yAxis.getDisplayPosition(yPoint1);
-        pix[1][1] = yAxis.getDisplayPosition(yPoint2);
-        return pix;
-    }
-
-    private static float[][] getData(DatasetAttributes dataAttr, int iChunk, double[] offset, float[][] z) throws IOException {
-        StringBuffer chunkLabel = new StringBuffer();
-        chunkLabel.setLength(0);
-        int[][] apt = new int[dataAttr.getDataset().getNDim()][2];
-        int fileStatus = dataAttr.getMatrixRegion(iChunk, 2048, 0, apt,
-                offset, chunkLabel);
-        if (fileStatus != 0) {
-            return null;
-        }
-        return dataAttr.readMatrix(dataAttr.mChunk, chunkLabel.toString(), apt, z);
-    }
-
-    private static boolean setContext(Contour contour, DatasetAttributes dataAttr, int iPosNeg) throws GraphicsIOException {
-        final boolean ok;
-        if (iPosNeg == 0) {
-            ok = dataAttr.getPos();
-        } else {
-            ok = dataAttr.getNeg();
-        }
-        if (ok) {
-            if (iPosNeg == 0) {
-                contour.setAttributes(dataAttr.posWidthProperty().get(), dataAttr.getPosColor());
-            } else {
-                contour.setAttributes(dataAttr.negWidthProperty().get(), dataAttr.getNegColor());
-            }
-        }
-        return ok;
-    }
-
-    private static boolean checkLevels(float[][] z, int iPosNeg, float level) {
-        int ny = z.length;
-        int nx = z[0].length;
-        boolean ok = false;
-
-        for (int jj = 0; jj < ny; jj++) {
-            for (int ii = 0; ii < nx; ii++) {
-                if ((iPosNeg == 0) && (z[jj][ii] > level)) {
-                    ok = true;
-                    break;
-                } else if ((iPosNeg == 1) && (z[jj][ii] < level)) {
-                    ok = true;
-                    break;
-                }
-            }
-
-            if (ok) {
-                break;
-            }
-        }
-
-        return ok;
     }
 
     public void drawProjection(DatasetAttributes projectionDatasetAttributes, DatasetAttributes datasetAttr, int orientation) {
@@ -708,125 +438,6 @@ public class DrawSpectrum {
         nPoints = drawVectoreCore(vec, dataOffset, drawReal, ph0, ph1, xy, bcPath, xFunction, yFunction, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
     }
 
-    private static int drawVectoreCore(VecBase vec, int dataOffset, boolean drawReal,
-                                       double ph0, double ph1, double[][] xyValues, Path bcPath, DoubleBinaryOperator xFunction,
-                                       DoubleBinaryOperator yFunction, int start, int end, int size,
-                                       double dValue, double dDelta, double delta) {
-
-        if ((start - dataOffset) < 0) {
-            start = dataOffset;
-        }
-        if (end > ((size + dataOffset) - 1)) {
-            end = (size + dataOffset) - 1;
-        }
-        int incr = (end - start) / 2048;
-        if (incr < 1) {
-            incr = 1;
-        }
-        if ((start - dataOffset) < 0) {
-            start = dataOffset;
-        }
-        if (end > ((size + dataOffset) - 1)) {
-            end = (size + dataOffset) - 1;
-        }
-        if (((Math.abs(ph0) > 1.0e-6) || (Math.abs(ph1) > 1.0e-6)) && !vec.isComplex()) {
-            if (vec instanceof Vec) {
-                ((Vec) vec).hft();
-            }
-        }
-        double dValueHold = dValue;
-        int nPoints = 0;
-        if (incr != 1) {
-            double[] ve = new double[end - start + 1];
-            for (int i = start; i <= end; i++) {
-                double p = ph0 + i * dDelta;
-                if (vec.isComplex()) {
-                    Complex cmpPhas = new Complex(Math.cos(p * DEG_TO_RAD), -Math.sin(p * DEG_TO_RAD));
-                    Complex phasedValue = vec.getComplex(i - dataOffset).multiply(cmpPhas);
-                    if (drawReal) {
-                        ve[i - start] = phasedValue.getReal();
-                    } else {
-                        ve[i - start] = phasedValue.getImaginary();
-                    }
-                } else {
-                    ve[i - start] = vec.getReal(i - dataOffset);
-                }
-            }
-            nPoints = speedSpectrum(ve, start, start, end, dValue, delta, incr, xyValues, xFunction, yFunction);
-        } else {
-            nPoints = 0;
-            int maxPoints = end - start + 1;
-            if ((xyValues[0] == null) || (xyValues[0].length < maxPoints)) {
-                xyValues[0] = new double[maxPoints];
-                xyValues[1] = new double[maxPoints];
-            }
-            int iLine = 0;
-            for (int i = start; i <= end; i++) {
-                double intensity;
-                if (vec.isComplex()) {
-                    double p = ph0 + i * dDelta;
-                    Complex cmpPhas = new Complex(Math.cos(p * DEG_TO_RAD), -Math.sin(p * DEG_TO_RAD));
-                    Complex phasedValue = vec.getComplex(i - dataOffset).multiply(cmpPhas);
-                    if (drawReal) {
-                        intensity = phasedValue.getReal();
-                    } else {
-                        intensity = phasedValue.getImaginary();
-                    }
-                } else {
-                    intensity = vec.getReal(i - dataOffset);
-                }
-                if (intensity != Double.MAX_VALUE) {
-                    xyValues[0][iLine] = xFunction.applyAsDouble(dValue, intensity);
-                    xyValues[1][iLine++] = yFunction.applyAsDouble(dValue, intensity);
-                }
-                dValue += delta;
-            }
-            nPoints = iLine;
-        }
-        if (bcPath != null) {
-            boolean[] signalPoints = null;
-            if (vec instanceof Vec) {
-                signalPoints = ((Vec) vec).getSignalRegion();
-            }
-            dValue = dValueHold;
-            if (signalPoints != null) {
-                boolean inBase = !signalPoints[start];
-                int last = 0;
-                for (int i = start; i < end; i++) {
-                    double intensity = 0.0;
-                    double xValue = xFunction.applyAsDouble(dValue, intensity);
-                    double yValue = yFunction.applyAsDouble(dValue, intensity);
-                    if (i == start) {
-                        if (inBase) {
-                            bcPath.getElements().add(new MoveTo(xValue, yValue));
-                        }
-                    }
-                    if (i == (end - 1)) {
-                        if (inBase) {
-                            bcPath.getElements().add(new LineTo(xValue, yValue));
-                        }
-                    }
-                    if (signalPoints[i] == inBase) {
-                        if (inBase) {
-                            bcPath.getElements().add(new LineTo(xValue, yValue));
-                            last = i;
-                        } else {
-                            bcPath.getElements().add(new MoveTo(xValue, yValue));
-                        }
-                    }
-                    if ((i - last) > 10) {
-                        if (inBase) {
-                            last = i;
-                        }
-                    }
-                    inBase = !signalPoints[i];
-                    dValue += delta;
-                }
-            }
-        }
-        return nPoints;
-    }
-
     public void drawVecAnno(DatasetAttributes dataAttributes, int orientation, AXMODE axMode) {
         DatasetBase dataset = dataAttributes.getDataset();
         nPoints = 0;
@@ -882,72 +493,6 @@ public class DrawSpectrum {
             dValue += delta;
         }
         nPoints = iLine;
-        return iLine;
-    }
-
-    private static int speedSpectrum(double[] ve, int vStart, int start, int end, double dValue, double delta, int nIncr, double[][] xy, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction) {
-        double minValue = Double.MAX_VALUE;
-        double maxValue = Double.NEGATIVE_INFINITY;
-        double pxmin;
-        double pxmax;
-        double iMin = 0;
-        double iMax = 0;
-        int k = 0;
-        int n = ((end - start + 1) / nIncr) * 2 + 8; // fixme approximate
-        if ((xy[0] == null) || (xy[0].length < n)) {
-            xy[0] = new double[n];
-            xy[1] = new double[n];
-        }
-
-        xy[0][0] = xFunction.applyAsDouble(dValue, ve[start - vStart]);
-        xy[1][0] = yFunction.applyAsDouble(dValue, ve[start - vStart]);
-        dValue += delta;
-        int iLine = 0;
-        for (int i = (start + 1); i < end; i++) {
-            double py1 = ve[i - vStart];
-            if (py1 == Double.MAX_VALUE) {
-                dValue += delta;
-                continue;
-            }
-
-            if (py1 < minValue) {
-                minValue = py1;
-                iMin = dValue;
-            }
-
-            if (py1 > maxValue) {
-                maxValue = py1;
-                iMax = dValue;
-            }
-
-            pxmin = iMin;
-            pxmax = iMax;
-
-            k++;
-            dValue += delta;
-
-            if (k < nIncr) {
-                continue;
-            }
-
-            k = 0;
-            if (pxmin > pxmax) {
-                xy[0][iLine] = (xFunction.applyAsDouble(pxmin, minValue));
-                xy[1][iLine++] = (yFunction.applyAsDouble(pxmin, minValue));
-                xy[0][iLine] = (xFunction.applyAsDouble(pxmax, maxValue));
-                xy[1][iLine++] = (yFunction.applyAsDouble(pxmax, maxValue));
-            } else {
-                xy[0][iLine] = (xFunction.applyAsDouble(pxmax, maxValue));
-                xy[1][iLine++] = (yFunction.applyAsDouble(pxmax, maxValue));
-                xy[0][iLine] = (xFunction.applyAsDouble(pxmin, minValue));
-                xy[1][iLine++] = (yFunction.applyAsDouble(pxmin, minValue));
-            }
-
-            minValue = Double.MAX_VALUE;
-            maxValue = Double.NEGATIVE_INFINITY;
-        }
-        xy[0][iLine] = (xFunction.applyAsDouble(dValue, ve[end - vStart]));
-        xy[1][iLine++] = (yFunction.applyAsDouble(dValue, ve[end - vStart]));
         return iLine;
     }
 
@@ -1132,5 +677,457 @@ public class DrawSpectrum {
         g2.setLineWidth(2);
         g2.setStroke(Color.BLACK);
         g2.stroke();
+    }
+
+    private static float[] getLevels(DatasetAttributes fileData) {
+        int nLevels = fileData.getNlvls();
+        double clm = fileData.getClm();
+
+        float[] levels = new float[nLevels];
+        levels[0] = (float) fileData.lvlProperty().get();
+        for (int i = 1; i < nLevels; i++) {
+            levels[i] = (float) (levels[i - 1] * clm);
+        }
+        return levels;
+    }
+
+    private static void drawSquares(DrawSpectrum drawSpectrum, DrawObject drawObject, GraphicsContextInterface g2) {
+        if (cancelled || drawObject.count < drawSpectrum.jobCount) {
+            return;
+        }
+
+        try {
+            drawObject.contour.drawSquares(g2);
+        } catch (Exception ex) {
+            log.warn("Exception while drawing square", ex);
+        }
+    }
+
+    private static double[][] getPix(Axis xAxis, Axis yAxis, DatasetAttributes dataAttr) {
+        DatasetBase dataset = dataAttr.getDataset();
+        double xPoint1 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][0]);
+        double xPoint2 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][1]);
+        double yPoint1 = dataset.pointToPPM(dataAttr.dim[1], dataAttr.ptd[1][0]);
+        double yPoint2 = dataset.pointToPPM(dataAttr.dim[1], dataAttr.ptd[1][1]);
+        double[][] pix = new double[2][2];
+        pix[0][0] = xAxis.getDisplayPosition(xPoint1);
+        pix[0][1] = xAxis.getDisplayPosition(xPoint2);
+        pix[1][0] = yAxis.getDisplayPosition(yPoint1);
+        pix[1][1] = yAxis.getDisplayPosition(yPoint2);
+        return pix;
+    }
+
+    private static float[][] getData(DatasetAttributes dataAttr, int iChunk, double[] offset, float[][] z) throws IOException {
+        StringBuffer chunkLabel = new StringBuffer();
+        chunkLabel.setLength(0);
+        int[][] apt = new int[dataAttr.getDataset().getNDim()][2];
+        int fileStatus = dataAttr.getMatrixRegion(iChunk, 2048, 0, apt,
+                offset, chunkLabel);
+        if (fileStatus != 0) {
+            return null;
+        }
+        return dataAttr.readMatrix(dataAttr.mChunk, chunkLabel.toString(), apt, z);
+    }
+
+    private static boolean setContext(Contour contour, DatasetAttributes dataAttr, int iPosNeg) throws GraphicsIOException {
+        final boolean ok;
+        if (iPosNeg == 0) {
+            ok = dataAttr.getPos();
+        } else {
+            ok = dataAttr.getNeg();
+        }
+        if (ok) {
+            if (iPosNeg == 0) {
+                contour.setAttributes(dataAttr.posWidthProperty().get(), dataAttr.getPosColor());
+            } else {
+                contour.setAttributes(dataAttr.negWidthProperty().get(), dataAttr.getNegColor());
+            }
+        }
+        return ok;
+    }
+
+    private static boolean checkLevels(float[][] z, int iPosNeg, float level) {
+        int ny = z.length;
+        int nx = z[0].length;
+        boolean ok = false;
+
+        for (int jj = 0; jj < ny; jj++) {
+            for (int ii = 0; ii < nx; ii++) {
+                if ((iPosNeg == 0) && (z[jj][ii] > level)) {
+                    ok = true;
+                    break;
+                } else if ((iPosNeg == 1) && (z[jj][ii] < level)) {
+                    ok = true;
+                    break;
+                }
+            }
+
+            if (ok) {
+                break;
+            }
+        }
+
+        return ok;
+    }
+
+    private static int drawVectoreCore(VecBase vec, int dataOffset, boolean drawReal,
+                                       double ph0, double ph1, double[][] xyValues, Path bcPath, DoubleBinaryOperator xFunction,
+                                       DoubleBinaryOperator yFunction, int start, int end, int size,
+                                       double dValue, double dDelta, double delta) {
+
+        if ((start - dataOffset) < 0) {
+            start = dataOffset;
+        }
+        if (end > ((size + dataOffset) - 1)) {
+            end = (size + dataOffset) - 1;
+        }
+        int incr = (end - start) / 2048;
+        if (incr < 1) {
+            incr = 1;
+        }
+        if ((start - dataOffset) < 0) {
+            start = dataOffset;
+        }
+        if (end > ((size + dataOffset) - 1)) {
+            end = (size + dataOffset) - 1;
+        }
+        if (((Math.abs(ph0) > 1.0e-6) || (Math.abs(ph1) > 1.0e-6)) && !vec.isComplex()) {
+            if (vec instanceof Vec) {
+                ((Vec) vec).hft();
+            }
+        }
+        double dValueHold = dValue;
+        int nPoints = 0;
+        if (incr != 1) {
+            double[] ve = new double[end - start + 1];
+            for (int i = start; i <= end; i++) {
+                double p = ph0 + i * dDelta;
+                if (vec.isComplex()) {
+                    Complex cmpPhas = new Complex(Math.cos(p * DEG_TO_RAD), -Math.sin(p * DEG_TO_RAD));
+                    Complex phasedValue = vec.getComplex(i - dataOffset).multiply(cmpPhas);
+                    if (drawReal) {
+                        ve[i - start] = phasedValue.getReal();
+                    } else {
+                        ve[i - start] = phasedValue.getImaginary();
+                    }
+                } else {
+                    ve[i - start] = vec.getReal(i - dataOffset);
+                }
+            }
+            nPoints = speedSpectrum(ve, start, start, end, dValue, delta, incr, xyValues, xFunction, yFunction);
+        } else {
+            nPoints = 0;
+            int maxPoints = end - start + 1;
+            if ((xyValues[0] == null) || (xyValues[0].length < maxPoints)) {
+                xyValues[0] = new double[maxPoints];
+                xyValues[1] = new double[maxPoints];
+            }
+            int iLine = 0;
+            for (int i = start; i <= end; i++) {
+                double intensity;
+                if (vec.isComplex()) {
+                    double p = ph0 + i * dDelta;
+                    Complex cmpPhas = new Complex(Math.cos(p * DEG_TO_RAD), -Math.sin(p * DEG_TO_RAD));
+                    Complex phasedValue = vec.getComplex(i - dataOffset).multiply(cmpPhas);
+                    if (drawReal) {
+                        intensity = phasedValue.getReal();
+                    } else {
+                        intensity = phasedValue.getImaginary();
+                    }
+                } else {
+                    intensity = vec.getReal(i - dataOffset);
+                }
+                if (intensity != Double.MAX_VALUE) {
+                    xyValues[0][iLine] = xFunction.applyAsDouble(dValue, intensity);
+                    xyValues[1][iLine++] = yFunction.applyAsDouble(dValue, intensity);
+                }
+                dValue += delta;
+            }
+            nPoints = iLine;
+        }
+        if (bcPath != null) {
+            boolean[] signalPoints = null;
+            if (vec instanceof Vec) {
+                signalPoints = ((Vec) vec).getSignalRegion();
+            }
+            dValue = dValueHold;
+            if (signalPoints != null) {
+                boolean inBase = !signalPoints[start];
+                int last = 0;
+                for (int i = start; i < end; i++) {
+                    double intensity = 0.0;
+                    double xValue = xFunction.applyAsDouble(dValue, intensity);
+                    double yValue = yFunction.applyAsDouble(dValue, intensity);
+                    if (i == start) {
+                        if (inBase) {
+                            bcPath.getElements().add(new MoveTo(xValue, yValue));
+                        }
+                    }
+                    if (i == (end - 1)) {
+                        if (inBase) {
+                            bcPath.getElements().add(new LineTo(xValue, yValue));
+                        }
+                    }
+                    if (signalPoints[i] == inBase) {
+                        if (inBase) {
+                            bcPath.getElements().add(new LineTo(xValue, yValue));
+                            last = i;
+                        } else {
+                            bcPath.getElements().add(new MoveTo(xValue, yValue));
+                        }
+                    }
+                    if ((i - last) > 10) {
+                        if (inBase) {
+                            last = i;
+                        }
+                    }
+                    inBase = !signalPoints[i];
+                    dValue += delta;
+                }
+            }
+        }
+        return nPoints;
+    }
+
+    private static int speedSpectrum(double[] ve, int vStart, int start, int end, double dValue, double delta, int nIncr, double[][] xy, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction) {
+        double minValue = Double.MAX_VALUE;
+        double maxValue = Double.NEGATIVE_INFINITY;
+        double pxmin;
+        double pxmax;
+        double iMin = 0;
+        double iMax = 0;
+        int k = 0;
+        int n = ((end - start + 1) / nIncr) * 2 + 8; // fixme approximate
+        if ((xy[0] == null) || (xy[0].length < n)) {
+            xy[0] = new double[n];
+            xy[1] = new double[n];
+        }
+
+        xy[0][0] = xFunction.applyAsDouble(dValue, ve[start - vStart]);
+        xy[1][0] = yFunction.applyAsDouble(dValue, ve[start - vStart]);
+        dValue += delta;
+        int iLine = 0;
+        for (int i = (start + 1); i < end; i++) {
+            double py1 = ve[i - vStart];
+            if (py1 == Double.MAX_VALUE) {
+                dValue += delta;
+                continue;
+            }
+
+            if (py1 < minValue) {
+                minValue = py1;
+                iMin = dValue;
+            }
+
+            if (py1 > maxValue) {
+                maxValue = py1;
+                iMax = dValue;
+            }
+
+            pxmin = iMin;
+            pxmax = iMax;
+
+            k++;
+            dValue += delta;
+
+            if (k < nIncr) {
+                continue;
+            }
+
+            k = 0;
+            if (pxmin > pxmax) {
+                xy[0][iLine] = (xFunction.applyAsDouble(pxmin, minValue));
+                xy[1][iLine++] = (yFunction.applyAsDouble(pxmin, minValue));
+                xy[0][iLine] = (xFunction.applyAsDouble(pxmax, maxValue));
+                xy[1][iLine++] = (yFunction.applyAsDouble(pxmax, maxValue));
+            } else {
+                xy[0][iLine] = (xFunction.applyAsDouble(pxmax, maxValue));
+                xy[1][iLine++] = (yFunction.applyAsDouble(pxmax, maxValue));
+                xy[0][iLine] = (xFunction.applyAsDouble(pxmin, minValue));
+                xy[1][iLine++] = (yFunction.applyAsDouble(pxmin, minValue));
+            }
+
+            minValue = Double.MAX_VALUE;
+            maxValue = Double.NEGATIVE_INFINITY;
+        }
+        xy[0][iLine] = (xFunction.applyAsDouble(dValue, ve[end - vStart]));
+        xy[1][iLine++] = (yFunction.applyAsDouble(dValue, ve[end - vStart]));
+        return iLine;
+    }
+
+    //XXX replace with record and see where it is used
+    private static class DrawObject {
+        private final Contour contour;
+        private final long count;
+
+        DrawObject(Contour contour, long count) {
+            this.contour = contour;
+            this.count = count;
+        }
+    }
+
+    private static class DrawTask {
+        private final Service<Void> worker;
+        private final DrawSpectrum drawSpectrum;
+        private List<DatasetAttributes> dataAttrList;
+        private PolyChartAxes axes;
+        private boolean done = false;
+
+        private DrawTask(DrawSpectrum drawSpectrum) {
+            this.drawSpectrum = drawSpectrum;
+            worker = new Service<>() {
+                @Override
+                protected Task<Void> createTask() {
+                    return new Task<>() {
+                        @Override
+                        protected Void call() {
+                            try {
+                                done = false;
+                                dataAttrList = new ArrayList<>();
+                                dataAttrList.addAll(drawSpectrum.dataAttrList);
+                                for (DatasetAttributes fileData : dataAttrList) {
+                                    axes = drawSpectrum.getAxes();
+                                    drawNow(this, fileData);
+                                    if (done) {
+                                        break;
+                                    }
+                                }
+                            } catch (IOException e) {
+                                log.warn(e.getMessage(), e);
+                            }
+                            return null;
+                        }
+                    };
+                }
+            };
+            worker.setExecutor(MAKE_CONTOUR_SERVICE);
+        }
+
+        private void drawNow(Task<Void> task, DatasetAttributes fileData) throws IOException {
+            float[] levels = getLevels(fileData);
+            double[] offset = {0, 0};
+            fileData.mChunk = -1;
+            float[][] z = null;
+
+            do {
+                if (task.isCancelled()) {
+                    done = true;
+                    break;
+                }
+                int iChunk = fileData.mChunk + 1;
+                double[][] pix = getPix(axes.getX(), axes.getY(), fileData);
+
+                try {
+                    z = getData(fileData, iChunk, offset, z);
+                    if (z != null) {
+                        double xOff = offset[0];
+                        double yOff = offset[1];
+
+                        for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
+                            float sign = iPosNeg == 0 ? 1.0f : -1.0f;
+                            for (float level : levels) {
+                                if (!checkLevels(z, iPosNeg, sign * level)) {
+                                    break;
+                                }
+                                Contour contour = new Contour(fileData.ptd, pix);
+                                if (!setContext(contour, fileData, iPosNeg)) {
+                                    continue;
+                                }
+                                contour.xOffset = xOff;
+                                contour.yOffset = yOff;
+
+                                int[][] cells = new int[z.length][z[0].length];
+                                if (!contour.marchSquares(sign * level, z, cells)) {
+                                    try {
+                                        DrawObject drawObject = new DrawObject(contour, drawSpectrum.jobCount);
+                                        drawSpectrum.contourQueue.put(drawObject);
+                                    } catch (InterruptedException ex) {
+                                        done = true;
+                                        return;
+                                    }
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        break;
+                    }
+                } catch (GraphicsIOException ex) {
+                    throw new IOException(ex.getMessage());
+                }
+            } while (true);
+
+        }
+    }
+
+    private static class DrawContours {
+        private final DrawSpectrum drawSpectrum;
+        private final Service<Void> worker;
+
+        //XXX TODO rework service/task mechanism, used several times in DrawSpectrum
+        private DrawContours(DrawSpectrum drawSpectrum) {
+            this.drawSpectrum = drawSpectrum;
+            worker = new Service<>() {
+                @Override
+                protected Task<Void> createTask() {
+                    return new Task<>() {
+                        @Override
+                        protected Void call() {
+                            try {
+                                drawAllContours(this);
+                            } catch (Exception e) {
+                                log.warn(e.getMessage(), e);
+                            }
+                            return null;
+                        }
+                    };
+                }
+            };
+            worker.setExecutor(DRAW_CONTOUR_SERVICE);
+        }
+
+        private void drawContourObject(DrawObject drawObject) throws InterruptedException, ExecutionException {
+            GraphicsContextInterface g2 = drawSpectrum.g2;
+            Fx.runOnFxThreadAndWait(() -> drawSquares(drawSpectrum, drawObject, g2));
+        }
+
+        private void drawAllContours(Task<Void> task) {
+            boolean interrupted = false;
+            try {
+                while (true) {
+                    if (task.isCancelled()) {
+                        break;
+                    }
+                    if (Thread.currentThread().isInterrupted()) {
+                        interrupted = true;
+                        break;
+                    }
+                    if (DrawSpectrum.cancelled) {
+                        return;
+                    }
+
+                    try {
+                        DrawObject drawObject = drawSpectrum.contourQueue.poll(10, TimeUnit.SECONDS);
+                        if (drawObject == null) {
+                            break;
+                        }
+
+                        try {
+                            drawContourObject(drawObject);
+                        } catch (ExecutionException ex) {
+                            log.warn(ex.getMessage(), ex);
+                        }
+                    } catch (InterruptedException ex) {
+                        interrupted = true;
+                        break;
+                    }
+                }
+            } finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
     }
 }
