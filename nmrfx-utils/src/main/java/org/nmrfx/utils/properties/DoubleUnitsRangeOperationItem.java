@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -26,7 +26,6 @@ package org.nmrfx.utils.properties;
 import javafx.beans.value.ChangeListener;
 
 /**
- *
  * @author brucejohnson
  */
 public class DoubleUnitsRangeOperationItem extends DoubleOperationItem {
@@ -49,14 +48,6 @@ public class DoubleUnitsRangeOperationItem extends DoubleOperationItem {
     @Override
     public Class<?> getType() {
         return DoubleUnitsRangeOperationItem.class;
-    }
-
-    public void setZoomSlider(ZoomSlider slider) {
-        this.slider = slider;
-        if (Character.isLetter(getLastChar())) {
-            slider.setIconLabel(String.valueOf(getLastChar()));
-        }
-
     }
 
     @Override
@@ -93,6 +84,14 @@ public class DoubleUnitsRangeOperationItem extends DoubleOperationItem {
         } else {
             return strValue;
         }
+    }
+
+    public void setZoomSlider(ZoomSlider slider) {
+        this.slider = slider;
+        if (Character.isLetter(getLastChar())) {
+            slider.setIconLabel(String.valueOf(getLastChar()));
+        }
+
     }
 
 }

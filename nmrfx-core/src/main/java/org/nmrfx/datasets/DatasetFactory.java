@@ -14,13 +14,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- *
  * @author brucejohnson
  */
 public class DatasetFactory {
     private static final Logger log = LoggerFactory.getLogger(DatasetFactory.class);
 
-    private DatasetFactory() {}
+    private DatasetFactory() {
+    }
 
     public static DatasetBase newDataset(String fullName, String name, boolean writable, boolean useCacheFile) throws IOException {
         DatasetBase dataset;
@@ -29,13 +29,14 @@ public class DatasetFactory {
             var parameterTypes = new Class[]{String.class, String.class, boolean.class, boolean.class};
             Constructor<?> constructor = c.getDeclaredConstructor(parameterTypes);
             dataset = (DatasetBase) constructor.newInstance(fullName, name, writable, useCacheFile);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException |
+                 InvocationTargetException | NoSuchMethodException | SecurityException ex) {
             dataset = new DatasetBase(fullName, name, writable, useCacheFile);
         }
         return dataset;
     }
 
-    public static DatasetBase newLinkDataset(String name, String fullName)  {
+    public static DatasetBase newLinkDataset(String name, String fullName) {
         DatasetBase dataset;
         try {
             Class<?> c = Class.forName("org.nmrfx.processor.datasets.Dataset");
@@ -44,7 +45,8 @@ public class DatasetFactory {
             String[] args = {name, fullName};
             log.debug("new link {}", fullName);
             dataset = (DatasetBase) m.invoke(null, (Object[]) args);
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException |
+                 IllegalArgumentException | InvocationTargetException ex) {
             log.warn(ex.getMessage(), ex);
             dataset = null;
         }

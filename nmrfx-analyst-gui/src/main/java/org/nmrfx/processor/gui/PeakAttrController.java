@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -74,6 +74,10 @@ public class PeakAttrController implements Initializable, StageBasedController, 
     private static final Logger log = LoggerFactory.getLogger(PeakAttrController.class);
 
     static PeakListTypes peakListTypes = null;
+    PeakNavigator peakNavigator;
+    PeakList peakList;
+    Peak currentPeak;
+    ObservableList<String> relationChoiceItems = FXCollections.observableArrayList("", "D1", "D2", "D3", "D4");
     private Stage stage;
     @FXML
     private TabPane tabPane;
@@ -105,54 +109,13 @@ public class PeakAttrController implements Initializable, StageBasedController, 
     private ToolBar peakReferenceToolBar;
     @FXML
     private TableView<SpectralDim> referenceTableView;
-
     @FXML
     private BorderPane peaksBorderPane;
-
     @FXML
     private BorderPane graphBorderPane;
-
     @FXML
     private ChoiceBox<PEAK_NORM> normChoice;
-
     private ScatterChart<Number, Number> scatterChart;
-
-    PeakNavigator peakNavigator;
-
-    PeakList peakList;
-    Peak currentPeak;
-    ObservableList<String> relationChoiceItems = FXCollections.observableArrayList("", "D1", "D2", "D3", "D4");
-
-    enum PEAK_NORM {
-        NO_NORM() {
-            @Override
-            public Optional<Double> normalize(double first, double value) {
-                return Optional.of(value);
-            }
-
-        },
-        FP_NORM() {
-            @Override
-            public Optional<Double> normalize(double first, double value) {
-                return Optional.of(value / first);
-            }
-
-        },
-        LOG_NORM() {
-            @Override
-            public Optional<Double> normalize(double first, double value) {
-                Optional<Double> result;
-                if (value > 0.0) {
-                    result = Optional.of(-Math.log(value / first));
-                } else {
-                    result = Optional.empty();
-                }
-                return result;
-            }
-        };
-
-        public abstract Optional<Double> normalize(double first, double value);
-    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -222,56 +185,18 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         peakListTypeChoice.setOnAction(this::setPeakListType);
     }
 
+    public Stage getStage() {
+        return stage;
+    }
+
     @Override
     public void setStage(Stage stage) {
         this.stage = stage;
     }
 
-    public Stage getStage() {
-        return stage;
-    }
-
-    public static PeakAttrController create() {
-        PeakAttrController controller = Fxml.load(PeakAttrController.class, "PeakAttrScene.fxml")
-                .withNewStage("Peak Attributes")
-                .getController();
-        controller.stage.show();
-        return controller;
-    }
-
     public void selectTab(String tabName) {
         var tabOpt = tabPane.getTabs().stream().filter(t -> t.getText().equals(tabName)).findFirst();
         tabOpt.ifPresent(t -> tabPane.getSelectionModel().select(t));
-    }
-
-    @Override
-    public void copyPeakTableView() {
-        TableUtils.copyTableToClipboard(peakTableView, true);
-    }
-
-    @Override
-    public void deletePeaks() {
-        peakNavigator.getPeak().delete();
-    }
-
-    @Override
-    public void restorePeaks() {
-        peakNavigator.getPeak().setStatus(0);
-    }
-
-    public void refreshPeakView() {
-        refreshPeakView(currentPeak);
-    }
-
-    @Override
-    public void refreshChangedListView() {
-        int index = currentPeak.getIndex();
-        if (index >= peakList.size()) {
-            index = peakList.size() - 1;
-        }
-        Peak peak = peakList.getPeak(index);
-        peakNavigator.setPeak(peak);
-        refreshPeakView(peak);
     }
 
     public void refreshPeakView(Peak peak) {
@@ -300,6 +225,39 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         updateGraph();
         if (clearIt) {
             clearInsepctor();
+        }
+    }
+
+    public void refreshPeakView() {
+        refreshPeakView(currentPeak);
+    }
+
+    public void refreshPeakListView(PeakList refreshPeakList) {
+        if (referenceTableView == null) {
+            System.out.println("null table");
+            return;
+        }
+        // fixme  need to update datasets upon dataset list change
+        relationChoiceItems.clear();
+        peakList = refreshPeakList;
+        if (peakList != null) {
+            ObservableList<SpectralDim> peakDimList = FXCollections.observableArrayList();
+            relationChoiceItems.add("");
+            for (int i = 0; i < peakList.nDim; i++) {
+                peakDimList.add(peakList.getSpectralDim(i));
+                relationChoiceItems.add(peakList.getSpectralDim(i).getDimName());
+            }
+            referenceTableView.setItems(peakDimList);
+            peakListNameField.setText(peakList.getName());
+            datasetNameField.setValue(peakList.getDatasetName());
+            conditionField.setValue(peakList.getSampleConditionLabel());
+            peakListTypeChoice.setOnAction(null);
+            peakListTypeChoice.setValue(peakList.getExperimentType());
+            peakListTypeChoice.setOnAction(this::setPeakListType);
+            stage.setTitle(peakList.getName());
+        } else {
+            referenceTableView.getItems().clear();
+            stage.setTitle("Peak Inspector");
         }
     }
 
@@ -357,35 +315,6 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         }
     }
 
-    public void refreshPeakListView(PeakList refreshPeakList) {
-        if (referenceTableView == null) {
-            System.out.println("null table");
-            return;
-        }
-        // fixme  need to update datasets upon dataset list change
-        relationChoiceItems.clear();
-        peakList = refreshPeakList;
-        if (peakList != null) {
-            ObservableList<SpectralDim> peakDimList = FXCollections.observableArrayList();
-            relationChoiceItems.add("");
-            for (int i = 0; i < peakList.nDim; i++) {
-                peakDimList.add(peakList.getSpectralDim(i));
-                relationChoiceItems.add(peakList.getSpectralDim(i).getDimName());
-            }
-            referenceTableView.setItems(peakDimList);
-            peakListNameField.setText(peakList.getName());
-            datasetNameField.setValue(peakList.getDatasetName());
-            conditionField.setValue(peakList.getSampleConditionLabel());
-            peakListTypeChoice.setOnAction(null);
-            peakListTypeChoice.setValue(peakList.getExperimentType());
-            peakListTypeChoice.setOnAction(this::setPeakListType);
-            stage.setTitle(peakList.getName());
-        } else {
-            referenceTableView.getItems().clear();
-            stage.setTitle("Peak Inspector");
-        }
-    }
-
     private void clearInsepctor() {
         peakTableView.getItems().clear();
         intensityField.setText("");
@@ -410,77 +339,36 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         peakNavigator.setPeakList(peakList);
     }
 
+    @Override
+    public void refreshChangedListView() {
+        int index = currentPeak.getIndex();
+        if (index >= peakList.size()) {
+            index = peakList.size() - 1;
+        }
+        Peak peak = peakList.getPeak(index);
+        peakNavigator.setPeak(peak);
+        refreshPeakView(peak);
+    }
+
+    @Override
+    public void copyPeakTableView() {
+        TableUtils.copyTableToClipboard(peakTableView, true);
+    }
+
+    @Override
+    public void deletePeaks() {
+        peakNavigator.getPeak().delete();
+    }
+
+    @Override
+    public void restorePeaks() {
+        peakNavigator.getPeak().setStatus(0);
+    }
+
     MenuButton initMenuBar() {
         PeakMenuBar peakMenuBar = new PeakMenuBar(this);
         peakMenuBar.initMenuBar(menuBar, true);
         return peakMenuBar.getPeakListMenu();
-    }
-
-    static class FloatStringConverter2 extends FloatStringConverter {
-
-        public Float fromString(String s) {
-            Float v;
-            try {
-                v = Float.parseFloat(s);
-            } catch (NumberFormatException nfE) {
-                v = null;
-            }
-            return v;
-        }
-
-    }
-
-    static class TextFieldTableCellFloat extends TextFieldTableCell<PeakDim, Float> {
-
-        public TextFieldTableCellFloat(StringConverter s) {
-            super(s);
-        }
-
-        @Override
-        public void updateItem(Float item, boolean empty) {
-            super.updateItem(item, empty);
-            if (item != null) {
-                setText(String.valueOf(item));
-            }
-        }
-    }
-
-    static class TextFieldTableCellPeakLabel extends TextFieldTableCell<PeakDim, String> {
-
-        public TextFieldTableCellPeakLabel(StringConverter s) {
-            super(s);
-        }
-
-        @Override
-        public void updateItem(String item, boolean empty) {
-            super.updateItem(item, empty);
-            PeakDim peakDim = getTableRow().getItem();
-            setText(null);
-            setGraphic(null);
-            if (!empty && (peakDim != null)) {
-                if (!peakDim.isLabelValid()) {
-                    setBackground(new Background(new BackgroundFill(Color.RED, null, null)));
-                } else {
-                    setBackground(Background.EMPTY);
-                }
-                setText(String.valueOf(item));
-            }
-        }
-    }
-
-    static class TextFieldRefTableCell extends TextFieldTableCell<SpectralDim, Double> {
-
-        public TextFieldRefTableCell(StringConverter s) {
-            super(s);
-        }
-
-        @Override
-        public void updateItem(Double item, boolean empty) {
-            super.updateItem(item, empty);
-            if (item != null) {
-                setText(String.valueOf(item));
-            }
-        }
     }
 
     void initTable() {
@@ -749,7 +637,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                 GUIUtils.warn("Set Peak List Type ", iaE.getMessage());
             }
 
-        },this::setPeakListName);
+        }, this::setPeakListName);
         referenceTableView.refresh();
     }
 
@@ -758,6 +646,111 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         PeakListType.setPeakList(peakList, peakListTypeName);
     }
 
+    public static PeakAttrController create() {
+        PeakAttrController controller = Fxml.load(PeakAttrController.class, "PeakAttrScene.fxml")
+                .withNewStage("Peak Attributes")
+                .getController();
+        controller.stage.show();
+        return controller;
+    }
+
+    enum PEAK_NORM {
+        NO_NORM() {
+            @Override
+            public Optional<Double> normalize(double first, double value) {
+                return Optional.of(value);
+            }
+
+        },
+        FP_NORM() {
+            @Override
+            public Optional<Double> normalize(double first, double value) {
+                return Optional.of(value / first);
+            }
+
+        },
+        LOG_NORM() {
+            @Override
+            public Optional<Double> normalize(double first, double value) {
+                Optional<Double> result;
+                if (value > 0.0) {
+                    result = Optional.of(-Math.log(value / first));
+                } else {
+                    result = Optional.empty();
+                }
+                return result;
+            }
+        };
+
+        public abstract Optional<Double> normalize(double first, double value);
+    }
+
+    static class FloatStringConverter2 extends FloatStringConverter {
+
+        public Float fromString(String s) {
+            Float v;
+            try {
+                v = Float.parseFloat(s);
+            } catch (NumberFormatException nfE) {
+                v = null;
+            }
+            return v;
+        }
+
+    }
+
+    static class TextFieldTableCellFloat extends TextFieldTableCell<PeakDim, Float> {
+
+        public TextFieldTableCellFloat(StringConverter s) {
+            super(s);
+        }
+
+        @Override
+        public void updateItem(Float item, boolean empty) {
+            super.updateItem(item, empty);
+            if (item != null) {
+                setText(String.valueOf(item));
+            }
+        }
+    }
+
+    static class TextFieldTableCellPeakLabel extends TextFieldTableCell<PeakDim, String> {
+
+        public TextFieldTableCellPeakLabel(StringConverter s) {
+            super(s);
+        }
+
+        @Override
+        public void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+            PeakDim peakDim = getTableRow().getItem();
+            setText(null);
+            setGraphic(null);
+            if (!empty && (peakDim != null)) {
+                if (!peakDim.isLabelValid()) {
+                    setBackground(new Background(new BackgroundFill(Color.RED, null, null)));
+                } else {
+                    setBackground(Background.EMPTY);
+                }
+                setText(String.valueOf(item));
+            }
+        }
+    }
+
+    static class TextFieldRefTableCell extends TextFieldTableCell<SpectralDim, Double> {
+
+        public TextFieldRefTableCell(StringConverter s) {
+            super(s);
+        }
+
+        @Override
+        public void updateItem(Double item, boolean empty) {
+            super.updateItem(item, empty);
+            if (item != null) {
+                setText(String.valueOf(item));
+            }
+        }
+    }
 
 
 }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,92 +32,28 @@ public class PeakPaths implements PeakListener {
 
     private static final String[] PRESSURE_NAMES = {"Ha", "Hb", "Hc", "Xa", "Xb", "Xc"};
     private static final String[] TITRATION_NAMES = {"K", "C"};
-
+    final PeakList firstList;
+    final double[][] indVars;
+    final double[] weights;
+    final double[] tols;
+    final double dTol;
     boolean fit0 = false;
     ArrayList<PeakList> peakLists;
     String name;
     String details = "";
-    final PeakList firstList;
-    final double[][] indVars;
     int[] peakDims = {0, 1};
-    final double[] weights;
-    final double[] tols;
-    final double dTol;
     PATHMODE pathMode;
     String[] parNames;
     List<String> datasetNames;
     Comparator<Peak> peakComparator = Comparator.comparingInt(Peak::getIdNum);
     Map<Peak, PeakPath> paths = new TreeMap<>(peakComparator);
 
-    static Map<String, PeakPaths> peakPaths() {
-        ProjectBase project = ProjectBase.getActive();
-        return project.getPeakPaths();
-    }
-
-    public static void purgePaths(PeakPaths peakPath) {
-        peakPath.getPathMap().keySet().removeIf(peak -> peak.getStatus() < 0);
-        for (Entry<Peak, PeakPath> entry : peakPath.getPathMap().entrySet()) {
-            List<PeakDistance> newDists = new ArrayList<>();
-            boolean changed = false;
-            for (PeakDistance peakDist : entry.getValue().getPeakDistances()) {
-                if ((peakDist != null) && (peakDist.getPeak().getStatus() <= 0)) {
-                    peakDist = null;
-                    changed = true;
-                }
-                newDists.add(peakDist);
-            }
-            if (changed) {
-                entry.setValue(new PeakPath(peakPath, newDists));
-            }
-        }
-        for (Peak peak : peakPath.getFirstList().peaks()) {
-            if (!peak.isDeleted() && !peakPath.getPathMap().containsKey(peak)) {
-                peakPath.initPath(peak);
-            }
-        }
-    }
-
-    public enum PATHMODE {
-        TITRATION("Concentration", "Shift Delta", TITRATION_NAMES),
-        PRESSURE("Pressure", "Shift Delta", PRESSURE_NAMES);
-
-        private final String xAxisLabel;
-        private final String yAxisLabel;
-        private final String[] names;
-
-        PATHMODE(String xAxisLabel, String yAxisLabel, String[] names) {
-            this.xAxisLabel = xAxisLabel;
-            this.yAxisLabel = yAxisLabel;
-            this.names = names;
-        }
-
-        public String[] names() {
-            return names;
-        }
-
-        public String xAxisLabel() {
-            return xAxisLabel;
-        }
-
-        public String yAxisLabel() {
-            return yAxisLabel;
-        }
-    }
-
-    @Override
-    public void peakListChanged(PeakEvent peakEvent) {
-        Object source = peakEvent.getSource();
-        if (source instanceof PeakList) {
-            purgePaths(this);
-        }
-    }
-
     public PeakPaths(String name, final List<PeakList> peakLists, double[] concentrations, final double[] binderConcs, final double[] weights, PATHMODE pathMode) {
         this(name, peakLists, concentrations, binderConcs, weights, null, pathMode);
     }
 
     public PeakPaths(String name, final List<PeakList> peakLists, double[] concentrations,
-            final double[] binderConcs, final double[] weights, double[] tols, PATHMODE pathMode) {
+                     final double[] binderConcs, final double[] weights, double[] tols, PATHMODE pathMode) {
         this.name = name;
         this.pathMode = pathMode;
         this.peakLists = new ArrayList<>();
@@ -152,87 +88,12 @@ public class PeakPaths implements PeakListener {
         this.weights = weights;
     }
 
-    public static PeakPaths loadPathData(PATHMODE pathMode, File file) throws IOException, IllegalArgumentException {
-        PeakPaths peakPath = null;
-        if (file != null) {
-            List<Double> x0List = new ArrayList<>();
-            List<Double> x1List = new ArrayList<>();
-            List<String> datasetNames = new ArrayList<>();
-            String sepChar = " +";
-            List<String> lines = Files.readAllLines(file.toPath());
-            if (!lines.isEmpty()) {
-                if (lines.get(0).contains("\t")) {
-                    sepChar = "\t";
-                }
-                for (String line : lines) {
-                    String[] fields = line.split(sepChar);
-                    if ((fields.length > 1) && !fields[0].startsWith("#")) {
-                        datasetNames.add(fields[0]);
-                        x0List.add(Double.parseDouble(fields[1]));
-                        if (fields.length > 2) {
-                            x1List.add(Double.parseDouble(fields[2]));
-                        }
-                    }
-                }
-            }
-            String peakPathName = file.getName();
-            peakPath = loadPathData(pathMode, datasetNames, x0List, x1List, peakPathName);
+    @Override
+    public void peakListChanged(PeakEvent peakEvent) {
+        Object source = peakEvent.getSource();
+        if (source instanceof PeakList) {
+            purgePaths(this);
         }
-        return peakPath;
-    }
-
-    record X2WithData(Double x0, Double x1, String dataName) {}
-
-    public static PeakPaths loadPathData(PATHMODE pathMode, List<String> datasetNames,
-                                         List<Double> x0List, List<Double> x1List, String peakPathName) {
-        double[] x0 = new double[x0List.size()];
-        double[] x1 = new double[x0List.size()];
-        List<X2WithData> x2WithDataList = new ArrayList<>();
-        for (int i=0;i<datasetNames.size();i++) {
-            var x2d = new X2WithData(x0List.get(i), x1List.isEmpty() ? null : x1List.get(i), datasetNames.get(i));
-            x2WithDataList.add(x2d);
-        }
-        x2WithDataList.sort(Comparator.comparing(X2WithData::x0));
-
-        List<PeakList> peakLists = new ArrayList<>();
-
-        for (int i = 0; i < x2WithDataList.size(); i++) {
-            var x2d = x2WithDataList.get(i);
-            String datasetName = x2d.dataName;
-            DatasetBase dataset = DatasetBase.getDataset(datasetName);
-            if (dataset == null) {
-                throw new IllegalArgumentException("\"Dataset \"" + datasetName + "\" doesn't exist\"");
-            }
-            PeakList peakList = PeakList.getPeakListForDataset(datasetName);
-            if (peakList == null) {
-                String peakListName = PeakList.getNameForDataset(datasetName);
-                peakList = PeakList.get(peakListName);
-            }
-            if (peakList == null) {
-                throw new IllegalArgumentException("\"PeakList for dataset \"" + datasetName + "\" doesn't exist\"");
-            }
-            peakLists.add(peakList);
-            x0[i] = x2d.x0;
-            if (x2d.x1 != null) {
-                x1[i] = x2d.x1;
-            } else {
-                x1[i] = 100.0;
-            }
-        }
-        double[] weights = {1.0, 1.0};
-        if (peakLists.get(0).getSpectralDim(1).getNucleus().contains("N")) {
-            weights[1] = 5.0;
-        }
-
-        if (peakPathName.contains(".")) {
-            peakPathName = peakPathName.substring(0, peakPathName.indexOf("."));
-        }
-        PeakPaths peakPath = new PeakPaths(peakPathName, peakLists, x0, x1, weights, pathMode);
-        peakPath.store();
-        peakPath.initPaths();
-        peakPath.datasetNames = datasetNames;
-
-        return peakPath;
     }
 
     public String getUnits() {
@@ -254,18 +115,6 @@ public class PeakPaths implements PeakListener {
     public void store(String name) {
         this.name = name;
         peakPaths().put(name, this);
-    }
-
-    public static Collection<PeakPaths> get() {
-        return peakPaths().values();
-    }
-
-    public static Collection<String> getNames() {
-        return peakPaths().keySet();
-    }
-
-    public static PeakPaths get(String name) {
-        return peakPaths().get(name);
     }
 
     public String getName() {
@@ -479,66 +328,6 @@ public class PeakPaths implements PeakListener {
         return filteredLists;
     }
 
-    static void filterLists(PeakPaths peakPath) {
-        for (PeakList peakList : peakPath.peakLists) {
-            int nPeaks = peakList.size();
-            for (int j = 0; j < nPeaks; j++) {
-                Peak peak = peakList.getPeak(j);
-                if (peak.getStatus() >= 0) {
-                    peak.setStatus(0);
-                }
-            }
-        }
-        int nPeaks = peakPath.firstList.size();
-        for (int i = 0; i < nPeaks; i++) {
-            Peak peak1 = peakPath.firstList.getPeak(i);
-            if (peak1.getStatus() < 0) {
-                continue;
-            }
-            double sum = 0.0;
-            for (int iDim : peakPath.peakDims) {
-                double boundary = peak1.getPeakDim(iDim).getBoundsValue();
-                sum += boundary * boundary / (peakPath.weights[iDim] * peakPath.weights[iDim]);
-            }
-            double tol = Math.sqrt(sum / peakPath.peakDims.length);
-            int iList = -1;
-            boolean ok = true;
-            ArrayList<Peak> minPeaks = new ArrayList<>();
-            for (PeakList peakList : peakPath.peakLists) {
-                iList++;
-                if (iList == 0) {
-                    continue;
-                }
-                int nPeaks2 = peakList.size();
-                double minDis = Double.MAX_VALUE;
-                Peak minPeak = null;
-                for (int j = 0; j < nPeaks2; j++) {
-                    Peak peak2 = peakList.getPeak(j);
-                    if (peak2.getStatus() != 0) {
-                        continue;
-                    }
-                    double distance = peakPath.calcDistance(peak1, peak2);
-                    if (distance < minDis) {
-                        minDis = distance;
-                        minPeak = peak2;
-                    }
-                }
-                if (minDis < tol) {
-                    minPeaks.add(minPeak);
-                } else {
-                    ok = false;
-                    break;
-                }
-            }
-            if (ok) {
-                peak1.setStatus(1);
-                for (Peak minPeak : minPeaks) {
-                    minPeak.setStatus(1);
-                }
-            }
-        }
-    }
-
     public void refreshPaths() {
         for (Peak peak : paths.keySet()) {
             refreshPath(peak);
@@ -621,6 +410,217 @@ public class PeakPaths implements PeakListener {
 
     public int[] getPeakDims() {
         return peakDims;
+    }
+
+    static Map<String, PeakPaths> peakPaths() {
+        ProjectBase project = ProjectBase.getActive();
+        return project.getPeakPaths();
+    }
+
+    public static void purgePaths(PeakPaths peakPath) {
+        peakPath.getPathMap().keySet().removeIf(peak -> peak.getStatus() < 0);
+        for (Entry<Peak, PeakPath> entry : peakPath.getPathMap().entrySet()) {
+            List<PeakDistance> newDists = new ArrayList<>();
+            boolean changed = false;
+            for (PeakDistance peakDist : entry.getValue().getPeakDistances()) {
+                if ((peakDist != null) && (peakDist.getPeak().getStatus() <= 0)) {
+                    peakDist = null;
+                    changed = true;
+                }
+                newDists.add(peakDist);
+            }
+            if (changed) {
+                entry.setValue(new PeakPath(peakPath, newDists));
+            }
+        }
+        for (Peak peak : peakPath.getFirstList().peaks()) {
+            if (!peak.isDeleted() && !peakPath.getPathMap().containsKey(peak)) {
+                peakPath.initPath(peak);
+            }
+        }
+    }
+
+    public static PeakPaths loadPathData(PATHMODE pathMode, File file) throws IOException, IllegalArgumentException {
+        PeakPaths peakPath = null;
+        if (file != null) {
+            List<Double> x0List = new ArrayList<>();
+            List<Double> x1List = new ArrayList<>();
+            List<String> datasetNames = new ArrayList<>();
+            String sepChar = " +";
+            List<String> lines = Files.readAllLines(file.toPath());
+            if (!lines.isEmpty()) {
+                if (lines.get(0).contains("\t")) {
+                    sepChar = "\t";
+                }
+                for (String line : lines) {
+                    String[] fields = line.split(sepChar);
+                    if ((fields.length > 1) && !fields[0].startsWith("#")) {
+                        datasetNames.add(fields[0]);
+                        x0List.add(Double.parseDouble(fields[1]));
+                        if (fields.length > 2) {
+                            x1List.add(Double.parseDouble(fields[2]));
+                        }
+                    }
+                }
+            }
+            String peakPathName = file.getName();
+            peakPath = loadPathData(pathMode, datasetNames, x0List, x1List, peakPathName);
+        }
+        return peakPath;
+    }
+
+    public static PeakPaths loadPathData(PATHMODE pathMode, List<String> datasetNames,
+                                         List<Double> x0List, List<Double> x1List, String peakPathName) {
+        double[] x0 = new double[x0List.size()];
+        double[] x1 = new double[x0List.size()];
+        List<X2WithData> x2WithDataList = new ArrayList<>();
+        for (int i = 0; i < datasetNames.size(); i++) {
+            var x2d = new X2WithData(x0List.get(i), x1List.isEmpty() ? null : x1List.get(i), datasetNames.get(i));
+            x2WithDataList.add(x2d);
+        }
+        x2WithDataList.sort(Comparator.comparing(X2WithData::x0));
+
+        List<PeakList> peakLists = new ArrayList<>();
+
+        for (int i = 0; i < x2WithDataList.size(); i++) {
+            var x2d = x2WithDataList.get(i);
+            String datasetName = x2d.dataName;
+            DatasetBase dataset = DatasetBase.getDataset(datasetName);
+            if (dataset == null) {
+                throw new IllegalArgumentException("\"Dataset \"" + datasetName + "\" doesn't exist\"");
+            }
+            PeakList peakList = PeakList.getPeakListForDataset(datasetName);
+            if (peakList == null) {
+                String peakListName = PeakList.getNameForDataset(datasetName);
+                peakList = PeakList.get(peakListName);
+            }
+            if (peakList == null) {
+                throw new IllegalArgumentException("\"PeakList for dataset \"" + datasetName + "\" doesn't exist\"");
+            }
+            peakLists.add(peakList);
+            x0[i] = x2d.x0;
+            if (x2d.x1 != null) {
+                x1[i] = x2d.x1;
+            } else {
+                x1[i] = 100.0;
+            }
+        }
+        double[] weights = {1.0, 1.0};
+        if (peakLists.get(0).getSpectralDim(1).getNucleus().contains("N")) {
+            weights[1] = 5.0;
+        }
+
+        if (peakPathName.contains(".")) {
+            peakPathName = peakPathName.substring(0, peakPathName.indexOf("."));
+        }
+        PeakPaths peakPath = new PeakPaths(peakPathName, peakLists, x0, x1, weights, pathMode);
+        peakPath.store();
+        peakPath.initPaths();
+        peakPath.datasetNames = datasetNames;
+
+        return peakPath;
+    }
+
+    public static Collection<PeakPaths> get() {
+        return peakPaths().values();
+    }
+
+    public static Collection<String> getNames() {
+        return peakPaths().keySet();
+    }
+
+    public static PeakPaths get(String name) {
+        return peakPaths().get(name);
+    }
+
+    static void filterLists(PeakPaths peakPath) {
+        for (PeakList peakList : peakPath.peakLists) {
+            int nPeaks = peakList.size();
+            for (int j = 0; j < nPeaks; j++) {
+                Peak peak = peakList.getPeak(j);
+                if (peak.getStatus() >= 0) {
+                    peak.setStatus(0);
+                }
+            }
+        }
+        int nPeaks = peakPath.firstList.size();
+        for (int i = 0; i < nPeaks; i++) {
+            Peak peak1 = peakPath.firstList.getPeak(i);
+            if (peak1.getStatus() < 0) {
+                continue;
+            }
+            double sum = 0.0;
+            for (int iDim : peakPath.peakDims) {
+                double boundary = peak1.getPeakDim(iDim).getBoundsValue();
+                sum += boundary * boundary / (peakPath.weights[iDim] * peakPath.weights[iDim]);
+            }
+            double tol = Math.sqrt(sum / peakPath.peakDims.length);
+            int iList = -1;
+            boolean ok = true;
+            ArrayList<Peak> minPeaks = new ArrayList<>();
+            for (PeakList peakList : peakPath.peakLists) {
+                iList++;
+                if (iList == 0) {
+                    continue;
+                }
+                int nPeaks2 = peakList.size();
+                double minDis = Double.MAX_VALUE;
+                Peak minPeak = null;
+                for (int j = 0; j < nPeaks2; j++) {
+                    Peak peak2 = peakList.getPeak(j);
+                    if (peak2.getStatus() != 0) {
+                        continue;
+                    }
+                    double distance = peakPath.calcDistance(peak1, peak2);
+                    if (distance < minDis) {
+                        minDis = distance;
+                        minPeak = peak2;
+                    }
+                }
+                if (minDis < tol) {
+                    minPeaks.add(minPeak);
+                } else {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) {
+                peak1.setStatus(1);
+                for (Peak minPeak : minPeaks) {
+                    minPeak.setStatus(1);
+                }
+            }
+        }
+    }
+
+    public enum PATHMODE {
+        TITRATION("Concentration", "Shift Delta", TITRATION_NAMES),
+        PRESSURE("Pressure", "Shift Delta", PRESSURE_NAMES);
+
+        private final String xAxisLabel;
+        private final String yAxisLabel;
+        private final String[] names;
+
+        PATHMODE(String xAxisLabel, String yAxisLabel, String[] names) {
+            this.xAxisLabel = xAxisLabel;
+            this.yAxisLabel = yAxisLabel;
+            this.names = names;
+        }
+
+        public String[] names() {
+            return names;
+        }
+
+        public String xAxisLabel() {
+            return xAxisLabel;
+        }
+
+        public String yAxisLabel() {
+            return yAxisLabel;
+        }
+    }
+
+    record X2WithData(Double x0, Double x1, String dataName) {
     }
 
 }

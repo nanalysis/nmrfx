@@ -52,11 +52,6 @@ public class AnnoPolyLine extends AnnoShape {
     }
 
     @Override
-    public boolean hit( double x, double y, boolean selectMode) {
-        return false;
-    }
-
-    @Override
     public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world) {
         try {
             gC.setStroke(stroke);
@@ -72,6 +67,11 @@ public class AnnoPolyLine extends AnnoShape {
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
+    }
+
+    @Override
+    public boolean hit(double x, double y, boolean selectMode) {
+        return false;
     }
 
     @Override

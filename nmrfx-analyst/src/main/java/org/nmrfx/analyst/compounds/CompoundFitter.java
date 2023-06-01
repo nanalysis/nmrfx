@@ -4,27 +4,10 @@
  */
 package org.nmrfx.analyst.compounds;
 
-import java.io.PrintWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.DecompositionSolver;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.apache.commons.math3.optim.ConvergenceChecker;
-import org.apache.commons.math3.optim.InitialGuess;
-import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.PointValuePair;
-import org.apache.commons.math3.optim.SimpleBounds;
-import org.apache.commons.math3.optim.SimpleValueChecker;
+import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.optim.*;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
@@ -42,47 +25,49 @@ import org.nmrfx.processor.math.VecUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
 import static java.util.Objects.requireNonNull;
 
 
 /**
- *
  * @author brucejohnson
  */
 public class CompoundFitter implements MultivariateFunction {
 
     private static final Logger log = LoggerFactory.getLogger(CompoundFitter.class);
-
-    public static int MAX_SHIFT = 15;
-
-    ArrayList<CompoundRegion> cList = new ArrayList<>();
-    List<CompoundMatch> cMatches = new ArrayList<>();
-
-    private RealMatrix A;
-    private RealVector B;
-    private RealVector X;
-    private SingularValueDecomposition svd;
-    Vec vec;
-    private double[] vData = new double[0];
-    private double[] maskData = new double[0];
-    private int[] map = null;
-    private int[] rmap = null;
-    private int bcNum = 0;
-    double ppmDeltaToPoint = 1;
-    double vecRef = 0;
-    double vecHzToPoint = 0;
-
+    /**
+     *
+     */
+    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
     private final static int VALUE_AB_ABS = 0;
     private final static int VALUE_AB_ABS_NEGPEN = 1;
     private final static int VALUE_ABS = 2;
     private final static int VALUE_LS = 3;
     private final static int VALUE_LS_NONNEG = 4;
+    public static int MAX_SHIFT = 15;
+    ArrayList<CompoundRegion> cList = new ArrayList<>();
+    List<CompoundMatch> cMatches = new ArrayList<>();
+    Vec vec;
+    double ppmDeltaToPoint = 1;
+    double vecRef = 0;
+    double vecHzToPoint = 0;
+    private RealMatrix A;
+    private RealVector B;
+    private RealVector X;
+    private SingularValueDecomposition svd;
+    private double[] vData = new double[0];
+    private double[] maskData = new double[0];
+    private int[] map = null;
+    private int[] rmap = null;
+    private int bcNum = 0;
     private int valueMode = VALUE_ABS;
-
-    /**
-     *
-     */
-    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
 
     /**
      *
@@ -91,7 +76,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param vec Vec object to set
      */
     public void setVec(Vec vec) {
@@ -106,13 +90,12 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
-     * @param vecName name of Vec to lookup and use
+     * @param vecName  name of Vec to lookup and use
      * @param maskName name of Vec to lookup and use as mask
      */
     public void setVecWithMask(String vecName, String maskName) {
         Vec vec = (Vec) Vec.get(vecName);
-        Vec maskVec =(Vec)  Vec.get(maskName);
+        Vec maskVec = (Vec) Vec.get(maskName);
         if (vec == null) {
             throw new IllegalArgumentException("Vector \"" + vecName + "\" does not exist");
         }
@@ -152,28 +135,10 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param bcNum order of baseline correction polynomial
      */
     public void setBC(final int bcNum) {
         this.bcNum = Math.max(bcNum, 0);
-    }
-
-    static class CompoundRegion {
-
-        private final CompoundMatch cMatch;
-        private final int[] regions;
-        private final double[] shifts;
-        private final int[] minShifts;
-        private final int[] maxShifts;
-
-        CompoundRegion(CompoundMatch cMatch, int[] regions, double[] shifts, int[] minShifts, int[] maxShifts) {
-            this.cMatch = cMatch;
-            this.regions = regions;
-            this.shifts = shifts;
-            this.minShifts = minShifts;
-            this.maxShifts = maxShifts;
-        }
     }
 
     /**
@@ -205,7 +170,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param cMatch
      * @param region
      * @param shift
@@ -226,7 +190,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param cMatch
      * @param cmpdID
      * @param regions
@@ -269,7 +232,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public double scoreLeastSq() {
@@ -278,7 +240,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public double scoreLeastSqNonNeg() {
@@ -287,7 +248,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param skipColumns
      * @param nonNeg
      * @return
@@ -329,7 +289,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public double aicScore() {
@@ -386,7 +345,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public int countSize() {
@@ -399,7 +357,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public double[] current() {
@@ -416,7 +373,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public double[][] currentWithBounds() {
@@ -447,7 +403,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param x
      * @return
      */
@@ -471,7 +426,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param x
      * @return
      */
@@ -487,7 +441,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param x
      * @return
      */
@@ -504,7 +457,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param x
      * @return
      */
@@ -527,31 +479,7 @@ public class CompoundFitter implements MultivariateFunction {
         return norm1 + viol;
     }
 
-    class UnivariateValue implements UnivariateFunction {
-
-        private final CompoundFitter fitter;
-        private final double[] current;
-
-        public UnivariateValue(CompoundFitter fitter) {
-            this.fitter = fitter;
-            current = fitter.current();
-        }
-
-        @Override
-        public double value(double x) {
-            int j = 0;
-            for (CompoundRegion cR : cList) {
-                for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
-                    cR.shifts[iRegion] = current[j++] + x;
-                }
-            }
-            double rmsd = scoreLeastSqNonNeg();
-            return rmsd;
-        }
-    }
-
     /**
-     *
      * @param range
      * @return
      */
@@ -569,7 +497,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param start
      * @return
      */
@@ -608,7 +535,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public double[] scoreAbsNegPen() {
@@ -617,7 +543,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public double[] scoreAbs() {
@@ -626,7 +551,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public double[] scoreByCMAES() {
@@ -675,7 +599,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public FitResult fitXY() {
@@ -718,7 +641,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param scale
      * @param offset
      * @return
@@ -836,7 +758,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param fileName
      */
     public void dumpAB(String fileName) {
@@ -873,7 +794,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param vecX
      * @param vecY
      * @param normalize
@@ -914,7 +834,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @param vecX
      * @param vecY
      * @param scale
@@ -979,7 +898,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public double fitSections() {
@@ -1005,7 +923,6 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     /**
-     *
      * @return
      */
     public ArrayList<FitResult> optimizeAlignment() {
@@ -1089,6 +1006,46 @@ public class CompoundFitter implements MultivariateFunction {
         }
 
         return fitter;
+    }
+
+    static class CompoundRegion {
+
+        private final CompoundMatch cMatch;
+        private final int[] regions;
+        private final double[] shifts;
+        private final int[] minShifts;
+        private final int[] maxShifts;
+
+        CompoundRegion(CompoundMatch cMatch, int[] regions, double[] shifts, int[] minShifts, int[] maxShifts) {
+            this.cMatch = cMatch;
+            this.regions = regions;
+            this.shifts = shifts;
+            this.minShifts = minShifts;
+            this.maxShifts = maxShifts;
+        }
+    }
+
+    class UnivariateValue implements UnivariateFunction {
+
+        private final CompoundFitter fitter;
+        private final double[] current;
+
+        public UnivariateValue(CompoundFitter fitter) {
+            this.fitter = fitter;
+            current = fitter.current();
+        }
+
+        @Override
+        public double value(double x) {
+            int j = 0;
+            for (CompoundRegion cR : cList) {
+                for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
+                    cR.shifts[iRegion] = current[j++] + x;
+                }
+            }
+            double rmsd = scoreLeastSqNonNeg();
+            return rmsd;
+        }
     }
     /*
     proc ::dcs::standards::setupCmpdFit {cmpdIDs} {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,23 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.utils.properties;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableObjectValue;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 /**
- *
  * @author johnsonb
  */
 public class ListOperationItem extends OperationItem implements ObservableObjectValue<String> {
@@ -46,7 +45,6 @@ public class ListOperationItem extends OperationItem implements ObservableObject
     ChoiceOperationItem typeSelector;
 
     /**
-     *
      * @param listener
      * @param defaultValue optional default value for the List.
      * @param category
@@ -60,14 +58,6 @@ public class ListOperationItem extends OperationItem implements ObservableObject
         this.value = this.defaultValue;
         this.listener = listener;
         this.typeSelector = typeSelector;
-    }
-
-    /**
-     * Returns values as a string created by the java List implementation of toString()
-     */
-    @Override
-    public String getValue() {
-        return value.toString();
     }
 
     @Override
@@ -91,9 +81,18 @@ public class ListOperationItem extends OperationItem implements ObservableObject
     }
 
     /**
+     * Returns values as a string created by the java List implementation of toString()
+     */
+    @Override
+    public String getValue() {
+        return value.toString();
+    }
+
+    /**
      * Value is set by giving a String of comma separated values or an ArrayList object.
      * Any other object types will not change value. The listener is only updated if the
      * new values from o are different from the old values.
+     *
      * @param o
      */
     @Override
@@ -138,6 +137,34 @@ public class ListOperationItem extends OperationItem implements ObservableObject
         }
     }
 
+    @Override
+    public boolean isDefault() {
+        return value.equals(defaultValue);
+    }
+
+    @Override
+    public void setFromString(String sValue) {
+        this.setValue(sValue);
+    }
+
+    @Override
+    public void setToDefault() {
+        value = defaultValue;
+    }
+
+    /**
+     * Returns the string representation of all Number values in the format "[.,.,.]" without any extra white
+     * space, if values contain non Numbers, those elements are not returned.
+     * Example: if values = [1.0, 2.0, 3.0] -> "[1.0,2.0,3.0]"
+     * if values = ["one", "two", "three"] -> "[]"
+     *
+     * @return The string representation of values
+     */
+    @Override
+    public String getStringRep() {
+        return "[" + listToString(value) + "]";
+    }
+
     /**
      * Returns the string representation of all Number values in the format ".,.,." without any extra white
      * space, if values contain non Numbers, those elements are not returned.
@@ -177,33 +204,6 @@ public class ListOperationItem extends OperationItem implements ObservableObject
 
     @Override
     public void removeListener(InvalidationListener listener) {
-    }
-
-    @Override
-    public boolean isDefault() {
-        return value.equals(defaultValue);
-    }
-
-    @Override
-    public void setFromString(String sValue) {
-        this.setValue(sValue);
-    }
-
-    @Override
-    public void setToDefault() {
-        value = defaultValue;
-    }
-
-    /**
-     * Returns the string representation of all Number values in the format "[.,.,.]" without any extra white
-     * space, if values contain non Numbers, those elements are not returned.
-     * Example: if values = [1.0, 2.0, 3.0] -> "[1.0,2.0,3.0]"
-     *          if values = ["one", "two", "three"] -> "[]"
-     * @return The string representation of values
-     */
-    @Override
-    public String getStringRep() {
-        return "[" + listToString(value) + "]";
     }
 
 }

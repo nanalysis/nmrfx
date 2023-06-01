@@ -33,15 +33,6 @@ public class PeakListsTableController implements Initializable, StageBasedContro
     @FXML
     private Button tableButton;
 
-    public static PeakListsTableController create() {
-        PeakListsTableController controller = Fxml.load(PeakListsTableController.class, "PeakListsScene.fxml")
-                .withNewStage("PeakLists")
-                .getController();
-
-        PeakListsTableController.peakListsTableController = controller;
-        return controller;
-    }
-
     public void show() {
         stage.show();
         stage.toFront();
@@ -104,18 +95,6 @@ public class PeakListsTableController implements Initializable, StageBasedContro
         }
     }
 
-    /**
-     * Gets the PeakListsTableController. A new controller is created if one has not already been made.
-     * @return The PeakListsTableController instance.
-     */
-    public static PeakListsTableController getPeakListsTableController() {
-        if (peakListsTableController == null) {
-            peakListsTableController = PeakListsTableController.create();
-        }
-        peakListsTableController.peakListsTable.updatePeakLists();
-        return peakListsTableController;
-    }
-
     void compressPeakList() {
         if (getPeakList() != null) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Remove deleted peaks (permanent!)");
@@ -171,6 +150,28 @@ public class PeakListsTableController implements Initializable, StageBasedContro
                 }
             }
         }
+    }
+
+    public static PeakListsTableController create() {
+        PeakListsTableController controller = Fxml.load(PeakListsTableController.class, "PeakListsScene.fxml")
+                .withNewStage("PeakLists")
+                .getController();
+
+        PeakListsTableController.peakListsTableController = controller;
+        return controller;
+    }
+
+    /**
+     * Gets the PeakListsTableController. A new controller is created if one has not already been made.
+     *
+     * @return The PeakListsTableController instance.
+     */
+    public static PeakListsTableController getPeakListsTableController() {
+        if (peakListsTableController == null) {
+            peakListsTableController = PeakListsTableController.create();
+        }
+        peakListsTableController.peakListsTable.updatePeakLists();
+        return peakListsTableController;
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,14 +17,9 @@
  */
 package org.nmrfx.chemistry;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
- *
  * @author brucejohnson
  */
 public class SpatialSetGroup {
@@ -70,6 +65,13 @@ public class SpatialSetGroup {
         return sp.getName();
     }
 
+    /**
+     * @param name the name to set
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public void add(SpatialSet spSet) {
         spSets.add(spSet);
     }
@@ -77,6 +79,7 @@ public class SpatialSetGroup {
     /**
      * Returns a spatial set from the set spSets. Which spatial set is returned is undefined
      * as spSets is unordered. In most cases, spSets only contains a single SpatialSet.
+     *
      * @return A SpatialSet
      */
     public SpatialSet getSpatialSet() {
@@ -172,12 +175,5 @@ public class SpatialSetGroup {
      */
     public void setSpSets(Set<SpatialSet> spSets) {
         this.spSets = spSets;
-    }
-
-    /**
-     * @param name the name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 }

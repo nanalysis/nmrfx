@@ -14,8 +14,8 @@ public class PyVecTest {
         interp.exec("import sys");
         interp.exec("sys.path.append('src/test/python')");
         interp.execfile(path.toString());
-        var pyResult =  interp.eval("result.failures");
-        for (var item: pyResult.asIterable()) {
+        var pyResult = interp.eval("result.failures");
+        for (var item : pyResult.asIterable()) {
             System.out.println("item FAILURE " + item);
         }
         return pyResult.__len__();
@@ -24,7 +24,7 @@ public class PyVecTest {
     @Test
     public void testvec() {
         int nFailures = executeScript("testvec.py");
-        Assert.assertEquals(0,  nFailures);
+        Assert.assertEquals(0, nFailures);
     }
 }
 

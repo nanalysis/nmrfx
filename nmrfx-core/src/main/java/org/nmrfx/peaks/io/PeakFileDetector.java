@@ -15,7 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.spi.FileTypeDetector;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakFileDetector extends FileTypeDetector {

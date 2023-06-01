@@ -9,7 +9,6 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
 /**
- *
  * @author brucejohnson
  */
 public class EnergyFFPairs extends EnergyDistancePairs {
@@ -45,6 +44,34 @@ public class EnergyFFPairs extends EnergyDistancePairs {
             bValues = resize(bValues, newSize);
             charge = resize(charge, newSize);
         }
+    }
+
+    @Override
+    public ViolationStats getError(int i, double limitVal, double weight) {
+        return getError(i, limitVal, weight, -1.0);
+    }
+
+    @Override
+    public ViolationStats getError(int i, double limitVal, double weight, double eWeight) {
+        String modeType = "FF";
+        Atom[] atoms = eCoords.atoms;
+        int iAtom = iAtoms[i];
+        int jAtom = jAtoms[i];
+        double r2 = disSq[i];
+        double r = Math.sqrt(r2);
+        double dif = 0.0;
+        if (r2 <= rDis2[i]) {
+            r = Math.sqrt(r2);
+            dif = rDis[i] - r;
+        }
+        String result = "";
+        ViolationStats stat = null;
+        double energy = getEnergy(i, r2, weights[i] * weight, weights[i] * eWeight);
+        if (Math.abs(dif) > limitVal) {
+            stat = new ViolationStats(2, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], 0.0, energy, eCoords);
+        }
+
+        return stat;
     }
 
     @Override
@@ -91,8 +118,8 @@ public class EnergyFFPairs extends EnergyDistancePairs {
             }
 //derivative of ( (2.0 + 0.5 *  x^2)/(1.0 + (0.0625 *  x^2 + 1.5) * x^2))
 // derivative of ( 2.0*(a + b *  x^2)/((a+b*x^2)^2 + x^2))
-// derivative of ( 2.0*(1.0 + 0.25 *  x^2)/((1.0+0.25*x^2)^2 + x^2)) 
-//derivative of ( 2.0*(2.0 + 0.15 *  x^2)/((2.0+0.15*x^2)^2 + x^2)) 
+// derivative of ( 2.0*(1.0 + 0.25 *  x^2)/((1.0+0.25*x^2)^2 + x^2))
+//derivative of ( 2.0*(2.0 + 0.15 *  x^2)/((2.0+0.15*x^2)^2 + x^2))
 // derivative of ( 2.0*q/(q^2+x^2))
 // derivative of (a*s3-b)*(s6)
             FastVector3D iV = vecCoords[iAtom];
@@ -121,7 +148,7 @@ public class EnergyFFPairs extends EnergyDistancePairs {
                 /*
                  * what is needed is actually the derivitive/r, therefore the r that
                  * would be in following drops out
-                 * double dqdx = 0.5 * r;  
+                 * double dqdx = 0.5 * r;
                  */
                 double deriv = deds * dsdp * 2.0 * weight;
                 derivs[i] = deriv;
@@ -208,33 +235,5 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         double eE = eWeight < 0.0 ? 0.0 : weight * (c * s);
         return eV + eE;
 
-    }
-
-    @Override
-    public ViolationStats getError(int i, double limitVal, double weight) {
-        return getError(i, limitVal, weight, -1.0);
-    }
-
-    @Override
-    public ViolationStats getError(int i, double limitVal, double weight, double eWeight) {
-        String modeType = "FF";
-        Atom[] atoms = eCoords.atoms;
-        int iAtom = iAtoms[i];
-        int jAtom = jAtoms[i];
-        double r2 = disSq[i];
-        double r = Math.sqrt(r2);
-        double dif = 0.0;
-        if (r2 <= rDis2[i]) {
-            r = Math.sqrt(r2);
-            dif = rDis[i] - r;
-        }
-        String result = "";
-        ViolationStats stat = null;
-        double energy = getEnergy(i, r2, weights[i] * weight, weights[i] * eWeight);
-        if (Math.abs(dif) > limitVal) {
-            stat = new ViolationStats(2, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], 0.0, energy, eCoords);
-        }
-
-        return stat;
     }
 }

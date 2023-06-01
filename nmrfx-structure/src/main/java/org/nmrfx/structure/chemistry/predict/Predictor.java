@@ -24,46 +24,19 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class Predictor {
     private static final Logger log = LoggerFactory.getLogger(Predictor.class);
-
-    ProteinPredictor proteinPredictor = null;
-
-    /**
-     * @return the rMax
-     */
-    public static double getRMax() {
-        return rMax;
-    }
-
-    /**
-     * @param arMax the rMax to set
-     */
-    public static void setRMax(double arMax) {
-        rMax = arMax;
-    }
-
-    /**
-     * @return the intraScale
-     */
-    public static double getIntraScale() {
-        return intraScale;
-    }
-
-    /**
-     * @param aIntraScale the intraScale to set
-     */
-    public static void setIntraScale(double aIntraScale) {
-        intraScale = aIntraScale;
-    }
-
-    NodeValidatorInterface nodeValidator = null;
-
     static final Map<String, Double> RNA_REF_SHIFTS = new HashMap<>();
     static final Map<String, Double> RNA_MAE_SHIFTS = new HashMap<>();
+    static double[][] alphas = new double[25][];
+    static Map<String, Double> baseShiftMap = new HashMap<>();
+    static Map<String, Double> maeMap = new HashMap<>();
+    static Map<String, Integer> coefMap = new HashMap<>();
+    static Map<String, Set<String>> rnaFixedMap = new HashMap<>();
+    private static double rMax = 4.6;
+    private static double intraScale = 5.0;
 
     static {
         RNA_MAE_SHIFTS.put("H2", 0.19);
@@ -148,13 +121,8 @@ public class Predictor {
         RNA_REF_SHIFTS.put("U.C6", 142.523);
     }
 
-    static double[][] alphas = new double[25][];
-    static Map<String, Double> baseShiftMap = new HashMap<>();
-    static Map<String, Double> maeMap = new HashMap<>();
-    static Map<String, Integer> coefMap = new HashMap<>();
-    private static double rMax = 4.6;
-    private static double intraScale = 5.0;
-    static Map<String, Set<String>> rnaFixedMap = new HashMap<>();
+    ProteinPredictor proteinPredictor = null;
+    NodeValidatorInterface nodeValidator = null;
 
     void clearRefPPMs(int iRef) {
         Molecule mol = Molecule.getActive();
@@ -209,56 +177,6 @@ public class Predictor {
             }
         }
         return rna;
-    }
-
-    public static void loadRNADistData() {
-        try {
-            readFile("data/rna_pred_dist_H_6.0.txt");
-            readFile("data/rna_pred_dist_C_6.0.txt");
-        } catch (IOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-    }
-
-    public static Double getMAE(Atom atom) {
-        String aName = atom.getName();
-        return maeMap.get(aName);
-    }
-
-    public static Double getDistBaseShift(Atom atom) {
-        checkRNADistData();
-        String nucName = atom.getEntity().getName();
-        String nucAtom = nucName + "." + atom.getName();
-        return baseShiftMap.getOrDefault(nucAtom, null);
-    }
-
-    public static void checkRNADistData() {
-        if (coefMap.isEmpty()) {
-            loadRNADistData();
-        }
-
-    }
-
-    public static int getAlphaIndex(String nucName, String aName) {
-        checkRNADistData();
-        Integer typeIndex = coefMap.get(aName);
-        if (typeIndex == null) {
-            typeIndex = coefMap.get(nucName + "." + aName);
-        }
-        return typeIndex != null ? typeIndex : -1;
-    }
-
-    public static double getAlpha(int alphaClass, int index) {
-        return alphas[alphaClass][index];
-    }
-
-    public static double getAlphaIntercept(int alphaClass) {
-        return alphas[alphaClass][alphas[alphaClass].length - 1];
-    }
-
-    public static double getAngleAlpha(int alphaClass, int index) {
-        int nAlpha = alphas[alphaClass].length - 1;
-        return alphas[alphaClass][nAlpha - 4 + index];
     }
 
     public void predictProtein(Molecule mol, int iStructure, int iRef) throws InvalidMoleculeException, IOException {
@@ -352,43 +270,6 @@ public class Predictor {
                 }
             }
         }
-    }
-
-    public static boolean isRNAPairFixed(Atom atom1, Atom atom2) {
-        String aName1 = atom1.getName();
-        if (!aName1.contains("'")) {
-            aName1 = atom1.getEntity().getName() + "." + aName1;
-        }
-        String aName2 = atom2.getName();
-        if (!aName2.contains("'")) {
-            aName2 = atom2.getEntity().getName() + "." + aName2;
-        }
-        return isRNAPairFixed(aName1, aName2);
-    }
-
-    public static boolean isRNAPairFixed(String aName1, String aName2) {
-        if (rnaFixedMap.isEmpty()) {
-            try {
-                readRNAFixed("data/rnafix.txt");
-            } catch (IOException ex) {
-                log.error("failed load ", ex);
-                return false;
-            }
-        }
-        String srcName;
-        String targetName;
-        if (aName1.compareTo(aName2) < 0) {
-            srcName = aName1;
-            targetName = aName2;
-        } else {
-            srcName = aName2;
-            targetName = aName1;
-        }
-
-        if (rnaFixedMap.containsKey(srcName)) {
-            return rnaFixedMap.get(srcName).contains(targetName);
-        }
-        return false;
     }
 
     public void predictRNAWithDistances(Polymer polymer, int iStruct, int iRef, boolean eMode) {
@@ -502,6 +383,121 @@ public class Predictor {
                 }
             }
         }
+    }
+
+    /**
+     * @return the rMax
+     */
+    public static double getRMax() {
+        return rMax;
+    }
+
+    /**
+     * @param arMax the rMax to set
+     */
+    public static void setRMax(double arMax) {
+        rMax = arMax;
+    }
+
+    /**
+     * @return the intraScale
+     */
+    public static double getIntraScale() {
+        return intraScale;
+    }
+
+    /**
+     * @param aIntraScale the intraScale to set
+     */
+    public static void setIntraScale(double aIntraScale) {
+        intraScale = aIntraScale;
+    }
+
+    public static void loadRNADistData() {
+        try {
+            readFile("data/rna_pred_dist_H_6.0.txt");
+            readFile("data/rna_pred_dist_C_6.0.txt");
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+    }
+
+    public static Double getMAE(Atom atom) {
+        String aName = atom.getName();
+        return maeMap.get(aName);
+    }
+
+    public static Double getDistBaseShift(Atom atom) {
+        checkRNADistData();
+        String nucName = atom.getEntity().getName();
+        String nucAtom = nucName + "." + atom.getName();
+        return baseShiftMap.getOrDefault(nucAtom, null);
+    }
+
+    public static void checkRNADistData() {
+        if (coefMap.isEmpty()) {
+            loadRNADistData();
+        }
+
+    }
+
+    public static int getAlphaIndex(String nucName, String aName) {
+        checkRNADistData();
+        Integer typeIndex = coefMap.get(aName);
+        if (typeIndex == null) {
+            typeIndex = coefMap.get(nucName + "." + aName);
+        }
+        return typeIndex != null ? typeIndex : -1;
+    }
+
+    public static double getAlpha(int alphaClass, int index) {
+        return alphas[alphaClass][index];
+    }
+
+    public static double getAlphaIntercept(int alphaClass) {
+        return alphas[alphaClass][alphas[alphaClass].length - 1];
+    }
+
+    public static double getAngleAlpha(int alphaClass, int index) {
+        int nAlpha = alphas[alphaClass].length - 1;
+        return alphas[alphaClass][nAlpha - 4 + index];
+    }
+
+    public static boolean isRNAPairFixed(Atom atom1, Atom atom2) {
+        String aName1 = atom1.getName();
+        if (!aName1.contains("'")) {
+            aName1 = atom1.getEntity().getName() + "." + aName1;
+        }
+        String aName2 = atom2.getName();
+        if (!aName2.contains("'")) {
+            aName2 = atom2.getEntity().getName() + "." + aName2;
+        }
+        return isRNAPairFixed(aName1, aName2);
+    }
+
+    public static boolean isRNAPairFixed(String aName1, String aName2) {
+        if (rnaFixedMap.isEmpty()) {
+            try {
+                readRNAFixed("data/rnafix.txt");
+            } catch (IOException ex) {
+                log.error("failed load ", ex);
+                return false;
+            }
+        }
+        String srcName;
+        String targetName;
+        if (aName1.compareTo(aName2) < 0) {
+            srcName = aName1;
+            targetName = aName2;
+        } else {
+            srcName = aName2;
+            targetName = aName1;
+        }
+
+        if (rnaFixedMap.containsKey(srcName)) {
+            return rnaFixedMap.get(srcName).contains(targetName);
+        }
+        return false;
     }
 
     public static void readFile(String resourceName) throws IOException {

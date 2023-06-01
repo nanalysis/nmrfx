@@ -5,15 +5,14 @@
  */
 package org.nmrfx.chemistry.relax;
 
-import java.util.Arrays;
-import java.util.Objects;
-
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.peaks.Peak;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 /**
- *
  * @author brucejohnson
  */
 @PluginAPI("ring")
@@ -34,16 +33,6 @@ public class ResonanceSource implements Comparable<ResonanceSource> {
         this.atoms = atoms;
         this.peak = null;
         this.atomKey = makeAtomKey(atoms);
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append("peak ").append(peak).append(" atoms:");
-        for (Atom atom : atoms) {
-            sBuilder.append(" ").append(atom.getFullName());
-        }
-        return sBuilder.toString();
     }
 
     @Override
@@ -72,6 +61,16 @@ public class ResonanceSource implements Comparable<ResonanceSource> {
             return false;
         }
         return Arrays.deepEquals(this.atoms, other.atoms);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append("peak ").append(peak).append(" atoms:");
+        for (Atom atom : atoms) {
+            sBuilder.append(" ").append(atom.getFullName());
+        }
+        return sBuilder.toString();
     }
 
     private String makeAtomKey(Atom[] keyAtoms) {

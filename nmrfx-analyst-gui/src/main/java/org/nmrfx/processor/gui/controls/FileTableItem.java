@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,17 +17,19 @@
  */
 package org.nmrfx.processor.gui.controls;
 
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleLongProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.paint.Color;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javafx.beans.property.*;
-import javafx.scene.paint.Color;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-
 /**
- *
  * @author Bruce Johnson
  */
 public class FileTableItem {
@@ -39,11 +41,11 @@ public class FileTableItem {
     private final SimpleIntegerProperty row;
     private final SimpleLongProperty date;
     private final SimpleIntegerProperty group;
-    private SimpleObjectProperty<DatasetAttributes> datasetAttr;
     private final HashMap<String, String> extras = new HashMap<>();
     private final HashMap<String, Integer> intExtras = new HashMap<>();
     private final HashMap<String, Double> doubleExtras = new HashMap<>();
     private final HashMap<String, Object> objectExtras = new HashMap<>();
+    private SimpleObjectProperty<DatasetAttributes> datasetAttr;
 
     public FileTableItem(String fileName, String seqName, int nDim, long date, int row, String datasetName) {
         this.fileName = new SimpleStringProperty(fileName);
@@ -72,12 +74,12 @@ public class FileTableItem {
         this.group.set(group);
     }
 
-    public void setDatasetName(String fileName) {
-        this.datasetName.set(fileName);
-    }
-
     public String getDatasetName() {
         return datasetName.get();
+    }
+
+    public void setDatasetName(String fileName) {
+        this.datasetName.set(fileName);
     }
 
     public String getSeqName() {
@@ -104,15 +106,15 @@ public class FileTableItem {
         this.date.set(date);
     }
 
+    public boolean getNeg() {
+        var dataAttr = getDatasetAttributes();
+        return dataAttr != null && dataAttr.getNeg(getRow() - 1);
+    }
+
     public void setNeg(boolean value) {
         if (datasetAttr != null) {
             datasetAttr.get().setNeg(value, getRow() - 1);
         }
-    }
-
-    public boolean getNeg() {
-        var dataAttr = getDatasetAttributes();
-        return dataAttr != null && dataAttr.getNeg(getRow() - 1);
     }
 
     public boolean getPos() {
@@ -166,6 +168,7 @@ public class FileTableItem {
     public DatasetAttributes getDatasetAttributes() {
         return datasetAttr == null ? null : datasetAttr.get();
     }
+
     public void setDatasetAttributes(DatasetAttributes datasetAttributes) {
         this.datasetAttr = new SimpleObjectProperty<>(datasetAttributes);
     }

@@ -6,7 +6,6 @@
 package org.nmrfx.analyst.compounds;
 
 /**
- *
  * @author brucejohnson
  */
 public class CompoundMatch {

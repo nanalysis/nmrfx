@@ -5,25 +5,21 @@
  */
 package org.nmrfx.processor.processing;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- *
  * @author brucejohnson
  */
 public class LineShapeCatalog {
@@ -47,20 +43,6 @@ public class LineShapeCatalog {
 
     }
 
-    public String toString() {
-        StringBuilder sBuilder = new StringBuilder();
-        if (data != null) {
-            for (int i = 0; i < data.length; i++) {
-                if (i != 0) {
-                    sBuilder.append(" ");
-                }
-                sBuilder.append(i).append(" ").append(data[i].length);
-                sBuilder.append(" ").append(data[i][0].length);
-            }
-        }
-        return sBuilder.toString();
-    }
-
     public LineShapeCatalog(NMRData data, double[][] lineWidthRanges, int[] nDecay, int[] nKeep, int nFrac, String saveFileName) {
         int nDim = data.getNDim();
         sw = new double[nDim];
@@ -82,6 +64,20 @@ public class LineShapeCatalog {
                 lineWidths[iDim][iDecay] = lineWidthRanges[iDim][0] + frac * delta;
             }
         }
+    }
+
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        if (data != null) {
+            for (int i = 0; i < data.length; i++) {
+                if (i != 0) {
+                    sBuilder.append(" ");
+                }
+                sBuilder.append(i).append(" ").append(data[i].length);
+                sBuilder.append(" ").append(data[i][0].length);
+            }
+        }
+        return sBuilder.toString();
     }
 
     void decayFID(Vec vec, double lw, double frac) {
@@ -155,28 +151,6 @@ public class LineShapeCatalog {
         double width = Math.abs(h2 - h1);
         return width;
 
-    }
-
-    public static LineShapeCatalog loadSimFids(String saveFileName, int nDim) throws IOException {
-        LineShapeCatalog simVecProcessor = null;
-        if ((saveFileName != null) && (saveFileName.length() > 0)) {
-            File saveFile = new File(saveFileName);
-            try (BufferedReader reader = Files.newBufferedReader(saveFile.toPath())) {
-                simVecProcessor = new LineShapeCatalog(nDim);
-                String line = reader.readLine();
-                String[] fields = line.split("\t");
-                simVecProcessor.nFrac = Integer.parseInt(fields[1]);
-
-                for (int iDim = 0; iDim < nDim; iDim++) {
-                    line = reader.readLine();
-                    fields = line.split("\t");
-                    int size = Integer.parseInt(fields[3]);
-                    simVecProcessor.loadSimFids(reader, iDim, nDim, size);
-                    simVecProcessor.normalize(iDim);
-                }
-            }
-        }
-        return simVecProcessor;
     }
 
     public void loadSimFids(BufferedReader reader, int iDim, int nDim, int size) throws IOException {
@@ -399,7 +373,7 @@ public class LineShapeCatalog {
     }
 
     private double[] interpolate(int iDim, double lwIndex, int offset,
-            double fP, boolean reverse) {
+                                 double fP, boolean reverse) {
         int lwIndex1 = (int) Math.floor(lwIndex) * nFrac;
         int lwIndex2 = lwIndex1 + nFrac;
         double fL = lwIndex - Math.floor(lwIndex);
@@ -426,7 +400,7 @@ public class LineShapeCatalog {
     }
 
     public boolean addToDatasetInterpolated(Dataset dataset, double[][] values,
-            int[] center, double scale, Double lvl) throws IOException {
+                                            int[] center, double scale, Double lvl) throws IOException {
         int[] regionSizes = new int[values.length];
 
         for (int i = 0; i < values.length; i++) {
@@ -469,7 +443,7 @@ public class LineShapeCatalog {
     }
 
     public void addToDataset(Dataset dataset, int[] indices,
-            int[] center, double scale) throws IOException {
+                             int[] center, double scale) throws IOException {
         int[] regionSizes = new int[indices.length];
 
         for (int i = 0; i < indices.length; i++) {
@@ -501,5 +475,27 @@ public class LineShapeCatalog {
                 dataset.writePoint(dpt, dataValue);
             }
         }
+    }
+
+    public static LineShapeCatalog loadSimFids(String saveFileName, int nDim) throws IOException {
+        LineShapeCatalog simVecProcessor = null;
+        if ((saveFileName != null) && (saveFileName.length() > 0)) {
+            File saveFile = new File(saveFileName);
+            try (BufferedReader reader = Files.newBufferedReader(saveFile.toPath())) {
+                simVecProcessor = new LineShapeCatalog(nDim);
+                String line = reader.readLine();
+                String[] fields = line.split("\t");
+                simVecProcessor.nFrac = Integer.parseInt(fields[1]);
+
+                for (int iDim = 0; iDim < nDim; iDim++) {
+                    line = reader.readLine();
+                    fields = line.split("\t");
+                    int size = Integer.parseInt(fields[3]);
+                    simVecProcessor.loadSimFids(reader, iDim, nDim, size);
+                    simVecProcessor.normalize(iDim);
+                }
+            }
+        }
+        return simVecProcessor;
     }
 }

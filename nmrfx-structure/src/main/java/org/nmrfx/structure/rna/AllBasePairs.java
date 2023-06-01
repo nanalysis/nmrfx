@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,81 +21,22 @@
 package org.nmrfx.structure.rna;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 public class AllBasePairs {
 
+    private final static Map<String, AllBasePairs> bpMap = new HashMap<>();
+    private final static List<AllBasePairs> basePairs = new ArrayList<>();
     public int type;
     public String res1;
     public String res2;
     BPConstraint[] bpConstraints;
-
-    private final static Map<String, AllBasePairs> bpMap = new HashMap<>();
-    private final static List<AllBasePairs> basePairs = new ArrayList<>();
 
     public AllBasePairs(int type, String res1, String res2, BPConstraint[] bpConstraints) {
         this.res1 = res1;
         this.res2 = res2;
         this.type = type;
         this.bpConstraints = bpConstraints;
-    }
-
-    public static class BPConstraint {
-
-        final String[][] atomNames;
-        final double lower;
-        final double upper;
-        final double lowerHeavy;
-        final double upperHeavy;
-
-        public BPConstraint(String[][] atomNames, double lower, double upper, double lowerHeavy, double upperHeavy) {
-            this.atomNames = atomNames;
-            this.lower = lower;
-            this.upper = upper;
-            this.lowerHeavy = lowerHeavy;
-            this.upperHeavy = upperHeavy;
-        }
-        
-        public String[][] getAtomNames() {
-            return atomNames;
-        }
-        
-        public double getLower() {
-            return lower;
-        }
-        
-        public double getUpper() {
-            return upper;
-        }
-        
-        public double getLowerHeavy() {
-            return lowerHeavy;
-        }
-        
-        public double getUpperHeavy() {
-            return upperHeavy;
-        }
-
-        public String toString() {
-            StringBuilder sBuilder = new StringBuilder();
-            sBuilder.append(String.format("%4.1f ", lower));
-            sBuilder.append(String.format("%4.1f ", upper));
-            sBuilder.append(String.format("%4.1f ", lowerHeavy));
-            sBuilder.append(String.format("%4.1f ", upperHeavy));
-            for (int i = 0; i < atomNames.length; i++) {
-                sBuilder.append(atomNames[i][0]).append(" ");
-                sBuilder.append(atomNames[i][1]);
-                if (i < atomNames.length - 1) {
-                    sBuilder.append(" ");
-                }
-            }
-            return sBuilder.toString();
-        }
     }
 
     public BPConstraint[] getBPConstraints() {
@@ -173,6 +114,59 @@ public class AllBasePairs {
                     basePairs.add(bp);
                 }
             }
+        }
+    }
+
+    public static class BPConstraint {
+
+        final String[][] atomNames;
+        final double lower;
+        final double upper;
+        final double lowerHeavy;
+        final double upperHeavy;
+
+        public BPConstraint(String[][] atomNames, double lower, double upper, double lowerHeavy, double upperHeavy) {
+            this.atomNames = atomNames;
+            this.lower = lower;
+            this.upper = upper;
+            this.lowerHeavy = lowerHeavy;
+            this.upperHeavy = upperHeavy;
+        }
+
+        public String[][] getAtomNames() {
+            return atomNames;
+        }
+
+        public double getLower() {
+            return lower;
+        }
+
+        public double getUpper() {
+            return upper;
+        }
+
+        public double getLowerHeavy() {
+            return lowerHeavy;
+        }
+
+        public double getUpperHeavy() {
+            return upperHeavy;
+        }
+
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append(String.format("%4.1f ", lower));
+            sBuilder.append(String.format("%4.1f ", upper));
+            sBuilder.append(String.format("%4.1f ", lowerHeavy));
+            sBuilder.append(String.format("%4.1f ", upperHeavy));
+            for (int i = 0; i < atomNames.length; i++) {
+                sBuilder.append(atomNames[i][0]).append(" ");
+                sBuilder.append(atomNames[i][1]);
+                if (i < atomNames.length - 1) {
+                    sBuilder.append(" ");
+                }
+            }
+            return sBuilder.toString();
         }
     }
 

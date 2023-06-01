@@ -67,19 +67,18 @@ public class DrawPeaks {
     static int nRegions = 32;
     static int minHitSize = 5;
     static double widthLimit = 0.0001;
-    char[] anchorS = {'s', ' '};
-    char[] anchorW = {' ', 'w'};
-    double frOffset = 0.05;
-
     /**
      * Creates a new instance of PeakRenderer
      */
     static Path g1DPath = new Path();
     static Path g2DPath = new Path();
-
+    static double peak2DStroke = 1.0;
+    static double peakOvalStroke = 2.0;
+    char[] anchorS = {'s', ' '};
+    char[] anchorW = {' ', 'w'};
+    double frOffset = 0.05;
     Axis xAxis;
     Axis yAxis;
-
     int jmode = 0;
     int disDim = 0;
     PolyChart chart = null;
@@ -89,9 +88,7 @@ public class DrawPeaks {
     boolean treeOn = false;
     boolean peakDisOn = true;
     boolean peakDisOff = true;
-    static double peak2DStroke = 1.0;
     double peak1DStroke = peak2DStroke;
-    static double peakOvalStroke = 2.0;
     int iPeakList = 0;
     float dY = 0;
     float dXRegion = 0.0f;
@@ -99,9 +96,9 @@ public class DrawPeaks {
 
     HashSet[] regions = null;
     Color selectFill = new Color(1.0f, 1.0f, 0.0f, 0.4f);
-    private boolean multipletMode = false;
     List<PeakBox> lastTextBoxes = new TreeList<>();
     GraphicsContextInterface g2;
+    private boolean multipletMode = false;
 
     public DrawPeaks(PolyChart chart, Canvas peakCanvas) {
         this.chart = chart;
@@ -114,36 +111,6 @@ public class DrawPeaks {
         }
         xAxis = chart.getAxes().getX();
         yAxis = chart.getAxes().getY();
-    }
-
-    class PeakBox {
-        Bounds bounds;
-        Peak peak;
-
-        PeakBox(Bounds bounds, Peak peak) {
-            this.bounds = bounds;
-            this.peak = peak;
-        }
-
-        boolean intersects(Bounds testBounds) {
-            return this.bounds.intersects(testBounds);
-        }
-
-        boolean contains(double x, double y) {
-            return this.bounds.contains(x, y);
-        }
-
-        Peak getPeak() {
-            return peak;
-        }
-
-        Bounds getBounds() {
-            return bounds;
-        }
-
-        Multiplet getMultiplet() {
-            return peak.getPeakDim(0).getMultiplet();
-        }
     }
 
     public void resetDrawList() {
@@ -171,7 +138,6 @@ public class DrawPeaks {
         }
         return result;
     }
-
 
     public void drawSimSum(GraphicsContextInterface g2, ArrayList peaks, int[] dim) throws GraphicsIOException {
         Peak1DRep peakRep = new Peak1DRep(g2, dim[0], peaks);
@@ -1362,6 +1328,37 @@ public class DrawPeaks {
         }
         return coords;
     }
+
+    class PeakBox {
+        Bounds bounds;
+        Peak peak;
+
+        PeakBox(Bounds bounds, Peak peak) {
+            this.bounds = bounds;
+            this.peak = peak;
+        }
+
+        boolean intersects(Bounds testBounds) {
+            return this.bounds.intersects(testBounds);
+        }
+
+        boolean contains(double x, double y) {
+            return this.bounds.contains(x, y);
+        }
+
+        Peak getPeak() {
+            return peak;
+        }
+
+        Bounds getBounds() {
+            return bounds;
+        }
+
+        Multiplet getMultiplet() {
+            return peak.getPeakDim(0).getMultiplet();
+        }
+    }
+
     class Peak1DRep {
 
         double x = 0;

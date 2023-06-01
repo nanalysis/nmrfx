@@ -1,27 +1,24 @@
 package org.nmrfx.structure.chemistry.predict;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.io.PDBAtomParser;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
+
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
-import org.nmrfx.chemistry.*;
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.chemistry.io.PDBAtomParser;
-import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
+import java.util.*;
 
 public class ProteinPredictor {
 
     public final static Map<String, Double> RANDOM_SCALES = new HashMap<>();
     // values from Journal of Biomolecular NMR (2018) 70:141–165 Potenci
+    static final Set<String> atomTypes = new HashSet<>();
 
     static {
         RANDOM_SCALES.put("N", -0.472);
@@ -33,8 +30,6 @@ public class ProteinPredictor {
         RANDOM_SCALES.put("HB", 0.022);
 
     }
-
-    static final Set<String> atomTypes = new HashSet<>();
 
     PropertyGenerator propertyGenerator;
     Map<String, Integer> aaMap = new HashMap<>();
@@ -97,24 +92,6 @@ public class ProteinPredictor {
             }
         }
         initMinMax();
-    }
-
-    class CorrComb {
-
-        int relPos;
-        String centerAA;
-        String neighborType;
-        double value1;
-        double value2;
-
-        public CorrComb(int relPos, String centerAA, String neighborType, double value1, double value2) {
-            this.relPos = relPos;
-            this.centerAA = centerAA;
-            this.neighborType = neighborType;
-            this.value1 = value1;
-            this.value2 = value2;
-        }
-
     }
 
     void loadPotenci() throws IOException {
@@ -221,21 +198,6 @@ public class ProteinPredictor {
         }
     }
 
-    public static double calcDisorderScale(double contactSum, double[] minMax) {
-        double sValue = -2.0 * (contactSum - minMax[0]) / (minMax[1] - minMax[0]);
-        double eValue = Math.exp(sValue);
-        return (1.0 - eValue) / (1.0 + eValue);
-    }
-
-    public static boolean checkAngles(Double... values) {
-        for (Double value : values) {
-            if ((value == null) || Double.isNaN(value) || Double.isInfinite(value)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public void predict(int iRef, int structureNum) throws InvalidMoleculeException, IOException {
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isPeptide()) {
@@ -307,7 +269,7 @@ public class ProteinPredictor {
                         double[] minMax = minMaxMap.get(type);
                         ProteinPredictorResult predResult
                                 = ProteinPredictorGen.predict(valueMap,
-                                        coefs, minMax, reportAtom != null);
+                                coefs, minMax, reportAtom != null);
                         double value = predResult.ppm;
                         value = Math.round(value * 100) / 100.0;
                         double rms = getRMS(type);
@@ -379,24 +341,6 @@ public class ProteinPredictor {
         return rms;
     }
 
-    public static double getRandomCoilError(Atom atom) {
-        String aName = atom.getName();
-        String scaleName = aName;
-        if (aName.length() > 2) {
-            scaleName = aName.substring(0, 2);
-        }
-        double scale;
-        if (RANDOM_SCALES.containsKey(scaleName)) {
-            scale = RANDOM_SCALES.get(scaleName);
-        } else if (RANDOM_SCALES.containsKey(scaleName.substring(0, 1))) {
-            scale = RANDOM_SCALES.get(scaleName.substring(0, 1));
-        } else {
-            scale = 1.0;
-        }
-        return scale;
-
-    }
-    
     String convert3To1(String name) {
         if (name.equals("MSE")) {
             return "M";
@@ -422,21 +366,21 @@ public class ProteinPredictor {
                         } else {
                             aNames2.add(aName);
                         }
-                        for (var aName2:aNames2) {
-                        Atom atom = residue.getAtom(aName2);
-                        if (atom != null) {
-                            Double ppm = predictRandom(residue, aName, 298.0);
-                            if (ppm != null) {
-                                double errValue = getRandomCoilError(atom);
-                                if (iRef < 0) {
-                                    atom.setRefPPM(-iRef - 1, ppm);
-                                    atom.setRefError(-iRef - 1, errValue);
-                                } else {
-                                    atom.setPPM(iRef, ppm);
-                                    atom.setPPMError(iRef, errValue);
+                        for (var aName2 : aNames2) {
+                            Atom atom = residue.getAtom(aName2);
+                            if (atom != null) {
+                                Double ppm = predictRandom(residue, aName, 298.0);
+                                if (ppm != null) {
+                                    double errValue = getRandomCoilError(atom);
+                                    if (iRef < 0) {
+                                        atom.setRefPPM(-iRef - 1, ppm);
+                                        atom.setRefError(-iRef - 1, errValue);
+                                    } else {
+                                        atom.setPPM(iRef, ppm);
+                                        atom.setPPMError(iRef, errValue);
+                                    }
                                 }
                             }
-                        }
                         }
                     }
                 }
@@ -466,13 +410,13 @@ public class ProteinPredictor {
             } else {
                 aaChars[4] = convert3To1(next2Res.getName());
             }
-            for (String aaChar: aaChars) {
-                 if (aaChar == null) {
-                      System.out.println("No sgnl res " + residue.getName() + " " + aName);
-                      return null;
-                 }
+            for (String aaChar : aaChars) {
+                if (aaChar == null) {
+                    System.out.println("No sgnl res " + residue.getName() + " " + aName);
+                    return null;
+                }
             }
-          result = predictRandom(aaChars, aName, tempK);
+            result = predictRandom(aaChars, aName, tempK);
         }
         return result;
     }
@@ -562,6 +506,57 @@ public class ProteinPredictor {
         }
 
         return result;
+    }
+
+    public static double calcDisorderScale(double contactSum, double[] minMax) {
+        double sValue = -2.0 * (contactSum - minMax[0]) / (minMax[1] - minMax[0]);
+        double eValue = Math.exp(sValue);
+        return (1.0 - eValue) / (1.0 + eValue);
+    }
+
+    public static boolean checkAngles(Double... values) {
+        for (Double value : values) {
+            if ((value == null) || Double.isNaN(value) || Double.isInfinite(value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static double getRandomCoilError(Atom atom) {
+        String aName = atom.getName();
+        String scaleName = aName;
+        if (aName.length() > 2) {
+            scaleName = aName.substring(0, 2);
+        }
+        double scale;
+        if (RANDOM_SCALES.containsKey(scaleName)) {
+            scale = RANDOM_SCALES.get(scaleName);
+        } else if (RANDOM_SCALES.containsKey(scaleName.substring(0, 1))) {
+            scale = RANDOM_SCALES.get(scaleName.substring(0, 1));
+        } else {
+            scale = 1.0;
+        }
+        return scale;
+
+    }
+
+    class CorrComb {
+
+        int relPos;
+        String centerAA;
+        String neighborType;
+        double value1;
+        double value2;
+
+        public CorrComb(int relPos, String centerAA, String neighborType, double value1, double value2) {
+            this.relPos = relPos;
+            this.centerAA = centerAA;
+            this.neighborType = neighborType;
+            this.value1 = value1;
+            this.value2 = value2;
+        }
+
     }
 
 }

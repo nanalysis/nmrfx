@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,12 @@
  */
 package org.nmrfx.processor.gui.utils;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeSupport;
 import javafx.application.Platform;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeSupport;
+
 /**
- *
  * @author brucejohnson
  */
 public class FxPropertyChangeSupport extends PropertyChangeSupport {

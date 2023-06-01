@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * @author brucejohnson
  */
 @PythonAPI("autoscript")
@@ -20,52 +19,6 @@ public class ProcessingLib {
 
     static Map<String, SequenceScript> sequences = new HashMap<>();
     static String fileName = "resource:psglib/bruker.yaml";
-
-    public static class SequenceScript {
-
-        final String name;
-        final int nDim;
-        final String vendor;
-        final String script;
-        final List<String> aliases;
-        final Map<String, Object> vars;
-
-        public String getName() {
-            return name;
-        }
-
-        public String getVendor() {
-            return vendor;
-        }
-
-        public int getNDim() {
-            return nDim;
-        }
-
-        public String getScript() {
-            return script;
-        }
-
-        public List<String> getAliases() {
-            return aliases;
-        }
-
-        public Map<String, Object> getVars() {
-            return vars;
-        }
-
-        public SequenceScript(String name, List<String> aliases, String vendor, int nDim, String script,
-                Map<String, Object> vars) {
-            this.name = name;
-            this.vendor = vendor;
-            this.nDim = nDim;
-            this.script = script;
-            this.aliases = aliases;
-            this.vars = vars;
-
-        }
-
-    }
 
     public static void loadYaml(String fileName) throws FileNotFoundException, IOException {
         InputStream input;
@@ -141,6 +94,52 @@ public class ProcessingLib {
             matchMode++;
         }
         return null;
+    }
+
+    public static class SequenceScript {
+
+        final String name;
+        final int nDim;
+        final String vendor;
+        final String script;
+        final List<String> aliases;
+        final Map<String, Object> vars;
+
+        public SequenceScript(String name, List<String> aliases, String vendor, int nDim, String script,
+                              Map<String, Object> vars) {
+            this.name = name;
+            this.vendor = vendor;
+            this.nDim = nDim;
+            this.script = script;
+            this.aliases = aliases;
+            this.vars = vars;
+
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getVendor() {
+            return vendor;
+        }
+
+        public int getNDim() {
+            return nDim;
+        }
+
+        public String getScript() {
+            return script;
+        }
+
+        public List<String> getAliases() {
+            return aliases;
+        }
+
+        public Map<String, Object> getVars() {
+            return vars;
+        }
+
     }
 
 }

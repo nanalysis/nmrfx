@@ -36,10 +36,16 @@ import java.util.*;
 
 public class EnergyLists {
     private static final Logger log = LoggerFactory.getLogger(EnergyLists.class);
-
+    static final double toDeg = 180.0 / Math.PI;
+    static final double toRad = Math.PI / 180;
+    static boolean REPORTBAD = false;
     public List<AtomPair> atomList = new ArrayList<>();
     public List<AtomPair> atomList2 = new ArrayList<>();
     public List<CompoundPair> compoundPairList = new ArrayList<>();
+    AtomBranch[] branches = null;
+    boolean stochasticMode = false;
+    boolean[] stochasticResidues = null;
+    boolean constraintsSetup = false;
     private List<Atom> refAtoms = new ArrayList<>();
     private List<BondPair> bondList = new ArrayList<>();
     private List<AngleConstraint> angleBoundList = new ArrayList<>();
@@ -61,13 +67,6 @@ public class EnergyLists {
     private ForceWeight forceWeight = new ForceWeight();
     private RingCurrentShift ringShifts = new RingCurrentShift();
     private Predictor predictor = null;
-    AtomBranch[] branches = null;
-    static final double toDeg = 180.0 / Math.PI;
-    static final double toRad = Math.PI / 180;
-    static boolean REPORTBAD = false;
-    boolean stochasticMode = false;
-    boolean[] stochasticResidues = null;
-    boolean constraintsSetup = false;
     private Map<Integer, List<DistanceConstraint>> distancePairMap = new HashMap<>();
 
     public EnergyLists() {
@@ -85,17 +84,12 @@ public class EnergyLists {
         angleBoundList.clear();
     }
 
-    public void setCourseGrain(final boolean value) {
-        useCourseGrain = value;
-        compoundArray = null;
-    }
-
     public boolean getCourseGrain() {
         return useCourseGrain;
     }
 
-    public void setIncludeH(final boolean value) {
-        includeH = value;
+    public void setCourseGrain(final boolean value) {
+        useCourseGrain = value;
         compoundArray = null;
     }
 
@@ -103,68 +97,73 @@ public class EnergyLists {
         return includeH;
     }
 
-    public void setHardSphere(final double value) {
-        hardSphere = value;
+    public void setIncludeH(final boolean value) {
+        includeH = value;
+        compoundArray = null;
     }
 
     public double getHardSphere() {
         return hardSphere;
     }
 
-    public void setDistanceLimit(final double value) {
-        distanceLimit = value;
+    public void setHardSphere(final double value) {
+        hardSphere = value;
     }
 
     public double getDistanceLimit() {
         return distanceLimit;
     }
 
-    public void setDeltaStart(final int value) {
-        deltaStart = value;
+    public void setDistanceLimit(final double value) {
+        distanceLimit = value;
     }
 
     public int getDeltaStart() {
         return deltaStart;
     }
 
-    public void setDeltaEnd(final int value) {
-        deltaEnd = value;
+    public void setDeltaStart(final int value) {
+        deltaStart = value;
     }
 
     public int getDeltaEnd() {
         return deltaEnd;
     }
 
-    public void setUpdateAt(final int value) {
-        updateAt = value;
+    public void setDeltaEnd(final int value) {
+        deltaEnd = value;
     }
 
     public int getUpdateAt() {
         return updateAt;
     }
 
-    public void setShrinkValue(final double value) {
-        shrinkValue = value;
+    public void setUpdateAt(final int value) {
+        updateAt = value;
     }
 
     public double getShrinkValue() {
         return shrinkValue;
     }
 
-    public void setShrinkHValue(final double value) {
-        shrinkHValue = value;
+    public void setShrinkValue(final double value) {
+        shrinkValue = value;
     }
 
     public double getShrinkHValue() {
         return shrinkHValue;
     }
 
-    public void setSwap(final int value) {
-        swapInterval = value;
+    public void setShrinkHValue(final double value) {
+        shrinkHValue = value;
     }
 
     public int getSwap() {
         return swapInterval;
+    }
+
+    public void setSwap(final int value) {
+        swapInterval = value;
     }
 
     void addAngleBoundary(AngleConstraint angleBoundary) {
@@ -179,38 +178,6 @@ public class EnergyLists {
         return refAtoms;
     }
 
-    class CompoundSphere {
-
-        final Compound compound;
-        final Atom atom;
-        final double radius;
-        final ArrayList<SpatialSet> sSets;
-
-        CompoundSphere(final Compound compound, final Atom atom, final double radius, ArrayList<SpatialSet> sSets) {
-            this.compound = compound;
-            this.atom = atom;
-            this.radius = radius;
-            this.sSets = sSets;
-        }
-
-        public String toString() {
-            return compound.getNumber() + "." + atom.getName() + " " + radius;
-        }
-    }
-
-    class CompoundPair {
-
-        final CompoundSphere cSphere1;
-        final CompoundSphere cSphere2;
-        final ArrayList<AtomPair> atomPairs = new ArrayList<>();
-
-        CompoundPair(CompoundSphere cSphere1, CompoundSphere cSphere2) {
-            this.cSphere1 = cSphere1;
-            this.cSphere2 = cSphere2;
-        }
-
-    }
-
     public boolean isCourseGrain(String atomType) {
         if (atomType.endsWith("g")) {
             return true;
@@ -219,17 +186,13 @@ public class EnergyLists {
         }
     }
 
-    public void setForceWeight(final ForceWeight forceWeight) {
-        this.forceWeight = forceWeight;
-        molecule.getEnergyCoords().setForceWeight(forceWeight);
-    }
-
     public ForceWeight getForceWeight() {
         return forceWeight;
     }
 
-    public void setStructure(final int iStruct) {
-        this.iStruct = iStruct;
+    public void setForceWeight(final ForceWeight forceWeight) {
+        this.forceWeight = forceWeight;
+        molecule.getEnergyCoords().setForceWeight(forceWeight);
     }
 
     public Molecule getMolecule() {
@@ -238,6 +201,10 @@ public class EnergyLists {
 
     public int getStructure() {
         return iStruct;
+    }
+
+    public void setStructure(final int iStruct) {
+        this.iStruct = iStruct;
     }
 
     public void setRingShifts(String filterString) {
@@ -260,25 +227,6 @@ public class EnergyLists {
         for (Polymer polymer : molecule.getPolymers()) {
             predictor.predictRNAWithDistances(polymer, 0, 0, true);
         }
-    }
-
-    public static double calcDistance(Point3 pt1, Point3 pt2) {
-        return Vector3D.distance(pt1, pt2);
-    }
-
-    public static double calcAngle(final Point3 pt1, final Point3 pt2, final Point3 pt3) {
-        Vector3D v12 = pt1.subtract(pt2);
-        Vector3D v32 = pt3.subtract(pt2);
-        return Vector3D.angle(v12, v32);
-    }
-
-    public static double volume(Vector3D a, Vector3D b, Vector3D c, Vector3D d) {
-        Vector3D i = a.subtract(d);
-        Vector3D j = b.subtract(d);
-        Vector3D k = c.subtract(d);
-        // triple product
-        double volume = Vector3D.dotProduct(i, Vector3D.crossProduct(j, k));
-        return volume;
     }
 
     public Atom findClosestAtom(AtomIterable atomContainer, Point3 pt1) {
@@ -659,38 +607,6 @@ public class EnergyLists {
             log.warn(e.getMessage(), e);
         }
         writer.close();
-    }
-
-    public static double grabDihedral(AngleConstraint boundary) {
-        double dihedral;
-        int atomListLength = boundary.getAtoms().length;
-        switch (atomListLength) {
-            case 1:
-                dihedral = boundary.getAtom().dihedralAngle;
-                return dihedral;
-            case 4:
-                Point3 pt0,
-                 pt1,
-                 pt2,
-                 pt3;
-                Atom[] atoms = boundary.getAtoms();
-                pt0 = atoms[0].getPoint();
-                pt1 = atoms[1].getPoint();
-                pt2 = atoms[2].getPoint();
-                pt3 = atoms[3].getPoint();
-                dihedral = AtomMath.calcDihedral(pt0, pt1, pt2, pt3);
-                return dihedral;
-            default:
-                throw new IllegalArgumentException("Invalid atom list size of " + atomListLength);
-        }
-    }
-
-    public static AtomEnergy calcDihedralEnergy(AngleConstraint boundary, final ForceWeight forceWeight,
-            final boolean calcDeriv) {
-        double dihedral = grabDihedral(boundary);
-        double upper = boundary.getUpper();
-        double lower = boundary.getLower();
-        return AtomMath.calcDihedralEnergy(dihedral, lower, upper, forceWeight, calcDeriv);
     }
 
     public double calcDihedralEnergyFast(double[] gradient) {
@@ -1562,5 +1478,88 @@ public class EnergyLists {
         }
         Double dis = distanceMap.get(atomNames);
         return dis;
+    }
+
+    public static double calcDistance(Point3 pt1, Point3 pt2) {
+        return Vector3D.distance(pt1, pt2);
+    }
+
+    public static double calcAngle(final Point3 pt1, final Point3 pt2, final Point3 pt3) {
+        Vector3D v12 = pt1.subtract(pt2);
+        Vector3D v32 = pt3.subtract(pt2);
+        return Vector3D.angle(v12, v32);
+    }
+
+    public static double volume(Vector3D a, Vector3D b, Vector3D c, Vector3D d) {
+        Vector3D i = a.subtract(d);
+        Vector3D j = b.subtract(d);
+        Vector3D k = c.subtract(d);
+        // triple product
+        double volume = Vector3D.dotProduct(i, Vector3D.crossProduct(j, k));
+        return volume;
+    }
+
+    public static double grabDihedral(AngleConstraint boundary) {
+        double dihedral;
+        int atomListLength = boundary.getAtoms().length;
+        switch (atomListLength) {
+            case 1:
+                dihedral = boundary.getAtom().dihedralAngle;
+                return dihedral;
+            case 4:
+                Point3 pt0,
+                        pt1,
+                        pt2,
+                        pt3;
+                Atom[] atoms = boundary.getAtoms();
+                pt0 = atoms[0].getPoint();
+                pt1 = atoms[1].getPoint();
+                pt2 = atoms[2].getPoint();
+                pt3 = atoms[3].getPoint();
+                dihedral = AtomMath.calcDihedral(pt0, pt1, pt2, pt3);
+                return dihedral;
+            default:
+                throw new IllegalArgumentException("Invalid atom list size of " + atomListLength);
+        }
+    }
+
+    public static AtomEnergy calcDihedralEnergy(AngleConstraint boundary, final ForceWeight forceWeight,
+                                                final boolean calcDeriv) {
+        double dihedral = grabDihedral(boundary);
+        double upper = boundary.getUpper();
+        double lower = boundary.getLower();
+        return AtomMath.calcDihedralEnergy(dihedral, lower, upper, forceWeight, calcDeriv);
+    }
+
+    class CompoundSphere {
+
+        final Compound compound;
+        final Atom atom;
+        final double radius;
+        final ArrayList<SpatialSet> sSets;
+
+        CompoundSphere(final Compound compound, final Atom atom, final double radius, ArrayList<SpatialSet> sSets) {
+            this.compound = compound;
+            this.atom = atom;
+            this.radius = radius;
+            this.sSets = sSets;
+        }
+
+        public String toString() {
+            return compound.getNumber() + "." + atom.getName() + " " + radius;
+        }
+    }
+
+    class CompoundPair {
+
+        final CompoundSphere cSphere1;
+        final CompoundSphere cSphere2;
+        final ArrayList<AtomPair> atomPairs = new ArrayList<>();
+
+        CompoundPair(CompoundSphere cSphere1, CompoundSphere cSphere2) {
+            this.cSphere1 = cSphere1;
+            this.cSphere2 = cSphere2;
+        }
+
     }
 }

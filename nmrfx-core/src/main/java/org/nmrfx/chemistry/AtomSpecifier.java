@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -51,11 +51,6 @@ public class AtomSpecifier {
         this.resName = resName;
     }
 
-    public AtomSpecifier setAtomName(String newName) {
-        return new AtomSpecifier(chainName, resNum, resName, newName);
-
-    }
-
     public String getResNumString() {
         return resNumStr;
     }
@@ -72,19 +67,9 @@ public class AtomSpecifier {
         return atomName;
     }
 
-    public static AtomSpecifier parseString(String s) {
-        Matcher matcher = RESIDUE_PATTERN.matcher(s);
-        String chainName = "";
-        String resChar = "";
-        String resNumStr = "";
-        String atomName = "";
-        if (matcher.matches()) {
-            chainName = matcher.group(2);
-            resChar = matcher.group(3);
-            resNumStr = matcher.group(4);
-            atomName = matcher.group(6);
-        }
-        return new AtomSpecifier(chainName, resNumStr, resChar, atomName);
+    public AtomSpecifier setAtomName(String newName) {
+        return new AtomSpecifier(chainName, resNum, resName, newName);
+
     }
 
     @Override
@@ -98,6 +83,21 @@ public class AtomSpecifier {
         }
         sBuilder.append(resNumStr).append(".").append(atomName);
         return sBuilder.toString();
+    }
+
+    public static AtomSpecifier parseString(String s) {
+        Matcher matcher = RESIDUE_PATTERN.matcher(s);
+        String chainName = "";
+        String resChar = "";
+        String resNumStr = "";
+        String atomName = "";
+        if (matcher.matches()) {
+            chainName = matcher.group(2);
+            resChar = matcher.group(3);
+            resNumStr = matcher.group(4);
+            atomName = matcher.group(6);
+        }
+        return new AtomSpecifier(chainName, resNumStr, resChar, atomName);
     }
 
 }

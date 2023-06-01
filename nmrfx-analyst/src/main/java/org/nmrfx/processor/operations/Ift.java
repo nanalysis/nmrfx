@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,19 +32,19 @@ import static org.nmrfx.processor.math.Vec.apache_ift;
 @PythonAPI("pyproc")
 public class Ift extends Operation {
 
-    @Override
-    public Operation eval(Vec vector) throws ProcessingException {
-        vector.setGroupDelay(0.0);
-        ift(vector);
-        return this;
-    }
-
     /**
      * Create operation for inverse Fourier transform.
      *
      * @throws ProcessingException
      */
     public Ift() throws ProcessingException {
+    }
+
+    @Override
+    public Operation eval(Vec vector) throws ProcessingException {
+        vector.setGroupDelay(0.0);
+        ift(vector);
+        return this;
     }
 
     private void ift(Vec vector) throws ProcessingException {

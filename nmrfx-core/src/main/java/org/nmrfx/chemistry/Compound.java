@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,15 +17,17 @@
  */
 package org.nmrfx.chemistry;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 public class Compound extends Entity implements AtomIterable {
 
-    protected HashMap atomMap;
     public String number = "";
-    Integer resNum;
     public int iRes = 0;
     public int labelNum = 1;
+    protected HashMap atomMap;
+    Integer resNum;
 
     protected Compound() {
     }
@@ -57,21 +59,18 @@ public class Compound extends Entity implements AtomIterable {
         return name;
     }
 
-    public String getNumber() {
-        return number;
-    }
-
-    public Integer getResNum() {
-        return resNum;
-    }
-
-    public void setNumber(final String number) {
-        this.number = number;
-    }
-
     @Override
     public int getIDNum() {
         return entityID;
+    }
+
+    @Override
+    public void addAtom(Atom afterAtom, Atom atom) {
+        super.addAtom(afterAtom, atom);
+        atom.entity = this;
+        atomMap.put(atom.name.toLowerCase(), atom);
+        molecule.invalidateAtomArray();
+        setHasEquivalentAtoms(false);
     }
 
     @Override
@@ -82,13 +81,16 @@ public class Compound extends Entity implements AtomIterable {
         setHasEquivalentAtoms(false);
     }
 
-    @Override
-    public void addAtom(Atom afterAtom, Atom atom) {
-        super.addAtom(afterAtom, atom);
-        atom.entity = this;
-        atomMap.put(atom.name.toLowerCase(), atom);
-        molecule.invalidateAtomArray();
-        setHasEquivalentAtoms(false);
+    public String getNumber() {
+        return number;
+    }
+
+    public void setNumber(final String number) {
+        this.number = number;
+    }
+
+    public Integer getResNum() {
+        return resNum;
     }
 
     public void addAtom(Atom atom) {
@@ -165,7 +167,7 @@ public class Compound extends Entity implements AtomIterable {
         });
         atomMap = newMap;
     }
-    
+
     public String toNEFSequenceString(int idx, String link) {
         //sequence code
         int num = Integer.parseInt(this.getNumber());

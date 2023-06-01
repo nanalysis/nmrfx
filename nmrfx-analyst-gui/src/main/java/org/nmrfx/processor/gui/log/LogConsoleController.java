@@ -21,11 +21,10 @@ import java.util.stream.Stream;
  */
 public class LogConsoleController implements Initializable, StageBasedController {
 
-    private static LogConsoleController logConsoleController = null;
-
     private static final String ANY_LEVEL = "-- LEVEL --";
     private static final String ANY_SECTION = "-- SECTION --";
     private static final String CONSOLE_TITLE = "Log Console";
+    private static LogConsoleController logConsoleController = null;
     private LogListener logListener = null;
     private Stage stage;
 
@@ -43,37 +42,12 @@ public class LogConsoleController implements Initializable, StageBasedController
     private LogTable table;
 
     /**
-     * Creates a new LogConsoleController and sets the static LogConsoleController.
-     * @return The newly created LogConsoleController
-     */
-    public static LogConsoleController create() {
-        logConsoleController = Fxml.load(LogConsoleController.class, "LogConsoleScene.fxml")
-                .withNewStage(CONSOLE_TITLE)
-                .getController();
-        logConsoleController.logListener = logConsoleController::logPublished;
-
-        // Only listen for new log messages if the log console is showing
-        logConsoleController.stage.showingProperty().addListener((observable, oldValue, newValue) -> {
-            if (Boolean.TRUE.equals(newValue)) {
-                logConsoleController.addLogRecords();
-                Log.addLogListener(logConsoleController.logListener);
-            } else {
-                Log.removeLogListener(logConsoleController.logListener);
-            }
-        });
-
-        return logConsoleController;
-    }
-
-    /**
      * Sets values in filter controls and adds listeners to changes.
-     * @param location
-     * The location used to resolve relative paths for the root object, or
-     * {@code null} if the location is not known.
      *
-     * @param resources
-     * The resources used to localize the root object, or {@code null} if
-     * the root object was not localized.
+     * @param location  The location used to resolve relative paths for the root object, or
+     *                  {@code null} if the location is not known.
+     * @param resources The resources used to localize the root object, or {@code null} if
+     *                  the root object was not localized.
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -126,6 +100,7 @@ public class LogConsoleController implements Initializable, StageBasedController
 
     /**
      * Creates a filter for LogRecords from an integer logLevel value, LogSection and a search string inputs.
+     *
      * @return Predicate to be used to filter LogRecords.
      */
     protected Predicate<LogRecord> buildFilter(int levelValue, LogSection section, String filterText) {
@@ -146,11 +121,12 @@ public class LogConsoleController implements Initializable, StageBasedController
 
     /**
      * Gets the selected choice from the sectionChoice and converts it to a LogSection.
+     *
      * @return The selected LogSection or null if ANY_SECTION is selected.
      */
     private LogSection getSelectedSectionValue() {
         String sectionName = sectionChoice.getSelectionModel().getSelectedItem();
-        if(ANY_SECTION.equals(sectionName)) {
+        if (ANY_SECTION.equals(sectionName)) {
             return null;
         }
         return LogSection.fromLogSectionNameString(sectionName);
@@ -158,6 +134,7 @@ public class LogConsoleController implements Initializable, StageBasedController
 
     /**
      * Gets the selected level from the logLevelChoice and converts it to an integer.
+     *
      * @return The int value of the log level or the value of ALL_INT if ANY_LEVEL is selected.
      */
     private int getSelectedLevelIntValue() {
@@ -170,6 +147,7 @@ public class LogConsoleController implements Initializable, StageBasedController
 
     /**
      * Listener for newly published LogRecords.
+     *
      * @param logRecord The new record to add.
      */
     private void logPublished(LogRecord logRecord) {
@@ -204,8 +182,33 @@ public class LogConsoleController implements Initializable, StageBasedController
     }
 
     /**
+     * Creates a new LogConsoleController and sets the static LogConsoleController.
+     *
+     * @return The newly created LogConsoleController
+     */
+    public static LogConsoleController create() {
+        logConsoleController = Fxml.load(LogConsoleController.class, "LogConsoleScene.fxml")
+                .withNewStage(CONSOLE_TITLE)
+                .getController();
+        logConsoleController.logListener = logConsoleController::logPublished;
+
+        // Only listen for new log messages if the log console is showing
+        logConsoleController.stage.showingProperty().addListener((observable, oldValue, newValue) -> {
+            if (Boolean.TRUE.equals(newValue)) {
+                logConsoleController.addLogRecords();
+                Log.addLogListener(logConsoleController.logListener);
+            } else {
+                Log.removeLogListener(logConsoleController.logListener);
+            }
+        });
+
+        return logConsoleController;
+    }
+
+    /**
      * If the static LogConsoleController has not been set, creates and sets a new
      * LogConsoleController before returning.
+     *
      * @return The static LogConsoleController object.
      */
     public static LogConsoleController getLogConsoleController() {

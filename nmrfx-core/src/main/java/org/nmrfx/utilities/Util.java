@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,20 +18,18 @@
 package org.nmrfx.utilities;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class Util {
 
     /**
-     *
      * stringMatch --
-     *
+     * <p>
      * See if a particular string matches a particular pattern. The matching operation permits the following special
      * characters in the pattern: *?\[] (see the manual entry for details on what these mean).
-     *
+     * <p>
      * Results: True if the string matches with the pattern.
-     *
+     * <p>
      * Side effects: None.
      *
      * @param str String to compare pattern against

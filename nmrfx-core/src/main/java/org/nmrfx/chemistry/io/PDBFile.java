@@ -45,54 +45,10 @@ public class PDBFile {
         reslibMap.put("IUPAC", "resource:/reslib_iu");
         reslibMap.put("XPLOR", "resource:/reslib");
     }
+
     Atom connectAtom = null;
 
     public PDBFile() {
-    }
-
-    public static boolean isIUPACMode() {
-        return iupacMode;
-    }
-
-    public static void setIUPACMode(final boolean newValue) {
-        iupacMode = newValue;
-    }
-
-    /**
-     * setLocalResLibDir is used to specify a directory of user generated
-     * residues.
-     *
-     * @param localDir provides a path to the directory
-     *
-     * When specifying a sequence, if the residue name is not found within the
-     * standard library, this path will be parsed for the necessary file.
-     */
-    public static void setLocalResLibDir(final String dirName) {
-        localReslibDir = dirName;
-    }
-
-    public static String getLocalReslibDir() {
-        return localReslibDir;
-    }
-
-    public static void putReslibDir(final String name, final String dirName) {
-        reslibMap.put(name, dirName);
-    }
-
-    public static String getReslibDir(final String name) {
-        if ((name == null) || name.equals("")) {
-            return getReslibDir();
-        } else {
-            return reslibMap.get(name);
-        }
-    }
-
-    public static String getReslibDir() {
-        if (iupacMode) {
-            return reslibMap.get("IUPAC");
-        } else {
-            return reslibMap.get("XPLOR");
-        }
     }
 
     public MoleculeBase read(String fileName) throws MoleculeIOException {
@@ -127,7 +83,7 @@ public class PDBFile {
         try (
                 BufferedReader bf = new BufferedReader(new FileReader(fileName));
                 LineNumberReader lineReader = new LineNumberReader(bf)
-        ){
+        ) {
             while (true) {
                 string = lineReader.readLine();
 
@@ -240,13 +196,6 @@ public class PDBFile {
         }
     }
 
-// fixme change capping atom names to new PDB standard H,H2  O,OXT,HXT
-    public static void capPolymer(Polymer polymer) {
-        polymer.getFirstResidue().capFirstResidue("");
-        polymer.getLastResidue().capLastResidue("");
-
-    }
-
     public ArrayList<String> readSequence(String fileName, boolean listMode, int structureNum)
             throws MoleculeIOException {
         String lastRes = "";
@@ -263,7 +212,7 @@ public class PDBFile {
         try (
                 BufferedReader bf = new BufferedReader(new FileReader(fileName));
                 LineNumberReader lineReader = new LineNumberReader(bf)
-        ){
+        ) {
             while (true) {
                 string = lineReader.readLine();
 
@@ -314,8 +263,7 @@ public class PDBFile {
             }
         } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             log.warn(e.getMessage(), e);
 
             return null;
@@ -339,7 +287,7 @@ public class PDBFile {
         try (
                 BufferedReader bf = new BufferedReader(new FileReader(fileName));
                 LineNumberReader lineReader = new LineNumberReader(bf)
-        ){
+        ) {
             while (true) {
                 String string = lineReader.readLine();
 
@@ -377,9 +325,8 @@ public class PDBFile {
 
         } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
-        }
-        catch (Exception exc) {
-            log.warn(exc.getMessage(),exc);
+        } catch (Exception exc) {
+            log.warn(exc.getMessage(), exc);
             return -1;
         }
         return 0;
@@ -632,8 +579,7 @@ public class PDBFile {
             }
         } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
-        }
-        catch (MoleculeIOException psE) {
+        } catch (MoleculeIOException psE) {
             throw psE;
         } catch (Exception exc) {
             log.warn(exc.getMessage(), exc);
@@ -929,6 +875,58 @@ public class PDBFile {
         }
     }
 
+    public static boolean isIUPACMode() {
+        return iupacMode;
+    }
+
+    public static void setIUPACMode(final boolean newValue) {
+        iupacMode = newValue;
+    }
+
+    /**
+     * setLocalResLibDir is used to specify a directory of user generated
+     * residues.
+     *
+     * @param localDir provides a path to the directory
+     *                 <p>
+     *                 When specifying a sequence, if the residue name is not found within the
+     *                 standard library, this path will be parsed for the necessary file.
+     */
+    public static void setLocalResLibDir(final String dirName) {
+        localReslibDir = dirName;
+    }
+
+    public static String getLocalReslibDir() {
+        return localReslibDir;
+    }
+
+    public static void putReslibDir(final String name, final String dirName) {
+        reslibMap.put(name, dirName);
+    }
+
+    public static String getReslibDir(final String name) {
+        if ((name == null) || name.equals("")) {
+            return getReslibDir();
+        } else {
+            return reslibMap.get(name);
+        }
+    }
+
+    public static String getReslibDir() {
+        if (iupacMode) {
+            return reslibMap.get("IUPAC");
+        } else {
+            return reslibMap.get("XPLOR");
+        }
+    }
+
+    // fixme change capping atom names to new PDB standard H,H2  O,OXT,HXT
+    public static void capPolymer(Polymer polymer) {
+        polymer.getFirstResidue().capFirstResidue("");
+        polymer.getLastResidue().capLastResidue("");
+
+    }
+
     public static Compound readResidue(String fileName, String fileContent, MoleculeBase molecule, String coordSetName) throws MoleculeIOException {
         return readResidue(fileName, fileContent, molecule, coordSetName, null);
     }
@@ -953,7 +951,7 @@ public class PDBFile {
         Map<String, Atom> atomMap = new HashMap<>();
         boolean calcBonds = true;
 
-        try (Reader reader = fileContent == null ? new FileReader(fileName): new StringReader(fileContent);
+        try (Reader reader = fileContent == null ? new FileReader(fileName) : new StringReader(fileContent);
              BufferedReader bufReader = new BufferedReader(reader)) {
             while ((string = bufReader.readLine()) != null) {
 
@@ -1003,8 +1001,7 @@ public class PDBFile {
             }
         } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             log.warn(ioe.getMessage(), ioe);
             molecule.getAtomTypes();
             if (calcBonds && compound != null) {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,37 +21,6 @@ package org.nmrfx.structure.chemistry;
 public class OverlappingLines {
 
     public static final double EPSILON = 0.000001;
-
-    static class Point {
-
-        double x;
-        double y;
-
-        Point(double x, double y) {
-            this.x = x;
-            this.y = y;
-        }
-    }
-
-    static class LineSegment {
-
-        Point p1;
-        Point p2;
-
-        public Point[] getBoundingBox() {
-            Point[] result = new Point[2];
-            result[0] = new Point(Math.min(p1.x, p2.x), Math.min(p1.y,
-                    p2.y));
-            result[1] = new Point(Math.max(p1.x, p2.x), Math.max(p1.y,
-                    p2.y));
-            return result;
-        }
-
-        LineSegment(Point p1, Point p2) {
-            this.p1 = p1;
-            this.p2 = p2;
-        }
-    }
 
     /**
      * Calculate the cross product of two points.
@@ -110,12 +79,12 @@ public class OverlappingLines {
     /**
      * Check if line segment first touches or crosses the line that is defined by line segment second.
      *
-     * @param first line segment interpreted as line
+     * @param first  line segment interpreted as line
      * @param second line segment
      * @return <code>true</code> if line segment first touches or crosses line second, <code>false</code> otherwise.
      */
     public static boolean lineSegmentTouchesOrCrossesLine(LineSegment a,
-            LineSegment b) {
+                                                          LineSegment b) {
         return isPointOnLine(a, b.p1)
                 || isPointOnLine(a, b.p2)
                 || (isPointRightOfLine(a, b.p1) ^ isPointRightOfLine(a,
@@ -141,5 +110,36 @@ public class OverlappingLines {
         LineSegment l1 = new LineSegment(new Point(x1, y1), new Point(x2, y2));
         LineSegment l2 = new LineSegment(new Point(x3, y3), new Point(x4, y4));
         return doLinesIntersect(l1, l2);
+    }
+
+    static class Point {
+
+        double x;
+        double y;
+
+        Point(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    static class LineSegment {
+
+        Point p1;
+        Point p2;
+
+        LineSegment(Point p1, Point p2) {
+            this.p1 = p1;
+            this.p2 = p2;
+        }
+
+        public Point[] getBoundingBox() {
+            Point[] result = new Point[2];
+            result[0] = new Point(Math.min(p1.x, p2.x), Math.min(p1.y,
+                    p2.y));
+            result[1] = new Point(Math.max(p1.x, p2.x), Math.max(p1.y,
+                    p2.y));
+            return result;
+        }
     }
 }

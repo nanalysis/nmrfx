@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,12 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import java.util.List;
 import javafx.scene.paint.Color;
 import org.nmrfx.peaks.Peak;
 
+import java.util.List;
+
 /**
- *
  * @author tedcolon
  */
 public class ConnectPeakAttributes {
@@ -35,24 +35,24 @@ public class ConnectPeakAttributes {
         this.peaks = peaks;
     }
 
-    public void setColor(Color color) {
-        setColor(color.toString(), 1.0);
-    }
-
     public void setColor(String color, double opacity) {
         connColor = Color.web(color, opacity);
-    }
-
-    public void setWidth(double width) {
-        connWidth = width;
     }
 
     public Color getColor() {
         return connColor;
     }
 
+    public void setColor(Color color) {
+        setColor(color.toString(), 1.0);
+    }
+
     public double getWidth() {
         return connWidth;
+    }
+
+    public void setWidth(double width) {
+        connWidth = width;
     }
 
     public List<Peak> getPeaks() {

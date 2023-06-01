@@ -1,14 +1,14 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
 import javafx.geometry.Point3D;
-
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 import javafx.scene.text.Font;
-import javax.vecmath.*;
+import javafx.scene.text.Text;
 import org.nmrfx.chemistry.Point3;
+
+import javax.vecmath.Vector3d;
 
 public class MolText extends Group implements MolItem {
 
@@ -43,7 +43,6 @@ public class MolText extends Group implements MolItem {
     }
 
     /**
-     *
      * @param text
      */
     public void setRadius(String text) {

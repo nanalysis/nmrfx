@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,7 +29,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
  * @author brucejohnson
  */
 public class SDFile {
@@ -249,10 +248,10 @@ public class SDFile {
                 log.warn("Unable to parse charge value.", nfE);
             }
             /*
-                 * String stereoString = string.substring(39, 42).trim(); int
-                 * stereoValue = 0; try { stereoValue =
-                 * Integer.parseInt(stereoString); } catch
-                 * (NumberFormatException nfE) { } atom.setStereo(stereoValue);
+             * String stereoString = string.substring(39, 42).trim(); int
+             * stereoValue = 0; try { stereoValue =
+             * Integer.parseInt(stereoString); } catch
+             * (NumberFormatException nfE) { } atom.setStereo(stereoValue);
              */
 
             atom.entity = compound;
@@ -361,7 +360,7 @@ public class SDFile {
                             if (sBuilder.length() > 0) {
                                 sBuilder.append("\n");
                             }
-                            
+
                             if (value.endsWith("\\")) {
                                 value = value.substring(0, value.length() - 1);
                             }
@@ -430,7 +429,8 @@ public class SDFile {
         if (molecule != null) {
             sdFile.getMolName(fileName);
             String compoundName = sdFile.molName;
-            compound = residue != null ? residue : new Compound("1", compoundName);;
+            compound = residue != null ? residue : new Compound("1", compoundName);
+            ;
             compound.molecule = molecule;
             compound.assemblyID = molecule.entityLabels.size() + 1;
             if (residue == null) {
@@ -454,6 +454,7 @@ public class SDFile {
     /**
      * Checks if a string is in mol file format by taking a look at the count line and verifying
      * that the string contains atleast as many lines as the header + parsed atom and bond lines
+     *
      * @param molContent the content to check
      * @return true if the content is in a mol file format, false otherwise
      */

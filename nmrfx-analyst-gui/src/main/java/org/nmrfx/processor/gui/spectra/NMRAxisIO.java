@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -37,15 +37,6 @@ public class NMRAxisIO extends NMRAxisBase implements AxisLimits {
         this.end = end;
     }
 
-    public double getDisplayPosition(Number value) {
-        double f = (value.doubleValue() - lowerBound) / (upperBound - lowerBound);
-        double displayPosition = f * (end - start) + start;
-        if (reverse) {
-            displayPosition = end - displayPosition + start;
-        }
-        return displayPosition;
-    }
-
     /**
      * @return the lowerBound
      */
@@ -74,6 +65,25 @@ public class NMRAxisIO extends NMRAxisBase implements AxisLimits {
         this.upperBound = upperBound;
     }
 
+    @Override
+    public String getLabel() {
+        return label;
+    }
+
+    @Override
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public double getDisplayPosition(Number value) {
+        double f = (value.doubleValue() - lowerBound) / (upperBound - lowerBound);
+        double displayPosition = f * (end - start) + start;
+        if (reverse) {
+            displayPosition = end - displayPosition + start;
+        }
+        return displayPosition;
+    }
+
     /**
      * @return the start
      */
@@ -100,16 +110,6 @@ public class NMRAxisIO extends NMRAxisBase implements AxisLimits {
      */
     public void setEnd(double end) {
         this.end = end;
-    }
-
-    @Override
-    public void setLabel(String label) {
-        this.label = label;
-    }
-
-    @Override
-    public String getLabel() {
-        return label;
     }
 
 }

@@ -17,29 +17,29 @@
  */
 package org.nmrfx.chemistry;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class AtomEnergyProp {
     private static final Logger log = LoggerFactory.getLogger(AtomEnergyProp.class);
 
     static final Pattern dihPattern = Pattern.compile("(^\\S.)-(\\S.)-(\\S.)-(\\S.)\\s+([\\d]+)\\s+([-.0-9]+)\\s+([-.0-9]+)\\s+([-.0-9]+)\\s*(.*)");
+    //scaling factor
+    private static final double rscale = 0.68;
+    private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
+    private static final double hbondDelta = 0.30;
+    private static final Map<Integer, AtomEnergyProp> DEFAULT_MAP = new HashMap<>();
     public static double[][][] irpTable;
-
+    protected static Map<String, Integer> torsionMap = new HashMap<>();
     private static boolean FILE_LOADED = false;
     private static boolean PARM_FILE_LOADED = false;
-
     final String name;
     private final int aNum;
     //leonard-jones a parameter
@@ -58,12 +58,6 @@ public class AtomEnergyProp {
     private final double mass;
     // hbond donor (1), acceptor (-1)
     private final int hbondMode;
-    //scaling factor
-    private static final double rscale = 0.68;
-    private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
-    private static final double hbondDelta = 0.30;
-    private static final Map<Integer, AtomEnergyProp> DEFAULT_MAP = new HashMap<>();
-    protected static Map<String, Integer> torsionMap = new HashMap<>();
 
     public AtomEnergyProp(final String name, int aNum, final double a, final double b, final double r, final double rh, final double e, final double c, final double mass, final int hbondMode) {
         this.name = name;
@@ -78,6 +72,53 @@ public class AtomEnergyProp {
         this.hbondMode = hbondMode;
     }
 
+    public void clear() {
+        propMap.clear();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getAtomNumber() {
+        return aNum;
+    }
+
+    /**
+     * @return the a
+     */
+    public double getA() {
+        return a;
+    }
+
+    public double getB() {
+        return b;
+    }
+
+    public double getC() {
+        return c;
+    }
+
+    public double getR() {
+        return r;
+    }
+
+    public double getRh() {
+        return rh;
+    }
+
+    public double getE() {
+        return e;
+    }
+
+    public double getMass() {
+        return mass;
+    }
+
+    public int getHBondMode() {
+        return hbondMode;
+    }
+
     public static void readPropFile() throws IOException {
         if (!FILE_LOADED) {
             readPropFile("reslib_iu/params.txt");
@@ -90,7 +131,7 @@ public class AtomEnergyProp {
         if (fileName.startsWith("reslib_iu")) {
             ClassLoader cl = ClassLoader.getSystemClassLoader();
             InputStream istream = cl.getResourceAsStream(fileName);
-            if (istream == null ) {
+            if (istream == null) {
                 throw new FileNotFoundException("Unable to find property file.");
             }
             reader = new InputStreamReader(istream);
@@ -165,7 +206,7 @@ public class AtomEnergyProp {
         if (fileName.startsWith("reslib_iu")) {
             ClassLoader cl = ClassLoader.getSystemClassLoader();
             InputStream istream = cl.getResourceAsStream(fileName);
-            if (istream == null ) {
+            if (istream == null) {
                 throw new FileNotFoundException();
             }
             reader = new InputStreamReader(istream);
@@ -246,10 +287,6 @@ public class AtomEnergyProp {
         return 0;
     }
 
-    public void clear() {
-        propMap.clear();
-    }
-
     public static void add(final String atomType, final AtomEnergyProp prop) {
         propMap.put(atomType, prop);
     }
@@ -272,49 +309,6 @@ public class AtomEnergyProp {
         return DEFAULT_MAP.get(aNum);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public int getAtomNumber() {
-        return aNum;
-    }
-
-    /**
-     * @return the a
-     */
-    public double getA() {
-        return a;
-    }
-
-    public double getB() {
-        return b;
-    }
-
-    public double getC() {
-        return c;
-    }
-
-    public double getR() {
-        return r;
-    }
-
-    public double getRh() {
-        return rh;
-    }
-
-    public double getE() {
-        return e;
-    }
-
-    public double getMass() {
-        return mass;
-    }
-
-    public int getHBondMode() {
-        return hbondMode;
-    }
-
     /**
      * computes interaction between two molecules based on table values
      * <p>
@@ -324,15 +318,15 @@ public class AtomEnergyProp {
      * simply adding both the radius. Hydrogen may be removed and substited by a
      * certain number of Angstrom's indicated by AtomEnergyProp
      *
-     * @param  atom1 the first atom
-     * @param  atom2 the second atom
-     * @param  hardSphere determines the value you want to add to atom radius
-     * @param  usehardSphere determines if you want to calculate rh
-     * @param  shrinkValue reduce the radius of non-hydrogen atoms by this amount
-     * @param  shrinkHValue reduce the radius of hydrogen atoms by this amount
+     * @param atom1         the first atom
+     * @param atom2         the second atom
+     * @param hardSphere    determines the value you want to add to atom radius
+     * @param usehardSphere determines if you want to calculate rh
+     * @param shrinkValue   reduce the radius of non-hydrogen atoms by this amount
+     * @param shrinkHValue  reduce the radius of hydrogen atoms by this amount
      */
     public static EnergyPair getInteraction(final Atom atom1, final Atom atom2, double hardSphere,
-            boolean usehardSphere, double shrinkValue, double shrinkHValue) {
+                                            boolean usehardSphere, double shrinkValue, double shrinkHValue) {
 
         AtomEnergyProp iProp = atom1.getAtomEnergyProp();
         AtomEnergyProp jProp = atom2.getAtomEnergyProp();

@@ -1,14 +1,10 @@
 package org.nmrfx.chemistry.constraints;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import org.nmrfx.chemistry.MoleculeBase;
 
+import java.util.*;
+
 /**
- *
  * @author brucejohnson
  */
 public class MolecularConstraints {
@@ -16,15 +12,12 @@ public class MolecularConstraints {
     public final MoleculeBase molecule;
 
     public final Map<String, NoeSet> noeSets = new HashMap<>();
-    Optional<NoeSet> activeNOESet = Optional.empty();
-
     public final Map<String, DistanceConstraintSet> distanceSets = new HashMap<>();
-    Optional<DistanceConstraintSet> activeDistanceSet = Optional.empty();
-
     public final Map<String, AngleConstraintSet> angleSets = new HashMap<>();
-    Optional<AngleConstraintSet> activeAngleSet = Optional.empty();
-
     public final Map<String, RDCConstraintSet> rdcSets = new HashMap<>();
+    Optional<NoeSet> activeNOESet = Optional.empty();
+    Optional<DistanceConstraintSet> activeDistanceSet = Optional.empty();
+    Optional<AngleConstraintSet> activeAngleSet = Optional.empty();
     Optional<RDCConstraintSet> activeRDCSet = Optional.empty();
 
     public MolecularConstraints(MoleculeBase molecule) {

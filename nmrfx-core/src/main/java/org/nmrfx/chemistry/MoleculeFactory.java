@@ -13,13 +13,12 @@ import java.util.Map;
 @PluginAPI("ring")
 public class MoleculeFactory {
 
+    private static final Logger log = LoggerFactory.getLogger(MoleculeFactory.class);
+    static Constructor constructor = null;
+
     private MoleculeFactory() {
 
     }
-
-    private static final Logger log = LoggerFactory.getLogger(MoleculeFactory.class);
-
-    static Constructor constructor = null;
 
     public static MoleculeBase getActive() {
         return ProjectBase.getActive().getActiveMolecule();

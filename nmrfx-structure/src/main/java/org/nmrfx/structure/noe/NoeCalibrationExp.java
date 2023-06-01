@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,11 +21,11 @@ package org.nmrfx.structure.noe;
 import org.nmrfx.chemistry.constraints.Noe;
 
 /**
- *
  * @author brucejohnson
  */
 public class NoeCalibrationExp extends NoeCalibration {
 
+    static final double INTENSITY_FLOOR = 1.0e-16;
     final double lower;
     final double referenceValue;
     final double referenceDist;
@@ -33,7 +33,6 @@ public class NoeCalibrationExp extends NoeCalibration {
     final double minBound;
     final double maxBound;
     final double fError;
-    static final double INTENSITY_FLOOR = 1.0e-16;
 
     public NoeCalibrationExp(final String measurementMode, final double lower, final double referenceValue, final double referenceDist, final double expValue, final double minBound, final double maxBound, final double fError, final boolean removeRedundant) {
         this.mMode = MeasurementMode.select(measurementMode);

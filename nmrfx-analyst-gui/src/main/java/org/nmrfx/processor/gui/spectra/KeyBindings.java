@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,36 +34,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class KeyBindings {
     private static final Map<DataFormat, DataFormatEventHandler> dataFormatHandlers = new HashMap<>();
+    static Map<String, BiConsumer<String, PolyChart>> globalKeyActionMap = new HashMap<>();
+    private final KeyCodeCombination pasteKeyCodeCombination = new KeyCodeCombination(KeyCode.V, KeyCombination.SHORTCUT_DOWN);
     KeyMonitor keyMonitor = new KeyMonitor();
     PolyChart chart;
     Map<String, Consumer> keyActionMap = new HashMap<>();
-    static Map<String, BiConsumer<String, PolyChart>> globalKeyActionMap = new HashMap<>();
-    private final KeyCodeCombination pasteKeyCodeCombination = new KeyCodeCombination(KeyCode.V, KeyCombination.SHORTCUT_DOWN);
+
     public KeyBindings(PolyChart chart) {
         this.chart = chart;
-    }
-
-    /**
-     * Adds the provided DataFormat event handler to the dataFormatHandler map.
-     * @param dataFormat The DataFormat.
-     * @param handler The DataFormat handler.
-     */
-    public static void registerCanvasDataFormatHandler(DataFormat dataFormat, DataFormatEventHandler handler) {
-        dataFormatHandlers.put(dataFormat, handler);
-    }
-
-    public static void registerGlobalKeyAction(String keyString, BiConsumer<String, PolyChart> action) {
-        // add firstchar so that key processing doesn't clear keyMonitor before a two key string is typed
-        String firstChar = keyString.substring(0, 1);
-        if (!globalKeyActionMap.containsKey(firstChar)) {
-            globalKeyActionMap.put(firstChar, null);
-        }
-        globalKeyActionMap.put(keyString, action);
     }
 
     public void registerKeyAction(String keyString, Consumer<PolyChart> action) {
@@ -367,5 +349,24 @@ public class KeyBindings {
             dataFormat = new DataFormat(format);
         }
         return dataFormat;
+    }
+
+    /**
+     * Adds the provided DataFormat event handler to the dataFormatHandler map.
+     *
+     * @param dataFormat The DataFormat.
+     * @param handler    The DataFormat handler.
+     */
+    public static void registerCanvasDataFormatHandler(DataFormat dataFormat, DataFormatEventHandler handler) {
+        dataFormatHandlers.put(dataFormat, handler);
+    }
+
+    public static void registerGlobalKeyAction(String keyString, BiConsumer<String, PolyChart> action) {
+        // add firstchar so that key processing doesn't clear keyMonitor before a two key string is typed
+        String firstChar = keyString.substring(0, 1);
+        if (!globalKeyActionMap.containsKey(firstChar)) {
+            globalKeyActionMap.put(firstChar, null);
+        }
+        globalKeyActionMap.put(keyString, action);
     }
 }

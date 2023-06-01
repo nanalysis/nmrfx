@@ -1,19 +1,23 @@
 package org.nmrfx.analyst.peaks;
 
+import org.yaml.snakeyaml.Yaml;
+
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.yaml.snakeyaml.Yaml;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class Solvents {
 
     private static final String SOLVENT_FILE_NAME = "solvents.yaml";
     static Map<String, Solvent> solvents = new HashMap<>();
+
+    public Solvent getSolvent(String name) {
+        return solvents.get(name);
+    }
 
     public static void loadYaml() {
         int max = 0;
@@ -45,10 +49,6 @@ public class Solvents {
                 solvents.put(synonym, solvent);
             }
         }
-    }
-
-    public Solvent getSolvent(String name) {
-        return solvents.get(name);
     }
 
     public static String canonicalIso(String name) {

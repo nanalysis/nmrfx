@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,6 @@
 package org.nmrfx.processor.operations;
 
 /**
- *
  * @author johnsonb
  */
 public class OperationException extends RuntimeException {

@@ -22,6 +22,11 @@ import static org.junit.Assume.assumeFalse;
 
 public class ProcessTest {
 
+    @ClassRule
+    public static final TemporaryFolder tmpFolder = TemporaryFolder.builder()
+            .parentFolder(new File(System.getProperty("user.dir")))
+            .assureDeletion()
+            .build();
     private static final String VALID_SUBMODULE_LOCATION = "nmrfx-test-data/valid";
     private static final String FID_SUBMODULE_LOCATION = "nmrfx-test-data/testfids/";
     private static final String ERR_MSG = "File doesn't exist: ";
@@ -30,24 +35,6 @@ public class ProcessTest {
     private static String fidHome;
     private static String tmpHome;
     private static String validHome;
-
-    @ClassRule
-    public static final TemporaryFolder tmpFolder = TemporaryFolder.builder()
-            .parentFolder(new File(System.getProperty("user.dir")))
-            .assureDeletion()
-            .build();
-
-    @BeforeClass
-    public static void setup() {
-        Path parent = FileSystems.getDefault()
-                .getPath("")
-                .toAbsolutePath()
-                .getParent();
-        // Python scripts expect path with / not \, so replace if present
-        fidHome = parent.resolve(FID_SUBMODULE_LOCATION).toString().replace("\\", "/") + "/";
-        validHome = parent.resolve(VALID_SUBMODULE_LOCATION).toString().replace("\\", "/") +"/";
-        tmpHome = tmpFolder.getRoot().toString().replace("\\", "/") + "/";
-    }
 
     public void executeScript(String fileName) {
         Path path = Path.of(scriptHome, fileName + ".py");
@@ -75,14 +62,13 @@ public class ProcessTest {
         File refFile;
         File testFile;
         if (fileName.contains("rs2d")) {
-            refFile=Path.of(validHome, fileName, "Proc","1","data.dat").toFile();
-            testFile = Path.of(tmpHome, "tst_" + fileName,"Proc","1","data.dat").toFile();
+            refFile = Path.of(validHome, fileName, "Proc", "1", "data.dat").toFile();
+            testFile = Path.of(tmpHome, "tst_" + fileName, "Proc", "1", "data.dat").toFile();
         } else if (fileName.contains("ucsf")) {
-            refFile=Path.of(validHome,"ubiq_hsqc_sf.ucsf").toFile();
+            refFile = Path.of(validHome, "ubiq_hsqc_sf.ucsf").toFile();
             testFile = Path.of(tmpHome, "tst_ubiq_hsqc_sf.ucsf").toFile();
-        }
-        else {
-            refFile=Path.of(validHome, fileName + ".nv").toFile();
+        } else {
+            refFile = Path.of(validHome, fileName + ".nv").toFile();
             testFile = Path.of(tmpHome, "tst_" + fileName + ".nv").toFile();
         }
         System.out.println("test file " + testFile);
@@ -102,14 +88,15 @@ public class ProcessTest {
         long[] detailedResult = runAndCompareDetailed(fileName);
         return detailedResult[0];
     }
+
     @Test(expected = Test.None.class)
     public void openFilesWithSpecialCharacters() throws IOException {
         List<String> directoryNames = List.of(new String[]{"Qualité", "你好世界"});
         try (PythonInterpreter interp = new PythonInterpreter()) {
             interp.exec("from pyproc import *");
             interp.exec("useProcessor()");  // necessary to reset between processing multiple files
-            for (String directoryName: directoryNames) {
-                new File(tmpHome  + directoryName).mkdir();
+            for (String directoryName : directoryNames) {
+                new File(tmpHome + directoryName).mkdir();
                 new File(tmpHome + directoryName + "/jcamp").mkdir();
                 Path fidOriginal = Paths.get(fidHome + "jcamp/TESTFID.DX");
                 Path fidCopy = Paths.get(tmpHome).resolve(directoryName).resolve("jcamp/TESTFID.DX");
@@ -244,6 +231,18 @@ public class ProcessTest {
     public void test_rs2d_2d() throws IOException {
         long result = runAndCompare("rs2d_2dhetero");
         assertEquals(-1, result);
+    }
+
+    @BeforeClass
+    public static void setup() {
+        Path parent = FileSystems.getDefault()
+                .getPath("")
+                .toAbsolutePath()
+                .getParent();
+        // Python scripts expect path with / not \, so replace if present
+        fidHome = parent.resolve(FID_SUBMODULE_LOCATION).toString().replace("\\", "/") + "/";
+        validHome = parent.resolve(VALID_SUBMODULE_LOCATION).toString().replace("\\", "/") + "/";
+        tmpHome = tmpFolder.getRoot().toString().replace("\\", "/") + "/";
     }
 
 

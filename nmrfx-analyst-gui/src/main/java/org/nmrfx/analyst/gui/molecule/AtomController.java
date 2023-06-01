@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -76,7 +76,6 @@ public class AtomController implements Initializable, StageBasedController, Free
     private static final Logger log = LoggerFactory.getLogger(AtomController.class);
 
     static final Map<String, String> filterMap = new HashMap<>();
-    PredictorSceneController predictorController = null;
 
     static {
         filterMap.put("Backbone", "*.H,N,HN,C,CA,CB");
@@ -90,6 +89,12 @@ public class AtomController implements Initializable, StageBasedController, Free
         filterMap.put("HCN", "*.H*,C*,N*");
         filterMap.put("HC", "*.H*,C*");
     }
+
+    PredictorSceneController predictorController = null;
+    ChoiceBox<Integer> ppmSetChoice;
+    ChoiceBox<Integer> refSetChoice;
+    ObservableList<Atom> atoms = FXCollections.observableArrayList();
+    MolFilter molFilter = new MolFilter("*.C*,H*,N*");
     private Stage stage;
     @FXML
     private ToolBar menuBar;
@@ -111,11 +116,6 @@ public class AtomController implements Initializable, StageBasedController, Free
     private TextField molFilterTextField;
     @FXML
     private ToolBar atomReferenceToolBar;
-    ChoiceBox<Integer> ppmSetChoice;
-    ChoiceBox<Integer> refSetChoice;
-    ObservableList<Atom> atoms = FXCollections.observableArrayList();
-
-    MolFilter molFilter = new MolFilter("*.C*,H*,N*");
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -136,26 +136,16 @@ public class AtomController implements Initializable, StageBasedController, Free
         updateView();
     }
 
+    public Stage getStage() {
+        return stage;
+    }
+
     @Override
     public void setStage(Stage stage) {
         this.stage = stage;
     }
 
-    public Stage getStage() {
-        return stage;
-    }
-
-    public static AtomController create() {
-        AtomController controller = Fxml.load(AtomController.class, "AtomScene.fxml")
-                .withNewStage("Atom Attributes")
-                .getController();
-        controller.stage.show();
-
-        AnalystApp.addMoleculeListener(controller::moleculeMapChanged);
-        return controller;
-    }
-
-    private void moleculeMapChanged(MapChangeListener.Change<? extends String,? extends MoleculeBase> change) {
+    private void moleculeMapChanged(MapChangeListener.Change<? extends String, ? extends MoleculeBase> change) {
         if (MoleculeFactory.getMolecules().isEmpty()) {
             setFilterString("");
             refreshAtomTable();
@@ -186,27 +176,27 @@ public class AtomController implements Initializable, StageBasedController, Free
         MenuButton editMenu = new MenuButton("Edit");
         MenuItem clearPPMItem = new MenuItem("Clear Assigned Shifts");
         clearPPMItem.setOnAction(e -> {
-            clearPPMs();
-            atomTableView.refresh();
-        }
+                    clearPPMs();
+                    atomTableView.refresh();
+                }
         );
         MenuItem clearRefItem = new MenuItem("Clear Ref Shifts");
         clearRefItem.setOnAction(e -> {
-            clearRefPPMs();
-            atomTableView.refresh();
-        }
+                    clearRefPPMs();
+                    atomTableView.refresh();
+                }
         );
         MenuItem getPPMItem = new MenuItem("Get Frozen PPM");
         getPPMItem.setOnAction(e -> {
-            PeakList.resFactory().assignFrozenAtoms("sim");
-            atomTableView.refresh();
-        }
+                    PeakList.resFactory().assignFrozenAtoms("sim");
+                    atomTableView.refresh();
+                }
         );
         MenuItem getAllPPMItem = new MenuItem("Get PPM");
         getAllPPMItem.setOnAction(e -> {
-            PeakList.resFactory().assignFromPeaks(null);
-            atomTableView.refresh();
-        }
+                    PeakList.resFactory().assignFromPeaks(null);
+                    atomTableView.refresh();
+                }
         );
         editMenu.getItems().addAll(clearPPMItem, clearRefItem, getPPMItem, getAllPPMItem);
 
@@ -250,66 +240,6 @@ public class AtomController implements Initializable, StageBasedController, Free
     @Override
     public void freezeHappened(Peak peak, boolean state) {
         Fx.runOnFxThread(atomTableView::refresh);
-    }
-
-    class DoubleStringConverter4 extends DoubleStringConverter {
-
-        @Override
-        public String toString(Double v) {
-            if (v == null) {
-                return "";
-            } else {
-                return String.format("%.4f", v);
-            }
-
-        }
-
-    }
-
-    class FloatStringConverter2 extends FloatStringConverter {
-
-        @Override
-        public Float fromString(String s) {
-            Float v;
-            try {
-                v = Float.parseFloat(s);
-            } catch (NumberFormatException nfE) {
-                v = null;
-            }
-            return v;
-        }
-
-    }
-
-    class TextFieldTableCellDouble extends TextFieldTableCell<Atom, Double> {
-
-        public TextFieldTableCellDouble(StringConverter s) {
-            super(s);
-        }
-
-        @Override
-        public void updateItem(Double item, boolean empty) {
-            super.updateItem(item, empty);
-            if (item != null) {
-                setText(String.valueOf(item));
-            } else {
-            }
-        }
-    };
-
-    class TextFieldTableCellNumber extends TextFieldTableCell<Atom, Number> {
-
-        public TextFieldTableCellNumber(StringConverter s) {
-            super(s);
-        }
-
-        @Override
-        public void updateItem(Number item, boolean empty) {
-            super.updateItem(item, empty);
-            if (item != null) {
-                setText(String.valueOf(item));
-            }
-        }
     }
 
     int getPPMSet() {
@@ -442,6 +372,8 @@ public class AtomController implements Initializable, StageBasedController, Free
         molFilterTextField.setText(filterString);
         updateView();
     }
+
+    ;
 
     public void updateView() {
         String filterString = molFilterTextField.getText().trim();
@@ -593,6 +525,76 @@ public class AtomController implements Initializable, StageBasedController, Free
             predictorController.getStage().toFront();
         } else {
             System.out.println("Coudn't make predictor controller");
+        }
+    }
+
+    public static AtomController create() {
+        AtomController controller = Fxml.load(AtomController.class, "AtomScene.fxml")
+                .withNewStage("Atom Attributes")
+                .getController();
+        controller.stage.show();
+
+        AnalystApp.addMoleculeListener(controller::moleculeMapChanged);
+        return controller;
+    }
+
+    class DoubleStringConverter4 extends DoubleStringConverter {
+
+        @Override
+        public String toString(Double v) {
+            if (v == null) {
+                return "";
+            } else {
+                return String.format("%.4f", v);
+            }
+
+        }
+
+    }
+
+    class FloatStringConverter2 extends FloatStringConverter {
+
+        @Override
+        public Float fromString(String s) {
+            Float v;
+            try {
+                v = Float.parseFloat(s);
+            } catch (NumberFormatException nfE) {
+                v = null;
+            }
+            return v;
+        }
+
+    }
+
+    class TextFieldTableCellDouble extends TextFieldTableCell<Atom, Double> {
+
+        public TextFieldTableCellDouble(StringConverter s) {
+            super(s);
+        }
+
+        @Override
+        public void updateItem(Double item, boolean empty) {
+            super.updateItem(item, empty);
+            if (item != null) {
+                setText(String.valueOf(item));
+            } else {
+            }
+        }
+    }
+
+    class TextFieldTableCellNumber extends TextFieldTableCell<Atom, Number> {
+
+        public TextFieldTableCellNumber(StringConverter s) {
+            super(s);
+        }
+
+        @Override
+        public void updateItem(Number item, boolean empty) {
+            super.updateItem(item, empty);
+            if (item != null) {
+                setText(String.valueOf(item));
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,7 +23,6 @@ import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
- *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -35,17 +34,17 @@ public class Fdss extends Operation {
     private final Unit startUnit;
     private final Unit endUnit;
 
-    @Override
-    public Fdss eval(Vec vector) throws ProcessingException {
-        fdss(vector);
-        return this;
-    }
-
     public Fdss(Unit centerUnit, Unit startUnit, Unit endUnit, boolean autoCenter) {
         this.startUnit = startUnit;
         this.centerUnit = centerUnit;
         this.endUnit = endUnit;
         this.autoCenter = autoCenter;
+    }
+
+    @Override
+    public Fdss eval(Vec vector) throws ProcessingException {
+        fdss(vector);
+        return this;
     }
 
     private void fdss(Vec vector) throws ProcessingException {

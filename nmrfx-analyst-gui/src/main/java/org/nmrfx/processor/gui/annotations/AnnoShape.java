@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,6 @@ import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 
 /**
- *
  * @author brucejohnson
  */
 public abstract class AnnoShape implements CanvasAnnotation {
@@ -78,6 +77,11 @@ public abstract class AnnoShape implements CanvasAnnotation {
     }
 
     @Override
+    public boolean getClipInAxes() {
+        return clipInAxes;
+    }
+
+    @Override
     public POSTYPE getXPosType() {
         return xPosType;
     }
@@ -85,15 +89,6 @@ public abstract class AnnoShape implements CanvasAnnotation {
     @Override
     public POSTYPE getYPosType() {
         return yPosType;
-    }
-
-    @Override
-    public boolean getClipInAxes() {
-        return clipInAxes;
-    }
-
-    public void setClipInAxes(boolean state) {
-        clipInAxes = state;
     }
 
     @Override
@@ -109,6 +104,10 @@ public abstract class AnnoShape implements CanvasAnnotation {
     @Override
     public void setSelectable(boolean state) {
         selectable = state;
+    }
+
+    public void setClipInAxes(boolean state) {
+        clipInAxes = state;
     }
 
 }

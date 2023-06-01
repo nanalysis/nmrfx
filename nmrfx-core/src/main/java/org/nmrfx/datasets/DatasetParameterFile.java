@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -36,16 +36,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class DatasetParameterFile {
 
+    final static Pattern DLABEL_PAT = Pattern.compile("dlabel +[0-9]+ (.*)");
     final DatasetBase dataset;
     final DatasetLayout layout;
     String relativeFIDPath = "";
     String absoluteFIDPath = "";
-    final static Pattern DLABEL_PAT = Pattern.compile("dlabel +[0-9]+ (.*)");
 
     public DatasetParameterFile(DatasetBase dataset, DatasetLayout layout) {
         this.dataset = dataset;
@@ -55,13 +54,6 @@ public class DatasetParameterFile {
     public String getParameterFileName() {
         String fileName = dataset.getCanonicalFile();
         return getParameterFileName(fileName);
-    }
-
-    public static String getParameterFileName(String fileName) {
-        Pattern pattern = Pattern.compile("\\.(nv|ucsf|nvlnk)$");
-        Matcher matcher = pattern.matcher(fileName);
-        int endIndex = matcher.find() ? matcher.start() : fileName.length();
-        return fileName.substring(0, endIndex) + ".par";
     }
 
     public final boolean remove() {
@@ -375,5 +367,12 @@ public class DatasetParameterFile {
             }
         }
 
+    }
+
+    public static String getParameterFileName(String fileName) {
+        Pattern pattern = Pattern.compile("\\.(nv|ucsf|nvlnk)$");
+        Matcher matcher = pattern.matcher(fileName);
+        int endIndex = matcher.find() ? matcher.start() : fileName.length();
+        return fileName.substring(0, endIndex) + ".par";
     }
 }

@@ -4,15 +4,15 @@
  */
 package org.nmrfx.analyst.compounds;
 
+import org.apache.commons.math3.stat.StatUtils;
 import org.nmrfx.processor.math.Vec;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.math3.stat.StatUtils;
 
 /**
- *
  * @author brucejohnson
  */
 //        set cData [java::new com.onemoonsci.datachord.compoundLib.CompoundData $data(ref) $data(sw) $data(sf) $data(n)]
@@ -28,8 +28,8 @@ public class CompoundData {
     private final double refConc;
     private final double cmpdConc;
     private final double refNProtons;
-    private double regionNorm = 0.0;
     List<Region> regions = new ArrayList<>();
+    private double regionNorm = 0.0;
 
     public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, double refNProtons) {
         this.id = cmpdID;
@@ -41,14 +41,6 @@ public class CompoundData {
         this.refConc = refConc;
         this.cmpdConc = cmpdConc;
         this.refNProtons = refNProtons;
-    }
-
-    public static void put(CompoundData cData, String id) {
-        cmpdMap.put(id, cData);
-    }
-
-    public static CompoundData get(String id) {
-        return cmpdMap.get(id);
     }
 
     @Override
@@ -332,5 +324,13 @@ public class CompoundData {
      */
     public double getRefNProtons() {
         return refNProtons;
+    }
+
+    public static void put(CompoundData cData, String id) {
+        cmpdMap.put(id, cData);
+    }
+
+    public static CompoundData get(String id) {
+        return cmpdMap.get(id);
     }
 }

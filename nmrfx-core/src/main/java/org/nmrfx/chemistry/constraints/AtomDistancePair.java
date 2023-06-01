@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,20 +18,19 @@
 
 package org.nmrfx.chemistry.constraints;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Point3;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Point3;
 
 /**
  * This class represents a pair of atoms for which the distance will be computed
  */
 public class AtomDistancePair {
 
+    final double methylCorrection;
     private final Atom[] atoms1;
     private final Atom[] atoms2;
-
-    final double methylCorrection;
 
     /**
      * Simple Constructor

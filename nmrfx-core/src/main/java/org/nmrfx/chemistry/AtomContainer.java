@@ -3,7 +3,6 @@ package org.nmrfx.chemistry;
 import java.util.List;
 
 /**
- *
  * @author Bruce Johnson
  */
 public interface AtomContainer {

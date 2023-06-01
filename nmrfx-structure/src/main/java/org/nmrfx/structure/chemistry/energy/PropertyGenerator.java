@@ -1,14 +1,16 @@
 package org.nmrfx.structure.chemistry.energy;
 
-import java.util.*;
-import java.io.*;
-import java.text.NumberFormat;
-import java.text.DecimalFormat;
-
 import org.nmrfx.chemistry.*;
-import org.nmrfx.structure.chemistry.*;
+import org.nmrfx.structure.chemistry.HydrogenBond;
+import org.nmrfx.structure.chemistry.MissingCoordinatesException;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.*;
 
 public class PropertyGenerator {
 
@@ -21,14 +23,6 @@ public class PropertyGenerator {
 
     static NumberFormat nFormat = NumberFormat.getInstance(stdLocale);
     static DecimalFormat formatter = (DecimalFormat) nFormat;
-    Map<String, HydrogenBond> hBondMap = null;
-    Map<String, Double> eShiftMap = null;
-    Map<String, Double> contactMap = null;
-    Map<String, Double> valueMap = new HashMap<>();
-    private Molecule molecule;
-    String[] residueNames = {"ALA", "ARG", "ASN", "ASP", "CYS", "GLU", "GLN",
-        "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR",
-        "TRP", "TYR", "VAL"};
 
     static {
         formatter.setMinimumFractionDigits(4);
@@ -36,6 +30,15 @@ public class PropertyGenerator {
         formatter.setMinimumIntegerDigits(1);
         formatter.setGroupingUsed(false);
     }
+
+    Map<String, HydrogenBond> hBondMap = null;
+    Map<String, Double> eShiftMap = null;
+    Map<String, Double> contactMap = null;
+    Map<String, Double> valueMap = new HashMap<>();
+    String[] residueNames = {"ALA", "ARG", "ASN", "ASP", "CYS", "GLU", "GLN",
+            "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR",
+            "TRP", "TYR", "VAL"};
+    private Molecule molecule;
 
     public double calcDistance(String aname1, String aname2, int structureNum)
             throws MissingCoordinatesException, InvalidMoleculeException {
@@ -475,7 +478,7 @@ public class PropertyGenerator {
     }
 
     public boolean getResidueProperties(Polymer polymer, Residue residue,
-            int structureNum) {
+                                        int structureNum) {
         valueMap.clear();
         Residue prevResidue = residue.previous;
         Residue nextResidue = residue.next;
@@ -573,7 +576,7 @@ public class PropertyGenerator {
     }
 
     public boolean getAtomProperties(Polymer polymer, int res, String resName,
-            String atomName, int structureNum) {
+                                     String atomName, int structureNum) {
         atomName = atomName.toUpperCase();
         String atomSpec = polymer.getName() + ":" + Integer.toString(res) + "." + atomName;
         Atom atom = molecule.findAtom(atomSpec);
@@ -717,78 +720,6 @@ public class PropertyGenerator {
         }
     }
 
-    public static void writeData(String name, HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data) {
-        try (BufferedWriter b = new BufferedWriter(new FileWriter(name))) {
-            b.write("@relation " + new Date().toString().replace(" ", "_"));
-            b.newLine();
-            /*
-             * Because the arff format apparently can't specify the class attribute, it defaults to the last attribute
-             * so chemical_shift must come last in the list.
-             */
-
- /*
-             * Warning: cludge ahead.
-             * Because we have to define attributes now but don't see them until the third level of maps,
-             * We have a flag to indicate whether or not we've defined the attributes. This should only happen once otherwise we're screwed.
-             * This is ridiculous but better than the alternative which is converting each levl keyset to an array, getting 0, and getting that particular key.
-             */
-            boolean haveDefinedAttributes = false;
-            for (String protein : data.keySet()) {
-                for (Integer residue : data.get(protein).keySet()) {
-                    if (!haveDefinedAttributes) {
-                        for (String a : data.get(protein).get(residue).keySet()) {
-                            if (a.equals("chemicalshift")) {
-                                continue;
-                            }
-                            b.write("@attribute ");
-                            a = a.replace(" ", "");
-                            a = a.replace(",", "_");
-                            b.write(a);
-                            b.write(" real");
-                            b.newLine();
-                        }
-                        b.write("@attribute chemicalshift real");
-                        b.newLine();
-                        b.write("@data");
-                        b.newLine();
-                        haveDefinedAttributes = true;
-                    }
-                    // the attributes are all in the same order because we're using tree maps
-                    // so we can just dump the value sets
-
-                    LinkedHashMap<String, String> map = data.get(protein).get(residue);
-                    String cs = map.get("chemicalshift");
-                    map.remove("chemicalshift");
-                    String v = map.values().toString();
-                    v = v.substring(1, v.length() - 1); // trim brackets
-                    b.write(v);
-                    b.write(",");
-                    b.write(cs);
-                    b.newLine();
-                }
-            }
-        } catch (Exception e) {
-            log.warn(e.getMessage(), e);
-        }
-    }
-
-    public static double getRandomShift(String aName, String resName) {
-        Double value = offsetTable.get(resName + "_" + aName);
-        if (value == null) {
-            value = 0.0;
-        }
-        return value;
-    }
-
-    public static double getOffset(String aName, String resName, int offset) {
-        String[] offsetChars = {"A", "B", "", "C", "D"};
-        Double value = offsetTable.get(resName + "_" + aName + "_" + offsetChars[offset + 2]);
-        if (value == null) {
-            value = 0.0;
-        }
-        return value;
-    }
-
     public double getCorrectedRandomShift(String polyName, int firstRes, int iRes, int lastRes, String aName) {
         String resName = molecule.findAtom(polyName + ":" + Integer.toString(iRes) + ".N").getEntity().name;
         double corr = getRandomShift(aName, resName);
@@ -815,56 +746,6 @@ public class PropertyGenerator {
             ret[i] = calculatePhi(polyName, first + i, structureNum);
         }
         return ret;
-    }
-
-    private static HashMap<String, HashMap<String, Double>> loadPropertyFile() throws FileNotFoundException, IOException {
-        InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/predict/protein/resprops.txt");
-        HashMap<String, HashMap<String, Double>> properties = new HashMap<String, HashMap<String, Double>>();
-
-        try ( BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
-            String[] keys = null;
-            while (true) {
-                String line = reader.readLine();
-                if (line == null) {
-                    break;
-                }
-                if (keys == null) {
-                    keys = line.split("\t");
-                } else {
-                    HashMap<String, Double> map = new HashMap<String, Double>();
-                    String[] values = line.split("\t");
-                    for (int i = 1; i < keys.length; ++i) {
-                        map.put(keys[i].trim(), Double.parseDouble(values[i].trim()));
-                    }
-                    properties.put(values[0], map);
-                }
-            }
-        }
-        return properties;
-    }
-
-    private static HashMap<String, double[]> loadResidueFactors() throws FileNotFoundException, IOException {
-        InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/predict/protein/resfactors.txt");
-        HashMap<String, double[]> map = new HashMap<>();
-
-        try ( var reader = new BufferedReader(new InputStreamReader(iStream))) {
-            while (true) {
-                var line = reader.readLine();
-                if (line == null) {
-                    break;
-                }
-                if (line.isBlank()) {
-                    continue;
-                }
-                String[] strValues = line.split("\t");
-                double[] values = new double[strValues.length - 1];
-                for (int i = 0; i < values.length; i++) {
-                    values[i] = Double.parseDouble(strValues[i + 1].trim());
-                }
-                map.put(strValues[0].trim(), values);
-            }
-        }
-        return map;
     }
 
     public double getProperty(String property, Residue residue) throws IllegalStateException {
@@ -914,30 +795,6 @@ public class PropertyGenerator {
         }
     }
 
-    private static ArrayList<String> loadAttributes(String attributeFile) {
-        if (verbose) {
-            System.out.printf("Reading attributes from %s.\n", attributeFile);
-        }
-        try (BufferedReader b = new BufferedReader(new FileReader(attributeFile))) {
-            ArrayList<String> attributes = new ArrayList<String>();
-
-            String line = b.readLine();
-            while (line != null) {
-                String[] fields = line.split(" ");
-                String attrLine = fields[1].replace("_", ",");
-                attributes.add(attrLine);
-                line = b.readLine();
-            }
-            return attributes;
-        } catch (FileNotFoundException e) {
-            System.out.println("Attribute file not found.");
-            System.exit(-1);
-        } catch (Exception e) {
-            log.warn(e.getMessage(), e);
-        }
-        return null;
-    }
-
     public double[] getResidueFactors(String resName) throws IOException {
         if (residueFactors == null) {
             residueFactors = loadResidueFactors();
@@ -952,7 +809,7 @@ public class PropertyGenerator {
     }
 
     public double[] getResidueShiftProps(Residue residue, int nNeighbors, int nFactors,
-            int iPPM, int iRef) throws IOException {
+                                         int iPPM, int iRef) throws IOException {
         String[] aNames = {"C", "CA", "CB", "N", "H", "HA", "HB"};
 
         Residue[] residues = new Residue[2 * nNeighbors + 1];
@@ -1027,5 +884,151 @@ public class PropertyGenerator {
             System.arraycopy(resFactors, 0, result, resOffset, nFactors);
         }
         return result;
+    }
+
+    public static void writeData(String name, HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data) {
+        try (BufferedWriter b = new BufferedWriter(new FileWriter(name))) {
+            b.write("@relation " + new Date().toString().replace(" ", "_"));
+            b.newLine();
+            /*
+             * Because the arff format apparently can't specify the class attribute, it defaults to the last attribute
+             * so chemical_shift must come last in the list.
+             */
+
+            /*
+             * Warning: cludge ahead.
+             * Because we have to define attributes now but don't see them until the third level of maps,
+             * We have a flag to indicate whether or not we've defined the attributes. This should only happen once otherwise we're screwed.
+             * This is ridiculous but better than the alternative which is converting each levl keyset to an array, getting 0, and getting that particular key.
+             */
+            boolean haveDefinedAttributes = false;
+            for (String protein : data.keySet()) {
+                for (Integer residue : data.get(protein).keySet()) {
+                    if (!haveDefinedAttributes) {
+                        for (String a : data.get(protein).get(residue).keySet()) {
+                            if (a.equals("chemicalshift")) {
+                                continue;
+                            }
+                            b.write("@attribute ");
+                            a = a.replace(" ", "");
+                            a = a.replace(",", "_");
+                            b.write(a);
+                            b.write(" real");
+                            b.newLine();
+                        }
+                        b.write("@attribute chemicalshift real");
+                        b.newLine();
+                        b.write("@data");
+                        b.newLine();
+                        haveDefinedAttributes = true;
+                    }
+                    // the attributes are all in the same order because we're using tree maps
+                    // so we can just dump the value sets
+
+                    LinkedHashMap<String, String> map = data.get(protein).get(residue);
+                    String cs = map.get("chemicalshift");
+                    map.remove("chemicalshift");
+                    String v = map.values().toString();
+                    v = v.substring(1, v.length() - 1); // trim brackets
+                    b.write(v);
+                    b.write(",");
+                    b.write(cs);
+                    b.newLine();
+                }
+            }
+        } catch (Exception e) {
+            log.warn(e.getMessage(), e);
+        }
+    }
+
+    public static double getRandomShift(String aName, String resName) {
+        Double value = offsetTable.get(resName + "_" + aName);
+        if (value == null) {
+            value = 0.0;
+        }
+        return value;
+    }
+
+    public static double getOffset(String aName, String resName, int offset) {
+        String[] offsetChars = {"A", "B", "", "C", "D"};
+        Double value = offsetTable.get(resName + "_" + aName + "_" + offsetChars[offset + 2]);
+        if (value == null) {
+            value = 0.0;
+        }
+        return value;
+    }
+
+    private static HashMap<String, HashMap<String, Double>> loadPropertyFile() throws FileNotFoundException, IOException {
+        InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/predict/protein/resprops.txt");
+        HashMap<String, HashMap<String, Double>> properties = new HashMap<String, HashMap<String, Double>>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
+            String[] keys = null;
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                if (keys == null) {
+                    keys = line.split("\t");
+                } else {
+                    HashMap<String, Double> map = new HashMap<String, Double>();
+                    String[] values = line.split("\t");
+                    for (int i = 1; i < keys.length; ++i) {
+                        map.put(keys[i].trim(), Double.parseDouble(values[i].trim()));
+                    }
+                    properties.put(values[0], map);
+                }
+            }
+        }
+        return properties;
+    }
+
+    private static HashMap<String, double[]> loadResidueFactors() throws FileNotFoundException, IOException {
+        InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/predict/protein/resfactors.txt");
+        HashMap<String, double[]> map = new HashMap<>();
+
+        try (var reader = new BufferedReader(new InputStreamReader(iStream))) {
+            while (true) {
+                var line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                if (line.isBlank()) {
+                    continue;
+                }
+                String[] strValues = line.split("\t");
+                double[] values = new double[strValues.length - 1];
+                for (int i = 0; i < values.length; i++) {
+                    values[i] = Double.parseDouble(strValues[i + 1].trim());
+                }
+                map.put(strValues[0].trim(), values);
+            }
+        }
+        return map;
+    }
+
+    private static ArrayList<String> loadAttributes(String attributeFile) {
+        if (verbose) {
+            System.out.printf("Reading attributes from %s.\n", attributeFile);
+        }
+        try (BufferedReader b = new BufferedReader(new FileReader(attributeFile))) {
+            ArrayList<String> attributes = new ArrayList<String>();
+
+            String line = b.readLine();
+            while (line != null) {
+                String[] fields = line.split(" ");
+                String attrLine = fields[1].replace("_", ",");
+                attributes.add(attrLine);
+                line = b.readLine();
+            }
+            return attributes;
+        } catch (FileNotFoundException e) {
+            System.out.println("Attribute file not found.");
+            System.exit(-1);
+        } catch (Exception e) {
+            log.warn(e.getMessage(), e);
+        }
+        return null;
     }
 }

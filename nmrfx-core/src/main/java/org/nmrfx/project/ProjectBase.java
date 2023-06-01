@@ -40,7 +40,6 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNullElse;
 
 /**
- *
  * @author brucejohnson
  */
 @PluginAPI("parametric")
@@ -56,7 +55,7 @@ public class ProjectBase {
     protected Path projectDir = null;
     protected Map<String, PeakPaths> peakPaths = new HashMap<>();
     protected Map<String, Compound> compoundMap = new HashMap<>();
-    protected  Map<String, MoleculeBase> molecules = new HashMap<>();
+    protected Map<String, MoleculeBase> molecules = new HashMap<>();
     protected MoleculeBase activeMol = null;
 
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
@@ -66,55 +65,6 @@ public class ProjectBase {
 
     protected ProjectBase(String name) {
         this.name = name;
-    }
-
-    public static ProjectBase getNewProject(String name) {
-        ProjectBase projectBase;
-        try {
-            Class<?> c = Class.forName("org.nmrfx.processor.gui.project.GUIProject");
-            Class[] parameterTypes = {String.class};
-            Constructor constructor = c.getDeclaredConstructor(parameterTypes);
-            projectBase = (ProjectBase) constructor.newInstance(name);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
-            projectBase = new ProjectBase(name);
-        }
-        return projectBase;
-    }
-
-    public static ProjectBase getActive() {
-        ProjectBase project = activeProject;
-        if (project == null) {
-            project = getNewProject("Untitled 1");
-        }
-        activeProject = project;
-        return project;
-    }
-
-    public static void setPCS(PropertyChangeSupport newPCS) {
-        pcs = newPCS;
-    }
-
-    static String getName(String s) {
-        Matcher matcher = INDEX_PATTERN.matcher(s);
-        String name;
-        if (matcher.matches()) {
-            name = matcher.group(1);
-        } else {
-            name = s;
-        }
-        return name;
-    }
-
-    public static Optional<Integer> getIndex(String s) {
-        Optional<Integer> fileNum = Optional.empty();
-        Matcher matcher = INDEX_PATTERN.matcher(s);
-        Matcher matcher2 = INDEX2_PATTERN.matcher(s);
-        if (matcher.matches()) {
-            fileNum = Optional.of(Integer.parseInt(matcher.group(1)));
-        } else if (matcher2.matches()) {
-            fileNum = Optional.of(Integer.parseInt(matcher2.group(1)));
-        }
-        return fileNum;
     }
 
     public final void setActive() {
@@ -184,25 +134,9 @@ public class ProjectBase {
         }
     }
 
-    public static void addSaveframeProcessor(String category, SaveframeProcessor saveframeProcessor) {
-        saveframeProcessors.put(category, saveframeProcessor);
-    }
-
     public void writeSaveframes(Writer chan) throws ParseException, IOException {
-        for (SaveframeWriter saveframeWriter :extraSaveframes) {
+        for (SaveframeWriter saveframeWriter : extraSaveframes) {
             saveframeWriter.write(chan);
-        }
-    }
-
-    public static void processExtraSaveFrames(STAR3 star3) throws ParseException {
-        for (Saveframe saveframe: star3.getSaveFrames().values()) {
-            if (saveframeProcessors.containsKey(saveframe.getCategoryName())) {
-                try {
-                    saveframeProcessors.get(saveframe.getCategoryName()).process(saveframe);
-                } catch (IOException e) {
-                    throw new ParseException(e.getMessage());
-                }
-            }
         }
     }
 
@@ -286,7 +220,7 @@ public class ProjectBase {
         peakLists.clear();
     }
 
-    public  MoleculeBase getActiveMolecule() {
+    public MoleculeBase getActiveMolecule() {
         return activeMol;
     }
 
@@ -298,23 +232,23 @@ public class ProjectBase {
         molecules.put(molecule.getName(), molecule);
     }
 
-    public  MoleculeBase getMolecule(String name) {
+    public MoleculeBase getMolecule(String name) {
         return molecules.get(name);
     }
 
-    public  Collection<MoleculeBase> getMolecules() {
+    public Collection<MoleculeBase> getMolecules() {
         return molecules.values();
     }
 
-    public  Collection<String> getMoleculeNames() {
+    public Collection<String> getMoleculeNames() {
         return molecules.keySet();
     }
 
-    public  void setMoleculeMap(Map<String, MoleculeBase> newMap) {
+    public void setMoleculeMap(Map<String, MoleculeBase> newMap) {
         molecules = newMap;
     }
 
-    public  void removeMolecule(String name) {
+    public void removeMolecule(String name) {
         var mol = molecules.get(name);
         if (mol == activeMol) {
             activeMol = null;
@@ -324,11 +258,10 @@ public class ProjectBase {
         }
     }
 
-    public  void clearAllMolecules() {
+    public void clearAllMolecules() {
         activeMol = null;
         molecules.clear();
     }
-
 
     public boolean hasDirectory() {
         return projectDir != null;
@@ -351,15 +284,15 @@ public class ProjectBase {
         datasets.clear();
     }
 
-    public void setProjectDir(Path projectDir) {
-        this.projectDir = projectDir;
-        if (pcs != null ) {
-            pcs.firePropertyChange(new PropertyChangeEvent(this, "project", null, this));
-        }
-    }
-
     public Path getProjectDir() {
         return this.projectDir;
+    }
+
+    public void setProjectDir(Path projectDir) {
+        this.projectDir = projectDir;
+        if (pcs != null) {
+            pcs.firePropertyChange(new PropertyChangeEvent(this, "project", null, this));
+        }
     }
 
     // used in subclasses
@@ -541,9 +474,10 @@ public class ProjectBase {
     /**
      * Loads the regions from the provided filename and sets them in the dataset. If resetNorm is true, the
      * integral norm is calculated from the regions and set in the dataset.
+     *
      * @param regionFileStr The string path of the region file.
-     * @param dataset The dataset to set the regions for.
-     * @param resetNorm Whether to reset the integral norm.
+     * @param dataset       The dataset to set the regions for.
+     * @param resetNorm     Whether to reset the integral norm.
      * @throws IOException if there is problem loading the regions.
      */
     private void loadRegions(String regionFileStr, DatasetBase dataset, boolean resetNorm) throws IOException {
@@ -551,7 +485,7 @@ public class ProjectBase {
         if (regionFile.canRead()) {
             List<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
             if (!DatasetRegion.isLongRegionFile(regionFile)) {
-                for (DatasetRegion region: regions) {
+                for (DatasetRegion region : regions) {
                     region.measure(dataset);
                 }
             }
@@ -609,40 +543,70 @@ public class ProjectBase {
         return peakPaths;
     }
 
-    public static class FileComparator implements Comparator<Path> {
-
-        @Override
-        public int compare(Path p1, Path p2) {
-            String s1 = p1.getFileName().toString();
-            String s2 = p2.getFileName().toString();
-            int result;
-            Optional<Integer> f1 = getIndex(s1);
-            Optional<Integer> f2 = getIndex(s2);
-            if (f1.isPresent() && f2.isEmpty()) {
-                result = 1;
-            } else if (f1.isEmpty() && f2.isPresent()) {
-                result = -1;
-            } else if (f1.isPresent()) {
-                int i1 = f1.get();
-                int i2 = f2.get();
-                result = Integer.compare(i1, i2);
-            } else {
-                if (s1.endsWith(".seq") && !s2.endsWith(".seq")) {
-                    result = 1;
-                } else if (!s1.endsWith(".seq") && s2.endsWith(".seq")) {
-                    result = -1;
-                } else if (s1.endsWith(".pdb") && !s2.endsWith(".pdb")) {
-                    result = 1;
-                } else if (!s1.endsWith(".pdb") && s2.endsWith(".pdb")) {
-                    result = -1;
-                } else {
-                    result = s1.compareTo(s2);
-                }
-
-            }
-            return result;
+    public static ProjectBase getNewProject(String name) {
+        ProjectBase projectBase;
+        try {
+            Class<?> c = Class.forName("org.nmrfx.processor.gui.project.GUIProject");
+            Class[] parameterTypes = {String.class};
+            Constructor constructor = c.getDeclaredConstructor(parameterTypes);
+            projectBase = (ProjectBase) constructor.newInstance(name);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException |
+                 InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+            projectBase = new ProjectBase(name);
         }
+        return projectBase;
+    }
 
+    public static ProjectBase getActive() {
+        ProjectBase project = activeProject;
+        if (project == null) {
+            project = getNewProject("Untitled 1");
+        }
+        activeProject = project;
+        return project;
+    }
+
+    public static void setPCS(PropertyChangeSupport newPCS) {
+        pcs = newPCS;
+    }
+
+    static String getName(String s) {
+        Matcher matcher = INDEX_PATTERN.matcher(s);
+        String name;
+        if (matcher.matches()) {
+            name = matcher.group(1);
+        } else {
+            name = s;
+        }
+        return name;
+    }
+
+    public static Optional<Integer> getIndex(String s) {
+        Optional<Integer> fileNum = Optional.empty();
+        Matcher matcher = INDEX_PATTERN.matcher(s);
+        Matcher matcher2 = INDEX2_PATTERN.matcher(s);
+        if (matcher.matches()) {
+            fileNum = Optional.of(Integer.parseInt(matcher.group(1)));
+        } else if (matcher2.matches()) {
+            fileNum = Optional.of(Integer.parseInt(matcher2.group(1)));
+        }
+        return fileNum;
+    }
+
+    public static void addSaveframeProcessor(String category, SaveframeProcessor saveframeProcessor) {
+        saveframeProcessors.put(category, saveframeProcessor);
+    }
+
+    public static void processExtraSaveFrames(STAR3 star3) throws ParseException {
+        for (Saveframe saveframe : star3.getSaveFrames().values()) {
+            if (saveframeProcessors.containsKey(saveframe.getCategoryName())) {
+                try {
+                    saveframeProcessors.get(saveframe.getCategoryName()).process(saveframe);
+                } catch (IOException e) {
+                    throw new ParseException(e.getMessage());
+                }
+            }
+        }
     }
 
     /**
@@ -680,5 +644,41 @@ public class ProjectBase {
         } else {
             return pcs.getPropertyChangeListeners();
         }
+    }
+
+    public static class FileComparator implements Comparator<Path> {
+
+        @Override
+        public int compare(Path p1, Path p2) {
+            String s1 = p1.getFileName().toString();
+            String s2 = p2.getFileName().toString();
+            int result;
+            Optional<Integer> f1 = getIndex(s1);
+            Optional<Integer> f2 = getIndex(s2);
+            if (f1.isPresent() && f2.isEmpty()) {
+                result = 1;
+            } else if (f1.isEmpty() && f2.isPresent()) {
+                result = -1;
+            } else if (f1.isPresent()) {
+                int i1 = f1.get();
+                int i2 = f2.get();
+                result = Integer.compare(i1, i2);
+            } else {
+                if (s1.endsWith(".seq") && !s2.endsWith(".seq")) {
+                    result = 1;
+                } else if (!s1.endsWith(".seq") && s2.endsWith(".seq")) {
+                    result = -1;
+                } else if (s1.endsWith(".pdb") && !s2.endsWith(".pdb")) {
+                    result = 1;
+                } else if (!s1.endsWith(".pdb") && s2.endsWith(".pdb")) {
+                    result = -1;
+                } else {
+                    result = s1.compareTo(s2);
+                }
+
+            }
+            return result;
+        }
+
     }
 }

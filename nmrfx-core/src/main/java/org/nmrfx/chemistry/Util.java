@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,8 @@
  */
 package org.nmrfx.chemistry;
 
+import org.apache.commons.math3.util.FastMath;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,22 +26,19 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.math3.util.FastMath;
-
 /**
- *
  * @author Bruce Johnson
  */
 public class Util {
 
     static boolean strictlyNEF;
 
-    static public void setStrictlyNEF(boolean state) {
-        strictlyNEF = state;
-    }
-
     static public boolean isStrictlyNEF() {
         return strictlyNEF;
+    }
+
+    static public void setStrictlyNEF(boolean state) {
+        strictlyNEF = state;
     }
 
     public static boolean hasSameShift(Atom atom, Atom partnerAtom) {
@@ -148,15 +147,14 @@ public class Util {
     }
 
     /**
-     *
      * stringMatch --
-     *
+     * <p>
      * See if a particular string matches a particular pattern. The matching
      * operation permits the following special characters in the pattern: *?\[]
      * (see the manual entry for details on what these mean).
-     *
+     * <p>
      * Results: True if the string matches with the pattern.
-     *
+     * <p>
      * Side effects: None.
      *
      * @param str String to compare pattern against

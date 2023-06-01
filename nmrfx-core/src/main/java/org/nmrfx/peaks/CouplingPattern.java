@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,27 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.peaks;
 
 import org.nmrfx.utilities.Format;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class CouplingPattern extends Coupling {
 
     public final static String COUPLING_CHARS = "sdtqphx";
-
-    private final CouplingItem[] couplingItems;
-    private final double intensity;
     static final private int[][] PASCALS_TRIANGLE = new int[16][];
 
     static {
@@ -49,6 +46,9 @@ public class CouplingPattern extends Coupling {
             }
         }
     }
+
+    private final CouplingItem[] couplingItems;
+    private final double intensity;
 
     CouplingPattern(final Multiplet multiplet, final double[] values, final int[] n, final double intensity, final double[] sin2thetas) {
         this.multiplet = multiplet;
@@ -66,7 +66,7 @@ public class CouplingPattern extends Coupling {
         // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
     }
 
-    public CouplingPattern(final Multiplet multiplet, final List<Double> values, final List<String> types,  final List<Double> sin2thetas, final double intensity) {
+    public CouplingPattern(final Multiplet multiplet, final List<Double> values, final List<String> types, final List<Double> sin2thetas, final double intensity) {
         this.multiplet = multiplet;
 
         couplingItems = new CouplingItem[values.size()];
@@ -97,8 +97,132 @@ public class CouplingPattern extends Coupling {
         return sBuilder.toString();
     }
 
-    public static char toCouplingChar(int nSplits) {
-        return COUPLING_CHARS.charAt(nSplits - 1);
+    @Override
+    List<AbsMultipletComponent> getAbsComponentList() {
+        List<AbsMultipletComponent> comps = new ArrayList<>();
+        int nFreqs = 1;
+        for (CouplingItem couplingItem : couplingItems) {
+            nFreqs *= couplingItem.getNSplits();
+        }
+        double[] freqs = new double[nFreqs];
+        double[] jAmps = new double[nFreqs];
+        jSplittings(couplingItems, freqs, jAmps);
+        PeakDim peakDim = multiplet.getPeakDim();
+        double centerPPM = peakDim.getChemShiftValue();
+        double sf = peakDim.getPeak().peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
+        for (int i = 0; i < nFreqs; i++) {
+            freqs[i] *= 1.0 / sf;
+            jAmps[i] *= intensity;
+            double lineWidth = multiplet.getPeakDim().getLineWidth();
+            double volume = (jAmps[i] * lineWidth * (Math.PI / 2.0) / 1.05);
+            AbsMultipletComponent comp = new AbsMultipletComponent(multiplet,
+                    centerPPM - freqs[i], jAmps[i], volume, lineWidth);
+            comps.add(comp);
+        }
+        return comps;
+    }
+
+    @Override
+    List<RelMultipletComponent> getRelComponentList() {
+        List<RelMultipletComponent> comps = new ArrayList<>();
+        int nFreqs = 1;
+        for (CouplingItem couplingItem : couplingItems) {
+            nFreqs *= couplingItem.getNSplits();
+        }
+        double[] freqs = new double[nFreqs];
+        double[] jAmps = new double[nFreqs];
+        jSplittings(couplingItems, freqs, jAmps);
+        PeakDim peakDim = multiplet.getPeakDim();
+        double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
+        for (int i = 0; i < nFreqs; i++) {
+            jAmps[i] *= intensity;
+            double lineWidth = multiplet.getPeakDim().getLineWidth();
+            double volume = (jAmps[i] * lineWidth * (Math.PI / 2.0) / 1.05);
+            lineWidth *= sf;
+
+            RelMultipletComponent comp = new RelMultipletComponent(multiplet, freqs[i], jAmps[i], volume, lineWidth);
+            comps.add(comp);
+        }
+        return comps;
+    }
+
+    @Override
+    public ArrayList<TreeLine> getSplittingGraph() {
+
+        ArrayList<TreeLine> lines = new ArrayList<>();
+
+        int[] splitCount = getNValues();
+
+        if ((couplingItems != null) && (couplingItems.length > 0)
+                && (splitCount != null)) {
+            if ((couplingItems.length > 1) || (couplingItems[0].getCoupling() != 0.0)) {
+                PeakDim peakDim = multiplet.getPeakDim();
+                double sf = peakDim.getPeak().peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
+                int nFreqs = 1;
+
+                for (int j = 0; j < splitCount.length; j++) {
+                    nFreqs = nFreqs * splitCount[j];
+                }
+
+                double[] freqs = new double[nFreqs];
+
+                int current = 1;
+                int nCouplings = couplingItems.length;
+
+                for (int i = 0; i < nCouplings; i++) {
+                    int last = (splitCount[i] * current) - 1;
+
+                    for (int j = 0; j < current; j++) {
+                        double offset = (couplingItems[i].getCoupling() / sf) * ((splitCount[i] / 2.0)
+                                - 0.5);
+                        double origin = freqs[current - j - 1];
+                        for (int k = 0; k < splitCount[i]; k++) {
+                            double freq = freqs[current - j - 1] + offset;
+                            freqs[last--] = freq;
+                            lines.add(new TreeLine(origin, i * 1.0, -freq, i * 1.0));
+                            offset -= (couplingItems[i].getCoupling() / sf);
+                        }
+                    }
+
+                    current *= splitCount[i];
+                }
+
+            }
+        }
+
+        return lines;
+    }
+
+    @Override
+    public String getCouplingsAsString() {
+        StringBuilder sbuf = new StringBuilder();
+        for (int i = 0; i < couplingItems.length; i++) {
+            if (i > 0) {
+                sbuf.append(" ");
+            }
+
+            sbuf.append(String.format("%.2f", couplingItems[i].getCoupling()));
+            sbuf.append(" ");
+            sbuf.append(couplingItems[i].getNSplits() - 1);
+            sbuf.append(" ");
+            sbuf.append(String.format("%.2f", couplingItems[i].getSin2Theta()));
+        }
+        return sbuf.toString();
+    }
+
+    @Override
+    public String getCouplingsAsSimpleString() {
+        StringBuilder sbuf = new StringBuilder();
+
+        for (int i = 0; i < couplingItems.length; i++) {
+            if (i > 0) {
+                sbuf.append(" ");
+            }
+
+            sbuf.append(Format.format1(couplingItems[i].getCoupling()));
+        }
+
+        return sbuf.toString();
     }
 
     @Override
@@ -165,38 +289,6 @@ public class CouplingPattern extends Coupling {
         return couplingItems.length;
     }
 
-    @Override
-    public String getCouplingsAsString() {
-        StringBuilder sbuf = new StringBuilder();
-        for (int i = 0; i < couplingItems.length; i++) {
-            if (i > 0) {
-                sbuf.append(" ");
-            }
-
-            sbuf.append(String.format("%.2f", couplingItems[i].getCoupling()));
-            sbuf.append(" ");
-            sbuf.append(couplingItems[i].getNSplits() - 1);
-            sbuf.append(" ");
-            sbuf.append(String.format("%.2f", couplingItems[i].getSin2Theta()));
-        }
-        return sbuf.toString();
-    }
-
-    @Override
-    public String getCouplingsAsSimpleString() {
-        StringBuilder sbuf = new StringBuilder();
-
-        for (int i = 0; i < couplingItems.length; i++) {
-            if (i > 0) {
-                sbuf.append(" ");
-            }
-
-            sbuf.append(Format.format1(couplingItems[i].getCoupling()));
-        }
-
-        return sbuf.toString();
-    }
-
     public void adjustCouplings(final int iCoupling, double newValue) {
         double minValue = 0.1;
         if ((iCoupling >= 0) && (couplingItems.length > iCoupling)) {
@@ -219,57 +311,12 @@ public class CouplingPattern extends Coupling {
         }
     }
 
-    @Override
-    List<AbsMultipletComponent> getAbsComponentList() {
-        List<AbsMultipletComponent> comps = new ArrayList<>();
-        int nFreqs = 1;
-        for (CouplingItem couplingItem : couplingItems) {
-            nFreqs *= couplingItem.getNSplits();
-        }
-        double[] freqs = new double[nFreqs];
-        double[] jAmps = new double[nFreqs];
-        jSplittings(couplingItems, freqs, jAmps);
-        PeakDim peakDim = multiplet.getPeakDim();
-        double centerPPM = peakDim.getChemShiftValue();
-        double sf = peakDim.getPeak().peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
-        for (int i = 0; i < nFreqs; i++) {
-            freqs[i] *= 1.0 / sf;
-            jAmps[i] *= intensity;
-            double lineWidth = multiplet.getPeakDim().getLineWidth();
-            double volume = (jAmps[i] * lineWidth * (Math.PI / 2.0) / 1.05);
-            AbsMultipletComponent comp = new AbsMultipletComponent(multiplet,
-                    centerPPM - freqs[i], jAmps[i], volume, lineWidth);
-            comps.add(comp);
-        }
-        return comps;
-    }
-
-    @Override
-    List<RelMultipletComponent> getRelComponentList() {
-        List<RelMultipletComponent> comps = new ArrayList<>();
-        int nFreqs = 1;
-        for (CouplingItem couplingItem : couplingItems) {
-            nFreqs *= couplingItem.getNSplits();
-        }
-        double[] freqs = new double[nFreqs];
-        double[] jAmps = new double[nFreqs];
-        jSplittings(couplingItems, freqs, jAmps);
-        PeakDim peakDim = multiplet.getPeakDim();
-        double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
-        for (int i = 0; i < nFreqs; i++) {
-            jAmps[i] *= intensity;
-            double lineWidth = multiplet.getPeakDim().getLineWidth();
-            double volume = (jAmps[i] * lineWidth * (Math.PI / 2.0) / 1.05);
-            lineWidth *= sf;
-
-            RelMultipletComponent comp = new RelMultipletComponent(multiplet, freqs[i], jAmps[i], volume, lineWidth);
-            comps.add(comp);
-        }
-        return comps;
-    }
-
     public void jSplittings(double[] freqs, double[] jAmps) {
         jSplittings(couplingItems, freqs, jAmps);
+    }
+
+    public static char toCouplingChar(int nSplits) {
+        return COUPLING_CHARS.charAt(nSplits - 1);
     }
 
     public static void jSplittings(CouplingItem[] cplItem, double[] freqs, double[] jAmps) {
@@ -305,52 +352,5 @@ public class CouplingPattern extends Coupling {
             }
             current *= nSplits;
         }
-    }
-
-    @Override
-    public ArrayList<TreeLine> getSplittingGraph() {
-
-        ArrayList<TreeLine> lines = new ArrayList<>();
-
-        int[] splitCount = getNValues();
-
-        if ((couplingItems != null) && (couplingItems.length > 0)
-                && (splitCount != null)) {
-            if ((couplingItems.length > 1) || (couplingItems[0].getCoupling() != 0.0)) {
-                PeakDim peakDim = multiplet.getPeakDim();
-                double sf = peakDim.getPeak().peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
-                int nFreqs = 1;
-
-                for (int j = 0; j < splitCount.length; j++) {
-                    nFreqs = nFreqs * splitCount[j];
-                }
-
-                double[] freqs = new double[nFreqs];
-
-                int current = 1;
-                int nCouplings = couplingItems.length;
-
-                for (int i = 0; i < nCouplings; i++) {
-                    int last = (splitCount[i] * current) - 1;
-
-                    for (int j = 0; j < current; j++) {
-                        double offset = (couplingItems[i].getCoupling() / sf) * ((splitCount[i] / 2.0)
-                                - 0.5);
-                        double origin = freqs[current - j - 1];
-                        for (int k = 0; k < splitCount[i]; k++) {
-                            double freq = freqs[current - j - 1] + offset;
-                            freqs[last--] = freq;
-                            lines.add(new TreeLine(origin, i * 1.0, -freq, i * 1.0));
-                            offset -= (couplingItems[i].getCoupling() / sf);
-                        }
-                    }
-
-                    current *= splitCount[i];
-                }
-
-            }
-        }
-
-        return lines;
     }
 }

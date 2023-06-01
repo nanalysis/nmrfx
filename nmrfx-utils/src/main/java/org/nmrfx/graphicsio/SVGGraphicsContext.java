@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 //TODO uncomment when core & utils are regrouped
@@ -67,52 +66,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     int clipIndex = 1;
 
     GCCache cache = new GCCache();
-
-    record Rotate(double value) {
-    }
-
-    record Translate(double x, double y) {
-    }
-
-    static class GCCache {
-        double fontSize = 12;
-        String fontFamilyName = "Helvetica";
-        Color fill = Color.BLACK;
-        Color stroke = Color.BLACK;
-        String clipPath = "";
-        TextAlignment textAlignment = TextAlignment.LEFT;
-        VPos textBaseline = VPos.BASELINE;
-        Affine transform = null;
-        List<Object> transforms = new ArrayList<>();
-
-        void save(SVGGraphicsContext svgGC) {
-            this.fontSize = svgGC.fontSize;
-            this.fontFamilyName = svgGC.fontFamilyName;
-            this.fill = svgGC.fill;
-            this.stroke = svgGC.stroke;
-            this.clipPath = svgGC.clipPath;
-            this.textAlignment = svgGC.textAlignment;
-            this.textBaseline = svgGC.textBaseline;
-            this.transform = svgGC.transform == null ? null : svgGC.transform.clone();
-            this.transforms.clear();
-            this.transforms.addAll(svgGC.transforms);
-        }
-
-        void restore(SVGGraphicsContext svgGC) {
-            svgGC.fontSize = fontSize;
-            svgGC.fontFamilyName = fontFamilyName;
-            svgGC.fill = fill;
-            svgGC.stroke = stroke;
-            svgGC.clipPath = clipPath;
-            svgGC.textAlignment = textAlignment;
-            svgGC.textBaseline = textBaseline;
-            svgGC.transform = transform == null ? null : transform.clone();
-            svgGC.transforms.clear();
-            svgGC.transforms.addAll(transforms);
-
-        }
-
-    }
 
     public void create(String fileName) {
         create(1024, 1024, fileName);
@@ -277,14 +230,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             builder.append(clipPath);
         }
         return builder.toString();
-    }
-
-    public static String toRGBCode(Color color) {
-        return String.format("#%02X%02X%02X",
-                (int) (color.getRed() * 255),
-                (int) (color.getGreen() * 255),
-                (int) (color.getBlue() * 255)
-        );
     }
 
     @Override
@@ -493,51 +438,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void setFill(Paint p) {
-        fill = (Color) p;
-    }
-
-    @Override
-    public void setFont(Font f) {
-        this.font = f;
-        fontSize = f.getSize();
-    }
-
-    @Override
-    public void setGlobalAlpha(double alpha) {
-
-    }
-
-    @Override
-    public void setLineCap(StrokeLineCap cap) {
-    }
-
-    @Override
-    public void setLineDashes(double... dashes) {
-        lineDashes = dashes;
-    }
-
-    @Override
-    public void setLineWidth(double lw) {
-        lineWidth = lw;
-    }
-
-    @Override
-    public void setStroke(Paint p) {
-        stroke = (Color) p;
-    }
-
-    @Override
-    public void setTextAlign(TextAlignment align) {
-        textAlignment = align;
-    }
-
-    @Override
-    public void setTextBaseline(VPos baseline) {
-        textBaseline = baseline;
-    }
-
-    @Override
     public void setTransform(Affine xform) {
         transform = xform;
     }
@@ -618,6 +518,71 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         doRect(x, y, w, h, true, false);
     }
 
+    @Override
+    public void setFill(Paint p) {
+        fill = (Color) p;
+    }
+
+    @Override
+    public void setFont(Font f) {
+        this.font = f;
+        fontSize = f.getSize();
+    }
+
+    @Override
+    public void setLineWidth(double lw) {
+        lineWidth = lw;
+    }
+
+    @Override
+    public void setStroke(Paint p) {
+        stroke = (Color) p;
+    }
+
+    @Override
+    public void setGlobalAlpha(double alpha) {
+
+    }
+
+    @Override
+    public void setLineCap(StrokeLineCap cap) {
+    }
+
+    @Override
+    public void setLineDashes(double... dashes) {
+        lineDashes = dashes;
+    }
+
+    @Override
+    public void setTextAlign(TextAlignment align) {
+        textAlignment = align;
+    }
+
+    @Override
+    public void setTextBaseline(VPos baseline) {
+        textBaseline = baseline;
+    }
+
+    @Override
+    public void strokeText(String text, double x, double y) {
+        try {
+            writer.writeStartElement("text");
+            writer.writeAttribute("style", getTextStyle(false));
+            writer.writeAttribute("x", format(x));
+            writer.writeAttribute("y", format(y));
+            writer.writeCharacters(text);
+            writer.writeEndElement();
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public void translate(double x, double y) {
+        transforms.add(new Translate(x, y));
+    }
+
     public void doRect(double x, double y, double w, double h, boolean strokeMode, boolean fillMode) {
         String style = getStyle(strokeMode, fillMode);
         try {
@@ -661,24 +626,58 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         }
     }
 
-    @Override
-    public void strokeText(String text, double x, double y) {
-        try {
-            writer.writeStartElement("text");
-            writer.writeAttribute("style", getTextStyle(false));
-            writer.writeAttribute("x", format(x));
-            writer.writeAttribute("y", format(y));
-            writer.writeCharacters(text);
-            writer.writeEndElement();
-            writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
-            log.warn(ex.getMessage(), ex);
-        }
+    public static String toRGBCode(Color color) {
+        return String.format("#%02X%02X%02X",
+                (int) (color.getRed() * 255),
+                (int) (color.getGreen() * 255),
+                (int) (color.getBlue() * 255)
+        );
     }
 
-    @Override
-    public void translate(double x, double y) {
-        transforms.add(new Translate(x, y));
+    record Rotate(double value) {
+    }
+
+    record Translate(double x, double y) {
+    }
+
+    static class GCCache {
+        double fontSize = 12;
+        String fontFamilyName = "Helvetica";
+        Color fill = Color.BLACK;
+        Color stroke = Color.BLACK;
+        String clipPath = "";
+        TextAlignment textAlignment = TextAlignment.LEFT;
+        VPos textBaseline = VPos.BASELINE;
+        Affine transform = null;
+        List<Object> transforms = new ArrayList<>();
+
+        void save(SVGGraphicsContext svgGC) {
+            this.fontSize = svgGC.fontSize;
+            this.fontFamilyName = svgGC.fontFamilyName;
+            this.fill = svgGC.fill;
+            this.stroke = svgGC.stroke;
+            this.clipPath = svgGC.clipPath;
+            this.textAlignment = svgGC.textAlignment;
+            this.textBaseline = svgGC.textBaseline;
+            this.transform = svgGC.transform == null ? null : svgGC.transform.clone();
+            this.transforms.clear();
+            this.transforms.addAll(svgGC.transforms);
+        }
+
+        void restore(SVGGraphicsContext svgGC) {
+            svgGC.fontSize = fontSize;
+            svgGC.fontFamilyName = fontFamilyName;
+            svgGC.fill = fill;
+            svgGC.stroke = stroke;
+            svgGC.clipPath = clipPath;
+            svgGC.textAlignment = textAlignment;
+            svgGC.textBaseline = textBaseline;
+            svgGC.transform = transform == null ? null : transform.clone();
+            svgGC.transforms.clear();
+            svgGC.transforms.addAll(transforms);
+
+        }
+
     }
 
 }

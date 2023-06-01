@@ -40,6 +40,6 @@ public class FitReactionAB extends FitEquation {
         double r = pars[3];
         double rY = (rScale - fEq * rScale) * Math.exp(-r * x) + fEq * rScale;
         double pY = ((1.0 - fEq) * pScale) * (1.0 - Math.exp(-r * x));
-        return new double[]{rY,pY};
+        return new double[]{rY, pY};
     }
 }

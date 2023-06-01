@@ -5,8 +5,6 @@
  */
 package org.nmrfx.analyst.dataops;
 
-import java.io.IOException;
-import java.util.List;
 import org.apache.commons.math3.stat.descriptive.rank.Max;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
@@ -17,32 +15,14 @@ import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.List;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class Normalize {
     private static final Logger log = LoggerFactory.getLogger(Normalize.class);
-
-    public enum NORMALIZE {
-        SUM() {
-            MathArrays.Function getInstance() {
-                return new Sum();
-            }
-        },
-        MEDIAN() {
-            MathArrays.Function getInstance() {
-                return new Median();
-            }
-        },
-        MAX() {
-            MathArrays.Function getInstance() {
-                return new Max();
-            }
-        };
-
-        abstract MathArrays.Function getInstance();
-    }
 
     public synchronized MathArrays.Function getFunction() {
         MathArrays.Function function = new Percentile(50);
@@ -124,5 +104,25 @@ public class Normalize {
                 log.error(ex.getMessage(), ex);
             }
         });
+    }
+
+    public enum NORMALIZE {
+        SUM() {
+            MathArrays.Function getInstance() {
+                return new Sum();
+            }
+        },
+        MEDIAN() {
+            MathArrays.Function getInstance() {
+                return new Median();
+            }
+        },
+        MAX() {
+            MathArrays.Function getInstance() {
+                return new Max();
+            }
+        };
+
+        abstract MathArrays.Function getInstance();
     }
 }

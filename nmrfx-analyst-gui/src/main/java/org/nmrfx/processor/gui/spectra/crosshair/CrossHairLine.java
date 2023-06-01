@@ -78,16 +78,16 @@ class CrossHairLine {
         return position;
     }
 
+    public void setPosition(double position) {
+        this.position = position;
+    }
+
     /**
      * @return the position if the line is active, or null.
      */
     @Nullable
     public Double getNullablePosition() {
         return active ? position : null;
-    }
-
-    public void setPosition(double position) {
-        this.position = position;
     }
 
     public double getStartY() {

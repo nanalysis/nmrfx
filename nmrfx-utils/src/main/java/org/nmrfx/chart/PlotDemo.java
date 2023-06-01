@@ -41,70 +41,18 @@ import java.util.stream.Collectors;
  */
 public class PlotDemo {
     private static final Logger log = LoggerFactory.getLogger(PlotDemo.class);
-
+    static List<String> header;
+    static List<String> classes;
+    static Map<String, Integer> classMap = new HashMap<>();
+    static double[][] iris = null;
     Stage stage;
     Canvas canvas;
     XYCanvasChart chart;
     GraphicsContextProxy gcP;
     Pane pane;
-    static List<String> header;
-    static List<String> classes;
-    static Map<String, Integer> classMap = new HashMap<>();
-    static double[][] iris = null;
 
     public PlotDemo(Stage stage) {
         this.stage = stage;
-    }
-
-    public static double[][] loadFile(String fileName, String classHeader) throws IOException {
-        Path path = Path.of(fileName);
-        var lines = Files.readAllLines(path);
-        String sepChar;
-        int iLine = -1;
-        double[][] result = new double[lines.size() - 1][];
-        int classColumn = -1;
-        classes = new ArrayList<>();
-        for (var line : lines) {
-            if (iLine >= 0) {
-                String[] fields = line.split(",");
-                result[iLine] = new double[fields.length];
-                for (int iField = 0; iField < fields.length; iField++) {
-                    String field = fields[iField];
-                    if (iField == classColumn) {
-                        if (!classMap.containsKey(field)) {
-                            classMap.put(field, classMap.size());
-                        }
-                        classes.add(field);
-                        int iClass = classMap.get(field);
-                        result[iLine][iField] = iClass;
-                    } else {
-                        result[iLine][iField] = Double.parseDouble(field);
-                    }
-                }
-            } else {
-                if (line.contains("\t")) {
-                    sepChar = "\t";
-                } else {
-                    sepChar = ",";
-                }
-                header = Arrays.stream(line.split(sepChar)).collect(Collectors.toList());
-                classColumn = header.indexOf(classHeader);
-            }
-            iLine++;
-
-        }
-        return result;
-    }
-
-    public static double[][] loadIRIS() {
-        if (iris == null) {
-            try {
-                iris = loadFile("src/test/data/iris.csv", "species");
-            } catch (IOException ex) {
-                log.error(ex.getMessage(), ex);
-            }
-        }
-        return iris;
     }
 
     public void showCanvasNow() {
@@ -235,5 +183,56 @@ public class PlotDemo {
             chart.setHeight(height);
             chart.drawChart();
         }
+    }
+
+    public static double[][] loadFile(String fileName, String classHeader) throws IOException {
+        Path path = Path.of(fileName);
+        var lines = Files.readAllLines(path);
+        String sepChar;
+        int iLine = -1;
+        double[][] result = new double[lines.size() - 1][];
+        int classColumn = -1;
+        classes = new ArrayList<>();
+        for (var line : lines) {
+            if (iLine >= 0) {
+                String[] fields = line.split(",");
+                result[iLine] = new double[fields.length];
+                for (int iField = 0; iField < fields.length; iField++) {
+                    String field = fields[iField];
+                    if (iField == classColumn) {
+                        if (!classMap.containsKey(field)) {
+                            classMap.put(field, classMap.size());
+                        }
+                        classes.add(field);
+                        int iClass = classMap.get(field);
+                        result[iLine][iField] = iClass;
+                    } else {
+                        result[iLine][iField] = Double.parseDouble(field);
+                    }
+                }
+            } else {
+                if (line.contains("\t")) {
+                    sepChar = "\t";
+                } else {
+                    sepChar = ",";
+                }
+                header = Arrays.stream(line.split(sepChar)).collect(Collectors.toList());
+                classColumn = header.indexOf(classHeader);
+            }
+            iLine++;
+
+        }
+        return result;
+    }
+
+    public static double[][] loadIRIS() {
+        if (iris == null) {
+            try {
+                iris = loadFile("src/test/data/iris.csv", "species");
+            } catch (IOException ex) {
+                log.error(ex.getMessage(), ex);
+            }
+        }
+        return iris;
     }
 }

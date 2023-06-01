@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,14 +18,14 @@
 
 package org.nmrfx.structure.chemistry;
 
-import java.util.*;
+import java.util.ArrayList;
 
 public class SmithWaterman {
 
+    private static final double MISMATCH_PENALTY = -0.5333;
     private final double[][] H;
     private final String aString;
     private final String bString;
-    private static final double MISMATCH_PENALTY = -0.5333;
     private final int nRows;
     private final int nCols;
     private final ArrayList<Integer> indexA = new ArrayList<Integer>();

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,37 +17,37 @@
  */
 package org.nmrfx.chemistry.io;
 
-import java.io.*;
-import java.util.*;
-
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.protein.ProteinHelix;
+import org.nmrfx.chemistry.protein.Sheet;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.MMCIF;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
-import org.nmrfx.chemistry.protein.ProteinHelix;
-import org.nmrfx.chemistry.protein.Sheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.*;
 
 @PluginAPI("ring")
 public class MMcifReader {
 
     private static final Logger log = LoggerFactory.getLogger(MMcifReader.class);
+    private static final String INVALID_ATOM_WARN_MSG_TEMPLATE = "invalid atom in chem comp atom saveframe \"{}.{}\"";
     static boolean DEBUG = false;
-
     final MMCIF mmcif;
     final File cifFile;
-
     Map entities = new HashMap();
     boolean hasResonances = false;
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
     Map<String, Character> chainCodeMap = new HashMap<>();
     Map<Integer, MMCIFEntity> entityMap = new HashMap<>();
-
-    private static final String INVALID_ATOM_WARN_MSG_TEMPLATE = "invalid atom in chem comp atom saveframe \"{}.{}\"";
 
     public MMcifReader(final File cifFile, final MMCIF star3) {
         this.mmcif = star3;
@@ -55,58 +55,6 @@ public class MMcifReader {
         for (int i = 0; i <= 25; i++) {
             chainCodeMap.put(String.valueOf(i + 1), (char) ('A' + i));
         }
-    }
-
-    public static void read(String cifFileName) throws ParseException {
-        File file = new File(cifFileName);
-        read(file);
-    }
-
-    public static void read(File cifFile) throws ParseException {
-        FileReader fileReader;
-        try {
-            fileReader = new FileReader(cifFile);
-        } catch (FileNotFoundException ex) {
-            return;
-        }
-        BufferedReader bfR = new BufferedReader(fileReader);
-
-        MMCIF cif = new MMCIF(bfR, "mmcif");
-
-        try {
-            cif.scanFile();
-        } catch (ParseException parseEx) {
-            throw new ParseException(parseEx.getMessage() + " " + cif.getLastLine());
-        }
-        MMcifReader reader = new MMcifReader(cifFile, cif);
-        reader.process();
-
-    }
-
-    public static void readChemComp(String cifFileName, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
-        File file = new File(cifFileName);
-        readChemComp(file, molecule, chainCode, sequenceCode);
-    }
-
-    public static void readChemComp(File cifFile, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
-        FileReader fileReader;
-        try {
-            fileReader = new FileReader(cifFile);
-        } catch (FileNotFoundException ex) {
-            return;
-        }
-        BufferedReader bfR = new BufferedReader(fileReader);
-
-        MMCIF cif = new MMCIF(bfR, "mmcif");
-
-        try {
-            cif.scanFile();
-        } catch (ParseException parseEx) {
-            throw new ParseException(parseEx.getMessage() + " " + cif.getLastLine());
-        }
-        MMcifReader reader = new MMcifReader(cifFile, cif);
-        reader.processChemComp(molecule, chainCode, sequenceCode);
-
     }
 
     void buildChains(final Saveframe saveframe, final String nomenclature, MMCIFPolymerEntity entity) throws ParseException {
@@ -126,109 +74,6 @@ public class MMcifReader {
                 }
             }
         }
-    }
-
-    class MMCIFEntity {
-
-        int id;
-        String type;
-
-        public MMCIFEntity(int id, String type) {
-            this.id = id;
-            this.type = type;
-        }
-
-        @Override
-        public String toString() {
-            return id + " " + type;
-        }
-
-        public void build(MoleculeBase molecule, String asymName) throws ParseException {
-            String mapID = asymName + "." + "0";
-            Compound ligand = new Compound("0", asymName);
-            ligand.molecule = molecule;
-            addCompound(mapID, ligand);
-            ligand.setIDNum(id);
-            ligand.assemblyID = id;
-            entities.put(asymName, ligand);
-            molecule.addEntity(ligand, asymName, id);
-        }
-    }
-
-    class MMCIFPolymerEntity extends MMCIFEntity {
-
-        List<Integer> numbers = new ArrayList<>();
-        List<String> names = new ArrayList<>();
-        List<Boolean> hetero = new ArrayList<>();
-
-        public MMCIFPolymerEntity(int id, String type) {
-            super(id, type);
-        }
-
-        public void addChain(List<Integer> numColumn, List<String> nameColumn, List<Boolean> heteroColumn) {
-            numbers.addAll(numColumn);
-            names.addAll(nameColumn);
-            hetero.addAll(heteroColumn);
-
-        }
-
-        public void add(Integer num, String name, boolean isHetero) {
-            numbers.add(num);
-            names.add(name);
-            hetero.add(isHetero);
-        }
-
-        @Override
-        public void build(MoleculeBase molecule, String asymName) throws ParseException {
-            String reslibDir = PDBFile.getReslibDir("IUPAC");
-            Sequence sequence = new Sequence(molecule);
-            sequence.newPolymer();
-            Polymer polymer = new Polymer(asymName, asymName);
-            polymer.setNomenclature("IUPAC");
-            polymer.setIDNum(id);
-            polymer.assemblyID = id;
-            entities.put(asymName, polymer);
-            molecule.addEntity(polymer, asymName, id);
-            for (int i = 0; i < numbers.size(); i++) {
-                String resName = names.get(i);
-                String iRes = numbers.get(i).toString();
-                boolean hetBool = hetero.get(i);
-                String hetStr = "n";
-                if (hetBool) {
-                    hetStr = "y";
-                }
-                Residue residue = new Residue(iRes, resName.toUpperCase(), hetStr);
-                residue.molecule = polymer.molecule;
-                String mapID = asymName + "." + iRes;
-                addCompound(mapID, residue);
-                polymer.addResidue(residue);
-                Residue.RES_POSITION resPos = Residue.RES_POSITION.MIDDLE;
-                if (i == 0) {
-                    resPos = Residue.RES_POSITION.START;
-                } else if (i == numbers.size() - 1) {
-                    resPos = Residue.RES_POSITION.END;
-                }
-
-                try {
-                    String extension = "";
-                    if (resName.equals("HIS")) {
-                        extension += "_prot";
-                    }
-                    if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
-                        log.warn("Can't find residue \"{}{}\" in residue libraries or STAR file", resName, extension);
-                    }
-                } catch (MoleculeIOException psE) {
-                    throw new ParseException(psE.getMessage());
-                }
-            }
-            for (Atom atom : molecule.getAtomArray()) {
-                if (atom.getAtomicNumber() == 0) {
-                    atom.setAtomicNumber(atom.getElementNumber());
-                }
-            }
-
-        }
-
     }
 
     void buildEntities(final Saveframe saveframe) throws ParseException {
@@ -779,6 +624,161 @@ public class MMcifReader {
             int toSet = Integer.parseInt(argv[4]);
             MoleculeBase molecule = MoleculeFactory.getActive();
             buildAtomSites(molecule, fromSet, toSet);
+        }
+
+    }
+
+    public static void read(String cifFileName) throws ParseException {
+        File file = new File(cifFileName);
+        read(file);
+    }
+
+    public static void read(File cifFile) throws ParseException {
+        FileReader fileReader;
+        try {
+            fileReader = new FileReader(cifFile);
+        } catch (FileNotFoundException ex) {
+            return;
+        }
+        BufferedReader bfR = new BufferedReader(fileReader);
+
+        MMCIF cif = new MMCIF(bfR, "mmcif");
+
+        try {
+            cif.scanFile();
+        } catch (ParseException parseEx) {
+            throw new ParseException(parseEx.getMessage() + " " + cif.getLastLine());
+        }
+        MMcifReader reader = new MMcifReader(cifFile, cif);
+        reader.process();
+
+    }
+
+    public static void readChemComp(String cifFileName, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
+        File file = new File(cifFileName);
+        readChemComp(file, molecule, chainCode, sequenceCode);
+    }
+
+    public static void readChemComp(File cifFile, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
+        FileReader fileReader;
+        try {
+            fileReader = new FileReader(cifFile);
+        } catch (FileNotFoundException ex) {
+            return;
+        }
+        BufferedReader bfR = new BufferedReader(fileReader);
+
+        MMCIF cif = new MMCIF(bfR, "mmcif");
+
+        try {
+            cif.scanFile();
+        } catch (ParseException parseEx) {
+            throw new ParseException(parseEx.getMessage() + " " + cif.getLastLine());
+        }
+        MMcifReader reader = new MMcifReader(cifFile, cif);
+        reader.processChemComp(molecule, chainCode, sequenceCode);
+
+    }
+
+    class MMCIFEntity {
+
+        int id;
+        String type;
+
+        public MMCIFEntity(int id, String type) {
+            this.id = id;
+            this.type = type;
+        }
+
+        @Override
+        public String toString() {
+            return id + " " + type;
+        }
+
+        public void build(MoleculeBase molecule, String asymName) throws ParseException {
+            String mapID = asymName + "." + "0";
+            Compound ligand = new Compound("0", asymName);
+            ligand.molecule = molecule;
+            addCompound(mapID, ligand);
+            ligand.setIDNum(id);
+            ligand.assemblyID = id;
+            entities.put(asymName, ligand);
+            molecule.addEntity(ligand, asymName, id);
+        }
+    }
+
+    class MMCIFPolymerEntity extends MMCIFEntity {
+
+        List<Integer> numbers = new ArrayList<>();
+        List<String> names = new ArrayList<>();
+        List<Boolean> hetero = new ArrayList<>();
+
+        public MMCIFPolymerEntity(int id, String type) {
+            super(id, type);
+        }
+
+        public void addChain(List<Integer> numColumn, List<String> nameColumn, List<Boolean> heteroColumn) {
+            numbers.addAll(numColumn);
+            names.addAll(nameColumn);
+            hetero.addAll(heteroColumn);
+
+        }
+
+        public void add(Integer num, String name, boolean isHetero) {
+            numbers.add(num);
+            names.add(name);
+            hetero.add(isHetero);
+        }
+
+        @Override
+        public void build(MoleculeBase molecule, String asymName) throws ParseException {
+            String reslibDir = PDBFile.getReslibDir("IUPAC");
+            Sequence sequence = new Sequence(molecule);
+            sequence.newPolymer();
+            Polymer polymer = new Polymer(asymName, asymName);
+            polymer.setNomenclature("IUPAC");
+            polymer.setIDNum(id);
+            polymer.assemblyID = id;
+            entities.put(asymName, polymer);
+            molecule.addEntity(polymer, asymName, id);
+            for (int i = 0; i < numbers.size(); i++) {
+                String resName = names.get(i);
+                String iRes = numbers.get(i).toString();
+                boolean hetBool = hetero.get(i);
+                String hetStr = "n";
+                if (hetBool) {
+                    hetStr = "y";
+                }
+                Residue residue = new Residue(iRes, resName.toUpperCase(), hetStr);
+                residue.molecule = polymer.molecule;
+                String mapID = asymName + "." + iRes;
+                addCompound(mapID, residue);
+                polymer.addResidue(residue);
+                Residue.RES_POSITION resPos = Residue.RES_POSITION.MIDDLE;
+                if (i == 0) {
+                    resPos = Residue.RES_POSITION.START;
+                } else if (i == numbers.size() - 1) {
+                    resPos = Residue.RES_POSITION.END;
+                }
+
+                try {
+                    String extension = "";
+                    if (resName.equals("HIS")) {
+                        extension += "_prot";
+                    }
+                    if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
+                        log.warn("Can't find residue \"{}{}\" in residue libraries or STAR file", resName, extension);
+                    }
+                } catch (MoleculeIOException psE) {
+                    throw new ParseException(psE.getMessage());
+                }
+            }
+            for (Atom atom : molecule.getAtomArray()) {
+                if (atom.getAtomicNumber() == 0) {
+                    atom.setAtomicNumber(atom.getElementNumber());
+                }
+            }
+
         }
 
     }

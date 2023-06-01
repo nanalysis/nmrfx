@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,19 +36,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- *
  * @author brucejohnson
  */
 public class TestBasePoints implements MultivariateFunction {
     private static final Logger log = LoggerFactory.getLogger(TestBasePoints.class);
-
+    static double DEGTORAD = Math.PI / 180.0;
+    static HashMap<String, TestBasePoints> tbMap = new HashMap<>();
     int winSize;
     double negativePenalty = 1.0e-5;
     Vec testVec = null;
     double[] rvec = null;
     double[] ivec = null;
     double[] values = null;
-
     Vec dVec = null;
     Vec vector = null;
     int start = 0;
@@ -56,14 +55,11 @@ public class TestBasePoints implements MultivariateFunction {
     boolean[] hasSignal = null;
     double p1Penalty = 0.0;
     double p1PenaltyWeight = 0.02;
-    static double DEGTORAD = Math.PI / 180.0;
     int mode = 0;
     boolean useRegionSign = false;
-
     // list of start and end of baseline regions
     ArrayList<RegionPositions> bList = new ArrayList<>();
     ArrayList<BRegionData> b2List = new ArrayList<>();
-    static HashMap<String, TestBasePoints> tbMap = new HashMap<>();
 
     public TestBasePoints(Vec vector, int winSize, double ratio, int mode, double negativePenalty) {
         this.winSize = winSize;
@@ -75,18 +71,6 @@ public class TestBasePoints implements MultivariateFunction {
     public TestBasePoints(int winSize) {
         this.winSize = winSize;
         useRegionSign = true;
-    }
-
-    public static TestBasePoints get(String name) {
-        return tbMap.get(name);
-    }
-
-    public static void remove(String name) {
-        tbMap.remove(name);
-    }
-
-    public static void add(String name, TestBasePoints tbPoints) {
-        tbMap.put(name, tbPoints);
     }
 
     public double[] autoPhaseZero() {
@@ -456,76 +440,6 @@ public class TestBasePoints implements MultivariateFunction {
         return testEnds(p0, 0.0);
     }
 
-    record RegionPositions(int base1, int base2, int sig1, int sig2, int base3, int base4) {
-
-        @Override
-        public String toString() {
-            StringBuilder sBuf = new StringBuilder();
-            sBuf.append(base1);
-            sBuf.append(" ");
-            sBuf.append(base2);
-            sBuf.append(" ");
-            sBuf.append(sig1);
-            sBuf.append(" ");
-            sBuf.append(sig2);
-            sBuf.append(" ");
-            sBuf.append(base3);
-            sBuf.append(" ");
-            sBuf.append(base4);
-            return sBuf.toString();
-        }
-    }
-
-    record RegionData(double meanR, double meanI, int center, int size) {
-
-    }
-
-    static class BRegionData {
-
-        final RegionData region1;
-        final RegionData region2;
-        final double max;
-        final double centerR;
-        final double centerI;
-        final int centerPos;
-
-        BRegionData(RegionData region1, RegionData region2, double max, int centerPos, double centerSumR, double centerSumI) {
-            this.region1 = region1;
-            this.region2 = region2;
-            this.max = max;
-            this.centerR = centerSumR;
-            this.centerI = centerSumI;
-            this.centerPos = centerPos;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sBuf = new StringBuilder();
-            sBuf.append(region1.size);
-            sBuf.append(" ");
-            sBuf.append(region1.center);
-            sBuf.append(" ");
-            sBuf.append(region1.meanR);
-            sBuf.append(" ");
-            sBuf.append(region1.meanI);
-            sBuf.append(" ");
-            sBuf.append(region2.size);
-            sBuf.append(" ");
-            sBuf.append(region2.center);
-            sBuf.append(" ");
-            sBuf.append(region2.meanR);
-            sBuf.append(" ");
-            sBuf.append(region2.meanI);
-            sBuf.append(" ");
-            sBuf.append(max);
-            sBuf.append(" ");
-            sBuf.append(centerR);
-            sBuf.append(" ");
-            sBuf.append(centerI);
-            return sBuf.toString();
-        }
-    }
-
     void genEndsList(final boolean maxMode) {
         double max = 0.0;
         BRegionData bRDMax = null;
@@ -800,7 +714,7 @@ public class TestBasePoints implements MultivariateFunction {
             double r2 = regionSum(regData.base3, regData.base4, p0, p1);
             double m1 = r1 / (regData.base2 - regData.base1 + 1);
             double m2 = r2 / (regData.base4 - regData.base3 + 1);
-            double c = regionSum(regData.sig1, regData.sig2,  p0, p1);
+            double c = regionSum(regData.sig1, regData.sig2, p0, p1);
             double mean = (m1 + m2) / 2;
             double c2 = c - mean * (regData.sig2 - regData.sig1 + 1);
             if (c2 < 0.0) {
@@ -852,6 +766,88 @@ public class TestBasePoints implements MultivariateFunction {
             return -1;
         } else {
             return 1;
+        }
+    }
+
+    public static TestBasePoints get(String name) {
+        return tbMap.get(name);
+    }
+
+    public static void remove(String name) {
+        tbMap.remove(name);
+    }
+
+    public static void add(String name, TestBasePoints tbPoints) {
+        tbMap.put(name, tbPoints);
+    }
+
+    record RegionPositions(int base1, int base2, int sig1, int sig2, int base3, int base4) {
+
+        @Override
+        public String toString() {
+            StringBuilder sBuf = new StringBuilder();
+            sBuf.append(base1);
+            sBuf.append(" ");
+            sBuf.append(base2);
+            sBuf.append(" ");
+            sBuf.append(sig1);
+            sBuf.append(" ");
+            sBuf.append(sig2);
+            sBuf.append(" ");
+            sBuf.append(base3);
+            sBuf.append(" ");
+            sBuf.append(base4);
+            return sBuf.toString();
+        }
+    }
+
+    record RegionData(double meanR, double meanI, int center, int size) {
+
+    }
+
+    static class BRegionData {
+
+        final RegionData region1;
+        final RegionData region2;
+        final double max;
+        final double centerR;
+        final double centerI;
+        final int centerPos;
+
+        BRegionData(RegionData region1, RegionData region2, double max, int centerPos, double centerSumR, double centerSumI) {
+            this.region1 = region1;
+            this.region2 = region2;
+            this.max = max;
+            this.centerR = centerSumR;
+            this.centerI = centerSumI;
+            this.centerPos = centerPos;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sBuf = new StringBuilder();
+            sBuf.append(region1.size);
+            sBuf.append(" ");
+            sBuf.append(region1.center);
+            sBuf.append(" ");
+            sBuf.append(region1.meanR);
+            sBuf.append(" ");
+            sBuf.append(region1.meanI);
+            sBuf.append(" ");
+            sBuf.append(region2.size);
+            sBuf.append(" ");
+            sBuf.append(region2.center);
+            sBuf.append(" ");
+            sBuf.append(region2.meanR);
+            sBuf.append(" ");
+            sBuf.append(region2.meanI);
+            sBuf.append(" ");
+            sBuf.append(max);
+            sBuf.append(" ");
+            sBuf.append(centerR);
+            sBuf.append(" ");
+            sBuf.append(centerI);
+            return sBuf.toString();
         }
     }
 

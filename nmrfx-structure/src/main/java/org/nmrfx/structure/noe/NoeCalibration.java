@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,10 +21,18 @@ package org.nmrfx.structure.noe;
 import org.nmrfx.chemistry.constraints.Noe;
 
 /**
- *
  * @author brucejohnson
  */
 public abstract class NoeCalibration {
+
+    MeasurementMode mMode;
+    boolean removeRedundant = true;
+
+    public abstract void calibrate(Noe noe);
+
+    public boolean removeRedundant() {
+        return removeRedundant;
+    }
 
     enum MeasurementMode {
 
@@ -47,6 +55,8 @@ public abstract class NoeCalibration {
 
         }
 
+        abstract double measure(Noe noe);
+
         static MeasurementMode select(String name) {
             if (name.startsWith("vol")) {
                 return VOLUME;
@@ -54,15 +64,5 @@ public abstract class NoeCalibration {
                 return INTENSITY;
             }
         }
-
-        abstract double measure(Noe noe);
-    }
-    MeasurementMode mMode;
-    boolean removeRedundant = true;
-
-    public abstract void calibrate(Noe noe);
-
-    public boolean removeRedundant() {
-        return removeRedundant;
     }
 }

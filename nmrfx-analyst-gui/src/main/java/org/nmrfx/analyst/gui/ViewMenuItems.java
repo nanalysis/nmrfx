@@ -13,6 +13,7 @@ public class ViewMenuItems extends MenuActions {
 
     private static final String PROCESSOR_MENU_TEXT = "Show Processor";
     DatasetsController datasetController;
+
     public ViewMenuItems(AnalystApp app, Menu menu) {
         super(app, menu);
     }
@@ -35,21 +36,21 @@ public class ViewMenuItems extends MenuActions {
         MenuItem integralTableItem = new MenuItem("Show Regions Table");
         integralTableItem.setOnAction(e -> showRegionsTable());
 
-        menu.getItems().addAll(consoleMenuItem, logConsoleMenuItem, dataMenuItem,  integralTableItem, procMenuItem);
+        menu.getItems().addAll(consoleMenuItem, logConsoleMenuItem, dataMenuItem, integralTableItem, procMenuItem);
         menu.onShowingProperty().set(e -> verifyMenuItems());
-    }
-
-    private void verifyMenuItems() {
-        for(MenuItem menuItem: menu.getItems()) {
-            if (PROCESSOR_MENU_TEXT.equals(menuItem.getText())) {
-                menuItem.setDisable(!AnalystApp.getFXMLControllerManager().getOrCreateActiveController().isProcessorControllerAvailable());
-            }
-        }
     }
 
     @Override
     protected void advanced() {
 
+    }
+
+    private void verifyMenuItems() {
+        for (MenuItem menuItem : menu.getItems()) {
+            if (PROCESSOR_MENU_TEXT.equals(menuItem.getText())) {
+                menuItem.setDisable(!AnalystApp.getFXMLControllerManager().getOrCreateActiveController().isProcessorControllerAvailable());
+            }
+        }
     }
 
     private void showConsole() {

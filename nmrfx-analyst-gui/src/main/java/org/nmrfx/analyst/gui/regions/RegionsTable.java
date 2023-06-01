@@ -33,60 +33,10 @@ public class RegionsTable extends TableView<DatasetRegion> {
     private static final String INTEGRAL_TYPE_COLUMN_NAME = "Type";
     private static final int NUMBER_DECIMAL_PLACES_REGION_BOUNDS = 4;
     private static final int NUMBER_DECIMAL_PLACES_INTEGRAL = 1;
-    private PolyChart chart;
     private final ObservableList<DatasetRegion> datasetRegions;
     private final Comparator<DatasetRegion> startingComparator = Comparator.comparing(dr -> dr.getRegionStart(0));
     private final DatasetRegionListener regionListener;
-
-    /**
-     * Table cell formatter to format non-editable columns of doubles
-     */
-    private static class DoubleTableCell extends TableCell<DatasetRegion, Double> {
-        String formatString;
-
-        public DoubleTableCell() {
-            formatString = "%." + NUMBER_DECIMAL_PLACES_INTEGRAL + "f";
-        }
-
-        public DoubleTableCell(int decimalPlaces) {
-            formatString = "%." + decimalPlaces + "f";
-        }
-
-        @Override
-        protected void updateItem(Double value, boolean empty) {
-            super.updateItem(value, empty);
-            if (empty) {
-                setText(null);
-            } else {
-                setText(String.format(formatString, value));
-            }
-        }
-    }
-
-    /**
-     * Formatter to change between Double and Strings in editable columns of Doubles
-     */
-    private static class DoubleColumnFormatter extends javafx.util.converter.DoubleStringConverter {
-        String formatString;
-
-        public DoubleColumnFormatter(int decimalPlaces) {
-            formatString = "%." + decimalPlaces + "f";
-        }
-
-        @Override
-        public String toString(Double object) {
-            return String.format(formatString, object);
-        }
-
-        @Override
-        public Double fromString(String string) {
-            try {
-                return Double.parseDouble(string);
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-    }
+    private PolyChart chart;
 
     public RegionsTable() {
         setPlaceholder(new Label("No regions to display"));
@@ -94,13 +44,13 @@ public class RegionsTable extends TableView<DatasetRegion> {
         this.datasetRegions = FXCollections.observableList(new ArrayList<>());
         SortedList<DatasetRegion> sortedRegions = new SortedList<>(this.datasetRegions);
         sortedRegions.comparatorProperty().bind(comparatorProperty());
-        regionListener  = updateRegion -> {
+        regionListener = updateRegion -> {
             datasetRegions.sort(Comparator.comparing(dr -> dr.getRegionStart(0)));
             refresh();
         };
 
         setEditable(true);
-        TableColumn<DatasetRegion, String>  regionsLabelCol = new TableColumn<>("Region");
+        TableColumn<DatasetRegion, String> regionsLabelCol = new TableColumn<>("Region");
         regionsLabelCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>("Region " + (datasetRegions.indexOf(cellData.getValue()) + 1)));
         getColumns().add(regionsLabelCol);
 
@@ -152,6 +102,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
 
     /**
      * Listener for edits of the normalized integral column that updates the norm in the dataset.
+     *
      * @param event The normalized integral column cell edit event
      */
     private void normalizedIntegralChanged(TableColumn.CellEditEvent<DatasetRegion, Double> event) {
@@ -163,6 +114,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
     /**
      * Listener for edits of the start or ending region bounds. The value is updated in the DatasetRegion for that
      * row and the new integral is measured.
+     *
      * @param event Edit event for the start or ending region bounds
      */
     private void regionBoundChanged(TableColumn.CellEditEvent<DatasetRegion, Double> event) {
@@ -185,6 +137,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
 
     /**
      * Clears the current regions and updates the list with the new values.
+     *
      * @param regions The new regions to set
      */
     public void setRegions(List<DatasetRegion> regions) {
@@ -205,10 +158,61 @@ public class RegionsTable extends TableView<DatasetRegion> {
 
     /**
      * Selects the row of the provided region in the table.
+     *
      * @param regionToSelect The region to select.
      */
     public void selectRegion(DatasetRegion regionToSelect) {
         getSelectionModel().clearSelection();
         getSelectionModel().select(regionToSelect);
+    }
+
+    /**
+     * Table cell formatter to format non-editable columns of doubles
+     */
+    private static class DoubleTableCell extends TableCell<DatasetRegion, Double> {
+        String formatString;
+
+        public DoubleTableCell() {
+            formatString = "%." + NUMBER_DECIMAL_PLACES_INTEGRAL + "f";
+        }
+
+        public DoubleTableCell(int decimalPlaces) {
+            formatString = "%." + decimalPlaces + "f";
+        }
+
+        @Override
+        protected void updateItem(Double value, boolean empty) {
+            super.updateItem(value, empty);
+            if (empty) {
+                setText(null);
+            } else {
+                setText(String.format(formatString, value));
+            }
+        }
+    }
+
+    /**
+     * Formatter to change between Double and Strings in editable columns of Doubles
+     */
+    private static class DoubleColumnFormatter extends javafx.util.converter.DoubleStringConverter {
+        String formatString;
+
+        public DoubleColumnFormatter(int decimalPlaces) {
+            formatString = "%." + decimalPlaces + "f";
+        }
+
+        @Override
+        public Double fromString(String string) {
+            try {
+                return Double.parseDouble(string);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+
+        @Override
+        public String toString(Double object) {
+            return String.format(formatString, object);
+        }
     }
 }

@@ -10,11 +10,13 @@ import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
-import javax.vecmath.*;
 import org.nmrfx.chemistry.Point3;
+
+import javax.vecmath.Vector3d;
 
 public class MolCylinder extends Group implements MolItem {
 
+    private final static double DEGTORAD = 180.0 / Math.PI;
     String molName = null;
     int iStructure = 0;
     int xDivisions = 15;
@@ -22,7 +24,6 @@ public class MolCylinder extends Group implements MolItem {
     Color color;
     Point3 p3dB;
     Point3 p3dE;
-    private final static double DEGTORAD = 180.0 / Math.PI;
 
     public MolCylinder(double[] begin, double[] end, double radius, Color color, String tag) {
         this.radius = (float) radius;
@@ -51,7 +52,6 @@ public class MolCylinder extends Group implements MolItem {
     }
 
     /**
-     *
      * @param radius
      */
     public void setRadius(double radius) {

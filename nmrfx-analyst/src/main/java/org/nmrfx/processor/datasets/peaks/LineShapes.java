@@ -49,8 +49,8 @@ public enum LineShapes {
             return amp * ((1.0 - k) * lorentz + k * gauss);
         }
     };
-    final int nPars;
     static final double LN2 = Math.log(2.0);
+    final int nPars;
 
     LineShapes(int nPars) {
         this.nPars = nPars;

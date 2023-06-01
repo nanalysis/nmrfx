@@ -65,7 +65,7 @@ public class SpectrumMenuActions extends MenuActions {
         copyItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().copySVGAction(e));
         menu.getItems().addAll(newMenuItem, deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem);
         MenuItem[] disableItems = {deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem};
-        for (var item:disableItems) {
+        for (var item : disableItems) {
             item.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
         }
     }
@@ -78,6 +78,7 @@ public class SpectrumMenuActions extends MenuActions {
         menu.getItems().addAll(
                 alignMenuItem);
     }
+
     void showFavorites() {
         if (windowIO == null) {
             windowIO = new WindowIO();

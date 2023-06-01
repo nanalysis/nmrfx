@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,20 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.processor.gui.spectra;
 
-import org.nmrfx.peaks.Peak;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.utilities.NvUtil;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakDisplayParameters {
@@ -61,6 +60,36 @@ public class PeakDisplayParameters {
     public static final int MULTIPLET_LABEL_ATOM = 2;
     public static final int MULTIPLET_LABEL_SUMMARY = 3;
     public static final int MULTIPLET_LABEL_PPM = 4;
+    static final String[] labelTypes = {
+            "Number", "Label", "Residue", "1Residue", "Atom", "Cluster", "User", "Comment",
+            "Summary", "PPM", "None"
+    };
+    static final String[] displayTypes = {"Peak", "Simulated", "Label", "Ellipse", "FillEllipse", "None"};
+    static final String[] colorTypes = {
+            "Plane", "Assigned", "Error", "Status", "Intensity"
+    };
+    static final String[] multipletLabelTypes = {
+            "None", "Number", "Atom", "Summary", "PPM"
+    };
+    static Font defaultPeakFont = new Font("SansSerif", 10);
+    Color colorOn = Color.BLACK;
+    Color colorOff = Color.RED;
+    int colorType = COLOR_BY_PLANE;
+    int labelType = LABEL_NUMBER;
+    int displayType = DISPLAY_PEAK;
+    int peakOff = 0;
+    int types = 0;
+    boolean treeOn = false;
+    int multipletLabelType = MULTIPLET_LABEL_NUMBER;
+    boolean displayOn = true;
+    boolean displayOff = true;
+    int jmode = 0;
+    double oneDStroke = 0.5;
+    private String peakListName = "";
+
+    PeakDisplayParameters(final String peakListName) {
+        this.peakListName = peakListName;
+    }
 
     /**
      * @return the colorOn
@@ -133,13 +162,6 @@ public class PeakDisplayParameters {
     }
 
     /**
-     * @return whether or not to draw tree label
-     */
-    public static boolean drawMultipletLabel(int multipletLabelType) {
-        return (multipletLabelType > 0);
-    }
-
-    /**
      * @return the displayOn
      */
     public boolean isDisplayOn() {
@@ -165,6 +187,61 @@ public class PeakDisplayParameters {
      */
     public double getOneDStroke() {
         return oneDStroke;
+    }
+
+    public PeakList getPeakList() {
+        if ((peakListName == null) || peakListName.equals("")) {
+            return null;
+        } else {
+            return (PeakList) PeakList.get(peakListName);
+        }
+    }
+
+    public String getPeakListName() {
+        return peakListName;
+    }
+
+    public void setPeakListName(final String name) {
+        peakListName = name;
+    }
+
+    /**
+     * @return whether or not to draw tree label
+     */
+    public static boolean drawMultipletLabel(int multipletLabelType) {
+        return (multipletLabelType > 0);
+    }
+
+    public static PeakDisplayParameters newInstance(PeakDisplayParameters peakPar) {
+        PeakDisplayParameters newPeakPar = new PeakDisplayParameters(peakPar.peakListName);
+
+        newPeakPar.colorOn = peakPar.colorOn;
+        newPeakPar.colorOff = peakPar.colorOff;
+        newPeakPar.colorType = peakPar.colorType;
+        newPeakPar.labelType = peakPar.labelType;
+        newPeakPar.displayType = peakPar.displayType;
+        newPeakPar.peakOff = peakPar.peakOff;
+        newPeakPar.types = peakPar.types;
+        newPeakPar.treeOn = peakPar.treeOn;
+        newPeakPar.multipletLabelType = peakPar.multipletLabelType;
+        newPeakPar.displayOn = peakPar.displayOn;
+        newPeakPar.displayOff = peakPar.displayOff;
+        newPeakPar.jmode = peakPar.jmode;
+        newPeakPar.oneDStroke = peakPar.oneDStroke;
+
+        return newPeakPar;
+    }
+
+    public static String[] getLabelTypes() {
+        return labelTypes.clone();
+    }
+
+    public static String[] getDisplayTypes() {
+        return displayTypes.clone();
+    }
+
+    public static String[] getColorTypes() {
+        return colorTypes.clone();
     }
 
     public enum Params {
@@ -369,7 +446,8 @@ public class PeakDisplayParameters {
                 String result = pdPar.colorOff.toString();
                 return result;
             }
-        },;
+        },
+        ;
         private String description;
         private Object defaultValue;
         private boolean isEditable = false;
@@ -429,85 +507,6 @@ public class PeakDisplayParameters {
         Error(),
         Status(),
         Intensity();
-    }
-
-    static final String[] labelTypes = {
-        "Number", "Label", "Residue", "1Residue", "Atom", "Cluster", "User", "Comment",
-        "Summary", "PPM", "None"
-    };
-    static final String[] displayTypes = {"Peak", "Simulated", "Label", "Ellipse", "FillEllipse", "None"};
-    static final String[] colorTypes = {
-        "Plane", "Assigned", "Error", "Status", "Intensity"
-    };
-    static final String[] multipletLabelTypes = {
-        "None", "Number", "Atom", "Summary", "PPM"
-    };
-    static Font defaultPeakFont = new Font("SansSerif", 10);
-    Color colorOn = Color.BLACK;
-    Color colorOff = Color.RED;
-    int colorType = COLOR_BY_PLANE;
-    int labelType = LABEL_NUMBER;
-    int displayType = DISPLAY_PEAK;
-    int peakOff = 0;
-    int types = 0;
-    boolean treeOn = false;
-    int multipletLabelType = MULTIPLET_LABEL_NUMBER;
-    boolean displayOn = true;
-    boolean displayOff = true;
-    int jmode = 0;
-    private String peakListName = "";
-    double oneDStroke = 0.5;
-
-    PeakDisplayParameters(final String peakListName) {
-        this.peakListName = peakListName;
-    }
-
-    public static PeakDisplayParameters newInstance(PeakDisplayParameters peakPar) {
-        PeakDisplayParameters newPeakPar = new PeakDisplayParameters(peakPar.peakListName);
-
-        newPeakPar.colorOn = peakPar.colorOn;
-        newPeakPar.colorOff = peakPar.colorOff;
-        newPeakPar.colorType = peakPar.colorType;
-        newPeakPar.labelType = peakPar.labelType;
-        newPeakPar.displayType = peakPar.displayType;
-        newPeakPar.peakOff = peakPar.peakOff;
-        newPeakPar.types = peakPar.types;
-        newPeakPar.treeOn = peakPar.treeOn;
-        newPeakPar.multipletLabelType = peakPar.multipletLabelType;
-        newPeakPar.displayOn = peakPar.displayOn;
-        newPeakPar.displayOff = peakPar.displayOff;
-        newPeakPar.jmode = peakPar.jmode;
-        newPeakPar.oneDStroke = peakPar.oneDStroke;
-
-        return newPeakPar;
-    }
-
-    public PeakList getPeakList() {
-        if ((peakListName == null) || peakListName.equals("")) {
-            return null;
-        } else {
-            return (PeakList) PeakList.get(peakListName);
-        }
-    }
-
-    public String getPeakListName() {
-        return peakListName;
-    }
-
-    public void setPeakListName(final String name) {
-        peakListName = name;
-    }
-
-    public static String[] getLabelTypes() {
-        return labelTypes.clone();
-    }
-
-    public static String[] getDisplayTypes() {
-        return displayTypes.clone();
-    }
-
-    public static String[] getColorTypes() {
-        return colorTypes.clone();
     }
 
 }

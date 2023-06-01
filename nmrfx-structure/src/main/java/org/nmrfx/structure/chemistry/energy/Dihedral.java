@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -33,9 +33,19 @@ import static java.util.Objects.requireNonNull;
 
 public class Dihedral {
     private static final Logger log = LoggerFactory.getLogger(Dihedral.class);
-
-    final Molecule molecule;
+    static final double toDeg = 180.0 / Math.PI;
+    static final double toRad = Math.PI / 180;
+    static final double deltaV1 = 121.8084 * Math.PI / 180.0;
+    static final double deltaV3 = 121.8084 * Math.PI / 180.0;
+    public static double backBoneScale = 4.0;
     static Random rand = new Random();
+    static long startTime = 0;
+    static double initPuckerAmplitude = 45 * toRad;
+    static double initPseudoAngle = 18 * toRad;
+    static Map<String, List<AngleConstraint>> angleBoundaries = new HashMap<>();
+    static List<Map<Residue, AngleProp>> torsionAngles = new ArrayList<>();
+    final Molecule molecule;
+    public EnergyLists energyList;
     double[] angleValues;
     double[] savedAngles;
     double[] bestValues;
@@ -43,31 +53,19 @@ public class Dihedral {
     double[] sincosValues;
     boolean sinCosMode = true;
     boolean centerBoundaries = false;
-    static final double toDeg = 180.0 / Math.PI;
-    static final double toRad = Math.PI / 180;
-    static final double deltaV1 = 121.8084 * Math.PI / 180.0;
-    static final double deltaV3 = 121.8084 * Math.PI / 180.0;
     int nBackbone = 0;
     int nSidechain = 0;
     double[][] boundaries = null;
     double[][] normBoundaries = null;
     double[][] ranBoundaries = null;
     double[] inputSigma = null;
-    public EnergyLists energyList;
     double lastEnergy = 0.0;
-    static long startTime = 0;
     double bestEnergy = Double.MAX_VALUE;
     int nEvaluations = 0;
     int reportAt = 100;
     boolean usePseudo = false;
-    private boolean usePseudoAsDefault = false;
-    static double initPuckerAmplitude = 45 * toRad;
-    static double initPseudoAngle = 18 * toRad;
-    public static double backBoneScale = 4.0;
-    static Map<String, List<AngleConstraint>> angleBoundaries = new HashMap<>();
-    static List<Map<Residue, AngleProp>> torsionAngles = new ArrayList<>();
-
     double maxSigma = 20;
+    private boolean usePseudoAsDefault = false;
 
     public Dihedral(final EnergyLists energyList, final boolean usePseudo) {
         this.energyList = energyList;
@@ -84,27 +82,6 @@ public class Dihedral {
         molecule.setDihedrals(this);
         prepareAngles(usePseudo);
         startTime = System.currentTimeMillis();
-    }
-
-    /**
-     * Used to determine if the value of function of the CMAES optimizer has
-     * converged
-     */
-    public class Checker extends SimpleValueChecker {
-
-        public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
-            super(relativeThreshold, absoluteThreshold, maxIter);
-        }
-
-        public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
-            boolean converged = super.converged(iteration, previous, current);
-            if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
-                long time = System.currentTimeMillis();
-                long deltaTime = time - startTime;
-                report(iteration, nEvaluations, deltaTime, energyList.atomList.size(), current.getValue());
-            }
-            return converged;
-        }
     }
 
     public void setPseudoParameters(double pseudoAngle, double puckerAnplitude) {
@@ -144,14 +121,6 @@ public class Dihedral {
         normBoundaries = new double[2][nNorm];
     }
 
-    public static void seed(long seed) {
-        rand.setSeed(seed);
-    }
-
-    public static Random getRandom() {
-        return rand;
-    }
-
     public void setSinCosMode(boolean state) {
         sinCosMode = state;
     }
@@ -163,16 +132,11 @@ public class Dihedral {
     public void setStart() {
         startTime = System.currentTimeMillis();
     }
-//    /** if use psuedo is set, calls prepare angles which resizes the bestValues
-//     * angleValues, and norm Values array
-//     * @param usePseudo 
-//     */
 
     public void setUsePseudo(boolean usePseudo) {
         usePseudoAsDefault = usePseudo;
         prepareAngles(usePseudo);
     }
-//
 
     public void saveDihedrals() {
         getDihedrals();
@@ -186,6 +150,10 @@ public class Dihedral {
             putDihedrals();
         }
     }
+//    /** if use psuedo is set, calls prepare angles which resizes the bestValues
+//     * angleValues, and norm Values array
+//     * @param usePseudo 
+//     */
 
     /**
      * This method generates a list of atoms that have rotatable angles. Atoms
@@ -214,13 +182,14 @@ public class Dihedral {
                 angleValues[i++] = Util.reduceAngle(pseudoVals[1]);
             }
         }
-        //List of all atoms with rotatable angles as specified in 
+        //List of all atoms with rotatable angles as specified in
         List<Atom> angleAtoms = molecule.getAngleAtoms();
         for (Atom atom : angleAtoms) {
-            //reducing angles so that value of each angle is >0 and <2pi 
+            //reducing angles so that value of each angle is >0 and <2pi
             angleValues[i++] = Util.reduceAngle(atom.daughterAtom.dihedralAngle);
         }
     }
+//
 
     /**
      * writes dihedral angles to a specified file. The file has 2 values: atom
@@ -253,7 +222,6 @@ public class Dihedral {
         }
         fileOut.close();
     }
-//
 
     /**
      * read dihedral angles from a specified file. The file has 2 values: atom
@@ -314,10 +282,10 @@ public class Dihedral {
             }
         }
     }
+//
 
     /**
      * based on the angleValues value, the dihedral angles of molecules are set
-     *
      */
     public void putDihedrals() {
         int i = 0;
@@ -589,14 +557,59 @@ public class Dihedral {
         return energy;
     }
 
+    public void putInitialAngles(boolean useRandom) throws InvalidMoleculeException {
+        List<Atom> angleAtoms = molecule.getAngleAtoms();
+        List<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
+        randomizeAngles();
+        if (!useRandom) {
+            int nPseudoAngles = pseudoAngleAtoms.size() / 3;
+            for (int i = 0; i < angleValues.length; ) {
+                Atom atom;
+                boolean incrementByTwo = false;
+                if (i < (2 * nPseudoAngles)) {
+                    atom = pseudoAngleAtoms.get(i / 2 * 3);
+                    incrementByTwo = true;
+                } else {
+                    atom = angleAtoms.get(i - 2 * nPseudoAngles).daughterAtom;
+                }
+                String atomName = atom.getFullName();
+
+                if (usePseudo == true && incrementByTwo == true) {
+                    angleValues[i++] = Util.reduceAngle(initPseudoAngle);
+                    angleValues[i++] = initPuckerAmplitude;
+                }
+                if (incrementByTwo == true) {
+                    i += 2;
+                }
+            }
+        }
+        putDihedrals();
+        molecule.genCoords(false, null);
+    }
+
+    public RotationalDynamics getRotationalDyamics() throws InvalidMoleculeException {
+        prepareAngles(false);
+        setBoundaries(0.1, false);
+        energyList.setupDihedrals();
+        return new RotationalDynamics(this, rand);
+    }
+
+    public static void seed(long seed) {
+        rand.setSeed(seed);
+    }
+
+    public static Random getRandom() {
+        return rand;
+    }
+
     public static double[] setSugarBonds(double pseudoRotationAngle,
-            double maxTorsionAngle) {
+                                         double maxTorsionAngle) {
         double[] sugarAngles = new double[5];
 
         for (int i = 0; i < sugarAngles.length; i++) {
             sugarAngles[i] = maxTorsionAngle
                     * Math.cos(pseudoRotationAngle + (i - 2) * 4.0 * Math.PI
-                            / 5.0);
+                    / 5.0);
         }
         return sugarAngles;
     }
@@ -630,41 +643,25 @@ public class Dihedral {
         return values;
     }
 
-    public void putInitialAngles(boolean useRandom) throws InvalidMoleculeException {
-        List<Atom> angleAtoms = molecule.getAngleAtoms();
-        List<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
-        randomizeAngles();
-        if (!useRandom) {
-            int nPseudoAngles = pseudoAngleAtoms.size() / 3;
-            for (int i = 0; i < angleValues.length;) {
-                Atom atom;
-                boolean incrementByTwo = false;
-                if (i < (2 * nPseudoAngles)) {
-                    atom = pseudoAngleAtoms.get(i / 2 * 3);
-                    incrementByTwo = true;
-                } else {
-                    atom = angleAtoms.get(i - 2 * nPseudoAngles).daughterAtom;
-                }
-                String atomName = atom.getFullName();
+    /**
+     * Used to determine if the value of function of the CMAES optimizer has
+     * converged
+     */
+    public class Checker extends SimpleValueChecker {
 
-                if (usePseudo == true && incrementByTwo == true) {
-                    angleValues[i++] = Util.reduceAngle(initPseudoAngle);
-                    angleValues[i++] = initPuckerAmplitude;
-                }
-                if (incrementByTwo == true) {
-                    i += 2;
-                }
-            }
+        public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
+            super(relativeThreshold, absoluteThreshold, maxIter);
         }
-        putDihedrals();
-        molecule.genCoords(false, null);
-    }
 
-    public RotationalDynamics getRotationalDyamics() throws InvalidMoleculeException {
-        prepareAngles(false);
-        setBoundaries(0.1, false);
-        energyList.setupDihedrals();
-        return new RotationalDynamics(this, rand);
+        public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
+            boolean converged = super.converged(iteration, previous, current);
+            if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
+                long time = System.currentTimeMillis();
+                long deltaTime = time - startTime;
+                report(iteration, nEvaluations, deltaTime, energyList.atomList.size(), current.getValue());
+            }
+            return converged;
+        }
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -49,15 +49,15 @@ public class PeakDim {
     private boolean frozen = false;
     private boolean linksDrawn = false;  // used in drawing link lines
 
+    public PeakDim(Peak peak, int iDim) {
+        myPeak = peak;
+        setSpectralDim(iDim);
+    }
+
     public void peakDimUpdated() {
         if (myPeak != null) {
             myPeak.peakUpdated(this);
         }
-    }
-
-    public PeakDim(Peak peak, int iDim) {
-        myPeak = peak;
-        setSpectralDim(iDim);
     }
 
     public PeakDim copy(Peak peak) {
@@ -143,6 +143,15 @@ public class PeakDim {
         return resonance;
     }
 
+    public void setResonance(long resID) {
+        remove();
+        resonance = PeakList.resFactory().get(resID);
+    }
+
+    public void setResonance(Resonance newResonance) {
+        resonance = newResonance;
+    }
+
     public String getResonanceIDsAsString() {
         return resonance.getIDString();
     }
@@ -189,15 +198,6 @@ public class PeakDim {
         if (resonance != null) {
             resonance.remove(this);
         }
-    }
-
-    public void setResonance(long resID) {
-        remove();
-        resonance = PeakList.resFactory().get(resID);
-    }
-
-    public void setResonance(Resonance newResonance) {
-        resonance = newResonance;
     }
 
     public String toSTAR3LoopAssignedPeakChemShiftString(int iContrib, long resID) {
@@ -395,10 +395,6 @@ public class PeakDim {
         return result.toString();
     }
 
-    public void setFrozen(boolean state) {
-        setFrozen(state, false);
-    }
-
     public void setFrozen(boolean state, boolean allConditions) {
         frozen = state;
         if (myPeak.peakList.isSlideable()) {
@@ -410,6 +406,10 @@ public class PeakDim {
 
     public boolean isFrozen() {
         return frozen;
+    }
+
+    public void setFrozen(boolean state) {
+        setFrozen(state, false);
     }
 
     public Float getAdjustedChemShift() {
@@ -428,32 +428,20 @@ public class PeakDim {
         return chemShift;
     }
 
-    public float getChemShiftValue() {
-        float value = 0.0f;
-        if (chemShift != null) {
-            value = chemShift;
-        }
-        return value;
-    }
-
-    public Float getChemShiftError() {
-        return chemShiftError;
-    }
-
-    public void setChemShiftValueNoCheck(float ctr) {
-        this.chemShift = ctr;
-        if (myPeak.peakList.isSlideable() && !frozen) {
-            slideDims();
-        }
-        peakDimUpdated();
-    }
-
     public void setChemShift(Float value) {
         this.chemShift = value;
         if (myPeak.peakList.isSlideable() && !frozen) {
             slideDims();
         }
         peakDimUpdated();
+    }
+
+    public float getChemShiftValue() {
+        float value = 0.0f;
+        if (chemShift != null) {
+            value = chemShift;
+        }
+        return value;
     }
 
     public void setChemShiftValue(float ctr) {
@@ -464,6 +452,18 @@ public class PeakDim {
 
         if (myPeak.getFlag(5)) {
             //fixme setMultipletComponentValues();
+        }
+        peakDimUpdated();
+    }
+
+    public Float getChemShiftError() {
+        return chemShiftError;
+    }
+
+    public void setChemShiftValueNoCheck(float ctr) {
+        this.chemShift = ctr;
+        if (myPeak.peakList.isSlideable() && !frozen) {
+            slideDims();
         }
         peakDimUpdated();
     }
@@ -487,19 +487,13 @@ public class PeakDim {
         }
     }
 
-    public Float getLineWidthError() {
-        return lineWidthError;
-    }
-
     public void setLineWidthValue(float wid) {
         this.lineWidth = wid;
         peakDimUpdated();
     }
 
-    public void setLineWidthHz(float wid) {
-        wid /= getSpectralDimObj().getSf();
-        this.lineWidth = wid;
-        peakDimUpdated();
+    public Float getLineWidthError() {
+        return lineWidthError;
     }
 
     public void setLineWidthErrorValue(float wid) {
@@ -517,9 +511,9 @@ public class PeakDim {
         }
     }
 
-    public void setBoundsHz(float bounds) {
-        bounds /= getSpectralDimObj().getSf();
-        this.bounds = bounds;
+    public void setLineWidthHz(float wid) {
+        wid /= getSpectralDimObj().getSf();
+        this.lineWidth = wid;
         peakDimUpdated();
     }
 
@@ -531,6 +525,12 @@ public class PeakDim {
         } else {
             return value;
         }
+    }
+
+    public void setBoundsHz(float bounds) {
+        bounds /= getSpectralDimObj().getSf();
+        this.bounds = bounds;
+        peakDimUpdated();
     }
 
     public Float getBounds() {
@@ -569,6 +569,11 @@ public class PeakDim {
         }
     }
 
+    public void setBoundsValue(float bou) {
+        this.bounds = bou;
+        peakDimUpdated();
+    }
+
     public Float getBoundsError() {
         return boundsError;
     }
@@ -578,11 +583,6 @@ public class PeakDim {
         float dLower = Math.abs(lower - cShift);
         float bValue = 2.0f * (dUpper > dLower ? dLower : dUpper);
         this.bounds = bValue;
-        peakDimUpdated();
-    }
-
-    public void setBoundsValue(float bou) {
-        this.bounds = bou;
         peakDimUpdated();
     }
 
@@ -605,13 +605,13 @@ public class PeakDim {
         }
     }
 
-    public Float getShapeFactorError() {
-        return shapeFactorError;
-    }
-
     public void setShapeFactorValue(float wid) {
         this.shapeFactor = wid;
         peakDimUpdated();
+    }
+
+    public Float getShapeFactorError() {
+        return shapeFactorError;
     }
 
     public void setShapeFactorErrorValue(float value) {
@@ -632,13 +632,13 @@ public class PeakDim {
         return phase;
     }
 
-    public Float getPhaseError() {
-        return phaseError;
-    }
-
     public void setPhaseValue(float decayRate) {
         this.decayRate = decayRate;
         peakDimUpdated();
+    }
+
+    public Float getPhaseError() {
+        return phaseError;
     }
 
     public void setPhaseErrorValue(float value) {
@@ -660,13 +660,13 @@ public class PeakDim {
         }
     }
 
-    public Float getDecayRateError() {
-        return phaseError;
-    }
-
     public void setDecayRateValue(float decayRate) {
         this.decayRate = decayRate;
         peakDimUpdated();
+    }
+
+    public Float getDecayRateError() {
+        return phaseError;
     }
 
     public void setDecayRateErrorValue(float value) {
@@ -688,10 +688,6 @@ public class PeakDim {
         return resonance.getName();
     }
 
-    public String getAtomLabel() {
-        return resonance.getAtomName();
-    }
-
     public void setLabel(String label) {
         List<String> labelArgs = new ArrayList<>();
         labelArgs.add(label);
@@ -701,6 +697,10 @@ public class PeakDim {
     public void setLabel(List<String> labelArgs) {
         resonance.setName(labelArgs);
         peakDimUpdated();
+    }
+
+    public String getAtomLabel() {
+        return resonance.getAtomName();
     }
 
     public boolean isLabelValid() {
@@ -731,12 +731,12 @@ public class PeakDim {
         peakDimUpdated();
     }
 
-    public void setLinkDrawn(boolean state) {
-        linksDrawn = state;
-    }
-
     public boolean isLinkDrawn() {
         return linksDrawn;
+    }
+
+    public void setLinkDrawn(boolean state) {
+        linksDrawn = state;
     }
 
     public Peak getPeak() {
@@ -771,12 +771,12 @@ public class PeakDim {
         return spectralDim;
     }
 
-    public SpectralDim getSpectralDimObj() {
-        return myPeak.peakList.getSpectralDim(spectralDim);
-    }
-
     private void setSpectralDim(int spectralDim) {
         this.spectralDim = spectralDim;
+    }
+
+    public SpectralDim getSpectralDimObj() {
+        return myPeak.peakList.getSpectralDim(spectralDim);
     }
 
     public void setAttribute(String name, String value) {

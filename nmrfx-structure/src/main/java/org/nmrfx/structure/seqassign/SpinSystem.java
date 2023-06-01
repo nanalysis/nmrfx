@@ -17,28 +17,25 @@ import static org.nmrfx.structure.seqassign.SpinSystems.comparePeaks;
 import static org.nmrfx.structure.seqassign.SpinSystems.matchDims;
 
 /**
- *
  * @author brucejohnson
  */
 public class SpinSystem {
     static final List<String> systemLoopTags = List.of("ID", "Spectral_peak_list_ID", "Peak_ID",
             "Confirmed_previous_ID", "Confirmed_next_ID", "Fragment_ID", "Fragment_index");
     static final List<String> peakLoopTags = List.of("ID", "Spin_system_ID", "Spectral_peak_list_ID", "Peak_ID", "Match_score");
-    static final List<String> fragmentLoopTags = List.of("ID",  "Polymer_ID", "First_residue_ID" , "Residue_count", "Score");
+    static final List<String> fragmentLoopTags = List.of("ID", "Polymer_ID", "First_residue_ID", "Residue_count", "Score");
     static final Map<Integer, SpinSystem> peakToSpinSystemMap = new HashMap<>();
-
-    SpinSystems spinSystems;
-    final Peak rootPeak;
-    List<PeakMatch> peakMatches = new ArrayList<>();
-    List<SpinSystemMatch> spinMatchP = new ArrayList<>();
-    List<SpinSystemMatch> spinMatchS = new ArrayList<>();
-    Optional<SpinSystemMatch> confirmP = Optional.empty();
-    Optional<SpinSystemMatch> confirmS = Optional.empty();
-    Optional<SeqFragment> fragment = Optional.empty();
-    int fragmentPosition = -1;
     static final String[] ATOM_TYPES = {"h", "n", "c", "ha", "ca", "cb"};
     static final Map<String, Integer> atomIndexMap = new HashMap<>();
-
+    static final int CA_INDEX = ATOM_TYPES.length - 2;
+    static final int CB_INDEX = ATOM_TYPES.length - 1;
+    static int[][] nAtmPeaks = {
+            {0, 0, 2, 0, 2, 2},
+            {7, 7, 1, 0, 1, 1}
+    };
+    static boolean[] RES_MTCH = {false, false, true, false, true, true};
+    static boolean[] RES_SCORE_ATOM = {false, false, true, false, true, true};
+    static double[] tols = {0.04, 0.5, 0.6, 0.04, 0.6, 0.6};
 
     static {
         int atomIndex = 0;
@@ -47,192 +44,24 @@ public class SpinSystem {
         }
     }
 
-    static int[][] nAtmPeaks = {
-            {0, 0, 2, 0, 2, 2},
-            {7, 7, 1, 0, 1, 1}
-    };
-    static boolean[] RES_MTCH = {false, false, true, false, true, true};
-    static boolean[] RES_SCORE_ATOM = {false, false, true, false, true, true};
-
-    static final int CA_INDEX = ATOM_TYPES.length - 2;
-    static final int CB_INDEX = ATOM_TYPES.length - 1;
-
-    static double[] tols = {0.04, 0.5, 0.6, 0.04, 0.6, 0.6};
+    final Peak rootPeak;
+    SpinSystems spinSystems;
+    List<PeakMatch> peakMatches = new ArrayList<>();
+    List<SpinSystemMatch> spinMatchP = new ArrayList<>();
+    List<SpinSystemMatch> spinMatchS = new ArrayList<>();
+    Optional<SpinSystemMatch> confirmP = Optional.empty();
+    Optional<SpinSystemMatch> confirmS = Optional.empty();
+    Optional<SeqFragment> fragment = Optional.empty();
+    int fragmentPosition = -1;
     double[][] values = new double[2][ATOM_TYPES.length];
     double[][] ranges = new double[2][ATOM_TYPES.length];
     int[][] nValues = new int[2][ATOM_TYPES.length];
-
-    static class ResAtomPattern {
-
-        final Peak peak;
-        final int[] resType;
-        final String[] atomTypes;
-        int[] atomTypeIndex;
-        final boolean requireSign;
-        final boolean positive;
-        final boolean ambiguousRes;
-
-        ResAtomPattern(Peak peak, String[] resType, String[] atomTypes, boolean requireSign, boolean positive, boolean ambiguousRes) {
-            this.peak = peak;
-            this.resType = new int[resType.length];
-            for (int i = 0; i < resType.length; i++) {
-                this.resType[i] = resType[i].equals("i-1") ? -1 : 0;
-            }
-            this.atomTypes = atomTypes.clone();
-            this.atomTypeIndex = new int[atomTypes.length];
-            this.requireSign = requireSign;
-            this.positive = positive;
-            this.ambiguousRes = ambiguousRes;
-            int iType = 0;
-            for (String aName : ATOM_TYPES) {
-                int i = 0;
-                for (String atomType : atomTypes) {
-                    if (atomType.equalsIgnoreCase(aName)) {
-                        atomTypeIndex[i] = iType;
-                        break;
-                    }
-                    i++;
-                }
-                iType++;
-            }
-        }
-
-        public String toString() {
-            StringBuilder sBuilder = new StringBuilder();
-            sBuilder.append(peak.getName()).append(" ");
-            for (int res : resType) {
-                sBuilder.append(res).append(" ");
-            }
-            for (String atomType : atomTypes) {
-                sBuilder.append(atomType).append(" ");
-            }
-            for (int atomTypeI : atomTypeIndex) {
-                sBuilder.append(atomTypeI).append(" ");
-            }
-            sBuilder.append(positive).append(" ").append(requireSign);
-            return sBuilder.toString();
-        }
-    }
-
-    static class ResAtomPatternOld {
-
-        final Peak peak;
-        final int iDim;
-        final int resType;
-        final String atomType;
-        int atomTypeIndex = -1;
-        final boolean requireSign;
-        final boolean positive;
-        final boolean ambiguousRes;
-
-        ResAtomPatternOld(Peak peak, int iDim, String resType, String atomType, boolean requireSign, boolean positive, boolean ambiguousRes) {
-            this.peak = peak;
-            this.iDim = iDim;
-            this.resType = resType.equals("i-1") ? -1 : 0;
-            this.atomType = atomType;
-            this.requireSign = requireSign;
-            this.positive = positive;
-            this.ambiguousRes = ambiguousRes;
-            int i = 0;
-            for (String aName : ATOM_TYPES) {
-                if (atomType.equals(aName)) {
-                    atomTypeIndex = i;
-                    break;
-                }
-                i++;
-            }
-
-        }
-    }
-
-    static class PeakAtomMatch {
-
-        final Peak peak;
-        final int dim;
-
-        PeakAtomMatch(Peak peak, int dim) {
-            this.peak = peak;
-            this.dim = dim;
-        }
-    }
-
-    public static class PeakMatch {
-
-        final Peak peak;
-        final double prob;
-        final int[] atomIndexes;
-        final boolean[] intraResidue;
-
-        PeakMatch(Peak peak, double prob) {
-            this.peak = peak;
-            this.prob = prob;
-            atomIndexes = new int[peak.getNDim()];
-            intraResidue = new boolean[peak.getNDim()];
-        }
-
-        void setIntraResidue(int dim, boolean state) {
-            intraResidue[dim] = state;
-        }
-
-        void setIndex(int dim, int index) {
-            atomIndexes[dim] = index;
-        }
-
-        public boolean getIntraResidue(int dim) {
-            return intraResidue[dim];
-        }
-
-        public boolean getPositive() {
-            return peak.getIntensity() > 0.0;
-        }
-
-        public int getIndex(int dim) {
-            return atomIndexes[dim];
-        }
-
-        public Peak getPeak() {
-            return peak;
-        }
-
-        public boolean isType(PeakList peakList, String aName, boolean intraMode) {
-            boolean ok;
-            if (peak.getPeakList() != peakList) {
-                ok = false;
-            } else {
-                boolean dimOK = false;
-                for (int i = 0; i < atomIndexes.length; i++) {
-                    String curName = ATOM_TYPES[atomIndexes[i]];
-                    if (aName.equalsIgnoreCase(curName) && (intraMode == intraResidue[i])) {
-                        dimOK = true;
-                        break;
-                    }
-                }
-                ok = dimOK;
-            }
-            return ok;
-
-        }
-
-        public String toString() {
-            StringBuilder sBuilder = new StringBuilder();
-            sBuilder.append(peak.getName()).append(" ").append(prob);
-            for (int i = 0; i < atomIndexes.length; i++) {
-                sBuilder.append(" ").append(atomIndexes[i]).append(" ").append(intraResidue[i]);
-            }
-            return sBuilder.toString();
-        }
-
-    }
 
     public SpinSystem(Peak peak, SpinSystems spinSystems) {
         this.spinSystems = spinSystems;
         this.rootPeak = peak;
         addPeak(peak, 1.0);
         peakToSpinSystemMap.put(peak.getIdNum(), this);
-    }
-
-    public static Optional<SpinSystem> spinSystemFromPeak(Peak peak) {
-        return  Optional.ofNullable(peakToSpinSystemMap.get(peak.getIdNum()));
     }
 
     public Peak getRootPeak() {
@@ -242,7 +71,6 @@ public class SpinSystem {
     public int getId() {
         return rootPeak.getIdNum();
     }
-
 
     public List<PeakMatch> peakMatches() {
         return peakMatches;
@@ -256,32 +84,6 @@ public class SpinSystem {
             }
         }
         return n;
-    }
-
-    public static class AtomPresent {
-
-        final String name;
-        final boolean intraResidue;
-        final boolean present;
-
-        public String getName() {
-            return name;
-        }
-
-        public boolean isIntraResidue() {
-            return intraResidue;
-        }
-
-        public boolean isPresent() {
-            return present;
-        }
-
-        public AtomPresent(String name, boolean intraResidue, boolean present) {
-            this.name = name.toUpperCase();
-            this.intraResidue = intraResidue;
-            this.present = present;
-        }
-
     }
 
     public List<AtomPresent> getTypesPresent(TypeInfo typeInfo, PeakList peakList, int iDim) {
@@ -315,18 +117,6 @@ public class SpinSystem {
                 break;
             }
         }
-    }
-
-    public static int getNAtomTypes() {
-        return ATOM_TYPES.length;
-    }
-
-    public static int getNPeaksForType(int k, int i) {
-        return nAtmPeaks[k][i];
-    }
-
-    public static String getAtomName(int index) {
-        return ATOM_TYPES[index];
     }
 
     public double getValue(int dir, int index) {
@@ -414,20 +204,6 @@ public class SpinSystem {
 
     public Optional<SeqFragment> getFragment() {
         return fragment;
-    }
-
-    public static int[] getCounts(PeakList peakList) {
-        int nDim = peakList.getNDim();
-        int[] counts = new int[nDim];
-        for (int i = 0; i < nDim; i++) {
-            SpectralDim sDim = peakList.getSpectralDim(i);
-            String fullPattern = sDim.getPattern();
-            String[] resAtoms = fullPattern.split("\\.");
-            String[] resPats = resAtoms[0].split(",");
-            String[] atomPats = resAtoms[1].split(",");
-            counts[i] = resPats.length * atomPats.length;
-        }
-        return counts;
     }
 
     List<ResAtomPattern> getPatterns(Peak peak) {
@@ -529,7 +305,7 @@ public class SpinSystem {
                         break;
                     }
                 }
-                // 
+                //
                 double limit = isGly ? 1.2 : 0.95;
 
                 if (isInter && (Math.abs(intensity) > limit)) {
@@ -907,13 +683,13 @@ public class SpinSystem {
 
     public boolean userFieldsSet() {
         boolean userFieldSet = false;
-        for (PeakMatch match : peakMatches ) {
+        for (PeakMatch match : peakMatches) {
             Peak peak = match.peak;
             for (PeakDim peakDim : peak.getPeakDims()) {
-               if (!peakDim.getUser().isBlank()) {
-                   userFieldSet = true;
-                   break;
-               }
+                if (!peakDim.getUser().isBlank()) {
+                    userFieldSet = true;
+                    break;
+                }
             }
             if (userFieldSet) {
                 break;
@@ -981,7 +757,7 @@ public class SpinSystem {
         boolean ok = false;
         int nMatch = 0;
         boolean[] matched = new boolean[ATOM_TYPES.length];
-        for (int i =0;i<ATOM_TYPES.length;i++) {
+        for (int i = 0; i < ATOM_TYPES.length; i++) {
             double vA = getValue(idxA, i);
             double vB = spinSysB.getValue(idxB, i);
             double tolA = tols[i];
@@ -1124,10 +900,10 @@ public class SpinSystem {
         double sumsS = 0.0;
         spinMatchP.addAll(spinSystems.compare(this, true));
         spinMatchS.addAll(spinSystems.compare(this, false));
-        for (var match:spinMatchP) {
+        for (var match : spinMatchP) {
             sumsP += match.score;
         }
-        for (var match:spinMatchS) {
+        for (var match : spinMatchS) {
             sumsS += match.score;
         }
 
@@ -1154,13 +930,13 @@ public class SpinSystem {
     }
 
     private void removeMatches(SpinSystem spinSys) {
-        for (int i=spinMatchP.size() - 1;i>=0;i--) {
+        for (int i = spinMatchP.size() - 1; i >= 0; i--) {
             var match = spinMatchP.get(i);
             if (match.getSpinSystemA() == spinSys) {
                 spinMatchP.remove(i);
             }
         }
-        for (int i=spinMatchS.size() - 1;i>=0;i--) {
+        for (int i = spinMatchS.size() - 1; i >= 0; i--) {
             var match = spinMatchS.get(i);
             if (match.getSpinSystemB() == spinSys) {
                 spinMatchS.remove(i);
@@ -1169,21 +945,21 @@ public class SpinSystem {
     }
 
     public void delete() {
-        for (var spinMatch:spinMatchP) {
+        for (var spinMatch : spinMatchP) {
             var spinA = spinMatch.getSpinSystemA();
             spinA.removeMatches(this);
         }
-        for (var spinMatch:spinMatchS) {
+        for (var spinMatch : spinMatchS) {
             var spinB = spinMatch.getSpinSystemB();
             spinB.removeMatches(this);
         }
         if (confirmP.isPresent()) {
             var match = confirmP.get();
-            match.getSpinSystemA().unconfirm(match,false);
+            match.getSpinSystemA().unconfirm(match, false);
         }
         if (confirmS.isPresent()) {
             var match = confirmS.get();
-            match.getSpinSystemB().unconfirm(match,false);
+            match.getSpinSystemB().unconfirm(match, false);
         }
         for (var peakMatch : peakMatches) {
             peakMatch.getPeak().delete();
@@ -1200,6 +976,75 @@ public class SpinSystem {
         var recipSys = prev ? otherSys.getMatchToNext().get(0).getSpinSystemB()
                 : otherSys.getMatchToPrevious().get(0).getSpinSystemA();
         return thisSys == recipSys;
+    }
+
+    void assignPeaksInSystem(Residue residue) {
+        for (var peakMatch : peakMatches()) {
+            for (var peakDim : peakMatch.getPeak().getPeakDims()) {
+                Optional<Atom> atomOpt = AtomResPattern.setLabelFromUserField(peakDim, residue);
+                atomOpt.ifPresent(atom -> {
+                    AtomResonance atomResonance = (AtomResonance) peakDim.getResonance();
+                    atomResonance.setAtom(atom);
+                });
+            }
+        }
+    }
+
+    void clearPeaksInSystem() {
+        for (var peakMatch : peakMatches()) {
+            for (var peakDim : peakMatch.getPeak().getPeakDims()) {
+                peakDim.setLabel("");
+                AtomResonance atomResonance = (AtomResonance) peakDim.getResonance();
+                atomResonance.setAtom(null);
+
+            }
+        }
+    }
+
+    String getSystemSTARString() {
+        String confirmedPrev = confirmP.isPresent() ? String.valueOf(confirmP.get().getSpinSystemA().getId()) : ".";
+        String confirmedNext = confirmS.isPresent() ? String.valueOf(confirmS.get().getSpinSystemB().getId()) : ".";
+        String fragmentID = fragment.isPresent() ? String.valueOf(fragment.get().id) : ".";
+        String fragmentPos = fragment.isPresent() ? String.valueOf(fragmentPosition) : ".";
+        return String.format("%3d %2d %3d %4s %4s %4s %3s", getId(), rootPeak.getPeakList().getId(),
+                rootPeak.getIdNum(), confirmedPrev, confirmedNext, fragmentID, fragmentPos);
+    }
+
+    int getPeakSTARString(StringBuilder sBuilder, int i) {
+        for (PeakMatch match : peakMatches) {
+            sBuilder.append(String.format("%4d %4d %2d %3d %10.7f\n", i++, getId(), match.peak.getPeakList().getId(), match.peak.getIdNum(), match.prob));
+        }
+        return i;
+    }
+
+    public static Optional<SpinSystem> spinSystemFromPeak(Peak peak) {
+        return Optional.ofNullable(peakToSpinSystemMap.get(peak.getIdNum()));
+    }
+
+    public static int getNAtomTypes() {
+        return ATOM_TYPES.length;
+    }
+
+    public static int getNPeaksForType(int k, int i) {
+        return nAtmPeaks[k][i];
+    }
+
+    public static String getAtomName(int index) {
+        return ATOM_TYPES[index];
+    }
+
+    public static int[] getCounts(PeakList peakList) {
+        int nDim = peakList.getNDim();
+        int[] counts = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            SpectralDim sDim = peakList.getSpectralDim(i);
+            String fullPattern = sDim.getPattern();
+            String[] resAtoms = fullPattern.split("\\.");
+            String[] resPats = resAtoms[0].split(",");
+            String[] atomPats = resAtoms[1].split(",");
+            counts[i] = resPats.length * atomPats.length;
+        }
+        return counts;
     }
 
     public static void extend(SpinSystem startSys, double minScore) {
@@ -1237,9 +1082,10 @@ public class SpinSystem {
             }
         }
     }
+
     private static void extendNext(SpinSystem startSys, double minScore) {
         SpinSystem spinSys = startSys;
-        while(spinSys.confirmS.isEmpty()) {
+        while (spinSys.confirmS.isEmpty()) {
             if (spinSys.getMatchToNext().isEmpty()) {
                 break;
             }
@@ -1258,42 +1104,191 @@ public class SpinSystem {
         }
     }
 
-     void assignPeaksInSystem(Residue residue) {
-        for (var peakMatch : peakMatches()) {
-            for (var peakDim : peakMatch.getPeak().getPeakDims()) {
-                Optional<Atom> atomOpt = AtomResPattern.setLabelFromUserField(peakDim, residue);
-                atomOpt.ifPresent(atom -> {
-                    AtomResonance atomResonance = (AtomResonance) peakDim.getResonance();
-                    atomResonance.setAtom(atom);
-                });
+    static class ResAtomPattern {
+
+        final Peak peak;
+        final int[] resType;
+        final String[] atomTypes;
+        final boolean requireSign;
+        final boolean positive;
+        final boolean ambiguousRes;
+        int[] atomTypeIndex;
+
+        ResAtomPattern(Peak peak, String[] resType, String[] atomTypes, boolean requireSign, boolean positive, boolean ambiguousRes) {
+            this.peak = peak;
+            this.resType = new int[resType.length];
+            for (int i = 0; i < resType.length; i++) {
+                this.resType[i] = resType[i].equals("i-1") ? -1 : 0;
+            }
+            this.atomTypes = atomTypes.clone();
+            this.atomTypeIndex = new int[atomTypes.length];
+            this.requireSign = requireSign;
+            this.positive = positive;
+            this.ambiguousRes = ambiguousRes;
+            int iType = 0;
+            for (String aName : ATOM_TYPES) {
+                int i = 0;
+                for (String atomType : atomTypes) {
+                    if (atomType.equalsIgnoreCase(aName)) {
+                        atomTypeIndex[i] = iType;
+                        break;
+                    }
+                    i++;
+                }
+                iType++;
             }
         }
-    }
 
-    void clearPeaksInSystem() {
-        for (var peakMatch : peakMatches()) {
-            for (var peakDim : peakMatch.getPeak().getPeakDims()) {
-                peakDim.setLabel("");
-                AtomResonance atomResonance = (AtomResonance) peakDim.getResonance();
-                atomResonance.setAtom(null);
-
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append(peak.getName()).append(" ");
+            for (int res : resType) {
+                sBuilder.append(res).append(" ");
             }
+            for (String atomType : atomTypes) {
+                sBuilder.append(atomType).append(" ");
+            }
+            for (int atomTypeI : atomTypeIndex) {
+                sBuilder.append(atomTypeI).append(" ");
+            }
+            sBuilder.append(positive).append(" ").append(requireSign);
+            return sBuilder.toString();
         }
     }
 
-    String getSystemSTARString() {
-        String confirmedPrev = confirmP.isPresent() ? String.valueOf(confirmP.get().getSpinSystemA().getId()) : ".";
-        String confirmedNext = confirmS.isPresent() ? String.valueOf(confirmS.get().getSpinSystemB().getId()) : ".";
-        String fragmentID = fragment.isPresent() ? String.valueOf(fragment.get().id) : ".";
-        String fragmentPos = fragment.isPresent() ? String.valueOf(fragmentPosition) : ".";
-        return String.format("%3d %2d %3d %4s %4s %4s %3s", getId(), rootPeak.getPeakList().getId(),
-                rootPeak.getIdNum(), confirmedPrev, confirmedNext, fragmentID, fragmentPos);
+    static class ResAtomPatternOld {
+
+        final Peak peak;
+        final int iDim;
+        final int resType;
+        final String atomType;
+        final boolean requireSign;
+        final boolean positive;
+        final boolean ambiguousRes;
+        int atomTypeIndex = -1;
+
+        ResAtomPatternOld(Peak peak, int iDim, String resType, String atomType, boolean requireSign, boolean positive, boolean ambiguousRes) {
+            this.peak = peak;
+            this.iDim = iDim;
+            this.resType = resType.equals("i-1") ? -1 : 0;
+            this.atomType = atomType;
+            this.requireSign = requireSign;
+            this.positive = positive;
+            this.ambiguousRes = ambiguousRes;
+            int i = 0;
+            for (String aName : ATOM_TYPES) {
+                if (atomType.equals(aName)) {
+                    atomTypeIndex = i;
+                    break;
+                }
+                i++;
+            }
+
+        }
     }
 
-    int getPeakSTARString(StringBuilder sBuilder, int i) {
-        for (PeakMatch match:peakMatches) {
-            sBuilder.append(String.format("%4d %4d %2d %3d %10.7f\n", i++, getId(), match.peak.getPeakList().getId(), match.peak.getIdNum(), match.prob));
+    static class PeakAtomMatch {
+
+        final Peak peak;
+        final int dim;
+
+        PeakAtomMatch(Peak peak, int dim) {
+            this.peak = peak;
+            this.dim = dim;
         }
-        return i;
+    }
+
+    public static class PeakMatch {
+
+        final Peak peak;
+        final double prob;
+        final int[] atomIndexes;
+        final boolean[] intraResidue;
+
+        PeakMatch(Peak peak, double prob) {
+            this.peak = peak;
+            this.prob = prob;
+            atomIndexes = new int[peak.getNDim()];
+            intraResidue = new boolean[peak.getNDim()];
+        }
+
+        void setIntraResidue(int dim, boolean state) {
+            intraResidue[dim] = state;
+        }
+
+        void setIndex(int dim, int index) {
+            atomIndexes[dim] = index;
+        }
+
+        public boolean getIntraResidue(int dim) {
+            return intraResidue[dim];
+        }
+
+        public boolean getPositive() {
+            return peak.getIntensity() > 0.0;
+        }
+
+        public int getIndex(int dim) {
+            return atomIndexes[dim];
+        }
+
+        public Peak getPeak() {
+            return peak;
+        }
+
+        public boolean isType(PeakList peakList, String aName, boolean intraMode) {
+            boolean ok;
+            if (peak.getPeakList() != peakList) {
+                ok = false;
+            } else {
+                boolean dimOK = false;
+                for (int i = 0; i < atomIndexes.length; i++) {
+                    String curName = ATOM_TYPES[atomIndexes[i]];
+                    if (aName.equalsIgnoreCase(curName) && (intraMode == intraResidue[i])) {
+                        dimOK = true;
+                        break;
+                    }
+                }
+                ok = dimOK;
+            }
+            return ok;
+
+        }
+
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append(peak.getName()).append(" ").append(prob);
+            for (int i = 0; i < atomIndexes.length; i++) {
+                sBuilder.append(" ").append(atomIndexes[i]).append(" ").append(intraResidue[i]);
+            }
+            return sBuilder.toString();
+        }
+
+    }
+
+    public static class AtomPresent {
+
+        final String name;
+        final boolean intraResidue;
+        final boolean present;
+
+        public AtomPresent(String name, boolean intraResidue, boolean present) {
+            this.name = name.toUpperCase();
+            this.intraResidue = intraResidue;
+            this.present = present;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public boolean isIntraResidue() {
+            return intraResidue;
+        }
+
+        public boolean isPresent() {
+            return present;
+        }
+
     }
 }

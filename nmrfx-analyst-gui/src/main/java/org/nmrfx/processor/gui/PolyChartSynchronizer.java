@@ -16,14 +16,6 @@ import java.util.Objects;
 public class PolyChartSynchronizer {
     private static final Logger log = LoggerFactory.getLogger(PolyChartSynchronizer.class);
     private static final int MINIMAL_GROUP_SIZE = 2;
-
-    // use weak references to keep PolyChart instance free for the garbage collector
-    record SyncGroup(List<WeakReference<PolyChart>> refs, String dimensionName) {
-        public boolean contains(PolyChart chart) {
-            return refs.stream().anyMatch(ref -> ref.get() == chart);
-        }
-    }
-
     // not using a Map with dimension name as a key, because the same dimension could be used for different independent groups.
     private final List<SyncGroup> groups = new ArrayList<>();
 
@@ -156,5 +148,12 @@ public class PolyChartSynchronizer {
 
         log.warn("No {} axis found for chart {}!", dimensionName, chart.getName());
         return null;
+    }
+
+    // use weak references to keep PolyChart instance free for the garbage collector
+    record SyncGroup(List<WeakReference<PolyChart>> refs, String dimensionName) {
+        public boolean contains(PolyChart chart) {
+            return refs.stream().anyMatch(ref -> ref.get() == chart);
+        }
     }
 }

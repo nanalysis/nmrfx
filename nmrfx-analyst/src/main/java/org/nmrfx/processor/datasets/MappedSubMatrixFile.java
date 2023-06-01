@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,23 +39,23 @@ import java.nio.channels.FileChannel;
 public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(MappedSubMatrixFile.class);
-    private RandomAccessFile raFile;
+    final boolean writable;
     private final Dataset dataset;
     private final File file;
-    private long totalSize;
     private final int dataType;
-    final boolean writable;
-    private MappedByteBuffer mappedBuffer;
+    private final int BYTES = Float.BYTES;
     DatasetLayout layout;
     FloatBuffer floatBuffer;
-    private final int BYTES = Float.BYTES;
+    private RandomAccessFile raFile;
+    private long totalSize;
+    private MappedByteBuffer mappedBuffer;
 
     /**
      * An object that represents a mapping of specified dataset with a memory
      * map.
      *
-     * @param dataset Dataset object that uses this mapped matrix file
-     * @param raFile The Random access file that actually stores data
+     * @param dataset  Dataset object that uses this mapped matrix file
+     * @param raFile   The Random access file that actually stores data
      * @param writable true if the mapping should be writable
      * @throws IOException if an I/O error occurs
      */
@@ -111,6 +111,11 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
     }
 
     @Override
+    public boolean isWritable() {
+        return writable;
+    }
+
+    @Override
     public void setWritable(boolean state) throws IOException {
         if (writable != state) {
             if (state) {
@@ -121,15 +126,6 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
             }
             init();
         }
-    }
-
-    @Override
-    public boolean isWritable() {
-        return writable;
-    }
-
-    protected void startVecGet(int... offsets) {
-        // return start position, block, stride, nPoints 
     }
 
     @Override
@@ -225,6 +221,10 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
     @Override
     public void force() {
         mappedBuffer.force();
+    }
+
+    protected void startVecGet(int... offsets) {
+        // return start position, block, stride, nPoints
     }
 
     private void clean(MappedByteBuffer mapping) {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,19 +27,18 @@ import org.nmrfx.annotations.PluginAPI;
 @PluginAPI("parametric")
 public class NNLSMat {
 
+    private static final double FACTOR = 0.01;
     private final double[][] aMat;
     private final int nRows;
     private final int nCols;
     private final double[] b;
     private final double[] x;
     private final int[] indices;
-    private int nPositive;
-    private double norm;
     private final double[] w;
     private final double[] zz;
     private final int maxIterations;
-
-    private static final double FACTOR = 0.01;
+    private int nPositive;
+    private double norm;
 
     public NNLSMat(RealMatrix A, ArrayRealVector B) {
         this.aMat = A.getData();
@@ -257,6 +256,60 @@ public class NNLSMat {
         System.arraycopy(src, 0, dest, 0, n);
     }
 
+    Candidate findCandidate() {
+        while (true) {
+            // Find largest positive value in w
+            double wmax = 0.0;
+            int izmax = -1;
+            for (int iz = nPositive; iz < nCols; iz++) {
+                int j = indices[iz];
+                if (w[j] > wmax) {
+                    wmax = w[j];
+                    izmax = iz;
+                }
+            }
+
+            // If wmax <= 0 we're done.
+            // This indicates satisfaction of the Kuhn-Tucker conditions.
+            if (wmax <= 0.0) {
+                return null;
+            }
+            int j = indices[izmax];
+
+            // The sign of w[index] is okay for index to be moved to set P.
+            // Begin the transformation and check the new diagonal
+            // element to avoid near linear independence.
+            double asave = aMat[nPositive][j];
+            HouseHolder houseHolder = new HouseHolder(aMat, nPositive, nPositive + 1, j);
+            double unorm = 0.0;
+            for (int l = 0; l < nPositive; l++) {
+                unorm += aMat[l][j] * aMat[l][j];
+            }
+            unorm = FastMath.sqrt(unorm);
+            // Check to see if column is sufficiently independent.
+            if (!Precision.equals(unorm + FastMath.abs(aMat[nPositive][j]) * FACTOR, unorm)) {
+
+                // Copy b into zz,
+                copyVector(b, zz, nRows);
+                // Use Householder to update zz
+                houseHolder.applyToVector(aMat, nPositive, nPositive + 1, j, zz);
+                // Solve for ztest = proposed new value for x[index].
+                double ztest = zz[nPositive] / aMat[nPositive][j];
+
+                // If ztest is positive, we've found our candidate.
+                if (ztest > 0.0) {
+                    return new Candidate(izmax, j, houseHolder);
+                }
+            }
+
+            // Reject index as aMat candidate to be moved from set Z to set P.
+            // restore aMat value and loop again for another try
+            aMat[nPositive][j] = asave;
+            w[j] = 0.0;
+        }
+
+    }
+
     class Givens {
 
         final double c;
@@ -308,60 +361,6 @@ public class NNLSMat {
             this.j = j;
             this.houseHolder = houseHolder;
         }
-    }
-
-    Candidate findCandidate() {
-        while (true) {
-            // Find largest positive value in w
-            double wmax = 0.0;
-            int izmax = -1;
-            for (int iz = nPositive; iz < nCols; iz++) {
-                int j = indices[iz];
-                if (w[j] > wmax) {
-                    wmax = w[j];
-                    izmax = iz;
-                }
-            }
-
-            // If wmax <= 0 we're done.
-            // This indicates satisfaction of the Kuhn-Tucker conditions.
-            if (wmax <= 0.0) {
-                return null;
-            }
-            int j = indices[izmax];
-
-            // The sign of w[index] is okay for index to be moved to set P.
-            // Begin the transformation and check the new diagonal
-            // element to avoid near linear independence.
-            double asave = aMat[nPositive][j];
-            HouseHolder houseHolder = new HouseHolder(aMat, nPositive, nPositive + 1, j);
-            double unorm = 0.0;
-            for (int l = 0; l < nPositive; l++) {
-                unorm += aMat[l][j] * aMat[l][j];
-            }
-            unorm = FastMath.sqrt(unorm);
-            // Check to see if column is sufficiently independent. 
-            if (!Precision.equals(unorm + FastMath.abs(aMat[nPositive][j]) * FACTOR, unorm)) {
-
-                // Copy b into zz,
-                copyVector(b, zz, nRows);
-                // Use Householder to update zz
-                houseHolder.applyToVector(aMat, nPositive, nPositive + 1, j, zz);
-                // Solve for ztest = proposed new value for x[index].
-                double ztest = zz[nPositive] / aMat[nPositive][j];
-
-                // If ztest is positive, we've found our candidate.
-                if (ztest > 0.0) {
-                    return new Candidate(izmax, j, houseHolder);
-                }
-            }
-
-            // Reject index as aMat candidate to be moved from set Z to set P.
-            // restore aMat value and loop again for another try
-            aMat[nPositive][j] = asave;
-            w[j] = 0.0;
-        }
-
     }
 
     class HouseHolder {
