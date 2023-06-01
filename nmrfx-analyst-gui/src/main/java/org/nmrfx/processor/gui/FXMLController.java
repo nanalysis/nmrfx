@@ -1120,9 +1120,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             int iRow = iChild / nCols;
             int iCol = iChild % nCols;
             if (minBorders.get()) {
-                chart.setAxisState(iCol == 0, iRow == (nRows - 1));
+                chart.getAxes().setAxisState(iCol == 0, iRow == (nRows - 1));
             } else {
-                chart.setAxisState(true, true);
+                chart.getAxes().setAxisState(true, true);
             }
             Insets borders = chart.getMinBorders();
             bordersGrid[0][iCol] = Math.max(bordersGrid[0][iCol], borders.getLeft());

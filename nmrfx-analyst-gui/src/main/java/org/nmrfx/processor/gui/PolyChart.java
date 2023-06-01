@@ -1650,35 +1650,6 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    //XXX move to axis
-    public void setAxisState(boolean leftEdge, boolean bottomEdge) {
-        axes.getY().setShowTicsAndLabels(leftEdge);
-        axes.getX().setShowTicsAndLabels(bottomEdge);
-        axes.getX().setTickLabelsVisible(bottomEdge);
-        axes.getX().setTickMarksVisible(bottomEdge);
-        axes.getX().setLabelVisible(bottomEdge);
-        axes.getY().setTickLabelsVisible(leftEdge);
-        axes.getY().setTickMarksVisible(leftEdge);
-        axes.getY().setLabelVisible(leftEdge);
-    }
-
-    //XXX move to axis?
-    void setAxisState(NMRAxis axis, String axisLabel) {
-        boolean state = axis.getShowTicsAndLabels();
-        axis.setTickLabelsVisible(state);
-        axis.setTickMarksVisible(state);
-        axis.setLabelVisible(state);
-
-        axis.setVisible(true);
-        if (!state) {
-            axis.setLabel("");
-        } else {
-            if (!axisLabel.equals(axis.getLabel())) {
-                axis.setLabel(axisLabel);
-            }
-        }
-    }
-
     void setDatasetAttr(DatasetAttributes datasetAttrs) {
         DatasetBase dataset = datasetAttrs.getDataset();
         int nAxes = dataset.getNDim();
@@ -1716,7 +1687,7 @@ public class PolyChart extends Region implements PeakListener {
         boolean autoScale = reversedAxis != axes.getX().getReverse();
         axes.getX().setReverse(reversedAxis);
         String xLabel = axes.getMode(0).getLabel(datasetAttributes, 0);
-        setAxisState(axes.getX(), xLabel);
+        axes.getX().updateStateAndLabel(xLabel);
         if (!is1D()) {
             if (dataset.getFreqDomain(dims[1])) {
                 axes.setMode(1, AXMODE.PPM);
@@ -1730,10 +1701,10 @@ public class PolyChart extends Region implements PeakListener {
 
             axes.getY().setReverse(reversedAxis);
             String yLabel = axes.getMode(0).getLabel(datasetAttributes, 1);
-            setAxisState(axes.getY(), yLabel);
+            axes.getY().updateStateAndLabel(yLabel);
         } else {
             axes.getY().setReverse(false);
-            setAxisState(axes.getY(), "Intensity");
+            axes.getY().updateStateAndLabel("Intensity");
         }
         if (autoScale) {
             axes.fullLimits(disDimProp.get());

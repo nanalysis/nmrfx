@@ -239,4 +239,14 @@ public class PolyChartAxes {
         return getRange(axis, lowerBound, upperBound);
     }
 
+    public void setAxisState(boolean leftEdge, boolean bottomEdge) {
+        xAxis.setShowTicsAndLabels(bottomEdge);
+        xAxis.setTickLabelsVisible(bottomEdge);
+        xAxis.setTickMarksVisible(bottomEdge);
+        xAxis.setLabelVisible(bottomEdge);
+        yAxis.setShowTicsAndLabels(leftEdge);
+        yAxis.setTickLabelsVisible(leftEdge);
+        yAxis.setTickMarksVisible(leftEdge);
+        yAxis.setLabelVisible(leftEdge);
+    }
 }
