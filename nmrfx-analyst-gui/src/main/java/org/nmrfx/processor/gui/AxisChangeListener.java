@@ -42,9 +42,9 @@ public class AxisChangeListener implements ChangeListener<Number> {
             if (chart == PolyChartManager.getInstance().getActiveChart()) {
                 if (axisIndex >= 2) {
                     DatasetAttributes datasetAttributes = chart.getDatasetAttributes().get(0);
-                    NMRAxis axis = chart.getAxis(axisIndex);
-                    int indexL = chart.getAxMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getLowerBound());
-                    int indexU = chart.getAxMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getUpperBound());
+                    NMRAxis axis = chart.getAxes().get(axisIndex);
+                    int indexL = chart.getAxes().getMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getLowerBound());
+                    int indexU = chart.getAxes().getMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getUpperBound());
 
                     chart.controller.getStatusBar().updatePlaneSpinner(indexL, axisIndex, 0);
                     chart.controller.getStatusBar().updatePlaneSpinner(indexU, axisIndex, 1);

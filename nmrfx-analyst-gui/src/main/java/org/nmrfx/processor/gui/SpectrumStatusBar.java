@@ -443,9 +443,9 @@ public class SpectrumStatusBar {
             if (!newChart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = newChart.getDatasetAttributes().get(0);
                 for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
-                    NMRAxis axis = newChart.getAxis(axNum);
-                    int indexL = newChart.getAxMode(axNum).getIndex(dataAttr, axNum, axis.getLowerBound());
-                    int indexU = newChart.getAxMode(axNum).getIndex(dataAttr, axNum, axis.getUpperBound());
+                    NMRAxis axis = newChart.getAxes().get(axNum);
+                    int indexL = newChart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getLowerBound());
+                    int indexU = newChart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getUpperBound());
                     int dDim = dataAttr.dim[axNum];
                     int size = dataAttr.getDataset().getSizeReal(dDim);
                     setPlaneRanges(axNum, size);
@@ -502,7 +502,7 @@ public class SpectrumStatusBar {
         int planeIndex = -1;
         if (!dataAttrList.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrList.get(0);
-            if (chart.getAxMode(axNum) == DatasetAttributes.AXMODE.PTS) {
+            if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
                 double[] values = dataAttr.getDataset().getValues(axNum);
                 if (values != null) {
                     double min = Double.MAX_VALUE;
@@ -527,7 +527,7 @@ public class SpectrumStatusBar {
         if (dataOpt.isPresent()) {
             DatasetAttributes dataAttr = dataOpt.get();
             PolyChart chart = controller.getActiveChart();
-            if (chart.getAxMode(axNum) == DatasetAttributes.AXMODE.PTS) {
+            if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
                 double[] values = dataAttr.getDataset().getValues(axNum);
                 if ((values != null) && (values.length > plane)) {
                     value = values[plane];
@@ -571,20 +571,21 @@ public class SpectrumStatusBar {
 
             if (!chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                NMRAxis axis = chart.getAxis(iDim);
+                NMRAxis axis = chart.getAxes().get(iDim);
                 int[] pts = new int[2];
-                pts[0] = chart.getAxMode(iDim).getIndex(dataAttr, iDim, axis.getLowerBound());
-                pts[1] = chart.getAxMode(iDim).getIndex(dataAttr, iDim, axis.getUpperBound());
+                pts[0] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getLowerBound());
+                pts[1] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getUpperBound());
                 int other = iSpin == 0 ? 1 : 0;
                 int delta = pts[other] - pts[iSpin];
                 pts[iSpin] = plane;
                 if (!shiftDown) {
                     pts[other] = pts[iSpin] + delta;
                 }
-                double ppm1 = chart.getAxMode(iDim).indexToValue(dataAttr, iDim, pts[0]);
-                double ppm2 = chart.getAxMode(iDim).indexToValue(dataAttr, iDim, pts[1]);
+                double ppm1 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[0]);
+                double ppm2 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[1]);
                 ChartUndoLimits undo = new ChartUndoLimits(controller.getActiveChart());
-                controller.getActiveChart().setAxis(iDim, ppm1, ppm2);
+                PolyChart polyChart = controller.getActiveChart();
+                polyChart.getAxes().setMinMax(iDim, ppm1, ppm2);
                 controller.getActiveChart().refresh();
                 ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
                 controller.getUndoManager().add("plane", undo, redo);

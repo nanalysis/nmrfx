@@ -151,7 +151,7 @@ public class PolyChartSynchronizer {
         List<String> dimNames = chart.getDimNames();
         for (int i = 0; i < dimNames.size(); i++) {
             if (dimNames.get(i).equals(dimensionName)) {
-                return chart.getAxis(i);
+                return chart.getAxes().get(i);
             }
         }
 

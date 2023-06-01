@@ -1132,10 +1132,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             maxBorderX = Math.max(maxBorderX, borders.getLeft());
             maxBorderY = Math.max(maxBorderY, borders.getBottom());
 
-            double ppmX0 = chart.getXAxis().getLowerBound();
-            double ppmX1 = chart.getXAxis().getUpperBound();
-            double ppmY0 = chart.getYAxis().getLowerBound();
-            double ppmY1 = chart.getYAxis().getUpperBound();
+            double ppmX0 = chart.getAxes().getX().getLowerBound();
+            double ppmX1 = chart.getAxes().getX().getUpperBound();
+            double ppmY0 = chart.getAxes().getY().getLowerBound();
+            double ppmY1 = chart.getAxes().getY().getUpperBound();
             if (minBorders.get()) {
                 double nucScaleX = 1.0;
                 double nucScaleY = 1.0;
@@ -1219,10 +1219,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         setChartDisable(true);
         if (charts.size() == 1) {
             PolyChart chart = charts.get(0);
-            double xLower = chart.getXAxis().getLowerBound();
-            double xUpper = chart.getXAxis().getUpperBound();
-            double yLower = chart.getYAxis().getLowerBound();
-            double yUpper = chart.getYAxis().getUpperBound();
+            double xLower = chart.getAxes().getX().getLowerBound();
+            double xUpper = chart.getAxes().getX().getUpperBound();
+            double yLower = chart.getAxes().getY().getLowerBound();
+            double yUpper = chart.getAxes().getY().getUpperBound();
             List<DatasetAttributes> datasetAttrs = chart.getDatasetAttributes();
             if (datasetAttrs.size() > 1) {
                 List<DatasetAttributes> current = new ArrayList<>(datasetAttrs);
@@ -1239,10 +1239,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 setChartDisable(true);
                 for (int i = 0; i < charts.size(); i++) {
                     PolyChart iChart = charts.get(i);
-                    iChart.getXAxis().setLowerBound(xLower);
-                    iChart.getXAxis().setUpperBound(xUpper);
-                    iChart.getYAxis().setLowerBound(yLower);
-                    iChart.getYAxis().setUpperBound(yUpper);
+                    iChart.getAxes().getX().setLowerBound(xLower);
+                    iChart.getAxes().getX().setUpperBound(xUpper);
+                    iChart.getAxes().getY().setLowerBound(yLower);
+                    iChart.getAxes().getY().setUpperBound(yUpper);
                     iChart.getCrossHairs().setAllStates(true);
                 }
                 setChartDisable(false);

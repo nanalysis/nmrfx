@@ -565,14 +565,14 @@ public class StripController implements ControllerTool {
                 for (int i = 0; i < dims.length; i++) {
                     dataAttr.setDim(i, dims[i]);
                 }
-                chart.setAxis(0, positions[0] - xWidth / 2.0, positions[0] + xWidth / 2.0);
+                chart.getAxes().setMinMax(0, positions[0] - xWidth / 2.0, positions[0] + xWidth / 2.0);
                 if (item.peakList != null) {
                     PeakListAttributes peakAttr = chart.setupPeakListAttributes(item.peakList);
                     peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.SglResidue);
                 }
                 chart.full(1);
                 for (int i = 1; i < positions.length; i++) {
-                    chart.setAxis(1 + i, positions[i], positions[i]);
+                    chart.getAxes().setMinMax(1 + i, positions[i], positions[i]);
                 }
             }
             chart.useImmediateMode(true);

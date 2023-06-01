@@ -111,8 +111,8 @@ public class DrawPeaks {
         for (int i = 0; i < regions.length; i++) {
             regions[i] = new HashSet();
         }
-        xAxis = (NMRAxis) chart.getXAxis();
-        yAxis = (NMRAxis) chart.getYAxis();
+        xAxis = chart.getAxes().getX();
+        yAxis = chart.getAxes().getY();
     }
 
     class PeakBox {

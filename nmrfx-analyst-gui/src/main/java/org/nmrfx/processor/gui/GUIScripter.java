@@ -148,8 +148,8 @@ public class GUIScripter {
         double[] result = new double[2];
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            result[0] = chart.getXAxis().getLowerBound();
-            result[1] = chart.getXAxis().getUpperBound();
+            result[0] = chart.getAxes().getX().getLowerBound();
+            result[1] = chart.getAxes().getX().getUpperBound();
         });
         return result;
     }
@@ -157,8 +157,8 @@ public class GUIScripter {
     public void ppm(String axis, double ppm1, double ppm2) {
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            chart.getXAxis().setLowerBound(ppm1);
-            chart.getXAxis().setUpperBound(ppm2);
+            chart.getAxes().getX().setLowerBound(ppm1);
+            chart.getAxes().getX().setUpperBound(ppm2);
             chart.refresh();
         });
     }
@@ -168,9 +168,9 @@ public class GUIScripter {
             PolyChart chart = getChart();
             int axNum = chart.getAxisNum(dimName);
             if (v1 < v2) {
-                chart.setAxis(axNum, v1, v2);
+                chart.getAxes().setMinMax(axNum, v1, v2);
             } else {
-                chart.setAxis(axNum, v2, v1);
+                chart.getAxes().setMinMax(axNum, v2, v1);
             }
         });
     }
@@ -179,9 +179,9 @@ public class GUIScripter {
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             if (v1 < v2) {
-                chart.setAxis(axNum, v1, v2);
+                chart.getAxes().setMinMax(axNum, v1, v2);
             } else {
-                chart.setAxis(axNum, v2, v1);
+                chart.getAxes().setMinMax(axNum, v2, v1);
             }
         });
     }
@@ -191,10 +191,10 @@ public class GUIScripter {
         String dimChars = "xyzabcdefghijk";
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            int nAxes = chart.getAxisCount();
+            int nAxes = chart.getAxes().count();
             for (int i = 0; i < nAxes; i++) {
-                double v1 = chart.getAxis(i).getLowerBound();
-                double v2 = chart.getAxis(i).getUpperBound();
+                double v1 = chart.getAxes().get(i).getLowerBound();
+                double v2 = chart.getAxes().get(i).getUpperBound();
                 String axName = dimChars.substring(i, i + 1);
                 List<Double> limits = new ArrayList<>();
                 limits.add(v1);

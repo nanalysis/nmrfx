@@ -48,8 +48,8 @@ public class CrossHairs {
     public CrossHairs(PolyChart chart) {
         this.chart = chart;
         this.controller = chart.getController();
-        xAxis = chart.getAxis(0);
-        yAxis = chart.getAxis(1);
+        xAxis = chart.getAxes().getX();
+        yAxis = chart.getAxes().getY();
 
         initialize();
     }
@@ -113,7 +113,8 @@ public class CrossHairs {
         SpectrumStatusBar statusBar = getController().getStatusBar();
         getCrossHairLine(index, orientation).setVisible(false);
         int iAxis = orientation == Orientation.HORIZONTAL ? 1 : 0;
-        double value = index == 1 ? chart.getAxis(iAxis).getLowerBound() : chart.getAxis(iAxis).getUpperBound();
+        NMRAxis axis = chart.getAxes().get(iAxis);
+        double value = index == 1 ? axis.getLowerBound() : axis.getUpperBound();
         statusBar.setCrossText(orientation, index, value, true);
     }
 
@@ -153,7 +154,7 @@ public class CrossHairs {
             for (Orientation orientation : Orientation.values()) {
                 CrossHairLine line = getCrossHairLine(index, orientation);
                 int iAxis = orientation == Orientation.HORIZONTAL ? 1 : 0;
-                NMRAxis axis = chart.getAxis(iAxis);
+                NMRAxis axis = chart.getAxes().get(iAxis);
                 if (!isInRange(index, line.getOrientation())) {
                     line.setVisible(false);
                     double value = index == 1 ? axis.getLowerBound() : axis.getUpperBound();
