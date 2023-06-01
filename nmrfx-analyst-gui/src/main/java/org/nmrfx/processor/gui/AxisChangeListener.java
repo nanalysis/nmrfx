@@ -45,8 +45,8 @@ public class AxisChangeListener implements ChangeListener<Number> {
                     int indexL = chart.getAxes().getMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getLowerBound());
                     int indexU = chart.getAxes().getMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getUpperBound());
 
-                    chart.controller.getStatusBar().updatePlaneSpinner(indexL, axisIndex, 0);
-                    chart.controller.getStatusBar().updatePlaneSpinner(indexU, axisIndex, 1);
+                    chart.getFXMLController().getStatusBar().updatePlaneSpinner(indexL, axisIndex, 0);
+                    chart.getFXMLController().getStatusBar().updatePlaneSpinner(indexU, axisIndex, 1);
                 }
 
                 PolyChartManager.getInstance().getSynchronizer().syncAxes(chart, axisIndex, bound, newValue.doubleValue());

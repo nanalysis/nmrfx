@@ -235,14 +235,14 @@ public class MouseBindings {
     }
 
     private void setCursor(Cursor cursor) {
-        FXMLController controller = chart.getController();
+        FXMLController controller = chart.getFXMLController();
         if (controller.getCurrentCursor() != cursor) {
             controller.setCurrentCursor(cursor);
         }
     }
 
     private void unsetCursor() {
-        FXMLController controller = chart.getController();
+        FXMLController controller = chart.getFXMLController();
         if (controller.getCurrentCursor() != controller.getCursor()) {
             controller.setCurrentCursor(controller.getCursor());
         }

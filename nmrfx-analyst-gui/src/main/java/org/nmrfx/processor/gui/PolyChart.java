@@ -103,6 +103,7 @@ public class PolyChart extends Region implements PeakListener {
     private final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
     private final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
     private final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
+    private final FXMLController controller;
     private final Canvas canvas;
     private final Canvas peakCanvas;
     private final Canvas annoCanvas;
@@ -129,7 +130,6 @@ public class PolyChart extends Region implements PeakListener {
     private final PolyChartAxes axes = new PolyChartAxes(datasetAttributesList);
 
     //XXX use accessor instead
-    FXMLController controller;
     int datasetPhaseDim = 0;
     int phaseAxis = 0;
 
@@ -169,6 +169,7 @@ public class PolyChart extends Region implements PeakListener {
         plotBackground = new Group();
         this.plotContent = plotContent;
         drawSpectrum = new DrawSpectrum(axes, canvas);
+        drawSpectrum.setupHaltButton(controller.getHaltButton());
 
         initChart();
         drawPeaks = new DrawPeaks(this, peakCanvas);
@@ -315,10 +316,6 @@ public class PolyChart extends Region implements PeakListener {
         return canvas;
     }
 
-    public FXMLController getFXMLController() {
-        return controller;
-    }
-
     public PolyChartAxes getAxes() {
         return axes;
     }
@@ -338,7 +335,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void focus() {
-        getController().getStage().requestFocus();
+        getFXMLController().getStage().requestFocus();
     }
 
     public Cursor getCanvasCursor() {
@@ -391,13 +388,8 @@ public class PolyChart extends Region implements PeakListener {
         PolyChartManager.getInstance().setActiveChart(this);
     }
 
-    public FXMLController getController() {
+    public FXMLController getFXMLController() {
         return controller;
-    }
-
-    public void setController(FXMLController controller) {
-        this.controller = controller;
-        drawSpectrum.setController(controller);
     }
 
     //TODO move to CrossHairMouseHandler? CrossHairs?

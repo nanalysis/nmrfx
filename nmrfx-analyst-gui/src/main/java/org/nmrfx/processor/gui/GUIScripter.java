@@ -280,7 +280,7 @@ public class GUIScripter {
                 }
             }
             if (!indices.isEmpty()) {
-                chart.getController().getStatusBar().updateRowSpinner(indices.get(0), 1);
+                chart.getFXMLController().getStatusBar().updateRowSpinner(indices.get(0), 1);
             }
             chart.refresh();
         });
@@ -469,8 +469,8 @@ public class GUIScripter {
     public List<Integer> grid() throws InterruptedException, ExecutionException {
         FutureTask<List<Integer>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
-            int nRows = chart.getController().arrangeGetRows();
-            int nColumns = chart.getController().arrangeGetColumns();
+            int nRows = chart.getFXMLController().arrangeGetRows();
+            int nColumns = chart.getFXMLController().arrangeGetColumns();
             List<Integer> result = new ArrayList<>();
             result.add(nRows);
             result.add(nColumns);
@@ -635,7 +635,7 @@ public class GUIScripter {
     public List<Double> geometry() throws InterruptedException, ExecutionException {
         FutureTask<List<Double>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
-            Stage stage = chart.getController().getStage();
+            Stage stage = chart.getFXMLController().getStage();
             double x = stage.getX();
             double y = stage.getY();
             double width = stage.getWidth();
@@ -654,7 +654,7 @@ public class GUIScripter {
     public void geometry(Double x, Double y, Double width, Double height) throws InterruptedException, ExecutionException {
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            Stage stage = chart.getController().getStage();
+            Stage stage = chart.getFXMLController().getStage();
             if (x != null) {
                 stage.setX(x);
             }

@@ -115,17 +115,19 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private final Canvas annoCanvas = new Canvas();
     private final Pane plotContent = new Pane();
     private final boolean[][] crossHairStates = new boolean[2][2];
+    private final SpectrumStatusBar statusBar = new SpectrumStatusBar(this);
     private final Set<ControllerTool> tools = new HashSet<>();
     private final SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(CanvasCursor.SELECTOR.getCursor());
     private final ObservableList<PolyChart> charts = FXCollections.observableArrayList();
     private final BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
     private final UndoManager undoManager = new UndoManager();
+    private final Button haltButton = GlyphsDude.createIconButton(FontAwesomeIcon.STOP, "Halt", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+    private final Button favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
     private final SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     private ChartProcessor chartProcessor;
     private Stage stage = null;
     private boolean isFID = true;
     private PopOver popOver = null;
-    private SpectrumStatusBar statusBar;
     private SpectrumMeasureBar measureBar = null;
     private PeakNavigator peakNavigator;
     private SpectrumComparator spectrumComparator;
@@ -152,8 +154,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private BorderPane mainBox;
     @FXML
     private StackPane processorPane;
-    private Button cancelButton;
-    private Button favoriteButton;
     private double previousStageRestoreWidth = 0;
     private double previousStageRestoreProcControllerWidth = 0;
     private boolean previousStageRestoreProcControllerVisible = false;
@@ -667,8 +667,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         processorController.show();
     }
 
-    public Button getCancelButton() {
-        return cancelButton;
+    public Button getHaltButton() {
+        return haltButton;
     }
 
     public void exportPNG(ActionEvent event) {
@@ -843,7 +843,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         new CanvasBindings(this, canvas).setHandlers();
         initToolBar(toolBar);
         charts.add(activeChart);
-        activeChart.setController(this);
 
         chartGroup = new GridPaneCanvas(this, canvas);
         chartGroup.addCharts(1, charts);
@@ -1586,7 +1585,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(this::showDatasetsAction);
         buttons.add(bButton);
-        favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         favoriteButton.setOnAction(e -> saveAsFavorite());
         // Set the initial status of the favorite button
         enableFavoriteButton();
@@ -1596,8 +1594,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> getActiveChart().refresh());
         buttons.add(bButton);
-        cancelButton = GlyphsDude.createIconButton(FontAwesomeIcon.STOP, "Halt", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        buttons.add(cancelButton);
+        buttons.add(haltButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
@@ -1700,7 +1697,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(groupButton);
 
-        statusBar = new SpectrumStatusBar(this);
         ToolBar btoolBar = new ToolBar();
         ToolBar btoolBar2 = new ToolBar();
         btoolVBox.getChildren().addAll(btoolBar, btoolBar2);

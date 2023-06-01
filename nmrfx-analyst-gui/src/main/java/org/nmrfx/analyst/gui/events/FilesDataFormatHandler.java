@@ -82,7 +82,7 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
                 return;
             }
         }
-        FXMLController controller = chart.getController();
+        FXMLController controller = chart.getFXMLController();
         if (isFID) {
             controller.openFile(files.get(0).getAbsolutePath(), true, false);
         } else {

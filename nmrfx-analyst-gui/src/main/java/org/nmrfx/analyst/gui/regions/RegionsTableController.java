@@ -105,13 +105,13 @@ public class RegionsTableController implements Initializable, StageBasedControll
         removeRegionButton.setOnAction(event -> regionsTable.removeSelectedRegion());
         addRegionButton.setOnAction(event -> addRegion());
         autoIntegrateButton.setOnAction(event -> {
-            SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getController().getTool(SimplePeakRegionTool.class);
+            SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getFXMLController().getTool(SimplePeakRegionTool.class);
             if (peakRegionTool != null) {
                 peakRegionTool.findRegions();
             }
         });
         removeAllButton.setOnAction(event -> {
-            SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getController().getTool(SimplePeakRegionTool.class);
+            SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getFXMLController().getTool(SimplePeakRegionTool.class);
             if (peakRegionTool != null) {
                 peakRegionTool.clearAnalysis(false);
             }

@@ -47,7 +47,7 @@ public class CrossHairs {
 
     public CrossHairs(PolyChart chart) {
         this.chart = chart;
-        this.controller = chart.getController();
+        this.controller = chart.getFXMLController();
         xAxis = chart.getAxes().getX();
         yAxis = chart.getAxes().getY();
 

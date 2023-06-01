@@ -71,7 +71,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     private MultipletTool(PolyChart chart) {
         this.chart = chart;
-        this.controller = chart.getController();
+        this.controller = chart.getFXMLController();
     }
 
     public VBox getBox() {

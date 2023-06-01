@@ -43,7 +43,6 @@ import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartAxes;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
@@ -102,14 +101,13 @@ public class DrawSpectrum {
         contoursDrawing = new ContoursDrawingService(this);
     }
 
-    public void setController(FXMLController controller) {
-        Button cancelButton = controller.getCancelButton();
-        cancelButton.setOnAction(actionEvent -> {
+    public void setupHaltButton(Button button) {
+        button.setOnAction(actionEvent -> {
             cancelled = true;
             contoursGeneration.cancel();
             contoursDrawing.cancel();
         });
-        cancelButton.disableProperty().bind(contoursGeneration.stateProperty().isNotEqualTo(Task.State.RUNNING));
+        button.disableProperty().bind(contoursGeneration.stateProperty().isNotEqualTo(Task.State.RUNNING));
     }
 
     public void setClipRect(double x, double y, double width, double height) {

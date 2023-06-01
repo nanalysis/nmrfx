@@ -455,7 +455,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     void viewMode() {
         if (viewMode.getValue() == DisplayMode.SPECTRUM) {
-            if (chart.controller.isFIDActive()) {
+            if (chart.getFXMLController().isFIDActive()) {
                 viewDatasetInApp(null);
             }
         } else if (viewMode.getValue() == DisplayMode.FID_OPS) {
@@ -469,7 +469,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public void viewDatasetInApp(Dataset dataset) {
         Dataset currentDataset = (Dataset) chart.getDataset();
         if (dataset != null) {
-            chart.controller.addDataset(dataset, false, false);
+            chart.getFXMLController().addDataset(dataset, false, false);
             if ((currentDataset != null) && (currentDataset != dataset)) {
                 currentDataset.close();
             }
@@ -479,7 +479,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     currentDataset.close();
                 }
                 boolean viewingDataset = isViewingDataset();
-                chart.controller.openDataset(chartProcessor.datasetFile, false, true);
+                chart.getFXMLController().openDataset(chartProcessor.datasetFile, false, true);
                 viewMode.setValue(DisplayMode.SPECTRUM);
                 if (!viewingDataset) {
                     chart.full();
@@ -510,8 +510,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         dimChoice.getSelectionModel().select(0);
         chartProcessor.setVecDim("D1");
         viewMode.setValue(DisplayMode.FID_OPS);
-        chart.controller.getUndoManager().clear();
-        chart.controller.updateSpectrumStatusBarOptions(false);
+        chart.getFXMLController().getUndoManager().clear();
+        chart.getFXMLController().updateSpectrumStatusBarOptions(false);
     }
 
     @FXML
@@ -519,8 +519,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         dimChoice.getSelectionModel().select(0);
         chartProcessor.setVecDim("D1");
         viewMode.setValue(DisplayMode.FID);
-        chart.controller.getUndoManager().clear();
-        chart.controller.updateSpectrumStatusBarOptions(false);
+        chart.getFXMLController().getUndoManager().clear();
+        chart.getFXMLController().updateSpectrumStatusBarOptions(false);
     }
 
     public String getScript() {

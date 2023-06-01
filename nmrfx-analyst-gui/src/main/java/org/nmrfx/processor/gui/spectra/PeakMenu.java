@@ -48,7 +48,7 @@ public class PeakMenu extends ChartMenu {
 
     void showPeakInspector() {
         chart.focus();
-        FXMLController controller = chart.getController();
+        FXMLController controller = chart.getFXMLController();
         controller.showPeakAttr();
         if (peak != null) {
             controller.getPeakAttrController().gotoPeak(peak);

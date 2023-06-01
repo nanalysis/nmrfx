@@ -107,7 +107,7 @@ public class KeyBindings {
                 case ESCAPE:
                     keyMonitor.complete();
                     keyEvent.consume();
-                    chart.getController().deselectCharts();
+                    chart.getFXMLController().deselectCharts();
                     break;
                 case DELETE, BACK_SPACE:
                     keyMonitor.complete();
@@ -200,19 +200,19 @@ public class KeyBindings {
                 keyMonitor.clear();
                 break;
             case "cc":
-                chart.getController().setCursor(CanvasCursor.CROSSHAIR.getCursor());
+                chart.getFXMLController().setCursor(CanvasCursor.CROSSHAIR.getCursor());
                 keyMonitor.clear();
                 break;
             case "cs":
-                chart.getController().setCursor(CanvasCursor.SELECTOR.getCursor());
+                chart.getFXMLController().setCursor(CanvasCursor.SELECTOR.getCursor());
                 keyMonitor.clear();
                 break;
             case "ca":
-                chart.getController().setCursor(CanvasCursor.PEAK.getCursor());
+                chart.getFXMLController().setCursor(CanvasCursor.PEAK.getCursor());
                 keyMonitor.clear();
                 break;
             case "cr":
-                chart.getController().setCursor(CanvasCursor.REGION.getCursor());
+                chart.getFXMLController().setCursor(CanvasCursor.REGION.getCursor());
                 keyMonitor.clear();
                 break;
             case "p":
@@ -220,11 +220,11 @@ public class KeyBindings {
             case "u":
                 break;
             case "uu":
-                chart.getController().undo();
+                chart.getFXMLController().undo();
                 keyMonitor.clear();
                 break;
             case "ur":
-                chart.getController().redo();
+                chart.getFXMLController().redo();
                 keyMonitor.clear();
                 break;
             case "v":
@@ -320,7 +320,7 @@ public class KeyBindings {
         if (keyEvent.isShiftDown()) {
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
             dataAttrs.stream().forEach(d -> d.rotateDim(1, 1));
-            chart.getController().updateAttrDims();
+            chart.getFXMLController().updateAttrDims();
             chart.full();
             chart.focus();
         } else {
@@ -336,7 +336,7 @@ public class KeyBindings {
         if (keyEvent.isShiftDown()) {
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
             dataAttrs.forEach(d -> d.rotateDim(1, -1));
-            chart.getController().updateAttrDims();
+            chart.getFXMLController().updateAttrDims();
             chart.full();
             chart.focus();
         } else {
