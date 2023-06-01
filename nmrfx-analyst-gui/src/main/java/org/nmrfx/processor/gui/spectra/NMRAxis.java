@@ -32,8 +32,7 @@ import org.nmrfx.chart.Axis;
  * @author brucejohnson
  */
 public class NMRAxis extends Axis implements NMRAxisLimits {
-
-    boolean showTicsAndLabels = true;
+    private boolean showTicsAndLabels = true;
 
     public NMRAxis(Orientation orientation, double lowerBound, double upperBound, double width, double height) {
         super(orientation, lowerBound, upperBound, width, height);

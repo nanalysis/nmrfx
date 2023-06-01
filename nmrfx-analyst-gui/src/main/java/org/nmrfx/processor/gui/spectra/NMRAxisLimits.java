@@ -16,31 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.processor.gui.spectra;
 
-/**
- *
- * @author brucejohnson
- */
+//TODO to move closer to Axis, because Axis is actually the implementation, even if hidden behind NMRAxis
+//TODO see if regrouping Axis / NMRAxis would be a problem
 public interface NMRAxisLimits {
 
-    public double getLowerBound();
+    double getLowerBound();
 
-    public double getUpperBound();
+    double getUpperBound();
 
-    public boolean getReverse();
+    boolean getReverse();
 
-    public void setReverse(boolean state);
+    void setReverse(boolean state);
 
-    public void setLabel(String label);
+    void setLabel(String label);
 
-    public String getLabel();
+    String getLabel();
 
-    public double getDisplayPosition(Number value);
+    double getDisplayPosition(Number value);
 
 }
