@@ -1672,7 +1672,7 @@ public class PolyChart extends Region implements PeakListener {
             axes.setMode(0, AXMODE.TIME);
         }
         boolean reversedAxis = (axes.getMode(0) == AXMODE.PPM);
-        boolean autoScale = reversedAxis != axes.getX().getReverse();
+        boolean autoScale = reversedAxis != axes.getX().isReversed();
         axes.getX().setReverse(reversedAxis);
         String xLabel = axes.getMode(0).getLabel(datasetAttributes, 0);
         axes.getX().updateStateAndLabel(xLabel);
@@ -1683,7 +1683,7 @@ public class PolyChart extends Region implements PeakListener {
                 axes.setMode(1, AXMODE.PTS);
             }
             reversedAxis = (axes.getMode(1) == AXMODE.PPM);
-            if (reversedAxis != axes.getX().getReverse()) {
+            if (reversedAxis != axes.getX().isReversed()) {
                 autoScale = true;
             }
 

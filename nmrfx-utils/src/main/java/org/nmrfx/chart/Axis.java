@@ -39,7 +39,7 @@ package org.nmrfx.chart;
  */
 //TODO uncomment once core & utils are merged
 //@PluginAPI("ring")
-public class Axis {
+public class Axis implements AxisLimits {
 
     public enum Bound {
         Lower, Upper

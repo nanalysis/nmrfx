@@ -17,12 +17,13 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import java.text.DecimalFormat;
 import javafx.util.StringConverter;
+import javafx.util.converter.NumberStringConverter;
+
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javafx.util.converter.NumberStringConverter;
 
 /**
  *
@@ -44,7 +45,7 @@ public class NMRAxisBase {
         reverse = state;
     }
 
-    public boolean getReverse() {
+    public boolean isReversed() {
         return reverse;
     }
 
