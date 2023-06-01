@@ -41,8 +41,8 @@ public class PeakPickHandler extends MouseHandler {
             List<DatasetAttributes> activeData = chart.getActiveDatasetAttributes();
             if (activeData.size() == 1) {
                 DatasetAttributes datasetAttr = activeData.get(0);
-                double pickX = chart.getAxis(0).getValueForDisplay(chart.getMouseX()).doubleValue();
-                double pickY = chart.getAxis(1).getValueForDisplay(chart.getMouseY()).doubleValue();
+                double pickX = chart.getAxes().getX().getValueForDisplay(chart.getMouseX()).doubleValue();
+                double pickY = chart.getAxes().getY().getValueForDisplay(chart.getMouseY()).doubleValue();
                 PeakPicking.pickAtPosition(chart, datasetAttr, pickX, pickY, mouseEvent.isShiftDown(), false);
                 completed = true;
             }
@@ -52,8 +52,8 @@ public class PeakPickHandler extends MouseHandler {
             double dX = Math.abs(x - mouseBindings.dragStart[0]);
             double minMove = 20;
             if ((dX > minMove) && !chart.getDatasetAttributes().isEmpty()) {
-                NMRAxis xAxis = chart.getXAxis();
-                NMRAxis yAxis = chart.getYAxis();
+                NMRAxis xAxis = chart.getAxes().getX();
+                NMRAxis yAxis = chart.getAxes().getY();
                 if (chart.is1D()) {
                     double xLim0 = xAxis.getValueForDisplay(mouseBindings.dragStart[0]).doubleValue();
                     double xLim1 = xAxis.getValueForDisplay(x).doubleValue();
@@ -95,9 +95,9 @@ public class PeakPickHandler extends MouseHandler {
 
         PolyChart chart = mouseBindings.getChart();
         if (chart.is1D()) {
-            double xLim0 = chart.getAxis(0).getValueForDisplay(mouseBindings.dragStart[0]).doubleValue();
-            double xLim1 = chart.getAxis(0).getValueForDisplay(mouseBindings.getMouseX()).doubleValue();
-            double threshold = chart.getAxis(1).getValueForDisplay(mouseBindings.getMouseY()).doubleValue();
+            double xLim0 = chart.getAxes().getX().getValueForDisplay(mouseBindings.dragStart[0]).doubleValue();
+            double xLim1 = chart.getAxes().getX().getValueForDisplay(mouseBindings.getMouseX()).doubleValue();
+            double threshold = chart.getAxes().getY().getValueForDisplay(mouseBindings.getMouseY()).doubleValue();
             PeakList peakList = pick1DRegion(chart, xLim0, xLim1, threshold, true);
             if (peakList != null) {
                 chart.setPeakStatus(true);

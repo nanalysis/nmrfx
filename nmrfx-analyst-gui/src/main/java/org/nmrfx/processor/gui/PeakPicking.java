@@ -131,11 +131,11 @@ public class PeakPicking {
                             chart.getCrossHairs().getPosition(0, orientation),
                             chart.getCrossHairs().getPosition(1, orientation));
                 } else {
-                    peakPickPar.limit(jDim, chart.axes[iDim].getLowerBound(), chart.axes[iDim].getUpperBound());
+                    peakPickPar.limit(jDim, chart.getAxes().get(iDim).getLowerBound(), chart.getAxes().get(iDim).getUpperBound());
                 }
             } else {
-                int p1 = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getLowerBound());
-                int p2 = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getUpperBound());
+                int p1 = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, chart.getAxes().get(iDim).getLowerBound());
+                int p2 = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, chart.getAxes().get(iDim).getUpperBound());
                 if (dataAttr.drawList.isEmpty()) {
                     peakPickPar.limit(jDim, p1, p2);
                 } else {
@@ -207,10 +207,10 @@ public class PeakPicking {
                 double pos = iDim == 0 ? x : y;
                 peakPickPar.limit(jDim, pos, pos);
             } else {
-                if (chart.axModes[iDim] == DatasetAttributes.AXMODE.PTS) {
-                    peakPickPar.limit(jDim, (int) chart.axes[iDim].getLowerBound(), (int) chart.axes[iDim].getUpperBound());
+                if (chart.getAxes().getMode(iDim) == DatasetAttributes.AXMODE.PTS) {
+                    peakPickPar.limit(jDim, (int) chart.getAxes().get(iDim).getLowerBound(), (int) chart.getAxes().get(iDim).getUpperBound());
                 } else {
-                    peakPickPar.limit(jDim, chart.axes[iDim].getLowerBound(), chart.axes[iDim].getUpperBound());
+                    peakPickPar.limit(jDim, chart.getAxes().get(iDim).getLowerBound(), chart.getAxes().get(iDim).getUpperBound());
                 }
             }
         }

@@ -2058,7 +2058,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     chart.full(i);
                 } else {
                     double pos;
-                    if (chart.getAxMode(i) == PPM) {
+                    if (chart.getAxes().getMode(i) == PPM) {
                         pos = ppms[i];
                     } else {
                         int dDim = dataAttr.getDim(i);

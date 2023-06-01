@@ -16,31 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.processor.gui.spectra;
 
 import javafx.geometry.Orientation;
 import org.nmrfx.chart.Axis;
 
-
-/**
- *
- * @author brucejohnson
- */
 public class NMRAxis extends Axis implements NMRAxisLimits {
-
-    boolean showTicsAndLabels = true;
+    private boolean showTicsAndLabels = true;
 
     public NMRAxis(Orientation orientation, double lowerBound, double upperBound, double width, double height) {
         super(orientation, lowerBound, upperBound, width, height);
-    }
-
-    public boolean getShowTicsAndLabels() {
-        return showTicsAndLabels;
     }
 
     public void setShowTicsAndLabels(boolean state) {
@@ -50,5 +35,18 @@ public class NMRAxis extends Axis implements NMRAxisLimits {
     @Override
     public boolean getReverse() {
         return isReversed();
+    }
+
+    public void updateStateAndLabel(String label) {
+        setTickLabelsVisible(showTicsAndLabels);
+        setTickMarksVisible(showTicsAndLabels);
+        setLabelVisible(showTicsAndLabels);
+
+        setVisible(true);
+        if (!showTicsAndLabels) {
+            setLabel("");
+        } else if (!label.equals(getLabel())) {
+            setLabel(label);
+        }
     }
 }

@@ -884,10 +884,10 @@ public class PeakSlider implements ControllerTool {
         List<PeakList> expLists = new ArrayList<>();
         controller.getCharts().forEach(chart -> {
                     for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
-                        double xMin = chart.getXAxis().getLowerBound();
-                        double xMax = chart.getXAxis().getUpperBound();
-                        double yMin = chart.getYAxis().getLowerBound();
-                        double yMax = chart.getYAxis().getUpperBound();
+                        double xMin = chart.getAxes().getX().getLowerBound();
+                        double xMax = chart.getAxes().getX().getUpperBound();
+                        double yMin = chart.getAxes().getY().getLowerBound();
+                        double yMax = chart.getAxes().getY().getUpperBound();
                         double[][] limits = {{xMin, xMax}, {yMin, yMax}};
                         Optional<PeakList> expListOpt = Optional.empty();
                         Optional<PeakList> predListOpt = Optional.empty();

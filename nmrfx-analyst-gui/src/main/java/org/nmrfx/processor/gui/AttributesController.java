@@ -600,19 +600,18 @@ public class AttributesController implements Initializable {
     }
 
     void setLimits() {
-        int i = 0;
-        for (NMRAxis axis : chart.axes) {
+        for (int i = 0; i < chart.getAxes().count(); i++) {
+            NMRAxis axis = chart.getAxes().get(i);
             double lower = axis.getLowerBound();
             double upper = axis.getUpperBound();
-            if ((i > 1) && !chart.getDatasetAttributes().isEmpty()) {
+            if (i > 1 && !chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                int lowPt = chart.axModes[i].getIndex(dataAttr, i, lower);
-                int upPt = chart.axModes[i].getIndex(dataAttr, i, upper);
+                int lowPt = chart.getAxes().getMode(i).getIndex(dataAttr, i, lower);
+                int upPt = chart.getAxes().getMode(i).getIndex(dataAttr, i, upper);
 
                 chart.controller.getStatusBar().updatePlaneSpinner(lowPt, i, 0);
                 chart.controller.getStatusBar().updatePlaneSpinner(upPt, i, 1);
             }
-            i++;
         }
     }
 

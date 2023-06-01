@@ -305,8 +305,8 @@ public class ScannerTool implements ControllerTool {
             }
             double[] ppms = chart.getCrossHairs().getVerticalPositions();
             double[] wppms = new double[2];
-            wppms[0] = chart.getAxis(0).getLowerBound();
-            wppms[1] = chart.getAxis(0).getUpperBound();
+            wppms[0] = chart.getAxes().get(0).getLowerBound();
+            wppms[1] = chart.getAxes().get(0).getUpperBound();
             int extra = 1;
 
             Measure measure = new Measure(columnName, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
@@ -359,8 +359,8 @@ public class ScannerTool implements ControllerTool {
         int nBins = 100;
         double[] ppms = chart.getCrossHairs().getVerticalPositions();
         double[] wppms = new double[2];
-        wppms[0] = chart.getAxis(0).getLowerBound();
-        wppms[1] = chart.getAxis(0).getUpperBound();
+        wppms[0] = chart.getAxes().get(0).getLowerBound();
+        wppms[1] = chart.getAxes().get(0).getUpperBound();
         int extra = 1;
 
         Measure measure = new Measure("binValues", 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());

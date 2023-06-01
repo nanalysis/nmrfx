@@ -250,12 +250,12 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         int nDataDim = dataAttr.nDim;
         double[][] limits = new double[nDataDim][2];
         for (int i = 0; i < nDataDim; i++) {
-            NMRAxis axis = chart.getAxis(i);
-            if (chart.getAxMode(i) == DatasetAttributes.AXMODE.PPM) {
+            NMRAxis axis = chart.getAxes().get(i);
+            if (chart.getAxes().getMode(i) == DatasetAttributes.AXMODE.PPM) {
                 limits[i][0] = axis.getLowerBound();
                 limits[i][1] = axis.getUpperBound();
-                double lb = chart.getAxMode(i).getIndexD(dataAttr, i, limits[i][0]);
-                double ub = chart.getAxMode(i).getIndexD(dataAttr, i, limits[i][1]);
+                double lb = chart.getAxes().getMode(i).getIndexD(dataAttr, i, limits[i][0]);
+                double ub = chart.getAxes().getMode(i).getIndexD(dataAttr, i, limits[i][1]);
                 if (Math.abs(lb - ub) < 0.5) {
                     lb = lb - ((double) getNplanes()) - 0.5;
                     ub = ub + ((double) getNplanes()) + 0.5;
@@ -409,8 +409,8 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         Optional<Peak> hit = Optional.empty();
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
-            xAxis = (NMRAxis) chart.getXAxis();
-            yAxis = (NMRAxis) chart.getYAxis();
+            xAxis = chart.getAxes().getX();
+            yAxis = chart.getAxes().getY();
             if ((peakList.nDim > 1) && !chart.is1D()) {
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY)).findFirst();
@@ -437,8 +437,8 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         Optional<MultipletSelection> hit = Optional.empty();
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
-            xAxis = (NMRAxis) chart.getXAxis();
-            yAxis = (NMRAxis) chart.getYAxis();
+            xAxis = chart.getAxes().getX();
+            yAxis = chart.getAxes().getY();
             if (peakList.nDim == 1) {
                 var pickResult = peaksInRegion.get().stream().filter(peak -> peak.getStatus() >= 0).
                         map(peak -> peak.getPeakDim(0).getMultiplet())
@@ -455,9 +455,9 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         Optional<Peak> hit = Optional.empty();
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
-            xAxis = (NMRAxis) chart.getXAxis();
-            yAxis = (NMRAxis) chart.getYAxis();
-            if ((peakList.nDim > 1) && !chart.is1D()){
+            xAxis = chart.getAxes().getX();
+            yAxis = chart.getAxes().getY();
+            if ((peakList.nDim > 1) && !chart.is1D()) {
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY)).findFirst();
                 if (hit.isPresent()) {
@@ -513,12 +513,12 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     public void selectPeaks(DrawPeaks drawPeaks, double pickX, double pickY, boolean append) {
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
-            xAxis = (NMRAxis) chart.getXAxis();
-            yAxis = (NMRAxis) chart.getYAxis();
+            xAxis = chart.getAxes().getX();
+            yAxis = chart.getAxes().getY();
             if (!append) {
                 selectedPeaks.clear();
             }
-            if ((peakList.nDim > 1) && !chart.is1D()){
+            if ((peakList.nDim > 1) && !chart.is1D()) {
                 List<Peak> peaks = peaksInRegion.get().stream().parallel()
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY))
                         .filter((peak) -> !selectedPeaks.contains(peak))

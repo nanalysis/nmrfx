@@ -17,6 +17,14 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import javafx.scene.control.Alert;
+import javafx.scene.input.*;
+import org.nmrfx.processor.gui.CanvasCursor;
+import org.nmrfx.processor.gui.KeyMonitor;
+import org.nmrfx.processor.gui.PeakPicking;
+import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.events.DataFormatEventHandler;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,16 +32,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javafx.scene.Cursor;
-import javafx.scene.control.Alert;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.DataFormat;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
-import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 
 /**
  *
@@ -175,8 +173,8 @@ public class KeyBindings {
                 List<DatasetAttributes> activeData = chart.getActiveDatasetAttributes();
                 if (activeData.size() == 1) {
                     DatasetAttributes datasetAttr = activeData.get(0);
-                    double pickX = chart.getAxis(0).getValueForDisplay(chart.getMouseX()).doubleValue();
-                    double pickY = chart.getAxis(1).getValueForDisplay(chart.getMouseY()).doubleValue();
+                    double pickX = chart.getAxes().getX().getValueForDisplay(chart.getMouseX()).doubleValue();
+                    double pickY = chart.getAxes().getY().getValueForDisplay(chart.getMouseY()).doubleValue();
                     PeakPicking.pickAtPosition(chart, datasetAttr, pickX, pickY, shortString.equals("as"), false);
                     chart.setPeakStatus(true);
                     keyMonitor.clear();
@@ -302,7 +300,7 @@ public class KeyBindings {
                                     if (matcher.matches()) {
                                         String group = matcher.group(1);
                                         int plane = Integer.parseInt(group);
-                                        chart.setAxis(2, plane, plane);
+                                        chart.getAxes().setMinMax(2, plane, plane);
                                         chart.refresh();
                                     }
                                 }
