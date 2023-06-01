@@ -20,7 +20,6 @@ package org.nmrfx.processor.gui.spectra;
 import javafx.beans.property.*;
 import javafx.scene.paint.Color;
 import org.nmrfx.annotations.PluginAPI;
-import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.math.VecBase;
@@ -1633,11 +1632,11 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return offsets;
     }
 
-    public void moveRegion(IntegralHit iHit, Axis[] axes, double[] newValue) {
+    public void moveRegion(IntegralHit iHit, PolyChartAxes axes, double[] newValue) {
         int handle = iHit.handle;
         DatasetRegion r = iHit.getDatasetRegion();
-        double newX = axes[0].getValueForDisplay(newValue[0]).doubleValue();
-        double newY = axes[1].getValueForDisplay(newValue[1]).doubleValue();
+        double newX = axes.getX().getValueForDisplay(newValue[0]).doubleValue();
+        double newY = axes.getY().getValueForDisplay(newValue[1]).doubleValue();
         switch (handle) {
             case 1:
                 double oldEnd = r.getRegionEndIntensity(0);

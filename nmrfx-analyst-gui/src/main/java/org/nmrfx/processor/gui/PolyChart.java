@@ -2691,7 +2691,7 @@ public class PolyChart extends Region implements PeakListener {
         double[] dragPos = {x, y};
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
             if (datasetAttr.getActiveRegion().isPresent()) {
-                datasetAttr.moveRegion(regionHit, axes.axisArray(), dragPos);
+                datasetAttr.moveRegion(regionHit, axes, dragPos);
                 refresh();
             }
         }

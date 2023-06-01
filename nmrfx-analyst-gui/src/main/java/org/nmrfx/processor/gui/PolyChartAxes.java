@@ -55,11 +55,6 @@ public class PolyChartAxes {
         axModes[iDim] = mode;
     }
 
-    @Deprecated(forRemoval = true)
-    public Axis[] axisArray() {
-        return axes;
-    }
-
     public void resetFrom(PolyChart chart, DatasetAttributes datasetAttrs, int nAxes) {
         DatasetBase dataset = datasetAttrs.getDataset();
 
