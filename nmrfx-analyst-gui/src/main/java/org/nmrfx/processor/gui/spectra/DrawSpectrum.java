@@ -621,26 +621,27 @@ public class DrawSpectrum {
     private void drawHandleV(GraphicsContextInterface g2, double x, double y) {
         int handleSize = 6;
         int handleSize2 = 9;
+        int halfHandleSize = handleSize / 2;
 
         g2.beginPath();
         g2.moveTo(x, y - handleSize2);
         g2.lineTo(x, y + handleSize2);
 
         g2.moveTo(x, y - handleSize2);
-        g2.lineTo(x - handleSize / 2, y - handleSize);
+        g2.lineTo(x - halfHandleSize, y - handleSize);
         g2.moveTo(x, y - handleSize2);
-        g2.lineTo(x + handleSize / 2, y - handleSize);
+        g2.lineTo(x + halfHandleSize, y - handleSize);
 
         g2.moveTo(x, y + handleSize2);
-        g2.lineTo(x - handleSize / 2, y + handleSize);
+        g2.lineTo(x - halfHandleSize, y + handleSize);
         g2.moveTo(x, y + handleSize2);
-        g2.lineTo(x + handleSize / 2, y + handleSize);
+        g2.lineTo(x + halfHandleSize, y + handleSize);
 
-        g2.moveTo(x - handleSize / 2, y - handleSize / 2);
-        g2.lineTo(x + handleSize / 2, y - handleSize / 2);
-        g2.lineTo(x + handleSize / 2, y + handleSize / 2);
-        g2.lineTo(x - handleSize / 2, y + handleSize / 2);
-        g2.lineTo(x - handleSize / 2, y - handleSize / 2);
+        g2.moveTo(x - halfHandleSize, y - halfHandleSize);
+        g2.lineTo(x + halfHandleSize, y - halfHandleSize);
+        g2.lineTo(x + halfHandleSize, y + halfHandleSize);
+        g2.lineTo(x - halfHandleSize, y + halfHandleSize);
+        g2.lineTo(x - halfHandleSize, y - halfHandleSize);
 
         g2.setFill(Color.WHITE);
         g2.fill();
@@ -652,25 +653,27 @@ public class DrawSpectrum {
     private void drawHandleH(GraphicsContextInterface g2, double x, double y) {
         int handleSize = 6;
         int handleSize2 = 9;
+        int halfHandleSize = handleSize / 2;
+
         g2.beginPath();
         g2.moveTo(x - handleSize, y);
         g2.lineTo(x + handleSize, y);
 
         g2.moveTo(x - handleSize2, y);
-        g2.lineTo(x - handleSize, y - handleSize / 2);
+        g2.lineTo(x - handleSize, y - halfHandleSize);
         g2.moveTo(x - handleSize2, y);
-        g2.lineTo(x - handleSize, y + handleSize / 2);
+        g2.lineTo(x - handleSize, y + halfHandleSize);
 
         g2.moveTo(x + handleSize2, y);
-        g2.lineTo(x + handleSize, y - handleSize / 2);
+        g2.lineTo(x + handleSize, y - halfHandleSize);
         g2.moveTo(x + handleSize2, y);
-        g2.lineTo(x + handleSize, y + handleSize / 2);
+        g2.lineTo(x + handleSize, y + halfHandleSize);
 
-        g2.moveTo(x - handleSize / 2, y - handleSize / 2);
-        g2.lineTo(x + handleSize / 2, y - handleSize / 2);
-        g2.lineTo(x + handleSize / 2, y + handleSize / 2);
-        g2.lineTo(x - handleSize / 2, y + handleSize / 2);
-        g2.lineTo(x - handleSize / 2, y - handleSize / 2);
+        g2.moveTo(x - halfHandleSize, y - halfHandleSize);
+        g2.lineTo(x + halfHandleSize, y - halfHandleSize);
+        g2.lineTo(x + halfHandleSize, y + halfHandleSize);
+        g2.lineTo(x - halfHandleSize, y + halfHandleSize);
+        g2.lineTo(x - halfHandleSize, y - halfHandleSize);
 
         g2.setFill(Color.WHITE);
         g2.fill();
