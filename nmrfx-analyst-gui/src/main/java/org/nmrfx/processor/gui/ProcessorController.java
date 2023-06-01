@@ -103,12 +103,14 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private static String patternString = "(\\w+)=((\\[[^\\[]*\\])|(\"[^\"]*\")|('[^']*')|([^,]+))";
 
     static Map<String, String> longNameMap = Map.of(
-            "FT", "Fourier Transform",
-            "ZF", "Zero Fill",
-            "APODIZE", "Apodization",
             "TDCOMB", "Phase Sensitive Mode",
+            "APODIZE", "Apodization",
+            "ZF", "Zero Fill",
+            "FT", "Fourier Transform",
+            "PHASE", "Phasing",
             "BC", "Baseline Correction",
-            "SUPPRESS", "Signal Suppression"
+            "SUPPRESS", "Signal Suppression",
+            "EXTRACT", "Extract Region"
             );
 
     private enum DisplayMode {
@@ -674,9 +676,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         PropertySheet opPropertySheet = new PropertySheet();
         VBox vBox = new VBox();
         HBox hBox = new HBox();
-        CheckBox activeBox = new CheckBox("Disabled");
+        CheckBox activeBox = new CheckBox("Active");
+        activeBox.setSelected(true);
         hBox.getChildren().add(activeBox);
-        titledPane.textFillProperty().bind(Bindings.when(activeBox.selectedProperty()).then(Color.GRAY).otherwise(Color.BLUE));
+        titledPane.textFillProperty().bind(Bindings.when(activeBox.selectedProperty()).then(Color.BLUE).otherwise(Color.GRAY));
         vBox.getChildren().addAll(hBox, opPropertySheet);
         titledPane.setContent(vBox);
         titledPane.getProperties().put("PropSheet", opPropertySheet);
@@ -1309,9 +1312,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         scanMaxN.getItems().addAll(5, 10, 20, 50, 100, 200);
         scanMaxN.setValue(50);
         viewMode.getItems().addAll(DisplayMode.values());
-        sortButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.SORT, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        sortButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.SORT, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         detailButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.INFO, "",
-                MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         opBox.getItems().add(ToolBarUtils.makeFiller(20));
         opBox.getItems().addAll(sortButton, detailButton);
         sortButton.setOnAction(e -> updateAccordionList());

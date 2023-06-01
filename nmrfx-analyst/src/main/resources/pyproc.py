@@ -3804,9 +3804,13 @@ def genScript(arrayed=False):
     sequence = fidInfo.fidObj.getSequence()
     if fidInfo.nd < 2:
         script += 'DIM(1)\n'
+        script += 'SUPPRESS(disabled=True)\n'
         script += 'APODIZE(lbOn=True, lb=0.5)\n'
         script += 'ZF()\n'
         script += 'FT()\n'
+        script += 'PHASE()\n'
+        script += 'BC(disabled=True)\n'
+
         trim = fidInfo.fidObj.getTrim()
         if trim > 1.0e-3:
             script += 'TRIM(ftrim=' + str(trim) +')\n'
