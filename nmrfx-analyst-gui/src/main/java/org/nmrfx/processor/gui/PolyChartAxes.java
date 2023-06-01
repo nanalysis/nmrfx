@@ -1,18 +1,29 @@
 package org.nmrfx.processor.gui;
 
+import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
+import org.apache.commons.lang3.Range;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 
+import java.util.List;
+
 public class PolyChartAxes {
     public static final int X_INDEX = 0;
     public static final int Y_INDEX = 1;
+
     private final NMRAxis xAxis = new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50);
     private final NMRAxis yAxis = new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200);
+    private final ObservableList<DatasetAttributes> datasetAttributesList; // shared with PolyChart
+
     private NMRAxis[] axes = {xAxis, yAxis}; //TODO replace with list?
     private DatasetAttributes.AXMODE[] axModes = {DatasetAttributes.AXMODE.PPM, DatasetAttributes.AXMODE.PPM};
+
+    public PolyChartAxes(ObservableList<DatasetAttributes> datasetAttributesList) {
+        this.datasetAttributesList = datasetAttributesList;
+    }
 
     public void init(PolyChart chart) {
         xAxis.lowerBoundProperty().addListener(new AxisChangeListener(chart, X_INDEX, Axis.Bound.Lower));
@@ -149,4 +160,83 @@ public class PolyChartAxes {
             axes[axis].setUpperBound(posU);
         }
     }
+
+    public void fullLimits(PolyChart.DISDIM disdim) {
+        double[] limits = getRange(0);
+        xAxis.setMinMax(limits[0], limits[1]);
+        if (disdim == PolyChart.DISDIM.TwoD) {
+            limits = getRange(1);
+            yAxis.setMinMax(limits[0], limits[1]);
+        }
+    }
+
+
+    public double[] getRange(int axis) {
+        return getRangeFromDatasetAttributesList(datasetAttributesList, axis);
+    }
+
+    public double[] getRangeFromDatasetAttributesList(List<DatasetAttributes> attributes, int axis) {
+        double[] limits = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY};
+        for (DatasetAttributes dataAttr : attributes) {
+            if (!dataAttr.isProjection()) {
+                dataAttr.checkRange(getMode(axis), axis, limits);
+            } else {
+                if (dataAttr.projection() == axis) {
+                    dataAttr.checkRange(getMode(axis), 0, limits);
+                }
+            }
+        }
+        return limits;
+    }
+
+    public double[] getRange(int axis, double min, double max) {
+        double[] limits = getRange(axis);
+        if (min > limits[0]) {
+            limits[0] = min;
+        }
+        if (max < limits[1]) {
+            limits[1] = max;
+        }
+        return limits;
+    }
+
+    /**
+     * Checks the current axis is within provided range.
+     *
+     * @param limits The limits of the new range, lower bound at index 0, upper bound at index 1
+     * @param iAxis  The axis to check
+     * @return true if the axis range is within the provided range
+     */
+    public boolean currentRangeWithinNewRange(double[] limits, int iAxis) {
+        NMRAxis axis = get(iAxis);
+        Range<Double> range = Range.between(limits[0], limits[1]);
+        return range.contains(axis.getLowerBound()) && range.contains(axis.getUpperBound());
+    }
+
+
+    /**
+     * Given a lower and upper bound, gets a valid range and attempts to keep the range between the original lower
+     * and upper bounds. The new bounds may have a different range than the originally provided bounds if it is not
+     * possible to have a valid range that large.
+     *
+     * @param axis       The axis to get the range for
+     * @param lowerBound The lower bound to try.
+     * @param upperBound The upper bound to try.
+     * @return A new set of bounds that are within the valid range of the dataset.
+     */
+    public double[] getRangeMinimalAdjustment(int axis, double lowerBound, double upperBound) {
+        double currentRange = Math.abs(upperBound - lowerBound);
+        double[] validLimits = getRange(axis, lowerBound, upperBound);
+        // if one of the limits has changed, adjust the other limit so the range is still the same.
+        if (Double.compare(validLimits[0], lowerBound) != 0) {
+            lowerBound = validLimits[0];
+            upperBound = validLimits[0] + currentRange;
+        } else {
+            upperBound = validLimits[1];
+            lowerBound = validLimits[1] - currentRange;
+        }
+        // Need to check the range again, in case the currentRange value was greater than the valid range.
+        return getRange(axis, lowerBound, upperBound);
+    }
+
 }

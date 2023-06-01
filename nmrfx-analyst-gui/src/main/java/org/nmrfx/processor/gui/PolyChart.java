@@ -40,7 +40,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
-import org.apache.commons.lang3.Range;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
@@ -127,7 +126,7 @@ public class PolyChart extends Region implements PeakListener {
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
     private final SliceAttributes sliceAttributes = new SliceAttributes();
     private final ChartProperties chartProps = new ChartProperties(this);
-    private final PolyChartAxes axes = new PolyChartAxes();
+    private final PolyChartAxes axes = new PolyChartAxes(datasetAttributesList);
 
     //XXX use accessor instead
     double minLeftBorder = 0.0;
@@ -526,10 +525,10 @@ public class PolyChart extends Region implements PeakListener {
                 if (is1D() || (dY > MIN_MOVE)) {
 
                     ChartUndoLimits undo = new ChartUndoLimits(this);
-                    double[] adjustedLimits = getRangeMinimalAdjustment(0, limits[0][0], limits[0][1]);
+                    double[] adjustedLimits = getAxes().getRangeMinimalAdjustment(0, limits[0][0], limits[0][1]);
                     axes.setMinMax(0, adjustedLimits[0], adjustedLimits[1]);
                     if (!is1D()) {
-                        adjustedLimits = getRangeMinimalAdjustment(1, limits[1][0], limits[1][1]);
+                        adjustedLimits = getAxes().getRangeMinimalAdjustment(1, limits[1][0], limits[1][1]);
                         axes.setMinMax(1, adjustedLimits[0], adjustedLimits[1]);
                     }
                     ChartUndoLimits redo = new ChartUndoLimits(this);
@@ -637,7 +636,7 @@ public class PolyChart extends Region implements PeakListener {
         // fixme add check for too small range
         min = center - range / 2.0;
         max = center + range / 2.0;
-        double[] limits = getRange(0, min, max);
+        double[] limits = getAxes().getRange(0, min, max);
         axes.getX().setMinMax(limits[0], limits[1]);
     }
 
@@ -674,65 +673,9 @@ public class PolyChart extends Region implements PeakListener {
         newChart.refresh();
     }
 
-    protected double[] getRange(int axis, double min, double max) {
-        double[] limits = getRange(axis);
-        if (min > limits[0]) {
-            limits[0] = min;
-        }
-        if (max < limits[1]) {
-            limits[1] = max;
-        }
-        return limits;
-    }
-
-    protected double[] getRange(int axis) {
-        return getRangeFromDatasetAttributesList(datasetAttributesList, axis);
-    }
-
-    private double[] getRangeFromDatasetAttributesList(List<DatasetAttributes> attributes, int axis) {
-        double[] limits = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY};
-        for (DatasetAttributes dataAttr : attributes) {
-            if (!dataAttr.isProjection()) {
-                dataAttr.checkRange(axes.getMode(axis), axis, limits);
-            } else {
-                if (dataAttr.projection() == axis) {
-                    dataAttr.checkRange(axes.getMode(axis), 0, limits);
-                }
-            }
-        }
-        return limits;
-    }
-
-    /**
-     * Given a lower and upper bound, gets a valid range and attempts to keep the range between the original lower
-     * and upper bounds. The new bounds may have a different range than the originally provided bounds if it is not
-     * possible to have a valid range that large.
-     *
-     * @param axis       The axis to get the range for
-     * @param lowerBound The lower bound to try.
-     * @param upperBound The upper bound to try.
-     * @return A new set of bounds that are within the valid range of the dataset.
-     */
-    private double[] getRangeMinimalAdjustment(int axis, double lowerBound, double upperBound) {
-        double currentRange = Math.abs(upperBound - lowerBound);
-        double[] validLimits = getRange(axis, lowerBound, upperBound);
-        // if one of the limits has changed, adjust the other limit so the range is still the same.
-        if (Double.compare(validLimits[0], lowerBound) != 0) {
-            lowerBound = validLimits[0];
-            upperBound = validLimits[0] + currentRange;
-        } else {
-            upperBound = validLimits[1];
-            lowerBound = validLimits[1] - currentRange;
-        }
-        // Need to check the range again, in case the currentRange value was greater than the valid range.
-        return getRange(axis, lowerBound, upperBound);
-    }
-
     public void scroll(double x, double y) {
-
         scrollXAxis(x);
         scrollYAxis(y);
-
         layoutPlotChildren();
     }
 
@@ -749,7 +692,7 @@ public class PolyChart extends Region implements PeakListener {
         // fixme add check for too small range
         min = center - range / 2.0;
         max = center + range / 2.0;
-        double[] limits = getRange(0, min, max);
+        double[] limits = getAxes().getRange(0, min, max);
 
         axes.getX().setMinMax(limits[0], limits[1]);
     }
@@ -774,7 +717,7 @@ public class PolyChart extends Region implements PeakListener {
             center -= y / scale;
             min = center - range / 2.0;
             max = center + range / 2.0;
-            double[] limits = getRange(1, min, max);
+            double[] limits = getAxes().getRange(1, min, max);
             axes.getY().setMinMax(limits[0], limits[1]);
         }
     }
@@ -855,7 +798,7 @@ public class PolyChart extends Region implements PeakListener {
         // fixme add check for too small range
         min = center - range / 2.0;
         max = center + range / 2.0;
-        double[] limits = getRange(1, min, max);
+        double[] limits = getAxes().getRange(1, min, max);
 
         axes.getY().setMinMax(limits[0], limits[1]);
 
@@ -899,22 +842,11 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-
-    //XXX move
-    private void fullAxisLimits() {
-        double[] limits = getRange(0);
-        axes.getX().setMinMax(limits[0], limits[1]);
-        if (disDimProp.get() == DISDIM.TwoD) {
-            limits = getRange(1);
-            axes.getY().setMinMax(limits[0], limits[1]);
-        }
-    }
-
     public void full() {
         Fx.runOnFxThread(() -> {
             if (!datasetAttributesList.isEmpty()) {
                 ChartUndoLimits undo = new ChartUndoLimits(this);
-                fullAxisLimits();
+                axes.fullLimits(disDimProp.get());
                 ChartUndoLimits redo = new ChartUndoLimits(this);
                 controller.getUndoManager().add("full", undo, redo);
                 layoutPlotChildren();
@@ -925,7 +857,7 @@ public class PolyChart extends Region implements PeakListener {
     public void full(int axis) {
         if (axes.count() > axis) {
             if (!datasetAttributesList.isEmpty()) {
-                double[] limits = getRange(axis);
+                double[] limits = getAxes().getRange(axis);
                 axes.setMinMax(axis, limits[0], limits[1]);
                 updateDatasetAttributeBounds();
                 layoutPlotChildren();
@@ -936,7 +868,7 @@ public class PolyChart extends Region implements PeakListener {
     public void center(int axis) {
         if (axes.count() > axis) {
             if (!datasetAttributesList.isEmpty()) {
-                double[] limits = getRange(axis);
+                double[] limits = getAxes().getRange(axis);
                 double center = (limits[0] + limits[1]) / 2.0;
                 if (axes.getMode(axis) == AXMODE.PTS) {
                     center = Math.ceil(center);
@@ -979,7 +911,7 @@ public class PolyChart extends Region implements PeakListener {
                     double range = Math.abs(upper - lower);
                     double newLower = positions[axis] - range / 2;
                     double newUpper = positions[axis] + range / 2;
-                    double[] bounds = getRangeMinimalAdjustment(axis, newLower, newUpper);
+                    double[] bounds = getAxes().getRangeMinimalAdjustment(axis, newLower, newUpper);
                     axes.setMinMax(axis, bounds[0], bounds[1]);
                 }
             }
@@ -1025,7 +957,7 @@ public class PolyChart extends Region implements PeakListener {
     public void firstPlane(int axis) {
         if (axes.count() > axis) {
             if (!datasetAttributesList.isEmpty()) {
-                double[] limits = getRange(axis);
+                double[] limits = getAxes().getRange(axis);
                 int iLim = axes.getMode(axis) == AXMODE.PPM ? 1 : 0;
                 axes.setMinMax(axis, limits[iLim], limits[iLim]);
             }
@@ -1035,7 +967,7 @@ public class PolyChart extends Region implements PeakListener {
     public void lastPlane(int axis) {
         if (axes.count() > axis) {
             if (!datasetAttributesList.isEmpty()) {
-                double[] limits = getRange(axis);
+                double[] limits = getAxes().getRange(axis);
                 int iLim = axes.getMode(axis) == AXMODE.PPM ? 0 : 1;
                 axes.setMinMax(axis, limits[iLim], limits[iLim]);
             }
@@ -1804,7 +1736,7 @@ public class PolyChart extends Region implements PeakListener {
             setAxisState(axes.getY(), "Intensity");
         }
         if (autoScale) {
-            fullAxisLimits();
+            axes.fullLimits(disDimProp.get());
             if (!datasetAttributes.getHasLevel()) {
                 autoScale(datasetAttributes);
             }
@@ -2293,13 +2225,13 @@ public class PolyChart extends Region implements PeakListener {
         if (attributes.size() == getDatasetAttributes().size()) {
             return;
         }
-        double[] limits = getRangeFromDatasetAttributesList(attributes, 0);
-        if (!currentRangeWithinNewRange(limits, 0)) {
+        double[] limits = axes.getRangeFromDatasetAttributesList(attributes, 0);
+        if (!axes.currentRangeWithinNewRange(limits, 0)) {
             axes.getX().setMinMax(limits[0], limits[1]);
         }
         if (disDimProp.get() == DISDIM.TwoD) {
-            limits = getRangeFromDatasetAttributesList(attributes, 1);
-            if (!currentRangeWithinNewRange(limits, 1)) {
+            limits = axes.getRangeFromDatasetAttributesList(attributes, 1);
+            if (!axes.currentRangeWithinNewRange(limits, 1)) {
                 axes.getY().setMinMax(limits[0], limits[1]);
             }
         }
@@ -2325,19 +2257,6 @@ public class PolyChart extends Region implements PeakListener {
             }
         }
         return numberOfMatches < Math.min(attributesToMatch.getDataset().getNDim(), 2) || attributesToMatch.isProjection();
-    }
-
-    /**
-     * Checks the current axis is within provided range.
-     *
-     * @param limits The limits of the new range, lower bound at index 0, upper bound at index 1
-     * @param iAxis  The axis to check
-     * @return true if the axis range is within the provided range
-     */
-    private boolean currentRangeWithinNewRange(double[] limits, int iAxis) {
-        NMRAxis axis = getAxes().get(iAxis);
-        Range<Double> range = Range.between(limits[0], limits[1]);
-        return range.contains(axis.getLowerBound()) && range.contains(axis.getUpperBound());
     }
 
     void drawTitle(GraphicsContextInterface gC, DatasetAttributes datasetAttributes,
