@@ -29,6 +29,7 @@ import org.nmrfx.processor.datasets.DataCoordTransformer;
 import org.nmrfx.processor.datasets.DataGenerator;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
+import org.nmrfx.processor.gui.PolyChartAxes;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.utils.properties.ColorProperty;
 import org.nmrfx.utils.properties.PublicPropertyContainer;
@@ -723,7 +724,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return rowIndex;
     }
 
-    public void updateBounds(AXMODE[] axModes, Axis[] axes, DISDIM disDim) {
+    public void updateBounds(PolyChartAxes axes, DISDIM disDim) {
         int[][] localPt;
         double[][] limits;
         localPt = new int[nDim][2];
@@ -731,23 +732,23 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         limits = new double[nDim][2];
         for (int i = 0; i < nDim; i++) {
             if (i == 0) {
-                localPtD[i][0] = axModes[i].getIndexD(this, i, axes[0].getLowerBound());
-                localPtD[i][1] = axModes[i].getIndexD(this, i, axes[0].getUpperBound());
+                localPtD[i][0] = axes.getMode(i).getIndexD(this, i, axes.get(0).getLowerBound());
+                localPtD[i][1] = axes.getMode(i).getIndexD(this, i, axes.get(0).getUpperBound());
             } else if (i == 1) {
                 if (disDim == DISDIM.TwoD) {
-                    localPtD[i][0] = axModes[i].getIndexD(this, i, axes[1].getLowerBound());
-                    localPtD[i][1] = axModes[i].getIndexD(this, i, axes[1].getUpperBound());
+                    localPtD[i][0] = axes.getMode(i).getIndexD(this, i, axes.get(1).getLowerBound());
+                    localPtD[i][1] = axes.getMode(i).getIndexD(this, i, axes.get(1).getUpperBound());
                 } else {
                     localPtD[i][0] = 0;
                     localPtD[i][1] = theFile.getSizeReal(dim[i]) - 1.0;
                 }
-            } else if (axModes.length <= i) {
+            } else if (axes.count() <= i) {
                 localPtD[i][0] = theFile.getSizeReal(dim[i]) / 2.0;
                 localPtD[i][1] = theFile.getSizeReal(dim[i]) / 2.0;
             } else {
-                if (Objects.nonNull(axModes[i]) && Objects.nonNull(axes[i])) {
-                    localPtD[i][0] = axModes[i].getIndexD(this, i, axes[i].getLowerBound());
-                    localPtD[i][1] = axModes[i].getIndexD(this, i, axes[i].getUpperBound());
+                if (Objects.nonNull(axes.getMode(i)) && Objects.nonNull(axes.get(i))) {
+                    localPtD[i][0] = axes.getMode(i).getIndexD(this, i, axes.get(i).getLowerBound());
+                    localPtD[i][1] = axes.getMode(i).getIndexD(this, i, axes.get(i).getUpperBound());
                 }
             }
             if (localPtD[i][0] > localPtD[i][1]) {

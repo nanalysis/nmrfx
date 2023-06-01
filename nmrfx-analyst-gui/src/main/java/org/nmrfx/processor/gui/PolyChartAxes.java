@@ -60,11 +60,6 @@ public class PolyChartAxes {
         return axes;
     }
 
-    @Deprecated(forRemoval = true)
-    public DatasetAttributes.AXMODE[] modeArray() {
-        return axModes;
-    }
-
     public void resetFrom(PolyChart chart, DatasetAttributes datasetAttrs, int nAxes) {
         DatasetBase dataset = datasetAttrs.getDataset();
 

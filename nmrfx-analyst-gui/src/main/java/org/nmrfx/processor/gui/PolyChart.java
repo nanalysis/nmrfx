@@ -1631,7 +1631,7 @@ public class PolyChart extends Region implements PeakListener {
 
     void updateDatasetAttributeBounds() {
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-            datasetAttributes.updateBounds(axes.modeArray(), axes.axisArray(), disDimProp.getValue());
+            datasetAttributes.updateBounds(axes, disDimProp.getValue());
         }
     }
 
