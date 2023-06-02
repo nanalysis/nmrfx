@@ -402,7 +402,7 @@ public class DrawSpectrum {
         double indexAxisDelta = (ppm1 - ppm2) / vec.getSize();
         double dValue = ppm2;
 
-        nPoints = drawVectoreCore(vec, dataOffset, true, 0.0, 0.0, xy, null, xFunction,
+        nPoints = drawVectorCore(vec, dataOffset, true, 0.0, 0.0, xy, null, xFunction,
                 yFunction, 0, vec.getSize() - 1, size, dValue, 0.0, indexAxisDelta);
     }
 
@@ -437,7 +437,7 @@ public class DrawSpectrum {
             vecEndPoint = hold;
             dValue = indexAxis.getUpperBound();
         }
-        nPoints = drawVectoreCore(vec, dataOffset, drawReal, ph0, ph1, xy, bcPath, xFunction, yFunction, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
+        nPoints = drawVectorCore(vec, dataOffset, drawReal, ph0, ph1, xy, bcPath, xFunction, yFunction, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
     }
 
     public void drawVecAnno(DatasetAttributes dataAttributes, int orientation, AXMODE axMode) {
@@ -763,10 +763,10 @@ public class DrawSpectrum {
         return ok;
     }
 
-    private static int drawVectoreCore(VecBase vec, int dataOffset, boolean drawReal,
-                                       double ph0, double ph1, double[][] xyValues, Path bcPath, DoubleBinaryOperator xFunction,
-                                       DoubleBinaryOperator yFunction, int start, int end, int size,
-                                       double dValue, double dDelta, double delta) {
+    private static int drawVectorCore(VecBase vec, int dataOffset, boolean drawReal,
+                                      double ph0, double ph1, double[][] xyValues, Path bcPath, DoubleBinaryOperator xFunction,
+                                      DoubleBinaryOperator yFunction, int start, int end, int size,
+                                      double dValue, double dDelta, double delta) {
 
         if ((start - dataOffset) < 0) {
             start = dataOffset;
