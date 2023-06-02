@@ -1,5 +1,5 @@
 /*
- * NMRFx Analyst : 
+ * NMRFx Analyst :
  * Copyright (C) 2004-2021 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,27 +29,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author mbeckwith
  */
 @PluginAPI("ring")
 public class RelaxationData implements RelaxationValues {
-
-    public enum relaxTypes {
-        R1("R1"), R2("R2"), T1RHO("T1rho"),
-        NOE("NOE"), S2("S2"),
-        RQ("RQ"), RAP("RAP");
-
-        private final String name;
-
-        relaxTypes(final String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
 
     private final String id;
     private final relaxTypes expType;
@@ -62,7 +45,7 @@ public class RelaxationData implements RelaxationValues {
     private final String key;
 
     public RelaxationData(String id, relaxTypes expType, ResonanceSource resSource, double field, double temperature,
-            Double value, Double error, Map<String, String> extras) {
+                          Double value, Double error, Map<String, String> extras) {
 
         this.id = id;
         this.expType = expType;
@@ -98,59 +81,12 @@ public class RelaxationData implements RelaxationValues {
         return key;
     }
 
-    public static void add(String id, String type, ResonanceSource resSource, double field, double value, double error) {
-        type = type.toUpperCase();
-        if (type.equals("T1")) {
-            type = "R1";
-        } else if (type.equals("T2")) {
-            type = "R2";
-        }
-        relaxTypes relaxType = relaxTypes.valueOf(type.toUpperCase());
-        RelaxationData rData = new RelaxationData(id, relaxType, resSource,
-                field,
-                25.0, value, error, Collections.emptyMap());
-        resSource.getAtom().addRelaxationData(id, rData);
-    }
-
     public String getId() {
         return id;
     }
 
-    @Override
-    public String getName() {
-        return getExpType().getName();
-    }
-
-    @Override
-    public ResonanceSource getResonanceSource() {
-        return resSource;
-    }
-
     public relaxTypes getExpType() {
         return expType;
-    }
-
-    @Override
-    public String[] getParNames() {
-        return new String[]{getExpType().getName()};
-    }
-
-    @Override
-    public Double getValue(String name) {
-        if (name.equals(getExpType().getName())) {
-            return getValue();
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public Double getError(String name) {
-        if (name.equals(getExpType().getName())) {
-            return getError();
-        } else {
-            return null;
-        }
     }
 
     public double getField() {
@@ -171,8 +107,55 @@ public class RelaxationData implements RelaxationValues {
         return error;
     }
 
+    @Override
+    public String[] getParNames() {
+        return new String[]{getExpType().getName()};
+    }
+
+    @Override
+    public String getName() {
+        return getExpType().getName();
+    }
+
+    @Override
+    public Double getValue(String name) {
+        if (name.equals(getExpType().getName())) {
+            return getValue();
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Double getError(String name) {
+        if (name.equals(getExpType().getName())) {
+            return getError();
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public ResonanceSource getResonanceSource() {
+        return resSource;
+    }
+
     public Map<String, String> getExtras() {
         return extras;
+    }
+
+    public static void add(String id, String type, ResonanceSource resSource, double field, double value, double error) {
+        type = type.toUpperCase();
+        if (type.equals("T1")) {
+            type = "R1";
+        } else if (type.equals("T2")) {
+            type = "R2";
+        }
+        relaxTypes relaxType = relaxTypes.valueOf(type.toUpperCase());
+        RelaxationData rData = new RelaxationData(id, relaxType, resSource,
+                field,
+                25.0, value, error, Collections.emptyMap());
+        resSource.getAtom().addRelaxationData(id, rData);
     }
 
     public static Map<Long, EnumMap<relaxTypes, RelaxationData>> assembleAtomData(Atom atom) {
@@ -200,14 +183,14 @@ public class RelaxationData implements RelaxationValues {
 
     private static String toFileString(Map<relaxTypes, RelaxationData> values, List<relaxTypes> types) {
         StringBuilder sBuilder = new StringBuilder();
-        for (var  type: types) {
+        for (var type : types) {
             var data = values.get(type);
             if ((sBuilder.length() == 0) && (data != null)) {
                 sBuilder.append(String.format("%.2f", data.getField()));
             }
             Double value = data != null ? data.getValue() : null;
             Double error = data != null ? data.getError() : null;
-            RelaxationValues.appendValueError(sBuilder, value, error,"%.3f");
+            RelaxationValues.appendValueError(sBuilder, value, error, "%.3f");
         }
         return sBuilder.toString();
     }
@@ -222,8 +205,8 @@ public class RelaxationData implements RelaxationValues {
         // figure out what relaxtypes are used so header can be setup
         for (Atom atom : atoms) {
             var dataMap = assembleAtomData(atom);
-            for (var relaxData:dataMap.values()) {
-                for (var relaxType:relaxData.values()) {
+            for (var relaxData : dataMap.values()) {
+                for (var relaxType : relaxData.values()) {
                     typesUsed.add(relaxType.getExpType());
                 }
             }
@@ -233,8 +216,8 @@ public class RelaxationData implements RelaxationValues {
 
         try (FileWriter fileWriter = new FileWriter(file)) {
             fileWriter.write("Chain\tResidue\tAtom\tfield");
-            for (var type:typeList) {
-                fileWriter.write("\t" + type.getName() + "\t" + type.getName()+"_err");
+            for (var type : typeList) {
+                fileWriter.write("\t" + type.getName() + "\t" + type.getName() + "_err");
             }
             fileWriter.write("\n");
             for (Atom atom : atoms) {
@@ -244,7 +227,7 @@ public class RelaxationData implements RelaxationValues {
                         String polymer = atom.getTopEntity().getName();
                         polymer = polymer == null ? "A" : polymer;
                         String resNum = String.valueOf(atom.getResidueNumber());
-                        fileWriter.write(polymer + "\t" + resNum+"\t" + atom.getName() + "\t");
+                        fileWriter.write(polymer + "\t" + resNum + "\t" + atom.getName() + "\t");
                         fileWriter.write(toFileString(r1R1NOE, typeList));
                         fileWriter.write("\n");
                     }
@@ -267,5 +250,21 @@ public class RelaxationData implements RelaxationValues {
             }
         });
         return relaxationData;
+    }
+
+    public enum relaxTypes {
+        R1("R1"), R2("R2"), T1RHO("T1rho"),
+        NOE("NOE"), S2("S2"),
+        RQ("RQ"), RAP("RAP");
+
+        private final String name;
+
+        relaxTypes(final String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
 }

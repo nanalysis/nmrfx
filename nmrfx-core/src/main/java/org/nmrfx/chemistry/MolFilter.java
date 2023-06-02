@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,59 +23,19 @@ import java.util.regex.Pattern;
 
 public class MolFilter {
 
+    private static String resresPatternStr = "(([a-zA-Z]?-?[0-9]+)-)?([a-zA-Z]?-?[0-9]+)";
+    private static Pattern resresPattern = Pattern.compile(resresPatternStr);
     public Vector atomNames = new Vector(4, 4);
-    CoordsetAndEntity csAndE = null;
-    String molName = "*";
-    String seqID = "1";
     public String firstRes = "";
     public String lastRes = "";
     public String firstResType = "*";
     public String lastResType = "*";
     public int structureNum = 0;
     public String entityName = null;
+    CoordsetAndEntity csAndE = null;
+    String molName = "*";
+    String seqID = "1";
     String string = "";
-    private static String resresPatternStr = "(([a-zA-Z]?-?[0-9]+)-)?([a-zA-Z]?-?[0-9]+)";
-    private static Pattern resresPattern = Pattern.compile(resresPatternStr);
-
-    private class CoordsetAndEntity {
-
-        String entityName = "*";
-        int entityID = -1;
-        String coordSetName = "*";
-        int coordID = -1;
-        String oneName = "";
-        boolean checkOneName = false;
-        int oneID = -1;
-
-        CoordsetAndEntity(final String coordSetName, final String entityName) {
-            if (entityName.length() != 0) {
-                try {
-                    entityID = Integer.parseInt(entityName);
-                    this.entityName = "";
-                } catch (NumberFormatException nfE) {
-                    this.entityName = entityName;
-                }
-
-            }
-            if (coordSetName.length() != 0) {
-                try {
-                    coordID = Integer.parseInt(entityName);
-                } catch (NumberFormatException nfE) {
-                    this.coordSetName = entityName;
-                    this.coordSetName = "";
-                }
-            }
-        }
-
-        CoordsetAndEntity(final String oneName) {
-            checkOneName = true;
-            try {
-                oneID = Integer.parseInt(oneName);
-            } catch (NumberFormatException nfE) {
-                this.oneName = oneName;
-            }
-        }
-    }
 
     public MolFilter(String string) {
         this.string = string;
@@ -97,7 +57,7 @@ public class MolFilter {
             if (sPeriodPos >= 0) {
                 seqID = string.substring(colonPos + 1, sPeriodPos);
             }
-        }        
+        }
         int periodPos = molName.indexOf(".");
 
         if (periodPos >= 0) {
@@ -237,7 +197,7 @@ public class MolFilter {
     public String getCoordEntity() {
         return molName;
     }
-    
+
     public String getCoordSeqID() {
         return seqID;
     }
@@ -274,5 +234,45 @@ public class MolFilter {
             result = csMatch && eMatch;
         }
         return result;
+    }
+
+    private class CoordsetAndEntity {
+
+        String entityName = "*";
+        int entityID = -1;
+        String coordSetName = "*";
+        int coordID = -1;
+        String oneName = "";
+        boolean checkOneName = false;
+        int oneID = -1;
+
+        CoordsetAndEntity(final String coordSetName, final String entityName) {
+            if (entityName.length() != 0) {
+                try {
+                    entityID = Integer.parseInt(entityName);
+                    this.entityName = "";
+                } catch (NumberFormatException nfE) {
+                    this.entityName = entityName;
+                }
+
+            }
+            if (coordSetName.length() != 0) {
+                try {
+                    coordID = Integer.parseInt(entityName);
+                } catch (NumberFormatException nfE) {
+                    this.coordSetName = entityName;
+                    this.coordSetName = "";
+                }
+            }
+        }
+
+        CoordsetAndEntity(final String oneName) {
+            checkOneName = true;
+            try {
+                oneID = Integer.parseInt(oneName);
+            } catch (NumberFormatException nfE) {
+                this.oneName = oneName;
+            }
+        }
     }
 }

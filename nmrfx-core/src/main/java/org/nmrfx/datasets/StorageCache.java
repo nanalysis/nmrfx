@@ -18,7 +18,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- *
  * @author brucejohnson
  */
 public class StorageCache {
@@ -27,75 +26,6 @@ public class StorageCache {
     Map<DatasetKey, ByteBuffer> buffers;
     ByteBuffer activeBuffer = null;
     DatasetKey activeKey = null;
-
-    public static class DatasetKey {
-
-        SubMatrixFile file;
-        int blockNum;
-
-        public DatasetKey(SubMatrixFile file, int blockNum) {
-            this.file = file;
-            this.blockNum = blockNum;
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 5;
-            hash = 89 * hash + Objects.hashCode(this.file);
-            hash = 89 * hash + this.blockNum;
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final DatasetKey other = (DatasetKey) obj;
-            if (this.blockNum != other.blockNum) {
-                return false;
-            }
-            if (!Objects.equals(this.file, other.file)) {
-                return false;
-            }
-            return true;
-        }
-
-        public int getBlockNum() {
-            return blockNum;
-        }
-
-        public String toString() {
-            return String.valueOf(blockNum);
-        }
-    }
-
-    static class TrackingLRUMap<K, V> extends LRUMap<DatasetKey, ByteBuffer> {
-
-        TrackingLRUMap(int maxSize) {
-            super(maxSize);
-        }
-
-        protected boolean removeLRU(LinkEntry<DatasetKey, ByteBuffer> entry) {
-            //releaseResources(entry.getValue());  // release resources held by entry
-            DatasetKey key = entry.getKey();
-
-            if (key.file.writable) {
-                try {
-                    key.file.writeBlock(key.blockNum, entry.getValue());
-                } catch (IOException ex) {
-                    log.error(ex.getMessage(), ex);
-                }
-            }
-            return true;  // actually delete entry
-        }
-    }
 
     public StorageCache() {
         TrackingLRUMap lruMap = new TrackingLRUMap(1024);
@@ -191,6 +121,75 @@ public class StorageCache {
             break;
         }
         return value;
+    }
+
+    public static class DatasetKey {
+
+        SubMatrixFile file;
+        int blockNum;
+
+        public DatasetKey(SubMatrixFile file, int blockNum) {
+            this.file = file;
+            this.blockNum = blockNum;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 5;
+            hash = 89 * hash + Objects.hashCode(this.file);
+            hash = 89 * hash + this.blockNum;
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final DatasetKey other = (DatasetKey) obj;
+            if (this.blockNum != other.blockNum) {
+                return false;
+            }
+            if (!Objects.equals(this.file, other.file)) {
+                return false;
+            }
+            return true;
+        }
+
+        public String toString() {
+            return String.valueOf(blockNum);
+        }
+
+        public int getBlockNum() {
+            return blockNum;
+        }
+    }
+
+    static class TrackingLRUMap<K, V> extends LRUMap<DatasetKey, ByteBuffer> {
+
+        TrackingLRUMap(int maxSize) {
+            super(maxSize);
+        }
+
+        protected boolean removeLRU(LinkEntry<DatasetKey, ByteBuffer> entry) {
+            //releaseResources(entry.getValue());  // release resources held by entry
+            DatasetKey key = entry.getKey();
+
+            if (key.file.writable) {
+                try {
+                    key.file.writeBlock(key.blockNum, entry.getValue());
+                } catch (IOException ex) {
+                    log.error(ex.getMessage(), ex);
+                }
+            }
+            return true;  // actually delete entry
+        }
     }
 
 }

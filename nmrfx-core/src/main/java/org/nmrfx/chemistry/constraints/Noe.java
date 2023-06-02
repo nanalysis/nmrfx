@@ -19,8 +19,11 @@ package org.nmrfx.chemistry.constraints;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.peaks.Peak;
+
 import java.io.Serializable;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 
 enum DisTypes {
 
@@ -44,44 +47,44 @@ enum DisTypes {
     };
     private String description;
 
-    public abstract double getDistance(Noe noe);
-
     DisTypes(String description) {
         this.description = description;
     }
+
+    public abstract double getDistance(Noe noe);
 }
 
 public class Noe extends DistanceConstraint implements Serializable {
 
+    public static int ppmSet = 0;
     private static boolean useDistances = false;
     private static int nStructures = 0;
     private static double tolerance = 0.2;
     private static DistanceStat defaultStat = new DistanceStat();
-    private int idNum = 0;
+    private static DisTypes distanceType = DisTypes.MINIMUM;
     public SpatialSetGroup spg1;
     public SpatialSetGroup spg2;
     public Peak peak = null;
+    public double atomScale = 1.0;
+    public DistanceStat disStat = defaultStat;
+    public int dcClass = 0;
+    public boolean symmetrical = false;
+    public Map resMap = null;
+    public EnumSet<Flags> activeFlags = null;
+    private int idNum = 0;
     private double intensity = 0.0;
     private double volume = 0.0;
     private double scale = 1.0;
-    public double atomScale = 1.0;
-    public DistanceStat disStat = defaultStat;
     private DistanceStat disStatAvg = defaultStat;
-    public int dcClass = 0;
     private double ppmError = 0.0;
     private short active = 1;
-    public boolean symmetrical = false;
     private double contribution = 1.0;
     private double disContrib = 1.0;
     private int nPossible = 0;
     private double networkValue = 1;
     private boolean swapped = false;
     private boolean filterSwapped = false;
-    public Map resMap = null;
-    public EnumSet<Flags> activeFlags = null;
-    private static DisTypes distanceType = DisTypes.MINIMUM;
     private GenTypes genType = GenTypes.MANUAL;
-    public static int ppmSet = 0;
 
     public Noe(Peak p, SpatialSet sp1, SpatialSet sp2, double newScale) {
         super(sp1, sp2);
@@ -131,6 +134,29 @@ public class Noe extends DistanceConstraint implements Serializable {
         return sBuild.toString();
     }
 
+    /**
+     * @return the lower
+     */
+    @Override
+    public double getLower() {
+        return lower;
+    }
+
+    /**
+     * @param lower the lower to set
+     */
+    public void setLower(double lower) {
+        this.lower = lower;
+    }
+
+    /**
+     * @return the upper
+     */
+    @Override
+    public double getUpper() {
+        return upper;
+    }
+
     @Override
     public int getID() {
         return idNum;
@@ -140,164 +166,14 @@ public class Noe extends DistanceConstraint implements Serializable {
         this.idNum = id;
     }
 
-    public static double getTolerance() {
-        return tolerance;
-    }
-
-    public static void setTolerance(double value) {
-        tolerance = value;
-    }
-
-    public SpatialSetGroup getSPG(int setNum, boolean getSwapped, boolean filterMode) {
-        if (setNum == 0) {
-            if ((filterMode && filterSwapped) || (!filterMode && swapped && getSwapped)) {
-                return spg2;
-            } else {
-                return spg1;
-            }
-        } else if ((filterMode && filterSwapped) || (!filterMode && swapped && getSwapped)) {
-            return spg1;
-        } else {
-            return spg2;
-        }
-    }
-
-    public static int getNStructures() {
-        return nStructures;
-    }
-
-    @Override
-    public DistanceStat getStat() {
-        return disStat;
-    }
-
-    public static int getSize(NoeSet noeSet) {
-        return noeSet.getSize();
-    }
-
-    public static void resetConstraints(NoeSet noeSet) {
-        noeSet.clear();
-    }
-
-    public String getPeakListName() {
-        String listName = "";
-        if (peak != null) {
-            listName = peak.getPeakList().getName();
-        }
-        return listName;
-    }
-
-    public int getPeakNum() {
-        int peakNum = 0;
-        if (peak != null) {
-            peakNum = peak.getIdNum();
-        }
-        return peakNum;
-    }
-
-    public String getEntity(SpatialSetGroup spg) {
-        String value = "";
-        if (spg != null) {
-            Entity entity = spg.getAnAtom().getEntity();
-            if (entity instanceof Residue) {
-                value = ((Residue) entity).polymer.getName();
-            } else {
-                value = ((Compound) entity).getName();
-            }
-        }
-        return value;
-    }
-
-    public static double avgDistance(List<Double> dArray, double expValue, int nMonomers, boolean sumAverage) {
-        double sum = 0.0;
-        int n = 0;
-        for (Double dis : dArray) {
-            sum += Math.pow(dis, expValue);
-            n++;
-
-        }
-        if (!sumAverage) {
-            nMonomers = n;
-        }
-        double distance = Math.pow((sum / nMonomers), 1.0 / expValue);
-        return distance;
-
-    }
-
-    public static Atom[][] getProtons(Atom[][] atoms) {
-        Atom[][] protons = new Atom[2][0];
-        if (atoms[0] != null) {
-            protons[0] = new Atom[atoms[0].length];
-            protons[1] = new Atom[atoms[0].length];
-            int k = 0;
-            for (int j = 0; j < atoms[0].length; j++) {
-                int nProton = 0;
-                for (Atom[] atom : atoms) {
-                    if ((atom != null) && (j < atom.length)) {
-                        if (atom[j].aNum == 1) {
-                            if (nProton == 0) {
-                                protons[0][k] = atom[j];
-                                nProton++;
-                            } else if (nProton == 1) {
-                                protons[1][k] = atom[j];
-                                k++;
-                                nProton++;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return protons;
-    }
-
-    public boolean isActive() {
-        boolean activeFlag = false;
-        if (activeFlags.isEmpty()) {
-            activeFlag = true;
-        } else if (activeFlags.size() == 1) {
-            if (getActivityFlags().equals("f")) {
-                activeFlag = true;
-            }
-        }
-        return activeFlag;
-    }
-
     @Override
     public boolean isUserActive() {
         return (active > 0);
     }
 
-    public int getActive() {
-        return active;
-    }
-
-    public void setActive(int newState) {
-        this.active = (short) newState;
-    }
-
-    public String getActivityFlags() {
-        StringBuilder result = new StringBuilder();
-        activeFlags.forEach((f) -> {
-            result.append(f.getCharDesc());
-        });
-        return result.toString();
-    }
-
-    public void inactivate(Flags enumVal) {
-        activeFlags.add(enumVal);
-    }
-
-    public void activate(Flags enumVal) {
-        activeFlags.remove(enumVal);
-    }
-
-    /**
-     * @return the distance
-     */
-    public double getDistance() {
-
-        return distanceType.getDistance(this);
+    @Override
+    public DistanceStat getStat() {
+        return disStat;
     }
 
     @Override
@@ -387,6 +263,100 @@ public class Noe extends DistanceConstraint implements Serializable {
     }
 
     /**
+     * @param upper the upper to set
+     */
+    public void setUpper(double upper) {
+        this.upper = upper;
+    }
+
+    public SpatialSetGroup getSPG(int setNum, boolean getSwapped, boolean filterMode) {
+        if (setNum == 0) {
+            if ((filterMode && filterSwapped) || (!filterMode && swapped && getSwapped)) {
+                return spg2;
+            } else {
+                return spg1;
+            }
+        } else if ((filterMode && filterSwapped) || (!filterMode && swapped && getSwapped)) {
+            return spg1;
+        } else {
+            return spg2;
+        }
+    }
+
+    public String getPeakListName() {
+        String listName = "";
+        if (peak != null) {
+            listName = peak.getPeakList().getName();
+        }
+        return listName;
+    }
+
+    public int getPeakNum() {
+        int peakNum = 0;
+        if (peak != null) {
+            peakNum = peak.getIdNum();
+        }
+        return peakNum;
+    }
+
+    public String getEntity(SpatialSetGroup spg) {
+        String value = "";
+        if (spg != null) {
+            Entity entity = spg.getAnAtom().getEntity();
+            if (entity instanceof Residue) {
+                value = ((Residue) entity).polymer.getName();
+            } else {
+                value = ((Compound) entity).getName();
+            }
+        }
+        return value;
+    }
+
+    public boolean isActive() {
+        boolean activeFlag = false;
+        if (activeFlags.isEmpty()) {
+            activeFlag = true;
+        } else if (activeFlags.size() == 1) {
+            if (getActivityFlags().equals("f")) {
+                activeFlag = true;
+            }
+        }
+        return activeFlag;
+    }
+
+    public int getActive() {
+        return active;
+    }
+
+    public void setActive(int newState) {
+        this.active = (short) newState;
+    }
+
+    public String getActivityFlags() {
+        StringBuilder result = new StringBuilder();
+        activeFlags.forEach((f) -> {
+            result.append(f.getCharDesc());
+        });
+        return result.toString();
+    }
+
+    public void inactivate(Flags enumVal) {
+        activeFlags.add(enumVal);
+    }
+
+    public void activate(Flags enumVal) {
+        activeFlags.remove(enumVal);
+    }
+
+    /**
+     * @return the distance
+     */
+    public double getDistance() {
+
+        return distanceType.getDistance(this);
+    }
+
+    /**
      * @return the genType
      */
     public GenTypes getGenType() {
@@ -398,54 +368,6 @@ public class Noe extends DistanceConstraint implements Serializable {
      */
     public void setGenType(GenTypes genType) {
         this.genType = genType;
-    }
-
-    public static Atom[][] getAtoms(Peak peak) {
-        Atom[][] atoms = new Atom[peak.getPeakList().getNDim()][];
-
-        for (int i = 0; i < peak.getPeakList().getNDim(); i++) {
-            atoms[i] = null;
-            String label = peak.peakDims[i].getLabel();
-            String[] elems = label.split(" ");
-
-            if (elems.length == 0) {
-                continue;
-            }
-
-            int nElems = elems.length;
-            atoms[i] = new Atom[nElems];
-
-            for (int j = 0; j < elems.length; j++) {
-                atoms[i][j] = MoleculeBase.getAtomByName(elems[j]);
-            }
-        }
-
-        return atoms;
-    }
-
-    public static class NoeMatch {
-
-        public final SpatialSet sp1;
-        public final SpatialSet sp2;
-        public final Constraint.GenTypes type;
-        public final double error;
-
-        public NoeMatch(SpatialSet sp1, SpatialSet sp2, Constraint.GenTypes type, double error) {
-            this.sp1 = sp1;
-            this.sp2 = sp2;
-            this.type = type;
-            this.error = error;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sBuilder = new StringBuilder();
-            sBuilder.append(sp1.atom.getShortName()).append("\t");
-            sBuilder.append(sp2.atom.getShortName()).append("\t");
-            sBuilder.append(type).append("\t");
-            sBuilder.append(error);
-            return sBuilder.toString();
-        }
     }
 
     /**
@@ -499,36 +421,6 @@ public class Noe extends DistanceConstraint implements Serializable {
 
     public void setDisStatAvg(DistanceStat disStatAvg) {
         this.disStatAvg = disStatAvg;
-    }
-
-    /**
-     * @return the lower
-     */
-    @Override
-    public double getLower() {
-        return lower;
-    }
-
-    /**
-     * @param lower the lower to set
-     */
-    public void setLower(double lower) {
-        this.lower = lower;
-    }
-
-    /**
-     * @return the upper
-     */
-    @Override
-    public double getUpper() {
-        return upper;
-    }
-
-    /**
-     * @param upper the upper to set
-     */
-    public void setUpper(double upper) {
-        this.upper = upper;
     }
 
     public void setTarget(double target) {
@@ -614,5 +506,116 @@ public class Noe extends DistanceConstraint implements Serializable {
             iRes2 = ((Residue) e2).iRes;
         }
         return Math.abs(iRes1 - iRes2);
+    }
+
+    public static double getTolerance() {
+        return tolerance;
+    }
+
+    public static void setTolerance(double value) {
+        tolerance = value;
+    }
+
+    public static int getNStructures() {
+        return nStructures;
+    }
+
+    public static int getSize(NoeSet noeSet) {
+        return noeSet.getSize();
+    }
+
+    public static void resetConstraints(NoeSet noeSet) {
+        noeSet.clear();
+    }
+
+    public static double avgDistance(List<Double> dArray, double expValue, int nMonomers, boolean sumAverage) {
+        double sum = 0.0;
+        int n = 0;
+        for (Double dis : dArray) {
+            sum += Math.pow(dis, expValue);
+            n++;
+
+        }
+        if (!sumAverage) {
+            nMonomers = n;
+        }
+        double distance = Math.pow((sum / nMonomers), 1.0 / expValue);
+        return distance;
+
+    }
+
+    public static Atom[][] getProtons(Atom[][] atoms) {
+        Atom[][] protons = new Atom[2][0];
+        if (atoms[0] != null) {
+            protons[0] = new Atom[atoms[0].length];
+            protons[1] = new Atom[atoms[0].length];
+            int k = 0;
+            for (int j = 0; j < atoms[0].length; j++) {
+                int nProton = 0;
+                for (Atom[] atom : atoms) {
+                    if ((atom != null) && (j < atom.length)) {
+                        if (atom[j].aNum == 1) {
+                            if (nProton == 0) {
+                                protons[0][k] = atom[j];
+                                nProton++;
+                            } else if (nProton == 1) {
+                                protons[1][k] = atom[j];
+                                k++;
+                                nProton++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return protons;
+    }
+
+    public static Atom[][] getAtoms(Peak peak) {
+        Atom[][] atoms = new Atom[peak.getPeakList().getNDim()][];
+
+        for (int i = 0; i < peak.getPeakList().getNDim(); i++) {
+            atoms[i] = null;
+            String label = peak.peakDims[i].getLabel();
+            String[] elems = label.split(" ");
+
+            if (elems.length == 0) {
+                continue;
+            }
+
+            int nElems = elems.length;
+            atoms[i] = new Atom[nElems];
+
+            for (int j = 0; j < elems.length; j++) {
+                atoms[i][j] = MoleculeBase.getAtomByName(elems[j]);
+            }
+        }
+
+        return atoms;
+    }
+
+    public static class NoeMatch {
+
+        public final SpatialSet sp1;
+        public final SpatialSet sp2;
+        public final Constraint.GenTypes type;
+        public final double error;
+
+        public NoeMatch(SpatialSet sp1, SpatialSet sp2, Constraint.GenTypes type, double error) {
+            this.sp1 = sp1;
+            this.sp2 = sp2;
+            this.type = type;
+            this.error = error;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append(sp1.atom.getShortName()).append("\t");
+            sBuilder.append(sp2.atom.getShortName()).append("\t");
+            sBuilder.append(type).append("\t");
+            sBuilder.append(error);
+            return sBuilder.toString();
+        }
     }
 }

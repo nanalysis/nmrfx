@@ -17,7 +17,14 @@
  */
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.apache.commons.math3.transform.DftNormalization;
+import org.apache.commons.math3.transform.FastFourierTransformer;
+import org.apache.commons.math3.transform.TransformType;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.math.Bessel;
 import org.nmrfx.processor.processing.ProcessingException;
 
 import java.io.FileInputStream;
@@ -31,23 +38,15 @@ import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.apache.commons.math3.transform.DftNormalization;
-import org.apache.commons.math3.transform.FastFourierTransformer;
-import org.apache.commons.math3.transform.TransformType;
-import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.math.Bessel;
-
 public class MatrixND implements MatrixType {
 
+    final int nDim;
+    int[] vSizes;
     private double[] data;
     private int[] sizes;
-    int[] vSizes;
     private int[] strides;
     private double[] phases0;
     private double[] phases1;
-    final int nDim;
     private int nElems;
     /**
      * Output point to write matrix.
@@ -99,130 +98,24 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    public void setVSizes(int... vSizes) {
-        this.vSizes = vSizes.clone();
-    }
-
     public int[] getVSizes() {
         return vSizes.clone();
     }
 
-    @Override
-    public String exportData(String rootName, String suffix) throws IOException {
-        return exportData(rootName, suffix, false);
-    }
-
-    @Override
-    public String exportData(String rootName, String suffix, boolean littleEndian) throws IOException {
-        int index = getIndex();
-
-        String parFileName = String.format("%s%04d.%s.par", rootName, index + 1, suffix);
-        try (FileOutputStream oStream = new FileOutputStream(parFileName)) {
-            ByteBuffer byteBuffer = ByteBuffer.allocate((1 + nDim) * Integer.SIZE / 8);
-            if (littleEndian) {
-                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            }
-            IntBuffer intBuffer = byteBuffer.asIntBuffer();
-            intBuffer.put(0, nDim);
-            for (int i = 0; i < nDim; i++) {
-                intBuffer.put(1 + i, sizes[i] / 2);
-            }
-            FileChannel channel = oStream.getChannel();
-            channel.write(byteBuffer);
-        } catch (IOException ioE) {
-            throw ioE;
-        }
-
-        String outFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
-
-        try (FileOutputStream oStream = new FileOutputStream(outFileName)) {
-            ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * Double.SIZE / 8);
-            if (littleEndian) {
-                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            }
-            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
-            doubleBuffer.put(data);
-            FileChannel channel = oStream.getChannel();
-            channel.write(byteBuffer);
-        } catch (IOException ioE) {
-            throw ioE;
-        }
-        return outFileName;
-    }
-
-    @Override
-    public String importData(String rootName, String suffix) throws IOException {
-        return importData(rootName, suffix, false);
-    }
-
-    @Override
-    public String importData(String rootName, String suffix, boolean littleEndian) throws IOException {
-        int index = getIndex();
-        String inFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
-        try (FileInputStream oStream = new FileInputStream(inFileName)) {
-            ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * Double.SIZE / 8);
-            if (littleEndian) {
-                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            }
-            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
-            FileChannel channel = oStream.getChannel();
-            channel.read(byteBuffer);
-            doubleBuffer.get(data);
-        } catch (IOException ioE) {
-            throw ioE;
-        }
-        return inFileName;
+    public void setVSizes(int... vSizes) {
+        this.vSizes = vSizes.clone();
     }
 
     public void dump() throws IOException {
         dump(null);
     }
 
-    @Override
-    public void dump(String outName) throws IOException {
-
-        FileWriter fileWriter = null;
-        if (outName != null) {
-            fileWriter = new FileWriter(outName);
-        }
-        MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
-        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
-        int i = 0;
-        try (FileWriter fw = fileWriter) {
-            while (iterator.hasNext()) {
-                iterator.next();
-                int[] counts = iterator.getCounts();
-                for (int count : counts) {
-                    if (fw != null) {
-                        fw.write(String.format("%3d ", count));
-                    } else {
-                        System.out.printf("%3d ", count);
-                    }
-                }
-                if (fw != null) {
-                    fw.write(String.format("%3d %.5f%n", i, data[i++]));
-                } else {
-                    System.out.printf("%3d %.5f%n", i, data[i++]);
-                }
-            }
-        }
-    }
-
-    @Override
-    public int getIndex() {
-        if (pt == null) {
-            return 0;
-        } else {
-            return pt[pt.length - 1][0];
-        }
+    public int[][] getPt() {
+        return pt;
     }
 
     public void setPt(int[][] pt) {
         this.pt = pt;
-    }
-
-    public int[][] getPt() {
-        return pt;
     }
 
     public int[] getDim() {
@@ -251,16 +144,6 @@ public class MatrixND implements MatrixType {
 
     public double getPh1(int i) {
         return phases1[i];
-    }
-
-    private static int[] calcStrides(int[] shape) {
-        int[] strides = new int[shape.length];
-        int stride = 1;
-        for (int i = shape.length - 1; i >= 0; i--) {
-            strides[i] = stride;
-            stride *= shape[i];
-        }
-        return strides;
     }
 
     public final double[] getVector(int axis, int... index) {
@@ -540,6 +423,112 @@ public class MatrixND implements MatrixType {
         doPhaseTD(phase);
     }
 
+    @Override
+    public void dump(String outName) throws IOException {
+
+        FileWriter fileWriter = null;
+        if (outName != null) {
+            fileWriter = new FileWriter(outName);
+        }
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        int i = 0;
+        try (FileWriter fw = fileWriter) {
+            while (iterator.hasNext()) {
+                iterator.next();
+                int[] counts = iterator.getCounts();
+                for (int count : counts) {
+                    if (fw != null) {
+                        fw.write(String.format("%3d ", count));
+                    } else {
+                        System.out.printf("%3d ", count);
+                    }
+                }
+                if (fw != null) {
+                    fw.write(String.format("%3d %.5f%n", i, data[i++]));
+                } else {
+                    System.out.printf("%3d %.5f%n", i, data[i++]);
+                }
+            }
+        }
+    }
+
+    @Override
+    public int getIndex() {
+        if (pt == null) {
+            return 0;
+        } else {
+            return pt[pt.length - 1][0];
+        }
+    }
+
+    @Override
+    public String exportData(String rootName, String suffix) throws IOException {
+        return exportData(rootName, suffix, false);
+    }
+
+    @Override
+    public String exportData(String rootName, String suffix, boolean littleEndian) throws IOException {
+        int index = getIndex();
+
+        String parFileName = String.format("%s%04d.%s.par", rootName, index + 1, suffix);
+        try (FileOutputStream oStream = new FileOutputStream(parFileName)) {
+            ByteBuffer byteBuffer = ByteBuffer.allocate((1 + nDim) * Integer.SIZE / 8);
+            if (littleEndian) {
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            }
+            IntBuffer intBuffer = byteBuffer.asIntBuffer();
+            intBuffer.put(0, nDim);
+            for (int i = 0; i < nDim; i++) {
+                intBuffer.put(1 + i, sizes[i] / 2);
+            }
+            FileChannel channel = oStream.getChannel();
+            channel.write(byteBuffer);
+        } catch (IOException ioE) {
+            throw ioE;
+        }
+
+        String outFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
+
+        try (FileOutputStream oStream = new FileOutputStream(outFileName)) {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * Double.SIZE / 8);
+            if (littleEndian) {
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            }
+            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
+            doubleBuffer.put(data);
+            FileChannel channel = oStream.getChannel();
+            channel.write(byteBuffer);
+        } catch (IOException ioE) {
+            throw ioE;
+        }
+        return outFileName;
+    }
+
+    @Override
+    public String importData(String rootName, String suffix) throws IOException {
+        return importData(rootName, suffix, false);
+    }
+
+    @Override
+    public String importData(String rootName, String suffix, boolean littleEndian) throws IOException {
+        int index = getIndex();
+        String inFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
+        try (FileInputStream oStream = new FileInputStream(inFileName)) {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * Double.SIZE / 8);
+            if (littleEndian) {
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            }
+            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
+            FileChannel channel = oStream.getChannel();
+            channel.read(byteBuffer);
+            doubleBuffer.get(data);
+        } catch (IOException ioE) {
+            throw ioE;
+        }
+        return inFileName;
+    }
+
     public void doPhaseTD(double[] phaseValues) {
         for (int i = 0; i < nDim; i++) {
             double ph0 = 0.0;
@@ -650,11 +639,6 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    static int getZfSize(double vecSize, int factor) {
-        int size = (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
-        return size;
-    }
-
     public boolean ensurePowerOf2() {
         boolean needsZF = false;
         int[] zfSizes = new int[getNDim()];
@@ -734,64 +718,14 @@ public class MatrixND implements MatrixType {
 
     }
 
-    public static void zeroValues(double[] values, int[] zeroList) {
-        for (int i : zeroList) {
-            values[i] = 0.0;
-        }
-    }
-
     public void zeroValues(int[] zeroList) {
         for (int i : zeroList) {
             data[i] = 0.0;
         }
     }
 
-    /**
-     * Get maximum of absolute value of a matrix.
-     *
-     * @param input
-     * @return position of maximum in input matrix
-     * @see Matrix
-     */
-    private static double getAbsMaxReal(double[] values) {
-        double max = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i < values.length; i++) {
-            double val = values[i];
-            double aval = Math.abs(val);
-            if (aval > max) {
-                max = aval;
-            }
-        }
-        return max;
-    }
-
-    private static void cutRealAboveThreshold(double[] in, double[] add, double threshold) {
-        double cutoff = getAbsMaxReal(in);
-        double th = threshold * cutoff;
-        int n = in.length;
-        for (int i = 0; i < n; i++) {
-            double value = in[i];
-            double avalue = Math.abs(value);
-            if (avalue > th) {
-                if (value > 0.0) {
-                    add[i] += (avalue - th);
-                    in[i] = th;
-                } else {
-                    add[i] -= (avalue - th);
-                    in[i] = -th;
-                }
-            }
-        }
-    }
-
     public void cutRealAboveThreshold(double[] add, double threshold) {
         cutRealAboveThreshold(data, add, threshold);
-    }
-
-    public static void copyValues(double[] source, double[] target, int[] srcTargetMap) {
-        for (int i = 0; i < srcTargetMap.length; i++) {
-            target[srcTargetMap[i]] = source[i];
-        }
     }
 
     public void copyValuesFrom(MatrixND source, int[] srcTargetMap) {
@@ -816,10 +750,6 @@ public class MatrixND implements MatrixType {
             sum += FastMath.abs(value);
         }
         return sum / data.length;
-    }
-
-    public static void copyData(double[] source, double[] target) {
-        System.arraycopy(source, 0, target, 0, target.length);
     }
 
     public void copyDataTo(double[] target) {
@@ -1080,7 +1010,7 @@ public class MatrixND implements MatrixType {
                         intensities[kDim][1] = ptValue * sign;
                         int nBelowThresh = 0;
                         if (counts[jDim] > 0) {
-                            int index = i - strides[jDim] * step; // 2 assumes complex                       
+                            int index = i - strides[jDim] * step; // 2 assumes complex
                             double testValue = sign * data[index];
 //                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
                             if ((ptValue < testValue)) {
@@ -1096,7 +1026,7 @@ public class MatrixND implements MatrixType {
                             intensities[kDim][0] = testValue * sign;
                         }
                         if (ok && counts[jDim] < (sizes[jDim] - 1)) {
-                            int index = i + strides[jDim] * step; // 2 assumes complex                       
+                            int index = i + strides[jDim] * step; // 2 assumes complex
                             double testValue = sign * data[index];
                             if (ptValue < testValue) {
                                 ok = false;
@@ -1118,5 +1048,74 @@ public class MatrixND implements MatrixType {
             }
         }
         return peaks;
+    }
+
+    private static int[] calcStrides(int[] shape) {
+        int[] strides = new int[shape.length];
+        int stride = 1;
+        for (int i = shape.length - 1; i >= 0; i--) {
+            strides[i] = stride;
+            stride *= shape[i];
+        }
+        return strides;
+    }
+
+    static int getZfSize(double vecSize, int factor) {
+        int size = (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
+        return size;
+    }
+
+    public static void zeroValues(double[] values, int[] zeroList) {
+        for (int i : zeroList) {
+            values[i] = 0.0;
+        }
+    }
+
+    /**
+     * Get maximum of absolute value of a matrix.
+     *
+     * @param input
+     * @return position of maximum in input matrix
+     * @see Matrix
+     */
+    private static double getAbsMaxReal(double[] values) {
+        double max = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < values.length; i++) {
+            double val = values[i];
+            double aval = Math.abs(val);
+            if (aval > max) {
+                max = aval;
+            }
+        }
+        return max;
+    }
+
+    private static void cutRealAboveThreshold(double[] in, double[] add, double threshold) {
+        double cutoff = getAbsMaxReal(in);
+        double th = threshold * cutoff;
+        int n = in.length;
+        for (int i = 0; i < n; i++) {
+            double value = in[i];
+            double avalue = Math.abs(value);
+            if (avalue > th) {
+                if (value > 0.0) {
+                    add[i] += (avalue - th);
+                    in[i] = th;
+                } else {
+                    add[i] -= (avalue - th);
+                    in[i] = -th;
+                }
+            }
+        }
+    }
+
+    public static void copyValues(double[] source, double[] target, int[] srcTargetMap) {
+        for (int i = 0; i < srcTargetMap.length; i++) {
+            target[srcTargetMap[i]] = source[i];
+        }
+    }
+
+    public static void copyData(double[] source, double[] target) {
+        System.arraycopy(source, 0, target, 0, target.length);
     }
 }

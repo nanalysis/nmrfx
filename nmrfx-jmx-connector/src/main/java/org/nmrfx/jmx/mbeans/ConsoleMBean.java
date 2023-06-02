@@ -25,6 +25,7 @@ public interface ConsoleMBean {
 
     /**
      * Execute any python script in the console
+     *
      * @param script the line to evaluate
      */
     void run(String script);

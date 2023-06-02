@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- *
  * @author brucejohnson
  */
 //TODO uncomment once core & utils are merged
@@ -49,21 +48,21 @@ public class XYCanvasChart {
 
     private static final Logger log = LoggerFactory.getLogger(XYCanvasChart.class);
     public static final Color[] colors = {
-        Color.web("#1b9e77"),
-        Color.web("#d95f02"),
-        Color.web("#7570b3"),
-        Color.web("#e7298a"),
-        Color.web("#66a61e"),
-        Color.web("#e6ab02"),
-        Color.web("#a6761d"),
-        Color.web("#666666"),
-        Color.web("#ff7f00"),
-        Color.web("#6a3d9a"),};
+            Color.web("#1b9e77"),
+            Color.web("#d95f02"),
+            Color.web("#7570b3"),
+            Color.web("#e7298a"),
+            Color.web("#66a61e"),
+            Color.web("#e6ab02"),
+            Color.web("#a6761d"),
+            Color.web("#666666"),
+            Color.web("#ff7f00"),
+            Color.web("#6a3d9a"),};
 
     public final Canvas canvas;
-    String title = "";
     public Axis xAxis;
     public Axis yAxis;
+    String title = "";
     double xPos = 0.0;
     double yPos = 0.0;
     double leftBorder = 0.0;
@@ -78,84 +77,7 @@ public class XYCanvasChart {
     ObservableList<DataSeries> data = FXCollections.observableArrayList();
 
     private DoubleProperty widthProperty;
-
-    public final DoubleProperty widthProperty() {
-        if (widthProperty == null) {
-            widthProperty = new SimpleDoubleProperty(this, "width", 200.0);
-        }
-        return widthProperty;
-    }
-
-    public void setWidth(double value) {
-        widthProperty().set(value);
-    }
-
-    public double getWidth() {
-        return widthProperty().get();
-    }
-
     private DoubleProperty heightProperty;
-
-    public final DoubleProperty heightProperty() {
-        if (heightProperty == null) {
-            heightProperty = new SimpleDoubleProperty(this, "height", 200.0);
-        }
-        return heightProperty;
-    }
-
-    public void setHeight(double value) {
-        heightProperty().set(value);
-    }
-
-    public double getHeight() {
-        return heightProperty().get();
-    }
-
-    public void setXPos(double value) {
-        xPos = value;
-    }
-
-    public void setYPos(double value) {
-        yPos = value;
-    }
-
-    public void setMinLeftBorder(double value) {
-        minLeftBorder = value;
-    }
-
-    public double getMinLeftBorder() {
-        return minLeftBorder;
-    }
-
-    public void setMinBottomBorder(double value) {
-        minBottomBorder = value;
-    }
-
-    public double getMinBottomBorder() {
-        return minBottomBorder;
-    }
-
-    public Axis getXAxis() {
-        return xAxis;
-    }
-
-    public Axis getYAxis() {
-        return yAxis;
-    }
-
-    public void setShowLegend(boolean state) {
-        showLegend = state;
-    }
-
-    public boolean getShowLegend() {
-        return showLegend;
-    }
-
-    public static XYCanvasChart buildChart(Canvas canvas) {
-        Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 400, 100.0);
-        Axis yAxis = new Axis(Orientation.VERTICAL, 0, 100, 100, 400);
-        return new XYCanvasChart(canvas, xAxis, yAxis);
-    }
 
     public XYCanvasChart(Canvas canvas, final Axis... AXIS) {
         this.canvas = canvas;
@@ -166,6 +88,76 @@ public class XYCanvasChart {
         data.addListener((ListChangeListener) (e -> seriesChanged()));
         legend = new CanvasLegend(this);
 
+    }
+
+    public final DoubleProperty widthProperty() {
+        if (widthProperty == null) {
+            widthProperty = new SimpleDoubleProperty(this, "width", 200.0);
+        }
+        return widthProperty;
+    }
+
+    public double getWidth() {
+        return widthProperty().get();
+    }
+
+    public void setWidth(double value) {
+        widthProperty().set(value);
+    }
+
+    public final DoubleProperty heightProperty() {
+        if (heightProperty == null) {
+            heightProperty = new SimpleDoubleProperty(this, "height", 200.0);
+        }
+        return heightProperty;
+    }
+
+    public double getHeight() {
+        return heightProperty().get();
+    }
+
+    public void setHeight(double value) {
+        heightProperty().set(value);
+    }
+
+    public void setXPos(double value) {
+        xPos = value;
+    }
+
+    public void setYPos(double value) {
+        yPos = value;
+    }
+
+    public double getMinLeftBorder() {
+        return minLeftBorder;
+    }
+
+    public void setMinLeftBorder(double value) {
+        minLeftBorder = value;
+    }
+
+    public double getMinBottomBorder() {
+        return minBottomBorder;
+    }
+
+    public void setMinBottomBorder(double value) {
+        minBottomBorder = value;
+    }
+
+    public Axis getXAxis() {
+        return xAxis;
+    }
+
+    public Axis getYAxis() {
+        return yAxis;
+    }
+
+    public boolean getShowLegend() {
+        return showLegend;
+    }
+
+    public void setShowLegend(boolean state) {
+        showLegend = state;
     }
 
     void seriesChanged() {
@@ -184,7 +176,7 @@ public class XYCanvasChart {
                 if (!dataSeries.isEmpty()) {
                     ok = true;
                     xMin = Math.min(xMin, dataSeries.getMinX());
-                    xMax = Math.max(xMax,dataSeries.getMaxX());
+                    xMax = Math.max(xMax, dataSeries.getMaxX());
                     yMin = Math.min(yMin, dataSeries.getMinY());
                     yMax = Math.max(yMax, dataSeries.getMaxY());
                 }
@@ -224,12 +216,12 @@ public class XYCanvasChart {
         return canvas;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
     public String getTitle() {
         return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public void setNames(String title, String xAxisName, String yAxisName, String extra) {
@@ -375,47 +367,6 @@ public class XYCanvasChart {
         gC.restore();
     }
 
-    public class PickPoint {
-        double x;
-        double y;
-        double radius;
-
-        public PickPoint(double x, double y, double radius) {
-            this.x = x;
-            this.y = y;
-            this.radius = radius;
-        }
-    }
-
-    public class Hit {
-
-        DataSeries series;
-        int index;
-        XYValue value;
-
-        Hit(DataSeries series, int index, XYValue value) {
-            this.series = series;
-            this.index = index;
-            this.value = value;
-        }
-
-        public DataSeries getSeries() {
-            return series;
-        }
-
-        public XYValue getValue() {
-            return value;
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
-        public String toString() {
-            return series.getName() + ":" + index;
-        }
-    }
-
     public Optional<Hit> pickChart(double mouseX, double mouseY, double hitRadius) {
         double minDimSize = getWidth() < getHeight() ? getWidth() : getHeight();
         Optional<Hit> hitOpt = Optional.empty();
@@ -486,6 +437,53 @@ public class XYCanvasChart {
                 ExceptionDialog eDialog = new ExceptionDialog(ex);
                 eDialog.showAndWait();
             }
+        }
+    }
+
+    public static XYCanvasChart buildChart(Canvas canvas) {
+        Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 400, 100.0);
+        Axis yAxis = new Axis(Orientation.VERTICAL, 0, 100, 100, 400);
+        return new XYCanvasChart(canvas, xAxis, yAxis);
+    }
+
+    public class PickPoint {
+        double x;
+        double y;
+        double radius;
+
+        public PickPoint(double x, double y, double radius) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+        }
+    }
+
+    public class Hit {
+
+        DataSeries series;
+        int index;
+        XYValue value;
+
+        Hit(DataSeries series, int index, XYValue value) {
+            this.series = series;
+            this.index = index;
+            this.value = value;
+        }
+
+        public DataSeries getSeries() {
+            return series;
+        }
+
+        public XYValue getValue() {
+            return value;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public String toString() {
+            return series.getName() + ":" + index;
         }
     }
 

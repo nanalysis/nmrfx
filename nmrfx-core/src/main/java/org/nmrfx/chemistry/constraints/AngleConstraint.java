@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,9 @@
  */
 package org.nmrfx.chemistry.constraints;
 
+import org.nmrfx.chemistry.*;
+
 import java.util.List;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.SpatialSet;
-import org.nmrfx.chemistry.Util;
 
 /**
  * This class determines if the angle boundary is valid - angle boundary for
@@ -30,10 +27,8 @@ import org.nmrfx.chemistry.Util;
  */
 public class AngleConstraint implements Constraint {
 
+    final static double toRad = Math.PI / 180.0;
     private static DistanceStat defaultStat = new DistanceStat();
-
-    protected int idNum = 0;
-
     /**
      * Upper Angle Bound
      */
@@ -42,8 +37,6 @@ public class AngleConstraint implements Constraint {
      * Lower Angle Bound
      */
     final double lower;
-
-    private Atom[] atoms = null;
     /**
      * Scale
      */
@@ -64,16 +57,17 @@ public class AngleConstraint implements Constraint {
      * name
      */
     final String name;
+    protected int idNum = 0;
+    private Atom[] atoms = null;
     /**
      * Index to list of angles
      */
     private int active = 1;
     private int index = -1;
     private DistanceStat disStat = defaultStat;
-    final static double toRad = Math.PI / 180.0;
 
     public AngleConstraint(Atom[] atoms, double lower, double upper, final double scale,
-            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
+                           Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
         if (atoms.length != 4) {
             throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
         }
@@ -107,7 +101,7 @@ public class AngleConstraint implements Constraint {
     }
 
     public AngleConstraint(List<Atom> atoms, double lower, double upper, final double scale,
-            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
+                           Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
         for (Atom atom : atoms) {
             if (atom == null) {
                 throw new InvalidMoleculeException("null atom");
@@ -151,26 +145,12 @@ public class AngleConstraint implements Constraint {
 
     }
 
-    public static boolean allowRotation(List<String> atomNames) {
-
-        int arrayLength = atomNames.size();
-        if (arrayLength != 4) {
-            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
-        }
-        Atom[] atoms = new Atom[4];
-        for (int i = 0; i < arrayLength; i++) {
-            atoms[i] = MoleculeBase.getAtomByName(atomNames.get(i));
-        }
-
-        return !((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2]));
+    public int getIndex() {
+        return index;
     }
 
     public void setIndex(final int index) {
         this.index = index;
-    }
-
-    public int getIndex() {
-        return index;
     }
 
     public Atom getAtom() {
@@ -230,12 +210,12 @@ public class AngleConstraint implements Constraint {
         return name;
     }
 
-    public void setActive(int state) {
-        active = state;
-    }
-
     public int getActive() {
         return active;
+    }
+
+    public void setActive(int state) {
+        active = state;
     }
 
     public double getViol(double angle) {
@@ -339,5 +319,19 @@ public class AngleConstraint implements Constraint {
         result.append(sep);
         result.append("1");
         return result.toString();
+    }
+
+    public static boolean allowRotation(List<String> atomNames) {
+
+        int arrayLength = atomNames.size();
+        if (arrayLength != 4) {
+            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
+        }
+        Atom[] atoms = new Atom[4];
+        for (int i = 0; i < arrayLength; i++) {
+            atoms[i] = MoleculeBase.getAtomByName(atomNames.get(i));
+        }
+
+        return !((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2]));
     }
 }

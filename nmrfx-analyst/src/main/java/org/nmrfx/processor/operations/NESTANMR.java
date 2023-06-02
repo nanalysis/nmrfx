@@ -100,14 +100,16 @@ public class NESTANMR extends MatrixOperation {
         this.extendMode = extendMode;
         this.extendFactor = extendFactor;
     }
+
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal, SampleSchedule schedule,
                     List phaseList, boolean zeroAtStart, double threshold,
                     String logHomeName) throws ProcessingException {
-        this(outerIterations, innerIterations, tolFinal, muFinal, schedule,phaseList,zeroAtStart,threshold,logHomeName, false,0);
+        this(outerIterations, innerIterations, tolFinal, muFinal, schedule, phaseList, zeroAtStart, threshold, logHomeName, false, 0);
     }
+
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal,
                     List phaseList, boolean zeroAtStart, double threshold, int extendFactor, List<int[]> skipList) throws ProcessingException {
-        this(outerIterations, innerIterations, tolFinal, muFinal, null,phaseList,zeroAtStart,threshold,null,true, extendFactor);
+        this(outerIterations, innerIterations, tolFinal, muFinal, null, phaseList, zeroAtStart, threshold, null, true, extendFactor);
         this.skipList = skipList;
     }
 
@@ -118,6 +120,16 @@ public class NESTANMR extends MatrixOperation {
         } else {
             return evalNUS(vector);
         }
+    }
+
+    @Override
+    public Operation evalMatrix(MatrixType matrix) {
+        if (extendMode) {
+            return evalExtendMatrix(matrix);
+        } else {
+            return evalNUSMatrix(matrix);
+        }
+
     }
 
     public Operation evalExtend(Vec vector) throws ProcessingException {
@@ -190,20 +202,6 @@ public class NESTANMR extends MatrixOperation {
         return this;
     }
 
-    @Override
-    public Operation evalMatrix(MatrixType matrix) {
-        if (extendMode) {
-            return evalExtendMatrix(matrix);
-        } else {
-            return evalNUSMatrix(matrix);
-        }
-
-    }
-
-    public static int getZfSize(double vecSize, int factor) {
-        return (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
-    }
-
     public Operation evalExtendMatrix(MatrixType matrix) {
         try {
             MatrixND matrixND = (MatrixND) matrix;
@@ -255,5 +253,9 @@ public class NESTANMR extends MatrixOperation {
 
         return this;
 
+    }
+
+    public static int getZfSize(double vecSize, int factor) {
+        return (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
     }
 }

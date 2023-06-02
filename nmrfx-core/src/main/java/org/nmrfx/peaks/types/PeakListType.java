@@ -27,19 +27,10 @@ public class PeakListType {
         this.name = name;
     }
 
-    public static void setPeakList(PeakList peakList, String name) {
-        for (int i = 0; i < peakList.getNDim(); i++) {
-            var sDim = peakList.getSpectralDim(i);
-            sDim.setRelation("");
-            sDim.setPattern("");
-        }
-        peakList.setExperimentType(name);
-    }
-
-    private SpectralDim getBondDim(Map<String, SpectralDim> sDims, String bondDim){
+    private SpectralDim getBondDim(Map<String, SpectralDim> sDims, String bondDim) {
         for (var entry : sDims.entrySet()) {
             String key = entry.getKey();
-            String dim =  key.substring(0, key.indexOf(":"));
+            String dim = key.substring(0, key.indexOf(":"));
             if (dim.equals(bondDim)) {
                 return entry.getValue();
             }
@@ -60,7 +51,7 @@ public class PeakListType {
         boolean[] used = new boolean[peakList.getNDim()];
         int j = 0;
         for (PeakListTypeDim dim : dims) {
-            String dimName = dim.getName()+":" + j;
+            String dimName = dim.getName() + ":" + j;
             for (int i = 0; i < peakList.getNDim(); i++) {
                 if (used[i]) {
                     continue;
@@ -84,7 +75,7 @@ public class PeakListType {
         }
         j = 0;
         for (PeakListTypeDim dim : dims) {
-            String dimName = dim.getName()+":" + j;
+            String dimName = dim.getName() + ":" + j;
             if (sDims.containsKey(dimName)) {
                 var sDim = sDims.get(dimName);
                 sDim.setPattern(dim.getPattern());
@@ -100,11 +91,21 @@ public class PeakListType {
         }
         peakList.setExperimentType(name);
     }
+
     @Override
     public String toString() {
         return "Type{" +
                 "name='" + name + '\'' +
                 ", dims=" + dims +
                 '}';
+    }
+
+    public static void setPeakList(PeakList peakList, String name) {
+        for (int i = 0; i < peakList.getNDim(); i++) {
+            var sDim = peakList.getSpectralDim(i);
+            sDim.setRelation("");
+            sDim.setPattern("");
+        }
+        peakList.setExperimentType(name);
     }
 }

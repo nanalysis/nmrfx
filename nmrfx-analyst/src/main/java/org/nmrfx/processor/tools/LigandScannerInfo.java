@@ -9,20 +9,19 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 
 /**
- *
  * @author brucejohnson
  */
 public class LigandScannerInfo {
 
     private final Dataset dataset;
-    private PeakList peakList = null;
     private final int index;
     private final String group;
     private final String sample;
     private final double conc;
-    private double minShift;
     double pcaDist;
     double[] pcaValues = null;
+    private PeakList peakList = null;
+    private double minShift;
 
     public LigandScannerInfo(Dataset dataset, int index, String group, String sample, double conc) {
         this.dataset = dataset;
@@ -32,12 +31,12 @@ public class LigandScannerInfo {
         this.conc = conc;
     }
 
-    public void setPCADist(double value) {
-        pcaDist = value;
-    }
-
     public double getPCADist() {
         return pcaDist;
+    }
+
+    public void setPCADist(double value) {
+        pcaDist = value;
     }
 
     public void setPCValues(double[] values) {

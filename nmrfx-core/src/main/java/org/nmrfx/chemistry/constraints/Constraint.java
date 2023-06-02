@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,10 +19,19 @@
 package org.nmrfx.chemistry.constraints;
 
 /**
- *
  * @author brucejohnson
  */
 public interface Constraint {
+
+    public int getID();
+
+    public boolean isUserActive();
+
+    public DistanceStat getStat();
+
+    public double getValue();
+
+    public String toSTARString();
 
     enum GenTypes {
 
@@ -37,6 +46,11 @@ public interface Constraint {
         private final String description;
         private final String shortDesc;
 
+        GenTypes(String description, String shortDesc) {
+            this.description = description;
+            this.shortDesc = shortDesc;
+        }
+
         public String getDescription() {
             return description;
         }
@@ -44,20 +58,5 @@ public interface Constraint {
         public String getShortDescription() {
             return shortDesc;
         }
-
-        GenTypes(String description, String shortDesc) {
-            this.description = description;
-            this.shortDesc = shortDesc;
-        }
     }
-
-    public int getID();
-
-    public boolean isUserActive();
-
-    public DistanceStat getStat();
-
-    public double getValue();
-
-    public String toSTARString();
 }

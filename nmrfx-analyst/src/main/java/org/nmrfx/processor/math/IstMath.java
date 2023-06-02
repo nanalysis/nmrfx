@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,11 +17,11 @@
  */
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,17 +95,17 @@ public class IstMath {
     /**
      * Create calculation for Iterative Soft Threshold.
      *
-     * @param threshold cutoff threshold as a fraction of maximum height
-     * @param loops number of loops to iterate over
-     * @param schedule sample schedule
-     * @param alg alternate cutoff algorithm
-     * @param timeDomain result is in timeDomain
+     * @param threshold       cutoff threshold as a fraction of maximum height
+     * @param loops           number of loops to iterate over
+     * @param schedule        sample schedule
+     * @param alg             alternate cutoff algorithm
+     * @param timeDomain      result is in timeDomain
      * @param adjustThreshold Use built-in protocol to reduce threshold during processing
-     * @param allValues Replace all values (including sampled) processing
+     * @param allValues       Replace all values (including sampled) processing
      * @throws ProcessingException if a processing error occurs
      */
     public IstMath(double threshold, int loops, SampleSchedule schedule, String alg,
-            boolean timeDomain, boolean adjustThreshold, boolean allValues) throws ProcessingException {
+                   boolean timeDomain, boolean adjustThreshold, boolean allValues) throws ProcessingException {
         if (threshold <= 0.0 || threshold >= 1.0) {
             log.warn("IST Warning: threshold {} out of bounds, reset to 0.9", threshold);
             threshold = 0.9;
@@ -306,7 +306,7 @@ public class IstMath {
      * different algorithms using the
      * <i>alg</i> parameter.
      *
-     * @param input input buffer
+     * @param input  input buffer
      * @param addbuf add buffer
      * @see #alg
      */
@@ -318,7 +318,7 @@ public class IstMath {
             case "phasedpos":
                 cutAboveComplexPhasedPosThreshold(input, add, nIterations);
                 break;
-        // if (alg.equals("abs"))
+            // if (alg.equals("abs"))
             default:
                 cutAboveComplexAbsThreshold(input, add, nIterations);
                 break;
@@ -408,7 +408,7 @@ public class IstMath {
      * Perform cutoff algorithm, comparing absolute values of a Complex array.
      *
      * @param input input vector
-     * @param add add buffer
+     * @param add   add buffer
      * @see #getAbsMax
      * @see Complex
      */
@@ -445,7 +445,7 @@ public class IstMath {
      * Perform cutoff algorithm, comparing positive and negative real values of a Complex phased array.
      *
      * @param input input buffer
-     * @param add add buffer
+     * @param add   add buffer
      * @see #getPhMax
      * @see Complex
      */
@@ -494,7 +494,7 @@ public class IstMath {
      * Perform cutoff algorithm, comparing positive real values of a phased Complex array.
      *
      * @param input input buffer
-     * @param add add buffer
+     * @param add   add buffer
      * @see #getPhPosMax
      * @see Complex
      */
@@ -530,7 +530,7 @@ public class IstMath {
      * Perform cutoff algorithm, comparing absolute values of a double array.
      *
      * @param input input vector
-     * @param add add buffer
+     * @param add   add buffer
      */
     private void cutAboveThreshold(double[] input, double[] add, int nIterations) {
         int maxpos = getAbsMax(input);

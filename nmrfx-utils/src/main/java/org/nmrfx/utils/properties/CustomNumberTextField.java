@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,34 +17,23 @@
  */
 package org.nmrfx.utils.properties;
 
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.Optional;
-import java.util.function.DoubleFunction;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import org.controlsfx.control.textfield.CustomTextField;
 
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Optional;
+import java.util.function.DoubleFunction;
+
 public class CustomNumberTextField extends CustomTextField {
 
     private final NumberFormat nf;
+    private final SimpleDoubleProperty number = new SimpleDoubleProperty();
     double min = Double.NEGATIVE_INFINITY;
     double max = Double.MAX_VALUE;
-    private final SimpleDoubleProperty number = new SimpleDoubleProperty();
     Optional<DoubleFunction> callbackFunction = Optional.empty();
-
-    public final Double getNumber() {
-        return number.get();
-    }
-
-    public final void setNumber(Double value) {
-        number.set(value);
-    }
-
-    public SimpleDoubleProperty numberProperty() {
-        return number;
-    }
 
     public CustomNumberTextField() {
         this(new Double(0.0));
@@ -60,6 +49,18 @@ public class CustomNumberTextField extends CustomTextField {
         this.nf = nf;
         initHandlers();
         setNumber(value);
+    }
+
+    public final Double getNumber() {
+        return number.get();
+    }
+
+    public final void setNumber(Double value) {
+        number.set(value);
+    }
+
+    public SimpleDoubleProperty numberProperty() {
+        return number;
     }
 
     private void initHandlers() {

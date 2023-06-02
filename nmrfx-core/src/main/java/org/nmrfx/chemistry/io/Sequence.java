@@ -17,42 +17,26 @@
  */
 package org.nmrfx.chemistry.io;
 
-import org.nmrfx.chemistry.Order;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import org.nmrfx.chemistry.AtomEnergyProp;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
- *
  * @author brucejohnson
  */
 public class Sequence {
 
     private static final Logger log = LoggerFactory.getLogger(Sequence.class);
-    private Atom connectAtom = null;
-    private Bond connectBond = null;
-    private Atom connectBranch = null;
-    private int connectPosition = -1;
-    private MoleculeBase molecule;
     private final static Map<String, String> residueAliases = new HashMap<>();
     private final static List<String> AMINO_ACID_NAMES = new ArrayList<>();
-    private String entryAtomName = null;
-    private String exitAtomName = null;
     public static boolean useCoarse = false;
 
     static {
@@ -99,6 +83,14 @@ public class Sequence {
 
     }
 
+    private Atom connectAtom = null;
+    private Bond connectBond = null;
+    private Atom connectBranch = null;
+    private int connectPosition = -1;
+    private MoleculeBase molecule;
+    private String entryAtomName = null;
+    private String exitAtomName = null;
+
     public Sequence() {
     }
 
@@ -139,6 +131,490 @@ public class Sequence {
 
     private void addNonStandardResidue(Residue residue) {
         residue.molecule.addNonStandardResidue(this, residue);
+    }
+
+    public MoleculeBase getMolecule() {
+        return molecule;
+    }
+
+    public void removeBadBonds() {
+        if ((connectBond != null) && (connectBond.end == null)) {
+            connectBond.begin.removeBondTo(null);
+        }
+    }
+
+    public BufferedReader getLocalResidueReader(final String fileName) {
+        File file = new File(fileName);
+        String reslibDir = PDBFile.getLocalReslibDir();
+        BufferedReader bf = null;
+        if (!reslibDir.equals("")) {
+            String fileNameLocal = reslibDir + "/" + file.getName();
+            File fileLocal = new File(fileNameLocal);
+            if (fileLocal.canRead()) {
+                try {
+                    bf = new BufferedReader(new FileReader(fileLocal));
+                } catch (IOException ioe) {
+                    bf = null;
+                }
+            }
+        }
+        return bf;
+    }
+
+    public ArrayList<String[]> loadResidue(final String fileName, boolean throwTclException) throws MoleculeIOException {
+        BufferedReader bf;
+        ArrayList<String[]> fieldArray = new ArrayList<>();
+        bf = getLocalResidueReader(fileName);
+        if (bf == null) {
+            try {
+                if (fileName.startsWith("resource:")) {
+                    InputStream inputStream = this.getClass().getResourceAsStream(fileName.substring(9));
+                    if (inputStream == null) {
+                        log.warn("resource null {}", fileName);
+                    } else {
+                        bf = new BufferedReader(new InputStreamReader(inputStream));
+                    }
+                } else {
+                    bf = new BufferedReader(new FileReader(fileName));
+                }
+            } catch (IOException ioe) {
+
+                if (throwTclException) {
+                    throw new MoleculeIOException("Cannot open the file " + fileName);
+                }
+
+            }
+        }
+        if (bf != null) {
+            try (BufferedReader bufferedReader = bf) {
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    line = line.trim();
+                    String[] fields = line.split("\\s+");
+                    fieldArray.add(fields);
+                }
+            } catch (IOException ioe) {
+                log.warn(ioe.getMessage(), ioe);
+            }
+        }
+        return fieldArray;
+    }
+
+    public boolean addResidue(String fileName, Residue residue, RES_POSITION resPos, String coordSetName, boolean throwTclException)
+            throws MoleculeIOException {
+        try {
+            // make sure parameters are in (if they are already this does nothing)
+            // so is quick to call
+            AtomEnergyProp.readPropFile();
+        } catch (IOException ex) {
+            throw new MoleculeIOException("Coudn't load energy parameter file" + ex.getMessage());
+        }
+        ArrayList<String[]> fieldArray = loadResidue(fileName, throwTclException);
+        boolean result = false;
+        if (fieldArray.size() > 0) {
+            residue.libraryMode(true);
+            result = true;
+            for (String[] fields : fieldArray) {
+                try {
+                    PRFFields prfField = PRFFields.valueOf(fields[0]);
+                    if (prfField != null) {
+                        prfField.processLine(this, fields, residue, resPos, coordSetName);
+                    }
+                } catch (IllegalArgumentException iAE) {
+                    // ignore field
+                }
+
+            }
+            if (entryAtomName != null || exitAtomName != null) {
+                throw new IllegalArgumentException("Start and entry point atoms specified for a standard residue with seq file");
+            }
+        } else {
+            Compound compound = readResidue(fileName, coordSetName, residue);
+            if (compound != null) {
+                result = true;
+                addNonStandardResidue(residue);
+            } else {
+                result = false;
+                log.warn("cant read {}", fileName);
+            }
+            // FIXME : What happens if first residue is an unnatural residue
+            if (this.connectAtom != null) {
+
+                /* FIXME: must also change to accomodate whether nucleic acid or protein */
+            }
+        }
+        return result;
+    }
+
+    public Compound readResidue(String fileName, String coordSetName, Residue residue) throws MoleculeIOException {
+        String localResLibDir = PDBFile.getLocalReslibDir();
+        File file = new File(fileName);
+        String fileShortName = file.getName();
+        residue.setFirstBackBoneAtom(entryAtomName);
+        residue.setLastBackBoneAtom(exitAtomName);
+        entryAtomName = null;
+        exitAtomName = null;
+        String localFile = localResLibDir + "/" + fileShortName.split(".prf")[0];
+        String[] exts = {".pdb", ".sdf"};
+        Compound compound = null;
+        for (String ext : exts) {
+            file = new File(localFile + ext);
+            if (file.canRead()) {
+                if (ext.equals(".pdb")) {
+                    compound = PDBFile.readResidue(localFile + ext, null, molecule, coordSetName, residue);
+                } else {
+                    compound = SDFile.read(localFile + ext, null, molecule, coordSetName, residue);
+                }
+                break;
+            }
+        }
+        return compound;
+    }
+
+    public MoleculeBase read(String fileName) throws MoleculeIOException {
+        File file = new File(fileName);
+        int dotPos = file.getName().lastIndexOf('.');
+        String polymerName;
+        if (dotPos == -1) {
+            polymerName = file.getName();
+        } else {
+            polymerName = file.getName().substring(0, dotPos);
+        }
+        read(fileName, polymerName);
+        return molecule;
+    }
+
+    public MoleculeBase read(String fileName, String polymerName) throws MoleculeIOException {
+        ArrayList<String> inputStrings = new ArrayList<>();
+        File file = new File(fileName);
+        try (Stream<String> lines = Files.lines(file.toPath())) {
+            lines.forEach(inputStrings::add);
+        } catch (FileNotFoundException ioe) {
+            throw new MoleculeIOException(ioe.getMessage());
+        } catch (IOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
+        }
+
+        String parentDir = file.getParent();
+        read(polymerName, inputStrings, parentDir);
+        return molecule;
+    }
+
+    public MoleculeBase read(String polymerName, List<String> inputStrings, String parentDir) throws MoleculeIOException {
+        return read(polymerName, inputStrings, parentDir, "");
+
+    }
+
+    public MoleculeBase read(String polymerName, List<String> inputStrings, String parentDir, String molName)
+            throws MoleculeIOException {
+        Polymer polymer = null;
+        Residue residue = null;
+        boolean setPolymerType = false;
+        String iRes = "1";
+        String[] stringArg = new String[3];
+        Pattern pattern = Pattern.compile("[-/\\w/\\.:]+");
+        String coordSetName = molName;
+        ArrayList<String> coordSetNames = new ArrayList<>();
+        ArrayList<Polymer> polymers = new ArrayList<>();
+        ArrayList<File> ligandFiles = new ArrayList<>();
+        Set<String> isNotCapped = new TreeSet<>();
+        String polymerType = null;
+        molecule = MoleculeFactory.getActive();
+        // First sequence is always a new polymer even if no '-' args are added
+        boolean newPolymer = true;
+        RES_POSITION resPos = RES_POSITION.START;
+
+        for (String inputString : inputStrings) {
+            inputString = inputString.trim();
+
+            if (inputString.length() == 0) {
+                continue;
+            }
+            if (inputString.charAt(0) == '#') {
+                continue;
+            }
+
+            Matcher matcher = pattern.matcher(inputString);
+            int nMatches = 0;
+            String resName = "";
+
+            for (int i = 0; i < stringArg.length; i++) {
+                stringArg[i] = null;
+            }
+
+            while ((nMatches < stringArg.length) && matcher.find()) {
+                stringArg[nMatches++] = inputString.substring(matcher.start(), matcher.end());
+            }
+            if (stringArg[0] == null) {
+                throw new MoleculeIOException("readseq: error in inputString \"" + inputString + "\"");
+            }
+
+            boolean isResidue = false;
+
+            if (stringArg[0].startsWith("-")) {
+                newPolymer = true;
+                iRes = "1";
+                if ("-molecule".startsWith(stringArg[0])) {
+                    molName = stringArg[1];
+                    /* NOTE: This molName is never used and would always be overwritten
+                       by polymerName. With this in mind, modifications to make this
+                       function not default to creating a molecule without editing
+                       initMolFromSeqFile
+                     */
+                } else if ("-polymer".startsWith(stringArg[0])) {
+                    polymerName = stringArg[1];
+                    coordSetNames.clear();
+                    resPos = RES_POSITION.START;
+                } else if ("-ptype".startsWith(stringArg[0])) {
+                    setPolymerType = true;
+                    polymerType = stringArg[1];
+                } else if ("-nocap".startsWith(stringArg[0])) {
+                    isNotCapped.add(polymerName);
+                } else if ("-coordset".startsWith(stringArg[0])) {
+                    coordSetNames.add(stringArg[1]);
+                    coordSetName = stringArg[1];
+                } else if ("-sdfile".startsWith(stringArg[0])) {
+                    if (parentDir != null) {
+                        // fixme should add coordset and file
+                        ligandFiles.add((new File(parentDir, stringArg[1])));
+                    }
+                } else if ("-pdbfile".startsWith(stringArg[0])) {
+                    if (parentDir != null) {
+                        // fixme should add coordset and file
+                        ligandFiles.add((new File(parentDir, stringArg[1])));
+                    }
+                } else if ("-ligand".startsWith(stringArg[0])) {
+                    if (parentDir != null) {
+                        // fixme should add coordset and file
+                        ligandFiles.add((new File(parentDir, stringArg[1])));
+                    }
+                } else if ("-entry".startsWith(stringArg[0])) {
+                    entryAtomName = stringArg[1];
+                } else if ("-exit".startsWith(stringArg[0])) {
+                    exitAtomName = stringArg[1];
+                } else {
+                    throw new MoleculeIOException("unknown option \"" + stringArg[0] + "\" in sequence file");
+                }
+            } else {
+                resName = stringArg[0];
+                isResidue = true;
+                if (stringArg[1] != null) {
+                    try {
+                        iRes = stringArg[1];
+                    } catch (NumberFormatException nfE) {
+                        throw new MoleculeIOException(nfE.toString());
+                    }
+                }
+                if (stringArg[2] != null) {
+                    if (stringArg[2].equals("middle")) {
+                        resPos = RES_POSITION.MIDDLE;
+                    }
+                }
+            }
+
+            if (!isResidue) {
+                continue;
+            } else if (newPolymer) {
+                if (coordSetNames.isEmpty()) {
+                    coordSetName = polymerName;
+                    // Prevent new molecules from being created everytime
+                    // readSequence is called
+                    molName = molecule == null ? polymerName : molecule.getName();
+                    coordSetNames.add(coordSetName);
+                }
+
+                polymer = initMolFromSeqFile(molName, polymerName, coordSetNames, polymerType);
+                polymers.add(polymer);
+                molecule = polymer.molecule;
+                int coordID = 1;
+                for (String cName : coordSetNames) {
+                    if (!molecule.coordSetExists(cName)) {
+                        molecule.addCoordSet(cName, coordID++, polymer);
+                    }
+                }
+
+                newPolymer = false;
+            }
+
+            if (molecule == null) {
+                throw new MoleculeIOException("can't create molecule");
+            }
+
+            int minus = resName.indexOf('-');
+
+            if (minus > 0) {
+                resName = resName.substring(0, minus);
+            }
+
+            int plus = resName.indexOf('+');
+
+            if (plus > 0) {
+                resName = resName.substring(0, minus);
+            }
+            String resFileName = resName.toLowerCase();
+            int colonIndex = resName.indexOf(":");
+            String changeMode = "";
+            if (colonIndex != -1) {
+                changeMode = resName.substring(colonIndex + 1);
+                resName = resName.substring(0, colonIndex);
+                resFileName = resName;
+            }
+            int underIndex = resName.indexOf("_");
+            if (underIndex != -1) {
+                resName = resName.substring(0, underIndex);
+            }
+
+            resName = PDBAtomParser.pdbResToPRFName(resName, 'r');
+
+            if (!setPolymerType) {
+                if (residueAliases.values().contains(resName)) {
+                    polymerType = "nucleicacid";
+                    setPolymerType = true;
+                } else if (AMINO_ACID_NAMES.contains(resName)) {
+                    polymerType = "polypeptide";
+                    setPolymerType = true;
+                }
+                if (setPolymerType) {
+                    polymer.setPolymerType(polymerType);
+                }
+            }
+
+            residue = new Residue(iRes, resName.toUpperCase());
+            residue.molecule = molecule;
+            polymer.addResidue(residue);
+
+            String reslibDir = PDBFile.getReslibDir();
+            if (PDBFile.isIUPACMode()) {
+                polymer.setNomenclature("IUPAC");
+            } else {
+                polymer.setNomenclature("XPLOR");
+            }
+            if (isNotCapped.contains(polymer.getName())) {
+                polymer.setCapped(false);
+            } else {
+                polymer.setCapped(true);
+            }
+            addResidue(reslibDir + "/" + Sequence.getAliased(resFileName) + ".prf", residue, resPos, coordSetName, true);
+            if (changeMode.equalsIgnoreCase("d")) {
+                residue.toDStereo();
+            }
+            resPos = RES_POSITION.MIDDLE;
+            try {
+                String[] matches = iRes.split("[^\\-0-9]+");
+
+                if ((matches != null) && (matches.length > 0) && (matches[0] != null)) {
+                    int nRes = Integer.parseInt(matches[0]);
+                    nRes++;
+                    iRes = String.valueOf(nRes);
+                }
+            } catch (NumberFormatException nfE) {
+                log.warn(nfE.getMessage(), nfE);
+            }
+        }
+        for (Polymer cpolymer : polymers) {
+            if (!isNotCapped.contains(cpolymer.getName())) {
+                PDBFile.capPolymer(cpolymer);
+            }
+        }
+        if (molecule != null) {
+            molecule.updateAtomArray();
+            molecule.genCoords(false);
+            molecule.setupRotGroups();
+        }
+        for (File ligandFile : ligandFiles) {
+            if (ligandFile.getPath().endsWith("pdb")) {
+                PDBFile.readResidue(ligandFile.getPath(), null, molecule, coordSetName);
+            } else {
+                SDFile.read(ligandFile.getPath(), null, molecule, coordSetName);
+            }
+        }
+        if ((connectBond != null) && (connectBond.end == null)) {
+            connectBond.begin.removeBondTo(null);
+        }
+
+        return molecule;
+    }
+
+    Polymer initMolFromSeqFile(String molName, String polymerName, ArrayList<String> coordSetNames, String polymerType)
+            throws MoleculeIOException {
+
+        if ((molName == null) || molName.equals("")) {
+            if (MoleculeFactory.getActive() == null) {
+                throw new MoleculeIOException("No default molecule");
+            } else {
+                molecule = MoleculeFactory.getActive();
+
+                if (molecule == null) {
+                    molecule = MoleculeFactory.newMolecule(polymerName);
+                }
+            }
+        } else {
+            molecule = MoleculeFactory.getMolecule(molName);
+
+            if (molecule == null) {
+                molecule = MoleculeFactory.newMolecule(molName);
+            }
+        }
+
+        if (molecule == null) {
+            return null;
+        }
+
+        Polymer polymer = null;
+        Entity entity = molecule.getEntity(polymerName);
+
+        if (entity == null) {
+            polymer = new Polymer(polymerName);
+            polymer.molecule = molecule;
+            polymer.assemblyID = molecule.entityLabels.size() + 1;
+
+            if (coordSetNames.isEmpty()) {
+                molecule.addEntity(polymer, "", polymer.assemblyID);
+            } else {
+                molecule.addEntity(polymer, (String) coordSetNames.get(0), polymer.assemblyID);
+            }
+        } else {
+            polymer = (Polymer) entity;
+        }
+        if (polymerType != null) {
+            polymer.setPolymerType(polymerType);
+        }
+
+        return polymer;
+    }
+
+    public void createLinker(int numLinks,
+                             double linkLen, double valAngle, double dihAngle) {
+        /**
+         * createLinker is a method to create a link between atoms in two
+         * separate entities
+         *
+         * @param numLinks number of linker atoms to use
+         * @param atom1
+         * @param atom2
+         */
+
+        Atom newAtom;
+        String linkRoot = "X";
+        for (int i = 1; i <= numLinks; i++) {
+            newAtom = connectAtom.add(linkRoot + Integer.toString(i), "X", Order.SINGLE);
+            newAtom.bondLength = (float) linkLen;
+            newAtom.dihedralAngle = (float) (dihAngle * Math.PI / 180.0);
+            newAtom.valanceAngle = (float) (valAngle * Math.PI / 180.0);
+            newAtom.irpIndex = 1;
+            newAtom.setType("XX");
+            connectAtom = newAtom;
+        }
+
+        log.info("create linker {}", numLinks);
+    }
+
+    public static String getAliased(String name) {
+        String newName = residueAliases.get(name);
+        if (newName == null) {
+            newName = name;
+        }
+        return newName;
     }
 
     public enum PRFFields {
@@ -333,7 +809,8 @@ public class Sequence {
                     }
                 }
             }
-        },;
+        },
+        ;
         private String description;
         private int minFields;
         private int maxFields;
@@ -382,490 +859,6 @@ public class Sequence {
             }
             return result;
         }
-    }
-
-    public MoleculeBase getMolecule() {
-        return molecule;
-    }
-
-    public void removeBadBonds() {
-        if ((connectBond != null) && (connectBond.end == null)) {
-            connectBond.begin.removeBondTo(null);
-        }
-    }
-
-    public BufferedReader getLocalResidueReader(final String fileName) {
-        File file = new File(fileName);
-        String reslibDir = PDBFile.getLocalReslibDir();
-        BufferedReader bf = null;
-        if (!reslibDir.equals("")) {
-            String fileNameLocal = reslibDir + "/" + file.getName();
-            File fileLocal = new File(fileNameLocal);
-            if (fileLocal.canRead()) {
-                try {
-                    bf = new BufferedReader(new FileReader(fileLocal));
-                } catch (IOException ioe) {
-                    bf = null;
-                }
-            }
-        }
-        return bf;
-    }
-
-    public ArrayList<String[]> loadResidue(final String fileName, boolean throwTclException) throws MoleculeIOException {
-        BufferedReader bf;
-        ArrayList<String[]> fieldArray = new ArrayList<>();
-        bf = getLocalResidueReader(fileName);
-        if (bf == null) {
-            try {
-                if (fileName.startsWith("resource:")) {
-                    InputStream inputStream = this.getClass().getResourceAsStream(fileName.substring(9));
-                    if (inputStream == null) {
-                        log.warn("resource null {}", fileName);
-                    } else {
-                        bf = new BufferedReader(new InputStreamReader(inputStream));
-                    }
-                } else {
-                    bf = new BufferedReader(new FileReader(fileName));
-                }
-            } catch (IOException ioe) {
-
-                if (throwTclException) {
-                    throw new MoleculeIOException("Cannot open the file " + fileName);
-                }
-
-            }
-        }
-        if (bf != null) {
-            try (BufferedReader bufferedReader = bf) {
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    line = line.trim();
-                    String[] fields = line.split("\\s+");
-                    fieldArray.add(fields);
-                }
-            } catch (IOException ioe) {
-                log.warn(ioe.getMessage(), ioe);
-            }
-        }
-        return fieldArray;
-    }
-
-    public boolean addResidue(String fileName, Residue residue, RES_POSITION resPos, String coordSetName, boolean throwTclException)
-            throws MoleculeIOException {
-        try {
-            // make sure parameters are in (if they are already this does nothing)
-            // so is quick to call
-            AtomEnergyProp.readPropFile();
-        } catch (IOException ex) {
-            throw new MoleculeIOException("Coudn't load energy parameter file" + ex.getMessage());
-        }
-        ArrayList<String[]> fieldArray = loadResidue(fileName, throwTclException);
-        boolean result = false;
-        if (fieldArray.size() > 0) {
-            residue.libraryMode(true);
-            result = true;
-            for (String[] fields : fieldArray) {
-                try {
-                    PRFFields prfField = PRFFields.valueOf(fields[0]);
-                    if (prfField != null) {
-                        prfField.processLine(this, fields, residue, resPos, coordSetName);
-                    }
-                } catch (IllegalArgumentException iAE) {
-                    // ignore field
-                }
-
-            }
-            if (entryAtomName != null || exitAtomName != null) {
-                throw new IllegalArgumentException("Start and entry point atoms specified for a standard residue with seq file");
-            }
-        } else {
-            Compound compound = readResidue(fileName, coordSetName, residue);
-            if (compound != null) {
-                result = true;
-                addNonStandardResidue(residue);
-            } else {
-                result = false;
-                log.warn("cant read {}", fileName);
-            }
-            // FIXME : What happens if first residue is an unnatural residue
-            if (this.connectAtom != null) {
-
-                /* FIXME: must also change to accomodate whether nucleic acid or protein */
-            }
-        }
-        return result;
-    }
-
-    public Compound readResidue(String fileName, String coordSetName, Residue residue) throws MoleculeIOException {
-        String localResLibDir = PDBFile.getLocalReslibDir();
-        File file = new File(fileName);
-        String fileShortName = file.getName();
-        residue.setFirstBackBoneAtom(entryAtomName);
-        residue.setLastBackBoneAtom(exitAtomName);
-        entryAtomName = null;
-        exitAtomName = null;
-        String localFile = localResLibDir + "/" + fileShortName.split(".prf")[0];
-        String[] exts = {".pdb", ".sdf"};
-        Compound compound = null;
-        for (String ext : exts) {
-            file = new File(localFile + ext);
-            if (file.canRead()) {
-                if (ext.equals(".pdb")) {
-                    compound = PDBFile.readResidue(localFile + ext, null, molecule, coordSetName, residue);
-                } else {
-                    compound = SDFile.read(localFile + ext, null, molecule, coordSetName, residue);
-                }
-                break;
-            }
-        }
-        return compound;
-    }
-
-    public MoleculeBase read(String fileName) throws MoleculeIOException {
-        File file = new File(fileName);
-        int dotPos = file.getName().lastIndexOf('.');
-        String polymerName;
-        if (dotPos == -1) {
-            polymerName = file.getName();
-        } else {
-            polymerName = file.getName().substring(0, dotPos);
-        }
-        read(fileName, polymerName);
-        return molecule;
-    }
-
-    public MoleculeBase read(String fileName, String polymerName) throws MoleculeIOException {
-        ArrayList<String> inputStrings = new ArrayList<>();
-        File file = new File(fileName);
-        try (Stream<String> lines = Files.lines(file.toPath())) {
-            lines.forEach(inputStrings::add);
-        }  catch (FileNotFoundException ioe) {
-            throw new MoleculeIOException(ioe.getMessage());
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
-
-        String parentDir = file.getParent();
-        read(polymerName, inputStrings, parentDir);
-        return molecule;
-    }
-
-    public MoleculeBase read(String polymerName, List<String> inputStrings, String parentDir) throws MoleculeIOException {
-        return read(polymerName, inputStrings, parentDir, "");
-
-    }
-
-    public MoleculeBase read(String polymerName, List<String> inputStrings, String parentDir, String molName)
-            throws MoleculeIOException {
-        Polymer polymer = null;
-        Residue residue = null;
-        boolean setPolymerType = false;
-        String iRes = "1";
-        String[] stringArg = new String[3];
-        Pattern pattern = Pattern.compile("[-/\\w/\\.:]+");
-        String coordSetName = molName;
-        ArrayList<String> coordSetNames = new ArrayList<>();
-        ArrayList<Polymer> polymers = new ArrayList<>();
-        ArrayList<File> ligandFiles = new ArrayList<>();
-        Set<String> isNotCapped = new TreeSet<>();
-        String polymerType = null;
-        molecule = MoleculeFactory.getActive();
-        // First sequence is always a new polymer even if no '-' args are added
-        boolean newPolymer = true;
-        RES_POSITION resPos = RES_POSITION.START;
-
-        for (String inputString : inputStrings) {
-            inputString = inputString.trim();
-
-            if (inputString.length() == 0) {
-                continue;
-            }
-            if (inputString.charAt(0) == '#') {
-                continue;
-            }
-
-            Matcher matcher = pattern.matcher(inputString);
-            int nMatches = 0;
-            String resName = "";
-
-            for (int i = 0; i < stringArg.length; i++) {
-                stringArg[i] = null;
-            }
-
-            while ((nMatches < stringArg.length) && matcher.find()) {
-                stringArg[nMatches++] = inputString.substring(matcher.start(), matcher.end());
-            }
-            if (stringArg[0] == null) {
-                throw new MoleculeIOException("readseq: error in inputString \"" + inputString + "\"");
-            }
-
-            boolean isResidue = false;
-
-            if (stringArg[0].startsWith("-")) {
-                newPolymer = true;
-                iRes = "1";
-                if ("-molecule".startsWith(stringArg[0])) {
-                    molName = stringArg[1];
-                    /* NOTE: This molName is never used and would always be overwritten
-                       by polymerName. With this in mind, modifications to make this
-                       function not default to creating a molecule without editing
-                       initMolFromSeqFile
-                     */
-                } else if ("-polymer".startsWith(stringArg[0])) {
-                    polymerName = stringArg[1];
-                    coordSetNames.clear();
-                    resPos = RES_POSITION.START;
-                } else if ("-ptype".startsWith(stringArg[0])) {
-                    setPolymerType = true;
-                    polymerType = stringArg[1];
-                } else if ("-nocap".startsWith(stringArg[0])) {
-                    isNotCapped.add(polymerName);
-                } else if ("-coordset".startsWith(stringArg[0])) {
-                    coordSetNames.add(stringArg[1]);
-                    coordSetName = stringArg[1];
-                } else if ("-sdfile".startsWith(stringArg[0])) {
-                    if (parentDir != null) {
-                        // fixme should add coordset and file
-                        ligandFiles.add((new File(parentDir, stringArg[1])));
-                    }
-                } else if ("-pdbfile".startsWith(stringArg[0])) {
-                    if (parentDir != null) {
-                        // fixme should add coordset and file
-                        ligandFiles.add((new File(parentDir, stringArg[1])));
-                    }
-                } else if ("-ligand".startsWith(stringArg[0])) {
-                    if (parentDir != null) {
-                        // fixme should add coordset and file
-                        ligandFiles.add((new File(parentDir, stringArg[1])));
-                    }
-                } else if ("-entry".startsWith(stringArg[0])) {
-                    entryAtomName = stringArg[1];
-                } else if ("-exit".startsWith(stringArg[0])) {
-                    exitAtomName = stringArg[1];
-                } else {
-                    throw new MoleculeIOException("unknown option \"" + stringArg[0] + "\" in sequence file");
-                }
-            } else {
-                resName = stringArg[0];
-                isResidue = true;
-                if (stringArg[1] != null) {
-                    try {
-                        iRes = stringArg[1];
-                    } catch (NumberFormatException nfE) {
-                        throw new MoleculeIOException(nfE.toString());
-                    }
-                }
-                if (stringArg[2] != null) {
-                    if (stringArg[2].equals("middle")) {
-                        resPos = RES_POSITION.MIDDLE;
-                    }
-                }
-            }
-
-            if (!isResidue) {
-                continue;
-            } else if (newPolymer) {
-                if (coordSetNames.isEmpty()) {
-                    coordSetName = polymerName;
-                    // Prevent new molecules from being created everytime 
-                    // readSequence is called 
-                    molName = molecule == null ? polymerName : molecule.getName();
-                    coordSetNames.add(coordSetName);
-                }
-
-                polymer = initMolFromSeqFile(molName, polymerName, coordSetNames, polymerType);
-                polymers.add(polymer);
-                molecule = polymer.molecule;
-                int coordID = 1;
-                for (String cName : coordSetNames) {
-                    if (!molecule.coordSetExists(cName)) {
-                        molecule.addCoordSet(cName, coordID++, polymer);
-                    }
-                }
-
-                newPolymer = false;
-            }
-
-            if (molecule == null) {
-                throw new MoleculeIOException("can't create molecule");
-            }
-
-            int minus = resName.indexOf('-');
-
-            if (minus > 0) {
-                resName = resName.substring(0, minus);
-            }
-
-            int plus = resName.indexOf('+');
-
-            if (plus > 0) {
-                resName = resName.substring(0, minus);
-            }
-            String resFileName = resName.toLowerCase();
-            int colonIndex = resName.indexOf(":");
-            String changeMode = "";
-            if (colonIndex != -1) {
-                changeMode = resName.substring(colonIndex + 1);
-                resName = resName.substring(0, colonIndex);
-                resFileName = resName;
-            }
-            int underIndex = resName.indexOf("_");
-            if (underIndex != -1) {
-                resName = resName.substring(0, underIndex);
-            }
-
-            resName = PDBAtomParser.pdbResToPRFName(resName, 'r');
-
-            if (!setPolymerType) {
-                if (residueAliases.values().contains(resName)) {
-                    polymerType = "nucleicacid";
-                    setPolymerType = true;
-                } else if (AMINO_ACID_NAMES.contains(resName)) {
-                    polymerType = "polypeptide";
-                    setPolymerType = true;
-                }
-                if (setPolymerType) {
-                    polymer.setPolymerType(polymerType);
-                }
-            }
-
-            residue = new Residue(iRes, resName.toUpperCase());
-            residue.molecule = molecule;
-            polymer.addResidue(residue);
-
-            String reslibDir = PDBFile.getReslibDir();
-            if (PDBFile.isIUPACMode()) {
-                polymer.setNomenclature("IUPAC");
-            } else {
-                polymer.setNomenclature("XPLOR");
-            }
-            if (isNotCapped.contains(polymer.getName())) {
-                polymer.setCapped(false);
-            } else {
-                polymer.setCapped(true);
-            }
-            addResidue(reslibDir + "/" + Sequence.getAliased(resFileName) + ".prf", residue, resPos, coordSetName, true);
-            if (changeMode.equalsIgnoreCase("d")) {
-                residue.toDStereo();
-            }
-            resPos = RES_POSITION.MIDDLE;
-            try {
-                String[] matches = iRes.split("[^\\-0-9]+");
-
-                if ((matches != null) && (matches.length > 0) && (matches[0] != null)) {
-                    int nRes = Integer.parseInt(matches[0]);
-                    nRes++;
-                    iRes = String.valueOf(nRes);
-                }
-            } catch (NumberFormatException nfE) {
-                log.warn(nfE.getMessage(), nfE);
-            }
-        }
-        for (Polymer cpolymer : polymers) {
-            if (!isNotCapped.contains(cpolymer.getName())) {
-                PDBFile.capPolymer(cpolymer);
-            }
-        }
-        if (molecule != null) {
-            molecule.updateAtomArray();
-            molecule.genCoords(false);
-            molecule.setupRotGroups();
-        }
-        for (File ligandFile : ligandFiles) {
-            if (ligandFile.getPath().endsWith("pdb")) {
-                PDBFile.readResidue(ligandFile.getPath(), null, molecule, coordSetName);
-            } else {
-                SDFile.read(ligandFile.getPath(), null, molecule, coordSetName);
-            }
-        }
-        if ((connectBond != null) && (connectBond.end == null)) {
-            connectBond.begin.removeBondTo(null);
-        }
-
-        return molecule;
-    }
-
-    Polymer initMolFromSeqFile(String molName, String polymerName, ArrayList<String> coordSetNames, String polymerType)
-            throws MoleculeIOException {
-
-        if ((molName == null) || molName.equals("")) {
-            if (MoleculeFactory.getActive() == null) {
-                throw new MoleculeIOException("No default molecule");
-            } else {
-                molecule = MoleculeFactory.getActive();
-
-                if (molecule == null) {
-                    molecule = MoleculeFactory.newMolecule(polymerName);
-                }
-            }
-        } else {
-            molecule = MoleculeFactory.getMolecule(molName);
-
-            if (molecule == null) {
-                molecule = MoleculeFactory.newMolecule(molName);
-            }
-        }
-
-        if (molecule == null) {
-            return null;
-        }
-
-        Polymer polymer = null;
-        Entity entity = molecule.getEntity(polymerName);
-
-        if (entity == null) {
-            polymer = new Polymer(polymerName);
-            polymer.molecule = molecule;
-            polymer.assemblyID = molecule.entityLabels.size() + 1;
-
-            if (coordSetNames.isEmpty()) {
-                molecule.addEntity(polymer, "", polymer.assemblyID);
-            } else {
-                molecule.addEntity(polymer, (String) coordSetNames.get(0), polymer.assemblyID);
-            }
-        } else {
-            polymer = (Polymer) entity;
-        }
-        if (polymerType != null) {
-            polymer.setPolymerType(polymerType);
-        }
-
-        return polymer;
-    }
-
-    public static String getAliased(String name) {
-        String newName = residueAliases.get(name);
-        if (newName == null) {
-            newName = name;
-        }
-        return newName;
-    }
-
-    public void createLinker(int numLinks,
-            double linkLen, double valAngle, double dihAngle) {
-        /**
-         * createLinker is a method to create a link between atoms in two
-         * separate entities
-         *
-         * @param numLinks number of linker atoms to use
-         * @param atom1
-         * @param atom2
-         */
-
-        Atom newAtom;
-        String linkRoot = "X";
-        for (int i = 1; i <= numLinks; i++) {
-            newAtom = connectAtom.add(linkRoot + Integer.toString(i), "X", Order.SINGLE);
-            newAtom.bondLength = (float) linkLen;
-            newAtom.dihedralAngle = (float) (dihAngle * Math.PI / 180.0);
-            newAtom.valanceAngle = (float) (valAngle * Math.PI / 180.0);
-            newAtom.irpIndex = 1;
-            newAtom.setType("XX");
-            connectAtom = newAtom;
-        }
-
-        log.info("create linker {}", numLinks);
     }
 
 }

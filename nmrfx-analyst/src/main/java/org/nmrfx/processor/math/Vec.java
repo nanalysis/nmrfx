@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
@@ -69,7 +69,7 @@ import static org.nmrfx.processor.math.VecUtil.nnlsFit;
  * resized and may have a capacity larger than the number of valid data values
  * they contain. Because of this the user must always pay attention to the size
  * field which indicates the number of valid points.
- *
+ * <p>
  * The class extends the Jython PySequence class which allows it to be used in
  * basic Python operations (addition, subtraction etc.).
  *
@@ -80,18 +80,14 @@ import static org.nmrfx.processor.math.VecUtil.nnlsFit;
 public class Vec extends VecBase {
 
     public static final PyType VTYPE = PyType.fromClass(Vec.class);
-
-    static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
-
     public static final String TYPE_NAME = "nmrfxvector";
-
-    private double[] annotationData = null;
-
+    static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
     /**
      * Sample schedule that applies to this vector when NUS data acquisition was
      * used.
      */
     public SampleSchedule schedule = null;
+    private double[] annotationData = null;
 
     public Vec(int size) {
         super(size, VTYPE);
@@ -111,6 +107,7 @@ public class Vec extends VecBase {
 
     /**
      * Create a real vector.
+     *
      * @param real The real data to store in the vector.
      */
     public Vec(double[] real) {
@@ -119,6 +116,7 @@ public class Vec extends VecBase {
 
     /**
      * Create a complex vector that stores real and imaginary in separate arrays.
+     *
      * @param real
      * @param imaginary
      */
@@ -126,39 +124,9 @@ public class Vec extends VecBase {
         super(real, imaginary);
     }
 
-    /**
-     * Create a vector with the specified name, size and complex mode and store
-     * it in a Map of Vec objects.
-     *
-     * @param size Size of vector.
-     * @param name name of vector
-     * @param complex true if vector stores complex data
-     * @return new Vec object
-     */
-    public static final Vec createNamedVector(int size, String name, boolean complex) {
-        var vec = new Vec(size, name, complex);
-        put(name, vec);
-        return vec;
-    }
-
     @Override
     public int __len__() {
         return size;
-    }
-
-    @Override
-    public Vec __radd__(PyObject pyO) {
-        return __add__(pyO);
-    }
-
-    /**
-     * Convert PyComplex value to Apache Commons Math Complex value
-     *
-     * @param pyC the value as PyComplex object
-     * @return the value as Commons Math Complex value
-     */
-    public Complex toComplex(PyComplex pyC) {
-        return new Complex(pyC.real, pyC.imag);
     }
 
     @Override
@@ -180,6 +148,11 @@ public class Vec extends VecBase {
     }
 
     @Override
+    public Vec __radd__(PyObject pyO) {
+        return __add__(pyO);
+    }
+
+    @Override
     public Vec __iadd__(PyObject pyO) {
         if (pyO instanceof Vec) {
             //  fixme check sizes
@@ -193,26 +166,6 @@ public class Vec extends VecBase {
             throw Py.TypeError("can't apply '+=' to object: " + pyO.getType().asString());
         }
         return this;
-    }
-
-    @Override
-    public Vec __rsub__(PyObject pyO) {
-        if (pyO instanceof Vec) {
-            return ((Vec) pyO).__sub__(this);
-        } else {
-            Vec vecNew = new Vec(this.getSize(), this.isComplex);
-            this.copy(vecNew);
-            if (pyO instanceof PyComplex) {
-                vecNew.scale(-1.0);
-                vecNew.add(toComplex((PyComplex) pyO));
-            } else if (pyO.isNumberType()) {
-                vecNew.scale(-1.0);
-                vecNew.add(pyO.asDouble());
-            } else {
-                throw Py.TypeError("can't apply '-' to object: " + pyO.getType().asString());
-            }
-            return vecNew;
-        }
     }
 
     @Override
@@ -236,6 +189,26 @@ public class Vec extends VecBase {
     }
 
     @Override
+    public Vec __rsub__(PyObject pyO) {
+        if (pyO instanceof Vec) {
+            return ((Vec) pyO).__sub__(this);
+        } else {
+            Vec vecNew = new Vec(this.getSize(), this.isComplex);
+            this.copy(vecNew);
+            if (pyO instanceof PyComplex) {
+                vecNew.scale(-1.0);
+                vecNew.add(toComplex((PyComplex) pyO));
+            } else if (pyO.isNumberType()) {
+                vecNew.scale(-1.0);
+                vecNew.add(pyO.asDouble());
+            } else {
+                throw Py.TypeError("can't apply '-' to object: " + pyO.getType().asString());
+            }
+            return vecNew;
+        }
+    }
+
+    @Override
     public Vec __isub__(PyObject pyO) {
         if (pyO instanceof Vec) {
             //  fixme check sizes
@@ -251,11 +224,6 @@ public class Vec extends VecBase {
             throw Py.TypeError("can't apply '-=' to object: " + pyO.getType().asString());
         }
         return this;
-    }
-
-    @Override
-    public Vec __rmul__(PyObject pyO) {
-        return __mul__(pyO);
     }
 
     @Override
@@ -281,6 +249,11 @@ public class Vec extends VecBase {
     }
 
     @Override
+    public Vec __rmul__(PyObject pyO) {
+        return __mul__(pyO);
+    }
+
+    @Override
     public Vec __imul__(PyObject pyO) {
 
         if (pyO instanceof Vec) {
@@ -298,24 +271,6 @@ public class Vec extends VecBase {
             throw Py.TypeError("can't apply '*' to object: " + pyO.getType().asString());
         }
         return this;
-    }
-
-    @Override
-    public Vec __rdiv__(PyObject pyO) {
-        if (pyO instanceof Vec) {
-            return ((Vec) pyO).__div__(this);
-        } else {
-            Vec vecNew = new Vec(this.getSize(), this.isComplex);
-            this.copy(vecNew);
-            if (pyO instanceof PyComplex) {
-                vecNew.rdivide(toComplex((PyComplex) pyO));
-            } else if (pyO.isNumberType()) {
-                vecNew.rdivide(pyO.asDouble());
-            } else {
-                throw Py.TypeError("can't apply '/' to object: " + pyO.getType().asString());
-            }
-            return vecNew;
-        }
     }
 
     @Override
@@ -339,6 +294,24 @@ public class Vec extends VecBase {
     }
 
     @Override
+    public Vec __rdiv__(PyObject pyO) {
+        if (pyO instanceof Vec) {
+            return ((Vec) pyO).__div__(this);
+        } else {
+            Vec vecNew = new Vec(this.getSize(), this.isComplex);
+            this.copy(vecNew);
+            if (pyO instanceof PyComplex) {
+                vecNew.rdivide(toComplex((PyComplex) pyO));
+            } else if (pyO.isNumberType()) {
+                vecNew.rdivide(pyO.asDouble());
+            } else {
+                throw Py.TypeError("can't apply '/' to object: " + pyO.getType().asString());
+            }
+            return vecNew;
+        }
+    }
+
+    @Override
     public Vec __idiv__(PyObject pyO) {
         if (pyO instanceof Vec) {
             //  fixme check sizes
@@ -357,6 +330,52 @@ public class Vec extends VecBase {
     }
 
     /**
+     * Convert PyComplex value to Apache Commons Math Complex value
+     *
+     * @param pyC the value as PyComplex object
+     * @return the value as Commons Math Complex value
+     */
+    public Complex toComplex(PyComplex pyC) {
+        return new Complex(pyC.real, pyC.imag);
+    }
+
+    /**
+     * Automatically calculate phase values for this vector using an one of two
+     * algorithms. One based on flattening baseline regions adjacent to peaks
+     * and one based on entropy minimization
+     *
+     * @param doFirst  Set to true to include first order phase correction
+     * @param winSize  Window size used for analyzing for baseline region
+     * @param ratio    Ratio Intensity to noise ratio used for indentifying
+     *                 baseline reginos
+     * @param mode     Set to 0 for flattening mode and 1 for entropy mode
+     * @param ph1Limit Set limit on first order phase. Can prevent unreasonable
+     *                 results
+     * @return an array of 1 or two phase values (depending on whether first
+     * order mode is used)
+     */
+    public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
+        int pivot = 0;
+        double p1PenaltyWeight = 1.0;
+        if (winSize < 1) {
+            winSize = 2;
+        }
+        if (ratio <= 0.0) {
+            ratio = 25.0;
+        }
+        double[] phaseResult;
+        if (!doFirst) {
+            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
+            phaseResult = tbPoints.autoPhaseZero();
+        } else {
+            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
+            tbPoints.setP1PenaltyWeight(p1PenaltyWeight);
+            phaseResult = tbPoints.autoPhase(ph1Limit);
+        }
+        return phaseResult;
+    }
+
+    /**
      * Get array of boolean values indicating whether each point is signal or
      * baseline. True values indicate that the corresponding point is signal.
      *
@@ -371,7 +390,7 @@ public class Vec extends VecBase {
      * correction algorithms.
      *
      * @param region boolean array where true values indicate that point is
-     * signal.
+     *               signal.
      */
     public void setSignalRegion(boolean[] region) {
         inSignalRegion = region;
@@ -399,10 +418,10 @@ public class Vec extends VecBase {
         }
         System.arraycopy(data, 0, annotationData, 0, data.length);
         double max = Double.NEGATIVE_INFINITY;
-        for (int i=0;i<annotationData.length;i++) {
+        for (int i = 0; i < annotationData.length; i++) {
             max = Math.max(max, annotationData[i]);
         }
-        for (int i=0;i<annotationData.length;i++) {
+        for (int i = 0; i < annotationData.length; i++) {
             annotationData[i] /= max;
         }
     }
@@ -412,6 +431,7 @@ public class Vec extends VecBase {
     }
 
     // fixme what the he?? does this do
+
     /**
      * Get start of "valid" data in vectors that have DSP "charge-up" at
      * beginning. This value is calculated based on the vectors stored
@@ -528,7 +548,7 @@ public class Vec extends VecBase {
     /**
      * Fix DSP charge-up
      *
-     * @param amp amplitude of filter
+     * @param amp   amplitude of filter
      * @param phase phase of filter
      */
     public void fixWithBrukerFilter(double amp, double phase) {
@@ -633,17 +653,6 @@ public class Vec extends VecBase {
     }
 
     /**
-     * Perform a Fast Fourier Transform (FFT) of the specified real data.
-     *
-     * @param ftvec an array of Complex values to be transformed
-     * @return The original array with now containing the FFT
-     */
-    public static Complex[] apache_rfft(final double[] ftvec) {
-        FastFourierTransformer ffTrans = new FastFourierTransformer(DftNormalization.STANDARD);
-        return ffTrans.transform(ftvec, TransformType.FORWARD);
-    }
-
-    /**
      * Perform a Fast Fourier Transform (FFT) of the vector using the Apache
      * Commons Math library.
      *
@@ -669,22 +678,6 @@ public class Vec extends VecBase {
         return (this);
     }
 
-    /**
-     * Perform a Fast Fourier Transform (FFT) of the specified complex data.
-     *
-     * @param ftvec an array of Complex values to be transformed
-     * @return The original array with now containing the FFT
-     */
-    public static Complex[] apache_fft(final Complex[] ftvec) {
-        FastFourierTransformer ffTrans = new FastFourierTransformer(DftNormalization.STANDARD);
-        Complex[] ftResult = ffTrans.transform(ftvec, TransformType.FORWARD);
-        final int ftSize = ftvec.length;
-        final int mid = ftSize / 2;
-        System.arraycopy(ftResult, 0, ftvec, mid, ftSize / 2);
-        System.arraycopy(ftResult, mid, ftvec, 0, ftSize / 2);
-        return ftvec;
-    }
-
     /*
      * Perform a inverse Fast Fourier Transform (FFT) of the vector using the Apache Commons Math library.
      *
@@ -704,31 +697,12 @@ public class Vec extends VecBase {
     }
 
     /**
-     * Perform an inverse Fast Fourier Transform (FFT) of the specified complex
-     * data.
-     *
-     * @param ftIn an array of Complex values to be transformed
-     * @return The original array with now containing the FFT
-     */
-    public static Complex[] apache_ift(final Complex[] ftIn) {
-        final int ftSize = ftIn.length;
-        Complex[] ftvec = new Complex[ftSize];
-        int mid = ftSize / 2;
-        System.arraycopy(ftIn, 0, ftvec, mid, ftSize / 2);
-        System.arraycopy(ftIn, mid, ftvec, 0, ftSize / 2);
-        FastFourierTransformer ffTrans = new FastFourierTransformer(DftNormalization.STANDARD);
-        Complex[] ftResult = ffTrans.transform(ftvec, TransformType.INVERSE);
-        System.arraycopy(ftResult, 0, ftIn, 0, ftSize);
-        return ftIn;
-    }
-
-    /**
      * Generate damped sinusoidal signal, and add to Vec instance.
      *
      * @param freq frequency in Hz
-     * @param lw Linewidth in Hz
-     * @param amp amplitude
-     * @param ph phase in degrees
+     * @param lw   Linewidth in Hz
+     * @param amp  amplitude
+     * @param ph   phase in degrees
      */
     public void genSignalHz(double freq, double lw, double amp, double ph) {
         double f = freq / (1.0 / dwellTime);
@@ -759,10 +733,10 @@ public class Vec extends VecBase {
     /**
      * Generate damped sinusoidal signal, and add to Vec instance.
      *
-     * @param freq frequency in degrees per point
+     * @param freq  frequency in degrees per point
      * @param decay exponential decay per point
-     * @param amp amplitude
-     * @param ph phase in degrees
+     * @param amp   amplitude
+     * @param ph    phase in degrees
      */
     public void genSignal(double freq, double decay, double amp, double ph) {
         Complex w = ComplexUtils.polar2Complex(decay, freq * Math.PI / 180.0);
@@ -876,79 +850,6 @@ public class Vec extends VecBase {
     }
 
     /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
-     * TPPI data collection.
-     *
-     * @param rvec vector of doubles to process
-     */
-    public static void negatePairs(double[] rvec) {
-        negatePairs(rvec, rvec.length);
-    }
-
-    /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
-     * TPPI data collection.
-     *
-     * @param rvec real values
-     * @param vecSize size of vector
-     */
-    public static void negatePairs(double[] rvec, int vecSize) {
-        for (int i = 3; i < vecSize; i += 4) {
-            rvec[i - 1] = -rvec[i - 1];
-            rvec[i] = -rvec[i];
-        }
-    }
-
-    /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
-     * TPPI data collection.
-     *
-     * @param rvec real values
-     * @param ivec imaginary values
-     */
-    public static void negatePairs(double[] rvec, double[] ivec) {
-        negatePairs(rvec, ivec, rvec.length);
-    }
-
-    /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
-     * TPPI data collection.
-     *
-     * @param rvec real values
-     * @param ivec imaginary values
-     * @param vecSize size of vector
-     */
-    public static void negatePairs(double[] rvec, double[] ivec, int vecSize) {
-        for (int i = 1; i < vecSize; i += 2) {
-            rvec[i] = -rvec[i];
-            ivec[i] = -ivec[i];
-        }
-    }
-
-    /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
-     * TPPI data collection.
-     *
-     * @param cvec complex values
-     */
-    public static void negatePairs(Complex[] cvec) {
-        negatePairs(cvec, cvec.length);
-    }
-
-    /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
-     * TPPI data collection.
-     *
-     * @param cvec complex values
-     * @param vecSize size of vector
-     */
-    public static void negatePairs(Complex[] cvec, int vecSize) {
-        for (int i = 1; i < vecSize; i += 2) {
-            cvec[i] = new Complex(-cvec[i].getReal(), -cvec[i].getImaginary());
-        }
-    }
-
-    /**
      * Negate every other pair of points. The effect is to shift a spectrum by
      * sw/2, moving the center frequency to the edge of the spectrum. Used for
      * States-TPPI processing.
@@ -1028,7 +929,6 @@ public class Vec extends VecBase {
         }
     }
 
-    //print a string of the value(s) at index i
     /**
      * Return String representation of value at specified index
      *
@@ -1055,10 +955,10 @@ public class Vec extends VecBase {
     /**
      * Perform Fast Fourier Transform (FFT) of this vector with various options.
      *
-     * @param negatePairs negate alternate real/imaginary pairs
+     * @param negatePairs     negate alternate real/imaginary pairs
      * @param negateImaginary negate imaginary pairs
-     * @param fixGroupDelay modify vector to remove DSP charge-up at front of
-     * vector
+     * @param fixGroupDelay   modify vector to remove DSP charge-up at front of
+     *                        vector
      */
     public void fft(boolean negatePairs, boolean negateImaginary, boolean fixGroupDelay) {
         if (isComplex()) {
@@ -1097,7 +997,7 @@ public class Vec extends VecBase {
      * Perform inverse Fast Fourier Transform (FFT) of this vector with various
      * options.
      *
-     * @param negatePairs negate alternate real/imaginary pairs
+     * @param negatePairs     negate alternate real/imaginary pairs
      * @param negateImaginary negate imaginary pairs
      */
     public void ifft(boolean negatePairs, boolean negateImaginary) {
@@ -1147,17 +1047,16 @@ public class Vec extends VecBase {
         rft(inverse, false, false);
     }
 
-
     /**
      * Real FT.
-     *
+     * <p>
      * Vec must be real. If a Vec is using cvec it will do a RFT of the real
      * part and copy back to cvec, if a Vec is using rvec it will copy RFT back
      * to rvec and ivec.
      *
-     * @param inverse If true do the inverse FFT.
+     * @param inverse     If true do the inverse FFT.
      * @param negatePairs negate alternate real/imaginary pairs
-     * @param negateOdd negate alternate values
+     * @param negateOdd   negate alternate values
      */
     public void rft(boolean inverse, boolean negatePairs, boolean negateOdd) {
         if (!isComplex) {
@@ -1236,6 +1135,8 @@ public class Vec extends VecBase {
 
         return (this);
     }
+
+    //print a string of the value(s) at index i
 
     /**
      * Take absolute value of values in vector.
@@ -1384,10 +1285,10 @@ public class Vec extends VecBase {
      * of this vector. FIXME check moments
      *
      * @param start first point of region
-     * @param end last point of region
+     * @param end   last point of region
      * @return an array of four values containing the first four moments.
      * @throws IllegalArgumentException if not vector not real, data is null, or
-     * the range is invalid
+     *                                  the range is invalid
      */
     public double[] moments(int start, int end)
             throws IllegalArgumentException {
@@ -1508,10 +1409,10 @@ public class Vec extends VecBase {
      * region of this vector
      *
      * @param start starting point (inclusive)
-     * @param end ending point (inclusive)
+     * @param end   ending point (inclusive)
      * @return an array of four doubles containing the statistics
      * @throws IllegalArgumentException if vector not real or doesn't have at
-     * least 4 values in range
+     *                                  least 4 values in range
      */
     public double[] regionStats(int start, int end)
             throws IllegalArgumentException {
@@ -1542,9 +1443,9 @@ public class Vec extends VecBase {
      * arrays. FIXME
      *
      * @param rVec this vector will be a real vector containing the real values
-     * of the original vector
+     *             of the original vector
      * @param iVec this vector will be a real vector containing the imaginary
-     * values of the original vector.
+     *             values of the original vector.
      */
     public void split(Vec rVec, Vec iVec) {
         rVec.resize(size, false);
@@ -1742,49 +1643,13 @@ public class Vec extends VecBase {
         }
     }
 
-    /**
-     * Automatically calculate phase values for this vector using an one of two
-     * algorithms. One based on flattening baseline regions adjacent to peaks
-     * and one based on entropy minimization
-     *
-     * @param doFirst Set to true to include first order phase correction
-     * @param winSize Window size used for analyzing for baseline region
-     * @param ratio Ratio Intensity to noise ratio used for indentifying
-     * baseline reginos
-     * @param mode Set to 0 for flattening mode and 1 for entropy mode
-     * @param ph1Limit Set limit on first order phase. Can prevent unreasonable
-     * results
-     * @return an array of 1 or two phase values (depending on whether first
-     * order mode is used)
-     */
-    public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
-        int pivot = 0;
-        double p1PenaltyWeight = 1.0;
-        if (winSize < 1) {
-            winSize = 2;
-        }
-        if (ratio <= 0.0) {
-            ratio = 25.0;
-        }
-        double[] phaseResult;
-        if (!doFirst) {
-            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
-            phaseResult = tbPoints.autoPhaseZero();
-        } else {
-            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
-            tbPoints.setP1PenaltyWeight(p1PenaltyWeight);
-            phaseResult = tbPoints.autoPhase(ph1Limit);
-        }
-        return phaseResult;
-    }
-
     public double testAutoPhase(int winSize, double ratio, int mode,
-            double negativePenalty) {
+                                double negativePenalty) {
         return testAutoPhase(winSize, ratio, mode, negativePenalty, 0.0, 0.0);
     }
 
     public double testAutoPhase(int winSize, double ratio, int mode,
-            double negativePenalty, double phase0, double phase1) {
+                                double negativePenalty, double phase0, double phase1) {
         TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
         return tbPoints.testFit(phase0, phase1);
     }
@@ -1802,7 +1667,7 @@ public class Vec extends VecBase {
      * Automatically phase spectrum by maximizing the sum of intensities
      *
      * @param first starting point of region to analyze
-     * @param last ending point of region to analyze
+     * @param last  ending point of region to analyze
      * @return zeroth order phase value
      */
     public double autoPhaseByMax(int first, int last) {
@@ -1871,15 +1736,15 @@ public class Vec extends VecBase {
     /**
      * Apply the specified phase values to this vector.
      *
-     * @param p0 The zeroth order phase value
-     * @param p1 The first order phase value
-     * @param pivot The pivot value at which the first order phase correction
-     * has no effect on data
-     * @param phaseAbs if false apply the specified values, if true subtract the
-     * currently stored ph0 and ph1 values from the specified values and then
+     * @param p0               The zeroth order phase value
+     * @param p1               The first order phase value
+     * @param pivot            The pivot value at which the first order phase correction
+     *                         has no effect on data
+     * @param phaseAbs         if false apply the specified values, if true subtract the
+     *                         currently stored ph0 and ph1 values from the specified values and then
      * @param discardImaginary Discard the imaginary values and convert vector
-     * to real. Phasing is a little faster if you do this (and saves calling a
-     * seperate REAL operation.
+     *                         to real. Phasing is a little faster if you do this (and saves calling a
+     *                         seperate REAL operation.
      * @return this vector
      */
     public Vec phase(double p0, double p1, int pivot, boolean phaseAbs, boolean discardImaginary) {
@@ -1980,7 +1845,7 @@ public class Vec extends VecBase {
      * Multiply vector by a frequency, relative to sweep width. Used with
      * digital filter with group delay (shift) of ncoefs/2.
      *
-     * @param freq frequency in Hz (up to +/-0.5 sweep width)
+     * @param freq  frequency in Hz (up to +/-0.5 sweep width)
      * @param shift number of points to shift scale by
      * @see FirFilter
      */
@@ -2001,7 +1866,7 @@ public class Vec extends VecBase {
      * values for the polynomial are in fractions of the vector size.
      *
      * @param order the polynomial order
-     * @param X the coefficients.
+     * @param X     the coefficients.
      */
     public void correctVec(int order, RealVector X) {
         double xval;
@@ -2065,7 +1930,7 @@ public class Vec extends VecBase {
      *
      * @param nBuckets The number of buckets (will be the new size of vector).
      * @throws IllegalArgumentException if vector is complex or number of
-     * buckets larger than size or not an integer fraction of size
+     *                                  buckets larger than size or not an integer fraction of size
      */
     public void bucket(int nBuckets) throws IllegalArgumentException {
         if (getFreqDomain()) {
@@ -2124,9 +1989,9 @@ public class Vec extends VecBase {
      * Time-domain solvent suppression
      *
      * @param winSize Size of window. Larger the window the narrower the region
-     * of suppression
+     *                of suppression
      * @param nPasses How many passes of filter to perform. Performing 3 passes
-     * is optimal.
+     *                is optimal.
      * @return this vector
      * @throws VecException if winSize larger than size of vector
      */
@@ -2149,9 +2014,9 @@ public class Vec extends VecBase {
      * Moving average filter.
      *
      * @param winSize Size of window. Larger the window the narrower the region
-     * of suppression when used for solvent suppression
+     *                of suppression when used for solvent suppression
      * @param nPasses How many passes of filter to perform. Performing 3 passes
-     * is optimal.
+     *                is optimal.
      * @return this vector
      * @throws VecException if winSize larger than size of vector
      */
@@ -2178,152 +2043,6 @@ public class Vec extends VecBase {
             winSize = (int) Math.ceil(winSize / filterDivisor);
         }
         return this;
-    }
-
-    /**
-     * Moving average filter for array of real values
-     *
-     * @param rValues The real values
-     * @param vecSize Number of values to use
-     * @param winSize window size of filter
-     * @throws VecException if windows size bigger than vector or values are
-     * null
-     */
-    public static void movingAverageFilter(double[] rValues, int vecSize, int winSize)
-            throws VecException {
-        if (winSize >= vecSize) {
-            throw new VecException("movingAverageFilter: error in parameters");
-        }
-        ResizableDoubleArray rWin = new ResizableDoubleArray(winSize);
-
-        if (rValues == null) {
-            throw new VecException("movingAverageFilter: no data in vector");
-        }
-        int winHalf = winSize / 2;
-        double rSum = 0.0;
-        for (int i = 0; i < winSize; i++) {
-            double rValue = rValues[i];
-            rWin.addElement(rValue);
-            rSum += rValue;
-        }
-        double rAverage = rSum / winSize;
-        for (int i = winHalf; i < winSize; i++) {
-            rValues[i - winHalf] = rAverage;
-        }
-        for (int i = winSize; i < vecSize; i++) {
-            double rValue = rValues[i];
-            double rOld = rWin.addElementRolling(rValue);
-            rAverage = rAverage - rOld / winSize + rValue / winSize;
-            rValues[i - winHalf] = rAverage;
-        }
-        for (int i = (vecSize - winHalf); i < vecSize; i++) {
-            rValues[i] = rAverage;
-        }
-    }
-
-    /**
-     * Moving average filter for two arrays containing real and imaginary values
-     *
-     * @param rValues The real values
-     * @param iValues The imaginary values
-     * @param vecSize Number of values to use
-     * @param winSize window size of filter
-     * @throws VecException if windows size bigger than vector or values are
-     * null
-     */
-    public static void movingAverageFilter(double[] rValues, double[] iValues, int vecSize, int winSize)
-            throws VecException {
-        if (winSize >= vecSize) {
-            throw new VecException("movingAverageFilter: error in parameters");
-        }
-        ResizableDoubleArray rWin = new ResizableDoubleArray(winSize);
-        ResizableDoubleArray iWin = new ResizableDoubleArray(winSize);
-        if (rValues == null) {
-            throw new VecException("movingAverageFilter: no data in vector");
-        }
-        if (iValues == null) {
-            throw new VecException("movingAverageFilter: no data in vector");
-        }
-        int winHalf = winSize / 2;
-        double rSum = 0.0;
-        double iSum = 0.0;
-        for (int i = 0; i < winSize; i++) {
-            double rValue = rValues[i];
-            double iValue = iValues[i];
-            rWin.addElement(rValue);
-            iWin.addElement(iValue);
-            rSum += rValue;
-            iSum += iValue;
-        }
-        double rAverage = rSum / winSize;
-        double iAverage = iSum / winSize;
-        for (int i = winHalf; i < winSize; i++) {
-            rValues[i - winHalf] = rAverage;
-            iValues[i - winHalf] = iAverage;
-        }
-        for (int i = winSize; i < vecSize; i++) {
-            double rValue = rValues[i];
-            double iValue = iValues[i];
-            double rOld = rWin.addElementRolling(rValue);
-            double iOld = iWin.addElementRolling(iValue);
-            rAverage = rAverage - rOld / winSize + rValue / winSize;
-            iAverage = iAverage - iOld / winSize + iValue / winSize;
-            rValues[i - winHalf] = rAverage;
-            iValues[i - winHalf] = iAverage;
-        }
-        for (int i = (vecSize - winHalf); i < vecSize; i++) {
-            rValues[i] = rAverage;
-            iValues[i] = iAverage;
-        }
-    }
-
-    /**
-     * Moving average filter for array of Complex values
-     *
-     * @param cValues The Complex values
-     * @param vecSize Number of values to use
-     * @param winSize window size of filter
-     * @throws VecException if windows size bigger than vector or values are
-     * null
-     */
-    public static void movingAverageFilter(Complex[] cValues, int vecSize, int winSize)
-            throws VecException {
-        if (winSize >= vecSize) {
-            throw new VecException("movingAverageFilter: error in parameters");
-        }
-        ResizableDoubleArray rWin = new ResizableDoubleArray(winSize);
-        ResizableDoubleArray iWin = new ResizableDoubleArray(winSize);
-        if (cValues == null) {
-            throw new VecException("movingAverageFilter: no data in vector");
-        }
-        int winHalf = winSize / 2;
-        double rSum = 0.0;
-        double iSum = 0.0;
-        for (int i = 0; i < winSize; i++) {
-            double rValue = cValues[i].getReal();
-            double iValue = cValues[i].getImaginary();
-            rWin.addElement(rValue);
-            iWin.addElement(iValue);
-            rSum += rValue;
-            iSum += iValue;
-        }
-        double rAverage = rSum / winSize;
-        double iAverage = iSum / winSize;
-        for (int i = winHalf; i < winSize; i++) {
-            cValues[i - winHalf] = new Complex(rAverage, iAverage);
-        }
-        for (int i = winSize; i < vecSize; i++) {
-            double rValue = cValues[i].getReal();
-            double iValue = cValues[i].getImaginary();
-            double rOld = rWin.addElementRolling(rValue);
-            double iOld = iWin.addElementRolling(iValue);
-            rAverage = rAverage - rOld / winSize + rValue / winSize;
-            iAverage = iAverage - iOld / winSize + iValue / winSize;
-            cValues[i - winHalf] = new Complex(rAverage, iAverage);
-        }
-        for (int i = (vecSize - winHalf); i < vecSize; i++) {
-            cValues[i] = new Complex(rAverage, iAverage);
-        }
     }
 
     /**
@@ -2359,12 +2078,12 @@ public class Vec extends VecBase {
      * Time domain polynomial correction. Can be used for solvent suppression by
      * fitting a polynomial to the FID.
      *
-     * @param order The polynomial order
+     * @param order   The polynomial order
      * @param winSize Size of regions to fit
-     * @param start Start the fit at this point. Using value greater than 0
-     * allows skipping artifacts
+     * @param start   Start the fit at this point. Using value greater than 0
+     *                allows skipping artifacts
      * @throws VecException if window size or polynomial order invalid for
-     * vector size
+     *                      vector size
      */
     public void tdpoly(int order, int winSize, int start) throws VecException {
         int m;
@@ -2456,7 +2175,7 @@ public class Vec extends VecBase {
      * provided vector.
      *
      * @param order The order of correction function
-     * @param X an array of coefficients
+     * @param X     an array of coefficients
      */
     public void correctVecSine(int order, RealVector X) {
         double yval;
@@ -2479,11 +2198,11 @@ public class Vec extends VecBase {
     /**
      * Baseline correction by fitting a smooth envelope below vector points
      *
-     * @param winSize window size
-     * @param lambda smoothing parameter
-     * @param order order of fit (0 or 1)
+     * @param winSize      window size
+     * @param lambda       smoothing parameter
+     * @param order        order of fit (0 or 1)
      * @param baselineMode if true set the vector to be the fitted baseline,
-     * rather than correcting the values. Useful for diagnostics
+     *                     rather than correcting the values. Useful for diagnostics
      * @throws VecException if vector complex
      */
     public void esmooth(int winSize, double lambda, int order, boolean baselineMode) throws VecException {
@@ -2622,10 +2341,10 @@ public class Vec extends VecBase {
      * will be interpolated between the average of the left and right edge
      * regions.
      *
-     * @param icenter center of region. If value less than 0 the position of
-     * maximum intensity will be used.
-     * @param nInterp Number of points within each side of region that will be
-     * fully interpolated.
+     * @param icenter   center of region. If value less than 0 the position of
+     *                  maximum intensity will be used.
+     * @param nInterp   Number of points within each side of region that will be
+     *                  fully interpolated.
      * @param halfWidth half width of region be zero within region.
      * @throws VecException if vector complex
      */
@@ -2743,56 +2462,11 @@ public class Vec extends VecBase {
     }
 
     /**
-     * Construct row n of Pascal's triangle in
-     *
-     * @param a array to store result in
-     * @param row the row to calculate
-     */
-    public static void pascalrow(double[] a, int row) {
-        int i, j;
-        for (j = 0; j <= row; j++) {
-            a[j] = 0;
-        }
-        a[0] = 1;
-        for (j = 1; j <= row; j++) {
-            for (i = row; i >= 1; i--) {
-                a[i] = a[i] - a[i - 1];
-            }
-        }
-    }
-
-    /**
-     * Calculate the value of a Lorentzian lineshape function
-     *
-     * @param x the frequency position
-     * @param b the linewidth
-     * @param freq the frequency
-     * @return the value at x
-     */
-    public static double lShape(double x, double b, double freq) {
-        b *= 0.5;
-        return (1.0 / Math.PI) * b / ((b * b) + ((x - freq) * (x - freq)));
-    }
-
-    static double[][] fillMatrix(final double[] f, final double[] d, final int nRows) {
-        int nCols = f.length;
-        double[][] A = new double[nRows][nCols];
-        int iCol = 0;
-        for (int iSig = 0; iSig < nCols; iSig++) {
-            for (int j = 0; j < nRows; j++) {
-                double yTemp = lShape(j, d[iSig], f[iSig]);
-                A[j][iSig] = yTemp;
-            }
-        }
-        return A;
-    }
-
-    /**
      * Fill a vector with Lorentzian lineshapes as specified in signals list
      *
-     * @param signals the list of signal objects
+     * @param signals        the list of signal objects
      * @param signalInPoints if true the frequency and decay in signals are in
-     * data points, otherwise they are in ppm and Hz.
+     *                       data points, otherwise they are in ppm and Hz.
      * @return this vector
      */
     public Vec fillVec(List<? extends Signal> signals, boolean signalInPoints) {
@@ -2824,97 +2498,6 @@ public class Vec extends VecBase {
         return this;
     }
 
-    static double[] fillVec(double[] x, int vecSize, ArrayList<Signal> signals) {
-        for (int j = 0; j < vecSize; j++) {
-            x[j] = 0.0;
-        }
-        int nWidths = 40;
-        signals.stream().forEach((signal) -> {
-            double d = signal.decay;
-            double f = signal.frequency;
-            double a = signal.amplitude;
-            int start = (int) Math.round(f - nWidths / 2 * d);
-            int end = (int) Math.round(f + nWidths / 2 * d);
-            if (start < 0) {
-                start = 0;
-            }
-            if (end > (vecSize - 1)) {
-                end = vecSize - 1;
-            }
-            for (int j = start; j <= end; j++) {
-                double yTemp = a * lShape(j, d, f);
-                x[j] += yTemp;
-            }
-        });
-        return x;
-    }
-
-    public static class OptimizeLineWidth implements UnivariateFunction {
-
-        final double[] signal;
-        final Complex[] fd;
-        final int[] useColumns;
-
-        public OptimizeLineWidth(final double[] signal, final Complex[] fd, final int[] useColumns) {
-            this.signal = signal;
-            this.fd = fd;
-            this.useColumns = useColumns;
-        }
-
-        @Override
-        public double value(final double x) {
-            AmplitudeFitResult afR = fitAmplitudes(signal, fd, useColumns, signal.length, true, x);
-            return afR.getRss();
-        }
-    }
-
-    /**
-     * Find amplitudes that optimize the fit of signals to an array of
-     * intensities.
-     *
-     * @param x The array of intensities
-     * @param fd A complex array whose values represent frequency and decay rate
-     * @param useColumns Only use signals whose indexed value is set to true in
-     * this array
-     * @param winSize Size of window frequencies came from
-     * @param uniformWidth If true use the same linewidth for all frequencies
-     * @param lineWidth If uniformWidth is true, use this line width
-     * @return an AmplitudeFitResult with amplitudes and quality measures
-     */
-    public static AmplitudeFitResult fitAmplitudes(final double[] x, final Complex[] fd, final int[] useColumns, final int winSize, final boolean uniformWidth, final double lineWidth) {
-        int nCols = 0;
-        for (int j = 0; j < fd.length; j++) {
-            if (useColumns[j] != -1) {
-                nCols++;
-            }
-        }
-        double[] f = new double[nCols];
-        double[] d = new double[nCols];
-        int iSig = 0;
-        for (int j = 0; j < fd.length; j++) {
-            if (useColumns[j] != -1) {
-                Complex zFD = fd[j];
-                double fR = -Math.atan2(zFD.getImaginary(), zFD.getReal());
-                double fPoints = (winSize * (Math.PI - fR)) / (2 * Math.PI);
-                f[iSig] = fPoints;
-                if (uniformWidth) {
-                    d[iSig] = lineWidth;
-                } else {
-                    d[iSig] = -1.0 * Math.log(zFD.abs()) * winSize / Math.PI;
-                }
-                iSig++;
-            }
-        }
-
-        RealMatrix AR = new Array2DRowRealMatrix(fillMatrix(f, d, winSize));
-        RealMatrix BR = new Array2DRowRealMatrix(AR.getRowDimension(), 1);
-        for (int i = 0; i < winSize; i++) {
-            BR.setEntry(i, 0, x[i]);
-        }
-        RealMatrix redAR = AR.copy();
-        return nnlsFit(redAR, BR.copy());
-    }
-
     /**
      * Continuous wavelet derivative
      *
@@ -2931,78 +2514,11 @@ public class Vec extends VecBase {
         return this;
     }
 
-    static void cwtd(Object vecObject, int size, int winSize) {
-        boolean complex = false;
-        double[] vec = null;
-        Complex[] cvec = null;
-        if (vecObject instanceof double[]) {
-            vec = (double[]) vecObject;
-        } else if (vecObject instanceof Complex[]) {
-            cvec = (Complex[]) vecObject;
-            complex = true;
-        }
-
-        double[] reVec = new double[size];
-        double[] imVec = new double[size];
-
-        double reSum;
-        double imSum;
-        int halfWin = winSize / 2;
-        double scaleCorr = 1.0 / Math.sqrt(winSize);
-
-        for (int i = 0; i < size; i++) {
-            reSum = 0.0;
-            imSum = 0.0;
-            int max = (i + winSize);
-            if (max > (size - 1)) {
-                max = size - 1;
-            }
-            for (int j = i; j <= max; j++) {
-                int dIJ = (j - i);
-                double psi = 0.0;
-                if (dIJ >= 0) {
-                    if (dIJ < halfWin) {
-                        psi = 1.0;
-                    } else if (dIJ < winSize) {
-                        psi = -1.0;
-                    }
-                }
-                if (complex) {
-                    reSum += cvec[j].getReal() * psi;
-                    imSum += cvec[j].getImaginary() * psi;
-                } else {
-                    reSum += vec[j] * psi;
-                }
-            }
-            if (complex) {
-                reVec[i] = reSum * scaleCorr;
-                imVec[i] = imSum * scaleCorr;
-            } else {
-                reVec[i] = reSum * scaleCorr;
-            }
-        }
-        if (complex) {
-            for (int i = 0; i < halfWin; i++) {
-                cvec[i] = Complex.ZERO;
-            }
-            for (int i = halfWin; i < size; i++) {
-                cvec[i] = new Complex(reVec[i - halfWin], imVec[i - halfWin]);
-            }
-        } else {
-            for (int i = 0; i < halfWin; i++) {
-                vec[i] = 0.0;
-            }
-            if (size - halfWin >= 0) {
-                System.arraycopy(reVec, halfWin, vec, halfWin, size - halfWin);
-            }
-        }
-    }
-
     /**
      * Integrate this vector over the specified range
      *
      * @param first starting point of range
-     * @param last ending point of range
+     * @param last  ending point of range
      */
     public void integrate(int first, int last) {
         integrate(first, last, 0.0, 0.0);
@@ -3013,10 +2529,10 @@ public class Vec extends VecBase {
      * of values between start and end. The values in vector are replaced with
      * their integral.
      *
-     * @param first starting point of range
-     * @param last ending point of range
+     * @param first          starting point of range
+     * @param last           ending point of range
      * @param firstIntensity Starting value for linear baseline
-     * @param lastIntensity Ending value for linear baseline
+     * @param lastIntensity  Ending value for linear baseline
      */
     public void integrate(int first, int last, double firstIntensity, double lastIntensity) {
         if (first < 0) {
@@ -3061,18 +2577,18 @@ public class Vec extends VecBase {
     /**
      * Identify signal regions.
      *
-     * @param winSize Size of window used in assessing standard deviation
-     * @param ratio Threshold ratio of intensities to noise
-     * @param regionWidth Minimum width for regions
-     * @param joinWidth Regions are joined if separation is less than this
-     * @param extend Increase width of region edges by this amount
+     * @param winSize      Size of window used in assessing standard deviation
+     * @param ratio        Threshold ratio of intensities to noise
+     * @param regionWidth  Minimum width for regions
+     * @param joinWidth    Regions are joined if separation is less than this
+     * @param extend       Increase width of region edges by this amount
      * @param minThreshold Threshold is the larger of this and ratio times noise
      * @return matrix of results. Each row is a region. Columns are the start,
      * end and mean intensity.
      * @throws IllegalArgumentException if real value array is null
      */
     public RealMatrix idIntegrals(int winSize, double ratio,
-            int regionWidth, int joinWidth, int extend, double minThreshold)
+                                  int regionWidth, int joinWidth, int extend, double minThreshold)
             throws IllegalArgumentException {
         double sumsq;
         double rmsd;
@@ -3274,7 +2790,7 @@ public class Vec extends VecBase {
      * @param exp target decay
      * @return this vector
      * @throws IllegalArgumentException if vectors aren't all the same size and
-     * complex
+     *                                  complex
      */
     public Vec deconv(Vec ref, Vec exp)
             throws IllegalArgumentException {
@@ -3354,5 +2870,488 @@ public class Vec extends VecBase {
             }
         }
         return array;
+    }
+
+    /**
+     * Create a vector with the specified name, size and complex mode and store
+     * it in a Map of Vec objects.
+     *
+     * @param size    Size of vector.
+     * @param name    name of vector
+     * @param complex true if vector stores complex data
+     * @return new Vec object
+     */
+    public static final Vec createNamedVector(int size, String name, boolean complex) {
+        var vec = new Vec(size, name, complex);
+        put(name, vec);
+        return vec;
+    }
+
+    /**
+     * Perform a Fast Fourier Transform (FFT) of the specified real data.
+     *
+     * @param ftvec an array of Complex values to be transformed
+     * @return The original array with now containing the FFT
+     */
+    public static Complex[] apache_rfft(final double[] ftvec) {
+        FastFourierTransformer ffTrans = new FastFourierTransformer(DftNormalization.STANDARD);
+        return ffTrans.transform(ftvec, TransformType.FORWARD);
+    }
+
+    /**
+     * Perform a Fast Fourier Transform (FFT) of the specified complex data.
+     *
+     * @param ftvec an array of Complex values to be transformed
+     * @return The original array with now containing the FFT
+     */
+    public static Complex[] apache_fft(final Complex[] ftvec) {
+        FastFourierTransformer ffTrans = new FastFourierTransformer(DftNormalization.STANDARD);
+        Complex[] ftResult = ffTrans.transform(ftvec, TransformType.FORWARD);
+        final int ftSize = ftvec.length;
+        final int mid = ftSize / 2;
+        System.arraycopy(ftResult, 0, ftvec, mid, ftSize / 2);
+        System.arraycopy(ftResult, mid, ftvec, 0, ftSize / 2);
+        return ftvec;
+    }
+
+    /**
+     * Perform an inverse Fast Fourier Transform (FFT) of the specified complex
+     * data.
+     *
+     * @param ftIn an array of Complex values to be transformed
+     * @return The original array with now containing the FFT
+     */
+    public static Complex[] apache_ift(final Complex[] ftIn) {
+        final int ftSize = ftIn.length;
+        Complex[] ftvec = new Complex[ftSize];
+        int mid = ftSize / 2;
+        System.arraycopy(ftIn, 0, ftvec, mid, ftSize / 2);
+        System.arraycopy(ftIn, mid, ftvec, 0, ftSize / 2);
+        FastFourierTransformer ffTrans = new FastFourierTransformer(DftNormalization.STANDARD);
+        Complex[] ftResult = ffTrans.transform(ftvec, TransformType.INVERSE);
+        System.arraycopy(ftResult, 0, ftIn, 0, ftSize);
+        return ftIn;
+    }
+
+    /**
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
+     *
+     * @param rvec vector of doubles to process
+     */
+    public static void negatePairs(double[] rvec) {
+        negatePairs(rvec, rvec.length);
+    }
+
+    /**
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
+     *
+     * @param rvec    real values
+     * @param vecSize size of vector
+     */
+    public static void negatePairs(double[] rvec, int vecSize) {
+        for (int i = 3; i < vecSize; i += 4) {
+            rvec[i - 1] = -rvec[i - 1];
+            rvec[i] = -rvec[i];
+        }
+    }
+
+    /**
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
+     *
+     * @param rvec real values
+     * @param ivec imaginary values
+     */
+    public static void negatePairs(double[] rvec, double[] ivec) {
+        negatePairs(rvec, ivec, rvec.length);
+    }
+
+    /**
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
+     *
+     * @param rvec    real values
+     * @param ivec    imaginary values
+     * @param vecSize size of vector
+     */
+    public static void negatePairs(double[] rvec, double[] ivec, int vecSize) {
+        for (int i = 1; i < vecSize; i += 2) {
+            rvec[i] = -rvec[i];
+            ivec[i] = -ivec[i];
+        }
+    }
+
+    /**
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
+     *
+     * @param cvec complex values
+     */
+    public static void negatePairs(Complex[] cvec) {
+        negatePairs(cvec, cvec.length);
+    }
+
+    /**
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
+     *
+     * @param cvec    complex values
+     * @param vecSize size of vector
+     */
+    public static void negatePairs(Complex[] cvec, int vecSize) {
+        for (int i = 1; i < vecSize; i += 2) {
+            cvec[i] = new Complex(-cvec[i].getReal(), -cvec[i].getImaginary());
+        }
+    }
+
+    /**
+     * Moving average filter for array of real values
+     *
+     * @param rValues The real values
+     * @param vecSize Number of values to use
+     * @param winSize window size of filter
+     * @throws VecException if windows size bigger than vector or values are
+     *                      null
+     */
+    public static void movingAverageFilter(double[] rValues, int vecSize, int winSize)
+            throws VecException {
+        if (winSize >= vecSize) {
+            throw new VecException("movingAverageFilter: error in parameters");
+        }
+        ResizableDoubleArray rWin = new ResizableDoubleArray(winSize);
+
+        if (rValues == null) {
+            throw new VecException("movingAverageFilter: no data in vector");
+        }
+        int winHalf = winSize / 2;
+        double rSum = 0.0;
+        for (int i = 0; i < winSize; i++) {
+            double rValue = rValues[i];
+            rWin.addElement(rValue);
+            rSum += rValue;
+        }
+        double rAverage = rSum / winSize;
+        for (int i = winHalf; i < winSize; i++) {
+            rValues[i - winHalf] = rAverage;
+        }
+        for (int i = winSize; i < vecSize; i++) {
+            double rValue = rValues[i];
+            double rOld = rWin.addElementRolling(rValue);
+            rAverage = rAverage - rOld / winSize + rValue / winSize;
+            rValues[i - winHalf] = rAverage;
+        }
+        for (int i = (vecSize - winHalf); i < vecSize; i++) {
+            rValues[i] = rAverage;
+        }
+    }
+
+    /**
+     * Moving average filter for two arrays containing real and imaginary values
+     *
+     * @param rValues The real values
+     * @param iValues The imaginary values
+     * @param vecSize Number of values to use
+     * @param winSize window size of filter
+     * @throws VecException if windows size bigger than vector or values are
+     *                      null
+     */
+    public static void movingAverageFilter(double[] rValues, double[] iValues, int vecSize, int winSize)
+            throws VecException {
+        if (winSize >= vecSize) {
+            throw new VecException("movingAverageFilter: error in parameters");
+        }
+        ResizableDoubleArray rWin = new ResizableDoubleArray(winSize);
+        ResizableDoubleArray iWin = new ResizableDoubleArray(winSize);
+        if (rValues == null) {
+            throw new VecException("movingAverageFilter: no data in vector");
+        }
+        if (iValues == null) {
+            throw new VecException("movingAverageFilter: no data in vector");
+        }
+        int winHalf = winSize / 2;
+        double rSum = 0.0;
+        double iSum = 0.0;
+        for (int i = 0; i < winSize; i++) {
+            double rValue = rValues[i];
+            double iValue = iValues[i];
+            rWin.addElement(rValue);
+            iWin.addElement(iValue);
+            rSum += rValue;
+            iSum += iValue;
+        }
+        double rAverage = rSum / winSize;
+        double iAverage = iSum / winSize;
+        for (int i = winHalf; i < winSize; i++) {
+            rValues[i - winHalf] = rAverage;
+            iValues[i - winHalf] = iAverage;
+        }
+        for (int i = winSize; i < vecSize; i++) {
+            double rValue = rValues[i];
+            double iValue = iValues[i];
+            double rOld = rWin.addElementRolling(rValue);
+            double iOld = iWin.addElementRolling(iValue);
+            rAverage = rAverage - rOld / winSize + rValue / winSize;
+            iAverage = iAverage - iOld / winSize + iValue / winSize;
+            rValues[i - winHalf] = rAverage;
+            iValues[i - winHalf] = iAverage;
+        }
+        for (int i = (vecSize - winHalf); i < vecSize; i++) {
+            rValues[i] = rAverage;
+            iValues[i] = iAverage;
+        }
+    }
+
+    /**
+     * Moving average filter for array of Complex values
+     *
+     * @param cValues The Complex values
+     * @param vecSize Number of values to use
+     * @param winSize window size of filter
+     * @throws VecException if windows size bigger than vector or values are
+     *                      null
+     */
+    public static void movingAverageFilter(Complex[] cValues, int vecSize, int winSize)
+            throws VecException {
+        if (winSize >= vecSize) {
+            throw new VecException("movingAverageFilter: error in parameters");
+        }
+        ResizableDoubleArray rWin = new ResizableDoubleArray(winSize);
+        ResizableDoubleArray iWin = new ResizableDoubleArray(winSize);
+        if (cValues == null) {
+            throw new VecException("movingAverageFilter: no data in vector");
+        }
+        int winHalf = winSize / 2;
+        double rSum = 0.0;
+        double iSum = 0.0;
+        for (int i = 0; i < winSize; i++) {
+            double rValue = cValues[i].getReal();
+            double iValue = cValues[i].getImaginary();
+            rWin.addElement(rValue);
+            iWin.addElement(iValue);
+            rSum += rValue;
+            iSum += iValue;
+        }
+        double rAverage = rSum / winSize;
+        double iAverage = iSum / winSize;
+        for (int i = winHalf; i < winSize; i++) {
+            cValues[i - winHalf] = new Complex(rAverage, iAverage);
+        }
+        for (int i = winSize; i < vecSize; i++) {
+            double rValue = cValues[i].getReal();
+            double iValue = cValues[i].getImaginary();
+            double rOld = rWin.addElementRolling(rValue);
+            double iOld = iWin.addElementRolling(iValue);
+            rAverage = rAverage - rOld / winSize + rValue / winSize;
+            iAverage = iAverage - iOld / winSize + iValue / winSize;
+            cValues[i - winHalf] = new Complex(rAverage, iAverage);
+        }
+        for (int i = (vecSize - winHalf); i < vecSize; i++) {
+            cValues[i] = new Complex(rAverage, iAverage);
+        }
+    }
+
+    /**
+     * Construct row n of Pascal's triangle in
+     *
+     * @param a   array to store result in
+     * @param row the row to calculate
+     */
+    public static void pascalrow(double[] a, int row) {
+        int i, j;
+        for (j = 0; j <= row; j++) {
+            a[j] = 0;
+        }
+        a[0] = 1;
+        for (j = 1; j <= row; j++) {
+            for (i = row; i >= 1; i--) {
+                a[i] = a[i] - a[i - 1];
+            }
+        }
+    }
+
+    /**
+     * Calculate the value of a Lorentzian lineshape function
+     *
+     * @param x    the frequency position
+     * @param b    the linewidth
+     * @param freq the frequency
+     * @return the value at x
+     */
+    public static double lShape(double x, double b, double freq) {
+        b *= 0.5;
+        return (1.0 / Math.PI) * b / ((b * b) + ((x - freq) * (x - freq)));
+    }
+
+    static double[][] fillMatrix(final double[] f, final double[] d, final int nRows) {
+        int nCols = f.length;
+        double[][] A = new double[nRows][nCols];
+        int iCol = 0;
+        for (int iSig = 0; iSig < nCols; iSig++) {
+            for (int j = 0; j < nRows; j++) {
+                double yTemp = lShape(j, d[iSig], f[iSig]);
+                A[j][iSig] = yTemp;
+            }
+        }
+        return A;
+    }
+
+    static double[] fillVec(double[] x, int vecSize, ArrayList<Signal> signals) {
+        for (int j = 0; j < vecSize; j++) {
+            x[j] = 0.0;
+        }
+        int nWidths = 40;
+        signals.stream().forEach((signal) -> {
+            double d = signal.decay;
+            double f = signal.frequency;
+            double a = signal.amplitude;
+            int start = (int) Math.round(f - nWidths / 2 * d);
+            int end = (int) Math.round(f + nWidths / 2 * d);
+            if (start < 0) {
+                start = 0;
+            }
+            if (end > (vecSize - 1)) {
+                end = vecSize - 1;
+            }
+            for (int j = start; j <= end; j++) {
+                double yTemp = a * lShape(j, d, f);
+                x[j] += yTemp;
+            }
+        });
+        return x;
+    }
+
+    /**
+     * Find amplitudes that optimize the fit of signals to an array of
+     * intensities.
+     *
+     * @param x            The array of intensities
+     * @param fd           A complex array whose values represent frequency and decay rate
+     * @param useColumns   Only use signals whose indexed value is set to true in
+     *                     this array
+     * @param winSize      Size of window frequencies came from
+     * @param uniformWidth If true use the same linewidth for all frequencies
+     * @param lineWidth    If uniformWidth is true, use this line width
+     * @return an AmplitudeFitResult with amplitudes and quality measures
+     */
+    public static AmplitudeFitResult fitAmplitudes(final double[] x, final Complex[] fd, final int[] useColumns, final int winSize, final boolean uniformWidth, final double lineWidth) {
+        int nCols = 0;
+        for (int j = 0; j < fd.length; j++) {
+            if (useColumns[j] != -1) {
+                nCols++;
+            }
+        }
+        double[] f = new double[nCols];
+        double[] d = new double[nCols];
+        int iSig = 0;
+        for (int j = 0; j < fd.length; j++) {
+            if (useColumns[j] != -1) {
+                Complex zFD = fd[j];
+                double fR = -Math.atan2(zFD.getImaginary(), zFD.getReal());
+                double fPoints = (winSize * (Math.PI - fR)) / (2 * Math.PI);
+                f[iSig] = fPoints;
+                if (uniformWidth) {
+                    d[iSig] = lineWidth;
+                } else {
+                    d[iSig] = -1.0 * Math.log(zFD.abs()) * winSize / Math.PI;
+                }
+                iSig++;
+            }
+        }
+
+        RealMatrix AR = new Array2DRowRealMatrix(fillMatrix(f, d, winSize));
+        RealMatrix BR = new Array2DRowRealMatrix(AR.getRowDimension(), 1);
+        for (int i = 0; i < winSize; i++) {
+            BR.setEntry(i, 0, x[i]);
+        }
+        RealMatrix redAR = AR.copy();
+        return nnlsFit(redAR, BR.copy());
+    }
+
+    static void cwtd(Object vecObject, int size, int winSize) {
+        boolean complex = false;
+        double[] vec = null;
+        Complex[] cvec = null;
+        if (vecObject instanceof double[]) {
+            vec = (double[]) vecObject;
+        } else if (vecObject instanceof Complex[]) {
+            cvec = (Complex[]) vecObject;
+            complex = true;
+        }
+
+        double[] reVec = new double[size];
+        double[] imVec = new double[size];
+
+        double reSum;
+        double imSum;
+        int halfWin = winSize / 2;
+        double scaleCorr = 1.0 / Math.sqrt(winSize);
+
+        for (int i = 0; i < size; i++) {
+            reSum = 0.0;
+            imSum = 0.0;
+            int max = (i + winSize);
+            if (max > (size - 1)) {
+                max = size - 1;
+            }
+            for (int j = i; j <= max; j++) {
+                int dIJ = (j - i);
+                double psi = 0.0;
+                if (dIJ >= 0) {
+                    if (dIJ < halfWin) {
+                        psi = 1.0;
+                    } else if (dIJ < winSize) {
+                        psi = -1.0;
+                    }
+                }
+                if (complex) {
+                    reSum += cvec[j].getReal() * psi;
+                    imSum += cvec[j].getImaginary() * psi;
+                } else {
+                    reSum += vec[j] * psi;
+                }
+            }
+            if (complex) {
+                reVec[i] = reSum * scaleCorr;
+                imVec[i] = imSum * scaleCorr;
+            } else {
+                reVec[i] = reSum * scaleCorr;
+            }
+        }
+        if (complex) {
+            for (int i = 0; i < halfWin; i++) {
+                cvec[i] = Complex.ZERO;
+            }
+            for (int i = halfWin; i < size; i++) {
+                cvec[i] = new Complex(reVec[i - halfWin], imVec[i - halfWin]);
+            }
+        } else {
+            for (int i = 0; i < halfWin; i++) {
+                vec[i] = 0.0;
+            }
+            if (size - halfWin >= 0) {
+                System.arraycopy(reVec, halfWin, vec, halfWin, size - halfWin);
+            }
+        }
+    }
+
+    public static class OptimizeLineWidth implements UnivariateFunction {
+
+        final double[] signal;
+        final Complex[] fd;
+        final int[] useColumns;
+
+        public OptimizeLineWidth(final double[] signal, final Complex[] fd, final int[] useColumns) {
+            this.signal = signal;
+            this.fd = fd;
+            this.useColumns = useColumns;
+        }
+
+        @Override
+        public double value(final double x) {
+            AmplitudeFitResult afR = fitAmplitudes(signal, fd, useColumns, signal.length, true, x);
+            return afR.getRss();
+        }
     }
 }

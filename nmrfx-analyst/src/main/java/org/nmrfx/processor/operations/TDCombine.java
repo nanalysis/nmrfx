@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -89,8 +88,9 @@ public class TDCombine extends Operation {
         return this;
     }
 
-    public static ArrayList<Vec> getArrayList() {
-        return new ArrayList<Vec>();
+    public TDCombine clone() {
+        TDCombine temp = new TDCombine(dim, numInputVec, numOutputVec, coef);
+        return temp;
     }
 
     public void combine(List<Vec> vectors) {
@@ -128,7 +128,7 @@ public class TDCombine extends Operation {
         /* 1  0 -1  0
          0  1  0  1 */
 
- /* 1 0 0 0 0 0 1 0 */
+        /* 1 0 0 0 0 0 1 0 */
  /* 2D states
          // RR1, IR1, RR2, IR2, RI1, II1, RI2, II2.
          iR1oR iI1oR iR2oR iI2oR
@@ -197,8 +197,7 @@ public class TDCombine extends Operation {
         }
     }
 
-    public TDCombine clone() {
-        TDCombine temp = new TDCombine(dim, numInputVec, numOutputVec, coef);
-        return temp;
+    public static ArrayList<Vec> getArrayList() {
+        return new ArrayList<Vec>();
     }
 }

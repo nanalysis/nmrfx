@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,42 +17,21 @@
  */
 package org.nmrfx.structure.rdc;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.math3.geometry.euclidean.threed.NotARotationMatrixException;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.EigenDecomposition;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.Point3;
-import org.nmrfx.chemistry.SpatialSet;
-import org.nmrfx.chemistry.constraints.RDCConstraintSet;
-import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
-import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
-import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.star.ParseException;
+import org.apache.commons.math3.geometry.euclidean.threed.*;
+import org.apache.commons.math3.linear.*;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.RDCConstraint;
+import org.nmrfx.chemistry.constraints.RDCConstraintSet;
+import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class OrderSVD {
 
@@ -63,6 +42,9 @@ public class OrderSVD {
     static HashMap<String, Double> maxRDCDict = new HashMap<>();
     static HashMap<String, Double> gammaIDict = new HashMap();
     static HashMap<String, Double> gammaSDict = new HashMap();
+    static double gammaH = 2.68e8;
+    static double gammaN = -2.71e7;
+    static double scaleHN = (gammaH * gammaN) / ((1.0e-10) * (1.0e-10) * (1.0e-10));
 
     static {
         maxRDCDict.put("HN", 24350.0);
@@ -80,10 +62,6 @@ public class OrderSVD {
         gammaSDict.put("C", 6.73e7);
         gammaSDict.put("H", 2.68e8);
     }
-
-    static double gammaH = 2.68e8;
-    static double gammaN = -2.71e7;
-    static double scaleHN = (gammaH * gammaN) / ((1.0e-10) * (1.0e-10) * (1.0e-10));
 
     RealMatrix AR;
     ArrayRealVector bVec;
@@ -106,9 +84,9 @@ public class OrderSVD {
      * orderten_svd_dipole.c
      *
      * @param vectors List of bond vectors
-     * @param dc List of unnormalized experimental dipolar couplings
-     * @param maxRDC List of maximum static dipolar coupling values (r^(-3))
-     * @param error List of error values
+     * @param dc      List of unnormalized experimental dipolar couplings
+     * @param maxRDC  List of maximum static dipolar coupling values (r^(-3))
+     * @param error   List of error values
      */
     public OrderSVD(List<Vector3D> vectors, List<Double> dc, double[] maxRDC, List<Double> error) {
         int nVectors = vectors.size();
@@ -206,66 +184,6 @@ public class OrderSVD {
     }
 
     /**
-     * Reads input files that are formatted in the same way as example.inp.
-     * Example file located in orderten_svd_dipole.c
-     *
-     * @param file String of the name of the file.
-     * @return List of Lists of vectors, unnormalized RDCConstraint values, maxRDC values,
- error values, atom names, and XYZ coordinates for both atoms.
-     */
-    public static List readInputFile(String file) {
-        ArrayList<Vector3D> vectors = new ArrayList<>();
-        ArrayList<Double> dc = new ArrayList<>();
-        ArrayList<Double> maxRDC = new ArrayList<>();
-        ArrayList<Double> errors = new ArrayList<>();
-        ArrayList<String> atoms = new ArrayList<>();
-        ArrayList<Double[]> a1Coords = new ArrayList<>();
-        ArrayList<Double[]> a2Coords = new ArrayList<>();
-
-        try (BufferedReader bf = new BufferedReader(new FileReader(file));
-             LineNumberReader lineReader = new LineNumberReader(bf)) {
-            while (true) {
-                String line = lineReader.readLine();
-                if (line == null) {
-                    break;
-                }
-                String sline = line.trim();
-                if (sline.length() == 0 || sline.charAt(0) == '#') {
-                    continue;
-                }
-                String[] sfields = sline.split("\\s+", -1);
-                if (sfields.length > 7 && StringUtils.isNumeric(sfields[7])) {
-                    Point3 v1 = new Point3(Double.parseDouble(sfields[0]), Double.parseDouble(sfields[1]), Double.parseDouble(sfields[2]));
-                    Point3 v2 = new Point3(Double.parseDouble(sfields[3]), Double.parseDouble(sfields[4]), Double.parseDouble(sfields[5]));
-                    Vector3D vector = v1.subtract(v2);
-                    vectors.add(vector);
-                    dc.add(Double.parseDouble(sfields[6]));
-                    maxRDC.add(Double.parseDouble(sfields[7]));
-                    errors.add(Double.parseDouble(sfields[8]));
-                    atoms.add(sfields[10]);
-                    Double[] a1XYZ = {Double.parseDouble(sfields[0]), Double.parseDouble(sfields[1]), Double.parseDouble(sfields[2])};
-                    Double[] a2XYZ = {Double.parseDouble(sfields[3]), Double.parseDouble(sfields[4]), Double.parseDouble(sfields[5])};
-                    a1Coords.add(a1XYZ);
-                    a2Coords.add(a2XYZ);
-                }
-            }
-        } catch (IOException ioe) {
-            log.warn(ioe.getMessage(), ioe);
-        }
-
-        List info = new ArrayList<>();
-        info.add(0, vectors);
-        info.add(1, dc);
-        info.add(2, maxRDC);
-        info.add(3, errors);
-        info.add(4, atoms);
-        info.add(5, a1Coords);
-        info.add(6, a2Coords);
-
-        return info;
-    }
-
-    /**
      * Returns the A matrix used in the SVD.
      *
      * @return RealMatrix A matrix containing the direction cosines used the
@@ -279,7 +197,7 @@ public class OrderSVD {
      * Returns the b vector used in the SVD.
      *
      * @return ArrayRealVector b vector containing the normalized experimental
- RDCConstraint values used to solve for x in the SVD: Ax = b.
+     * RDCConstraint values used to solve for x in the SVD: Ax = b.
      */
     public ArrayRealVector getBVector() {
         return bVec;
@@ -289,7 +207,7 @@ public class OrderSVD {
      * Returns the unnormalized experimental RDCConstraint value vector.
      *
      * @return ArrayRealVector b vector containing the unnormalized experimental
- RDCConstraint values.
+     * RDCConstraint values.
      */
     public ArrayRealVector getBUnNormVector() {
         return bVecUnNorm;
@@ -299,7 +217,7 @@ public class OrderSVD {
      * Returns the x vector solved for in the SVD.
      *
      * @return RealVector x solved for in the SVD using the direction cosine A
- matrix and the normalized experimental RDCConstraint b vector: Ax = b.
+     * matrix and the normalized experimental RDCConstraint b vector: Ax = b.
      */
     public RealVector getXVector() {
         return xVec;
@@ -455,7 +373,7 @@ public class OrderSVD {
 
     /**
      * Returns the maximum RDCConstraint values used for different pairs of atoms in the
- molecule.
+     * molecule.
      *
      * @return double[] Array of the maxRDC values for the atom pairs in the
      * molecule.
@@ -466,10 +384,10 @@ public class OrderSVD {
 
     /**
      * Sets the maximum RDCConstraint values used for different pairs of atoms in the
- molecule.
+     * molecule.
      *
      * @param maxRDC double[] Array of the maxRDC values for the atom pairs in
-     * the molecule.
+     *               the molecule.
      */
     public void setMaxRDCs(double[] maxRDC) {
         maxRDCs = maxRDC;
@@ -477,32 +395,21 @@ public class OrderSVD {
 
     /**
      * Calculates the normalized RDCConstraint values using the A matrix and x vector from
- the SVD.
+     * the SVD.
      *
      * @return RealVector Normalized calculated RDCConstraint values b vector calculated
- using the solved x vector from the SVD: Ax = b.
+     * using the solved x vector from the SVD: Ax = b.
      */
     public RealVector calcBVectorNorm() {
         return AR.operate(xVec);
     }
 
     /**
-     * Sets the normalized RDCConstraint values calculated using the A matrix and x vector
- from the SVD.
-     *
-     * @param calcBVecNorm RealVector Normalized calculated RDCConstraint values b vector
- calculated using the solved x vector from the SVD: Ax = b.
-     */
-    public void setCalcBVectorNorm(RealVector calcBVecNorm) {
-        bCalcNorm = calcBVecNorm.toArray();
-    }
-
-    /**
      * Calculates the unnormalized RDCConstraint values using the A matrix and x vector
- from the SVD.
+     * from the SVD.
      *
      * @return RealVector Unnormalized calculated RDCConstraint values b vector calculated
- using the solved x vector from the SVD: Ax = b.
+     * using the solved x vector from the SVD: Ax = b.
      */
     public RealVector calcBVector() {
         RealVector calcBVecNorm = calcBVectorNorm();
@@ -512,22 +419,11 @@ public class OrderSVD {
     }
 
     /**
-     * Sets the unnormalized RDCConstraint values calculated using the A matrix and x
- vector from the SVD.
-     *
-     * @param calcBVec RealVector Unnormalized calculated RDCConstraint values b vector
- calculated using the solved x vector from the SVD: Ax = b.
-     */
-    public void setCalcBVector(RealVector calcBVec) {
-        bCalc = calcBVec.toArray();
-    }
-
-    /**
      * Returns the differences between the unnormalized RDCConstraint values (calculated -
- experimental).
+     * experimental).
      *
      * @return RealVector of the differences between the unnormalized RDCConstraint values
- (calculated b vector - experimental b vector).
+     * (calculated b vector - experimental b vector).
      */
     public RealVector getRDCDiffs() {
         return dcDiffs;
@@ -535,10 +431,10 @@ public class OrderSVD {
 
     /**
      * Sets the differences between the unnormalized RDCConstraint values (calculated -
- experimental).
+     * experimental).
      *
      * @param rdcDiffs RealVector of the differences between the unnormalized
- RDCConstraint values (calculated b vector - experimental b vector).
+     *                 RDCConstraint values (calculated b vector - experimental b vector).
      */
     public void setRDCDiffs(RealVector rdcDiffs) {
         dcDiffs = rdcDiffs;
@@ -546,24 +442,46 @@ public class OrderSVD {
 
     /**
      * Returns the normalized RDCConstraint values calculated using the A matrix and x
- vector from the SVD.
+     * vector from the SVD.
      *
      * @return double[] Normalized b (calculated RDCConstraint) values calculated using
- the solved x vector from the SVD: Ax = b.
+     * the solved x vector from the SVD: Ax = b.
      */
     public double[] getCalcBVectorNorm() {
         return bCalcNorm;
     }
 
     /**
+     * Sets the normalized RDCConstraint values calculated using the A matrix and x vector
+     * from the SVD.
+     *
+     * @param calcBVecNorm RealVector Normalized calculated RDCConstraint values b vector
+     *                     calculated using the solved x vector from the SVD: Ax = b.
+     */
+    public void setCalcBVectorNorm(RealVector calcBVecNorm) {
+        bCalcNorm = calcBVecNorm.toArray();
+    }
+
+    /**
      * Returns the unnormalized RDCConstraint values calculated using the A matrix and x
- vector from the SVD.
+     * vector from the SVD.
      *
      * @return double[] Unnormalized b (calculated RDCConstraint) values calculated using
- the solved x vector from the SVD: Ax = b.
+     * the solved x vector from the SVD: Ax = b.
      */
     public double[] getCalcBVector() {
         return bCalc;
+    }
+
+    /**
+     * Sets the unnormalized RDCConstraint values calculated using the A matrix and x
+     * vector from the SVD.
+     *
+     * @param calcBVec RealVector Unnormalized calculated RDCConstraint values b vector
+     *                 calculated using the solved x vector from the SVD: Ax = b.
+     */
+    public void setCalcBVector(RealVector calcBVec) {
+        bCalc = calcBVec.toArray();
     }
 
     /**
@@ -577,15 +495,6 @@ public class OrderSVD {
     }
 
     /**
-     * Sets the Euler angles.
-     *
-     * @param eulerVals
-     */
-    public void setEulerAngles(double[][] eulerVals) {
-        euler = eulerVals;
-    }
-
-    /**
      * Returns the Euler angles.
      *
      * @return double[][] Arrays of Euler angles.
@@ -595,12 +504,12 @@ public class OrderSVD {
     }
 
     /**
-     * Sets the RDCConstraint constraint set.
+     * Sets the Euler angles.
      *
-     * @param set
+     * @param eulerVals
      */
-    public void setRDCset(RDCConstraintSet set) {
-        rdcSet = set;
+    public void setEulerAngles(double[][] eulerVals) {
+        euler = eulerVals;
     }
 
     /**
@@ -610,6 +519,15 @@ public class OrderSVD {
      */
     public RDCConstraintSet getRDCset() {
         return rdcSet;
+    }
+
+    /**
+     * Sets the RDCConstraint constraint set.
+     *
+     * @param set
+     */
+    public void setRDCset(RDCConstraintSet set) {
+        rdcSet = set;
     }
 
     /**
@@ -625,7 +543,7 @@ public class OrderSVD {
      * Calculates the Euler angles for a rotation about z, y', z''.
      *
      * @param R double[][] Rotation matrix for clockwise rotation about z, y',
-     * z''.
+     *          z''.
      * @return double[][] Euler angles (alpha, beta, gamma) for the ZYZ
      * rotation.
      */
@@ -648,12 +566,72 @@ public class OrderSVD {
     }
 
     /**
+     * Reads input files that are formatted in the same way as example.inp.
+     * Example file located in orderten_svd_dipole.c
+     *
+     * @param file String of the name of the file.
+     * @return List of Lists of vectors, unnormalized RDCConstraint values, maxRDC values,
+     * error values, atom names, and XYZ coordinates for both atoms.
+     */
+    public static List readInputFile(String file) {
+        ArrayList<Vector3D> vectors = new ArrayList<>();
+        ArrayList<Double> dc = new ArrayList<>();
+        ArrayList<Double> maxRDC = new ArrayList<>();
+        ArrayList<Double> errors = new ArrayList<>();
+        ArrayList<String> atoms = new ArrayList<>();
+        ArrayList<Double[]> a1Coords = new ArrayList<>();
+        ArrayList<Double[]> a2Coords = new ArrayList<>();
+
+        try (BufferedReader bf = new BufferedReader(new FileReader(file));
+             LineNumberReader lineReader = new LineNumberReader(bf)) {
+            while (true) {
+                String line = lineReader.readLine();
+                if (line == null) {
+                    break;
+                }
+                String sline = line.trim();
+                if (sline.length() == 0 || sline.charAt(0) == '#') {
+                    continue;
+                }
+                String[] sfields = sline.split("\\s+", -1);
+                if (sfields.length > 7 && StringUtils.isNumeric(sfields[7])) {
+                    Point3 v1 = new Point3(Double.parseDouble(sfields[0]), Double.parseDouble(sfields[1]), Double.parseDouble(sfields[2]));
+                    Point3 v2 = new Point3(Double.parseDouble(sfields[3]), Double.parseDouble(sfields[4]), Double.parseDouble(sfields[5]));
+                    Vector3D vector = v1.subtract(v2);
+                    vectors.add(vector);
+                    dc.add(Double.parseDouble(sfields[6]));
+                    maxRDC.add(Double.parseDouble(sfields[7]));
+                    errors.add(Double.parseDouble(sfields[8]));
+                    atoms.add(sfields[10]);
+                    Double[] a1XYZ = {Double.parseDouble(sfields[0]), Double.parseDouble(sfields[1]), Double.parseDouble(sfields[2])};
+                    Double[] a2XYZ = {Double.parseDouble(sfields[3]), Double.parseDouble(sfields[4]), Double.parseDouble(sfields[5])};
+                    a1Coords.add(a1XYZ);
+                    a2Coords.add(a2XYZ);
+                }
+            }
+        } catch (IOException ioe) {
+            log.warn(ioe.getMessage(), ioe);
+        }
+
+        List info = new ArrayList<>();
+        info.add(0, vectors);
+        info.add(1, dc);
+        info.add(2, maxRDC);
+        info.add(3, errors);
+        info.add(4, atoms);
+        info.add(5, a1Coords);
+        info.add(6, a2Coords);
+
+        return info;
+    }
+
+    /**
      * Calculates the vector associated with two atoms in a Molecule object.
      *
      * @param atomName1 String of the name of the first atom of the vector.
      * @param atomName2 String of the name of the second atom of the vector.
      * @param xyzCoords Optional List of Lists containing the XYZ coordinates of
-     * the two atoms: [[atom1X, atom1Y, atom1Z], [atom2X, atom2Y, atomZ]]
+     *                  the two atoms: [[atom1X, atom1Y, atom1Z], [atom2X, atom2Y, atomZ]]
      * @return Vector3D object that represents the vector associated with the
      * two atoms.
      */
@@ -682,16 +660,16 @@ public class OrderSVD {
 
     /**
      * Calculates the maximum RDCConstraint value associated with two atoms in a Molecule
- object.
+     * object.
      *
-     * @param vector Vector3D object that represents the vector associated with
-     * the two atoms.
-     * @param atomName1 String of the name of the first atom of the vector.
-     * @param atomName2 String of the name of the second atom of the vector.
+     * @param vector     Vector3D object that represents the vector associated with
+     *                   the two atoms.
+     * @param atomName1  String of the name of the first atom of the vector.
+     * @param atomName2  String of the name of the second atom of the vector.
      * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint value based
- on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDCConstraint value with the
- scaling method used in CYANA.
+     *                   on the vector distance.
+     * @param scale      Boolean of whether to calculate the max RDCConstraint value with the
+     *                   scaling method used in CYANA.
      * @return double parameter that is the maxRDC value.
      */
     public static double calcMaxRDC(Vector3D vector, String atomName1, String atomName2, boolean calcMaxRDC, boolean scale) {
@@ -718,17 +696,17 @@ public class OrderSVD {
     /**
      * Performs an Order SVD calculation to calculate molecular RDCs.
      *
-     * @param atomPairs List of List of Strings of atom name pairs: [[atom 1
-     * name, atom 2 name], [atom 1 name, atom 2 name]...]
-     * @param rdc List of the unnormalized experimental RDCConstraint values.
-     * @param errors List of the errors in the experimental RDCConstraint values.
+     * @param atomPairs  List of List of Strings of atom name pairs: [[atom 1
+     *                   name, atom 2 name], [atom 1 name, atom 2 name]...]
+     * @param rdc        List of the unnormalized experimental RDCConstraint values.
+     * @param errors     List of the errors in the experimental RDCConstraint values.
      * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint value based
- on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDCConstraint value with the
- scaling method used in CYANA.
-     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of
-     * the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2
-     * Z]]...]
+     *                   on the vector distance.
+     * @param scale      Boolean of whether to calculate the max RDCConstraint value with the
+     *                   scaling method used in CYANA.
+     * @param xyzCoords  Optional List of Lists containing the XYZ coordinates of
+     *                   the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2
+     *                   Z]]...]
      */
     public static void calcRDC(List<List<String>> atomPairs, List<Double> rdc, List<Double> errors, boolean calcMaxRDC, boolean scale, List<List<List<Double>>> xyzCoords) {
         List<Vector3D> vectors = new ArrayList<>();
@@ -778,16 +756,15 @@ public class OrderSVD {
     /**
      * Performs an Order SVD calculation to calculate molecular RDCs.
      *
-     * @param rdcSet RDCConstraintSet containing RDCConstraint information from the STAR
- file (e.g. atoms, rdc values, rdc error values).
+     * @param rdcSet     RDCConstraintSet containing RDCConstraint information from the STAR
+     *                   file (e.g. atoms, rdc values, rdc error values).
      * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint value based
- on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDCConstraint value with the
- scaling method used in CYANA.
-     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of
-     * the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2
-     * Z]]...]
-     *
+     *                   on the vector distance.
+     * @param scale      Boolean of whether to calculate the max RDCConstraint value with the
+     *                   scaling method used in CYANA.
+     * @param xyzCoords  Optional List of Lists containing the XYZ coordinates of
+     *                   the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2
+     *                   Z]]...]
      * @return OrderSVD object containing information from the SVD calculation.
      */
     public static OrderSVD calcRDCs(RDCConstraintSet rdcSet, boolean calcMaxRDC, boolean scale, List<List<List<Double>>> xyzCoords) {
@@ -837,10 +814,9 @@ public class OrderSVD {
      * Runs an OrderSVD calculation.
      *
      * @param vectors List of bond vectors
-     * @param rdc1 List of unnormalized experimental dipolar couplings
-     * @param maxRDC List of maximum static dipolar coupling values (r^(-3))
-     * @param err List of error values
-     *
+     * @param rdc1    List of unnormalized experimental dipolar couplings
+     * @param maxRDC  List of maximum static dipolar coupling values (r^(-3))
+     * @param err     List of error values
      * @return OrderSVD object containing information from the SVD calculation.
      */
     public static OrderSVD runOrderSVD(List<Vector3D> vectors, List<Double> rdc1, List<Double> maxRDC, List<Double> err) {
@@ -949,8 +925,8 @@ public class OrderSVD {
     /**
      * Saves SVD RDCConstraint results to a file.
      *
-     * @param svdResults OrderSVD object with the results of the SVD RDCConstraint
- calculation.
+     * @param svdResults  OrderSVD object with the results of the SVD RDCConstraint
+     *                    calculation.
      * @param resultsFile File to write.
      * @throws IOException
      */
@@ -1037,8 +1013,8 @@ public class OrderSVD {
      * Reads experimental RDCs from XPLOR or CYANA files and updates the RDCSet
      * object.
      *
-     * @param file File to read.
-     * @param type String of the file format: "xplor" or "cyana".
+     * @param file       File to read.
+     * @param type       String of the file format: "xplor" or "cyana".
      * @param rdcSetName String of the name of the RDCConstraint set.
      * @throws IOException
      * @throws ParseException
@@ -1081,10 +1057,10 @@ public class OrderSVD {
     /**
      * Updates the RDCSet object with RDCs read from XPLOR or CYANA files.
      *
-     * @param atom1 List of atoms for the first atom in the RDCConstraint pair.
-     * @param atom2 List of atoms for the second atom in the RDCConstraint pair.
-     * @param rdc List of XPLOR or CYANA RDCConstraint values.
-     * @param err List of XPLOR or CYANA RDCConstraint error values.
+     * @param atom1      List of atoms for the first atom in the RDCConstraint pair.
+     * @param atom2      List of atoms for the second atom in the RDCConstraint pair.
+     * @param rdc        List of XPLOR or CYANA RDCConstraint values.
+     * @param err        List of XPLOR or CYANA RDCConstraint error values.
      * @param rdcSetName String of the name of the RDCConstraint set.
      */
     public static void updateRDCSet(MoleculeBase molecule, List<String> atom1, List<String> atom2, List<String> rdc, List<String> err, String rdcSetName) {

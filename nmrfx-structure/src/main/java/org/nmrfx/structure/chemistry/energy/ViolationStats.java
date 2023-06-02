@@ -6,11 +6,11 @@
 package org.nmrfx.structure.chemistry.energy;
 
 /**
- *
  * @author brucejohnson
  */
 public class ViolationStats {
 
+    private final EnergyCoords outer;
     int mode;
     String aName1;
     String aName2;
@@ -20,7 +20,6 @@ public class ViolationStats {
     double energy;
     double constraintDis = 0.0;
     double dif;
-    private final EnergyCoords outer;
 
     public ViolationStats(int mode, String aName1, String aName2, double dis, double rLow, double rUp, double energy, final EnergyCoords outer) {
         this.outer = outer;

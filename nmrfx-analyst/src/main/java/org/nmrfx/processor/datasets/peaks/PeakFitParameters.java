@@ -2,34 +2,9 @@ package org.nmrfx.processor.datasets.peaks;
 
 import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.ARRAYED_FIT_MODE.SINGLE;
 import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FITJ_MODE.FIT;
-import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FIT_MODE.*;
+import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FIT_MODE.ALL;
 
 public class PeakFitParameters {
-    public enum ARRAYED_FIT_MODE {
-        SINGLE,
-        PLANES,
-        EXP;
-    }
-
-    public enum FIT_MODE {
-        ALL,
-        AMPLITUDES,
-        LW_AMPLITUDES,
-        MAXDEV,
-        RMS
-    }
-
-    public enum FITJ_MODE {
-        FIT,
-        JFIT,
-        LFIT
-    }
-
-    public record ShapeParameters(boolean fitShape, boolean constrainShape,
-                           double directShapeFactor, double indirectShapeFactor) {
-
-    }
-
     boolean doFit;
     FIT_MODE fitMode;
     FITJ_MODE fitJMode;
@@ -39,29 +14,10 @@ public class PeakFitParameters {
     boolean lsFit;
     int constrainDim;
     ARRAYED_FIT_MODE arrayedFitMode;
-
     public PeakFitParameters() {
         this(true, ALL, FIT, true, 3.0,
                 false, -1, SINGLE);
     }
-
-    /*
-     * @param doFit Currently unused
-     * @param fitMode An int value that specifies whether to fit all parameters
-     * or just amplitudes
-     * @param updatePeaks If true update the peaks with the fitted parameters
-     * otherwise return a list of the fit parameters
-     * @param multiplier unused?? should multiply width of regions
-     * @param fitShape If true fit using the generalized Lorentzian model
-     * @param lsFit If true and a lineshape catalog exists in dataset then use
-     * the lineshape catalog to fit
-     * @param constrainDim If this is greater than or equal to 0 then the
-     * specified all positions and widths of the specified dimension will be
-     * constrained to be the same value. Useful for fitting column or row of
-     * peaks.
-
-     */
-
     public PeakFitParameters(boolean doFit, FIT_MODE fitMode, FITJ_MODE fitJMode, boolean updatePeaks,
                              double multiplier, boolean lsFit, int constrainDim,
                              ARRAYED_FIT_MODE arrayedFitMode) {
@@ -92,6 +48,23 @@ public class PeakFitParameters {
         return this;
     }
 
+    /*
+     * @param doFit Currently unused
+     * @param fitMode An int value that specifies whether to fit all parameters
+     * or just amplitudes
+     * @param updatePeaks If true update the peaks with the fitted parameters
+     * otherwise return a list of the fit parameters
+     * @param multiplier unused?? should multiply width of regions
+     * @param fitShape If true fit using the generalized Lorentzian model
+     * @param lsFit If true and a lineshape catalog exists in dataset then use
+     * the lineshape catalog to fit
+     * @param constrainDim If this is greater than or equal to 0 then the
+     * specified all positions and widths of the specified dimension will be
+     * constrained to be the same value. Useful for fitting column or row of
+     * peaks.
+
+     */
+
     public FIT_MODE fitMode() {
         return fitMode;
     }
@@ -100,6 +73,7 @@ public class PeakFitParameters {
         this.fitMode = fitMode;
         return this;
     }
+
     public FITJ_MODE fitJMode() {
         return fitJMode;
     }
@@ -167,6 +141,31 @@ public class PeakFitParameters {
     public PeakFitParameters arrayedFitMode(ARRAYED_FIT_MODE arrayedFitMode) {
         this.arrayedFitMode = arrayedFitMode;
         return this;
+    }
+
+    public enum ARRAYED_FIT_MODE {
+        SINGLE,
+        PLANES,
+        EXP;
+    }
+
+    public enum FIT_MODE {
+        ALL,
+        AMPLITUDES,
+        LW_AMPLITUDES,
+        MAXDEV,
+        RMS
+    }
+
+    public enum FITJ_MODE {
+        FIT,
+        JFIT,
+        LFIT
+    }
+
+    public record ShapeParameters(boolean fitShape, boolean constrainShape,
+                                  double directShapeFactor, double indirectShapeFactor) {
+
     }
 
 }

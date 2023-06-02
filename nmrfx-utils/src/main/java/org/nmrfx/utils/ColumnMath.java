@@ -17,7 +17,7 @@ public class ColumnMath {
     public double[] getValues() {
         values = new double[varFields.length];
         int i = 0;
-        for (var varField:varFields) {
+        for (var varField : varFields) {
             try {
                 values[i] = Double.parseDouble(varField.getText());
             } catch (NumberFormatException nfe) {
@@ -30,14 +30,14 @@ public class ColumnMath {
 
     void checkValue() {
         boolean ok = true;
-        for (var varField:varFields) {
+        for (var varField : varFields) {
             String s = varField.getText();
             try {
                 Double.parseDouble(s);
                 varField.setBackground(GUIUtils.getDefaultBackground());
             } catch (NumberFormatException nfe) {
                 varField.setBackground(GUIUtils.getErrorBackground());
-                ok=false;
+                ok = false;
             }
         }
         var applyButton = dialog.getDialogPane().lookupButton(ButtonType.APPLY);
@@ -89,7 +89,7 @@ public class ColumnMath {
 
     DoubleUnaryOperator getFunction() {
         getValues();
-        return v -> (v+values[0]) * values[1] + values[2];
+        return v -> (v + values[0]) * values[1] + values[2];
     }
 
 }

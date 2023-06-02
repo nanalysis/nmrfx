@@ -5,10 +5,11 @@
  */
 package org.nmrfx.processor.optimization;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
- *
  * @author tedcolon
  */
 public class HausdorffDistance {
@@ -19,21 +20,6 @@ public class HausdorffDistance {
     public HausdorffDistance(Set<Collection> setA, Set<Collection> setB) {
         this.setA = setA;
         this.setB = setB;
-    }
-
-    public static Double distance(Collection<Double> ptA, Collection<Double> ptB) throws IllegalArgumentException {
-        if (ptA.size() != ptB.size()) {
-            throw new IllegalArgumentException(String.format("Collection sizes do not match. (%d != %d)", ptA.size(), ptB.size()));
-        }
-        Iterator<Double> aCoor = ptA.iterator(); // coordinates for ptA, i.e. (X1, Y1, Z1)
-        Iterator<Double> bCoor = ptB.iterator(); // coordinates for ptB, i.e. (X2, Y2, Z2)
-        double sum = 0.0;
-        double diff;
-        while (aCoor.hasNext() && bCoor.hasNext()) {
-            diff = bCoor.next() - aCoor.next();
-            sum += Math.pow(diff, 2);
-        }
-        return Math.sqrt(sum);
     }
 
     public Double calculate() throws IllegalArgumentException {
@@ -59,5 +45,20 @@ public class HausdorffDistance {
             }
         }
         return finalDist;
+    }
+
+    public static Double distance(Collection<Double> ptA, Collection<Double> ptB) throws IllegalArgumentException {
+        if (ptA.size() != ptB.size()) {
+            throw new IllegalArgumentException(String.format("Collection sizes do not match. (%d != %d)", ptA.size(), ptB.size()));
+        }
+        Iterator<Double> aCoor = ptA.iterator(); // coordinates for ptA, i.e. (X1, Y1, Z1)
+        Iterator<Double> bCoor = ptB.iterator(); // coordinates for ptB, i.e. (X2, Y2, Z2)
+        double sum = 0.0;
+        double diff;
+        while (aCoor.hasNext() && bCoor.hasNext()) {
+            diff = bCoor.next() - aCoor.next();
+            sum += Math.pow(diff, 2);
+        }
+        return Math.sqrt(sum);
     }
 }

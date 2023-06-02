@@ -10,19 +10,18 @@ import org.mockito.Mockito;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 
 
 public class GUIProjectTest {
-    GUIProject testProject = Mockito.spy(new GUIProject("A Test Project"));
     @ClassRule
     public static final TemporaryFolder tmpFolder = TemporaryFolder.builder()
             .parentFolder(new File(System.getProperty("user.dir")))
             .assureDeletion()
             .build();
+    GUIProject testProject = Mockito.spy(new GUIProject("A Test Project"));
 
     @Before
     public void setUp() {

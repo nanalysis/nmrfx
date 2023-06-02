@@ -8,35 +8,24 @@ package org.nmrfx.star;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.PrintWriter;
-import java.io.StreamTokenizer;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
 /**
- *
  * @author brucejohnson
  */
 public class STAR3Base {
 
     private static final Logger log = LoggerFactory.getLogger(STAR3Base.class);
+    final String name;
+    final String fileName;
+    public boolean usePrevious;
     LineNumberReader lineReader = null;
     PrintWriter out = null;
     BufferedReader bfR;
     STAR3.STARTokenizer stTokenizer = null;
     String string;
-    public boolean usePrevious;
     String lastToken = null;
-    final String name;
-    final String fileName;
     LinkedHashMap<String, Saveframe> saveFrames = new LinkedHashMap<>();
 
     public STAR3Base(final String name) {
@@ -77,18 +66,6 @@ public class STAR3Base {
         out.print(token);
     }
 
-    static public String[] getTokenPair(String token) throws ParseException {
-        // fixme prepare pattern matcher for efficiency, or use indexOf?
-        if (token.charAt(0) != '_') {
-            throw new ParseException("Incorrect tag format \"" + token + "\"");
-        }
-        String[] tokenPair = token.split("\\.");
-        if (tokenPair.length != 2) {
-            throw new ParseException("Incorrect tag format \"" + token + "\"");
-        }
-        return tokenPair;
-    }
-
     void setupTokenizer(StreamTokenizer tokenizer) {
         tokenizer.resetSyntax();
         tokenizer.wordChars('a', 'z');
@@ -117,80 +94,6 @@ public class STAR3Base {
         tokenizer.wordChars('[', '[');
         tokenizer.wordChars(']', ']');
         tokenizer.wordChars('=', '=');
-    }
-
-    class STARTokenizer {
-
-        String s;
-        int pos;
-        int length = 0;
-
-        void initialize(final String newStr) {
-            pos = 0;
-            s = newStr;
-            if (newStr == null) {
-                length = 0;
-            } else {
-                length = s.length();
-            }
-        }
-
-        String nextToken() {
-            if (pos >= length) {
-                return null;
-            }
-            int fChar;
-            int lChar;
-            boolean gotWS = false;
-            while (pos < length) {
-                if (Character.isWhitespace(s.charAt(pos))) {
-                    gotWS = true;
-                } else {
-                    if (pos == 0) {
-                        gotWS = true;
-                    }
-                    break;
-                }
-                pos++;
-            }
-            if (pos == length) {
-                return null;
-            }
-            fChar = pos;
-            lChar = pos;
-            if (gotWS && (s.charAt(pos) == '\'' || s.charAt(pos) == '"')) {
-                char qChar = s.charAt(pos);
-                pos++;
-                while (pos < length) {
-                    if ((s.charAt(pos) == qChar) && ((pos == length - 1) || Character.isWhitespace(s.charAt(pos + 1)))) {
-                        lChar = pos;
-                        pos++;
-                        break;
-                    }
-                    pos++;
-                }
-            } else {
-                while (pos < length) {
-                    if (Character.isWhitespace(s.charAt(pos))) {
-                        break;
-                    }
-                    lChar = pos;
-                    pos++;
-                }
-            }
-            String token = s.substring(fChar, lChar + 1);
-            token = token.trim();
-            int length = token.length();
-            if (length > 1) {
-                char firstChar = token.charAt(0);
-                char lastChar = token.charAt(length - 1);
-                if ((lastChar == firstChar) && ((firstChar == '\'') || (firstChar == '"'))) {
-                    token = token.substring(1, length - 1);
-                }
-            }
-
-            return token;
-        }
     }
 
     public void unGetToken() {
@@ -279,46 +182,6 @@ public class STAR3Base {
         }
 
         return (string);
-    }
-
-    public static String valueOf(Number number) {
-        String value = ".";
-        if (number != null) {
-            value = String.valueOf(number);
-        }
-        return value;
-    }
-
-    public static String getTokenFromMap(Map tokenMap, String tokenName) throws ParseException {
-        String tokenValue = (String) tokenMap.get(tokenName);
-        if (tokenValue == null) {
-            throw new ParseException("Token \"" + tokenName + "\" not in tokenMap");
-        }
-        return tokenValue;
-    }
-
-    public static String getTokenFromMap(Map tokenMap, String tokenName, String defaultValue) throws ParseException {
-        String tokenValue = (String) tokenMap.get(tokenName);
-        if (tokenValue == null) {
-            if (defaultValue == null) {
-                throw new ParseException("Token \"" + tokenName + "\" not in tokenMap");
-            } else {
-                tokenValue = defaultValue;
-            }
-        }
-        return tokenValue;
-    }
-
-    public static String quote(String s) {
-        String result = s;
-        char stringQuote = '"';
-        if (s.indexOf(' ') != -1) {
-            if (s.indexOf('"') != -1) {
-                stringQuote = '\'';
-            }
-            result = stringQuote + s + stringQuote;
-        }
-        return result;
     }
 
     public void processSaveFrame(String saveFrameName) throws ParseException {
@@ -447,6 +310,58 @@ public class STAR3Base {
         this.saveFrames = saveFrames;
     }
 
+    static public String[] getTokenPair(String token) throws ParseException {
+        // fixme prepare pattern matcher for efficiency, or use indexOf?
+        if (token.charAt(0) != '_') {
+            throw new ParseException("Incorrect tag format \"" + token + "\"");
+        }
+        String[] tokenPair = token.split("\\.");
+        if (tokenPair.length != 2) {
+            throw new ParseException("Incorrect tag format \"" + token + "\"");
+        }
+        return tokenPair;
+    }
+
+    public static String valueOf(Number number) {
+        String value = ".";
+        if (number != null) {
+            value = String.valueOf(number);
+        }
+        return value;
+    }
+
+    public static String getTokenFromMap(Map tokenMap, String tokenName) throws ParseException {
+        String tokenValue = (String) tokenMap.get(tokenName);
+        if (tokenValue == null) {
+            throw new ParseException("Token \"" + tokenName + "\" not in tokenMap");
+        }
+        return tokenValue;
+    }
+
+    public static String getTokenFromMap(Map tokenMap, String tokenName, String defaultValue) throws ParseException {
+        String tokenValue = (String) tokenMap.get(tokenName);
+        if (tokenValue == null) {
+            if (defaultValue == null) {
+                throw new ParseException("Token \"" + tokenName + "\" not in tokenMap");
+            } else {
+                tokenValue = defaultValue;
+            }
+        }
+        return tokenValue;
+    }
+
+    public static String quote(String s) {
+        String result = s;
+        char stringQuote = '"';
+        if (s.indexOf(' ') != -1) {
+            if (s.indexOf('"') != -1) {
+                stringQuote = '\'';
+            }
+            result = stringQuote + s + stringQuote;
+        }
+        return result;
+    }
+
     public static void writeLoopStrings(Writer chan, String[] loopStrings) throws ParseException, IOException {
         chan.write("\nloop_\n");
         for (int j = 0; j < loopStrings.length; j++) {
@@ -480,6 +395,80 @@ public class STAR3Base {
             chan.write(";\n");
         } else {
             chan.write(quote(s) + "\n");
+        }
+    }
+
+    class STARTokenizer {
+
+        String s;
+        int pos;
+        int length = 0;
+
+        void initialize(final String newStr) {
+            pos = 0;
+            s = newStr;
+            if (newStr == null) {
+                length = 0;
+            } else {
+                length = s.length();
+            }
+        }
+
+        String nextToken() {
+            if (pos >= length) {
+                return null;
+            }
+            int fChar;
+            int lChar;
+            boolean gotWS = false;
+            while (pos < length) {
+                if (Character.isWhitespace(s.charAt(pos))) {
+                    gotWS = true;
+                } else {
+                    if (pos == 0) {
+                        gotWS = true;
+                    }
+                    break;
+                }
+                pos++;
+            }
+            if (pos == length) {
+                return null;
+            }
+            fChar = pos;
+            lChar = pos;
+            if (gotWS && (s.charAt(pos) == '\'' || s.charAt(pos) == '"')) {
+                char qChar = s.charAt(pos);
+                pos++;
+                while (pos < length) {
+                    if ((s.charAt(pos) == qChar) && ((pos == length - 1) || Character.isWhitespace(s.charAt(pos + 1)))) {
+                        lChar = pos;
+                        pos++;
+                        break;
+                    }
+                    pos++;
+                }
+            } else {
+                while (pos < length) {
+                    if (Character.isWhitespace(s.charAt(pos))) {
+                        break;
+                    }
+                    lChar = pos;
+                    pos++;
+                }
+            }
+            String token = s.substring(fChar, lChar + 1);
+            token = token.trim();
+            int length = token.length();
+            if (length > 1) {
+                char firstChar = token.charAt(0);
+                char lastChar = token.charAt(length - 1);
+                if ((lastChar == firstChar) && ((firstChar == '\'') || (firstChar == '"'))) {
+                    token = token.substring(1, length - 1);
+                }
+            }
+
+            return token;
         }
     }
 

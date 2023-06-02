@@ -1,31 +1,26 @@
 package org.nmrfx.analyst.dataops;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import org.nmrfx.analyst.compounds.CompoundData;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.InputStream;
+import java.util.*;
+
 /**
- *
  * @author brucejohnson
  */
 public class SimData {
 
     static Map<String, SimData> simDataMap = new TreeMap<>();
-
-    double ppmScale = 20.0;
-    double jScale = 250.0;
     final String name;
     final String id;
     final short[][] ppms;
     final short[][] jValues;
     final short[][] jPairs;
+    double ppmScale = 20.0;
+    double jScale = 250.0;
 
     public SimData(String name, String id, int nBlocks) {
         this.name = name;
@@ -33,10 +28,6 @@ public class SimData {
         ppms = new short[nBlocks][];
         jValues = new short[nBlocks][];
         jPairs = new short[nBlocks][];
-    }
-
-    public static boolean loaded() {
-        return !simDataMap.isEmpty();
     }
 
     public void setPPMs(int iBlock, List<Double> values) {
@@ -84,6 +75,10 @@ public class SimData {
             values[i] = jPairs[iBlock][i];
         }
         return values;
+    }
+
+    public static boolean loaded() {
+        return !simDataMap.isEmpty();
     }
 
     public static boolean contains(String name) {
@@ -138,25 +133,11 @@ public class SimData {
 //    public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, double refNProtons) {
 
     public static CompoundData genCompoundData(String cmpdID, String name, SimDataVecPars pars, double lb,
-            double refConc, double cmpdConc) {
+                                               double refConc, double cmpdConc) {
         Vec vec = prepareVec(name, pars);
         List<Region> regions = genVec(name, vec, lb);
         CompoundData cData = genRegions(cmpdID, name, pars, refConc, cmpdConc, vec, regions);
         return cData;
-    }
-
-    static class Region {
-
-        double min;
-        double max;
-        int nProtons;
-
-        public Region(double min, double max, int nProtons) {
-            this.min = min;
-            this.max = max;
-            this.nProtons = nProtons;
-        }
-
     }
 
     public static List<Region> genVec(String name, Vec vec, double lb) throws IllegalArgumentException {
@@ -265,6 +246,20 @@ public class SimData {
             }
             simDataMap.put(name.toLowerCase().replace(' ', '-'), simData);
         }
+    }
+
+    static class Region {
+
+        double min;
+        double max;
+        int nProtons;
+
+        public Region(double min, double max, int nProtons) {
+            this.min = min;
+            this.max = max;
+            this.nProtons = nProtons;
+        }
+
     }
 
 }

@@ -60,6 +60,25 @@ public class BrukerData implements NMRData {
     private static final Logger log = LoggerFactory.getLogger(BrukerData.class);
 
     private final static int MAXDIM = 10;
+    private static HashMap<String, Double> phaseTable = null;
+    private final boolean[] complexDim = new boolean[MAXDIM];
+    private final double[] f1coef[] = new double[MAXDIM][];   // FnMODE,2 MC2,2
+    private final String[] f1coefS = new String[MAXDIM];   // FnMODE,2 MC2,2
+    private final String fttype[] = new String[MAXDIM];
+    private final int tdsize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
+    private final int arraysize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
+    private final int maxSize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
+    // fixme dynamically determine size
+    private final Double[] Ref = new Double[MAXDIM];
+    private final Double[] Sw = new Double[MAXDIM];
+    private final Double[] Sf = new Double[MAXDIM];
+    private final String fpath;
+    private final double scale;
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
+    boolean hasFID = false;
+    boolean hasSpectrum = false;
+    List<Double> arrayValues = new ArrayList<>();
+    File nusFile = null;
     private int tbytes = 0;             // TD,1
     private int np;                   // TD,1
     private int dim = 0;                // from acqu[n]s files
@@ -72,39 +91,19 @@ public class BrukerData implements NMRData {
     private boolean fixDSP = true;
     private boolean fixByShift = false;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
-    private final boolean[] complexDim = new boolean[MAXDIM];
-    private final double[] f1coef[] = new double[MAXDIM][];   // FnMODE,2 MC2,2
-    private final String[] f1coefS = new String[MAXDIM];   // FnMODE,2 MC2,2
-    private final String fttype[] = new String[MAXDIM];
-    private final int tdsize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
-    private final int arraysize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
-    private final int maxSize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
     private double deltaPh0_2 = 0.0;
-    // fixme dynamically determine size
-    private final Double[] Ref = new Double[MAXDIM];
-    private final Double[] Sw = new Double[MAXDIM];
-    private final Double[] Sf = new Double[MAXDIM];
     private String text = null;
-
-    private final String fpath;
     private FileChannel fc = null;
     private HashMap<String, String> parMap = null;
-    private static HashMap<String, Double> phaseTable = null;
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
-    private final double scale;
     // flag to indicate BrukerData has been opened as an FID
     private boolean isFID;
-    boolean hasFID = false;
-    boolean hasSpectrum = false;
-    List<Double> arrayValues = new ArrayList<>();
-    File nusFile = null;
-    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     /**
      * Open Bruker parameter and data files.
      *
-     * @param path full path to the fid directory or file
+     * @param path    full path to the fid directory or file
      * @param nusFile The name of a NUS file to load
      * @throws java.io.IOException
      */
@@ -213,16 +212,6 @@ public class BrukerData implements NMRData {
         return dataset;
     }
 
-    @Override
-    public DatasetType getPreferredDatasetType() {
-        return preferredDatasetType;
-    }
-
-    @Override
-    public void setPreferredDatasetType(DatasetType datasetType) {
-        this.preferredDatasetType = datasetType;
-    }
-
     public String suggestName(File file) {
         File pdataNumFile = file.getParentFile();
         File numFile = pdataNumFile.getParentFile().getParentFile();
@@ -246,155 +235,9 @@ public class BrukerData implements NMRData {
         }
     }
 
-    /**
-     * Finds data, given a path to search for vendor-specific files and
-     * directories.
-     *
-     * @param bpath full path for data
-     * @return if data was successfully found or not
-     */
-    public static boolean findData(StringBuilder bpath) {
-        File file = new File(bpath.toString());
-        String fileName = file.getName();
-        return isProcessedFile(fileName);
-    }
-
-    /**
-     * Finds FID data, given a path to search for vendor-specific files and
-     * directories.
-     *
-     * @param bpath full path for FID data
-     * @return if FID data was successfully found or not
-     */
-    public static boolean findFID(StringBuilder bpath) {
-        boolean found = false;
-        if (findFIDFiles(bpath.toString())) {
-            // case: select numeric subdirectory, e.g. 'HMQC/4'
-            found = true;
-        } else {
-            // case: select 'ser', 'fid', or 'acqus' file
-            File f = new File(bpath.toString());
-            String s = f.getParent();
-            if (findFIDFiles(s)) {
-                int len2 = bpath.toString().length();
-                int len1 = s.length();
-                bpath = bpath.delete(len1, len2);
-                bpath.trimToSize();
-                found = true;
-            } else {
-                // case: select parent dir, e.g. 'HMQC'; look for subdir, e.g. 'HMQC/4'
-                if (bpath.toString().endsWith(File.separator)) {
-                    bpath.setLength(bpath.length() - 1);
-                    bpath.trimToSize();
-                }
-                Path bdir = Paths.get(bpath.toString());
-                if (bdir.toFile().isDirectory()) {
-                    try (DirectoryStream<Path> stream = Files.newDirectoryStream(bdir, "[0-9]")) {
-                        for (Path entry : stream) {
-                            s = entry.toString();
-                            if (findFIDFiles(s)) {
-                                s = s.substring(bdir.toString().length());
-                                bpath.append(s);
-                                found = true;
-                                break;
-                            }
-                        }
-                    } catch (DirectoryIteratorException | IOException ex) {
-                        // I/O error encountered during the iteration, the cause is an IOException
-                        log.warn(ex.getMessage(), ex);
-                    }
-                }
-            }
-        }
-        return found;
-    } // findFID
-
-    private static boolean findFIDFiles(String dpath) {
-        boolean found = false;
-        if ((new File(dpath + File.separator + "acqus")).exists()) {
-            if ((new File(dpath + File.separator + "ser")).exists()) {
-                found = true;
-            } else if ((new File(dpath + File.separator + "fid")).exists()) {
-                found = true;
-            }
-        }
-        return found;
-    } // findFIDFiles
-
-    private static boolean findDataFiles(String dpath) {
-        boolean found = false;
-        if ((new File(dpath + File.separator + "acqus")).exists()) {
-            if ((new File(dpath + File.separator + "ser")).exists()) {
-                found = true;
-            } else if ((new File(dpath + File.separator + "fid")).exists()) {
-                found = true;
-            }
-        }
-        return found;
-    } // findFIDFiles
-
-    public static boolean isProcessedFile(String name) {
-        boolean result = false;
-        if (!name.isBlank() && (name.length() > 1)
-                && Character.isDigit(name.charAt(0))) {
-            int nDim = Integer.parseInt(name.substring(0, 1));
-            if ((nDim > 0) && (nDim == (name.length() - 1))) {
-                result = true;
-                for (int i = 1; i < nDim; i++) {
-                    if (name.charAt(i) != 'r') {
-                        result = false;
-                        break;
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return fpath;
-    }
-
-    @Override
-    public String getVendor() {
-        return "bruker";
-    }
-
-    @Override
-    public String getUser() {
-        String s = "";
-        if ((s = getPar("OWNER,1")) == null) {
-            s = "";
-        } else {
-            s = s.trim();
-        }
-        return s;
-    }
-
-    @Override
-    public Map getFidFlags() {
-        Map<String, Boolean> flags = new HashMap(5);
-        flags.put("fixdsp", fixDSP);
-        flags.put("shiftdsp", fixByShift);
-        flags.put("exchangeXY", exchangeXY);
-        flags.put("swapBits", swapBits);
-        flags.put("negatePairs", negatePairs);
-        return flags;
-    }
-
     @Override
     public String getFilePath() {
         return fpath;
-    }
-
-    @Override
-    public List<VendorPar> getPars() {
-        List<VendorPar> vendorPars = new ArrayList<>();
-        for (Entry<String, String> par : parMap.entrySet()) {
-            vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
-        }
-        return vendorPars;
     }
 
     @Override
@@ -424,20 +267,13 @@ public class BrukerData implements NMRData {
         }
     }
 
-    public List<Double> getDoubleListPar(String parName) {
-        List<Double> result = new ArrayList<>();
-        if ((parMap != null) && (parMap.get(parName) != null)) {
-            String[] sValues = parMap.get(parName).split(" ");
-            for (String sValue : sValues) {
-                try {
-                    result.add(Double.parseDouble(sValue));
-                } catch (NumberFormatException nFE) {
-                    result = null;
-                    break;
-                }
-            }
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        for (Entry<String, String> par : parMap.entrySet()) {
+            vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
         }
-        return result;
+        return vendorPars;
     }
 
     @Override
@@ -460,77 +296,61 @@ public class BrukerData implements NMRData {
     }
 
     @Override
-    public boolean isComplex(int iDim) {
-        return complexDim[iDim];
+    public int getSize(int iDim) {
+        return tdsize[iDim];
     }
 
     @Override
-    public int getGroupSize(int dim) {
-        return isComplex(dim) ? 2 : 1;
+    public int getMaxSize(int iDim) {
+        return maxSize[iDim];
     }
 
     @Override
-    public String getFTType(int iDim) {
-        return fttype[iDim];
-    }
-
-    // used only for indirect dimensions; direct dimension done when FID read 
-    @Override
-    public boolean getNegatePairs(int iDim) {
-        return (fttype[iDim].equals("negate"));
-    }
-
-    @Override
-    public boolean getNegateImag(int iDim) {
-        if (iDim > 0) {
-            return !f1coefS[iDim].equals("sep");
-        } else {
-            return false;
+    public void setSize(int iDim, int size) {
+        if (size > maxSize[iDim]) {
+            size = maxSize[iDim];
         }
+        tdsize[iDim] = size;
     }
 
     @Override
-    public double[] getCoefs(int iDim) {
-        return f1coef[iDim];
+    public int getArraySize(int iDim) {
+        return arraysize[iDim];
     }
 
     @Override
-    public String getSymbolicCoefs(int iDim) {
-        return f1coefS[iDim];
+    public void setArraySize(int iDim, int size) {
+        arraysize[iDim] = size;
     }
 
     @Override
-    public String[] getSFNames() {
-        int nDim = getNDim();
-        String[] names = new String[nDim];
-        for (int i = 0; i < nDim; i++) {
-            names[i] = "SFO1," + (i + 1);
+    public String getSolvent() {
+        String s;
+        if ((s = getPar("SOLVENT,1")) == null) {
+            s = "";
         }
-        return names;
+        return s;
     }
 
     @Override
-    public String[] getSWNames() {
-        int nDim = getNDim();
-        String[] names = new String[nDim];
-        for (int i = 0; i < nDim; i++) {
-            names[i] = "SW_h," + (i + 1);
-        }
-        return names;
-    }
-
-    @Override
-    public String[] getLabelNames() {
-        int nDim = getNDim();
-        ArrayList<String> names = new ArrayList<>();
-        for (int i = 0; i < nDim; i++) {
-            String name = getTN(i);
-            if (names.contains(name)) {
-                name = name + "_" + (i + 1);
+    public double getTempK() {
+        Double d;
+        if ((d = getParDouble("TEMP,1")) == null) {
+            if ((d = getParDouble("TE,1")) == null) {
+// fixme what should we return if not present, is it ever not present
+                d = 298.0;
             }
-            names.add(name);
         }
-        return names.toArray(new String[names.size()]);
+        return d;
+    }
+
+    @Override
+    public String getSequence() {
+        String s;
+        if ((s = getPar("PULPROG,1")) == null) {
+            s = "";
+        }
+        return s;
     }
 
     @Override
@@ -585,44 +405,6 @@ public class BrukerData implements NMRData {
     }
 
     @Override
-    public int getSize(int iDim) {
-        return tdsize[iDim];
-    }
-
-    @Override
-    public int getMaxSize(int iDim) {
-        return maxSize[iDim];
-    }
-
-    @Override
-    public void setSize(int iDim, int size) {
-        if (size > maxSize[iDim]) {
-            size = maxSize[iDim];
-        }
-        tdsize[iDim] = size;
-    }
-
-    @Override
-    public int getArraySize(int iDim) {
-        return arraysize[iDim];
-    }
-
-    @Override
-    public void setArraySize(int iDim, int size) {
-        arraysize[iDim] = size;
-    }
-
-    @Override
-    public void setRef(int iDim, double ref) {
-        Ref[iDim] = ref;
-    }
-
-    @Override
-    public void resetRef(int iDim) {
-        Ref[iDim] = null;
-    }
-
-    @Override
     public double getRef(int iDim) {
         double ref = 0.0;
         if (Ref[iDim] != null) {
@@ -649,6 +431,16 @@ public class BrukerData implements NMRData {
     }
 
     @Override
+    public void setRef(int iDim, double ref) {
+        Ref[iDim] = ref;
+    }
+
+    @Override
+    public void resetRef(int iDim) {
+        Ref[iDim] = null;
+    }
+
+    @Override
     public double getRefPoint(int dim) {
         return 1.0;
     }
@@ -670,68 +462,69 @@ public class BrukerData implements NMRData {
     }
 
     @Override
-    public String getSolvent() {
-        String s;
-        if ((s = getPar("SOLVENT,1")) == null) {
-            s = "";
-        }
-        return s;
+    public boolean getFixDSP() {
+        return fixDSP;
     }
 
     @Override
-    public double getTempK() {
-        Double d;
-        if ((d = getParDouble("TEMP,1")) == null) {
-            if ((d = getParDouble("TE,1")) == null) {
-// fixme what should we return if not present, is it ever not present
-                d = 298.0;
-            }
-        }
-        return d;
+    public void setFixDSP(boolean value) {
+        fixDSP = value;
     }
 
     @Override
-    public String getSequence() {
-        String s;
-        if ((s = getPar("PULPROG,1")) == null) {
-            s = "";
-        }
-        return s;
+    public boolean isComplex(int iDim) {
+        return complexDim[iDim];
     }
 
     @Override
-    public long getDate() {
-        String s;
-        long seconds = 0;
-        if ((s = getPar("DATE,1")) != null) {
-            try {
-                seconds = Long.parseLong(s);
-            } catch (NumberFormatException e) {
-                log.warn("Unable to parse date.", e);
-            }
+    public int getGroupSize(int dim) {
+        return isComplex(dim) ? 2 : 1;
+    }
+
+    // used only for indirect dimensions; direct dimension done when FID read
+    @Override
+    public boolean getNegatePairs(int iDim) {
+        return (fttype[iDim].equals("negate"));
+    }
+
+    @Override
+    public String getFTType(int iDim) {
+        return fttype[iDim];
+    }
+
+    @Override
+    public boolean getNegateImag(int iDim) {
+        if (iDim > 0) {
+            return !f1coefS[iDim].equals("sep");
         } else {
-            System.out.println("no date");
+            return false;
         }
-        return seconds;
     }
 
-    // open and read Bruker text file
     @Override
-    public String getText() {
-        if (text == null) {
-            String textPath = fpath + "/pdata/1/title";
-            if ((new File(textPath)).exists()) {
-                try {
-                    Path path = FileSystems.getDefault().getPath(textPath);
-                    text = new String(Files.readAllBytes(path));
-                } catch (IOException ex) {
-                    text = "";
-                }
-            } else {
-                text = "";
-            }
+    public double[] getCoefs(int iDim) {
+        return f1coef[iDim];
+    }
+
+    @Override
+    public String getSymbolicCoefs(int iDim) {
+        return f1coefS[iDim];
+    }
+
+    @Override
+    public String getVendor() {
+        return "bruker";
+    }
+
+    @Override
+    public String getUser() {
+        String s = "";
+        if ((s = getPar("OWNER,1")) == null) {
+            s = "";
+        } else {
+            s = s.trim();
         }
-        return text;
+        return s;
     }
 
     @Override
@@ -804,6 +597,428 @@ public class BrukerData implements NMRData {
         return new LPParams(); // does not exist in Bruker params
     }
 
+    @Override
+    public String[] getSFNames() {
+        int nDim = getNDim();
+        String[] names = new String[nDim];
+        for (int i = 0; i < nDim; i++) {
+            names[i] = "SFO1," + (i + 1);
+        }
+        return names;
+    }
+
+    @Override
+    public String[] getSWNames() {
+        int nDim = getNDim();
+        String[] names = new String[nDim];
+        for (int i = 0; i < nDim; i++) {
+            names[i] = "SW_h," + (i + 1);
+        }
+        return names;
+    }
+
+    @Override
+    public String[] getLabelNames() {
+        int nDim = getNDim();
+        ArrayList<String> names = new ArrayList<>();
+        for (int i = 0; i < nDim; i++) {
+            String name = getTN(i);
+            if (names.contains(name)) {
+                name = name + "_" + (i + 1);
+            }
+            names.add(name);
+        }
+        return names.toArray(new String[names.size()]);
+    }
+
+    // open and read Bruker text file
+    @Override
+    public String getText() {
+        if (text == null) {
+            String textPath = fpath + "/pdata/1/title";
+            if ((new File(textPath)).exists()) {
+                try {
+                    Path path = FileSystems.getDefault().getPath(textPath);
+                    text = new String(Files.readAllBytes(path));
+                } catch (IOException ex) {
+                    text = "";
+                }
+            } else {
+                text = "";
+            }
+        }
+        return text;
+    }
+
+    @Override
+    public long getDate() {
+        String s;
+        long seconds = 0;
+        if ((s = getPar("DATE,1")) != null) {
+            try {
+                seconds = Long.parseLong(s);
+            } catch (NumberFormatException e) {
+                log.warn("Unable to parse date.", e);
+            }
+        } else {
+            System.out.println("no date");
+        }
+        return seconds;
+    }
+
+    @Override
+    public List<Double> getValues(int dim) {
+        List<Double> result;
+        if (dim == getMinDim()) {
+            result = arrayValues;
+        } else {
+            result = new ArrayList<>();
+        }
+        return result;
+    }
+
+    @Override
+    public void readVector(int iVec, Vec dvec) {
+        dvec.setGroupDelay(groupDelay);
+        if (dvec.isComplex()) {
+            if (dvec.useApache()) {
+                readVector(iVec, dvec.getCvec());
+                fixDSP(dvec);
+            } else {
+                readVector(iVec, dvec.rvec, dvec.ivec);
+                fixDSP(dvec);
+            }
+        } else {
+            readVector(iVec, dvec.rvec);
+            // cannot dspPhase
+        }
+        dvec.dwellTime = 1.0 / getSW(0);
+        dvec.centerFreq = getSF(0);
+
+        dvec.setRefValue(getRef(0));
+    }
+
+    @Override
+    public void readVector(int iVec, Complex[] cdata) {
+        byte[] dataBuf = new byte[tbytes];
+        readVecBlock(iVec, dataBuf);
+        if (dType == 0) {
+            copyVecData(dataBuf, cdata);
+        } else {
+            copyDoubleVecData(dataBuf, cdata);
+        }
+    }
+
+    @Override
+    public void readVector(int iVec, double[] rdata, double[] idata) {
+        byte[] dataBuf = new byte[tbytes];
+        readVecBlock(iVec, dataBuf);
+        if (dType == 0) {
+            copyVecData(dataBuf, rdata, idata);
+        } else {
+            copyDoubleVecData(dataBuf, rdata, idata);
+        }
+    }
+
+    @Override
+    public void readVector(int iVec, double[] data) {
+        byte[] dataBuf = new byte[tbytes];
+        readVecBlock(iVec, dataBuf);
+        if (dType == 0) {
+            copyVecData(dataBuf, data);
+        } else {
+            copyDoubleVecData(dataBuf, data);
+        }
+    }
+
+    @Override
+    public void readVector(int iDim, int iVec, Vec dvec) {
+        int shiftAmount = 0;
+        if (groupDelay > 0) {
+            // fixme which is correct (use ceil or not)
+            shiftAmount = (int) Math.round(groupDelay);
+            System.out.println(iVec + " " + groupDelay + " " + shiftAmount);
+        }
+        if (dvec.isComplex()) {
+            if (dvec.useApache()) {
+                readVector(iDim, iVec + shiftAmount, dvec.getCvec());
+            } else {
+                readVector(iDim, iVec + shiftAmount, null, dvec.rvec, dvec.ivec);
+            }
+        } else {
+            readVector(iDim, iVec, null, dvec.rvec, null);
+        }
+        dvec.dwellTime = 1.0 / getSW(iDim);
+        dvec.centerFreq = getSF(iDim);
+        dvec.setRefValue(getRef(iDim));
+        dvec.setPh0(getPH0(iDim));
+        dvec.setPh1(getPH1(iDim));
+        if (iDim == 0) {
+            dvec.setGroupDelay(groupDelay);
+        } else {
+            dvec.setGroupDelay(0.0);
+        }
+    }
+
+    @Override
+    public Map getFidFlags() {
+        Map<String, Boolean> flags = new HashMap(5);
+        flags.put("fixdsp", fixDSP);
+        flags.put("shiftdsp", fixByShift);
+        flags.put("exchangeXY", exchangeXY);
+        flags.put("swapBits", swapBits);
+        flags.put("negatePairs", negatePairs);
+        return flags;
+    }
+
+    /**
+     * Set flags before FID data is read using readVector. Flags are only active
+     * on BrukerData. Allowable flags are 'fixdsp', 'exchange', 'swapbits',
+     * 'negatepairs', with values of True or False. For example, in python:
+     * <p>
+     * f = FID(serDir) f.flags = {'fixdsp':True,
+     * 'shiftdsp':True,'exchange':True, 'swapbits':True, 'negatepairs':False}
+     * CREATE(serDir+'hmqc.nv', dSizes, f)
+     * </p>
+     *
+     * @param flags a Map of String / boolean key value pairs
+     */
+    @Override
+    public void setFidFlags(Map flags) {
+        for (Object key : flags.keySet()) {
+            boolean value = (boolean) flags.get(key);
+            switch (key.toString()) {
+                case "fixdsp":
+                    if (value) {
+                        setFixDSPOn();
+                    } else {
+                        setFixDSPOff();
+                    }
+                    break;
+                case "shiftdsp":
+                    if (value) {
+                        setDSPShiftOn();
+                    } else {
+                        setDSPShiftOff();
+                    }
+                    break;
+                case "exchangeXY":
+                    if (value) {
+                        setExchangeOn();
+                    } else {
+                        setExchangeOff();
+                    }
+                    break;
+                case "negatePairs":
+                    if (value) {
+                        setNegatePairsOn();
+                    } else {
+                        setNegatePairsOff();
+                    }
+                    break;
+                case "swapBits":
+                    if (value) {
+                        setSwapBitsOn();
+                    } else {
+                        setSwapBitsOff();
+                    }
+                    break;
+            }
+        }
+    }
+
+    @Override
+    public void resetAcqOrder() {
+        acqOrder = null;
+    }
+
+    @Override
+    public String[] getAcqOrder() {
+        if (acqOrder == null) {
+            int nDim = getNDim() - 1;
+            acqOrder = new String[nDim * 2];
+            // p1,d1,p2,d2
+            Integer ipar;
+            int aqSeq = 0;
+            if ((ipar = getParInt("AQSEQ,1")) != null) {
+                aqSeq = ipar;
+            }
+
+            if ((nDim == 2) && (aqSeq == 1)) {
+                for (int i = 0; i < nDim; i++) {
+                    int j = 1 - i;
+                    acqOrder[i * 2] = "p" + (j + 1);
+                    acqOrder[i * 2 + 1] = "d" + (j + 1);
+                }
+            } else {
+                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
+                    for (int i = 0; i < nDim; i++) {
+                        acqOrder[i] = "p" + (i + 1);
+                    }
+                    for (int i = 0; i < nDim; i++) {
+                        acqOrder[i + nDim] = "d" + (i + 1);
+                    }
+                } else {
+                    for (int i = 0; i < nDim; i++) {
+                        acqOrder[i * 2] = "p" + (i + 1);
+                        acqOrder[i * 2 + 1] = "d" + (i + 1);
+                    }
+                }
+            }
+        }
+        return acqOrder;
+    }
+
+    @Override
+    public void setAcqOrder(String[] newOrder) {
+        if (newOrder.length == 1) {
+            String s = newOrder[0];
+            final int len = s.length();
+            int nDim = getNDim();
+            int nIDim = nDim - 1;
+            if ((len == nDim) || (len == nIDim)) {
+                acqOrder = new String[nIDim * 2];
+                int j = 0;
+                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                        }
+                    }
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                } else {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                }
+            } else if (len > nDim) {
+                acqOrder = new String[(len - 1) * 2];
+                int j = 0;
+                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                        }
+                    }
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                } else {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                }
+            }
+        } else {
+            this.acqOrder = new String[newOrder.length];
+            System.arraycopy(newOrder, 0, this.acqOrder, 0, newOrder.length);
+        }
+    }
+
+    @Override
+    public String getAcqOrderShort() {
+        String[] acqOrderArray = getAcqOrder();
+        StringBuilder builder = new StringBuilder();
+        int nDim = getNDim();
+        if (acqOrderArray.length / 2 == nDim) {
+            builder.append(acqOrderArray.length / 2 + 1);
+        } else {
+            builder.append(nDim);
+        }
+        for (int i = acqOrderArray.length - 1; i >= 0; i--) {
+            String elem = acqOrderArray[i];
+            if (elem.substring(0, 1).equals("p")) {
+                builder.append(elem.substring(1, 2));
+            } else if (elem.substring(0, 1).equals("a")) {
+                return "";
+            }
+        }
+        return builder.toString();
+    }
+
+    @Override
+    public boolean isFID() {
+        return isFID;
+    }
+
+    @Override
+    public boolean isFrequencyDim(int iDim) {
+        boolean result = true;
+        int minDim = getMinDim();
+        if (!isComplex(iDim)) {
+            // second test is because sometimes the vclist/vdlist can be smaller than the td for the dimension
+            // so we assume we assume if there are arrayed values the smallest dim is the one that is arrayed
+            if ((arrayValues != null) && (arrayValues.size() > 0) && ((arrayValues.size() == getSize(iDim)) || (iDim == minDim))) {
+                result = false;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public SampleSchedule getSampleSchedule() {
+        return sampleSchedule;
+    }
+
+    @Override
+    public void setSampleSchedule(SampleSchedule sampleSchedule) {
+        this.sampleSchedule = sampleSchedule;
+    }
+
+    @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
+    }
+
+    @Override
+    public String toString() {
+        return fpath;
+    }
+
+    public List<Double> getDoubleListPar(String parName) {
+        List<Double> result = new ArrayList<>();
+        if ((parMap != null) && (parMap.get(parName) != null)) {
+            String[] sValues = parMap.get(parName).split(" ");
+            for (String sValue : sValues) {
+                try {
+                    result.add(Double.parseDouble(sValue));
+                } catch (NumberFormatException nFE) {
+                    result = null;
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
     // open Bruker parameter file(s)
     private void openParFile(File parDirFile) throws IOException {
         parMap = new LinkedHashMap<>(200);
@@ -817,13 +1032,13 @@ public class BrukerData implements NMRData {
             if (optLine.isPresent()) {
                 String[] aqSeqParts = optLine.get().split("=");
                 if ((aqSeqParts.length == 2) && (aqSeqParts[1].endsWith("D") && Character.isDigit(aqSeqParts[1].charAt(0)))) {
-                    dimPar = aqSeqParts[1].substring(0,1);
+                    dimPar = aqSeqParts[1].substring(0, 1);
                 }
             }
         }
         int maxDim = dimPar != null ? Integer.parseInt(dimPar) : MAXDIM;
 
-            // process proc files if they exist
+        // process proc files if they exist
         File pdataFile = parDirFile.toPath().resolve("pdata").toFile();
         if (pdataFile.exists()) {
             Path bdir = pdataFile.toPath();
@@ -1120,62 +1335,6 @@ public class BrukerData implements NMRData {
         }
     }
 
-    /**
-     * Set flags before FID data is read using readVector. Flags are only active
-     * on BrukerData. Allowable flags are 'fixdsp', 'exchange', 'swapbits',
-     * 'negatepairs', with values of True or False. For example, in python:
-     * <p>
-     * f = FID(serDir) f.flags = {'fixdsp':True,
-     * 'shiftdsp':True,'exchange':True, 'swapbits':True, 'negatepairs':False}
-     * CREATE(serDir+'hmqc.nv', dSizes, f)
-     * </p>
-     *
-     * @param flags a Map of String / boolean key value pairs
-     */
-    @Override
-    public void setFidFlags(Map flags) {
-        for (Object key : flags.keySet()) {
-            boolean value = (boolean) flags.get(key);
-            switch (key.toString()) {
-                case "fixdsp":
-                    if (value) {
-                        setFixDSPOn();
-                    } else {
-                        setFixDSPOff();
-                    }
-                    break;
-                case "shiftdsp":
-                    if (value) {
-                        setDSPShiftOn();
-                    } else {
-                        setDSPShiftOff();
-                    }
-                    break;
-                case "exchangeXY":
-                    if (value) {
-                        setExchangeOn();
-                    } else {
-                        setExchangeOff();
-                    }
-                    break;
-                case "negatePairs":
-                    if (value) {
-                        setNegatePairsOn();
-                    } else {
-                        setNegatePairsOff();
-                    }
-                    break;
-                case "swapBits":
-                    if (value) {
-                        setSwapBitsOn();
-                    } else {
-                        setSwapBitsOff();
-                    }
-                    break;
-            }
-        }
-    }
-
     private void setSwapBitsOff() {
         swapBits = false;
     }
@@ -1198,16 +1357,6 @@ public class BrukerData implements NMRData {
 
     private void setNegatePairsOff() {
         negatePairs = false;
-    }
-
-    @Override
-    public void setFixDSP(boolean value) {
-        fixDSP = value;
-    }
-
-    @Override
-    public boolean getFixDSP() {
-        return fixDSP;
     }
 
     private void setFixDSPOn() {
@@ -1249,70 +1398,6 @@ public class BrukerData implements NMRData {
         }
     }
 
-    private static void initPhaseTable() {
-// see nspinit.tcl for phaseTable details 
-        if (phaseTable == null) {
-            phaseTable = new HashMap<>();
-
-            phaseTable.put("1,0", 0.0);
-            phaseTable.put("2,10", 44.75);
-            phaseTable.put("2,11", 46.0);
-            phaseTable.put("2,12", 46.311);
-            phaseTable.put("3,10", 33.5);
-            phaseTable.put("3,11", 36.5);
-            phaseTable.put("3,12", 36.53);
-            phaseTable.put("4,10", 66.625);
-            phaseTable.put("4,11", 48.0);
-            phaseTable.put("4,12", 47.87);
-            phaseTable.put("6,10", 59.0833);
-            phaseTable.put("6,11", 50.1667);
-            phaseTable.put("6,12", 50.229);
-            phaseTable.put("8,10", 68.5625);
-            phaseTable.put("8,11", 53.25);
-            phaseTable.put("8,12", 53.289);
-            phaseTable.put("12,10", 60.375);
-            phaseTable.put("12,11", 69.5);
-            phaseTable.put("12,12", 69.551);
-            phaseTable.put("16,10", 69.5313);
-            phaseTable.put("16,11", 72.25);
-            phaseTable.put("16,12", 71.6);
-            phaseTable.put("24,10", 61.0208);
-            phaseTable.put("24,11", 72.1667);
-            phaseTable.put("24,12", 70.184);
-            phaseTable.put("32,10", 70.0156);
-            phaseTable.put("32,11", 72.75);
-            phaseTable.put("32,12", 72.138);
-            phaseTable.put("48,10", 61.3438);
-            phaseTable.put("48,11", 70.5);
-            phaseTable.put("48,12", 70.528);
-            phaseTable.put("64,10", 70.2578);
-            phaseTable.put("64,11", 73.0);
-            phaseTable.put("64,12", 72.348);
-            phaseTable.put("96,10", 61.5052);
-            phaseTable.put("96,11", 70.6667);
-            phaseTable.put("96,12", 70.7);
-            phaseTable.put("128,10", 70.3789);
-            phaseTable.put("128,11", 72.5);
-            phaseTable.put("128,12", 72.524);
-            phaseTable.put("192,10", 61.5859);
-            phaseTable.put("192,11", 71.3333);
-            phaseTable.put("256,10", 70.4395);
-            phaseTable.put("256,11", 72.25);
-            phaseTable.put("384,10", 61.6263);
-            phaseTable.put("384,11", 71.6667);
-            phaseTable.put("512,10", 70.4697);
-            phaseTable.put("512,11", 72.125);
-            phaseTable.put("768,10", 61.6465);
-            phaseTable.put("768,11", 71.8333);
-            phaseTable.put("1024,10", 70.4849);
-            phaseTable.put("1024,11", 72.0625);
-            phaseTable.put("1536,10", 61.6566);
-            phaseTable.put("1536,11", 71.9167);
-            phaseTable.put("2048,10", 70.4924);
-            phaseTable.put("2048,11", 72.0313);
-        }
-    }
-
     // open Bruker file, read fid data
     private void openDataFile(String datapath) {
         if ((new File(datapath + File.separator + "ser")).exists()) {
@@ -1331,89 +1416,6 @@ public class BrukerData implements NMRData {
                     log.warn(ex.getMessage(), ex);
                 }
             }
-        }
-    }
-
-    @Override
-    public void readVector(int iVec, Vec dvec) {
-        dvec.setGroupDelay(groupDelay);
-        if (dvec.isComplex()) {
-            if (dvec.useApache()) {
-                readVector(iVec, dvec.getCvec());
-                fixDSP(dvec);
-            } else {
-                readVector(iVec, dvec.rvec, dvec.ivec);
-                fixDSP(dvec);
-            }
-        } else {
-            readVector(iVec, dvec.rvec);
-            // cannot dspPhase
-        }
-        dvec.dwellTime = 1.0 / getSW(0);
-        dvec.centerFreq = getSF(0);
-
-        dvec.setRefValue(getRef(0));
-    }
-
-    @Override
-    public void readVector(int iDim, int iVec, Vec dvec) {
-        int shiftAmount = 0;
-        if (groupDelay > 0) {
-            // fixme which is correct (use ceil or not)
-            shiftAmount = (int) Math.round(groupDelay);
-            System.out.println(iVec + " " + groupDelay + " " + shiftAmount);
-        }
-        if (dvec.isComplex()) {
-            if (dvec.useApache()) {
-                readVector(iDim, iVec + shiftAmount, dvec.getCvec());
-            } else {
-                readVector(iDim, iVec + shiftAmount, null, dvec.rvec, dvec.ivec);
-            }
-        } else {
-            readVector(iDim, iVec, null, dvec.rvec, null);
-        }
-        dvec.dwellTime = 1.0 / getSW(iDim);
-        dvec.centerFreq = getSF(iDim);
-        dvec.setRefValue(getRef(iDim));
-        dvec.setPh0(getPH0(iDim));
-        dvec.setPh1(getPH1(iDim));
-        if (iDim == 0) {
-            dvec.setGroupDelay(groupDelay);
-        } else {
-            dvec.setGroupDelay(0.0);
-        }
-    }
-
-    @Override
-    public void readVector(int iVec, Complex[] cdata) {
-        byte[] dataBuf = new byte[tbytes];
-        readVecBlock(iVec, dataBuf);
-        if (dType == 0) {
-            copyVecData(dataBuf, cdata);
-        } else {
-            copyDoubleVecData(dataBuf, cdata);
-        }
-    }
-
-    @Override
-    public void readVector(int iVec, double[] rdata, double[] idata) {
-        byte[] dataBuf = new byte[tbytes];
-        readVecBlock(iVec, dataBuf);
-        if (dType == 0) {
-            copyVecData(dataBuf, rdata, idata);
-        } else {
-            copyDoubleVecData(dataBuf, rdata, idata);
-        }
-    }
-
-    @Override
-    public void readVector(int iVec, double[] data) {
-        byte[] dataBuf = new byte[tbytes];
-        readVecBlock(iVec, dataBuf);
-        if (dType == 0) {
-            copyVecData(dataBuf, data);
-        } else {
-            copyDoubleVecData(dataBuf, data);
         }
     }
 
@@ -1672,144 +1674,6 @@ public class BrukerData implements NMRData {
         }
     }
 
-    @Override
-    public String[] getAcqOrder() {
-        if (acqOrder == null) {
-            int nDim = getNDim() - 1;
-            acqOrder = new String[nDim * 2];
-            // p1,d1,p2,d2
-            Integer ipar;
-            int aqSeq = 0;
-            if ((ipar = getParInt("AQSEQ,1")) != null) {
-                aqSeq = ipar;
-            }
-
-            if ((nDim == 2) && (aqSeq == 1)) {
-                for (int i = 0; i < nDim; i++) {
-                    int j = 1 - i;
-                    acqOrder[i * 2] = "p" + (j + 1);
-                    acqOrder[i * 2 + 1] = "d" + (j + 1);
-                }
-            } else {
-                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
-                    for (int i = 0; i < nDim; i++) {
-                        acqOrder[i] = "p" + (i + 1);
-                    }
-                    for (int i = 0; i < nDim; i++) {
-                        acqOrder[i + nDim] = "d" + (i + 1);
-                    }
-                } else {
-                    for (int i = 0; i < nDim; i++) {
-                        acqOrder[i * 2] = "p" + (i + 1);
-                        acqOrder[i * 2 + 1] = "d" + (i + 1);
-                    }
-                }
-            }
-        }
-        return acqOrder;
-    }
-
-    @Override
-    public void resetAcqOrder() {
-        acqOrder = null;
-    }
-
-    @Override
-    public void setAcqOrder(String[] newOrder) {
-        if (newOrder.length == 1) {
-            String s = newOrder[0];
-            final int len = s.length();
-            int nDim = getNDim();
-            int nIDim = nDim - 1;
-            if ((len == nDim) || (len == nIDim)) {
-                acqOrder = new String[nIDim * 2];
-                int j = 0;
-                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                        }
-                    }
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                } else {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                }
-            } else if (len > nDim) {
-                acqOrder = new String[(len - 1) * 2];
-                int j = 0;
-                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                        }
-                    }
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                } else {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                }
-            }
-        } else {
-            this.acqOrder = new String[newOrder.length];
-            System.arraycopy(newOrder, 0, this.acqOrder, 0, newOrder.length);
-        }
-    }
-
-    @Override
-    public String getAcqOrderShort() {
-        String[] acqOrderArray = getAcqOrder();
-        StringBuilder builder = new StringBuilder();
-        int nDim = getNDim();
-        if (acqOrderArray.length / 2 == nDim) {
-            builder.append(acqOrderArray.length / 2 + 1);
-        } else {
-            builder.append(nDim);
-        }
-        for (int i = acqOrderArray.length - 1; i >= 0; i--) {
-            String elem = acqOrderArray[i];
-            if (elem.substring(0, 1).equals("p")) {
-                builder.append(elem.substring(1, 2));
-            } else if (elem.substring(0, 1).equals("a")) {
-                return "";
-            }
-        }
-        return builder.toString();
-    }
-
-    @Override
-    public List<Double> getValues(int dim) {
-        List<Double> result;
-        if (dim == getMinDim()) {
-            result = arrayValues;
-        } else {
-            result = new ArrayList<>();
-        }
-        return result;
-    }
-
     int getMinDim() {
         int minSize = getSize(0);
         int minDim = 0;
@@ -1820,40 +1684,6 @@ public class BrukerData implements NMRData {
             }
         }
         return minDim;
-    }
-
-    @Override
-    public boolean isFrequencyDim(int iDim) {
-        boolean result = true;
-        int minDim = getMinDim();
-        if (!isComplex(iDim)) {
-            // second test is because sometimes the vclist/vdlist can be smaller than the td for the dimension
-            // so we assume we assume if there are arrayed values the smallest dim is the one that is arrayed
-            if ((arrayValues != null) && (arrayValues.size() > 0) && ((arrayValues.size() == getSize(iDim)) || (iDim == minDim))) {
-                result = false;
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public boolean isFID() {
-        return isFID;
-    }
-
-    @Override
-    public SampleSchedule getSampleSchedule() {
-        return sampleSchedule;
-    }
-
-    @Override
-    public void setSampleSchedule(SampleSchedule sampleSchedule) {
-        this.sampleSchedule = sampleSchedule;
-    }
-
-    @Override
-    public List<DatasetGroupIndex> getSkipGroups() {
-        return datasetGroupIndices;
     }
 
     private List<String> scanPulseSequence(Path path) throws IOException {
@@ -1927,6 +1757,175 @@ public class BrukerData implements NMRData {
 
         }
     } // end fileout2
+
+    /**
+     * Finds data, given a path to search for vendor-specific files and
+     * directories.
+     *
+     * @param bpath full path for data
+     * @return if data was successfully found or not
+     */
+    public static boolean findData(StringBuilder bpath) {
+        File file = new File(bpath.toString());
+        String fileName = file.getName();
+        return isProcessedFile(fileName);
+    }
+
+    /**
+     * Finds FID data, given a path to search for vendor-specific files and
+     * directories.
+     *
+     * @param bpath full path for FID data
+     * @return if FID data was successfully found or not
+     */
+    public static boolean findFID(StringBuilder bpath) {
+        boolean found = false;
+        if (findFIDFiles(bpath.toString())) {
+            // case: select numeric subdirectory, e.g. 'HMQC/4'
+            found = true;
+        } else {
+            // case: select 'ser', 'fid', or 'acqus' file
+            File f = new File(bpath.toString());
+            String s = f.getParent();
+            if (findFIDFiles(s)) {
+                int len2 = bpath.toString().length();
+                int len1 = s.length();
+                bpath = bpath.delete(len1, len2);
+                bpath.trimToSize();
+                found = true;
+            } else {
+                // case: select parent dir, e.g. 'HMQC'; look for subdir, e.g. 'HMQC/4'
+                if (bpath.toString().endsWith(File.separator)) {
+                    bpath.setLength(bpath.length() - 1);
+                    bpath.trimToSize();
+                }
+                Path bdir = Paths.get(bpath.toString());
+                if (bdir.toFile().isDirectory()) {
+                    try (DirectoryStream<Path> stream = Files.newDirectoryStream(bdir, "[0-9]")) {
+                        for (Path entry : stream) {
+                            s = entry.toString();
+                            if (findFIDFiles(s)) {
+                                s = s.substring(bdir.toString().length());
+                                bpath.append(s);
+                                found = true;
+                                break;
+                            }
+                        }
+                    } catch (DirectoryIteratorException | IOException ex) {
+                        // I/O error encountered during the iteration, the cause is an IOException
+                        log.warn(ex.getMessage(), ex);
+                    }
+                }
+            }
+        }
+        return found;
+    } // findFID
+
+    private static boolean findFIDFiles(String dpath) {
+        boolean found = false;
+        if ((new File(dpath + File.separator + "acqus")).exists()) {
+            if ((new File(dpath + File.separator + "ser")).exists()) {
+                found = true;
+            } else if ((new File(dpath + File.separator + "fid")).exists()) {
+                found = true;
+            }
+        }
+        return found;
+    } // findFIDFiles
+
+    private static boolean findDataFiles(String dpath) {
+        boolean found = false;
+        if ((new File(dpath + File.separator + "acqus")).exists()) {
+            if ((new File(dpath + File.separator + "ser")).exists()) {
+                found = true;
+            } else if ((new File(dpath + File.separator + "fid")).exists()) {
+                found = true;
+            }
+        }
+        return found;
+    } // findFIDFiles
+
+    public static boolean isProcessedFile(String name) {
+        boolean result = false;
+        if (!name.isBlank() && (name.length() > 1)
+                && Character.isDigit(name.charAt(0))) {
+            int nDim = Integer.parseInt(name.substring(0, 1));
+            if ((nDim > 0) && (nDim == (name.length() - 1))) {
+                result = true;
+                for (int i = 1; i < nDim; i++) {
+                    if (name.charAt(i) != 'r') {
+                        result = false;
+                        break;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private static void initPhaseTable() {
+// see nspinit.tcl for phaseTable details
+        if (phaseTable == null) {
+            phaseTable = new HashMap<>();
+
+            phaseTable.put("1,0", 0.0);
+            phaseTable.put("2,10", 44.75);
+            phaseTable.put("2,11", 46.0);
+            phaseTable.put("2,12", 46.311);
+            phaseTable.put("3,10", 33.5);
+            phaseTable.put("3,11", 36.5);
+            phaseTable.put("3,12", 36.53);
+            phaseTable.put("4,10", 66.625);
+            phaseTable.put("4,11", 48.0);
+            phaseTable.put("4,12", 47.87);
+            phaseTable.put("6,10", 59.0833);
+            phaseTable.put("6,11", 50.1667);
+            phaseTable.put("6,12", 50.229);
+            phaseTable.put("8,10", 68.5625);
+            phaseTable.put("8,11", 53.25);
+            phaseTable.put("8,12", 53.289);
+            phaseTable.put("12,10", 60.375);
+            phaseTable.put("12,11", 69.5);
+            phaseTable.put("12,12", 69.551);
+            phaseTable.put("16,10", 69.5313);
+            phaseTable.put("16,11", 72.25);
+            phaseTable.put("16,12", 71.6);
+            phaseTable.put("24,10", 61.0208);
+            phaseTable.put("24,11", 72.1667);
+            phaseTable.put("24,12", 70.184);
+            phaseTable.put("32,10", 70.0156);
+            phaseTable.put("32,11", 72.75);
+            phaseTable.put("32,12", 72.138);
+            phaseTable.put("48,10", 61.3438);
+            phaseTable.put("48,11", 70.5);
+            phaseTable.put("48,12", 70.528);
+            phaseTable.put("64,10", 70.2578);
+            phaseTable.put("64,11", 73.0);
+            phaseTable.put("64,12", 72.348);
+            phaseTable.put("96,10", 61.5052);
+            phaseTable.put("96,11", 70.6667);
+            phaseTable.put("96,12", 70.7);
+            phaseTable.put("128,10", 70.3789);
+            phaseTable.put("128,11", 72.5);
+            phaseTable.put("128,12", 72.524);
+            phaseTable.put("192,10", 61.5859);
+            phaseTable.put("192,11", 71.3333);
+            phaseTable.put("256,10", 70.4395);
+            phaseTable.put("256,11", 72.25);
+            phaseTable.put("384,10", 61.6263);
+            phaseTable.put("384,11", 71.6667);
+            phaseTable.put("512,10", 70.4697);
+            phaseTable.put("512,11", 72.125);
+            phaseTable.put("768,10", 61.6465);
+            phaseTable.put("768,11", 71.8333);
+            phaseTable.put("1024,10", 70.4849);
+            phaseTable.put("1024,11", 72.0625);
+            phaseTable.put("1536,10", 61.6566);
+            phaseTable.put("1536,11", 71.9167);
+            phaseTable.put("2048,10", 70.4924);
+            phaseTable.put("2048,11", 72.0313);
+        }
+    }
 
     class BrukerSinebellWt extends SinebellWt {
 

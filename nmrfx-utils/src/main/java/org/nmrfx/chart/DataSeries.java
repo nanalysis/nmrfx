@@ -47,7 +47,7 @@ public class DataSeries {
     private double minY = Double.MAX_VALUE;
     private double maxY = Double.NEGATIVE_INFINITY;
     private double limitXMin = Double.NEGATIVE_INFINITY;
-    private double limitXMax= Double.MAX_VALUE;
+    private double limitXMax = Double.MAX_VALUE;
 
     public DataSeries() {
         updatePredicate();
@@ -93,12 +93,12 @@ public class DataSeries {
         this.fill = color;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void add(XYValue value) {

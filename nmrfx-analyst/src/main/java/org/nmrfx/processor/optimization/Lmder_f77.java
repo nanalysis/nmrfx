@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,10 +39,10 @@ public class Lmder_f77 {
     java.util.Random generator = null;
     Lmder_fcn lmderFunc = null;
     Lmder_fcn[] lmderFuncs = {
-        new fexpc_f77(), new fexpc1_f77(), new fexpb_f77(), new fexpg_f77(),
-        new flogistic_f77(), new fexp2_f77(), new funcgf_f77(), new fexpd_f77(),
-        new flineshape_f77(), new flineshapeW_f77(), new flineshapeLorentz_f77(),
-        new flineshapeLorentzIW_f77()
+            new fexpc_f77(), new fexpc1_f77(), new fexpb_f77(), new fexpg_f77(),
+            new flogistic_f77(), new fexp2_f77(), new funcgf_f77(), new fexpd_f77(),
+            new flineshape_f77(), new flineshapeW_f77(), new flineshapeLorentz_f77(),
+            new flineshapeLorentzIW_f77()
     };
 
     public void setFunc(int funcNum) {
@@ -437,8 +437,38 @@ public class Lmder_f77 {
         }
     }
 
+    public double gShapeDer(double[] a, int start, double x, int jcal,
+                            double[] dc) {
+        double y = 0.0;
+        double b = a[1] / 1.66;
+        double freq = a[start + 1];
+
+        if (jcal == 1) {
+            double arg1 = (x - freq + (a[start + 2] / 2.0)) / b;
+            double arg2 = (x - freq - (a[start + 2] / 2.0)) / b;
+            y = Math.exp(-arg1 * arg1) + Math.exp(-arg2 * arg2);
+        } else if (jcal == -1) {
+            double arg1 = (x - freq + (a[start + 2] / 2.0)) / b;
+            double arg2 = (x - freq - (a[start + 2] / 2.0)) / b;
+            y = Math.exp(-arg1 * arg1) - Math.exp(-arg2 * arg2);
+        } else if (jcal == 2) {
+            double arg1 = (x - freq + (a[start + 2] / 2.0)) / b;
+            double arg2 = (x - freq) / b;
+            double arg3 = (x - freq - (a[start + 2] / 2.0)) / b;
+            y = (Math.exp(-arg1 * arg1) / 2.0) + Math.exp(-arg2 * arg2)
+                    + (Math.exp(-arg3 * arg3) / 2.0);
+        } else {
+            double arg1 = (x - freq) / b;
+            y = Math.exp(-arg1 * arg1);
+            dc[start + 1] = (2 * arg1 * y) / b; //dy/df (without a)
+            dc[1] = (2 * y * arg1 * arg1) / b;
+        }
+
+        return y;
+    }
+
     public static void lmder1_f77(Lmder_fcn nlls, int m, int n, double[] x,
-            double[] fvec, double[][] fjac, double tol, int[] info, int[] ipvt) {
+                                  double[] fvec, double[][] fjac, double tol, int[] info, int[] ipvt) {
         /*
 
          Here is a copy of the lmder1 FORTRAN documentation:
@@ -893,53 +923,6 @@ public class Lmder_f77 {
         }
     }
 
-    public double gShapeDer(double[] a, int start, double x, int jcal,
-            double[] dc) {
-        double y = 0.0;
-        double b = a[1] / 1.66;
-        double freq = a[start + 1];
-
-        if (jcal == 1) {
-            double arg1 = (x - freq + (a[start + 2] / 2.0)) / b;
-            double arg2 = (x - freq - (a[start + 2] / 2.0)) / b;
-            y = Math.exp(-arg1 * arg1) + Math.exp(-arg2 * arg2);
-        } else if (jcal == -1) {
-            double arg1 = (x - freq + (a[start + 2] / 2.0)) / b;
-            double arg2 = (x - freq - (a[start + 2] / 2.0)) / b;
-            y = Math.exp(-arg1 * arg1) - Math.exp(-arg2 * arg2);
-        } else if (jcal == 2) {
-            double arg1 = (x - freq + (a[start + 2] / 2.0)) / b;
-            double arg2 = (x - freq) / b;
-            double arg3 = (x - freq - (a[start + 2] / 2.0)) / b;
-            y = (Math.exp(-arg1 * arg1) / 2.0) + Math.exp(-arg2 * arg2)
-                    + (Math.exp(-arg3 * arg3) / 2.0);
-        } else {
-            double arg1 = (x - freq) / b;
-            y = Math.exp(-arg1 * arg1);
-            dc[start + 1] = (2 * arg1 * y) / b; //dy/df (without a)
-            dc[1] = (2 * y * arg1 * arg1) / b;
-        }
-
-        return y;
-    }
-
-    public static void main(String[] args) {
-        Lmder_f77 lmder = new Lmder_f77();
-        lmder.setFunc(7);
-        lmder.setLengths(64);
-
-        for (int i = 0; i < lmder.xv.length; i++) {
-            lmder.xv[i] = i;
-        }
-
-        lmder.initpt();
-        lmder.simulate(0.02);
-        lmder.dumpXY();
-        lmder.randomizeGuess(0.5);
-        lmder.doMin();
-        System.out.println(lmder.rms());
-    }
-
     class fexpc_f77 implements Lmder_fcn {
 
         static final int nPar = 3;
@@ -947,21 +930,11 @@ public class Lmder_f77 {
         public fexpc_f77() {
         }
 
-        public String getEquation() {
-            return "A*exp(-x/B)+C";
-        }
-
         public int getN() {
             return nPar;
         }
 
         public void setN(int newN) {
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 2.0;
-            a[3] = 0.0;
         }
 
         public double[] guess() {
@@ -973,8 +946,22 @@ public class Lmder_f77 {
             return a;
         }
 
+        public String getEquation() {
+            return "A*exp(-x/B)+C";
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 2.0;
+            a[3] = 0.0;
+        }
+
+        public double calculate(double[] a, double x) {
+            return (a[1] * Math.exp(-x / a[2])) + a[3];
+        }
+
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             if (iflag[1] == 1) {
                 nfev++;
 
@@ -991,10 +978,6 @@ public class Lmder_f77 {
             }
         }
 
-        public double calculate(double[] a, double x) {
-            return (a[1] * Math.exp(-x / a[2])) + a[3];
-        }
-
         public void derivative(double[] a, double x, double[][] fjac, int i) {
             double eVal = Math.exp(-x / a[2]);
             fjac[i][1] = eVal;
@@ -1007,20 +990,11 @@ public class Lmder_f77 {
 
         static final int nPar = 2;
 
-        public String getEquation() {
-            return "A*exp(-x/B)";
-        }
-
         public int getN() {
             return nPar;
         }
 
         public void setN(int newN) {
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 2.0;
         }
 
         public double[] guess() {
@@ -1031,17 +1005,26 @@ public class Lmder_f77 {
             return a;
         }
 
+        public String getEquation() {
+            return "A*exp(-x/B)";
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 2.0;
+        }
+
+        public double calculate(double[] a, double x) {
+            return a[1] * Math.exp(-x / a[2]);
+        }
+
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
                 fvec[i] = yval - yv[i - 1];
             }
-        }
-
-        public double calculate(double[] a, double x) {
-            return a[1] * Math.exp(-x / a[2]);
         }
     }
 
@@ -1049,20 +1032,11 @@ public class Lmder_f77 {
 
         static final int nPar = 2;
 
-        public String getEquation() {
-            return "A*x*exp(-x*B)";
-        }
-
         public int getN() {
             return nPar;
         }
 
         public void setN(int newN) {
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.0;
-            a[2] = 0.5;
         }
 
         public double[] guess() {
@@ -1073,17 +1047,26 @@ public class Lmder_f77 {
             return a;
         }
 
+        public String getEquation() {
+            return "A*x*exp(-x*B)";
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 1.0;
+            a[2] = 0.5;
+        }
+
+        public double calculate(double[] a, double x) {
+            return a[1] * x * Math.exp(-x * a[2]);
+        }
+
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
                 fvec[i] = yval - yv[i - 1];
             }
-        }
-
-        public double calculate(double[] a, double x) {
-            return a[1] * x * Math.exp(-x * a[2]);
         }
     }
 
@@ -1091,21 +1074,11 @@ public class Lmder_f77 {
 
         static final int nPar = 3;
 
-        public String getEquation() {
-            return "A*exp(-((x-B)/C)^2)";
-        }
-
         public int getN() {
             return nPar;
         }
 
         public void setN(int newN) {
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 0.0;
-            a[3] = 1.0;
         }
 
         public double[] guess() {
@@ -1122,13 +1095,14 @@ public class Lmder_f77 {
             return a;
         }
 
-        public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
-            for (int i = 1; i <= m; i++) {
-                double t = xv[i - 1];
-                double yval = calculate(a, t);
-                fvec[i] = yval - yv[i - 1];
-            }
+        public String getEquation() {
+            return "A*exp(-((x-B)/C)^2)";
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 0.0;
+            a[3] = 1.0;
         }
 
         public double calculate(double[] a, double x) {
@@ -1137,28 +1111,26 @@ public class Lmder_f77 {
 
             return a[1] * ex;
         }
+
+        public void fcn(int m, int n, double[] a, double[] fvec,
+                        double[][] fjac, int[] iflag) {
+            for (int i = 1; i <= m; i++) {
+                double t = xv[i - 1];
+                double yval = calculate(a, t);
+                fvec[i] = yval - yv[i - 1];
+            }
+        }
     }
 
     class flogistic_f77 implements Lmder_fcn {
 
         static final int nPar = 4;
 
-        public String getEquation() {
-            return "((D-A)*x^C)/(x^C+B^C)+A";
-        }
-
         public int getN() {
             return nPar;
         }
 
         public void setN(int newN) {
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 0.0;
-            a[2] = 0.4;
-            a[3] = 1.0;
-            a[4] = 1.0;
         }
 
         public double[] guess() {
@@ -1171,18 +1143,29 @@ public class Lmder_f77 {
             return a;
         }
 
-        public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
-            for (int i = 1; i <= m; i++) {
-                double t = xv[i - 1];
-                double yval = calculate(a, t);
-                fvec[i] = yval - yv[i - 1];
-            }
+        public String getEquation() {
+            return "((D-A)*x^C)/(x^C+B^C)+A";
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 0.0;
+            a[2] = 0.4;
+            a[3] = 1.0;
+            a[4] = 1.0;
         }
 
         public double calculate(double[] a, double x) {
             return (((a[4] - a[1]) * Math.pow(x, a[3])) / (Math.pow(x, a[3])
                     + Math.pow(a[2], a[3]))) + a[1];
+        }
+
+        public void fcn(int m, int n, double[] a, double[] fvec,
+                        double[][] fjac, int[] iflag) {
+            for (int i = 1; i <= m; i++) {
+                double t = xv[i - 1];
+                double yval = calculate(a, t);
+                fvec[i] = yval - yv[i - 1];
+            }
         }
     }
 
@@ -1190,21 +1173,11 @@ public class Lmder_f77 {
 
         static final int nPar = 3;
 
-        public String getEquation() {
-            return "A*(exp(-x/B)+exp(-x/C))";
-        }
-
         public int getN() {
             return nPar;
         }
 
         public void setN(int newN) {
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 1.0;
-            a[3] = 0.5;
         }
 
         public double[] guess() {
@@ -1216,17 +1189,27 @@ public class Lmder_f77 {
             return a;
         }
 
+        public String getEquation() {
+            return "A*(exp(-x/B)+exp(-x/C))";
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 1.0;
+            a[3] = 0.5;
+        }
+
+        public double calculate(double[] a, double x) {
+            return a[1] * (Math.exp(-x / a[2]) + Math.exp(-x / a[3]));
+        }
+
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
                 fvec[i] = yval - yv[i - 1];
             }
-        }
-
-        public double calculate(double[] a, double x) {
-            return a[1] * (Math.exp(-x / a[2]) + Math.exp(-x / a[3]));
         }
     }
 
@@ -1241,16 +1224,6 @@ public class Lmder_f77 {
         public void setN(int newN) {
         }
 
-        public String getEquation() {
-            return "A*exp(-x*C)*exp(-i*x*B)";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.0;
-            a[2] = 0.1;
-            a[3] = 0.1;
-        }
-
         public double[] guess() {
             getStatsForGuess();
             a[1] = 1.0;
@@ -1260,13 +1233,14 @@ public class Lmder_f77 {
             return a;
         }
 
-        public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
-            for (int i = 1; i <= m; i++) {
-                double t = xv[i - 1];
-                double yval = calculate(a, t);
-                fvec[i] = yval - yv[i - 1];
-            }
+        public String getEquation() {
+            return "A*exp(-x*C)*exp(-i*x*B)";
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 1.0;
+            a[2] = 0.1;
+            a[3] = 0.1;
         }
 
         public double calculate(double[] a, double x) {
@@ -1309,26 +1283,26 @@ public class Lmder_f77 {
 
             return yval;
         }
+
+        public void fcn(int m, int n, double[] a, double[] fvec,
+                        double[][] fjac, int[] iflag) {
+            for (int i = 1; i <= m; i++) {
+                double t = xv[i - 1];
+                double yval = calculate(a, t);
+                fvec[i] = yval - yv[i - 1];
+            }
+        }
     }
 
     class fexpd_f77 implements Lmder_fcn {
 
         static final int nPar = 2;
 
-        public String getEquation() {
-            return "-2.0*A*exp(-x/B)+A";
-        }
-
         public int getN() {
             return nPar;
         }
 
         public void setN(int newN) {
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 2.0;
         }
 
         public double[] guess() {
@@ -1339,17 +1313,26 @@ public class Lmder_f77 {
             return a;
         }
 
+        public String getEquation() {
+            return "-2.0*A*exp(-x/B)+A";
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 2.0;
+        }
+
+        public double calculate(double[] a, double x) {
+            return ((-2.0 * a[1] * Math.exp(-x / a[2])) + a[1]);
+        }
+
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
                 fvec[i] = yval - yv[i - 1];
             }
-        }
-
-        public double calculate(double[] a, double x) {
-            return ((-2.0 * a[1] * Math.exp(-x / a[2])) + a[1]);
         }
     }
 
@@ -1363,10 +1346,6 @@ public class Lmder_f77 {
         double[] ys = new double[xy_ndim];
         double[] xs = new double[xy_ndim];
 
-        public String getEquation() {
-            return "Lineshape";
-        }
-
         public int getN() {
             return nPar;
         }
@@ -1374,12 +1353,6 @@ public class Lmder_f77 {
         public void setN(int newN) {
             nPar = newN;
             xy_nsig = nPar / ((xy_ndim * 2) + 1);
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 1.0;
-            a[3] = 0.5;
         }
 
         public double[] guess() {
@@ -1391,13 +1364,14 @@ public class Lmder_f77 {
             return a;
         }
 
-        public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
-            for (int i = 1; i <= m; i++) {
-                double t = xv[i - 1];
-                double yval = calculate(a, t);
-                fvec[i] = yval - yv[i - 1];
-            }
+        public String getEquation() {
+            return "Lineshape";
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 1.0;
+            a[3] = 0.5;
         }
 
         public double calculate(double[] a, double x) {
@@ -1432,6 +1406,15 @@ public class Lmder_f77 {
             return y;
         }
 
+        public void fcn(int m, int n, double[] a, double[] fvec,
+                        double[][] fjac, int[] iflag) {
+            for (int i = 1; i <= m; i++) {
+                double t = xv[i - 1];
+                double yval = calculate(a, t);
+                fvec[i] = yval - yv[i - 1];
+            }
+        }
+
         public double gShape(double[] a, int start, double x, int jcal) {
             double y = 0.0;
             double b = a[start + 2] / 1.66;
@@ -1464,10 +1447,6 @@ public class Lmder_f77 {
         double[] ys = new double[xy_ndim];
         double[] xs = new double[xy_ndim];
 
-        public String getEquation() {
-            return "Lineshape";
-        }
-
         public int getN() {
             return nPar;
         }
@@ -1475,12 +1454,6 @@ public class Lmder_f77 {
         public void setN(int newN) {
             nPar = newN;
             xy_nsig = (nPar - 1) / (xy_ndim + 1);
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 1.0;
-            a[3] = 0.5;
         }
 
         public double[] guess() {
@@ -1492,57 +1465,14 @@ public class Lmder_f77 {
             return a;
         }
 
-        public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
-            if (iflag[1] == 1) {
-                nfev++;
-
-                for (int i = 1; i <= m; i++) {
-                    double t = xv[i - 1];
-                    double yval = calculate(a, t);
-                    fvec[i] = yval - yv[i - 1];
-                }
-            } else if (iflag[1] == 2) {
-                double[] dc = new double[a.length]; // derivative component
-
-                for (int i = 1; i <= m; i++) {
-                    double t = xv[i - 1];
-                    derivative(a, t, dc, fjac, i);
-                }
-            }
+        public String getEquation() {
+            return "Lineshape";
         }
 
-        public void derivative(double[] a, double x, double[] dc,
-                double[][] fjac, int i) {
-            xs[0] = x;
-
-            int kk = 1;
-            iNPar[0] = 1;
-            fjac[i][1] = 0.0;
-
-            for (int k = 0; k < xy_nsig; k++) {
-                int start = kk + 1;
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    ys[iDim] = gShapeDer(a, start, xs[iDim], iJCal[iDim], dc);
-                }
-
-                double ypeak = 1.0;
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    ypeak = ypeak * ys[iDim];
-                }
-
-                fjac[i][1] += dc[1];
-                fjac[i][start] = ypeak;
-                fjac[i][start + 1] = dc[start + 1] * a[start];
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    kk += iNPar[iDim];
-                }
-
-                kk++;
-            }
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 1.0;
+            a[3] = 0.5;
         }
 
         public double calculate(double[] a, double x) {
@@ -1575,6 +1505,59 @@ public class Lmder_f77 {
             }
 
             return y;
+        }
+
+        public void fcn(int m, int n, double[] a, double[] fvec,
+                        double[][] fjac, int[] iflag) {
+            if (iflag[1] == 1) {
+                nfev++;
+
+                for (int i = 1; i <= m; i++) {
+                    double t = xv[i - 1];
+                    double yval = calculate(a, t);
+                    fvec[i] = yval - yv[i - 1];
+                }
+            } else if (iflag[1] == 2) {
+                double[] dc = new double[a.length]; // derivative component
+
+                for (int i = 1; i <= m; i++) {
+                    double t = xv[i - 1];
+                    derivative(a, t, dc, fjac, i);
+                }
+            }
+        }
+
+        public void derivative(double[] a, double x, double[] dc,
+                               double[][] fjac, int i) {
+            xs[0] = x;
+
+            int kk = 1;
+            iNPar[0] = 1;
+            fjac[i][1] = 0.0;
+
+            for (int k = 0; k < xy_nsig; k++) {
+                int start = kk + 1;
+
+                for (int iDim = 0; iDim < xy_ndim; iDim++) {
+                    ys[iDim] = gShapeDer(a, start, xs[iDim], iJCal[iDim], dc);
+                }
+
+                double ypeak = 1.0;
+
+                for (int iDim = 0; iDim < xy_ndim; iDim++) {
+                    ypeak = ypeak * ys[iDim];
+                }
+
+                fjac[i][1] += dc[1];
+                fjac[i][start] = ypeak;
+                fjac[i][start + 1] = dc[start + 1] * a[start];
+
+                for (int iDim = 0; iDim < xy_ndim; iDim++) {
+                    kk += iNPar[iDim];
+                }
+
+                kk++;
+            }
         }
 
         public double gShape(double[] a, int start, double x, int jcal) {
@@ -1615,10 +1598,6 @@ public class Lmder_f77 {
         double[] ys = new double[xy_ndim];
         double[] xs = new double[xy_ndim];
 
-        public String getEquation() {
-            return "Lineshape";
-        }
-
         public int getN() {
             return nPar;
         }
@@ -1626,12 +1605,6 @@ public class Lmder_f77 {
         public void setN(int newN) {
             nPar = newN;
             xy_nsig = (nPar - 1) / (xy_ndim + 1);
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 1.0;
-            a[3] = 0.5;
         }
 
         public double[] guess() {
@@ -1643,57 +1616,14 @@ public class Lmder_f77 {
             return a;
         }
 
-        public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
-            if (iflag[1] == 1) {
-                nfev++;
-
-                for (int i = 1; i <= m; i++) {
-                    double t = xv[i - 1];
-                    double yval = calculate(a, t);
-                    fvec[i] = yval - yv[i - 1];
-                }
-            } else if (iflag[1] == 2) {
-                double[] dc = new double[a.length]; // derivative component
-
-                for (int i = 1; i <= m; i++) {
-                    double t = xv[i - 1];
-                    derivative(a, t, dc, fjac, i);
-                }
-            }
+        public String getEquation() {
+            return "Lineshape";
         }
 
-        public void derivative(double[] a, double x, double[] dc,
-                double[][] fjac, int i) {
-            xs[0] = x;
-
-            int kk = 1;
-            iNPar[0] = 1;
-            fjac[i][1] = 0.0;
-
-            for (int k = 0; k < xy_nsig; k++) {
-                int start = kk + 1;
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    ys[iDim] = lShapeDer(a, start, xs[iDim], iJCal[iDim], dc);
-                }
-
-                double ypeak = 1.0;
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    ypeak = ypeak * ys[iDim];
-                }
-
-                fjac[i][1] += dc[1];
-                fjac[i][start] = ypeak;
-                fjac[i][start + 1] = dc[start + 1] * a[start];
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    kk += iNPar[iDim];
-                }
-
-                kk++;
-            }
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 1.0;
+            a[3] = 0.5;
         }
 
         public double calculate(double[] a, double x) {
@@ -1728,6 +1658,59 @@ public class Lmder_f77 {
             return y;
         }
 
+        public void fcn(int m, int n, double[] a, double[] fvec,
+                        double[][] fjac, int[] iflag) {
+            if (iflag[1] == 1) {
+                nfev++;
+
+                for (int i = 1; i <= m; i++) {
+                    double t = xv[i - 1];
+                    double yval = calculate(a, t);
+                    fvec[i] = yval - yv[i - 1];
+                }
+            } else if (iflag[1] == 2) {
+                double[] dc = new double[a.length]; // derivative component
+
+                for (int i = 1; i <= m; i++) {
+                    double t = xv[i - 1];
+                    derivative(a, t, dc, fjac, i);
+                }
+            }
+        }
+
+        public void derivative(double[] a, double x, double[] dc,
+                               double[][] fjac, int i) {
+            xs[0] = x;
+
+            int kk = 1;
+            iNPar[0] = 1;
+            fjac[i][1] = 0.0;
+
+            for (int k = 0; k < xy_nsig; k++) {
+                int start = kk + 1;
+
+                for (int iDim = 0; iDim < xy_ndim; iDim++) {
+                    ys[iDim] = lShapeDer(a, start, xs[iDim], iJCal[iDim], dc);
+                }
+
+                double ypeak = 1.0;
+
+                for (int iDim = 0; iDim < xy_ndim; iDim++) {
+                    ypeak = ypeak * ys[iDim];
+                }
+
+                fjac[i][1] += dc[1];
+                fjac[i][start] = ypeak;
+                fjac[i][start + 1] = dc[start + 1] * a[start];
+
+                for (int iDim = 0; iDim < xy_ndim; iDim++) {
+                    kk += iNPar[iDim];
+                }
+
+                kk++;
+            }
+        }
+
         public double lShape(double[] a, int start, double x, int jcal) {
             double y = 0.0;
             double b = a[1] * 0.5;
@@ -1739,7 +1722,7 @@ public class Lmder_f77 {
         }
 
         public double lShapeDer(double[] a, int start, double x, int jcal,
-                double[] dc) {
+                                double[] dc) {
             double y = 0.0;
             double b = a[1] * 0.5;
             double freq = a[start + 1];
@@ -1763,10 +1746,6 @@ public class Lmder_f77 {
         double[] ys = new double[xy_ndim];
         double[] xs = new double[xy_ndim];
 
-        public String getEquation() {
-            return "Lineshape";
-        }
-
         public int getN() {
             if (nFit != 0) {
                 return nFit;
@@ -1780,12 +1759,6 @@ public class Lmder_f77 {
             xy_nsig = (nPar - 1) / (xy_ndim + 1);
         }
 
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 1.0;
-            a[3] = 0.5;
-        }
-
         public double[] guess() {
             getStatsForGuess();
             a[1] = yMax;
@@ -1795,8 +1768,50 @@ public class Lmder_f77 {
             return a;
         }
 
+        public String getEquation() {
+            return "Lineshape";
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 1.0;
+            a[3] = 0.5;
+        }
+
+        public double calculate(double[] a, double x) {
+            double y = 0;
+            xs[0] = x;
+
+            int kk = 1;
+            iNPar[0] = 1;
+
+            for (int k = 0; k < xy_nsig; k++) {
+                int start = kk + 1;
+
+                for (int iDim = 0; iDim < xy_ndim; iDim++) {
+                    ys[iDim] = lShape(a, start, xs[iDim], iJCal[iDim]);
+                }
+
+                double ypeak = a[start];
+
+                for (int iDim = 0; iDim < xy_ndim; iDim++) {
+                    ypeak = ypeak * ys[iDim];
+                }
+
+                y += ypeak;
+
+                for (int iDim = 0; iDim < xy_ndim; iDim++) {
+                    kk += iNPar[iDim];
+                }
+
+                kk++;
+            }
+
+            return y;
+        }
+
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= n; i++) {
                 aCalc[map[i]] = a[i];
             }
@@ -1833,7 +1848,7 @@ public class Lmder_f77 {
         }
 
         public void derivative(double[] a, double x, double[] dc,
-                double[] jacCol, int i) {
+                               double[] jacCol, int i) {
             xs[0] = x;
 
             int kk = 1;
@@ -1865,38 +1880,6 @@ public class Lmder_f77 {
             }
         }
 
-        public double calculate(double[] a, double x) {
-            double y = 0;
-            xs[0] = x;
-
-            int kk = 1;
-            iNPar[0] = 1;
-
-            for (int k = 0; k < xy_nsig; k++) {
-                int start = kk + 1;
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    ys[iDim] = lShape(a, start, xs[iDim], iJCal[iDim]);
-                }
-
-                double ypeak = a[start];
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    ypeak = ypeak * ys[iDim];
-                }
-
-                y += ypeak;
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    kk += iNPar[iDim];
-                }
-
-                kk++;
-            }
-
-            return y;
-        }
-
         public double calculateOneSig(double[] a, int iSig, double x) {
             int start = (iSig * 2) + 2;
             double y = lShape(a, start, x, 0);
@@ -1919,7 +1902,7 @@ public class Lmder_f77 {
         }
 
         public double lShapeDer(double[] a, int start, double x, int jcal,
-                double[] dc) {
+                                double[] dc) {
             double y = 0.0;
             double b = a[1] * 0.5;
             double freq = a[start + 1];
@@ -1991,6 +1974,23 @@ public class Lmder_f77 {
 
             return X;
         }
+    }
+
+    public static void main(String[] args) {
+        Lmder_f77 lmder = new Lmder_f77();
+        lmder.setFunc(7);
+        lmder.setLengths(64);
+
+        for (int i = 0; i < lmder.xv.length; i++) {
+            lmder.xv[i] = i;
+        }
+
+        lmder.initpt();
+        lmder.simulate(0.02);
+        lmder.dumpXY();
+        lmder.randomizeGuess(0.5);
+        lmder.doMin();
+        System.out.println(lmder.rms());
     }
 
 }

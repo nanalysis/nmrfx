@@ -1,11 +1,11 @@
 package org.nmrfx.structure.chemistry.miner;
 
-import java.util.*;
-
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomContainer;
 import org.nmrfx.chemistry.IAtom;
 import org.nmrfx.chemistry.IBond;
-import org.nmrfx.chemistry.Atom;
+
+import java.util.*;
 
 public class BreadthFirstIterator implements Iterator {
 
@@ -97,7 +97,8 @@ public class BreadthFirstIterator implements Iterator {
         return addedAtom;
     }
 
-    public void remove() {
+    public boolean hasNext() {
+        return bfIterate();
     }
 
     public Object next() {
@@ -108,7 +109,6 @@ public class BreadthFirstIterator implements Iterator {
         return sphereOfAtoms;
     }
 
-    public boolean hasNext() {
-        return bfIterate();
+    public void remove() {
     }
 }

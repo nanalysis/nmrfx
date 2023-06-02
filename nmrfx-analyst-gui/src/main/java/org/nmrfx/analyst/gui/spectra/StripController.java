@@ -237,9 +237,9 @@ public class StripController implements ControllerTool {
     }
 
     void updateDimMenus(PeakList peakList) {
-        for (var dimMenu: dimChoiceBoxes) {
+        for (var dimMenu : dimChoiceBoxes) {
             dimMenu.getItems().clear();
-            for (var sDim:peakList.getSpectralDims()) {
+            for (var sDim : peakList.getSpectralDims()) {
                 dimMenu.getItems().add(sDim.getDimName());
             }
         }
@@ -515,70 +515,6 @@ public class StripController implements ControllerTool {
         }
     }
 
-    static class StripItem {
-
-        Dataset dataset;
-        PeakList peakList;
-        int offset = 0;
-        int row = 0;
-
-        public StripItem() {
-
-        }
-
-        public StripItem(Dataset dataset, PeakList peakList, int offset, int row) {
-            this.dataset = dataset;
-            this.peakList = peakList;
-            this.offset = offset;
-            this.row = row;
-        }
-    }
-
-    class Cell {
-
-        Peak peak;
-        double[] positions;
-
-        public Cell(Dataset dataset, Peak peak) {
-
-        }
-
-        public Cell(Peak peak, double[] positions) {
-            this.peak = peak;
-            this.positions = positions;
-        }
-
-        void updateCell() {
-            positions = getPositions(peak, dimNames);
-        }
-
-        void updateChart(PolyChart chart, StripItem item, boolean init) {
-            controller.setActiveChart(chart);
-            if (item.dataset != null) {
-                if (init) {
-                    controller.addDataset(item.dataset, false, false);
-                    chart.getCrossHairs().setState(0, Orientation.HORIZONTAL, true);
-                }
-                chart.setDataset(item.dataset);
-                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                int[] dims = getDims(dataAttr.getDataset());
-                for (int i = 0; i < dims.length; i++) {
-                    dataAttr.setDim(i, dims[i]);
-                }
-                chart.getAxes().setMinMax(0, positions[0] - xWidth / 2.0, positions[0] + xWidth / 2.0);
-                if (item.peakList != null) {
-                    PeakListAttributes peakAttr = chart.setupPeakListAttributes(item.peakList);
-                    peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.SglResidue);
-                }
-                chart.full(1);
-                for (int i = 1; i < positions.length; i++) {
-                    chart.getAxes().setMinMax(1 + i, positions[i], positions[i]);
-                }
-            }
-            chart.useImmediateMode(true);
-        }
-    }
-
     public void setCenter(int index) {
         int nActive = (int) nSlider.getValue();
         int start = index - nActive / 2;
@@ -687,9 +623,6 @@ public class StripController implements ControllerTool {
         return result;
     }
 
-    public record PeakMatchResult(Peak peak, double score) {
-    }
-
     public List<PeakMatchResult> matchPeaks(Peak peak) {
         var originPeaks = getMatchPeaks(peak);
         List<PeakMatchResult> result = new ArrayList<>();
@@ -779,7 +712,7 @@ public class StripController implements ControllerTool {
                 }
                 if (!datasets.contains(dataset)) {
                     datasets.add(dataset);
-                    StripItem item = new StripItem(dataset,peakList,iCol, iRow);
+                    StripItem item = new StripItem(dataset, peakList, iCol, iRow);
                     items.add(item);
                 } else {
                     break;
@@ -796,5 +729,72 @@ public class StripController implements ControllerTool {
         dimChoiceBoxes[0].setValue(xDim);
         dimChoiceBoxes[1].setValue(zDim);
         addPeaks(peakList0.peaks());
+    }
+
+    static class StripItem {
+
+        Dataset dataset;
+        PeakList peakList;
+        int offset = 0;
+        int row = 0;
+
+        public StripItem() {
+
+        }
+
+        public StripItem(Dataset dataset, PeakList peakList, int offset, int row) {
+            this.dataset = dataset;
+            this.peakList = peakList;
+            this.offset = offset;
+            this.row = row;
+        }
+    }
+
+    public record PeakMatchResult(Peak peak, double score) {
+    }
+
+    class Cell {
+
+        Peak peak;
+        double[] positions;
+
+        public Cell(Dataset dataset, Peak peak) {
+
+        }
+
+        public Cell(Peak peak, double[] positions) {
+            this.peak = peak;
+            this.positions = positions;
+        }
+
+        void updateCell() {
+            positions = getPositions(peak, dimNames);
+        }
+
+        void updateChart(PolyChart chart, StripItem item, boolean init) {
+            controller.setActiveChart(chart);
+            if (item.dataset != null) {
+                if (init) {
+                    controller.addDataset(item.dataset, false, false);
+                    chart.getCrossHairs().setState(0, Orientation.HORIZONTAL, true);
+                }
+                chart.setDataset(item.dataset);
+                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                int[] dims = getDims(dataAttr.getDataset());
+                for (int i = 0; i < dims.length; i++) {
+                    dataAttr.setDim(i, dims[i]);
+                }
+                chart.getAxes().setMinMax(0, positions[0] - xWidth / 2.0, positions[0] + xWidth / 2.0);
+                if (item.peakList != null) {
+                    PeakListAttributes peakAttr = chart.setupPeakListAttributes(item.peakList);
+                    peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.SglResidue);
+                }
+                chart.full(1);
+                for (int i = 1; i < positions.length; i++) {
+                    chart.getAxes().setMinMax(1 + i, positions[i], positions[i]);
+                }
+            }
+            chart.useImmediateMode(true);
+        }
     }
 }

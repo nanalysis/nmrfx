@@ -67,9 +67,6 @@ public class ConsoleController extends OutputStream implements Initializable, St
     private final List<Byte> bytes = new ArrayList<>();
 
     protected ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
-
-    @FXML
-    private TextArea textArea;
     Stage stage;
     ArrayList<String> history = new ArrayList<>();
     int historyInd = 0;
@@ -83,6 +80,8 @@ public class ConsoleController extends OutputStream implements Initializable, St
             event.consume();
         }
     };
+    @FXML
+    private TextArea textArea;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -92,30 +91,6 @@ public class ConsoleController extends OutputStream implements Initializable, St
     @Override
     public void setStage(Stage stage) {
         this.stage = stage;
-    }
-
-    public static ConsoleController getConsoleController() {
-        return consoleController;
-    }
-
-    public static ConsoleController create(InteractiveInterpreter interpreter, String title) {
-        ConsoleController.interpreter = interpreter;
-
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle(title);
-
-        consoleController = Fxml.load(ConsoleController.class, "ConsoleScene.fxml")
-                .withStage(stage)
-                .getController();
-
-        stage.show();
-        Screen screen = Screen.getPrimary();
-        Rectangle2D screenSize = screen.getBounds();
-        stage.toFront();
-        stage.setY(screenSize.getHeight() - stage.getHeight());
-        stage.setOnCloseRequest(consoleController.close);
-
-        return consoleController;
     }
 
     public void initializeConsole() {
@@ -190,6 +165,11 @@ public class ConsoleController extends OutputStream implements Initializable, St
         startTimer();
     }
 
+    @Override
+    public void close() {
+        stage.hide();
+    }
+
     public void clearConsole() {
         textArea.setText("> ");
         textArea.end();
@@ -239,11 +219,6 @@ public class ConsoleController extends OutputStream implements Initializable, St
             textArea.appendText("\n" + e.getMessage());
         }
         textArea.appendText("\n> ");
-    }
-
-    @Override
-    public void close() {
-        stage.hide();
     }
 
     public void show() {
@@ -350,6 +325,37 @@ public class ConsoleController extends OutputStream implements Initializable, St
         return lastLineStart == lastLineEnd;
     }
 
+    synchronized void startTimer() {
+        if ((schedExecutor != null) && ((futureUpdate == null) || futureUpdate.isDone())) {
+            UpdateTask updateTask = new UpdateTask();
+            futureUpdate = schedExecutor.schedule(updateTask, 500, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    public static ConsoleController getConsoleController() {
+        return consoleController;
+    }
+
+    public static ConsoleController create(InteractiveInterpreter interpreter, String title) {
+        ConsoleController.interpreter = interpreter;
+
+        Stage stage = new Stage(StageStyle.DECORATED);
+        stage.setTitle(title);
+
+        consoleController = Fxml.load(ConsoleController.class, "ConsoleScene.fxml")
+                .withStage(stage)
+                .getController();
+
+        stage.show();
+        Screen screen = Screen.getPrimary();
+        Rectangle2D screenSize = screen.getBounds();
+        stage.toFront();
+        stage.setY(screenSize.getHeight() - stage.getHeight());
+        stage.setOnCloseRequest(consoleController.close);
+
+        return consoleController;
+    }
+
     class UpdateTask implements Runnable {
         @Override
         public void run() {
@@ -359,13 +365,6 @@ public class ConsoleController extends OutputStream implements Initializable, St
                     textArea.end();
                 }
             });
-        }
-    }
-
-    synchronized void startTimer() {
-        if ((schedExecutor != null) && ((futureUpdate == null) || futureUpdate.isDone())) {
-            UpdateTask updateTask = new UpdateTask();
-            futureUpdate = schedExecutor.schedule(updateTask, 500, TimeUnit.MILLISECONDS);
         }
     }
 }

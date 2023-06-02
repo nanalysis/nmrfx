@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,6 +29,7 @@ import org.nmrfx.processor.math.Vec;
 @PythonAPI("pyproc")
 public class Phase extends Operation implements Invertible {
 
+    private final static double degtorad = Math.PI / 180.0;
     private final double p0;
     private final double p1;
     private final Integer pivot;
@@ -38,8 +39,6 @@ public class Phase extends Operation implements Invertible {
     private double[] pImag = null;
     private double ph0save;
     private double ph1save;
-
-    private final static double degtorad = Math.PI / 180.0;
 
     public Phase(Double p0, Double p1) {
         this(p0, p1, false, false);

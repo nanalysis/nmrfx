@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@ package org.nmrfx.chemistry;
 
 import org.nmrfx.annotations.PluginAPI;
 
-import java.io.*;
+import java.io.Serializable;
 
 @PluginAPI("residuegen")
 public class Bond implements IBond, Serializable {
@@ -32,7 +32,6 @@ public class Bond implements IBond, Serializable {
     static final public int STEREO_BOND_EITHER = 12;
     static final public int VISITED = 0;
     static final public int ISAROMATIC = 1;
-    boolean[] properties;
     public float radius = 0.3f;
     public float red = 1.0f;
     public float green = 0.0f;
@@ -41,6 +40,7 @@ public class Bond implements IBond, Serializable {
     public int stereo = 0;
     public Atom begin;
     public Atom end;
+    boolean[] properties;
     boolean[] flags = new boolean[2];
     boolean ringClosure = false;
 
@@ -86,11 +86,6 @@ public class Bond implements IBond, Serializable {
         return end;
     }
 
-    @Override
-    public Atom getAtom(int index) {
-        return index == 0 ? begin : end;
-    }
-
     public Atom getConnectedAtom(Atom atom) {
         if (atom == begin) {
             return end;
@@ -99,22 +94,6 @@ public class Bond implements IBond, Serializable {
         } else {
             return null;
         }
-    }
-
-    @Override
-    public void setFlag(int flag, boolean state) throws IllegalArgumentException {
-        if (flag > flags.length) {
-            throw new IllegalArgumentException("Invalid flag");
-        }
-        flags[flag] = state;
-    }
-
-    @Override
-    public boolean getFlag(int flag) throws IllegalArgumentException {
-        if (flag > flags.length) {
-            throw new IllegalArgumentException("Invalid flag");
-        }
-        return flags[flag];
     }
 
     public void setProperty(int propIndex) {
@@ -154,8 +133,29 @@ public class Bond implements IBond, Serializable {
     }
 
     @Override
+    public Atom getAtom(int index) {
+        return index == 0 ? begin : end;
+    }
+
+    @Override
     public Order getOrder() {
         return order;
+    }
+
+    @Override
+    public void setFlag(int flag, boolean state) throws IllegalArgumentException {
+        if (flag > flags.length) {
+            throw new IllegalArgumentException("Invalid flag");
+        }
+        flags[flag] = state;
+    }
+
+    @Override
+    public boolean getFlag(int flag) throws IllegalArgumentException {
+        if (flag > flags.length) {
+            throw new IllegalArgumentException("Invalid flag");
+        }
+        return flags[flag];
     }
 
     public boolean isRingClosure() {

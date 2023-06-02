@@ -5,28 +5,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
  * @author brucejohnson
  */
 public class RelaxEquations {
 
-    static final int S = 1;
-    static final int ImS = 2;
-    static final int I = 3;
-    static final int IpS = 4;
     public final static double SQRT2 = Math.sqrt(2.0);
-
     public final static double MU0 = 4.0e-7 * Math.PI;
     public final static double GAMMA_N = -2.71e7;
     public final static double GAMMA_C = 6.72828e7;
     public final static double GAMMA_H = 2.68e8;
-
     public final static double PLANCK = 1.054e-34;
     public final static double R_HN = 1.02e-10;
     public final static double R_HC = 1.104e-10;
     public final static Map<String, Double> GAMMA_MAP = new HashMap<>();
     public final static Map<String, Double> R_MAP = new HashMap<>();
     public final static Map<String, Double> CSA_MAP = new HashMap<>();
+    static final int S = 1;
+    static final int ImS = 2;
+    static final int I = 3;
+    static final int IpS = 4;
 
     static {
         GAMMA_MAP.put("H", GAMMA_H);
@@ -67,9 +64,9 @@ public class RelaxEquations {
     private final double sigma;
 
     //   consider using scaled versions (smaller exponents)
+
     /**
-     *
-     * @param sf double. 1H NMR Spectrometer frequency.
+     * @param sf    double. 1H NMR Spectrometer frequency.
      * @param elem1 String. First element ("H" for 1H NMR).
      * @param elem2 String. Second element (C, N, etc.)
      */
@@ -92,13 +89,14 @@ public class RelaxEquations {
     }
 
     // Note: tauM = tm in Art Palmer's code, and taui in Relax. 
+
     /**
      * Model Free spectral density function, J(omega), calculation using Model
      * 1.
      *
-     * @param w double. The frequency, omega.
+     * @param w    double. The frequency, omega.
      * @param tauM double. The overall correlation time.
-     * @param s2 double. The order parameter S^2.
+     * @param s2   double. The order parameter S^2.
      * @return J(w) value.
      */
     public double JModelFree(double w, double tauM, double s2) {
@@ -109,14 +107,15 @@ public class RelaxEquations {
 
     // Note: tauM = tm in Art Palmer's code, and taui in Relax. 
     // tau = ts in Art Palmer's code (taue in the paper: Phys Chem Chem Phys, 2016, 18, 5839-5849), and taue in Relax.
+
     /**
      * Model Free spectral density function, J(omega), calculation using Model
      * 2.
      *
-     * @param w double. The frequency, omega.
-     * @param tau double. The internal correlation time.
+     * @param w    double. The frequency, omega.
+     * @param tau  double. The internal correlation time.
      * @param tauM double. The overall correlation time.
-     * @param s2 double. The order parameter S^2.
+     * @param s2   double. The order parameter S^2.
      * @return J(w) value.
      */
     public double JModelFree(double w, double tau, double tauM, double s2) {
@@ -127,16 +126,17 @@ public class RelaxEquations {
     }
 
     // Note: tauM = tm in Art Palmer's code. tau = ts in Art Palmer's code.
+
     /**
      * Model Free spectral density function, J(omega), calculation using Model
      * 5.
      *
-     * @param w double. The frequency, omega.
-     * @param tau double. The internal correlation time.
+     * @param w    double. The frequency, omega.
+     * @param tau  double. The internal correlation time.
      * @param tauM double. The overall correlation time.
-     * @param s2 double. The order parameter S^2.
-     * @param sf2 double. The order parameter for intramolecular motions with
-     * fast correlation times.
+     * @param s2   double. The order parameter S^2.
+     * @param sf2  double. The order parameter for intramolecular motions with
+     *             fast correlation times.
      * @return J(w) value.
      */
     public double JModelFree(double w, double tau, double tauM, double s2, double sf2) {
@@ -150,13 +150,13 @@ public class RelaxEquations {
      * Model Free spectral density function, J(omega), calculation using Model
      * 6.
      *
-     * @param w double. The frequency, omega.
+     * @param w    double. The frequency, omega.
      * @param tauF double. The internal fast correlation time.
      * @param tauM double. The overall correlation time.
      * @param tauS double. The internal slow correlation time.
-     * @param s2 double. The order parameter S^2.
-     * @param sf2 double. The order parameter for intramolecular motions with
-     * fast correlation times.
+     * @param s2   double. The order parameter S^2.
+     * @param sf2  double. The order parameter for intramolecular motions with
+     *             fast correlation times.
      * @return J(w) value.
      */
     public double JModelFree(double w, double tauF, double tauM, double tauS, double s2, double sf2) {
@@ -168,12 +168,13 @@ public class RelaxEquations {
     }
 
     // Note: tauM = tm in Art Palmer's code, and taui in Relax. 
+
     /**
      * Model Free spectral density function, J(omega), calculations using Model
      * 1.
      *
      * @param tauM double. The overall correlation time.
-     * @param s2 double. The order parameter S^2.
+     * @param s2   double. The order parameter S^2.
      * @return double[]. Array of J(w) values.
      */
     public double[] getJModelFree(double tauM, double s2) {
@@ -187,13 +188,14 @@ public class RelaxEquations {
     }
 
     // Note: tauM = tm in Art Palmer's code, and taui in Relax. tau = ts in Art Palmer's code (taue in the paper), and taue in Relax.
+
     /**
      * Model Free spectral density function, J(omega), calculations using Model
      * 2.
      *
-     * @param tau double. The internal correlation time.
+     * @param tau  double. The internal correlation time.
      * @param tauM double. The overall correlation time.
-     * @param s2 double. The order parameter S^2.
+     * @param s2   double. The order parameter S^2.
      * @return double[]. Array of J(w) values.
      */
     public double[] getJModelFree(double tau, double tauM, double s2) {
@@ -207,15 +209,16 @@ public class RelaxEquations {
     }
 
     // Note: tauM = tm in Art Palmer's code. tau = ts in Art Palmer's code.
+
     /**
      * Model Free spectral density function, J(omega), calculations using Model
      * 5.
      *
-     * @param tau double. The internal correlation time.
+     * @param tau  double. The internal correlation time.
      * @param tauM double. The overall correlation time.
-     * @param s2 double. The order parameter S^2.
-     * @param sf2 double. The order parameter for intramolecular motions with
-     * fast correlation times.
+     * @param s2   double. The order parameter S^2.
+     * @param sf2  double. The order parameter for intramolecular motions with
+     *             fast correlation times.
      * @return double[]. Array of J(w) values.
      */
     public double[] getJModelFree(double tau, double tauM, double s2, double sf2) {
@@ -235,9 +238,9 @@ public class RelaxEquations {
      * @param tauF double. The internal fast correlation time.
      * @param tauM double. The overall correlation time.
      * @param tauS double. The internal slow correlation time.
-     * @param s2 double. The order parameter S^2.
-     * @param sf2 double. The order parameter for intramolecular motions with
-     * fast correlation times.
+     * @param s2   double. The order parameter S^2.
+     * @param sf2  double. The order parameter for intramolecular motions with
+     *             fast correlation times.
      * @return double[]. Array of J(w) values.
      */
     public double[] getJModelFree(double tauF, double tauM, double tauS, double s2, double sf2) {
@@ -253,7 +256,7 @@ public class RelaxEquations {
     /**
      * Spectral density function calculation.
      *
-     * @param w double. The frequency, omega.
+     * @param w   double. The frequency, omega.
      * @param tau double. The correlation time.
      * @return double. The spectral density, J(w).
      */
@@ -265,9 +268,9 @@ public class RelaxEquations {
     /**
      * Spectral density function calculation.
      *
-     * @param w double. The frequency, omega.
+     * @param w   double. The frequency, omega.
      * @param tau double. The correlation time.
-     * @param S2 double. The order parameter.
+     * @param S2  double. The order parameter.
      * @return double. The spectral density, J(w).
      */
     public double J(double w, double tau, double S2) {
@@ -320,7 +323,7 @@ public class RelaxEquations {
      * Spectral density function calculations.
      *
      * @param tau double. The correlation time.
-     * @param S double. The order parameter.
+     * @param S   double. The order parameter.
      * @return double[]. Array of J(w) values.
      */
     public double[] getJ(double tau, double S) {
@@ -399,7 +402,7 @@ public class RelaxEquations {
     /**
      * R2 calculation
      *
-     * @param J double[]. Array of spectral density function values, J(w).
+     * @param J   double[]. Array of spectral density function values, J(w).
      * @param Rex double. Rate of exchange, Rex, value.
      * @return double. R2 value.
      */
@@ -438,7 +441,7 @@ public class RelaxEquations {
     /**
      * Gamma calculation
      *
-     * @param J double[]. Array of spectral density function values, J(w).
+     * @param J   double[]. Array of spectral density function values, J(w).
      * @param Rex double. Rate of exchange, Rex, value.
      * @return double. Gamma value.
      */

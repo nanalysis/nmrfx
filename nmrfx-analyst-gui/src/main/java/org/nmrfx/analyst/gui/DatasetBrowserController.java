@@ -62,7 +62,12 @@ import java.util.ResourceBundle;
 public class DatasetBrowserController implements Initializable, StageBasedController {
 
     private static final Logger log = LoggerFactory.getLogger(DatasetBrowserController.class);
-
+    String remoteDir = "";
+    String localDir = "";
+    FileSystem fileSystem = FileSystems.getDefault();
+    RemoteDatasetAccess rdA = null;
+    Button datasetButton;
+    Button fetchButton;
     private Stage stage;
     @FXML
     private ToolBar toolBar;
@@ -74,12 +79,6 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
     private TextField directoryTextField;
     @FXML
     private HBox hBox;
-    String remoteDir = "";
-    String localDir = "";
-    FileSystem fileSystem = FileSystems.getDefault();
-    RemoteDatasetAccess rdA = null;
-    Button datasetButton;
-    Button fetchButton;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -89,13 +88,13 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
         remoteDir = AnalystPrefs.getRemoteDirectory();
     }
 
+    public Stage getStage() {
+        return stage;
+    }
+
     @Override
     public void setStage(Stage stage) {
         this.stage = stage;
-    }
-
-    public Stage getStage() {
-        return stage;
     }
 
     boolean initRemoteDatasetAccess() {
@@ -131,14 +130,6 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
             }
         }
         return true;
-    }
-
-    public static DatasetBrowserController create() {
-        DatasetBrowserController controller = Fxml.load(DatasetBrowserController.class, "DatasetBrowserScene.fxml")
-                .withNewStage("Dataset Browser")
-                .getController();
-        controller.stage.show();
-        return controller;
     }
 
     void initToolBar() {
@@ -475,6 +466,14 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
             rData.setProcessed(NMRDataUtil.getProcessedDataset(localFile));
             rData.setPresent(localFile.exists());
         }
+    }
+
+    public static DatasetBrowserController create() {
+        DatasetBrowserController controller = Fxml.load(DatasetBrowserController.class, "DatasetBrowserScene.fxml")
+                .withNewStage("Dataset Browser")
+                .getController();
+        controller.stage.show();
+        return controller;
     }
 
 }

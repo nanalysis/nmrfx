@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,6 @@ import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import java.util.*;
 
 /**
- *
  * @author brucejohnson
  */
 public class SpectrumAdjuster {
@@ -173,7 +172,7 @@ public class SpectrumAdjuster {
     }
 
     public static void adjustDatasetRef(Optional<Double> delXOpt,
-            Optional<Double> delYOpt, boolean shiftDataset, boolean alwaysShiftPeaks) {
+                                        Optional<Double> delYOpt, boolean shiftDataset, boolean alwaysShiftPeaks) {
         PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         CrossHairs crossHairs = chart.getCrossHairs();
         int nDim = 1;

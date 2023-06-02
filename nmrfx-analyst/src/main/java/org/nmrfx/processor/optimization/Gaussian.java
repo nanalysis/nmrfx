@@ -4,9 +4,9 @@ package org.nmrfx.processor.optimization;
  * @author brucejohnson
  */
 public class Gaussian extends FitEquation {
-    final boolean fitC;
     static final String[] abParNames = {"A", "B"};
     static final String[] abcParNames = {"A", "B", "C"};
+    final boolean fitC;
 
     public Gaussian() {
         this(false);
@@ -57,7 +57,7 @@ public class Gaussian extends FitEquation {
         double a = pars[0];
         double b = pars[1];
         double c = fitC ? pars[2] : 0.0;
-        double y = (a-c) * Math.exp(-b * x * x) + c;
+        double y = (a - c) * Math.exp(-b * x * x) + c;
         return new double[]{y};
     }
 }

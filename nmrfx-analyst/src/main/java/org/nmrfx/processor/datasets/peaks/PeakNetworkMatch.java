@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,6 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.optimization.BipartiteMatcher;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.InitialGuess;
@@ -33,9 +27,15 @@ import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.optimization.BipartiteMatcher;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakNetworkMatch {
@@ -154,7 +154,7 @@ public class PeakNetworkMatch {
     }
 
     void bpMatchList(String[] dimNamesI, double[][] tols, double[][] offsets,
-            boolean optimizeMatch, double tolMul, final double[][] boundary) {
+                     boolean optimizeMatch, double tolMul, final double[][] boundary) {
         // should check for "deleted" peaks
 
         boolean matched = true;
@@ -281,23 +281,6 @@ public class PeakNetworkMatch {
         return deltaSqSum;
     }
 
-    static class MatchItem {
-
-        final int itemIndex;
-        final double[] values;
-
-        MatchItem(final int itemIndex, final double[] values) {
-            this.itemIndex = itemIndex;
-            this.values = values;
-        }
-
-        MatchItem(final int itemIndex, final double value) {
-            this.itemIndex = itemIndex;
-            double[] valueArray = {value};
-            this.values = valueArray;
-        }
-    }
-
     List<MatchItem> getMatchingItems(PeakList peakList, int[] dims, final double[][] boundary) {
         List<MatchItem> matchList = new ArrayList<>();
         int nPeaks = peakList.size();
@@ -345,19 +328,6 @@ public class PeakNetworkMatch {
             matchList.add(matchItem);
         }
         return matchList;
-    }
-
-    class MatchResult {
-
-        final double score;
-        final int nMatches;
-        final int[] matching;
-
-        MatchResult(final int[] matching, final int nMatches, final double score) {
-            this.matching = matching;
-            this.score = score;
-            this.nMatches = nMatches;
-        }
     }
 
     private MatchResult doBPMatch(List<MatchItem> iMList, final double[] iOffsets, List<MatchItem> jMList, final double[] jOffsets, double[] tol, final boolean doLinkMatch) {
@@ -488,6 +458,36 @@ public class PeakNetworkMatch {
             System.out.println(v);
         }
 
+    }
+
+    static class MatchItem {
+
+        final int itemIndex;
+        final double[] values;
+
+        MatchItem(final int itemIndex, final double[] values) {
+            this.itemIndex = itemIndex;
+            this.values = values;
+        }
+
+        MatchItem(final int itemIndex, final double value) {
+            this.itemIndex = itemIndex;
+            double[] valueArray = {value};
+            this.values = valueArray;
+        }
+    }
+
+    class MatchResult {
+
+        final double score;
+        final int nMatches;
+        final int[] matching;
+
+        MatchResult(final int[] matching, final int nMatches, final double score) {
+            this.matching = matching;
+            this.score = score;
+            this.nMatches = nMatches;
+        }
     }
 
 }

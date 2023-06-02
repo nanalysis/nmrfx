@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class PeakPicking {
@@ -70,17 +69,17 @@ public class PeakPicking {
 
     public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean useCrossHairs, boolean refineLS,
                                           Double level, boolean saveFile, String listName) {
-         return peakPickActive(chart, dataAttr,  null, useCrossHairs,  refineLS, level, saveFile, listName);
+        return peakPickActive(chart, dataAttr, null, useCrossHairs, refineLS, level, saveFile, listName);
     }
 
     public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, double[][] region,
                                           Double level) {
         chart.getPeakListAttributes().clear();
-        return peakPickActive(chart, dataAttr,  region, false,  false, level, false, null);
+        return peakPickActive(chart, dataAttr, region, false, false, level, false, null);
     }
 
     public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, double[][] region, boolean useCrossHairs, boolean refineLS,
-        Double level, boolean saveFile, String listName) {
+                                          Double level, boolean saveFile, String listName) {
         DatasetBase datasetBase = dataAttr.getDataset();
         Dataset dataset = (Dataset) datasetBase;
         int nDim = dataset.getNDim();

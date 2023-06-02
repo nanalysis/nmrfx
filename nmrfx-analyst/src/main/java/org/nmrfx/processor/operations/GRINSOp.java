@@ -61,12 +61,9 @@ public class GRINSOp extends MatrixOperation {
      * @see SampleSchedule
      */
     private final SampleSchedule sampleSchedule;
-
-    private List<int[]> skipList = null;
-
     private final boolean extendMode;
-
     private final File logHome;
+    private List<int[]> skipList = null;
 
     public GRINSOp(double noise, double scale, int zfFactor,
                    List<Double> phaseList, boolean preserve, boolean synthetic, boolean extendMode,

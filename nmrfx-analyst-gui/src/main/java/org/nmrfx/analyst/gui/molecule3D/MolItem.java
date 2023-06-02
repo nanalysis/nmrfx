@@ -4,7 +4,6 @@ import javafx.geometry.Point3D;
 import javafx.scene.Node;
 
 /**
- *
  * @author brucejohnson
  */
 public interface MolItem {

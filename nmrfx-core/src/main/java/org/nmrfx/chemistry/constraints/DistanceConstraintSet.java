@@ -17,58 +17,80 @@
  */
 package org.nmrfx.chemistry.constraints;
 
-import java.util.*;
-
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MolFilter;
 import org.nmrfx.chemistry.MoleculeBase;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author brucejohnson
  */
 public class DistanceConstraintSet implements ConstraintSet, Iterable {
 
-    private final MolecularConstraints molecularConstraints;
-    private final ArrayList<DistanceConstraint> constraints = new ArrayList<>();
-    int nStructures = 0;
-    private final String name;
-    boolean dirty = true;
     public static char[] violCharArray = new char[0];
     public static int ID = 1;
+    private static String[] angleConstraintLoopStrings = {
+            "_Torsion_angle_constraint.ID",
+            "_Torsion_angle_constraint.Torsion_angle_name",
+            "_Torsion_angle_constraint.Assembly_atom_ID_1",
+            "_Torsion_angle_constraint.Entity_assembly_ID_1",
+            "_Torsion_angle_constraint.Entity_ID_1",
+            "_Torsion_angle_constraint.Comp_index_ID_1",
+            "_Torsion_angle_constraint.Seq_ID_1",
+            "_Torsion_angle_constraint.Comp_ID_1",
+            "_Torsion_angle_constraint.Atom_ID_1",
+            "_Torsion_angle_constraint.Atom_type_1",
+            "_Torsion_angle_constraint.Resonance_ID_1",
+            "_Torsion_angle_constraint.Assembly_atom_ID_2",
+            "_Torsion_angle_constraint.Entity_assembly_ID_2",
+            "_Torsion_angle_constraint.Entity_ID_2",
+            "_Torsion_angle_constraint.Comp_index_ID_2",
+            "_Torsion_angle_constraint.Seq_ID_2",
+            "_Torsion_angle_constraint.Comp_ID_2",
+            "_Torsion_angle_constraint.Atom_ID_2",
+            "_Torsion_angle_constraint.Atom_type_2",
+            "_Torsion_angle_constraint.Resonance_ID_2",
+            "_Torsion_angle_constraint.Assembly_atom_ID_3",
+            "_Torsion_angle_constraint.Entity_assembly_ID_3",
+            "_Torsion_angle_constraint.Entity_ID_3",
+            "_Torsion_angle_constraint.Comp_index_ID_3",
+            "_Torsion_angle_constraint.Seq_ID_3",
+            "_Torsion_angle_constraint.Comp_ID_3",
+            "_Torsion_angle_constraint.Atom_ID_3      _Torsion_angle_constraint.Atom_type_3",
+            "_Torsion_angle_constraint.Resonance_ID_3",
+            "_Torsion_angle_constraint.Assembly_atom_ID_4",
+            "_Torsion_angle_constraint.Entity_assembly_ID_4",
+            "_Torsion_angle_constraint.Entity_ID_4",
+            "_Torsion_angle_constraint.Comp_index_ID_4",
+            "_Torsion_angle_constraint.Seq_ID_4",
+            "_Torsion_angle_constraint.Comp_ID_4",
+            "_Torsion_angle_constraint.Atom_ID_4",
+            "_Torsion_angle_constraint.Atom_type_4",
+            "_Torsion_angle_constraint.Resonance_ID_4",
+            "_Torsion_angle_constraint.Angle_lower_bound_val",
+            "_Torsion_angle_constraint.Angle_upper_bound_val",
+            "_Torsion_angle_constraint.Entry_ID",
+            "_Torsion_angle_constraint.Gen_dist_constraint_list_ID",};
+    private final MolecularConstraints molecularConstraints;
+    private final ArrayList<DistanceConstraint> constraints = new ArrayList<>();
+    private final String name;
+    int nStructures = 0;
+    boolean dirty = true;
     boolean containsBonds = false;
 
     private DistanceConstraintSet(MolecularConstraints molecularConstraints,
-            String name) {
+                                  String name) {
         this.name = name;
         this.molecularConstraints = molecularConstraints;
-    }
-
-    public static DistanceConstraintSet newSet(MolecularConstraints molecularConstraints,
-            String name) {
-        DistanceConstraintSet distanceSet = new DistanceConstraintSet(molecularConstraints,
-                name);
-        return distanceSet;
     }
 
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public String getCategory() {
-        return "distance_constraints";
-    }
-
-    @Override
-    public String getListType() {
-        return "_Distance_constraint_list";
-    }
-
-    @Override
-    public String getType() {
-        return "distance constraint";
     }
 
     @Override
@@ -87,26 +109,14 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
         dirty = true;
     }
 
-    public ArrayList<DistanceConstraint> get() {
-        if (dirty) {
-            updateData();
-        }
-        return constraints;
-    }
-
     @Override
     public DistanceConstraint get(int i) {
         return constraints.get(i);
     }
 
     @Override
-    public MolecularConstraints getMolecularConstraints() {
-        return molecularConstraints;
-    }
-
-    @Override
-    public Iterator iterator() {
-        return constraints.iterator();
+    public void setDirty() {
+        dirty = true;
     }
 
     @Override
@@ -115,8 +125,45 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
     }
 
     @Override
-    public void setDirty() {
-        dirty = true;
+    public Iterator iterator() {
+        return constraints.iterator();
+    }
+
+    @Override
+    public String getType() {
+        return "distance constraint";
+    }
+
+    @Override
+    public String getCategory() {
+        return "distance_constraints";
+    }
+
+    @Override
+    public String getListType() {
+        return "_Distance_constraint_list";
+    }
+
+    @Override
+    public String[] getLoopStrings() {
+        return angleConstraintLoopStrings;
+    }
+
+    @Override
+    public void resetWriting() {
+        ID = 1;
+    }
+
+    @Override
+    public MolecularConstraints getMolecularConstraints() {
+        return molecularConstraints;
+    }
+
+    public ArrayList<DistanceConstraint> get() {
+        if (dirty) {
+            updateData();
+        }
+        return constraints;
     }
 
     public boolean containsBonds() {
@@ -149,76 +196,23 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
         dirty = false;
     }
 
-    private static String[] angleConstraintLoopStrings = {
-        "_Torsion_angle_constraint.ID",
-        "_Torsion_angle_constraint.Torsion_angle_name",
-        "_Torsion_angle_constraint.Assembly_atom_ID_1",
-        "_Torsion_angle_constraint.Entity_assembly_ID_1",
-        "_Torsion_angle_constraint.Entity_ID_1",
-        "_Torsion_angle_constraint.Comp_index_ID_1",
-        "_Torsion_angle_constraint.Seq_ID_1",
-        "_Torsion_angle_constraint.Comp_ID_1",
-        "_Torsion_angle_constraint.Atom_ID_1",
-        "_Torsion_angle_constraint.Atom_type_1",
-        "_Torsion_angle_constraint.Resonance_ID_1",
-        "_Torsion_angle_constraint.Assembly_atom_ID_2",
-        "_Torsion_angle_constraint.Entity_assembly_ID_2",
-        "_Torsion_angle_constraint.Entity_ID_2",
-        "_Torsion_angle_constraint.Comp_index_ID_2",
-        "_Torsion_angle_constraint.Seq_ID_2",
-        "_Torsion_angle_constraint.Comp_ID_2",
-        "_Torsion_angle_constraint.Atom_ID_2",
-        "_Torsion_angle_constraint.Atom_type_2",
-        "_Torsion_angle_constraint.Resonance_ID_2",
-        "_Torsion_angle_constraint.Assembly_atom_ID_3",
-        "_Torsion_angle_constraint.Entity_assembly_ID_3",
-        "_Torsion_angle_constraint.Entity_ID_3",
-        "_Torsion_angle_constraint.Comp_index_ID_3",
-        "_Torsion_angle_constraint.Seq_ID_3",
-        "_Torsion_angle_constraint.Comp_ID_3",
-        "_Torsion_angle_constraint.Atom_ID_3      _Torsion_angle_constraint.Atom_type_3",
-        "_Torsion_angle_constraint.Resonance_ID_3",
-        "_Torsion_angle_constraint.Assembly_atom_ID_4",
-        "_Torsion_angle_constraint.Entity_assembly_ID_4",
-        "_Torsion_angle_constraint.Entity_ID_4",
-        "_Torsion_angle_constraint.Comp_index_ID_4",
-        "_Torsion_angle_constraint.Seq_ID_4",
-        "_Torsion_angle_constraint.Comp_ID_4",
-        "_Torsion_angle_constraint.Atom_ID_4",
-        "_Torsion_angle_constraint.Atom_type_4",
-        "_Torsion_angle_constraint.Resonance_ID_4",
-        "_Torsion_angle_constraint.Angle_lower_bound_val",
-        "_Torsion_angle_constraint.Angle_upper_bound_val",
-        "_Torsion_angle_constraint.Entry_ID",
-        "_Torsion_angle_constraint.Gen_dist_constraint_list_ID",};
-
-    @Override
-    public String[] getLoopStrings() {
-        return angleConstraintLoopStrings;
-    }
-
-    @Override
-    public void resetWriting() {
-        ID = 1;
-    }
-
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
-            final double rUp) throws IllegalArgumentException {
+                                      final double rUp) throws IllegalArgumentException {
         addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, 1.0, null, null);
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
-            final double rUp, boolean isBond) throws IllegalArgumentException {
+                                      final double rUp, boolean isBond) throws IllegalArgumentException {
         addDistanceConstraint(filterString1, filterString2, rLow, rUp, isBond, 1.0, null, null);
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
-            final double rUp, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
+                                      final double rUp, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
         addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, weight, targetValue, targetErr);
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
-            final double rUp, boolean isBond, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
+                                      final double rUp, boolean isBond, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
         MolFilter molFilter1 = new MolFilter(filterString1);
         MolFilter molFilter2 = new MolFilter(filterString2);
         MoleculeBase molecule = molecularConstraints.molecule;
@@ -255,17 +249,17 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
     }
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
-            final double rLow, final double rUp) throws IllegalArgumentException {
+                                      final double rLow, final double rUp) throws IllegalArgumentException {
         addDistanceConstraint(filterStrings1, filterStrings2, rLow, rUp, false, 1.0, null, null);
     }
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
-            final double rLow, final double rUp, boolean isBond) throws IllegalArgumentException {
+                                      final double rLow, final double rUp, boolean isBond) throws IllegalArgumentException {
         addDistanceConstraint(filterStrings1, filterStrings2, rLow, rUp, isBond, 1.0, null, null);
     }
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
-            final double rLow, final double rUp, boolean isBond, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
+                                      final double rLow, final double rUp, boolean isBond, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
         if (filterStrings1.size() != filterStrings2.size()) {
             throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
         }
@@ -311,7 +305,7 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
     }
 
     public void addDistance(final int modelNum, final List<String> filterStrings1, final List<String> filterStrings2,
-            final double rLow, final double rUp, Double weight, List<Double> targetValues, Double targetErr) throws IllegalArgumentException {
+                            final double rLow, final double rUp, Double weight, List<Double> targetValues, Double targetErr) throws IllegalArgumentException {
         if (filterStrings1.size() != filterStrings2.size()) {
             throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
         }
@@ -356,6 +350,13 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
             // fixme  distancePairMap.put(modelNum, distList);
         }
 
+    }
+
+    public static DistanceConstraintSet newSet(MolecularConstraints molecularConstraints,
+                                               String name) {
+        DistanceConstraintSet distanceSet = new DistanceConstraintSet(molecularConstraints,
+                name);
+        return distanceSet;
     }
 
 }

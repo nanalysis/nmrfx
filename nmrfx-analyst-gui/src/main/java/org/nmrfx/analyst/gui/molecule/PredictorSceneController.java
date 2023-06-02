@@ -58,23 +58,13 @@ public class PredictorSceneController implements Initializable, StageBasedContro
         molChoice.setValue("Shells");
     }
 
-    public static PredictorSceneController create(AtomController atomController) {
-        PredictorSceneController controller = Fxml.load(PredictorSceneController.class, "PredictorScene.fxml")
-                .withNewStage("Predictor")
-                .getController();
-        controller.atomController = atomController;
-        controller.stage.show();
-        controller.stage.toFront();
-        return controller;
+    public Stage getStage() {
+        return stage;
     }
 
     @Override
     public void setStage(Stage stage) {
         this.stage = stage;
-    }
-
-    public Stage getStage() {
-        return stage;
     }
 
     @FXML
@@ -193,6 +183,16 @@ public class PredictorSceneController implements Initializable, StageBasedContro
             }
         }
 
+    }
+
+    public static PredictorSceneController create(AtomController atomController) {
+        PredictorSceneController controller = Fxml.load(PredictorSceneController.class, "PredictorScene.fxml")
+                .withNewStage("Predictor")
+                .getController();
+        controller.atomController = atomController;
+        controller.stage.show();
+        controller.stage.toFront();
+        return controller;
     }
 
 }

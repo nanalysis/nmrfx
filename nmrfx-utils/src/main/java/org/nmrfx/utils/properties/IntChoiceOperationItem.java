@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,29 +16,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.utils.properties;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableIntegerValue;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 /**
- *
  * @author brucejohnson
  */
 public class IntChoiceOperationItem extends OperationItem implements ObservableIntegerValue {
 
+    private final Collection<?> choices;
     Integer defaultValue;
     Integer value;
     ChangeListener<? super Number> listener;
-    private final Collection<?> choices;
 
     public IntChoiceOperationItem(ChangeListener listener, Integer defaultValue, Collection<?> choices, String category, String name, String description) {
         super(category, name, description);
@@ -97,6 +97,11 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
     }
 
     @Override
+    public String getStringRep() {
+        return String.valueOf(value);
+    }
+
+    @Override
     public int get() {
         return value;
     }
@@ -120,11 +125,6 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
 
     public Collection<?> getChoices() {
         return choices;
-    }
-
-    @Override
-    public String getStringRep() {
-        return String.valueOf(value);
     }
 
     @Override

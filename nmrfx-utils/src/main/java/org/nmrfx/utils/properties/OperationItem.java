@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,19 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.utils.properties;
 
-import java.util.Optional;
 import javafx.beans.value.ObservableValue;
 import org.controlsfx.control.PropertySheet.Item;
 
+import java.util.Optional;
+
 /**
- *
  * @author brucejohnson
  */
 public abstract class OperationItem implements Item {
@@ -67,6 +67,11 @@ public abstract class OperationItem implements Item {
     @Override
     public abstract void setValue(Object o);
 
+    @Override
+    public Optional<ObservableValue<? extends Object>> getObservableValue() {
+        return Optional.empty();
+    }
+
     public abstract boolean isDefault();
 
     public abstract void setFromString(String sValue);
@@ -75,11 +80,6 @@ public abstract class OperationItem implements Item {
 
     public String getStringRep() {
         return getValue().toString();
-    }
-
-    @Override
-    public Optional<ObservableValue<? extends Object>> getObservableValue() {
-        return Optional.empty();
     }
 
 }

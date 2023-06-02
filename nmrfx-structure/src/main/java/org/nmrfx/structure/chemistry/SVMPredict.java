@@ -17,9 +17,13 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import libsvm.*;
+import libsvm.svm;
+import libsvm.svm_model;
+import libsvm.svm_node;
+
 import java.io.*;
-import java.util.*;
+import java.util.HashMap;
+import java.util.StringTokenizer;
 
 public class SVMPredict {
 
@@ -40,14 +44,6 @@ public class SVMPredict {
         return models.get(atomName);
     }
 
-    private static double atof(String s) {
-        return Double.valueOf(s).doubleValue();
-    }
-
-    private static int atoi(String s) {
-        return Integer.parseInt(s);
-    }
-
     public double predict(String atomName, double[] attributes) throws IllegalArgumentException {
         int m = attributes.length;
         svm_node[] x = new svm_node[m];
@@ -63,6 +59,14 @@ public class SVMPredict {
         double v = svm.svm_predict(model, x);
         return v;
 
+    }
+
+    private static double atof(String s) {
+        return Double.valueOf(s).doubleValue();
+    }
+
+    private static int atoi(String s) {
+        return Integer.parseInt(s);
     }
 
     private static void predict(BufferedReader input, DataOutputStream output, svm_model model) throws IOException {

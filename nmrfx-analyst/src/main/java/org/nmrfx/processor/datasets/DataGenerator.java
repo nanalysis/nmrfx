@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,10 +31,10 @@ public abstract class DataGenerator {
     public abstract float[][] Matrix(int iChunk, int[] offset) throws IOException;
 
     public abstract float[][] readMatrix(int iChunk, String chunkLabelStr,
-            int[][] apt, float[][] matrix) throws IOException;
+                                         int[][] apt, float[][] matrix) throws IOException;
 
     public abstract int getMatrixRegion(int iChunk, int maxChunkSize, int mode, int[][] apt,
-            double[] offset, StringBuffer chunkLabel);
+                                        double[] offset, StringBuffer chunkLabel);
 
     public abstract int[][] bounds(int iChunk);
 

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,9 +20,12 @@ package org.nmrfx.chemistry.utilities;
 
 import org.nmrfx.annotations.PluginAPI;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /* Simple demo of CSV matching using Regular Expressions.
@@ -32,24 +35,24 @@ import java.util.regex.*;
 @PluginAPI("ring")
 public class CSVRE {
 
-    /**
-     * The rather involved pattern used to match CSV's consists of three alternations: the first matches quoted fields,
-     * the second unquoted, the third null fields
-     */
-    private static String sepStr = ",";
     public static final String CSV_PATTERN
             = //	"\"([^\"\\\\]*(\\\\.[^\"\\\\]*)*)\",?|([^,]+),?|,";
             "\"(([^\"])|(\"\"))+\",?|([^,]+),?|,";
     public static final String TAB_PATTERN = "\"(([^\"])|(\"\"))+\"\t?|([^\t]+)\t?|\t";
     public static final String SPACE_PATTERN = "\"(([^\"])|(\"\"))+\" ?|([^ ]+) ?| ";
-    public static final String GEN_PATTERN = "\"(([^\"])|(\"\"))+\"" + sepStr
-            + "?|([^" + sepStr + "]+)" + sepStr + "?|" + sepStr;
     static Pattern tabPattern = null;
     static Pattern commaPattern = null;
     static Pattern spacePattern = null;
     static Pattern tabPattern2 = null;
     static Pattern commaPattern2 = null;
     static Pattern spacePattern2 = null;
+    /**
+     * The rather involved pattern used to match CSV's consists of three alternations: the first matches quoted fields,
+     * the second unquoted, the third null fields
+     */
+    private static String sepStr = ",";
+    public static final String GEN_PATTERN = "\"(([^\"])|(\"\"))+\"" + sepStr
+            + "?|([^" + sepStr + "]+)" + sepStr + "?|" + sepStr;
 
     static {
         sepStr = "\t";
@@ -75,18 +78,6 @@ public class CSVRE {
     static Pattern makePattern2(String sepStr) {
         // remove extra quotes and sepStr at end of field
         return Pattern.compile("(" + sepStr + "$)");
-    }
-
-    public static void main(String[] argv) throws IOException {
-        String line;
-
-        // Construct a new Regular Expression parser.
-        BufferedReader is = new BufferedReader(new InputStreamReader(System.in));
-
-        // For each line...
-        while ((line = is.readLine()) != null) {
-            parseLine(" ", line);
-        }
     }
 
     public static String[] parseLine(String sepStr, String line) {
@@ -134,5 +125,17 @@ public class CSVRE {
         resultFields = (String[]) resultVec.toArray(resultFields);
 
         return resultFields;
+    }
+
+    public static void main(String[] argv) throws IOException {
+        String line;
+
+        // Construct a new Regular Expression parser.
+        BufferedReader is = new BufferedReader(new InputStreamReader(System.in));
+
+        // For each line...
+        while ((line = is.readLine()) != null) {
+            parseLine(" ", line);
+        }
     }
 }

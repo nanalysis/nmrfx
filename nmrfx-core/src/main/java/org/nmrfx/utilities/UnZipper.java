@@ -1,24 +1,20 @@
 package org.nmrfx.utilities;
 
-import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.io.File;
-import java.io.InputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.nio.file.SimpleFileVisitor;
+import java.io.*;
 import java.nio.file.Path;
-import java.util.zip.*;
+import java.nio.file.SimpleFileVisitor;
 import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public class UnZipper extends SimpleFileVisitor<Path> {
 
+    final static int BUFFER_SIZE = 16384;
     // Print information about
     // each type of file.
     final byte[] buffer;
     final File zipFile;
     final File destDir;
-    final static int BUFFER_SIZE = 16384;
 
     public UnZipper(File destDir, String zipFileName) throws FileNotFoundException, IOException {
         buffer = new byte[16384];

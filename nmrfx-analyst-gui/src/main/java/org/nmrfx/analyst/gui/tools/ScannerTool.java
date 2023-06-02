@@ -62,27 +62,23 @@ import java.util.regex.Pattern;
  */
 public class ScannerTool implements ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(ScannerTool.class);
-
+    static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
+    static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
+    static final Pattern[] PATS = {WPAT, RPAT};
+    static Consumer createControllerAction = null;
     BorderPane borderPane;
-
     ToolBar scannerBar;
-    private TableView<FileTableItem> tableView;
     Consumer<ScannerTool> closeAction;
-
     FXMLController controller;
     PolyChart chart;
     Stage stage;
     ScanTable scanTable;
     ToggleGroup measureTypeGroup = new ToggleGroup();
     ToggleGroup offsetTypeGroup = new ToggleGroup();
-
-    static Consumer createControllerAction = null;
     TRACTGUI tractGUI = null;
     TablePlotGUI plotGUI = null;
     MinerController miner;
-    static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
-    static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
-    static final Pattern[] PATS = {WPAT, RPAT};
+    private TableView<FileTableItem> tableView;
 
     public ScannerTool(FXMLController controller, Consumer<ScannerTool> closeAction) {
         this.controller = controller;
@@ -108,10 +104,6 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
-    }
-
-    public static void addCreateAction(Consumer<ScannerTool> action) {
-        createControllerAction = action;
     }
 
     @Override
@@ -541,40 +533,42 @@ public class ScannerTool implements ControllerTool {
 
     /**
      * Loads the short version of the regions file into the scanner table.
+     *
      * @param file The file to load
      * @throws IOException
      */
     private void loadRegionsShort(File file) throws IOException {
-            try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
-                String s;
-                while ((s = reader.readLine()) != null) {
-                    String[] fields = s.split("\\s+");
-                    if (fields.length > 2) {
-                        String name = fields[0];
-                        StringBuilder sBuilder = new StringBuilder();
-                        for (int i = 1; i < fields.length; i++) {
-                            sBuilder.append(fields[i]);
-                            if (i != fields.length - 1) {
-                                sBuilder.append("_");
-                            }
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+            String s;
+            while ((s = reader.readLine()) != null) {
+                String[] fields = s.split("\\s+");
+                if (fields.length > 2) {
+                    String name = fields[0];
+                    StringBuilder sBuilder = new StringBuilder();
+                    for (int i = 1; i < fields.length; i++) {
+                        sBuilder.append(fields[i]);
+                        if (i != fields.length - 1) {
+                            sBuilder.append("_");
                         }
-                        String columnPrefix;
-                        if (name.startsWith("V.")) {
-                            columnPrefix = scanTable.getNextColumnName("", sBuilder.toString());
-                        } else {
-                            columnPrefix = name;
-                        }
-                        sBuilder.insert(0, ':');
-                        sBuilder.insert(0, columnPrefix);
-                        scanTable.addTableColumn(sBuilder.toString(), "D");
                     }
+                    String columnPrefix;
+                    if (name.startsWith("V.")) {
+                        columnPrefix = scanTable.getNextColumnName("", sBuilder.toString());
+                    } else {
+                        columnPrefix = name;
+                    }
+                    sBuilder.insert(0, ':');
+                    sBuilder.insert(0, columnPrefix);
+                    scanTable.addTableColumn(sBuilder.toString(), "D");
                 }
             }
+        }
     }
 
     /**
      * Loads the long version of the regions file into the Scanner table. The long version regions are assumed to
      * have a Measure Type of volume and an Offset Type of none.
+     *
      * @param file The file to load
      * @throws IOException
      */
@@ -623,7 +617,7 @@ public class ScannerTool implements ControllerTool {
 
     List<Double> toDoubleList(List<String> values) {
         List<Double> doubleValues = new ArrayList<>();
-        for (var s:values) {
+        for (var s : values) {
             try {
                 double dValue = Double.parseDouble(s);
                 doubleValues.add(dValue);
@@ -637,7 +631,7 @@ public class ScannerTool implements ControllerTool {
 
     List<Integer> toIntegerList(List<String> values) {
         List<Integer> intValues = new ArrayList<>();
-        for (var s:values) {
+        for (var s : values) {
             try {
                 int iValue = Integer.parseInt(s);
                 intValues.add(iValue);
@@ -704,6 +698,25 @@ public class ScannerTool implements ControllerTool {
         }
     }
 
+    void showPlotGUI() {
+        if (plotGUI == null) {
+            plotGUI = new TablePlotGUI(tableView);
+        }
+        plotGUI.showPlotStage();
+    }
+
+    void showTRACTGUI() {
+        if (tractGUI == null) {
+            tractGUI = new TRACTGUI(this);
+
+        }
+        tractGUI.showMCplot();
+    }
+
+    public static void addCreateAction(Consumer<ScannerTool> action) {
+        createControllerAction = action;
+    }
+
     public static Optional<Measure> matchHeader(String header) {
         Optional<Measure> result = Optional.empty();
         String columnName;
@@ -749,21 +762,6 @@ public class ScannerTool implements ControllerTool {
         }
         return result;
 
-    }
-
-    void showPlotGUI() {
-        if (plotGUI == null) {
-            plotGUI = new TablePlotGUI(tableView);
-        }
-        plotGUI.showPlotStage();
-    }
-
-    void showTRACTGUI() {
-        if (tractGUI == null) {
-            tractGUI = new TRACTGUI(this);
-
-        }
-        tractGUI.showMCplot();
     }
 
 }

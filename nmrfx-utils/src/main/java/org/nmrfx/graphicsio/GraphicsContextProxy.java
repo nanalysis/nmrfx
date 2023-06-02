@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,7 +27,6 @@ import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
 
 /**
- *
  * @author brucejohnson
  */
 //TODO uncomment when core & utils are regrouped
@@ -151,51 +150,6 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     }
 
     @Override
-    public void setFill(Paint p) {
-        gC.setFill(p);
-    }
-
-    @Override
-    public void setFont(Font f) {
-        gC.setFont(f);
-    }
-
-    @Override
-    public void setGlobalAlpha(double alpha) {
-        gC.setGlobalAlpha(alpha);
-    }
-
-    @Override
-    public void setLineCap(StrokeLineCap cap) {
-        gC.setLineCap(cap);
-    }
-
-    @Override
-    public void setLineDashes(double... dashes) {
-        gC.setLineDashes(dashes);
-    }
-
-    @Override
-    public void setLineWidth(double lw) {
-        gC.setLineWidth(lw);
-    }
-
-    @Override
-    public void setStroke(Paint p) {
-        gC.setStroke(p);
-    }
-
-    @Override
-    public void setTextAlign(TextAlignment align) {
-        gC.setTextAlign(align);
-    }
-
-    @Override
-    public void setTextBaseline(VPos baseline) {
-        gC.setTextBaseline(baseline);
-    }
-
-    @Override
     public void setTransform(Affine xform) {
         gC.setTransform(xform);
     }
@@ -238,6 +192,51 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     @Override
     public void translate(double x, double y) {
         gC.translate(x, y);
+    }
+
+    @Override
+    public void setFill(Paint p) {
+        gC.setFill(p);
+    }
+
+    @Override
+    public void setFont(Font f) {
+        gC.setFont(f);
+    }
+
+    @Override
+    public void setLineWidth(double lw) {
+        gC.setLineWidth(lw);
+    }
+
+    @Override
+    public void setStroke(Paint p) {
+        gC.setStroke(p);
+    }
+
+    @Override
+    public void setGlobalAlpha(double alpha) {
+        gC.setGlobalAlpha(alpha);
+    }
+
+    @Override
+    public void setLineCap(StrokeLineCap cap) {
+        gC.setLineCap(cap);
+    }
+
+    @Override
+    public void setLineDashes(double... dashes) {
+        gC.setLineDashes(dashes);
+    }
+
+    @Override
+    public void setTextAlign(TextAlignment align) {
+        gC.setTextAlign(align);
+    }
+
+    @Override
+    public void setTextBaseline(VPos baseline) {
+        gC.setTextBaseline(baseline);
     }
 
 }

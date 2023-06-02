@@ -6,7 +6,8 @@ import org.nmrfx.processor.gui.spectra.KeyBindings;
 
 public class DataFormatHandlerUtil {
 
-    private DataFormatHandlerUtil() {}
+    private DataFormatHandlerUtil() {
+    }
 
     public static void addHandlersToController() {
         // register key binding handlers

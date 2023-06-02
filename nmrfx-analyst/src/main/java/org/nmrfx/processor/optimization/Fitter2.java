@@ -1,7 +1,10 @@
 package org.nmrfx.processor.optimization;
 
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.exception.*;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.MaxCountExceededException;
+import org.apache.commons.math3.exception.NotPositiveException;
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
 import org.apache.commons.math3.optim.*;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
@@ -44,8 +47,88 @@ public class Fitter2 {
     BiFunction<double[], double[], double[]> function;
     BiFunction<double[], double[][], Double> valuesFunction = null;
     ExpressionEvaluator expressionEvaluator = null;
+
     private Fitter2() {
 
+    }
+
+    public Optional<PointValuePair> fit(double[] start, double[] lowerBounds, double[] upperBounds, double inputSigma) {
+        this.start = start;
+        this.lowerBounds = lowerBounds.clone();
+        this.upperBounds = upperBounds.clone();
+        this.inputSigma = inputSigma;
+        Optimizer opt = new Optimizer();
+        opt.setXYE(xValues, yValues, errValues);
+
+        return opt.refineCMAES(start, inputSigma);
+    }
+
+    public double rms(double[] pars) {
+        Optimizer opt = new Optimizer();
+        opt.setXYE(xValues, yValues, errValues);
+        return opt.valueWithDenormalized(pars);
+    }
+
+    public void setXYE(double[][] xValues, double[][] yValues, double[][] errValues) {
+        this.xValues = xValues;
+        this.yValues = yValues;
+        this.errValues = errValues;
+    }
+
+    public double[][] getX() {
+        return xValues;
+    }
+
+    public double[][] getY() {
+        return yValues;
+    }
+
+    public Optional<double[]> bootstrap(double[] guess, int nSim) {
+        reportFitness = false;
+        int nPar = start.length;
+        parValues = new double[nPar + 1][nSim];
+        AtomicInteger nCount = new AtomicInteger();
+        IntStream.range(0, nSim).parallel().forEach(iSim -> {
+            double[][] newX = new double[xValues.length][yValues[0].length];
+            double[][] newY = new double[yValues.length][yValues[0].length];
+            double[][] newErr = new double[yValues.length][yValues[0].length];
+            Optimizer optimizer = new Optimizer();
+            for (int iValue = 0; iValue < yValues[0].length; iValue++) {
+                int rI = random.nextInt(yValues[0].length);
+                for (int xIndex = 0; xIndex < newX.length; xIndex++) {
+                    newX[xIndex][iValue] = xValues[xIndex][rI];
+                }
+                for (int iY = 0; iY < yValues.length; iY++) {
+                    newY[iY][iValue] = yValues[iY][rI];
+                    newErr[iY][iValue] = errValues[iY][rI];
+                }
+            }
+
+            optimizer.setXYE(newX, newY, newErr);
+
+
+            var optResult = optimizer.refineCMAES(guess, inputSigma);
+            if (optResult.isPresent()) {
+                PointValuePair result = optResult.get();
+                double[] rPoint = result.getPoint();
+                for (int j = 0; j < nPar; j++) {
+                    parValues[j][iSim] = rPoint[j];
+                }
+                parValues[nPar][iSim] = result.getValue();
+                nCount.incrementAndGet();
+            } else {
+                return;
+            }
+        });
+        if (nCount.get() == nSim) {
+            double[] parSDev = new double[nPar];
+            for (int i = 0; i < nPar; i++) {
+                DescriptiveStatistics dStat = new DescriptiveStatistics(parValues[i]);
+                parSDev[i] = dStat.getStandardDeviation();
+            }
+            return Optional.of(parSDev);
+        }
+        return Optional.empty();
     }
 
     public static Fitter getFitter(BiFunction<double[], double[], Double> function) {
@@ -78,37 +161,6 @@ public class Fitter2 {
         return fitter;
     }
 
-    public Optional<PointValuePair> fit(double[] start, double[] lowerBounds, double[] upperBounds, double inputSigma)  {
-        this.start = start;
-        this.lowerBounds = lowerBounds.clone();
-        this.upperBounds = upperBounds.clone();
-        this.inputSigma = inputSigma;
-        Optimizer opt = new Optimizer();
-        opt.setXYE(xValues, yValues, errValues);
-
-        return opt.refineCMAES(start, inputSigma);
-    }
-
-    public double rms(double[] pars) {
-        Optimizer opt = new Optimizer();
-        opt.setXYE(xValues, yValues, errValues);
-        return opt.valueWithDenormalized(pars);
-    }
-
-    public void setXYE(double[][] xValues, double[][] yValues, double[][] errValues) {
-        this.xValues = xValues;
-        this.yValues = yValues;
-        this.errValues = errValues;
-    }
-
-    public double[][] getX() {
-        return xValues;
-    }
-
-    public double[][] getY() {
-        return yValues;
-    }
-
     class Optimizer implements MultivariateFunction {
         double[][] xValues;
         double[][] yValues;
@@ -121,24 +173,6 @@ public class Fitter2 {
         boolean absMode = false;
         boolean weightFit = false;
         RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
-
-        public class Checker extends SimpleValueChecker {
-
-            public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
-                super(relativeThreshold, absoluteThreshold, maxIter);
-            }
-
-            @Override
-            public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
-                boolean converged = super.converged(iteration, previous, current);
-                if (reportFitness && (converged || (iteration == 1) || ((iteration % reportAt) == 0))) {
-                    long time = System.currentTimeMillis();
-                    long deltaTime = time - startTime;
-                    log.info("Delta {} Iteration {} Value {}", deltaTime, iteration, current.getValue());
-                }
-                return converged;
-            }
-        }
 
         @Override
         public double value(double[] normPar) {
@@ -160,7 +194,7 @@ public class Fitter2 {
                 }
                 value = function.apply(par, ax);
 
-                for (int j=0;j<yValues.length;j++) {
+                for (int j = 0; j < yValues.length; j++) {
                     double delta = (value[j] - yValues[j][i]);
                     if (weightFit) {
                         delta /= errValues[j][i];
@@ -226,7 +260,7 @@ public class Fitter2 {
             }
         }
 
-        public Optional<PointValuePair> refineCMAES(double[] guess, double inputSigma)  {
+        public Optional<PointValuePair> refineCMAES(double[] guess, double inputSigma) {
             startTime = System.currentTimeMillis();
             random.setSeed(1);
             double lambdaMul = 3.0;
@@ -256,7 +290,8 @@ public class Fitter2 {
                         new ObjectiveFunction(this), GoalType.MINIMIZE,
                         new SimpleBounds(normLower, normUpper),
                         new InitialGuess(normGuess));
-            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | MaxCountExceededException e) {
+            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException |
+                     MaxCountExceededException e) {
                 log.error("Failure in refineCMAES", e);
                 return Optional.empty();
             }
@@ -264,53 +299,23 @@ public class Fitter2 {
             fitTime = endTime - startTime;
             return Optional.of(new PointValuePair(deNormalize(result.getPoint()), result.getValue()));
         }
-    }
 
-    public Optional<double[]> bootstrap(double[] guess, int nSim) {
-        reportFitness = false;
-        int nPar = start.length;
-        parValues = new double[nPar + 1][nSim];
-        AtomicInteger nCount = new AtomicInteger();
-        IntStream.range(0, nSim).parallel().forEach(iSim -> {
-            double[][] newX = new double[xValues.length][yValues[0].length];
-            double[][] newY = new double[yValues.length][yValues[0].length];
-            double[][] newErr = new double[yValues.length][yValues[0].length];
-            Optimizer optimizer = new Optimizer();
-            for (int iValue = 0; iValue < yValues[0].length; iValue++) {
-                int rI = random.nextInt(yValues[0].length);
-                for (int xIndex = 0; xIndex < newX.length; xIndex++) {
-                    newX[xIndex][iValue] = xValues[xIndex][rI];
-                }
-                for (int iY=0;iY<yValues.length;iY++) {
-                    newY[iY][iValue] = yValues[iY][rI];
-                    newErr[iY][iValue] = errValues[iY][rI];
-                }
+        public class Checker extends SimpleValueChecker {
+
+            public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
+                super(relativeThreshold, absoluteThreshold, maxIter);
             }
 
-            optimizer.setXYE(newX, newY, newErr);
-
-
-            var optResult = optimizer.refineCMAES(guess, inputSigma);
-            if (optResult.isPresent()) {
-                PointValuePair result = optResult.get();
-                double[] rPoint = result.getPoint();
-                for (int j = 0; j < nPar; j++) {
-                    parValues[j][iSim] = rPoint[j];
+            @Override
+            public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
+                boolean converged = super.converged(iteration, previous, current);
+                if (reportFitness && (converged || (iteration == 1) || ((iteration % reportAt) == 0))) {
+                    long time = System.currentTimeMillis();
+                    long deltaTime = time - startTime;
+                    log.info("Delta {} Iteration {} Value {}", deltaTime, iteration, current.getValue());
                 }
-                parValues[nPar][iSim] = result.getValue();
-                nCount.incrementAndGet();
-            } else {
-                return;
+                return converged;
             }
-        });
-        if (nCount.get() == nSim) {
-            double[] parSDev = new double[nPar];
-            for (int i = 0; i < nPar; i++) {
-                DescriptiveStatistics dStat = new DescriptiveStatistics(parValues[i]);
-                parSDev[i] = dStat.getStandardDeviation();
-            }
-            return Optional.of(parSDev);
         }
-        return Optional.empty();
     }
 }

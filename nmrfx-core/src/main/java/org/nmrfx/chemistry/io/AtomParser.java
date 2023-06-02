@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,27 +17,14 @@
  */
 package org.nmrfx.chemistry.io;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class AtomParser {
 
-    public String resNum = "";
-    public String resName = "";
-    public String atomName = "";
-    public String elemName = "";
-    public String chainID = "";
-    public String segment = "";
-    public String loc = "";
-    public String insertCode = "";
-    public double x;
-    public double y;
-    public double z;
-    public double occupancy = 1.0;
-    public double bfactor = 1.0;
-    public double charge = 0.0;
-    public String temp = "";
-    static HashMap translationMap = new HashMap();
     public static HashMap<String, String> pdbToIUPAC = new HashMap<>();
+    static HashMap translationMap = new HashMap();
     static HashMap<String, String> iupacToPDB = new HashMap<>();
     static HashMap<String, String> xplorToIUPAC = new HashMap<>();
     static HashMap<String, String> iupacToXPLOR = new HashMap<>();
@@ -484,6 +471,22 @@ public class AtomParser {
         iupacToXPLOR.put("TYR,HB3", "HB1");
 
     }
+
+    public String resNum = "";
+    public String resName = "";
+    public String atomName = "";
+    public String elemName = "";
+    public String chainID = "";
+    public String segment = "";
+    public String loc = "";
+    public String insertCode = "";
+    public double x;
+    public double y;
+    public double z;
+    public double occupancy = 1.0;
+    public double bfactor = 1.0;
+    public double charge = 0.0;
+    public String temp = "";
 
     public static void addTranslation(int i, String type, String aa, String aname) {
         translationMap.put(type + "." + aa + "." + aname, Integer.valueOf(i));

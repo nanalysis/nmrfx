@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,22 +19,21 @@ package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.SecondaryStructure;
+import org.nmrfx.structure.chemistry.Molecule;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.chemistry.SecondaryStructure;
 
 /**
- *
  * @author bajlabuser
  */
 public class SSGen {
 
+    public static String type;
     public int tracker = 0;
     public String viennaSeq;
     public Molecule molecule;
-    public static String type;
     public List<SecondaryStructure> structures = new ArrayList<>();
     public List<Residue> residues;
 
@@ -71,39 +70,6 @@ public class SSGen {
     public final void pairTo() {
         SSLayout ssLay = new SSLayout(viennaSeq.length());
         ssLay.interpVienna(viennaSeq, residues);
-    }
-
-    public static SecondaryStructure classifyRes(List<Residue> residues) {
-        if (residues != null && !(residues.isEmpty())) {
-            if (null != type) {
-                switch (type) {
-                    case "junction":
-                        SecondaryStructure J = new Junction(residues);
-                        return J;
-                    case "nonloop": {
-                        SecondaryStructure L = new NonLoop(residues);
-                        return L;
-                    }
-                    case "bulge":
-                        SecondaryStructure B = new Bulge(residues);
-                        return B;
-                    case "internalLoop":
-                        SecondaryStructure IL = new InternalLoop(residues);
-                        return IL;
-                    case "loop": {
-                        SecondaryStructure L = new Loop(residues);
-                        return L;
-                    }
-                    case "helix": {
-                        SecondaryStructure H = new RNAHelix(residues);
-                        return H;
-                    }
-                    default:
-                        break;
-                }
-            }
-        }
-        return null;
     }
 
     public List<Residue> genResList() {
@@ -201,6 +167,39 @@ public class SSGen {
                 structures.add(ss);
             }
         }
+    }
+
+    public static SecondaryStructure classifyRes(List<Residue> residues) {
+        if (residues != null && !(residues.isEmpty())) {
+            if (null != type) {
+                switch (type) {
+                    case "junction":
+                        SecondaryStructure J = new Junction(residues);
+                        return J;
+                    case "nonloop": {
+                        SecondaryStructure L = new NonLoop(residues);
+                        return L;
+                    }
+                    case "bulge":
+                        SecondaryStructure B = new Bulge(residues);
+                        return B;
+                    case "internalLoop":
+                        SecondaryStructure IL = new InternalLoop(residues);
+                        return IL;
+                    case "loop": {
+                        SecondaryStructure L = new Loop(residues);
+                        return L;
+                    }
+                    case "helix": {
+                        SecondaryStructure H = new RNAHelix(residues);
+                        return H;
+                    }
+                    default:
+                        break;
+                }
+            }
+        }
+        return null;
     }
 
 }

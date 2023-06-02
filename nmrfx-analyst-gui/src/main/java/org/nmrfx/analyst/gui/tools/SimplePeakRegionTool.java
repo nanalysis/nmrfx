@@ -119,6 +119,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     /**
      * Adds/Populates the changeMoleculeMenu to the "Molecule" SplitMenuButton if atleast one
      * molecule is loaded into memory, otherwise the menu is removed.
+     *
      * @param event The on showing event.
      */
     private void adjustMenuOptions(Event event) {
@@ -141,7 +142,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         changeMoleculeMenu.getItems().clear();
         Set<String> moleculeNames = (Set<String>) MoleculeFactory.getMoleculeNames();
         MenuItem moleculeMenuItem;
-        for (String moleculeName: moleculeNames) {
+        for (String moleculeName : moleculeNames) {
             moleculeMenuItem = new MenuItem(moleculeName);
             moleculeMenuItem.setOnAction(this::moleculeSelected);
             changeMoleculeMenu.getItems().add(moleculeMenuItem);
@@ -150,6 +151,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
     /**
      * Sets the selected molecule as the active molecule and updates it on the active chart.
+     *
      * @param actionEvent
      */
     private void moleculeSelected(ActionEvent actionEvent) {

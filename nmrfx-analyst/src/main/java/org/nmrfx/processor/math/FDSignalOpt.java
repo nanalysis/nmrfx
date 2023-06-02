@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,26 +36,26 @@ import java.util.ArrayList;
 @PluginAPI("parametric")
 public class FDSignalOpt implements MultivariateFunction {
 
+    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
     private final double[] values;
     private final double[] testVec;
     private final int vecSize;
     private final double[] parameters;
     private final int leftEdge;
     private final int rightEdge;
+    private final int[] parMap;
+    ArrayList<Signal> signals;
+    double bestValue = Double.MAX_VALUE;
+    double[] bestPars;
     private double[][] boundaries = null;
     private double[][] normBoundaries = null;
     private double[] normValues;
     private boolean absMode = false;
-    ArrayList<Signal> signals;
-    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
-    double bestValue = Double.MAX_VALUE;
-    double[] bestPars;
     private int nEvaluations = 0;
     private double startValue = 0.0;
     private double finalValue = 0.0;
     private double finalDelta = 0.0;
     private double[] weights;
-    private final int[] parMap;
 
     public FDSignalOpt(double[] testVec, int vecSize, ArrayList<? extends Signal> signals, boolean constrainWidth, int leftEdge, int rightEdge) {
         this.testVec = testVec;
@@ -98,12 +98,12 @@ public class FDSignalOpt implements MultivariateFunction {
         calcWeights();
     }
 
-    public void setAbsMode(final boolean state) {
-        absMode = state;
-    }
-
     public boolean getAbsMode() {
         return absMode;
+    }
+
+    public void setAbsMode(final boolean state) {
+        absMode = state;
     }
 
     private void setBoundaries(double sigma) {

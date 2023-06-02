@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,6 +25,20 @@ import org.nmrfx.chemistry.utilities.Format;
 
 public class IdResult {
 
+    public double dismin = 0.0;
+    public double dismax = 0.0;
+    public double dis = 0.0;
+    double[] dp;
+    SpatialSet[] spatialSets;
+    double inRange = 0;
+    boolean hasDistances = false;
+
+    IdResult(int nDim) {
+        super();
+        dp = new double[nDim];
+        spatialSets = new SpatialSet[nDim];
+    }
+
     /**
      * @return the dismin
      */
@@ -44,20 +58,6 @@ public class IdResult {
      */
     public double getDis() {
         return dis;
-    }
-
-    public double dismin = 0.0;
-    public double dismax = 0.0;
-    public double dis = 0.0;
-    double[] dp;
-    SpatialSet[] spatialSets;
-    double inRange = 0;
-    boolean hasDistances = false;
-
-    IdResult(int nDim) {
-        super();
-        dp = new double[nDim];
-        spatialSets = new SpatialSet[nDim];
     }
 
     void setSpatialSet(int i, SpatialSet value) {

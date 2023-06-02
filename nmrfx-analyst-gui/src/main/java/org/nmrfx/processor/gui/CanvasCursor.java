@@ -2,14 +2,12 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.scene.Cursor;
-import javafx.scene.ImageCursor;
-import javafx.scene.image.Image;
 import org.apache.commons.lang3.SystemUtils;
 
 public enum CanvasCursor {
     CROSSHAIR(Cursor.CROSSHAIR, FontAwesomeIcon.PLUS),
     SELECTOR(SystemUtils.IS_OS_LINUX ? Cursor.HAND : Cursor.MOVE, FontAwesomeIcon.MOUSE_POINTER),
-   // PEAK(IconUtilities.getCursor("fxgl_cross32", 16, 16), FontAwesomeIcon.CROSSHAIRS),
+    // PEAK(IconUtilities.getCursor("fxgl_cross32", 16, 16), FontAwesomeIcon.CROSSHAIRS),
     PEAK(Cursor.N_RESIZE, FontAwesomeIcon.ARROWS_V),
     REGION(Cursor.E_RESIZE, FontAwesomeIcon.ARROWS_H);
 

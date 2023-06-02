@@ -21,15 +21,15 @@
  */
 package org.nmrfx.processor.math;
 
-import java.util.Arrays;
-import java.util.Comparator;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.Comparator;
+
 /**
- *
  * @author brucejohnson
  */
 public class Polynomial {
@@ -37,57 +37,15 @@ public class Polynomial {
     private static final Logger log = LoggerFactory.getLogger(Polynomial.class);
 
     public static double rootTol = 1.0e-6;
+    public Complex[] root = null;
     double eps = 1.1102230246252e-16;
     double big = Double.MAX_VALUE;
     double small = Double.MIN_VALUE;
     int nitmax = 500;
-    public Complex[] root = null;
     double[] radius = null;
     double[] apoly = null;
     double[] apolyr = null;
     boolean[] err = null;
-
-    class NewtonResult {
-
-        double radius = 0.0;
-        boolean again = false;
-        Complex corr = null;
-    }
-
-    static class ComplexComparator implements Comparator {
-
-        @Override
-        public int compare(Object o1, Object o2) {
-            int result = 0;
-            if (o1 == null) {
-                if (o2 != null) {
-                    result = 1;
-                }
-            } else if (o2 == null) {
-                result = -1;
-            } else if (o1.equals(o2)) {
-                result = 1;
-            } else {
-                Complex c1 = (Complex) o1;
-                Complex c2 = (Complex) o2;
-                if (c1.getReal() > c2.getReal()) {
-                    result = -1;
-                } else if (c1.getReal() < c2.getReal()) {
-                    result = 1;
-                } else if (c1.getImaginary() > c2.getImaginary()) {
-                    result = -1;
-                } else {
-                    result = 1;
-                }
-            }
-
-            return result;
-        }
-
-        public boolean equals(Object o1, Object o2) {
-            return compare(o1, o2) == 0;
-        }
-    }
 
     /**
      * Creates a new instance of Polynomial object
@@ -762,6 +720,48 @@ public class Polynomial {
             log.info("  {} coef {} i {}", i, coef2[i].getReal(), coef2[i].getImaginary());
         }
 
+    }
+
+    static class ComplexComparator implements Comparator {
+
+        @Override
+        public int compare(Object o1, Object o2) {
+            int result = 0;
+            if (o1 == null) {
+                if (o2 != null) {
+                    result = 1;
+                }
+            } else if (o2 == null) {
+                result = -1;
+            } else if (o1.equals(o2)) {
+                result = 1;
+            } else {
+                Complex c1 = (Complex) o1;
+                Complex c2 = (Complex) o2;
+                if (c1.getReal() > c2.getReal()) {
+                    result = -1;
+                } else if (c1.getReal() < c2.getReal()) {
+                    result = 1;
+                } else if (c1.getImaginary() > c2.getImaginary()) {
+                    result = -1;
+                } else {
+                    result = 1;
+                }
+            }
+
+            return result;
+        }
+
+        public boolean equals(Object o1, Object o2) {
+            return compare(o1, o2) == 0;
+        }
+    }
+
+    class NewtonResult {
+
+        double radius = 0.0;
+        boolean again = false;
+        Complex corr = null;
     }
 
     /**

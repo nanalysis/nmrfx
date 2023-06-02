@@ -9,7 +9,6 @@ import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsIOException;
 
 /**
- *
  * @author brucejohnson
  */
 public class CanvasLegend {
@@ -81,7 +80,7 @@ public class CanvasLegend {
             if (series.strokeSymbol || series.fillSymbol) {
                 series.symbol.draw(gC, x, y, series.radius, series.stroke, series.fill);
             } else {
-                gC.strokeLine(x-5,y, x+5, y);
+                gC.strokeLine(x - 5, y, x + 5, y);
             }
             gC.setTextBaseline(VPos.CENTER);
             gC.setTextAlign(TextAlignment.LEFT);

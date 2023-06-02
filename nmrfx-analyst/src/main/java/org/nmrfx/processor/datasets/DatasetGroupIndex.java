@@ -27,11 +27,18 @@ public class DatasetGroupIndex {
                 }
                 indices[i] = value;
             } else {
-                lastValue = StringUtils.strip(fields[i],"'\"");
+                lastValue = StringUtils.strip(fields[i], "'\"");
                 break;
             }
         }
         groupIndex = lastValue;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(groupIndex);
+        result = 31 * result + Arrays.hashCode(indices);
+        return result;
     }
 
     @Override
@@ -42,11 +49,8 @@ public class DatasetGroupIndex {
         return groupIndex == that.groupIndex && Arrays.equals(indices, that.indices);
     }
 
-    @Override
-    public int hashCode() {
-        int result = Objects.hash(groupIndex);
-        result = 31 * result + Arrays.hashCode(indices);
-        return result;
+    public String toString() {
+        return toIndexString().replace("-1", "*");
     }
 
     public String toIndexString() {
@@ -67,36 +71,12 @@ public class DatasetGroupIndex {
         return sBuilder.toString();
     }
 
-    public String toString() {
-        return toIndexString().replace("-1", "*");
-    }
-
     public int[] getIndices() {
         return indices;
     }
 
     public String getGroupIndex() {
         return groupIndex;
-    }
-
-    // build string for putting in process.py script markrows command
-    // looks like "[3,4,"RI"],[5,10,"RR"], where the numbers are row, plane,... and the
-    // string is the real /imaginary state of the vector where highest deviation was found
-    public static Optional<String> getSkipString(Collection<DatasetGroupIndex> groups) {
-        Optional<String> result = Optional.empty();
-        if (!groups.isEmpty()) {
-            StringBuilder sBuilder = new StringBuilder();
-            sBuilder.append("[");
-            for (DatasetGroupIndex group : groups) {
-                if (sBuilder.length() != 1) {
-                    sBuilder.append("],[");
-                }
-                sBuilder.append(group.toIndexString());
-            }
-            sBuilder.append("]");
-            result = Optional.of(sBuilder.toString());
-        }
-        return result;
     }
 
     public List<int[]> groupToIndices() {
@@ -119,6 +99,26 @@ public class DatasetGroupIndex {
                 }
             }
             result.add(cIndices);
+        }
+        return result;
+    }
+
+    // build string for putting in process.py script markrows command
+    // looks like "[3,4,"RI"],[5,10,"RR"], where the numbers are row, plane,... and the
+    // string is the real /imaginary state of the vector where highest deviation was found
+    public static Optional<String> getSkipString(Collection<DatasetGroupIndex> groups) {
+        Optional<String> result = Optional.empty();
+        if (!groups.isEmpty()) {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append("[");
+            for (DatasetGroupIndex group : groups) {
+                if (sBuilder.length() != 1) {
+                    sBuilder.append("],[");
+                }
+                sBuilder.append(group.toIndexString());
+            }
+            sBuilder.append("]");
+            result = Optional.of(sBuilder.toString());
         }
         return result;
     }

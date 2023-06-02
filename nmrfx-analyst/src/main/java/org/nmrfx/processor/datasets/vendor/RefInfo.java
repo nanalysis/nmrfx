@@ -11,14 +11,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
  * @author Bruce Johnson
  */
 @PythonAPI("autoscript")
 public class RefInfo {
-    String directRef = "";
-
     static public final String[] PROP_NAMES = {"skip", "label", "acqarray", "acqsize", "tdsize", "sf", "sw", "ref"};
+    String directRef = "";
     Map<String, Object> refMap = new HashMap<>();
 
     String getArraySizes(NMRData nmrData) {
@@ -38,7 +36,7 @@ public class RefInfo {
         }
         return arraySizes;
     }
-    
+
     public void setDirectRef(String value) {
         directRef = value;
     }

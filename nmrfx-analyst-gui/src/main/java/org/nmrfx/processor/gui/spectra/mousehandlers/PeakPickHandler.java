@@ -22,11 +22,6 @@ public class PeakPickHandler extends MouseHandler {
         super(mouseBindings);
     }
 
-    public static Optional<MouseHandler> handler(MouseBindings mouseBindings) {
-        PeakPickHandler handler = new PeakPickHandler(mouseBindings);
-        return Optional.of(handler);
-    }
-
     @Override
     public void mousePressed(MouseEvent mouseEvent) {
         mouseAction = MouseBindings.MOUSE_ACTION.DRAG_PEAKPICK;
@@ -143,5 +138,10 @@ public class PeakPickHandler extends MouseHandler {
             }
         }
         return peakList;
+    }
+
+    public static Optional<MouseHandler> handler(MouseBindings mouseBindings) {
+        PeakPickHandler handler = new PeakPickHandler(mouseBindings);
+        return Optional.of(handler);
     }
 }

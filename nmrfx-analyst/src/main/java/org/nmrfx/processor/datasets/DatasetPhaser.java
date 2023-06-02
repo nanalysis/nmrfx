@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /**
- *
  * @author Bruce Johnson
  */
 @PythonAPI("pyproc")
@@ -50,39 +49,12 @@ public class DatasetPhaser {
         nDim = dataset.getNDim();
     }
 
-    class Index {
-
-        final double amax;
-        final int[][] pt;
-
-        Index(double max, int[][] pt) {
-            this.amax = max;
-            this.pt = new int[nDim][2];
-            for (int i = 0; i < nDim; i++) {
-                this.pt[i][0] = pt[i][0];
-                this.pt[i][1] = pt[i][1];
-            }
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sBuilder = new StringBuilder();
-            for (int i = 0; i < nDim; i++) {
-                sBuilder.append(pt[i][0]);
-                sBuilder.append(" ");
-            }
-            sBuilder.append(amax);
-            return sBuilder.toString();
-
-        }
-    }
-
     /**
      * Calculate phasing along the specified dataset dimension.
      *
-     * @param iDim index of the dataset dimension
+     * @param iDim         index of the dataset dimension
      * @param phaseWinSize size of window to use in analysis
-     * @param phaseRatio ratio of signal to noise to use in finding baseline
+     * @param phaseRatio   ratio of signal to noise to use in finding baseline
      * @throws java.io.IOException if an I/O error occurs
      */
     public void setup(int iDim, int phaseWinSize, double phaseRatio, IDBaseline2.ThreshMode threshMode) throws IOException {
@@ -238,5 +210,32 @@ public class DatasetPhaser {
         }
         dataset.setPh0(iDim, dataPh0);
         dataset.setPh1(iDim, dataPh1);
+    }
+
+    class Index {
+
+        final double amax;
+        final int[][] pt;
+
+        Index(double max, int[][] pt) {
+            this.amax = max;
+            this.pt = new int[nDim][2];
+            for (int i = 0; i < nDim; i++) {
+                this.pt[i][0] = pt[i][0];
+                this.pt[i][1] = pt[i][1];
+            }
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            for (int i = 0; i < nDim; i++) {
+                sBuilder.append(pt[i][0]);
+                sBuilder.append(" ");
+            }
+            sBuilder.append(amax);
+            return sBuilder.toString();
+
+        }
     }
 }

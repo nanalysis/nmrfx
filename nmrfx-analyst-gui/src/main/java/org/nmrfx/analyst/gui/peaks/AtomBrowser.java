@@ -38,7 +38,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class AtomBrowser {
@@ -250,17 +249,6 @@ public class AtomBrowser {
         }
     }
 
-    class RangeItem {
-
-        double min;
-        double max;
-
-        RangeItem(double min, double max) {
-            this.min = min;
-            this.max = max;
-        }
-    }
-
     public void addRangeControl(String name, double min, double max) {
         RangeItem rangeItem = new RangeItem(min, max);
         rangeItems.put(name, rangeItem);
@@ -398,142 +386,6 @@ public class AtomBrowser {
         return peaks;
     }
 
-    /*
-        foreach pklist [nv_peak list] {
-        set results [list]
-        foreach dim [nv_peak label $pklist] {
-            nv_peak template $pklist $dim $tol
-            set pkmatches [nv_peak find $pklist $ppm]
-            foreach peak $pkmatches {
-                set atom [nv_peak elem $dim.L $peak]
-                if {[[namespace current]::isAtomActive $dataset $atom] || $order($pklist)=="first"} {
-                    lappend results $atom
-                }
-            }
-        }
-
-     */
-    public static class AtomDelta {
-
-        final String name;
-        final double fDelta;
-        final int listType;
-        final PeakDim peakDim;
-
-        AtomDelta(String name, double fDelta, int listType, PeakDim peakDim) {
-            this.name = name;
-            this.fDelta = fDelta;
-            this.listType = listType;
-            this.peakDim = peakDim;
-        }
-
-        public double getScore() {
-            return listType + fDelta;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public PeakDim getPeakDim() {
-            return peakDim;
-        }
-
-        public double getFDelta() {
-            return fDelta;
-        }
-
-        public String toString() {
-            return String.format("%s %2d%% %1d", name, Math.round(99.0 * fDelta), listType);
-        }
-    }
-
-    public static List<AtomDelta> getMatchingAtomNames(DatasetBase dataset,
-            SpectralDim sDim, double ppm, double tol) {
-        double[] ppms = {ppm};
-        Map<String, AtomDelta> atomDeltaMap = new HashMap<>();
-        for (PeakList peakList : PeakList.peakLists()) {
-            // maybe check if dataset active too
-            int listType;
-            if ((peakList.getDatasetName() != null) && !peakList.getDatasetName().equals("")) {
-                if (peakList.getDatasetName().equals(dataset.getName())) {
-                    listType = 0;
-                } else {
-                    listType = 2;
-                }
-            } else {
-                listType = 3;
-            }
-            for (int i = 0; i < peakList.getNDim(); i++) {
-                SpectralDim spectralDim = peakList.getSpectralDim(i);
-                peakList.clearSearchDims();
-                peakList.addSearchDim(spectralDim.getDimName(), tol);
-                List<Peak> sPeaks = peakList.findPeaks(ppms);
-                for (Peak sPeak : sPeaks) {
-                    double delta = Math.abs(sPeak.getPeakDim(i).getChemShiftValue() - ppm) / tol;
-                    String aName = sPeak.getPeakDim(i).getLabel();
-                    if (!aName.equals("")) {
-                        AtomDelta aDelta = new AtomDelta(aName, delta, listType, sPeak.getPeakDim(i));
-                        AtomDelta current = atomDeltaMap.get(aName);
-                        if ((current == null) || aDelta.getScore() < current.getScore()) {
-                            atomDeltaMap.put(aName, aDelta);
-                        }
-                    }
-                }
-            }
-        }
-        Molecule molecule = Molecule.getActive();
-        String nucName = Nuclei.findNuclei(sDim.getNucleus()).getName();
-        if (molecule != null) {
-            List<Atom> atoms = molecule.getAtoms();
-            for (Atom atom : atoms) {
-                if (atom.getElementName().equalsIgnoreCase(nucName)) {
-                    Double shift = atom.getPPM();
-                    if (shift != null) {
-                        double delta = Math.abs(shift - ppm) / tol;
-                        String aName = atom.getShortName();
-                        AtomDelta aDelta = new AtomDelta(aName, delta, 1, null);
-                        AtomDelta current = atomDeltaMap.get(aName);
-                        if ((current == null) || aDelta.getScore() < current.getScore()) {
-                            atomDeltaMap.put(aName, aDelta);
-                        }
-                    }
-                }
-            }
-        }
-        List<AtomDelta> result = atomDeltaMap.values().stream().sorted(Comparator.comparing(AtomDelta::getScore)).collect(Collectors.toList());
-        return result;
-    }
-
-    class DrawItem implements Comparator<DrawItem> {
-
-        final Dataset dataset;
-        final PeakList peakList;
-        final Double shift;
-        final boolean active;
-        final boolean breakThrough;
-        final boolean frozen;
-
-        DrawItem(Dataset dataset, PeakList peakList, double shift, boolean active, boolean breakThrough, boolean frozen) {
-            this.dataset = dataset;
-            this.peakList = peakList;
-            this.shift = shift;
-            this.active = active;
-            this.breakThrough = breakThrough;
-            this.frozen = frozen;
-
-        }
-
-        Double getShift() {
-            return shift;
-        }
-
-        @Override
-        public int compare(DrawItem o1, DrawItem o2) {
-            return o1.shift.compareTo(o2.shift);
-        }
-    }
-
     List<DrawItem> getDrawItems(List<Peak> peaks, String aSpec, boolean requireEntity) {
         Set<String> usedResSet = new HashSet<>();
         Map<String, List<DrawItem>> datasetShifts = new HashMap<>();
@@ -604,6 +456,153 @@ public class AtomBrowser {
             }
         }
         return drawList;
+    }
+
+    public static List<AtomDelta> getMatchingAtomNames(DatasetBase dataset,
+                                                       SpectralDim sDim, double ppm, double tol) {
+        double[] ppms = {ppm};
+        Map<String, AtomDelta> atomDeltaMap = new HashMap<>();
+        for (PeakList peakList : PeakList.peakLists()) {
+            // maybe check if dataset active too
+            int listType;
+            if ((peakList.getDatasetName() != null) && !peakList.getDatasetName().equals("")) {
+                if (peakList.getDatasetName().equals(dataset.getName())) {
+                    listType = 0;
+                } else {
+                    listType = 2;
+                }
+            } else {
+                listType = 3;
+            }
+            for (int i = 0; i < peakList.getNDim(); i++) {
+                SpectralDim spectralDim = peakList.getSpectralDim(i);
+                peakList.clearSearchDims();
+                peakList.addSearchDim(spectralDim.getDimName(), tol);
+                List<Peak> sPeaks = peakList.findPeaks(ppms);
+                for (Peak sPeak : sPeaks) {
+                    double delta = Math.abs(sPeak.getPeakDim(i).getChemShiftValue() - ppm) / tol;
+                    String aName = sPeak.getPeakDim(i).getLabel();
+                    if (!aName.equals("")) {
+                        AtomDelta aDelta = new AtomDelta(aName, delta, listType, sPeak.getPeakDim(i));
+                        AtomDelta current = atomDeltaMap.get(aName);
+                        if ((current == null) || aDelta.getScore() < current.getScore()) {
+                            atomDeltaMap.put(aName, aDelta);
+                        }
+                    }
+                }
+            }
+        }
+        Molecule molecule = Molecule.getActive();
+        String nucName = Nuclei.findNuclei(sDim.getNucleus()).getName();
+        if (molecule != null) {
+            List<Atom> atoms = molecule.getAtoms();
+            for (Atom atom : atoms) {
+                if (atom.getElementName().equalsIgnoreCase(nucName)) {
+                    Double shift = atom.getPPM();
+                    if (shift != null) {
+                        double delta = Math.abs(shift - ppm) / tol;
+                        String aName = atom.getShortName();
+                        AtomDelta aDelta = new AtomDelta(aName, delta, 1, null);
+                        AtomDelta current = atomDeltaMap.get(aName);
+                        if ((current == null) || aDelta.getScore() < current.getScore()) {
+                            atomDeltaMap.put(aName, aDelta);
+                        }
+                    }
+                }
+            }
+        }
+        List<AtomDelta> result = atomDeltaMap.values().stream().sorted(Comparator.comparing(AtomDelta::getScore)).collect(Collectors.toList());
+        return result;
+    }
+
+    /*
+        foreach pklist [nv_peak list] {
+        set results [list]
+        foreach dim [nv_peak label $pklist] {
+            nv_peak template $pklist $dim $tol
+            set pkmatches [nv_peak find $pklist $ppm]
+            foreach peak $pkmatches {
+                set atom [nv_peak elem $dim.L $peak]
+                if {[[namespace current]::isAtomActive $dataset $atom] || $order($pklist)=="first"} {
+                    lappend results $atom
+                }
+            }
+        }
+
+     */
+    public static class AtomDelta {
+
+        final String name;
+        final double fDelta;
+        final int listType;
+        final PeakDim peakDim;
+
+        AtomDelta(String name, double fDelta, int listType, PeakDim peakDim) {
+            this.name = name;
+            this.fDelta = fDelta;
+            this.listType = listType;
+            this.peakDim = peakDim;
+        }
+
+        public double getScore() {
+            return listType + fDelta;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public PeakDim getPeakDim() {
+            return peakDim;
+        }
+
+        public double getFDelta() {
+            return fDelta;
+        }
+
+        public String toString() {
+            return String.format("%s %2d%% %1d", name, Math.round(99.0 * fDelta), listType);
+        }
+    }
+
+    class RangeItem {
+
+        double min;
+        double max;
+
+        RangeItem(double min, double max) {
+            this.min = min;
+            this.max = max;
+        }
+    }
+
+    class DrawItem implements Comparator<DrawItem> {
+
+        final Dataset dataset;
+        final PeakList peakList;
+        final Double shift;
+        final boolean active;
+        final boolean breakThrough;
+        final boolean frozen;
+
+        DrawItem(Dataset dataset, PeakList peakList, double shift, boolean active, boolean breakThrough, boolean frozen) {
+            this.dataset = dataset;
+            this.peakList = peakList;
+            this.shift = shift;
+            this.active = active;
+            this.breakThrough = breakThrough;
+            this.frozen = frozen;
+
+        }
+
+        Double getShift() {
+            return shift;
+        }
+
+        @Override
+        public int compare(DrawItem o1, DrawItem o2) {
+            return o1.shift.compareTo(o2.shift);
+        }
     }
     /*
 

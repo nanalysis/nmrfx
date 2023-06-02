@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,25 @@ public class DimCounter implements Iterable<int[]> {
     private final int[] size;
     private final int nDim;
     private final int counterSize;
+
+    public DimCounter(int... size) {
+        nDim = size.length;
+        this.size = size.clone();
+        int sizeTemp = 1;
+        for (int i = 0; i < nDim; i++) {
+            sizeTemp *= size[i];
+        }
+        counterSize = sizeTemp;
+    }
+
+    @Override
+    public Iterator iterator() {
+        return new Iterator();
+    }
+
+    public int getSize() {
+        return counterSize;
+    }
 
     public class Iterator implements java.util.Iterator<int[]> {
 
@@ -59,24 +78,5 @@ public class DimCounter implements Iterable<int[]> {
         public void remove() {
             throw new UnsupportedOperationException();
         }
-    }
-
-    public DimCounter(int... size) {
-        nDim = size.length;
-        this.size = size.clone();
-        int sizeTemp = 1;
-        for (int i = 0; i < nDim; i++) {
-            sizeTemp *= size[i];
-        }
-        counterSize = sizeTemp;
-    }
-
-    @Override
-    public Iterator iterator() {
-        return new Iterator();
-    }
-
-    public int getSize() {
-        return counterSize;
     }
 }

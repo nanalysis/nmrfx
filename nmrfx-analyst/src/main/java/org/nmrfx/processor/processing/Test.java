@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,15 +17,13 @@
  */
 package org.nmrfx.processor.processing;
 
-import org.nmrfx.processor.processing.processes.ProcessOps;
-import org.nmrfx.processor.operations.WriteVector;
 import org.nmrfx.processor.operations.Hft;
 import org.nmrfx.processor.operations.Phase;
 import org.nmrfx.processor.operations.Real;
-import org.nmrfx.processor.processing.processes.IncompleteProcessException;
+import org.nmrfx.processor.operations.WriteVector;
+import org.nmrfx.processor.processing.processes.ProcessOps;
 
 /**
- *
  * @author johnsonb
  */
 public class Test {
@@ -48,6 +46,7 @@ public class Test {
 
         long stop = System.currentTimeMillis();
 
-        System.out.println("Runtime: " + (stop - start) + " milliseconds");;
+        System.out.println("Runtime: " + (stop - start) + " milliseconds");
+        ;
     }
 }

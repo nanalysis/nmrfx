@@ -56,44 +56,6 @@ public class DatasetLayout {
         offsetPoints = new int[nDim];
     }
 
-    public static int calculateBlockSize(int[] dimSizes) {
-        return DEFAULT_BLOCK_SIZE;
-    }
-
-    public static DatasetLayout createFullMatrix(int headerSize, int[] sizes) {
-        DatasetLayout layout = new DatasetLayout(sizes);
-        layout.setFileHeaderSize(headerSize);
-        layout.setBlockHeaderSize(0);
-        layout.blockPoints = 1;
-        layout.totalBlocks = 1;
-        for (int i = 0; i < sizes.length; i++) {
-            layout.blockSize[i] = sizes[i];
-            layout.nBlocks[i] = 1;
-            layout.blockPoints *= layout.blockSize[i];
-        }
-        layout.subMatrix = false;
-        return layout;
-    }
-
-    public static DatasetLayout createBlockMatrix(int headerSize, int[] sizes) {
-        DatasetLayout layout = new DatasetLayout(sizes);
-        layout.setFileHeaderSize(headerSize);
-        layout.setBlockHeaderSize(0);
-        layout.setBlockSize(DatasetLayout.calculateBlockSize(sizes));
-        layout.dimDataset();
-        return layout;
-    }
-
-    public static DatasetLayout resize(DatasetLayout source, int[] sizes) {
-        DatasetLayout layout = new DatasetLayout(sizes);
-        layout.setFileHeaderSize(source.getFileHeaderSize());
-        layout.setBlockHeaderSize(source.getBlockHeaderSize());
-        layout.blockPoints = source.blockPoints;
-        layout.setBlockSize(DatasetLayout.calculateBlockSize(sizes));
-        layout.dimDataset();
-        return layout;
-    }
-
     public boolean isSubMatrix() {
         return subMatrix;
     }
@@ -154,17 +116,17 @@ public class DatasetLayout {
     }
 
     /**
-     * @return the blockHeaderSize
-     */
-    public int getBlockHeaderSize() {
-        return blockHeaderSize;
-    }
-
-    /**
      * @param fileHeaderSize the fileHeaderSize to set
      */
     public void setFileHeaderSize(int fileHeaderSize) {
         this.fileHeaderSize = fileHeaderSize;
+    }
+
+    /**
+     * @return the blockHeaderSize
+     */
+    public int getBlockHeaderSize() {
+        return blockHeaderSize;
     }
 
     /**
@@ -355,6 +317,44 @@ public class DatasetLayout {
         for (i = 0; i < nDim; i++) {
             blockSize[i] = bsize[i] / nbdim[i];
         }
+    }
+
+    public static int calculateBlockSize(int[] dimSizes) {
+        return DEFAULT_BLOCK_SIZE;
+    }
+
+    public static DatasetLayout createFullMatrix(int headerSize, int[] sizes) {
+        DatasetLayout layout = new DatasetLayout(sizes);
+        layout.setFileHeaderSize(headerSize);
+        layout.setBlockHeaderSize(0);
+        layout.blockPoints = 1;
+        layout.totalBlocks = 1;
+        for (int i = 0; i < sizes.length; i++) {
+            layout.blockSize[i] = sizes[i];
+            layout.nBlocks[i] = 1;
+            layout.blockPoints *= layout.blockSize[i];
+        }
+        layout.subMatrix = false;
+        return layout;
+    }
+
+    public static DatasetLayout createBlockMatrix(int headerSize, int[] sizes) {
+        DatasetLayout layout = new DatasetLayout(sizes);
+        layout.setFileHeaderSize(headerSize);
+        layout.setBlockHeaderSize(0);
+        layout.setBlockSize(DatasetLayout.calculateBlockSize(sizes));
+        layout.dimDataset();
+        return layout;
+    }
+
+    public static DatasetLayout resize(DatasetLayout source, int[] sizes) {
+        DatasetLayout layout = new DatasetLayout(sizes);
+        layout.setFileHeaderSize(source.getFileHeaderSize());
+        layout.setBlockHeaderSize(source.getBlockHeaderSize());
+        layout.blockPoints = source.blockPoints;
+        layout.setBlockSize(DatasetLayout.calculateBlockSize(sizes));
+        layout.dimDataset();
+        return layout;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,18 +30,18 @@ import org.nmrfx.processor.processing.ProcessingException;
 @PythonAPI("pyproc")
 public class Reverse extends Operation {
 
-    @Override
-    public Operation eval(Vec vector) throws ProcessingException {
-        vector.reverse();
-        return this;
-    }
-
     /**
      * Create operation for reverse.
      *
      * @throws ProcessingException
      */
     public Reverse() throws ProcessingException {
+    }
+
+    @Override
+    public Operation eval(Vec vector) throws ProcessingException {
+        vector.reverse();
+        return this;
     }
 
 }

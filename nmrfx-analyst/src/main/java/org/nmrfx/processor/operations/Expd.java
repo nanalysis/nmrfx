@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,6 @@ import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
- *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -31,16 +30,16 @@ public class Expd extends Apodization implements Invertible {
     private final double lb;
     private final double fPoint;
 
-    @Override
-    public Expd eval(Vec vector) throws ProcessingException {
-        expd(vector);
-        return this;
-    }
-
     public Expd(double lb, double fPoint, boolean inverse) {
         this.lb = lb;
         this.fPoint = fPoint;
         this.invertOp = inverse;
+    }
+
+    @Override
+    public Expd eval(Vec vector) throws ProcessingException {
+        expd(vector);
+        return this;
     }
 
     /**

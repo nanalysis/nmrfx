@@ -5,34 +5,32 @@
  */
 package org.nmrfx.processor.optimization;
 
+import org.apache.commons.math3.special.Erf;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.math3.special.Erf;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakList;
 
 /**
  * Coupling information about a given cluster to facilitate Bipartite Match.
  *
- *
- * @see PeakClusterMatcher
- *
  * @author tedcolon
+ * @see PeakClusterMatcher
  */
 public class PeakCluster {
 
-    private final List<Peak> linkedPeaks; // all peaks in the cluster
     public final Peak rootPeak;
-
+    public final int size;
+    public final int iDim;
+    private final List<Peak> linkedPeaks; // all peaks in the cluster
     private final double tol = 0.25; // tolerance value (in ppm)
     private final List<PeakCluster> clustersWithinTol = new ArrayList<>();
     private final double origPPM;
     private double ppm;
-    public final int size;
-    public final int iDim;
     private PeakCluster pairedTo = null;
     private int[] peakMatches = null;
     private boolean isFrozen = false;
@@ -47,17 +45,6 @@ public class PeakCluster {
         this.size = linkedPeaks.size();
     }
 
-    public static PeakCluster[] makePeakCluster(Collection<List<Peak>> clusters, int iDim) {
-        PeakCluster[] peakClusters = new PeakCluster[clusters.size()];
-        int i = 0;
-        for (List<Peak> cluster : clusters) {
-            PeakCluster iCluster = new PeakCluster(cluster, iDim);
-            peakClusters[i] = iCluster;
-            i++;
-        }
-        return peakClusters;
-    }
-
     public void setShift(double newPPM) {
         for (Peak peak : linkedPeaks) {
             peak.getPeakDim(iDim).setChemShiftValue((float) newPPM);
@@ -70,6 +57,170 @@ public class PeakCluster {
             peak.getPeakDim(iDim).setChemShiftValue((float) origPPM);
         }
 
+    }
+
+    public boolean isFrozen() {
+        return isFrozen;
+    }
+
+    public void setFreeze(boolean freeze) {
+        this.isFrozen = freeze;
+    }
+
+    public List<Peak> getLinkedPeaks() {
+        return linkedPeaks;
+    }
+
+    public boolean equalSize(PeakCluster other) {
+        return size == other.size;
+    }
+
+    public boolean contains(Peak peak) {
+        return linkedPeaks.stream().anyMatch((p) -> (p.equals(peak)));
+    }
+
+    @Override
+    public String toString() {
+        String name = rootPeak == null ? "" : String.format("Root Peak: %s %7.2f", rootPeak.toString(), ppm);
+        return name;
+    }
+
+    public String dump() {
+        linkedPeaks.sort((p1, p2) -> p1.peakDims[iDim].getChemShift().compareTo(p2.peakDims[iDim].getChemShift()));
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(toString()).append(" :");
+        for (Peak peak : linkedPeaks) {
+            sBuilder.append(" ").append(peak.getName());
+        }
+        return sBuilder.toString();
+    }
+
+    public PeakCluster getPairedTo() {
+        return pairedTo;
+    }
+
+    public void setPairedTo(PeakCluster otherCluster) {
+        this.pairedTo = otherCluster;
+    }
+
+    public BipartiteMatcher compareTo(PeakCluster other) {
+        if (other == null) {
+            return null;
+        }
+        BipartiteMatcher matcher = new BipartiteMatcher();
+        int N = size + other.size;
+        matcher.reset(N, true);
+        double weight;
+        Peak expPeak, predPeak;
+        // init
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                matcher.setWeight(i, j, 0.0);
+            }
+        }
+
+        for (int iE = 0; iE < size; iE++) {
+            for (int jP = 0; jP < other.size; jP++) {
+                expPeak = linkedPeaks.get(iE);
+                predPeak = other.linkedPeaks.get(jP);
+                weight = calcWeight(expPeak, predPeak, predPeak.getPeakList().scale);
+                matcher.setWeight(iE, jP, weight);
+            }
+        }
+        return matcher;
+    }
+
+    public double comparisonScore(PeakCluster other) {
+        BipartiteMatcher matcher = this.compareTo(other);
+        double score = Double.NEGATIVE_INFINITY;
+        if (matcher != null) {
+            double minWeight = matcher.minWeight;
+            int[] matchings = matcher.getMatching();
+            score = matcher.getMaxWtSum(matchings, minWeight);
+        }
+        return score;
+    }
+
+    public int[] getPeakMatches() {
+        return peakMatches;
+    }
+
+    public void setPeakMatches(int[] peakMatches) {
+        this.peakMatches = peakMatches;
+    }
+
+    public List<List<Peak>> getPeakMatches(PeakCluster other) {
+        List<List<Peak>> matches = new ArrayList<>();
+
+        // reason for this:
+        // Provides option to calculate possible peak matches if one doesn't already exist.
+        int[] matching = (getPairedTo().equals(other))
+                ? getPeakMatches() : this.compareTo(other).getMatching();
+        if (matching != null) {
+            for (int i = 0; i < matching.length; i++) {
+                int j = matching[i];
+                if (j < 0) {
+                    continue;
+                }
+                List<Peak> matchedPeaks = new ArrayList<>();
+
+                // ensures that iPeak is always the experimental peak
+                // and jPeak is always the predicted peak
+                boolean rootIsSim = rootPeak.getPeakList().isSimulated();
+                Peak iPeak = (rootIsSim) && (i < other.size)
+                        ? other.linkedPeaks.get(i) : (!rootIsSim) && (i < size)
+                        ? linkedPeaks.get(i) : null;
+                Peak jPeak = (rootIsSim) && (j < size)
+                        ? linkedPeaks.get(j) : (!rootIsSim) && (j < other.size)
+                        ? other.linkedPeaks.get(j) : null;
+                matchedPeaks.add(iPeak);
+                matchedPeaks.add(jPeak);
+                matches.add(matchedPeaks);
+            }
+        }
+        return matches;
+    }
+
+    public List<PeakCluster> getTolClusters() {
+        return clustersWithinTol;
+    }
+
+    public String getTolListString() {
+        if (!clustersWithinTol.isEmpty()) {
+            String output = "";
+            for (PeakCluster pc : clustersWithinTol) {
+                String rtString = pc.rootPeak.getName();
+                if (!rtString.isEmpty()) {
+                    output = output.isEmpty() ? rtString : String.join(" ", output, rtString);
+                }
+            }
+            return output;
+        }
+        return null;
+    }
+
+    public double clusterDistance(PeakCluster other) {
+        return Math.abs(ppm - other.ppm);
+    }
+
+    public boolean isInTol(PeakCluster other) {
+        boolean withinTol = Math.abs(ppm - other.ppm) < tol;
+        if (withinTol && !clustersWithinTol.contains(other)) {
+            clustersWithinTol.add(other);
+            other.clustersWithinTol.add(this);
+        }
+        return withinTol;
+    }
+
+    public static PeakCluster[] makePeakCluster(Collection<List<Peak>> clusters, int iDim) {
+        PeakCluster[] peakClusters = new PeakCluster[clusters.size()];
+        int i = 0;
+        for (List<Peak> cluster : clusters) {
+            PeakCluster iCluster = new PeakCluster(cluster, iDim);
+            peakClusters[i] = iCluster;
+            i++;
+        }
+        return peakClusters;
     }
 
     public static void prepareList(PeakList peakList, double[][] limits) {
@@ -194,158 +345,5 @@ public class PeakCluster {
             sumOfQs += Qval;
         }
         return sumOfQs;
-    }
-
-    public boolean isFrozen() {
-        return isFrozen;
-    }
-
-    public void setFreeze(boolean freeze) {
-        this.isFrozen = freeze;
-    }
-
-    public List<Peak> getLinkedPeaks() {
-        return linkedPeaks;
-    }
-
-    public boolean equalSize(PeakCluster other) {
-        return size == other.size;
-    }
-
-    public boolean contains(Peak peak) {
-        return linkedPeaks.stream().anyMatch((p) -> (p.equals(peak)));
-    }
-
-    @Override
-    public String toString() {
-        String name = rootPeak == null ? "" : String.format("Root Peak: %s %7.2f", rootPeak.toString(), ppm);
-        return name;
-    }
-
-    public String dump() {
-        linkedPeaks.sort((p1, p2) -> p1.peakDims[iDim].getChemShift().compareTo(p2.peakDims[iDim].getChemShift()));
-        StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append(toString()).append(" :");
-        for (Peak peak : linkedPeaks) {
-            sBuilder.append(" ").append(peak.getName());
-        }
-        return sBuilder.toString();
-    }
-
-    public void setPairedTo(PeakCluster otherCluster) {
-        this.pairedTo = otherCluster;
-    }
-
-    public PeakCluster getPairedTo() {
-        return pairedTo;
-    }
-
-    public BipartiteMatcher compareTo(PeakCluster other) {
-        if (other == null) {
-            return null;
-        }
-        BipartiteMatcher matcher = new BipartiteMatcher();
-        int N = size + other.size;
-        matcher.reset(N, true);
-        double weight;
-        Peak expPeak, predPeak;
-        // init
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                matcher.setWeight(i, j, 0.0);
-            }
-        }
-
-        for (int iE = 0; iE < size; iE++) {
-            for (int jP = 0; jP < other.size; jP++) {
-                expPeak = linkedPeaks.get(iE);
-                predPeak = other.linkedPeaks.get(jP);
-                weight = calcWeight(expPeak, predPeak, predPeak.getPeakList().scale);
-                matcher.setWeight(iE, jP, weight);
-            }
-        }
-        return matcher;
-    }
-
-    public double comparisonScore(PeakCluster other) {
-        BipartiteMatcher matcher = this.compareTo(other);
-        double score = Double.NEGATIVE_INFINITY;
-        if (matcher != null) {
-            double minWeight = matcher.minWeight;
-            int[] matchings = matcher.getMatching();
-            score = matcher.getMaxWtSum(matchings, minWeight);
-        }
-        return score;
-    }
-
-    public void setPeakMatches(int[] peakMatches) {
-        this.peakMatches = peakMatches;
-    }
-
-    public int[] getPeakMatches() {
-        return peakMatches;
-    }
-
-    public List<List<Peak>> getPeakMatches(PeakCluster other) {
-        List<List<Peak>> matches = new ArrayList<>();
-
-        // reason for this:
-        // Provides option to calculate possible peak matches if one doesn't already exist.
-        int[] matching = (getPairedTo().equals(other))
-                ? getPeakMatches() : this.compareTo(other).getMatching();
-        if (matching != null) {
-            for (int i = 0; i < matching.length; i++) {
-                int j = matching[i];
-                if (j < 0) {
-                    continue;
-                }
-                List<Peak> matchedPeaks = new ArrayList<>();
-
-                // ensures that iPeak is always the experimental peak
-                // and jPeak is always the predicted peak
-                boolean rootIsSim = rootPeak.getPeakList().isSimulated();
-                Peak iPeak = (rootIsSim) && (i < other.size)
-                        ? other.linkedPeaks.get(i) : (!rootIsSim) && (i < size)
-                        ? linkedPeaks.get(i) : null;
-                Peak jPeak = (rootIsSim) && (j < size)
-                        ? linkedPeaks.get(j) : (!rootIsSim) && (j < other.size)
-                        ? other.linkedPeaks.get(j) : null;
-                matchedPeaks.add(iPeak);
-                matchedPeaks.add(jPeak);
-                matches.add(matchedPeaks);
-            }
-        }
-        return matches;
-    }
-
-    public List<PeakCluster> getTolClusters() {
-        return clustersWithinTol;
-    }
-
-    public String getTolListString() {
-        if (!clustersWithinTol.isEmpty()) {
-            String output = "";
-            for (PeakCluster pc : clustersWithinTol) {
-                String rtString = pc.rootPeak.getName();
-                if (!rtString.isEmpty()) {
-                    output = output.isEmpty() ? rtString : String.join(" ", output, rtString);
-                }
-            }
-            return output;
-        }
-        return null;
-    }
-
-    public double clusterDistance(PeakCluster other) {
-        return Math.abs(ppm - other.ppm);
-    }
-
-    public boolean isInTol(PeakCluster other) {
-        boolean withinTol = Math.abs(ppm - other.ppm) < tol;
-        if (withinTol && !clustersWithinTol.contains(other)) {
-            clustersWithinTol.add(other);
-            other.clustersWithinTol.add(this);
-        }
-        return withinTol;
     }
 }

@@ -6,7 +6,6 @@
 package org.nmrfx.peaks;
 
 /**
- *
  * @author brucejohnson
  */
 public class RelMultipletComponent extends MultipletComponent {

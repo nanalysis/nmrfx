@@ -1,6 +1,5 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import java.util.ArrayList;
 import javafx.scene.paint.Color;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Bond;
@@ -8,8 +7,9 @@ import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.structure.chemistry.Molecule;
 
+import java.util.ArrayList;
+
 /**
- *
  * @author brucejohnson
  */
 public class MolCoords {

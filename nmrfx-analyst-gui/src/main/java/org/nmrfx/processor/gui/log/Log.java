@@ -13,9 +13,8 @@ import static org.slf4j.Logger.ROOT_LOGGER_NAME;
  */
 public class Log {
     private static final String LOGBACK_CONFIGURATION_FILE_PROPERTY = "logback.configurationFile";
-    public static MemoryAppender memoryAppender;
-
     private static final Map<String, LogLevel> updatedLoggers = new HashMap<>();
+    public static MemoryAppender memoryAppender;
 
     /**
      * Specify where to find the log configuration file.

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,11 +18,9 @@
 package org.nmrfx.chemistry.protein;
 
 import org.nmrfx.chemistry.Residue;
-
 import org.nmrfx.chemistry.SecondaryStructure;
 
 /**
- *
  * @author bajlabuser, mbeckwith
  */
 public class Sheet extends SecondaryStructure {

@@ -74,13 +74,6 @@ public class DatasetsController implements Initializable, StageBasedController, 
 
     private static final Logger log = LoggerFactory.getLogger(DatasetsController.class);
     private static final Map<String, double[]> savedValues = new HashMap<>();
-    private Stage stage;
-    @FXML
-    private ToolBar toolBar;
-    @FXML
-    private TableView<DatasetBase> tableView;
-
-    private int dimNumber = 0;
     TableColumn dim1Column;
     Button valueButton;
     Button saveParButton;
@@ -88,6 +81,12 @@ public class DatasetsController implements Initializable, StageBasedController, 
     Stage valueStage = null;
     TableView<ValueItem> valueTableView = null;
     DatasetBase valueDataset = null;
+    private Stage stage;
+    @FXML
+    private ToolBar toolBar;
+    @FXML
+    private TableView<DatasetBase> tableView;
+    private int dimNumber = 0;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -95,22 +94,13 @@ public class DatasetsController implements Initializable, StageBasedController, 
         initTable();
     }
 
-    @Override
-    public void setStage(Stage stage) {
-        this.stage = stage;
-    }
-
     public Stage getStage() {
         return stage;
     }
 
-    public static DatasetsController create() {
-        DatasetsController controller = Fxml.load(DatasetsController.class, "DatasetsScene.fxml")
-                .withNewStage("Datasets")
-                .getController();
-        ProjectBase.addPropertyChangeListener(controller);
-        controller.stage.show();
-        return controller;
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     void initToolBar() {
@@ -167,44 +157,6 @@ public class DatasetsController implements Initializable, StageBasedController, 
         if (datasetList instanceof ObservableList) {
             setDatasetList((ObservableList<DatasetBase>) datasetList);
         }
-    }
-
-    class DatasetDoubleFieldTableCell extends TextFieldTableCell<DatasetBase, Double> {
-
-        DatasetDoubleFieldTableCell(StringConverter<Double> converter) {
-            super(converter);
-        }
-
-        @Override
-        public void commitEdit(Double newValue) {
-            String column = getTableColumn().getText();
-            DatasetBase dataset = getTableRow().getItem();
-            super.commitEdit(newValue);
-            switch (column) {
-                case "level" -> dataset.setLvl(newValue);
-                case "scale" -> dataset.setScale(newValue);
-                case "ref" -> dataset.setRefValue(getDimNum(), newValue);
-            }
-        }
-
-    }
-
-    class DatasetStringFieldTableCell extends TextFieldTableCell<DatasetBase, String> {
-
-        DatasetStringFieldTableCell(StringConverter<String> converter) {
-            super(converter);
-        }
-
-        @Override
-        public void commitEdit(String newValue) {
-            String column = getTableColumn().getText();
-            DatasetBase dataset = getTableRow().getItem();
-            super.commitEdit(newValue);
-            if ("label".equals(column)) {
-                dataset.setLabel(getDimNum(), newValue);
-            }
-        }
-
     }
 
     void initTable() {
@@ -478,52 +430,6 @@ public class DatasetsController implements Initializable, StageBasedController, 
         }
     }
 
-    public static class ValueItem {
-
-        int index;
-        double value;
-
-        public ValueItem(int index, double value) {
-            this.index = index;
-            this.value = value;
-        }
-
-        public double getValue() {
-            return value;
-        }
-
-        public void setValue(double value) {
-            this.value = value;
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
-        public void setIndex(int index) {
-            this.index = index;
-        }
-    }
-
-    class ValueItemDoubleFieldTableCell extends TextFieldTableCell<ValueItem, Double> {
-
-        ValueItemDoubleFieldTableCell(StringConverter<Double> converter) {
-            super(converter);
-        }
-
-        @Override
-        public void commitEdit(Double newValue) {
-            String column = getTableColumn().getText();
-            ValueItem value = getTableRow().getItem();
-            super.commitEdit(newValue);
-            if ("Value".equals(column)) {
-                value.setValue(newValue);
-                saveValueTable();
-            }
-        }
-
-    }
-
     private void saveValueTable() {
         List<ValueItem> items = valueTableView.getItems();
         if (valueDataset != null) {
@@ -674,15 +580,46 @@ public class DatasetsController implements Initializable, StageBasedController, 
         tableView.refresh();
     }
 
+    public static DatasetsController create() {
+        DatasetsController controller = Fxml.load(DatasetsController.class, "DatasetsScene.fxml")
+                .withNewStage("Datasets")
+                .getController();
+        ProjectBase.addPropertyChangeListener(controller);
+        controller.stage.show();
+        return controller;
+    }
+
+    public static class ValueItem {
+
+        int index;
+        double value;
+
+        public ValueItem(int index, double value) {
+            this.index = index;
+            this.value = value;
+        }
+
+        public double getValue() {
+            return value;
+        }
+
+        public void setValue(double value) {
+            this.value = value;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public void setIndex(int index) {
+            this.index = index;
+        }
+    }
+
     /**
      * Formatter to change between Integer and Strings in editable columns of Integers
      */
     private static class IntegerColumnFormatter extends javafx.util.converter.IntegerStringConverter {
-
-        @Override
-        public String toString(Integer object) {
-            return String.format("%d", object);
-        }
 
         @Override
         public Integer fromString(String string) {
@@ -692,6 +629,68 @@ public class DatasetsController implements Initializable, StageBasedController, 
                 return null;
             }
         }
+
+        @Override
+        public String toString(Integer object) {
+            return String.format("%d", object);
+        }
+    }
+
+    class DatasetDoubleFieldTableCell extends TextFieldTableCell<DatasetBase, Double> {
+
+        DatasetDoubleFieldTableCell(StringConverter<Double> converter) {
+            super(converter);
+        }
+
+        @Override
+        public void commitEdit(Double newValue) {
+            String column = getTableColumn().getText();
+            DatasetBase dataset = getTableRow().getItem();
+            super.commitEdit(newValue);
+            switch (column) {
+                case "level" -> dataset.setLvl(newValue);
+                case "scale" -> dataset.setScale(newValue);
+                case "ref" -> dataset.setRefValue(getDimNum(), newValue);
+            }
+        }
+
+    }
+
+    class DatasetStringFieldTableCell extends TextFieldTableCell<DatasetBase, String> {
+
+        DatasetStringFieldTableCell(StringConverter<String> converter) {
+            super(converter);
+        }
+
+        @Override
+        public void commitEdit(String newValue) {
+            String column = getTableColumn().getText();
+            DatasetBase dataset = getTableRow().getItem();
+            super.commitEdit(newValue);
+            if ("label".equals(column)) {
+                dataset.setLabel(getDimNum(), newValue);
+            }
+        }
+
+    }
+
+    class ValueItemDoubleFieldTableCell extends TextFieldTableCell<ValueItem, Double> {
+
+        ValueItemDoubleFieldTableCell(StringConverter<Double> converter) {
+            super(converter);
+        }
+
+        @Override
+        public void commitEdit(Double newValue) {
+            String column = getTableColumn().getText();
+            ValueItem value = getTableRow().getItem();
+            super.commitEdit(newValue);
+            if ("Value".equals(column)) {
+                value.setValue(newValue);
+                saveValueTable();
+            }
+        }
+
     }
 
 }

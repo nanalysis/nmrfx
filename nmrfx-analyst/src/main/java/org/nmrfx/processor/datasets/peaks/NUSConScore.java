@@ -12,7 +12,6 @@ import java.util.DoubleSummaryStatistics;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 @PythonAPI("pscript")

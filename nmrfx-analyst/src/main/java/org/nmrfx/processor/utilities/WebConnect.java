@@ -31,17 +31,6 @@ public class WebConnect {
     private static final Logger log = LoggerFactory.getLogger(WebConnect.class);
     static String webAddress = "https://nmrfx.org/downloads/version/version.txt";
 
-    public static String getVersion() {
-        WebConnect webConn = new WebConnect();
-        String version;
-        try {
-            version = webConn.fetchContent(webAddress);
-        } catch (Exception ex) {
-            version = "";
-        }
-        return version;
-    }
-
     public WebConnect() {
     }
 
@@ -80,5 +69,16 @@ public class WebConnect {
             }
         }
         return result;
+    }
+
+    public static String getVersion() {
+        WebConnect webConn = new WebConnect();
+        String version;
+        try {
+            version = webConn.fetchContent(webAddress);
+        } catch (Exception ex) {
+            version = "";
+        }
+        return version;
     }
 }

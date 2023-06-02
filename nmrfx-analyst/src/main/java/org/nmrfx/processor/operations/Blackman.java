@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,6 @@ import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
- *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -35,6 +34,19 @@ public class Blackman extends Apodization implements Invertible {
     final double c;
     final int apodSize;
     final int dim;
+
+    public Blackman(double offset, double end, double c, int apodSize, int dim) {
+        this(offset, end, c, apodSize, dim, false);
+    }
+
+    public Blackman(double offset, double end, double c, int apodSize, int dim, boolean inverse) {
+        this.offset = offset;
+        this.end = end;
+        this.c = c;
+        this.apodSize = apodSize;
+        this.invertOp = inverse;
+        this.dim = dim;
+    }
 
     @Override
     public Blackman eval(Vec vector) throws ProcessingException {
@@ -50,19 +62,6 @@ public class Blackman extends Apodization implements Invertible {
             apply(matrixND, dim, vSizes[dim]);
         }
         return this;
-    }
-
-    public Blackman(double offset, double end, double c, int apodSize, int dim) {
-        this(offset, end, c, apodSize, dim, false);
-    }
-
-    public Blackman(double offset, double end, double c, int apodSize, int dim, boolean inverse) {
-        this.offset = offset;
-        this.end = end;
-        this.c = c;
-        this.apodSize = apodSize;
-        this.invertOp = inverse;
-        this.dim = dim;
     }
 
     public void setupApod(int dataSize, int vStart) {
