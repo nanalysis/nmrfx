@@ -36,7 +36,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
@@ -110,10 +109,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private final SimpleObjectProperty<List<Peak>> selectedPeaks = new SimpleObjectProperty<>();
     private final VBox phaserBox = new VBox();
     private final ListView<String> datasetListView = new ListView<>();
-    private final Canvas canvas = new Canvas();
-    private final Canvas peakCanvas = new Canvas();
-    private final Canvas annoCanvas = new Canvas();
-    private final Pane plotContent = new Pane();
     private final boolean[][] crossHairStates = new boolean[2][2];
     private final SpectrumStatusBar statusBar = new SpectrumStatusBar(this);
     private final Set<ControllerTool> tools = new HashSet<>();
@@ -158,7 +153,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private double previousStageRestoreProcControllerWidth = 0;
     private boolean previousStageRestoreProcControllerVisible = false;
     private PolyChart activeChart = null;
-    private GridPaneCanvas chartGroup;
+    private ChartDrawingLayers chartDrawingLayers;
     private final BooleanProperty minBorders = new SimpleBooleanProperty(this, "minBorders", false);
     private final ColorProperty bgColor = new ColorProperty(this, "bgColor", null);
     private final ColorProperty axesColor = new ColorProperty(this, "axesColor", null);
@@ -682,12 +677,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
-                plotContent.setVisible(false);
+                chartDrawingLayers.getPlotContent().setVisible(false);
                 GUIUtils.snapNode(chartPane, selectedFile);
             } catch (IOException ex) {
                 GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
             } finally {
-                plotContent.setVisible(true);
+                chartDrawingLayers.getPlotContent().setVisible(true);
             }
         }
     }
@@ -714,7 +709,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (fileName != null) {
             try {
                 PDFGraphicsContext pdfGC = new PDFGraphicsContext();
-                pdfGC.create(true, canvas.getWidth(), canvas.getHeight(), fileName);
+                pdfGC.create(true, chartDrawingLayers.getCanvas().getWidth(), chartDrawingLayers.getCanvas().getHeight(), fileName);
                 for (PolyChart chart : charts) {
                     chart.exportVectorGraphics(pdfGC);
                 }
@@ -748,7 +743,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (fileName != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
             try {
-                svgGC.create(canvas.getWidth(), canvas.getHeight(), fileName);
+                svgGC.create(chartDrawingLayers.getCanvas().getWidth(), chartDrawingLayers.getCanvas().getHeight(), fileName);
                 for (PolyChart chart : charts) {
                     chart.exportVectorGraphics(svgGC);
                 }
@@ -765,7 +760,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         SVGGraphicsContext svgGC = new SVGGraphicsContext();
         try {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            svgGC.create(canvas.getWidth(), canvas.getHeight(), stream);
+            svgGC.create(chartDrawingLayers.getCanvas().getWidth(), chartDrawingLayers.getCanvas().getHeight(), stream);
             for (PolyChart chart : charts) {
                 chart.exportVectorGraphics(svgGC);
             }
@@ -838,26 +833,19 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             MenuBar menuBar = AnalystApp.getMenuBar();
             topBar.getChildren().add(0, menuBar);
         }
-        plotContent.setMouseTransparent(true);
-        activeChart = PolyChartManager.getInstance().create(this, plotContent, canvas, peakCanvas, annoCanvas);
-        new CanvasBindings(this, canvas).setHandlers();
+        chartDrawingLayers = new ChartDrawingLayers(this, chartPane);
+        activeChart = PolyChartManager.getInstance().create(this,
+                chartDrawingLayers.getPlotContent(), chartDrawingLayers.getCanvas(),
+                chartDrawingLayers.getPeakCanvas(), chartDrawingLayers.getAnnoCanvas());
+        new CanvasBindings(this, chartDrawingLayers.getCanvas()).setHandlers();
         initToolBar(toolBar);
         charts.add(activeChart);
 
-        chartGroup = new GridPaneCanvas(this, canvas);
-        chartGroup.addCharts(1, charts);
-        chartGroup.setMouseTransparent(true);
-        chartPane.getChildren().addAll(canvas, chartGroup, peakCanvas, annoCanvas, plotContent);
-        chartGroup.setManaged(true);
-        canvas.setManaged(false);
-        peakCanvas.setManaged(false);
-        annoCanvas.setManaged(false);
-        plotContent.setManaged(false);
         mainBox.layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
             if (arg2.getWidth() < 1.0 || arg2.getHeight() < 1.0) {
                 return;
             }
-            chartGroup.requestLayout();
+            chartDrawingLayers.getChartGroup().requestLayout();
         });
 
         statusBar.setMode(1);
@@ -898,29 +886,20 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public Cursor getCurrentCursor() {
-        return canvas.getCursor();
+        return chartDrawingLayers.getCanvas().getCursor();
     }
 
     public void setCurrentCursor(Cursor cursor) {
-        canvas.setCursor(cursor);
+        chartDrawingLayers.getCanvas().setCursor(cursor);
     }
 
     public void setCursor() {
         Cursor cursor = cursorProperty.getValue();
-        canvas.setCursor(cursor);
+        chartDrawingLayers.getCanvas().setCursor(cursor);
         for (PolyChart chart : charts) {
             chart.getCrossHairs().setAllStates(CanvasCursor.isCrosshair(cursor));
         }
         statusBar.updateCursorBox();
-    }
-
-    public void resizeCanvases(double width, double height) {
-        canvas.setWidth(width);
-        canvas.setHeight(height);
-        peakCanvas.setWidth(width);
-        peakCanvas.setHeight(height);
-        annoCanvas.setWidth(width);
-        annoCanvas.setHeight(height);
     }
 
     public Phaser getPhaser() {
@@ -1026,7 +1005,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void removeChart(PolyChart chart) {
         if (chart != null) {
-            chartGroup.getChildren().remove(chart);
+            chartDrawingLayers.getChartGroup().getChildren().remove(chart);
             charts.remove(chart);
             if (chart == activeChart) {
                 if (charts.isEmpty()) {
@@ -1035,7 +1014,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                     activeChart = charts.get(0);
                 }
             }
-            chartGroup.requestLayout();
+            chartDrawingLayers.getChartGroup().requestLayout();
             for (PolyChart refreshChart : charts) {
                 refreshChart.layoutPlotChildren();
             }
@@ -1077,30 +1056,30 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 addChart();
             }
         }
-        chartGroup.addCharts(chartGroup.getRows(), charts);
+        chartDrawingLayers.getChartGroup().addCharts(chartDrawingLayers.getChartGroup().getRows(), charts);
     }
 
     public void arrange(int nRows) {
-        chartGroup.setRows(nRows);
-        chartGroup.calculateAndSetOrientation();
+        chartDrawingLayers.getChartGroup().setRows(nRows);
+        chartDrawingLayers.getChartGroup().calculateAndSetOrientation();
     }
 
     public void draw() {
-        chartGroup.layoutChildren();
+        chartDrawingLayers.getChartGroup().layoutChildren();
     }
 
     public void addChart() {
-        PolyChart chart = PolyChartManager.getInstance().create(this, plotContent, canvas, peakCanvas, annoCanvas);
+        PolyChart chart = PolyChartManager.getInstance().create(this, chartDrawingLayers.getPlotContent(), chartDrawingLayers.getCanvas(), chartDrawingLayers.getPeakCanvas(), chartDrawingLayers.getAnnoCanvas());
         charts.add(chart);
         chart.setChartDisabled(true);
-        chartGroup.addChart(chart);
+        chartDrawingLayers.getChartGroup().addChart(chart);
         activeChart = chart;
     }
 
     public void setBorderState(boolean state) {
         minBorders.set(state);
-        chartGroup.updateConstraints();
-        chartGroup.layoutChildren();
+        chartDrawingLayers.getChartGroup().updateConstraints();
+        chartDrawingLayers.getChartGroup().layoutChildren();
     }
 
     public double[][] prepareChildren(int nRows, int nCols) {
@@ -1212,7 +1191,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void removeSelectedChart() {
         if (charts.size() > 1) {
             getActiveChart().close();
-            arrange(chartGroup.getOrientation());
+            arrange(chartDrawingLayers.getChartGroup().getOrientation());
         }
     }
 
@@ -1229,7 +1208,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 List<DatasetAttributes> current = new ArrayList<>(datasetAttrs);
                 setNCharts(current.size());
                 chart.getDatasetAttributes().clear();
-                chartGroup.setOrientation(orient, true);
+                chartDrawingLayers.getChartGroup().setOrientation(orient, true);
                 for (int i = 0; i < charts.size(); i++) {
                     DatasetAttributes datasetAttr = current.get(i);
                     PolyChart iChart = charts.get(i);
@@ -1247,22 +1226,22 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                     iChart.getCrossHairs().setAllStates(true);
                 }
                 setChartDisable(false);
-                chartGroup.layoutChildren();
+                chartDrawingLayers.getChartGroup().layoutChildren();
                 charts.forEach(PolyChart::refresh);
                 return;
             }
         }
-        chartGroup.setOrientation(orient, true);
+        chartDrawingLayers.getChartGroup().setOrientation(orient, true);
         setChartDisable(false);
-        chartGroup.layoutChildren();
+        chartDrawingLayers.getChartGroup().layoutChildren();
     }
 
     public int arrangeGetRows() {
-        return chartGroup.getRows();
+        return chartDrawingLayers.getChartGroup().getRows();
     }
 
     public int arrangeGetColumns() {
-        return chartGroup.getColumns();
+        return chartDrawingLayers.getChartGroup().getColumns();
     }
 
     public void alignCenters() {
