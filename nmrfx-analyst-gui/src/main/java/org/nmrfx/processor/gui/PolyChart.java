@@ -155,11 +155,11 @@ public class PolyChart extends Region implements PeakListener {
         this.controller = controller;
         this.name = name;
         this.drawingLayers = drawingLayers;
-        drawSpectrum = new DrawSpectrum(axes, drawingLayers.getBase());
+        drawSpectrum = new DrawSpectrum(axes, drawingLayers.getGraphicsProxyFor(ChartDrawingLayers.Item.Spectrum));
         drawSpectrum.setupHaltButton(controller.getHaltButton());
 
         initChart();
-        drawPeaks = new DrawPeaks(this, drawingLayers.getPeaksAndAnnotations());
+        drawPeaks = new DrawPeaks(this, drawingLayers.getGraphicsContextFor(ChartDrawingLayers.Item.Peaks));
         setVisible(false);
     }
 

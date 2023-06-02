@@ -18,8 +18,10 @@
 package org.nmrfx.processor.gui;
 
 import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 
 /**
@@ -27,6 +29,11 @@ import org.nmrfx.processor.gui.controls.GridPaneCanvas;
  * These layers can be shared across multiple charts, which will have to draw at the correct coordinated by themselves using the layout information.
  */
 public class ChartDrawingLayers {
+    enum Item {
+        Spectrum,
+        Peaks
+    }
+
     // Manages grid layout when displaying multiple charts on the same drawing canvas
     // Also contains chart instances (as javafx Region objects)
     private final GridPaneCanvas grid;
@@ -75,6 +82,19 @@ public class ChartDrawingLayers {
         base.setHeight(height);
         peaksAndAnnotations.setHeight(height);
         slicesAndDragBoxes.setHeight(height);
+    }
+
+    public GraphicsContext getGraphicsContextFor(Item item) {
+        Canvas canvas =  switch (item) {
+            case Spectrum -> base;
+            case Peaks -> peaksAndAnnotations;
+        };
+
+        return canvas.getGraphicsContext2D();
+    }
+
+    public GraphicsContextProxy getGraphicsProxyFor(Item item) {
+        return new GraphicsContextProxy(getGraphicsContextFor(item));
     }
 
     //XXX try to remove accessor usages from FXMLController
