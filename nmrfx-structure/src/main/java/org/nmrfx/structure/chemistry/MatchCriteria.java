@@ -26,10 +26,10 @@ public class MatchCriteria {
     private final String relation;
     private final String[] resPats;
     private final String[] atomPats;
+    private double ppm;
     private final double tol;
     private final double folding;
     private final int foldCount;
-    private double ppm;
 
     public MatchCriteria(int dim, final double ppm, final double tol, final String[] atomPats, final String[] resPats, final String relation, final double folding, final int foldCount) {
         super();

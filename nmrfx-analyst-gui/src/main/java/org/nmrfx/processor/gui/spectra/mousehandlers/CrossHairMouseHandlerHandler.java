@@ -10,6 +10,12 @@ public class CrossHairMouseHandlerHandler extends MouseHandler {
         super(mouseBindings);
     }
 
+    public static Optional<CrossHairMouseHandlerHandler> handler(MouseBindings mouseBindings) {
+        CrossHairMouseHandlerHandler handler = new CrossHairMouseHandlerHandler(mouseBindings);
+        return Optional.of(handler);
+    }
+
+
     @Override
     public void mousePressed(MouseEvent mouseEvent) {
         mouseBindings.getChart().handleCrossHair(mouseEvent, true);
@@ -32,10 +38,5 @@ public class CrossHairMouseHandlerHandler extends MouseHandler {
     @Override
     public void mouseDragged(MouseEvent mouseEvent) {
         mouseBindings.getChart().handleCrossHair(mouseEvent, false);
-    }
-
-    public static Optional<CrossHairMouseHandlerHandler> handler(MouseBindings mouseBindings) {
-        CrossHairMouseHandlerHandler handler = new CrossHairMouseHandlerHandler(mouseBindings);
-        return Optional.of(handler);
     }
 }

@@ -22,6 +22,27 @@ package org.nmrfx.processor.datasets.vendor.jeol;
  */
 public class JeolDeltaAxis {
 
+    public enum AxisType {
+
+        NONE("none", 0),
+        REAL("real", 1),
+        TPPI("tppi", 1),
+        COMPLEX("complex", 2),
+        REAL_COMPLEX("real_complex", 1),
+        ENVELOPE("envelope", 1);
+        String name;
+        int sectionCount;
+
+        AxisType(final String name, final int sectionCount) {
+            this.name = name;
+            this.sectionCount = sectionCount;
+        }
+
+        public int getSectionCount() {
+            return sectionCount;
+        }
+    }
+
     final int iDim;
     final int nPoints;
     final int start;
@@ -29,6 +50,7 @@ public class JeolDeltaAxis {
     final AxisType type;
     final int nSubMatrices;
     final int subMatrixEdge;
+
     public JeolDeltaAxis(final int iDim, final int nPoints, final int subMatrixEdge, final int start, final int stop, final int iType) {
         this.iDim = iDim;
         this.nPoints = nPoints;
@@ -63,27 +85,6 @@ public class JeolDeltaAxis {
             }
         } else {
             return type.sectionCount;
-        }
-    }
-
-    public enum AxisType {
-
-        NONE("none", 0),
-        REAL("real", 1),
-        TPPI("tppi", 1),
-        COMPLEX("complex", 2),
-        REAL_COMPLEX("real_complex", 1),
-        ENVELOPE("envelope", 1);
-        String name;
-        int sectionCount;
-
-        AxisType(final String name, final int sectionCount) {
-            this.name = name;
-            this.sectionCount = sectionCount;
-        }
-
-        public int getSectionCount() {
-            return sectionCount;
         }
     }
 }

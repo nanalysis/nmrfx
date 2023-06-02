@@ -28,40 +28,6 @@ public class NoeCalibrationBin extends NoeCalibration {
     final double[] bins;  // 2.2 100 3.0 20 5.0 
     final double lower;
 
-    NoeCalibrationBin(final String measurementMode, final double lower, final double[] bins, final boolean removeRedundant) {
-        String validationString = validateBins(bins);
-        if (!validationString.equals("OK")) {
-            throw new IllegalArgumentException(validationString);
-        }
-        this.mMode = MeasurementMode.select(measurementMode);
-        this.lower = lower;
-        this.bins = bins.clone();
-        this.removeRedundant = removeRedundant;
-    }
-
-    public void calibrate(Noe noe) {
-        // fixme  what about negative NOE peaks?
-        if (!noe.isActive()) {
-            return;
-        }
-        // 2.2 100 3.0 20 5.0
-        double bound = bins[bins.length - 1];
-        double intensity = Math.abs(mMode.measure(noe));
-        double I = intensity / noe.getScale() / noe.atomScale;
-        if (I > bins[1]) {
-            bound = bins[0];
-        }
-        for (int i = 1; i < bins.length; i += 2) {
-            if (I > bins[i]) {
-                bound = bins[i - 1];
-                break;
-            }
-        }
-        noe.setUpper(bound);
-        noe.setLower(lower);
-        noe.setTarget((noe.getLower() + noe.getUpper()) / 2.0);
-    }
-
     public static String validateBins(final double[] checkBins) {
         String result = "OK";
         int binLength = checkBins.length;
@@ -86,5 +52,39 @@ public class NoeCalibrationBin extends NoeCalibration {
             }
         }
         return result;
+    }
+
+    NoeCalibrationBin(final String measurementMode, final double lower, final double[] bins, final boolean removeRedundant) {
+        String validationString = validateBins(bins);
+        if (!validationString.equals("OK")) {
+            throw new IllegalArgumentException(validationString);
+        }
+        this.mMode = MeasurementMode.select(measurementMode);
+        this.lower = lower;
+        this.bins = bins.clone();
+        this.removeRedundant = removeRedundant;
+    }
+
+    public void calibrate(Noe noe) {
+        // fixme  what about negative NOE peaks?
+        if (!noe.isActive()) {
+            return;
+        }
+        // 2.2 100 3.0 20 5.0 
+        double bound = bins[bins.length - 1];
+        double intensity = Math.abs(mMode.measure(noe));
+        double I = intensity / noe.getScale() / noe.atomScale;
+        if (I > bins[1]) {
+            bound = bins[0];
+        }
+        for (int i = 1; i < bins.length; i += 2) {
+            if (I > bins[i]) {
+                bound = bins[i - 1];
+                break;
+            }
+        }
+        noe.setUpper(bound);
+        noe.setLower(lower);
+        noe.setTarget((noe.getLower() + noe.getUpper()) / 2.0);
     }
 }

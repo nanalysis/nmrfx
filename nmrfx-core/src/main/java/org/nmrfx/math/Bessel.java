@@ -50,6 +50,14 @@ import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 
 public class Bessel {
 
+    // Approximation of the Modifed Bessel function of the first kind
+    // Based on concepts at:
+    // https://www.advanpix.com/2015/11/11/rational-approximations-for-the-modified-bessel-function-of-the-first-kind-i0-computations-double-precision
+    // and refined polynomial values from the Boost library
+    // https://www.boost.org/doc/libs/1_77_0/boost/math/special_functions/detail/bessel_i0.hpp
+    private Bessel() {
+    }
+
     public static final double[] COEF_LOW = {
             1.00000000000000000e+00,
             2.49999999999999909e-01,
@@ -67,6 +75,7 @@ public class Bessel {
             1.13943037744822825e-22,
             9.07926920085624812e-25
     };
+
     public static final double[] COEF_MED = {
             3.98942280401425088e-01,
             4.98677850604961985e-02,
@@ -102,14 +111,6 @@ public class Bessel {
     public final static PolynomialFunction polyLow = new PolynomialFunction(COEF_LOW);
     public final static PolynomialFunction polyMed = new PolynomialFunction(COEF_MED);
     public final static PolynomialFunction polyHigh = new PolynomialFunction(COEF_HIGH);
-
-    // Approximation of the Modifed Bessel function of the first kind
-    // Based on concepts at:
-    // https://www.advanpix.com/2015/11/11/rational-approximations-for-the-modified-bessel-function-of-the-first-kind-i0-computations-double-precision
-    // and refined polynomial values from the Boost library
-    // https://www.boost.org/doc/libs/1_77_0/boost/math/special_functions/detail/bessel_i0.hpp
-    private Bessel() {
-    }
 
     /**
      * @author brucejohnson

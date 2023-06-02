@@ -25,15 +25,6 @@ import org.nmrfx.chemistry.constraints.Noe;
  */
 public abstract class NoeCalibration {
 
-    MeasurementMode mMode;
-    boolean removeRedundant = true;
-
-    public abstract void calibrate(Noe noe);
-
-    public boolean removeRedundant() {
-        return removeRedundant;
-    }
-
     enum MeasurementMode {
 
         INTENSITY("intensity") {
@@ -55,8 +46,6 @@ public abstract class NoeCalibration {
 
         }
 
-        abstract double measure(Noe noe);
-
         static MeasurementMode select(String name) {
             if (name.startsWith("vol")) {
                 return VOLUME;
@@ -64,5 +53,16 @@ public abstract class NoeCalibration {
                 return INTENSITY;
             }
         }
+
+        abstract double measure(Noe noe);
+    }
+
+    MeasurementMode mMode;
+    boolean removeRedundant = true;
+
+    public abstract void calibrate(Noe noe);
+
+    public boolean removeRedundant() {
+        return removeRedundant;
     }
 }

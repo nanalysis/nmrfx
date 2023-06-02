@@ -115,10 +115,6 @@ public class LorentzLS extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = a*b^2/(b^2 + 4*(x-f)^2)";
-    }
-
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
         double xMid = DataUtil.getMidValue1Side(VecID.Y, VecID.X, getDataSetPtr());
@@ -139,5 +135,9 @@ public class LorentzLS extends OptFunction {
                 }
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = a*b^2/(b^2 + 4*(x-f)^2)";
     }
 }

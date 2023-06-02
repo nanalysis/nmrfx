@@ -40,11 +40,11 @@ import java.util.regex.Pattern;
  */
 public class DatasetParameterFile {
 
-    final static Pattern DLABEL_PAT = Pattern.compile("dlabel +[0-9]+ (.*)");
     final DatasetBase dataset;
     final DatasetLayout layout;
     String relativeFIDPath = "";
     String absoluteFIDPath = "";
+    final static Pattern DLABEL_PAT = Pattern.compile("dlabel +[0-9]+ (.*)");
 
     public DatasetParameterFile(DatasetBase dataset, DatasetLayout layout) {
         this.dataset = dataset;
@@ -54,6 +54,13 @@ public class DatasetParameterFile {
     public String getParameterFileName() {
         String fileName = dataset.getCanonicalFile();
         return getParameterFileName(fileName);
+    }
+
+    public static String getParameterFileName(String fileName) {
+        Pattern pattern = Pattern.compile("\\.(nv|ucsf|nvlnk)$");
+        Matcher matcher = pattern.matcher(fileName);
+        int endIndex = matcher.find() ? matcher.start() : fileName.length();
+        return fileName.substring(0, endIndex) + ".par";
     }
 
     public final boolean remove() {
@@ -367,12 +374,5 @@ public class DatasetParameterFile {
             }
         }
 
-    }
-
-    public static String getParameterFileName(String fileName) {
-        Pattern pattern = Pattern.compile("\\.(nv|ucsf|nvlnk)$");
-        Matcher matcher = pattern.matcher(fileName);
-        int endIndex = matcher.find() ? matcher.start() : fileName.length();
-        return fileName.substring(0, endIndex) + ".par";
     }
 }

@@ -42,17 +42,17 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(BigMappedMatrixFile.class);
     private static int MAPPING_SIZE = 1 << 30;
-    final boolean writable;
+    private File file;
+    Dataset dataset;
+    private RandomAccessFile raFile;
+    DatasetLayout layout;
     private final long[] strides;
+    private long totalSize;
     private final int dataType;
+    final boolean writable;
     private final int mapSize;
     private final List<MapInfo> mappings = new ArrayList<>();
     private final int BYTES = 4;
-    Dataset dataset;
-    DatasetLayout layout;
-    private File file;
-    private RandomAccessFile raFile;
-    private long totalSize;
 
     /**
      * Create a memory-mapped interface to a large Dataset file that will
@@ -107,6 +107,24 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
         return layout;
     }
 
+    /**
+     * Set the mapping size which determines how many map segments are used.
+     *
+     * @param newMapSize the mapping size in MBytes (1024 x 1024 bytes)
+     */
+    public static void setMapSize(final int newMapSize) {
+        MAPPING_SIZE = newMapSize * 1024 * 1024;
+    }
+
+    /**
+     * Return the mapping size which determines how many map segments are used.
+     *
+     * @return the mapping size
+     */
+    public static int getMapSize() {
+        return MAPPING_SIZE / 1024 / 1024;
+    }
+
     @Override
     public final synchronized void writeHeader(boolean nvExtra) {
         if (file != null) {
@@ -120,11 +138,6 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
     }
 
     @Override
-    public boolean isWritable() {
-        return writable;
-    }
-
-    @Override
     public void setWritable(boolean state) throws IOException {
         if (writable != state) {
             if (state) {
@@ -135,6 +148,15 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
             }
             init();
         }
+    }
+
+    @Override
+    public boolean isWritable() {
+        return writable;
+    }
+
+    protected void startVecGet(int... offsets) {
+        // return start position, block, stride, nPoints 
     }
 
     @Override
@@ -168,6 +190,16 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
     @Override
     public long getTotalSize() {
         return totalSize;
+    }
+
+    private MappedByteBuffer getMapping(final int index) throws IOException {
+        MapInfo mapInfo = mappings.get(index);
+        if (mapInfo.buffer == null) {
+            mapInfo.mapIt(raFile);
+        } else {
+            mapInfo.touch();
+        }
+        return mapInfo.buffer;
     }
 
     @Override
@@ -292,38 +324,6 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
         for (MapInfo mapInfo : mappings) {
             mapInfo.force();
         }
-    }
-
-    protected void startVecGet(int... offsets) {
-        // return start position, block, stride, nPoints
-    }
-
-    private MappedByteBuffer getMapping(final int index) throws IOException {
-        MapInfo mapInfo = mappings.get(index);
-        if (mapInfo.buffer == null) {
-            mapInfo.mapIt(raFile);
-        } else {
-            mapInfo.touch();
-        }
-        return mapInfo.buffer;
-    }
-
-    /**
-     * Return the mapping size which determines how many map segments are used.
-     *
-     * @return the mapping size
-     */
-    public static int getMapSize() {
-        return MAPPING_SIZE / 1024 / 1024;
-    }
-
-    /**
-     * Set the mapping size which determines how many map segments are used.
-     *
-     * @param newMapSize the mapping size in MBytes (1024 x 1024 bytes)
-     */
-    public static void setMapSize(final int newMapSize) {
-        MAPPING_SIZE = newMapSize * 1024 * 1024;
     }
 
 }

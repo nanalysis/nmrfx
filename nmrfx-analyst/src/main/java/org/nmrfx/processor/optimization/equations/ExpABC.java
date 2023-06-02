@@ -112,10 +112,6 @@ public class ExpABC extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = a * exp(-x * b) + c";
-    }
-
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
 
@@ -138,5 +134,9 @@ public class ExpABC extends OptFunction {
                 }
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = a * exp(-x * b) + c";
     }
 }

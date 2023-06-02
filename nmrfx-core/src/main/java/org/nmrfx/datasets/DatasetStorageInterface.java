@@ -39,18 +39,18 @@ public interface DatasetStorageInterface {
     }
 
     /**
-     * Return whether matrix can be written. Will depend on underlying file.
-     *
-     * @return true if matrix can be written
-     */
-    public boolean isWritable();
-
-    /**
      * Change whether matrix can be written. Will depend on underlying file.
      *
      * @return true if matrix can be written
      */
     public void setWritable(boolean state) throws IOException;
+
+    /**
+     * Return whether matrix can be written. Will depend on underlying file.
+     *
+     * @return true if matrix can be written
+     */
+    public boolean isWritable();
 
     /**
      * Return the byte index in file that corresponds to offsets specified for

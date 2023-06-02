@@ -8,9 +8,9 @@ import org.nmrfx.peaks.PeakList;
  */
 public interface PeakMenuTarget {
 
-    PeakList getPeakList();
-
     void setPeakList(PeakList peakList);
+
+    PeakList getPeakList();
 
     void refreshPeakView();
 

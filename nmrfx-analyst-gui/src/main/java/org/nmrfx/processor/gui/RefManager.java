@@ -44,9 +44,6 @@ import java.util.*;
 public class RefManager {
 
     private static final Logger log = LoggerFactory.getLogger(RefManager.class);
-    static public final String[] propNames = {"skip", "label", "acqarray", "acqsize", "tdsize", "sf", "sw", "ref"};
-    static final String[] bSFNames = {"SFO1,1", "SFO1,2", "SFO1,3", "SFO1,4", "SFO1,5"};
-    static final String[] bSWNames = {"SW_h,1", "SW_h,2", "SW_h,3", "SW_h,4", "SW_h,5"};
     ChangeListener<Number> doubleListener;
     ChangeListener<Number> intListener;
     ChangeListener<String> stringListener;
@@ -56,6 +53,9 @@ public class RefManager {
     PropertySheet refSheet;
     ProcessorController processorController;
     Map<String, Object> refMap = new HashMap<>();
+    static public final String[] propNames = {"skip", "label", "acqarray", "acqsize", "tdsize", "sf", "sw", "ref"};
+    static final String[] bSFNames = {"SFO1,1", "SFO1,2", "SFO1,3", "SFO1,4", "SFO1,5"};
+    static final String[] bSWNames = {"SW_h,1", "SW_h,2", "SW_h,3", "SW_h,4", "SW_h,5"};
 
     RefManager(ProcessorController processorController, PropertySheet refSheet) {
         this.processorController = processorController;

@@ -23,13 +23,13 @@ public class PeakClusterMatcher {
 
     private final List<PeakList> expPeakLists;
     private final List<PeakList> predPeakLists;
-    private final int iDim;
     // FIXME: Should probably consider having a list of PeakCluster[]
     // to compliment the list of PeakList for the exp and pred clusters.
     private PeakCluster[] expPeakClusters = null;
     private PeakCluster[] predPeakClusters = null;
     private int[] clusterMatch = null;
     private List<PeakCluster[]> matchedClusters = null;
+    private final int iDim;
 
     public PeakClusterMatcher(List<PeakList> expPeakLists, List<PeakList> predPeakLists, int iDim) {
         this.expPeakLists = expPeakLists;

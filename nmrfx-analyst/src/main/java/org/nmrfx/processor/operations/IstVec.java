@@ -73,6 +73,12 @@ public class IstVec extends Operation {
      */
     private IstMath istMath;
 
+    @Override
+    public IstVec eval(Vec vector) throws ProcessingException {
+        ist(vector);
+        return this;
+    }
+
     /**
      * Create Vec operation for Iterative Soft Threshold.
      *
@@ -113,12 +119,6 @@ public class IstVec extends Operation {
         this(threshold, loops, schedule, alg, timeDomain, zeroFill, allValues, adjustThreshold);
         this.ph0 = ph0;
         this.ph1 = ph1;
-    }
-
-    @Override
-    public IstVec eval(Vec vector) throws ProcessingException {
-        ist(vector);
-        return this;
     }
 
     /**

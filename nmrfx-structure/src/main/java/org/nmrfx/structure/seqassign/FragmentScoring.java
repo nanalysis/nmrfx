@@ -19,6 +19,35 @@ public class FragmentScoring {
 
     static Map<String, MultivariateGaussianDistribution> aaDistMap = new HashMap<>();
 
+    public static class AAScore {
+
+        final double score;
+        final String name;
+        double norm;
+
+        public AAScore(String name, double score) {
+            this.score = score;
+            this.name = name;
+        }
+
+        public Double getScore() {
+            return score;
+        }
+
+        public Double getNorm() {
+            return norm;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void normalize(double sum) {
+            norm = score / sum;
+        }
+
+    }
+
     static void initMolAaDistMap() {
         BMRBStats.loadAllIfEmpty();
         Molecule molecule = Molecule.getActive();
@@ -181,35 +210,6 @@ public class FragmentScoring {
         matchScore.totalScore = pValue;
 
         return matchScore;
-    }
-
-    public static class AAScore {
-
-        final double score;
-        final String name;
-        double norm;
-
-        public AAScore(String name, double score) {
-            this.score = score;
-            this.name = name;
-        }
-
-        public Double getScore() {
-            return score;
-        }
-
-        public Double getNorm() {
-            return norm;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void normalize(double sum) {
-            norm = score / sum;
-        }
-
     }
 
 }

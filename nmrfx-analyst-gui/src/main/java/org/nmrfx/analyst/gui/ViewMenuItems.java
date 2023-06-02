@@ -40,17 +40,17 @@ public class ViewMenuItems extends MenuActions {
         menu.onShowingProperty().set(e -> verifyMenuItems());
     }
 
-    @Override
-    protected void advanced() {
-
-    }
-
     private void verifyMenuItems() {
         for (MenuItem menuItem : menu.getItems()) {
             if (PROCESSOR_MENU_TEXT.equals(menuItem.getText())) {
                 menuItem.setDisable(!AnalystApp.getFXMLControllerManager().getOrCreateActiveController().isProcessorControllerAvailable());
             }
         }
+    }
+
+    @Override
+    protected void advanced() {
+
     }
 
     private void showConsole() {

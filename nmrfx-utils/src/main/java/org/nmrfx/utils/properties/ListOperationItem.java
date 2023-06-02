@@ -60,6 +60,14 @@ public class ListOperationItem extends OperationItem implements ObservableObject
         this.typeSelector = typeSelector;
     }
 
+    /**
+     * Returns values as a string created by the java List implementation of toString()
+     */
+    @Override
+    public String getValue() {
+        return value.toString();
+    }
+
     @Override
     public Class<?> getType() {
         return ListOperationItem.class;
@@ -78,14 +86,6 @@ public class ListOperationItem extends OperationItem implements ObservableObject
     @Override
     public String getDescription() {
         return description;
-    }
-
-    /**
-     * Returns values as a string created by the java List implementation of toString()
-     */
-    @Override
-    public String getValue() {
-        return value.toString();
     }
 
     /**
@@ -137,34 +137,6 @@ public class ListOperationItem extends OperationItem implements ObservableObject
         }
     }
 
-    @Override
-    public boolean isDefault() {
-        return value.equals(defaultValue);
-    }
-
-    @Override
-    public void setFromString(String sValue) {
-        this.setValue(sValue);
-    }
-
-    @Override
-    public void setToDefault() {
-        value = defaultValue;
-    }
-
-    /**
-     * Returns the string representation of all Number values in the format "[.,.,.]" without any extra white
-     * space, if values contain non Numbers, those elements are not returned.
-     * Example: if values = [1.0, 2.0, 3.0] -> "[1.0,2.0,3.0]"
-     * if values = ["one", "two", "three"] -> "[]"
-     *
-     * @return The string representation of values
-     */
-    @Override
-    public String getStringRep() {
-        return "[" + listToString(value) + "]";
-    }
-
     /**
      * Returns the string representation of all Number values in the format ".,.,." without any extra white
      * space, if values contain non Numbers, those elements are not returned.
@@ -204,6 +176,34 @@ public class ListOperationItem extends OperationItem implements ObservableObject
 
     @Override
     public void removeListener(InvalidationListener listener) {
+    }
+
+    @Override
+    public boolean isDefault() {
+        return value.equals(defaultValue);
+    }
+
+    @Override
+    public void setFromString(String sValue) {
+        this.setValue(sValue);
+    }
+
+    @Override
+    public void setToDefault() {
+        value = defaultValue;
+    }
+
+    /**
+     * Returns the string representation of all Number values in the format "[.,.,.]" without any extra white
+     * space, if values contain non Numbers, those elements are not returned.
+     * Example: if values = [1.0, 2.0, 3.0] -> "[1.0,2.0,3.0]"
+     * if values = ["one", "two", "three"] -> "[]"
+     *
+     * @return The string representation of values
+     */
+    @Override
+    public String getStringRep() {
+        return "[" + listToString(value) + "]";
     }
 
 }

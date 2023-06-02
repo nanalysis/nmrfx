@@ -36,8 +36,6 @@ import java.util.Collections;
 public class GRINS {
 
     private static final Logger log = LoggerFactory.getLogger(GRINS.class);
-    public static double thresholdScale = 0.8;
-    public static double noiseScale = 5.0;
     final MatrixND matrix;
     final double noise;
     final boolean preserve;
@@ -47,6 +45,9 @@ public class GRINS {
     final double scale;
     final double[] phase;
     final String logFileName;
+
+    public static double thresholdScale = 0.8;
+    public static double noiseScale = 5.0;
     boolean calcLorentz = true;
     boolean calcGauss = false;
     double fracLorentz = 1.0;

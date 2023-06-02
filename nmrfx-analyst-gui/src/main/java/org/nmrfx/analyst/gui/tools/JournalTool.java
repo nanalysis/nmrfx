@@ -26,6 +26,15 @@ public class JournalTool {
         return vBox != null;
     }
 
+    public static JournalTool getTool(PolyChart chart) {
+        JournalTool journalTool = (JournalTool) chart.getPopoverTool(JournalTool.class.getName());
+        if (journalTool == null) {
+            journalTool = new JournalTool();
+            chart.setPopoverTool(JournalTool.class.getName(), journalTool);
+        }
+        return journalTool;
+    }
+
     public void initializePopover(PopOver popOver) {
         this.vBox = new VBox();
         HBox hBox = new HBox();
@@ -52,14 +61,5 @@ public class JournalTool {
             annoJournalFormat.setJournalName(journalName);
         }
         AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart().refresh();
-    }
-
-    public static JournalTool getTool(PolyChart chart) {
-        JournalTool journalTool = (JournalTool) chart.getPopoverTool(JournalTool.class.getName());
-        if (journalTool == null) {
-            journalTool = new JournalTool();
-            chart.setPopoverTool(JournalTool.class.getName(), journalTool);
-        }
-        return journalTool;
     }
 }

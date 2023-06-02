@@ -40,37 +40,27 @@ public class StructureProject extends ProjectBase {
         activeMol = null;
     }
 
+    public static StructureProject getActive() {
+        if (activeProject == null) {
+            activeProject = new StructureProject("Untitled 1");
+        }
+        return activeProject;
+    }
+
     public Molecule getMolecule(String name) {
         return (Molecule) molecules.get(name);
     }
 
-    public void removeMolecule(String name) {
-        molecules.remove(name);
+    public void putMolecule(Molecule molecule) {
+        molecules.put(molecule.getName(), molecule);
     }
 
     public void clearAllMolecules() {
         molecules.clear();
     }
 
-    public void saveProject() throws IOException {
-        ProjectBase currentProject = getActive();
-        setActive();
-        try {
-            if (projectDir == null) {
-                throw new IllegalArgumentException("Project directory not set");
-            }
-            super.saveProject();
-            NMRStarWriter.writeAll(getSTAR3FileName());
-            saveShifts(false);
-            saveShifts(true);
-        } catch (ParseException | InvalidPeakException | InvalidMoleculeException ex) {
-            throw new IOException(ex.getMessage());
-        }
-        currentProject.setActive();
-    }
-
-    public void putMolecule(Molecule molecule) {
-        molecules.put(molecule.getName(), molecule);
+    public void removeMolecule(String name) {
+        molecules.remove(name);
     }
 
     public Molecule activeMol() {
@@ -143,6 +133,23 @@ public class StructureProject extends ProjectBase {
 
     }
 
+    public void saveProject() throws IOException {
+        ProjectBase currentProject = getActive();
+        setActive();
+        try {
+            if (projectDir == null) {
+                throw new IllegalArgumentException("Project directory not set");
+            }
+            super.saveProject();
+            NMRStarWriter.writeAll(getSTAR3FileName());
+            saveShifts(false);
+            saveShifts(true);
+        } catch (ParseException | InvalidPeakException | InvalidMoleculeException ex) {
+            throw new IOException(ex.getMessage());
+        }
+        currentProject.setActive();
+    }
+
     boolean loadSTAR3(Path directory) throws IOException {
         File starFile = getSTAR3FileName(directory);
         boolean result = false;
@@ -200,6 +207,25 @@ public class StructureProject extends ProjectBase {
             }
         }
 
+    }
+
+    public static void loadMolecule(Path file) throws MoleculeIOException {
+        if (file.toString().endsWith(".pdb")) {
+            PDBFile pdbReader = new PDBFile();
+            pdbReader.readSequence(file.toString(), false, 0);
+            System.out.println("read mol: " + file.toString());
+        } else if (file.toString().endsWith(".sdf")) {
+            SDFile.read(file.toString(), null);
+        } else if (file.toString().endsWith(".mol")) {
+            SDFile.read(file.toString(), null);
+        } else if (file.toString().endsWith(".seq")) {
+            Sequence seq = new Sequence();
+            seq.read(file.toString());
+        }
+        if (MoleculeFactory.getActive() == null) {
+            throw new MoleculeIOException("Couldn't open any molecules");
+        }
+        System.out.println("active mol " + MoleculeFactory.getActive().getName());
     }
 
     void loadMoleculeEntities(Path directory) throws MoleculeIOException, IOException {
@@ -284,32 +310,6 @@ public class StructureProject extends ProjectBase {
                 throw ioE;
             }
         }
-    }
-
-    public static StructureProject getActive() {
-        if (activeProject == null) {
-            activeProject = new StructureProject("Untitled 1");
-        }
-        return activeProject;
-    }
-
-    public static void loadMolecule(Path file) throws MoleculeIOException {
-        if (file.toString().endsWith(".pdb")) {
-            PDBFile pdbReader = new PDBFile();
-            pdbReader.readSequence(file.toString(), false, 0);
-            System.out.println("read mol: " + file.toString());
-        } else if (file.toString().endsWith(".sdf")) {
-            SDFile.read(file.toString(), null);
-        } else if (file.toString().endsWith(".mol")) {
-            SDFile.read(file.toString(), null);
-        } else if (file.toString().endsWith(".seq")) {
-            Sequence seq = new Sequence();
-            seq.read(file.toString());
-        }
-        if (MoleculeFactory.getActive() == null) {
-            throw new MoleculeIOException("Couldn't open any molecules");
-        }
-        System.out.println("active mol " + MoleculeFactory.getActive().getName());
     }
 
 }

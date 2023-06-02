@@ -35,24 +35,24 @@ public class ConnectPeakAttributes {
         this.peaks = peaks;
     }
 
+    public void setColor(Color color) {
+        setColor(color.toString(), 1.0);
+    }
+
     public void setColor(String color, double opacity) {
         connColor = Color.web(color, opacity);
+    }
+
+    public void setWidth(double width) {
+        connWidth = width;
     }
 
     public Color getColor() {
         return connColor;
     }
 
-    public void setColor(Color color) {
-        setColor(color.toString(), 1.0);
-    }
-
     public double getWidth() {
         return connWidth;
-    }
-
-    public void setWidth(double width) {
-        connWidth = width;
     }
 
     public List<Peak> getPeaks() {

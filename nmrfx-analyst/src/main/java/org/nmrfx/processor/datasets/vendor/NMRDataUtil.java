@@ -283,6 +283,40 @@ public final class NMRDataUtil {
     } // end guessNucleusFromFreq
 
     /**
+     *
+     */
+    public static class PeekFiles extends SimpleFileVisitor<Path> {
+
+        ArrayList<String> fileList = new ArrayList<>();
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
+            if (attr.isRegularFile() && (file.endsWith("fid") || (file.endsWith("ser")) || file.toString().endsWith(".jdx") || file.toString().endsWith(".dx") || file.toString().endsWith(RS2DData.DATA_FILE_NAME))) {
+                String fidPath = NMRDataUtil.isFIDDir(file.toString());
+                if (fidPath != null) {
+                    fileList.add(fidPath);
+                }
+            }
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFileFailed(Path file, IOException e) {
+            log.warn(e.getMessage(), e);
+            return FileVisitResult.CONTINUE;
+        }
+
+        /**
+         * Get the files that were found while scanning
+         *
+         * @return a list of file names
+         */
+        public ArrayList<String> getFiles() {
+            return fileList;
+        }
+    } // end class PeekFiles
+
+    /**
      * Scan the specified directory to find sub-directories that are NMR data
      * sets.
      *
@@ -410,38 +444,4 @@ public final class NMRDataUtil {
         double[] phases = vec.autoPhase(true, winSize, 25.0, 2, 360.0, 50.0);
         return phases;
     }
-
-    /**
-     *
-     */
-    public static class PeekFiles extends SimpleFileVisitor<Path> {
-
-        ArrayList<String> fileList = new ArrayList<>();
-
-        @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
-            if (attr.isRegularFile() && (file.endsWith("fid") || (file.endsWith("ser")) || file.toString().endsWith(".jdx") || file.toString().endsWith(".dx") || file.toString().endsWith(RS2DData.DATA_FILE_NAME))) {
-                String fidPath = NMRDataUtil.isFIDDir(file.toString());
-                if (fidPath != null) {
-                    fileList.add(fidPath);
-                }
-            }
-            return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFileFailed(Path file, IOException e) {
-            log.warn(e.getMessage(), e);
-            return FileVisitResult.CONTINUE;
-        }
-
-        /**
-         * Get the files that were found while scanning
-         *
-         * @return a list of file names
-         */
-        public ArrayList<String> getFiles() {
-            return fileList;
-        }
-    } // end class PeekFiles
 }

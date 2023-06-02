@@ -146,6 +146,14 @@ public class AnalystApp extends Application {
         waitForCommit();
     }
 
+    public static boolean isMac() {
+        return SystemUtils.IS_OS_MAC;
+    }
+
+    public static String getVersion() {
+        return NvUtil.getVersion();
+    }
+
     public MenuBar makeMenuBar(String appName) {
         MenuToolkit tk = null;
         if (isMac()) {
@@ -643,14 +651,6 @@ public class AnalystApp extends Application {
         datasetController.refresh();
         datasetController.getStage().show();
         datasetController.getStage().toFront();
-    }
-
-    public static boolean isMac() {
-        return SystemUtils.IS_OS_MAC;
-    }
-
-    public static String getVersion() {
-        return NvUtil.getVersion();
     }
 
     /**

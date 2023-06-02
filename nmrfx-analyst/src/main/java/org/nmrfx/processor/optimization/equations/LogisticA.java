@@ -146,10 +146,6 @@ public class LogisticA extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = ((d - a) * x^c) / (x^c * b^c)";
-    }
-
     @Override
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
@@ -173,5 +169,9 @@ public class LogisticA extends OptFunction {
                     break;
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = ((d - a) * x^c) / (x^c * b^c)";
     }
 }

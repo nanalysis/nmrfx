@@ -17,7 +17,6 @@ import java.util.TreeMap;
 public class Spheres extends Group implements MolItem {
 
     static final private double minSelRadius = 0.15;
-    static Map parameterMap = new TreeMap();
     String molName = null;
     int iStructure = 0;
     int xDivisions = 15;
@@ -29,6 +28,7 @@ public class Spheres extends Group implements MolItem {
     Vector3d a = new Vector3d(0.0, 0.0, 0.0);
     Vector3d b = new Vector3d(0.0, 0.0, 0.0);
     Color color;
+    static Map parameterMap = new TreeMap();
 
     public Spheres(String molName, List<Vector3D> vecs, Color color, double radius, Vector3D center, double scale, String tag) {
         this.molName = molName;

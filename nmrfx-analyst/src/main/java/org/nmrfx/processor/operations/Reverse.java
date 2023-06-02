@@ -30,18 +30,18 @@ import org.nmrfx.processor.processing.ProcessingException;
 @PythonAPI("pyproc")
 public class Reverse extends Operation {
 
+    @Override
+    public Operation eval(Vec vector) throws ProcessingException {
+        vector.reverse();
+        return this;
+    }
+
     /**
      * Create operation for reverse.
      *
      * @throws ProcessingException
      */
     public Reverse() throws ProcessingException {
-    }
-
-    @Override
-    public Operation eval(Vec vector) throws ProcessingException {
-        vector.reverse();
-        return this;
     }
 
 }

@@ -37,20 +37,6 @@ public class Kaiser extends Apodization implements Invertible {
     final int apodSize;
     final int dim;
 
-    public Kaiser(double offset, double beta, double end, double c, int apodSize, int dim) {
-        this(offset, beta, end, c, apodSize, dim, false);
-    }
-
-    public Kaiser(double offset, double beta, double end, double c, int apodSize, int dim, boolean inverse) {
-        this.offset = offset;
-        this.end = end;
-        this.beta = beta;
-        this.c = c;
-        this.apodSize = apodSize;
-        this.dim = dim;
-        this.invertOp = inverse;
-    }
-
     @Override
     public Kaiser eval(Vec vector) throws ProcessingException {
         apply(vector);
@@ -65,6 +51,20 @@ public class Kaiser extends Apodization implements Invertible {
             apply(matrixND, dim, vSizes[dim]);
         }
         return this;
+    }
+
+    public Kaiser(double offset, double beta, double end, double c, int apodSize, int dim) {
+        this(offset, beta, end, c, apodSize, dim, false);
+    }
+
+    public Kaiser(double offset, double beta, double end, double c, int apodSize, int dim, boolean inverse) {
+        this.offset = offset;
+        this.end = end;
+        this.beta = beta;
+        this.c = c;
+        this.apodSize = apodSize;
+        this.dim = dim;
+        this.invertOp = inverse;
     }
 
     public void setupApod(int dataSize, int vStart) {

@@ -17,12 +17,18 @@ public class PolyChartManager {
     // singleton - maybe remove once the ownership is clearer
 
     private static final PolyChartManager instance = new PolyChartManager();
+
+    public static PolyChartManager getInstance() {
+        return instance;
+    }
+
     private final ObservableList<PolyChart> allCharts = FXCollections.observableArrayList();
     private final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
     private final SimpleBooleanProperty multipleCharts = new SimpleBooleanProperty(false);
     private final SimpleObjectProperty<DatasetBase> currentDataset = new SimpleObjectProperty<>(null);
     private final PolyChartSynchronizer synchronizer = new PolyChartSynchronizer();
     private int lastId = 0;
+
     public PolyChartManager() {
         allCharts.addListener((ListChangeListener<PolyChart>) e -> multipleCharts.set(allCharts.size() > 1));
     }
@@ -79,14 +85,14 @@ public class PolyChartManager {
         return allCharts;
     }
 
-    public PolyChart getActiveChart() {
-        return activeChart.get();
-    }
-
     public void setActiveChart(PolyChart chart) {
         activeChart.set(chart);
         currentDataset.set(chart.getDataset());
         chart.getController().setActiveChart(chart);
+    }
+
+    public PolyChart getActiveChart() {
+        return activeChart.get();
     }
 
     @Nullable
@@ -108,9 +114,5 @@ public class PolyChartManager {
 
     public PolyChartSynchronizer getSynchronizer() {
         return synchronizer;
-    }
-
-    public static PolyChartManager getInstance() {
-        return instance;
     }
 }

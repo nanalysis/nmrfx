@@ -47,15 +47,23 @@ public class NOECalibrator {
     private static double MAX_BONUS = 20.0;
 
     private static boolean sumAverage = true;
-    private final Map<PeakList, NoeCalibration> scaleMap = new HashMap<>();
     NoeSet noeSet;
     MoleculeBase molecule;
     private boolean useDistances = false;
     private char[] violCharArray = new char[0];
+    private final Map<PeakList, NoeCalibration> scaleMap = new HashMap<>();
 
     public NOECalibrator(NoeSet noeSet) {
         this.noeSet = noeSet;
         this.molecule = noeSet.getMolecularConstraints().molecule;
+    }
+
+    public static void setSumAverage(boolean state) {
+        sumAverage = state;
+    }
+
+    public static boolean getSumAverage() {
+        return sumAverage;
     }
 
     public NoeCalibration getCalibration(PeakList peakList) {
@@ -894,14 +902,6 @@ public class NOECalibrator {
             }
         }
         return listCopy;
-    }
-
-    public static boolean getSumAverage() {
-        return sumAverage;
-    }
-
-    public static void setSumAverage(boolean state) {
-        sumAverage = state;
     }
 
 }

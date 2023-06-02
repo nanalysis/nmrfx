@@ -42,6 +42,14 @@ public class HoseCodeGenerator {
         return shellNodes;
     }
 
+    class NodeComparator implements Comparator<MNode> {
+
+        @Override
+        public int compare(MNode o1, MNode o2) {
+            return o2.compareTo(o1);
+        }
+    }
+
     private void initNodeValue(Entity entity, MNode mNode) {
         MNode parent = mNode.getParent();
         Atom nodeAtom = mNode.getAtom();
@@ -297,13 +305,5 @@ public class HoseCodeGenerator {
 
     public void scoreNode(MNode mNode) {
         String elemName = mNode.getAtom().getElementName();
-    }
-
-    class NodeComparator implements Comparator<MNode> {
-
-        @Override
-        public int compare(MNode o1, MNode o2) {
-            return o2.compareTo(o1);
-        }
     }
 }

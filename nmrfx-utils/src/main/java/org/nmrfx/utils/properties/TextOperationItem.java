@@ -61,11 +61,6 @@ public class TextOperationItem extends OperationItem implements ObservableString
     }
 
     @Override
-    public String getValue() {
-        return value;
-    }
-
-    @Override
     public void setValue(Object o) {
         String oldValue = value;
         value = o.toString();
@@ -99,11 +94,6 @@ public class TextOperationItem extends OperationItem implements ObservableString
     }
 
     @Override
-    public String getStringRep() {
-        return '\'' + value + '\'';
-    }
-
-    @Override
     public String get() {
         return value;
     }
@@ -123,6 +113,16 @@ public class TextOperationItem extends OperationItem implements ObservableString
 
     @Override
     public void removeListener(InvalidationListener listener) {
+    }
+
+    @Override
+    public String getValue() {
+        return value;
+    }
+
+    @Override
+    public String getStringRep() {
+        return '\'' + value + '\'';
     }
 
 }

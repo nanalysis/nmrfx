@@ -42,9 +42,6 @@ public class OrderSVD {
     static HashMap<String, Double> maxRDCDict = new HashMap<>();
     static HashMap<String, Double> gammaIDict = new HashMap();
     static HashMap<String, Double> gammaSDict = new HashMap();
-    static double gammaH = 2.68e8;
-    static double gammaN = -2.71e7;
-    static double scaleHN = (gammaH * gammaN) / ((1.0e-10) * (1.0e-10) * (1.0e-10));
 
     static {
         maxRDCDict.put("HN", 24350.0);
@@ -62,6 +59,10 @@ public class OrderSVD {
         gammaSDict.put("C", 6.73e7);
         gammaSDict.put("H", 2.68e8);
     }
+
+    static double gammaH = 2.68e8;
+    static double gammaN = -2.71e7;
+    static double scaleHN = (gammaH * gammaN) / ((1.0e-10) * (1.0e-10) * (1.0e-10));
 
     RealMatrix AR;
     ArrayRealVector bVec;
@@ -181,6 +182,66 @@ public class OrderSVD {
                 cycle++;
             }
         }
+    }
+
+    /**
+     * Reads input files that are formatted in the same way as example.inp.
+     * Example file located in orderten_svd_dipole.c
+     *
+     * @param file String of the name of the file.
+     * @return List of Lists of vectors, unnormalized RDCConstraint values, maxRDC values,
+     * error values, atom names, and XYZ coordinates for both atoms.
+     */
+    public static List readInputFile(String file) {
+        ArrayList<Vector3D> vectors = new ArrayList<>();
+        ArrayList<Double> dc = new ArrayList<>();
+        ArrayList<Double> maxRDC = new ArrayList<>();
+        ArrayList<Double> errors = new ArrayList<>();
+        ArrayList<String> atoms = new ArrayList<>();
+        ArrayList<Double[]> a1Coords = new ArrayList<>();
+        ArrayList<Double[]> a2Coords = new ArrayList<>();
+
+        try (BufferedReader bf = new BufferedReader(new FileReader(file));
+             LineNumberReader lineReader = new LineNumberReader(bf)) {
+            while (true) {
+                String line = lineReader.readLine();
+                if (line == null) {
+                    break;
+                }
+                String sline = line.trim();
+                if (sline.length() == 0 || sline.charAt(0) == '#') {
+                    continue;
+                }
+                String[] sfields = sline.split("\\s+", -1);
+                if (sfields.length > 7 && StringUtils.isNumeric(sfields[7])) {
+                    Point3 v1 = new Point3(Double.parseDouble(sfields[0]), Double.parseDouble(sfields[1]), Double.parseDouble(sfields[2]));
+                    Point3 v2 = new Point3(Double.parseDouble(sfields[3]), Double.parseDouble(sfields[4]), Double.parseDouble(sfields[5]));
+                    Vector3D vector = v1.subtract(v2);
+                    vectors.add(vector);
+                    dc.add(Double.parseDouble(sfields[6]));
+                    maxRDC.add(Double.parseDouble(sfields[7]));
+                    errors.add(Double.parseDouble(sfields[8]));
+                    atoms.add(sfields[10]);
+                    Double[] a1XYZ = {Double.parseDouble(sfields[0]), Double.parseDouble(sfields[1]), Double.parseDouble(sfields[2])};
+                    Double[] a2XYZ = {Double.parseDouble(sfields[3]), Double.parseDouble(sfields[4]), Double.parseDouble(sfields[5])};
+                    a1Coords.add(a1XYZ);
+                    a2Coords.add(a2XYZ);
+                }
+            }
+        } catch (IOException ioe) {
+            log.warn(ioe.getMessage(), ioe);
+        }
+
+        List info = new ArrayList<>();
+        info.add(0, vectors);
+        info.add(1, dc);
+        info.add(2, maxRDC);
+        info.add(3, errors);
+        info.add(4, atoms);
+        info.add(5, a1Coords);
+        info.add(6, a2Coords);
+
+        return info;
     }
 
     /**
@@ -405,6 +466,17 @@ public class OrderSVD {
     }
 
     /**
+     * Sets the normalized RDCConstraint values calculated using the A matrix and x vector
+     * from the SVD.
+     *
+     * @param calcBVecNorm RealVector Normalized calculated RDCConstraint values b vector
+     *                     calculated using the solved x vector from the SVD: Ax = b.
+     */
+    public void setCalcBVectorNorm(RealVector calcBVecNorm) {
+        bCalcNorm = calcBVecNorm.toArray();
+    }
+
+    /**
      * Calculates the unnormalized RDCConstraint values using the A matrix and x vector
      * from the SVD.
      *
@@ -416,6 +488,17 @@ public class OrderSVD {
         RealVector tValsR = new ArrayRealVector(maxRDCs);
         RealVector calcBVec = calcBVecNorm.ebeMultiply(tValsR);
         return calcBVec;
+    }
+
+    /**
+     * Sets the unnormalized RDCConstraint values calculated using the A matrix and x
+     * vector from the SVD.
+     *
+     * @param calcBVec RealVector Unnormalized calculated RDCConstraint values b vector
+     *                 calculated using the solved x vector from the SVD: Ax = b.
+     */
+    public void setCalcBVector(RealVector calcBVec) {
+        bCalc = calcBVec.toArray();
     }
 
     /**
@@ -452,17 +535,6 @@ public class OrderSVD {
     }
 
     /**
-     * Sets the normalized RDCConstraint values calculated using the A matrix and x vector
-     * from the SVD.
-     *
-     * @param calcBVecNorm RealVector Normalized calculated RDCConstraint values b vector
-     *                     calculated using the solved x vector from the SVD: Ax = b.
-     */
-    public void setCalcBVectorNorm(RealVector calcBVecNorm) {
-        bCalcNorm = calcBVecNorm.toArray();
-    }
-
-    /**
      * Returns the unnormalized RDCConstraint values calculated using the A matrix and x
      * vector from the SVD.
      *
@@ -471,17 +543,6 @@ public class OrderSVD {
      */
     public double[] getCalcBVector() {
         return bCalc;
-    }
-
-    /**
-     * Sets the unnormalized RDCConstraint values calculated using the A matrix and x
-     * vector from the SVD.
-     *
-     * @param calcBVec RealVector Unnormalized calculated RDCConstraint values b vector
-     *                 calculated using the solved x vector from the SVD: Ax = b.
-     */
-    public void setCalcBVector(RealVector calcBVec) {
-        bCalc = calcBVec.toArray();
     }
 
     /**
@@ -495,15 +556,6 @@ public class OrderSVD {
     }
 
     /**
-     * Returns the Euler angles.
-     *
-     * @return double[][] Arrays of Euler angles.
-     */
-    public double[][] getEulerAngles() {
-        return euler;
-    }
-
-    /**
      * Sets the Euler angles.
      *
      * @param eulerVals
@@ -513,12 +565,12 @@ public class OrderSVD {
     }
 
     /**
-     * Returns the RDCConstraint constraint set.
+     * Returns the Euler angles.
      *
-     * @return
+     * @return double[][] Arrays of Euler angles.
      */
-    public RDCConstraintSet getRDCset() {
-        return rdcSet;
+    public double[][] getEulerAngles() {
+        return euler;
     }
 
     /**
@@ -528,6 +580,15 @@ public class OrderSVD {
      */
     public void setRDCset(RDCConstraintSet set) {
         rdcSet = set;
+    }
+
+    /**
+     * Returns the RDCConstraint constraint set.
+     *
+     * @return
+     */
+    public RDCConstraintSet getRDCset() {
+        return rdcSet;
     }
 
     /**
@@ -563,66 +624,6 @@ public class OrderSVD {
         double[][] euler = {{alpha, beta, gamma}, {alpha2, beta2, gamma}};
 
         return euler;
-    }
-
-    /**
-     * Reads input files that are formatted in the same way as example.inp.
-     * Example file located in orderten_svd_dipole.c
-     *
-     * @param file String of the name of the file.
-     * @return List of Lists of vectors, unnormalized RDCConstraint values, maxRDC values,
-     * error values, atom names, and XYZ coordinates for both atoms.
-     */
-    public static List readInputFile(String file) {
-        ArrayList<Vector3D> vectors = new ArrayList<>();
-        ArrayList<Double> dc = new ArrayList<>();
-        ArrayList<Double> maxRDC = new ArrayList<>();
-        ArrayList<Double> errors = new ArrayList<>();
-        ArrayList<String> atoms = new ArrayList<>();
-        ArrayList<Double[]> a1Coords = new ArrayList<>();
-        ArrayList<Double[]> a2Coords = new ArrayList<>();
-
-        try (BufferedReader bf = new BufferedReader(new FileReader(file));
-             LineNumberReader lineReader = new LineNumberReader(bf)) {
-            while (true) {
-                String line = lineReader.readLine();
-                if (line == null) {
-                    break;
-                }
-                String sline = line.trim();
-                if (sline.length() == 0 || sline.charAt(0) == '#') {
-                    continue;
-                }
-                String[] sfields = sline.split("\\s+", -1);
-                if (sfields.length > 7 && StringUtils.isNumeric(sfields[7])) {
-                    Point3 v1 = new Point3(Double.parseDouble(sfields[0]), Double.parseDouble(sfields[1]), Double.parseDouble(sfields[2]));
-                    Point3 v2 = new Point3(Double.parseDouble(sfields[3]), Double.parseDouble(sfields[4]), Double.parseDouble(sfields[5]));
-                    Vector3D vector = v1.subtract(v2);
-                    vectors.add(vector);
-                    dc.add(Double.parseDouble(sfields[6]));
-                    maxRDC.add(Double.parseDouble(sfields[7]));
-                    errors.add(Double.parseDouble(sfields[8]));
-                    atoms.add(sfields[10]);
-                    Double[] a1XYZ = {Double.parseDouble(sfields[0]), Double.parseDouble(sfields[1]), Double.parseDouble(sfields[2])};
-                    Double[] a2XYZ = {Double.parseDouble(sfields[3]), Double.parseDouble(sfields[4]), Double.parseDouble(sfields[5])};
-                    a1Coords.add(a1XYZ);
-                    a2Coords.add(a2XYZ);
-                }
-            }
-        } catch (IOException ioe) {
-            log.warn(ioe.getMessage(), ioe);
-        }
-
-        List info = new ArrayList<>();
-        info.add(0, vectors);
-        info.add(1, dc);
-        info.add(2, maxRDC);
-        info.add(3, errors);
-        info.add(4, atoms);
-        info.add(5, a1Coords);
-        info.add(6, a2Coords);
-
-        return info;
     }
 
     /**

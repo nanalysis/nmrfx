@@ -84,15 +84,6 @@ public class BooleanOperationItem extends OperationItem implements ObservableBoo
     }
 
     @Override
-    public String getStringRep() {
-        if (value) {
-            return "True";
-        } else {
-            return "False";
-        }
-    }
-
-    @Override
     public boolean get() {
         return value;
     }
@@ -112,5 +103,14 @@ public class BooleanOperationItem extends OperationItem implements ObservableBoo
 
     @Override
     public void removeListener(InvalidationListener listener) {
+    }
+
+    @Override
+    public String getStringRep() {
+        if (value) {
+            return "True";
+        } else {
+            return "False";
+        }
     }
 }

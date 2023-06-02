@@ -28,13 +28,13 @@ import java.util.*;
  */
 public class Loop {
 
-    final HashMap<String, ArrayList<String>> loopTags = new HashMap<>();
-    final Saveframe saveFrame;
     String name = "";
     ArrayList<String>[] columns = null;
+    final HashMap<String, ArrayList<String>> loopTags = new HashMap<>();
     ArrayList<String> tags = new ArrayList();
     private int nTags;
     private int nRows = 0;
+    final Saveframe saveFrame;
 
     /**
      * Creates a new instance of Loop

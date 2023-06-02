@@ -771,6 +771,32 @@ public interface NMRData {
         return schedule;
     }
 
+
+    /**
+     * Create a sample schedule (with Poisson - Gap sampling)
+     *
+     * @param z        Full size of acquistion
+     * @param fraction fraction of total points actually sampled
+     * @param path     Path to a sample file to create
+     * @param demo     set to true to indicate that dataset actually has full
+     *                 sampling. We just want to simulate NUS.
+     * @param nmrdata  The NMRData object that this schedule will be associated
+     *                 with
+     * @return the SampleSchedule object
+     * @throws ProcessingException if a processing error occurs
+     */
+    static SampleSchedule createSampleSchedule(int z, double fraction, String path,
+                                               boolean demo, NMRData nmrdata) throws ProcessingException {
+        int p = (int) (fraction * z);
+        SampleSchedule schedule = new SampleSchedule(p, z, path, demo);
+        if (nmrdata != null) {
+            nmrdata.setSampleSchedule(schedule);
+            return schedule;
+        } else {
+            throw new ProcessingException("Sample schedule created, but no FID object found.");
+        }
+    }
+
     /**
      * Get the values as a name-value map for a specified set of parameter
      * names.
@@ -883,30 +909,5 @@ public interface NMRData {
 
     default void clearSkipGroups() {
         getSkipGroups().clear();
-    }
-
-    /**
-     * Create a sample schedule (with Poisson - Gap sampling)
-     *
-     * @param z        Full size of acquistion
-     * @param fraction fraction of total points actually sampled
-     * @param path     Path to a sample file to create
-     * @param demo     set to true to indicate that dataset actually has full
-     *                 sampling. We just want to simulate NUS.
-     * @param nmrdata  The NMRData object that this schedule will be associated
-     *                 with
-     * @return the SampleSchedule object
-     * @throws ProcessingException if a processing error occurs
-     */
-    static SampleSchedule createSampleSchedule(int z, double fraction, String path,
-                                               boolean demo, NMRData nmrdata) throws ProcessingException {
-        int p = (int) (fraction * z);
-        SampleSchedule schedule = new SampleSchedule(p, z, path, demo);
-        if (nmrdata != null) {
-            nmrdata.setSampleSchedule(schedule);
-            return schedule;
-        } else {
-            throw new ProcessingException("Sample schedule created, but no FID object found.");
-        }
     }
 }

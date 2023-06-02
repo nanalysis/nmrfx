@@ -23,8 +23,7 @@ import java.util.TreeMap;
 public class MolCylinders extends Group implements MolItem {
 
     static final private double minSelRadius = 0.1;
-    private final static double DEGTORAD = 180.0 / Math.PI;
-    static Map parameterMap = new TreeMap();
+
     String molName = null;
     int iStructure = 0;
     int xDivisions = 15;
@@ -33,6 +32,8 @@ public class MolCylinders extends Group implements MolItem {
     List<BondLine> bondLines = null;
     Vector3d a = new Vector3d(0.0, 0.0, 0.0);
     Vector3d b = new Vector3d(0.0, 0.0, 0.0);
+    static Map parameterMap = new TreeMap();
+    private final static double DEGTORAD = 180.0 / Math.PI;
 
     public MolCylinders(String molName, List<Bond> bonds, List<BondLine> bondLines, double radius, String tag) {
         this.molName = molName;
@@ -98,6 +99,12 @@ public class MolCylinders extends Group implements MolItem {
             }
         }
         return result;
+
+    }
+
+    enum CylPos {
+
+        TOP, BOTTOM, CENTER, MISS
 
     }
 
@@ -423,12 +430,6 @@ public class MolCylinders extends Group implements MolItem {
         // rotate the cylinder into correct orientation
         Transform transform = rotateMatrix.createConcatenation(rotateFix);
         return transform;
-    }
-
-    enum CylPos {
-
-        TOP, BOTTOM, CENTER, MISS
-
     }
 
 }

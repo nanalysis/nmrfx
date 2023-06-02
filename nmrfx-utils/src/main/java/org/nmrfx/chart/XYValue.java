@@ -67,12 +67,12 @@ public class XYValue {
         return y;
     }
 
-    public Object getExtraValue() {
-        return extraValue;
-    }
-
     public void setExtraValue(Object value) {
         this.extraValue = value;
+    }
+
+    public Object getExtraValue() {
+        return extraValue;
     }
 
 }

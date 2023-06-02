@@ -34,17 +34,17 @@ public class Fdss extends Operation {
     private final Unit startUnit;
     private final Unit endUnit;
 
+    @Override
+    public Fdss eval(Vec vector) throws ProcessingException {
+        fdss(vector);
+        return this;
+    }
+
     public Fdss(Unit centerUnit, Unit startUnit, Unit endUnit, boolean autoCenter) {
         this.startUnit = startUnit;
         this.centerUnit = centerUnit;
         this.endUnit = endUnit;
         this.autoCenter = autoCenter;
-    }
-
-    @Override
-    public Fdss eval(Vec vector) throws ProcessingException {
-        fdss(vector);
-        return this;
     }
 
     private void fdss(Vec vector) throws ProcessingException {

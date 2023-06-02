@@ -104,10 +104,6 @@ public class RDispSin extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = A-A*sin(B/x)/(B/x)+C";
-    }
-
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
         double yAtMinX = DataUtil.getYAtMinX(VecID.Y, VecID.X, getDataSetPtr());
@@ -129,5 +125,9 @@ public class RDispSin extends OptFunction {
                 }
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = A-A*sin(B/x)/(B/x)+C";
     }
 }

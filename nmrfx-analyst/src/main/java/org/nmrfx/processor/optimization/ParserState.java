@@ -36,6 +36,7 @@ public enum ParserState {
     EQUATION_NAME(2),
     DATA_NAME(3),
     DATA_VALUE(4);
+    private final int value;
     private static Map<Integer, ParserState> lu = new HashMap<Integer, ParserState>();
 
     static {
@@ -43,8 +44,6 @@ public enum ParserState {
             lu.put(pstate.get(), pstate);
         }
     }
-
-    private final int value;
 
     ParserState(int value) {
         this.value = value;

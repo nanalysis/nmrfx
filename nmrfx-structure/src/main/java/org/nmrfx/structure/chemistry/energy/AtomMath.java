@@ -34,7 +34,24 @@ import org.nmrfx.chemistry.constraints.DistanceConstraint;
 public class AtomMath {
 
     static final double sumAvgN = 6.0;
-    static final double RADJ = 0.02;
+
+    // atm_dis Vector3D
+    // atm_sqdis Vector3D
+    private static class IrpParameter {
+
+        final int irpClass;
+        final double v;
+        final double s;
+        final int n;
+
+        IrpParameter(int irpClass, double v, double s, int n) {
+            this.irpClass = irpClass;
+            this.v = v;
+            this.s = s;
+            this.n = n;
+        }
+    }
+
     static IrpParameter[] IrpParameters = new IrpParameter[10];
 
     static {
@@ -48,6 +65,8 @@ public class AtomMath {
         IrpParameters[8] = new IrpParameter(8, 1.90, 1.0, 3);
         IrpParameters[9] = new IrpParameter(9, 1.80, 1.0, 3);
     }
+
+    static final double RADJ = 0.02;
 
     /**
      *
@@ -243,7 +262,7 @@ public class AtomMath {
             if (!calcDeriv) {
                 result = new AtomEnergy(e);
             } else {
-                //  what is needed is actually the derivitive/r, therefore
+                //  what is needed is actually the derivitive/r, therefore 
                 // we divide by r
                 // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
                 double deriv = -2.0 * weight * dif / (r + RADJ);
@@ -425,7 +444,7 @@ public class AtomMath {
                     double viol2 = viol * viol;
                     if (calcDeriv) {
                         double energy = noeWeight * viol2 * viol;
-                        // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
+                        // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???                    
                         double deriv = 2.0 * energy / (r + RADJ);
                         energy = energy * viol;
                         result = new AtomEnergy(energy, deriv);
@@ -444,7 +463,7 @@ public class AtomMath {
         final AtomEnergy result;
 
         // 100  80   101 - 359 - 79
-        // 80  100
+        // 80  100   
         if ((lower < upper) && ((dihedral <= upper) && (dihedral >= lower))) {
             result = AtomEnergy.ZERO;
         } else if ((lower > upper) && ((dihedral >= lower))) {
@@ -514,22 +533,5 @@ public class AtomMath {
         result = new AtomEnergy(energy);
         return result;
 
-    }
-
-    // atm_dis Vector3D
-    // atm_sqdis Vector3D
-    private static class IrpParameter {
-
-        final int irpClass;
-        final double v;
-        final double s;
-        final int n;
-
-        IrpParameter(int irpClass, double v, double s, int n) {
-            this.irpClass = irpClass;
-            this.v = v;
-            this.s = s;
-            this.n = n;
-        }
     }
 }

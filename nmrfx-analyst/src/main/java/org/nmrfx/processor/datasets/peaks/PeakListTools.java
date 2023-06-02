@@ -56,19 +56,22 @@ import static org.nmrfx.processor.datasets.peaks.PeakListTools.GuessType.*;
  */
 public class PeakListTools {
     private static final Logger log = LoggerFactory.getLogger(PeakListTools.class);
-    /**
-     *
-     */
-    public static Map<String, PeakList> peakListTable = new LinkedHashMap<>();
-    /**
-     *
-     */
-    public boolean inMem;
 
     public static ResonanceFactory resFactory() {
         Project project = (Project) Project.getActive();
         return project.resFactory;
     }
+
+
+    /**
+     *
+     */
+    public static Map<String, PeakList> peakListTable = new LinkedHashMap<>();
+
+    /**
+     *
+     */
+    public boolean inMem;
 
     public static void swap(double[] limits) {
         double hold;
@@ -485,6 +488,20 @@ public class PeakListTools {
         }
     }
 
+    /**
+     *
+     */
+    public static class MatchItem {
+
+        final int itemIndex;
+        final double[] values;
+
+        MatchItem(final int itemIndex, final double[] values) {
+            this.itemIndex = itemIndex;
+            this.values = values;
+        }
+    }
+
     public static MatchResult matchPeakLists(PeakList peakListA, PeakList peakListB, int[] dims, double[] tol) {
         List<MatchItem> peakItemsA = getMatchingItems(peakListA, dims);
         List<MatchItem> peakItemsB = getMatchingItems(peakListB, dims);
@@ -546,6 +563,7 @@ public class PeakListTools {
         }
         return result;
     }
+
 
     public static void shiftAndFreezePeakList(List<Peak[]> peakMatches, int[] dims) {
         for (var peakMatch : peakMatches) {
@@ -663,6 +681,22 @@ public class PeakListTools {
         return matchList;
     }
 
+    static class MatchResult {
+        List<MatchItem> matchItemsA;
+        List<MatchItem> matchItemsB;
+        final double score;
+        final int nMatches;
+        final int[] matching;
+
+        MatchResult(List<MatchItem> matchItemsA, List<MatchItem> matchItemsB, final int[] matching, final int nMatches, final double score) {
+            this.matchItemsA = matchItemsA;
+            this.matchItemsB = matchItemsB;
+            this.matching = matching;
+            this.score = score;
+            this.nMatches = nMatches;
+        }
+    }
+
     private static MatchResult doBPMatch(PeakList peakList, List<MatchItem> iMList, final double[] iOffsets, List<MatchItem> jMList, final double[] jOffsets, double[] tol) {
         int iNPeaks = iMList.size();
         int jNPeaks = jMList.size();
@@ -751,6 +785,7 @@ public class PeakListTools {
             log.warn(e.getMessage(), e);
         }
     }
+// fixme removed bpmatchpeaks
 
     /**
      * @param iPeak
@@ -791,7 +826,6 @@ public class PeakListTools {
         }
         return deltaSqSum;
     }
-// fixme removed bpmatchpeaks
 
     public static void clusterPeakColumns(PeakList peakList, int iDim) {
         double widthScale = 0.25;
@@ -838,6 +872,9 @@ public class PeakListTools {
             }
         }
     }
+
+    // FIXME should check to see that nucleus is same
+    // FIXME should check to see that nucleus is same
 
     /**
      * @param signals
@@ -906,8 +943,31 @@ public class PeakListTools {
         }
     }
 
-    // FIXME should check to see that nucleus is same
-    // FIXME should check to see that nucleus is same
+    final static class CenterRef {
+
+        final int index;
+        final int dim;
+
+        public CenterRef(final int index, final int dim) {
+            this.index = index;
+            this.dim = dim;
+        }
+    }
+
+    public enum GuessType {
+        GLOBAL_INTENSITY,
+        RELAX_END_INTENSITY,
+        RELAX_RATE,
+        INTENSITY,
+        CENTER,
+        WIDTH,
+        SHAPE
+    }
+
+
+    public record GuessValue(double value, double lower, double upper, boolean floating, GuessType guessType) {
+    }
+
 
     /**
      * @param pt
@@ -1697,101 +1757,54 @@ public class PeakListTools {
         return result;
     }
 
-    public enum GuessType {
-        GLOBAL_INTENSITY,
-        RELAX_END_INTENSITY,
-        RELAX_RATE,
-        INTENSITY,
-        CENTER,
-        WIDTH,
-        SHAPE
-    }
-
-    /**
-     *
-     */
-    public static class MatchItem {
-
-        final int itemIndex;
-        final double[] values;
-
-        MatchItem(final int itemIndex, final double[] values) {
-            this.itemIndex = itemIndex;
-            this.values = values;
-        }
-    }
-
-    static class MatchResult {
-        final double score;
-        final int nMatches;
-        final int[] matching;
-        List<MatchItem> matchItemsA;
-        List<MatchItem> matchItemsB;
-
-        MatchResult(List<MatchItem> matchItemsA, List<MatchItem> matchItemsB, final int[] matching, final int nMatches, final double score) {
-            this.matchItemsA = matchItemsA;
-            this.matchItemsB = matchItemsB;
-            this.matching = matching;
-            this.score = score;
-            this.nMatches = nMatches;
-        }
-    }
-
-    final static class CenterRef {
-
-        final int index;
-        final int dim;
-
-        public CenterRef(final int index, final int dim) {
-            this.index = index;
-            this.dim = dim;
-        }
-    }
-
-    public record GuessValue(double value, double lower, double upper, boolean floating, GuessType guessType) {
-    }
-
     /**
      *
      */
     static public class PhaseRelationship {
+
+        private static final TreeMap TYPES_LIST = new TreeMap();
 
         /**
          *
          */
         public static final PhaseRelationship ANYPHASE = new PhaseRelationship(
                 "anyphase");
+
         /**
          *
          */
         public static final PhaseRelationship INPHASE = new PhaseRelationship(
                 "inphase");
+
         /**
          *
          */
         public static final PhaseRelationship INPHASE_POS = new PhaseRelationship(
                 "inphase_pos");
+
         /**
          *
          */
         public static final PhaseRelationship INPHASE_NEG = new PhaseRelationship(
                 "inphase_neg");
+
         /**
          *
          */
         public static final PhaseRelationship ANTIPHASE = new PhaseRelationship(
                 "antiphase");
+
         /**
          *
          */
         public static final PhaseRelationship ANTIPHASE_LEFT = new PhaseRelationship(
                 "antiphase_left");
+
         /**
          *
          */
         public static final PhaseRelationship ANTIPHASE_RIGHT = new PhaseRelationship(
                 "antiphase_right");
-        private static final TreeMap TYPES_LIST = new TreeMap();
         private final String name;
 
         private PhaseRelationship(String name) {

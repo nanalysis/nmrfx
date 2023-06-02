@@ -58,6 +58,7 @@ public class ProcessingCodeAreaUtil {
     private static final String STRING_PATTERN = "\"([^\"\\\\]|\\\\.)*\"";
     private static final String SNGLSTRING_PATTERN = "\'([^\'\\\\]|\\\\.)*\'";
     private static final String COMMENT_PATTERN = "//[^\n]*" + "|" + "/\\*(.|\\R)*?\\*/";
+
     private static final Pattern PATTERN = Pattern.compile(
             "(?<KEYWORD>" + KEYWORD_PATTERN + ")"
                     + "|(?<OPS>" + OP_PATTERN + ")"
@@ -70,6 +71,7 @@ public class ProcessingCodeAreaUtil {
                     + "|(?<SNGLSTRING>" + SNGLSTRING_PATTERN + ")"
                     + "|(?<COMMENT>" + COMMENT_PATTERN + ")"
     );
+
     private CodeArea codeArea;
     private ExecutorService executor;
 

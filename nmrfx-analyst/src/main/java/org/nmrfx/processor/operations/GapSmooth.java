@@ -33,7 +33,6 @@ import org.nmrfx.processor.processing.ProcessingException;
 @PythonAPI("pyproc")
 public class GapSmooth extends Operation {
 
-    private final boolean autoCenter;
     /**
      * Center point.
      */
@@ -42,6 +41,7 @@ public class GapSmooth extends Operation {
     private int center;
     private int start;
     private int end;
+    private final boolean autoCenter;
 
     /**
      * @param center

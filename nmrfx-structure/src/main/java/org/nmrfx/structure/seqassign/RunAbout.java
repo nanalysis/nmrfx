@@ -42,6 +42,10 @@ public class RunAbout implements SaveframeWriter {
         runaboutMap.put(id, this);
     }
 
+    public static final RunAbout getRunAbout(int id) {
+        return runaboutMap.get(id);
+    }
+
     public boolean isActive() {
         return active;
     }
@@ -65,29 +69,6 @@ public class RunAbout implements SaveframeWriter {
         return peakLists;
     }
 
-    public void setPeakLists(List<PeakList> lists) {
-        refList = lists.get(0);
-        PeakList.clusterOrigin = refList;
-        List<String> stdNames = Arrays.asList(SpinSystem.ATOM_TYPES);
-        int[][] counts = new int[2][stdNames.size()];
-        peakLists.clear();
-        peakListMap.clear();
-        datasetMap.clear();
-        peakListTypes.clear();
-        peakLists.addAll(lists);
-
-        for (var peakList : peakLists) {
-            String typeName = peakList.getExperimentType();
-            peakListMap.put(typeName, peakList);
-            peakListTypes.put(peakList.getName(), typeName);
-            datasetMap.put(typeName, DatasetBase.getDataset(peakList.getDatasetName()));
-            List<String> patElems = getPatterns(peakList);
-            setAtomCount(typeName, patElems, counts, stdNames);
-        }
-        SpinSystem.nAtmPeaks = counts;
-        active = true;
-    }
-
     public List<String> getDimLabel(String dimType) {
         return dimLabels.get(dimType);
     }
@@ -109,6 +90,42 @@ public class RunAbout implements SaveframeWriter {
         }
         aTypeMap.put(peakList.getExperimentType(), aTypes);
         return patElems;
+    }
+
+    public static class TypeInfo {
+
+        final boolean[][] intraResidue;
+        final String[][] names;
+        final int[][] signs;
+        final int nTotal;
+
+        TypeInfo(int nDim, int nTotal) {
+            intraResidue = new boolean[nDim][];
+            names = new String[nDim][];
+            signs = new int[nDim][];
+            this.nTotal = nTotal;
+        }
+
+        void setIntraResidue(int iDim, boolean[] values) {
+            intraResidue[iDim] = values;
+        }
+
+        void setNames(int iDim, String[] values) {
+            names[iDim] = values;
+        }
+
+        void setSigns(int iDim, int[] values) {
+            signs[iDim] = values;
+        }
+
+        String[] getNames(int iDim) {
+            return names[iDim];
+        }
+
+        boolean[] getIntraResidue(int iDim) {
+            return intraResidue[iDim];
+        }
+
     }
 
     public TypeInfo getTypeInfo(String typeName) {
@@ -188,6 +205,30 @@ public class RunAbout implements SaveframeWriter {
         refList = peakList;
         PeakList.clusterOrigin = refList;
     }
+
+    public void setPeakLists(List<PeakList> lists) {
+        refList = lists.get(0);
+        PeakList.clusterOrigin = refList;
+        List<String> stdNames = Arrays.asList(SpinSystem.ATOM_TYPES);
+        int[][] counts = new int[2][stdNames.size()];
+        peakLists.clear();
+        peakListMap.clear();
+        datasetMap.clear();
+        peakListTypes.clear();
+        peakLists.addAll(lists);
+
+        for (var peakList : peakLists) {
+            String typeName = peakList.getExperimentType();
+            peakListMap.put(typeName, peakList);
+            peakListTypes.put(peakList.getName(), typeName);
+            datasetMap.put(typeName, DatasetBase.getDataset(peakList.getDatasetName()));
+            List<String> patElems = getPatterns(peakList);
+            setAtomCount(typeName, patElems, counts, stdNames);
+        }
+        SpinSystem.nAtmPeaks = counts;
+        active = true;
+    }
+
 
     public Optional<String> getTypeName(String row, String dDir) {
         Optional<String> typeName = Optional.empty();
@@ -328,6 +369,30 @@ public class RunAbout implements SaveframeWriter {
         getSpinSystems().dump();
     }
 
+    public static String getHDimName(PeakList peakList) {
+        String result = null;
+        for (int i = 0; i < peakList.getNDim(); i++) {
+            String dimName = peakList.getSpectralDim(i).getDimName();
+            if (dimName.contains("H")) {
+                result = dimName;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public static String getNDimName(PeakList peakList) {
+        String result = null;
+        for (int i = 0; i < peakList.getNDim(); i++) {
+            String dimName = peakList.getSpectralDim(i).getDimName();
+            if (dimName.contains("N") && !dimName.contains("H")) {
+                result = dimName;
+                break;
+            }
+        }
+        return result;
+    }
+
     public void filterPeaks() {
         double tolScale = 3.0;
         PeakList refList = peakLists.get(0);
@@ -454,6 +519,7 @@ public class RunAbout implements SaveframeWriter {
         spinSystems.readSTARSaveFrame(saveframe);
     }
 
+
     @Override
     public void write(Writer chan) throws ParseException, IOException {
         writeToSTAR(chan);
@@ -506,69 +572,5 @@ public class RunAbout implements SaveframeWriter {
             }
             setPeakLists(loopLists);
         }
-    }
-
-    public static final RunAbout getRunAbout(int id) {
-        return runaboutMap.get(id);
-    }
-
-    public static String getHDimName(PeakList peakList) {
-        String result = null;
-        for (int i = 0; i < peakList.getNDim(); i++) {
-            String dimName = peakList.getSpectralDim(i).getDimName();
-            if (dimName.contains("H")) {
-                result = dimName;
-                break;
-            }
-        }
-        return result;
-    }
-
-    public static String getNDimName(PeakList peakList) {
-        String result = null;
-        for (int i = 0; i < peakList.getNDim(); i++) {
-            String dimName = peakList.getSpectralDim(i).getDimName();
-            if (dimName.contains("N") && !dimName.contains("H")) {
-                result = dimName;
-                break;
-            }
-        }
-        return result;
-    }
-
-    public static class TypeInfo {
-
-        final boolean[][] intraResidue;
-        final String[][] names;
-        final int[][] signs;
-        final int nTotal;
-
-        TypeInfo(int nDim, int nTotal) {
-            intraResidue = new boolean[nDim][];
-            names = new String[nDim][];
-            signs = new int[nDim][];
-            this.nTotal = nTotal;
-        }
-
-        void setIntraResidue(int iDim, boolean[] values) {
-            intraResidue[iDim] = values;
-        }
-
-        void setNames(int iDim, String[] values) {
-            names[iDim] = values;
-        }
-
-        void setSigns(int iDim, int[] values) {
-            signs[iDim] = values;
-        }
-
-        String[] getNames(int iDim) {
-            return names[iDim];
-        }
-
-        boolean[] getIntraResidue(int iDim) {
-            return intraResidue[iDim];
-        }
-
     }
 }

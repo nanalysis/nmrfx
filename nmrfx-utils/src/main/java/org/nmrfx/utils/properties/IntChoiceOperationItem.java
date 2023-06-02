@@ -35,10 +35,10 @@ import java.util.Collection;
  */
 public class IntChoiceOperationItem extends OperationItem implements ObservableIntegerValue {
 
-    private final Collection<?> choices;
     Integer defaultValue;
     Integer value;
     ChangeListener<? super Number> listener;
+    private final Collection<?> choices;
 
     public IntChoiceOperationItem(ChangeListener listener, Integer defaultValue, Collection<?> choices, String category, String name, String description) {
         super(category, name, description);
@@ -97,11 +97,6 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
     }
 
     @Override
-    public String getStringRep() {
-        return String.valueOf(value);
-    }
-
-    @Override
     public int get() {
         return value;
     }
@@ -125,6 +120,11 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
 
     public Collection<?> getChoices() {
         return choices;
+    }
+
+    @Override
+    public String getStringRep() {
+        return String.valueOf(value);
     }
 
     @Override

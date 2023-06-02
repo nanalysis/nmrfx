@@ -43,9 +43,6 @@ import static java.util.Objects.requireNonNull;
  */
 public class RotationalDynamics {
 
-    public static boolean firstRun = true;
-    private static ProgressUpdater progressUpdater = null;
-    public TrajectoryWriter trajectoryWriter = null;
     ArrayList<AtomBranch> branches;
     Molecule molecule;
     Dihedral dihedrals;
@@ -73,6 +70,9 @@ public class RotationalDynamics {
     double sumERef = 0.0;
     double[] velStore = null;
     Random rand = null;
+    public static boolean firstRun = true;
+    public TrajectoryWriter trajectoryWriter = null;
+    private static ProgressUpdater progressUpdater = null;
     PyObject tempFunction;
     PyObject econFunction;
 
@@ -91,6 +91,10 @@ public class RotationalDynamics {
         this.rand = rand;
         getBranchAtoms();
         // makeInertias now
+    }
+
+    public static void setUpdater(ProgressUpdater updater) {
+        progressUpdater = updater;
     }
 
     public void setTrajectoryWriter(TrajectoryWriter trajWriter) {
@@ -506,6 +510,36 @@ public class RotationalDynamics {
         return deltaEnergy;
     }
 
+    class DynState {
+
+        double lastTimeStep;
+        double lastDelta;
+        double lastLastTotalEnergy;
+        double lastTotalTime;
+        double lastSumDeltaSq;
+        double lastMaxDelta;
+        double lastSumERef;
+
+        DynState() {
+            lastTimeStep = timeStep;
+            lastDelta = deltaEnergy;
+            lastLastTotalEnergy = lastTotalEnergy;
+            lastTotalTime = totalTime;
+            lastSumDeltaSq = sumDeltaSq;
+            lastMaxDelta = sumMaxDelta;
+            lastSumERef = sumERef;
+        }
+
+        void restore() {
+            deltaEnergy = lastDelta;
+            lastTotalEnergy = lastLastTotalEnergy;
+            totalTime = lastTotalTime;
+            sumDeltaSq = lastSumDeltaSq;
+            sumMaxDelta = lastMaxDelta;
+            sumERef = lastSumERef;
+        }
+    }
+
     private void saveState() {
         dihedrals.getDihedrals();
         saveVelocities2();
@@ -609,40 +643,6 @@ public class RotationalDynamics {
             currentStep++;
         }
         molecule.updateFromVecCoords();
-    }
-
-    public static void setUpdater(ProgressUpdater updater) {
-        progressUpdater = updater;
-    }
-
-    class DynState {
-
-        double lastTimeStep;
-        double lastDelta;
-        double lastLastTotalEnergy;
-        double lastTotalTime;
-        double lastSumDeltaSq;
-        double lastMaxDelta;
-        double lastSumERef;
-
-        DynState() {
-            lastTimeStep = timeStep;
-            lastDelta = deltaEnergy;
-            lastLastTotalEnergy = lastTotalEnergy;
-            lastTotalTime = totalTime;
-            lastSumDeltaSq = sumDeltaSq;
-            lastMaxDelta = sumMaxDelta;
-            lastSumERef = sumERef;
-        }
-
-        void restore() {
-            deltaEnergy = lastDelta;
-            lastTotalEnergy = lastLastTotalEnergy;
-            totalTime = lastTotalTime;
-            sumDeltaSq = lastSumDeltaSq;
-            sumMaxDelta = lastMaxDelta;
-            sumERef = lastSumERef;
-        }
     }
 
 }

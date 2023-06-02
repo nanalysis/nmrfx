@@ -33,36 +33,6 @@ import java.util.Map;
 @PluginAPI("parametric")
 public class Sign extends Operation implements Invertible {
 
-    private static final Map<String, ModeType> lookup
-            = new HashMap<String, ModeType>();
-
-    static {
-        for (ModeType s : EnumSet.allOf(ModeType.class)) {
-            lookup.put(s.getName(), s);
-        }
-
-    }
-
-    ModeType modeType;
-
-    /**
-     * Sign change operation.
-     *
-     * @param mode
-     * @throws ProcessingException
-     * @see Vec
-     */
-    public Sign(String mode) throws ProcessingException {
-        modeType = lookup.get(mode);
-
-    }
-
-    @Override
-    public Sign eval(Vec vector) throws ProcessingException {
-        modeType.execute(vector);
-        return this;
-    }
-
     enum ModeType {
 
         NEGIMAG("i") {
@@ -107,6 +77,36 @@ public class Sign extends Operation implements Invertible {
 
         public abstract void execute(Vec vec);
 
+    }
+
+    private static final Map<String, ModeType> lookup
+            = new HashMap<String, ModeType>();
+
+    static {
+        for (ModeType s : EnumSet.allOf(ModeType.class)) {
+            lookup.put(s.getName(), s);
+        }
+
+    }
+
+    ModeType modeType;
+
+    /**
+     * Sign change operation.
+     *
+     * @param mode
+     * @throws ProcessingException
+     * @see Vec
+     */
+    public Sign(String mode) throws ProcessingException {
+        modeType = lookup.get(mode);
+
+    }
+
+    @Override
+    public Sign eval(Vec vector) throws ProcessingException {
+        modeType.execute(vector);
+        return this;
     }
 
 }

@@ -52,6 +52,16 @@ public class DragBindings {
         this.controller = controller;
     }
 
+    /**
+     * Adds the provided DataFormat event handler to the dataFormatHandler map.
+     *
+     * @param dataFormat The DataFormat.
+     * @param handler    The DataFormat handler.
+     */
+    public static void registerCanvasDataFormatHandler(DataFormat dataFormat, DataFormatEventHandler handler) {
+        dataFormatHandlers.put(dataFormat, handler);
+    }
+
     public void mouseDragDropped(final DragEvent e) {
         final PolyChart chart;
         Optional<PolyChart> dropChart = controller.getChart(e.getX(), e.getY());
@@ -100,15 +110,5 @@ public class DragBindings {
         if (isAccepted) {
             e.acceptTransferModes(TransferMode.COPY);
         }
-    }
-
-    /**
-     * Adds the provided DataFormat event handler to the dataFormatHandler map.
-     *
-     * @param dataFormat The DataFormat.
-     * @param handler    The DataFormat handler.
-     */
-    public static void registerCanvasDataFormatHandler(DataFormat dataFormat, DataFormatEventHandler handler) {
-        dataFormatHandlers.put(dataFormat, handler);
     }
 }

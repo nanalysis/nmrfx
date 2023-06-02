@@ -47,8 +47,18 @@ import java.util.prefs.Preferences;
 public class PreferencesController implements Initializable, StageBasedController {
 
     private static final Logger log = LoggerFactory.getLogger(PreferencesController.class);
+
+    @FXML
+    PropertySheet prefSheet;
+    ChangeListener<String> stringListener;
+    ChangeListener<String> datasetListener;
+    ChangeListener<String> locationListener;
+    ChangeListener<Integer> nprocessListener;
+    Stage stage;
+
     static File nestaNMR = null;
     static File datasetDir = null;
+    private static Map<String, String> recentMap = new HashMap<>();
     static String location = null;
     static Integer nProcesses = null;
     static IntegerProperty tickFontSizeProp = null;
@@ -58,14 +68,6 @@ public class PreferencesController implements Initializable, StageBasedControlle
     static BooleanProperty constrainPeakShapeProp = null;
     static DoubleProperty peakShapeDirectFactorProp = null;
     static DoubleProperty peakShapeIndirectFactorProp = null;
-    private static Map<String, String> recentMap = new HashMap<>();
-    @FXML
-    PropertySheet prefSheet;
-    ChangeListener<String> stringListener;
-    ChangeListener<String> datasetListener;
-    ChangeListener<String> locationListener;
-    ChangeListener<Integer> nprocessListener;
-    Stage stage;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -147,13 +149,21 @@ public class PreferencesController implements Initializable, StageBasedControlle
                 fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem);
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
 
-    @Override
-    public void setStage(Stage stage) {
-        this.stage = stage;
+    public static PreferencesController create(Stage parent) {
+        PreferencesController controller = Fxml.load(PreferencesController.class, "PreferencesScene.fxml")
+                .withNewStage("Preferences", parent)
+                .getController();
+        controller.stage.show();
+        return controller;
     }
 
     @FXML
@@ -163,14 +173,6 @@ public class PreferencesController implements Initializable, StageBasedControlle
 
     public PropertySheet getPrefSheet() {
         return prefSheet;
-    }
-
-    public static PreferencesController create(Stage parent) {
-        PreferencesController controller = Fxml.load(PreferencesController.class, "PreferencesScene.fxml")
-                .withNewStage("Preferences", parent)
-                .getController();
-        controller.stage.show();
-        return controller;
     }
 
     /**

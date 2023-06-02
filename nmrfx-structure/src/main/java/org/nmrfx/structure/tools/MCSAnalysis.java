@@ -17,10 +17,10 @@ import java.util.List;
 public class MCSAnalysis {
 
     final PeakList peakList;
+    PeakList peakListRef = null;
     final int[] iDims;
     final double[] alphas;
     final double[] tols;
-    PeakList peakListRef = null;
     Molecule molecule = null;
     String[] aNames;
 
@@ -57,6 +57,24 @@ public class MCSAnalysis {
             peakList.addSearchDim(dimNames[i], tols[i]);
             iDims[i] = peakList.getListDim(dimNames[i]);
         }
+    }
+
+    public class Hit {
+
+        int index;
+        String atomName;
+        Peak peak;
+        double dis;
+        int nPeaks;
+
+        public Hit(int index, String atomName, Peak peak, double dis, int nPeaks) {
+            this.index = index;
+            this.atomName = atomName;
+            this.peak = peak;
+            this.dis = dis;
+            this.nPeaks = nPeaks;
+        }
+
     }
 
     double getDisMax() {
@@ -168,23 +186,5 @@ public class MCSAnalysis {
         }
         double mean = sum / nShifted;
         return mean;
-    }
-
-    public class Hit {
-
-        int index;
-        String atomName;
-        Peak peak;
-        double dis;
-        int nPeaks;
-
-        public Hit(int index, String atomName, Peak peak, double dis, int nPeaks) {
-            this.index = index;
-            this.atomName = atomName;
-            this.peak = peak;
-            this.dis = dis;
-            this.nPeaks = nPeaks;
-        }
-
     }
 }

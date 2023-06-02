@@ -22,6 +22,37 @@ public class OverlappingLines {
 
     public static final double EPSILON = 0.000001;
 
+    static class Point {
+
+        double x;
+        double y;
+
+        Point(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    static class LineSegment {
+
+        Point p1;
+        Point p2;
+
+        public Point[] getBoundingBox() {
+            Point[] result = new Point[2];
+            result[0] = new Point(Math.min(p1.x, p2.x), Math.min(p1.y,
+                    p2.y));
+            result[1] = new Point(Math.max(p1.x, p2.x), Math.max(p1.y,
+                    p2.y));
+            return result;
+        }
+
+        LineSegment(Point p1, Point p2) {
+            this.p1 = p1;
+            this.p2 = p2;
+        }
+    }
+
     /**
      * Calculate the cross product of two points.
      *
@@ -110,36 +141,5 @@ public class OverlappingLines {
         LineSegment l1 = new LineSegment(new Point(x1, y1), new Point(x2, y2));
         LineSegment l2 = new LineSegment(new Point(x3, y3), new Point(x4, y4));
         return doLinesIntersect(l1, l2);
-    }
-
-    static class Point {
-
-        double x;
-        double y;
-
-        Point(double x, double y) {
-            this.x = x;
-            this.y = y;
-        }
-    }
-
-    static class LineSegment {
-
-        Point p1;
-        Point p2;
-
-        LineSegment(Point p1, Point p2) {
-            this.p1 = p1;
-            this.p2 = p2;
-        }
-
-        public Point[] getBoundingBox() {
-            Point[] result = new Point[2];
-            result[0] = new Point(Math.min(p1.x, p2.x), Math.min(p1.y,
-                    p2.y));
-            result[1] = new Point(Math.max(p1.x, p2.x), Math.max(p1.y,
-                    p2.y));
-            return result;
-        }
     }
 }

@@ -40,6 +40,19 @@ public class RNAHelix extends SecondaryStructure {
 
     }
 
+    @Override
+    public void getInvolvedRes() {
+        int i = 0;
+        while (i < secResidues.size()) {
+            Residue res1 = secResidues.get(i);
+            Residue res2 = secResidues.get(i + 1);
+            System.out.print(res1.getPolymer().getName() + ":" + res1.getName()
+                    + res1.getResNum() + ":" + res2.getPolymer().getName()
+                    + ":" + res2.getName() + res2.getResNum() + " ");
+            i += 2;
+        }
+    }
+
     public void setBasePairs() {
         int i = 0;
         while (i < secResidues.size()) {
@@ -54,18 +67,5 @@ public class RNAHelix extends SecondaryStructure {
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public void getInvolvedRes() {
-        int i = 0;
-        while (i < secResidues.size()) {
-            Residue res1 = secResidues.get(i);
-            Residue res2 = secResidues.get(i + 1);
-            System.out.print(res1.getPolymer().getName() + ":" + res1.getName()
-                    + res1.getResNum() + ":" + res2.getPolymer().getName()
-                    + ":" + res2.getName() + res2.getResNum() + " ");
-            i += 2;
-        }
     }
 }

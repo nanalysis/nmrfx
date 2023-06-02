@@ -73,16 +73,21 @@ import java.util.ResourceBundle;
 public class PeakTableController implements PeakMenuTarget, PeakListener, Initializable, StageBasedController {
 
     static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.RED, null, null));
-    private final KeyCodeCombination copyKeyCodeCombination = new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN);
-    PeakMenuBar peakMenuBar;
-    MenuButton peakListMenuButton;
     private Stage stage;
+
     @FXML
     private ToolBar toolBar;
+
     @FXML
     private TableView<Peak> tableView;
+
     private PeakList peakList;
+
     private int currentDims = 0;
+    PeakMenuBar peakMenuBar;
+    MenuButton peakListMenuButton;
+    private final KeyCodeCombination copyKeyCodeCombination = new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN);
+
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -90,13 +95,21 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         initTable();
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
 
-    @Override
-    public void setStage(Stage stage) {
-        this.stage = stage;
+    public static PeakTableController create() {
+        PeakTableController controller = Fxml.load(PeakListsTableController.class, "PeakTableScene.fxml")
+                .withNewStage("Peaks")
+                .getController();
+        controller.stage.show();
+        return controller;
     }
 
     void initToolBar() {
@@ -125,8 +138,91 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     }
 
     @Override
+    public void copyPeakTableView() {
+        TableUtils.copyTableToClipboard(tableView, true);
+    }
+
+    @Override
+    public void deletePeaks() {
+        deleteSelectedPeaks();
+    }
+
+    @Override
+    public void restorePeaks() {
+        List<Peak> selectedPeaks = tableView.getSelectionModel().getSelectedItems();
+        for (Peak peak : selectedPeaks) {
+            peak.setStatus(0);
+        }
+        tableView.getSelectionModel().clearSelection();
+    }
+
+    @Override
+    public void refreshPeakView() {
+        tableView.refresh();
+    }
+
+    @Override
+    public void refreshChangedListView() {
+        tableView.refresh();
+    }
+
+    @Override
+    public PeakList getPeakList() {
+        return peakList;
+    }
+
+    @Override
     public void peakListChanged(PeakEvent peakEvent) {
         refreshPeakView();
+    }
+
+    private class DimTableColumn<S, T> extends TableColumn<S, T> {
+
+        int peakDim;
+
+        DimTableColumn(String title, int iDim) {
+            super(title + ":" + (iDim + 1));
+            peakDim = iDim;
+        }
+    }
+
+    private static class ColumnFormatter<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
+
+        private Format format;
+
+        public ColumnFormatter(Format format) {
+            super();
+            this.format = format;
+        }
+
+        @Override
+        public TableCell<S, T> call(TableColumn<S, T> arg0) {
+            return new TableCell<S, T>() {
+                @Override
+                protected void updateItem(T item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(new Label(format.format(item)));
+                    }
+                }
+            };
+        }
+    }
+
+    private static class PeakStringFieldTableCell extends TextFieldTableCell<Peak, String> {
+
+        PeakStringFieldTableCell(StringConverter<String> converter) {
+            super(converter);
+        }
+
+        @Override
+        public void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+            setText(item);
+        }
+
     }
 
     void initTable() {
@@ -162,14 +258,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
     }
 
-    private void deleteSelectedPeaks() {
-        List<Peak> selectedPeaks = new ArrayList<>(tableView.getSelectionModel().getSelectedItems());
-        for (Peak peak : selectedPeaks) {
-            peak.delete();
-        }
-        tableView.getSelectionModel().clearSelection();
-    }
-
     public void keyPressed(KeyEvent keyEvent) {
         KeyCode code = keyEvent.getCode();
         if (code == null) {
@@ -184,6 +272,14 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         } else if (code == KeyCode.DELETE) {
             deleteSelectedPeaks();
         }
+    }
+
+    private void deleteSelectedPeaks() {
+        List<Peak> selectedPeaks = new ArrayList<>(tableView.getSelectionModel().getSelectedItems());
+        for (Peak peak : selectedPeaks) {
+            peak.delete();
+        }
+        tableView.getSelectionModel().clearSelection();
     }
 
     void updateColumns(int nDim) {
@@ -314,110 +410,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         }
     }
 
-    void showPeakInfo(Peak peak) {
-        FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-        controller.showPeakAttr();
-        controller.getPeakAttrController().gotoPeak(peak);
-        controller.getPeakAttrController().getStage().toFront();
-
-    }
-
-    void closePeak() {
-
-    }
-
-    @Override
-    public PeakList getPeakList() {
-        return peakList;
-    }
-
-    @Override
-    public void refreshPeakView() {
-        tableView.refresh();
-    }
-
-    @Override
-    public void refreshChangedListView() {
-        tableView.refresh();
-    }
-
-    @Override
-    public void copyPeakTableView() {
-        TableUtils.copyTableToClipboard(tableView, true);
-    }
-
-    @Override
-    public void deletePeaks() {
-        deleteSelectedPeaks();
-    }
-
-    @Override
-    public void restorePeaks() {
-        List<Peak> selectedPeaks = tableView.getSelectionModel().getSelectedItems();
-        for (Peak peak : selectedPeaks) {
-            peak.setStatus(0);
-        }
-        tableView.getSelectionModel().clearSelection();
-    }
-
-    public static PeakTableController create() {
-        PeakTableController controller = Fxml.load(PeakListsTableController.class, "PeakTableScene.fxml")
-                .withNewStage("Peaks")
-                .getController();
-        controller.stage.show();
-        return controller;
-    }
-
-    private static class ColumnFormatter<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
-
-        private Format format;
-
-        public ColumnFormatter(Format format) {
-            super();
-            this.format = format;
-        }
-
-        @Override
-        public TableCell<S, T> call(TableColumn<S, T> arg0) {
-            return new TableCell<S, T>() {
-                @Override
-                protected void updateItem(T item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (item == null || empty) {
-                        setGraphic(null);
-                    } else {
-                        setGraphic(new Label(format.format(item)));
-                    }
-                }
-            };
-        }
-    }
-
-    private static class PeakStringFieldTableCell extends TextFieldTableCell<Peak, String> {
-
-        PeakStringFieldTableCell(StringConverter<String> converter) {
-            super(converter);
-        }
-
-        @Override
-        public void updateItem(String item, boolean empty) {
-            super.updateItem(item, empty);
-            setText(item);
-        }
-
-    }
-
-    private class DimTableColumn<S, T> extends TableColumn<S, T> {
-
-        int peakDim;
-
-        DimTableColumn(String title, int iDim) {
-            super(title + ":" + (iDim + 1));
-            peakDim = iDim;
-        }
-    }
-
-
     @Override
     public void setPeakList(PeakList peakList) {
         if (this.peakList != null) {
@@ -441,7 +433,15 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
     }
 
+    void showPeakInfo(Peak peak) {
+        FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+        controller.showPeakAttr();
+        controller.getPeakAttrController().gotoPeak(peak);
+        controller.getPeakAttrController().getStage().toFront();
 
+    }
 
+    void closePeak() {
 
+    }
 }

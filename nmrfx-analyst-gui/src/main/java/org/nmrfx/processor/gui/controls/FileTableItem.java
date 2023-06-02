@@ -41,11 +41,11 @@ public class FileTableItem {
     private final SimpleIntegerProperty row;
     private final SimpleLongProperty date;
     private final SimpleIntegerProperty group;
+    private SimpleObjectProperty<DatasetAttributes> datasetAttr;
     private final HashMap<String, String> extras = new HashMap<>();
     private final HashMap<String, Integer> intExtras = new HashMap<>();
     private final HashMap<String, Double> doubleExtras = new HashMap<>();
     private final HashMap<String, Object> objectExtras = new HashMap<>();
-    private SimpleObjectProperty<DatasetAttributes> datasetAttr;
 
     public FileTableItem(String fileName, String seqName, int nDim, long date, int row, String datasetName) {
         this.fileName = new SimpleStringProperty(fileName);
@@ -74,12 +74,12 @@ public class FileTableItem {
         this.group.set(group);
     }
 
-    public String getDatasetName() {
-        return datasetName.get();
-    }
-
     public void setDatasetName(String fileName) {
         this.datasetName.set(fileName);
+    }
+
+    public String getDatasetName() {
+        return datasetName.get();
     }
 
     public String getSeqName() {
@@ -106,15 +106,15 @@ public class FileTableItem {
         this.date.set(date);
     }
 
-    public boolean getNeg() {
-        var dataAttr = getDatasetAttributes();
-        return dataAttr != null && dataAttr.getNeg(getRow() - 1);
-    }
-
     public void setNeg(boolean value) {
         if (datasetAttr != null) {
             datasetAttr.get().setNeg(value, getRow() - 1);
         }
+    }
+
+    public boolean getNeg() {
+        var dataAttr = getDatasetAttributes();
+        return dataAttr != null && dataAttr.getNeg(getRow() - 1);
     }
 
     public boolean getPos() {

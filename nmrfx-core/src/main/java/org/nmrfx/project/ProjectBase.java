@@ -67,6 +67,56 @@ public class ProjectBase {
         this.name = name;
     }
 
+    public static ProjectBase getNewProject(String name) {
+        ProjectBase projectBase;
+        try {
+            Class<?> c = Class.forName("org.nmrfx.processor.gui.project.GUIProject");
+            Class[] parameterTypes = {String.class};
+            Constructor constructor = c.getDeclaredConstructor(parameterTypes);
+            projectBase = (ProjectBase) constructor.newInstance(name);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException |
+                 InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+            projectBase = new ProjectBase(name);
+        }
+        return projectBase;
+    }
+
+    public static ProjectBase getActive() {
+        ProjectBase project = activeProject;
+        if (project == null) {
+            project = getNewProject("Untitled 1");
+        }
+        activeProject = project;
+        return project;
+    }
+
+    public static void setPCS(PropertyChangeSupport newPCS) {
+        pcs = newPCS;
+    }
+
+    static String getName(String s) {
+        Matcher matcher = INDEX_PATTERN.matcher(s);
+        String name;
+        if (matcher.matches()) {
+            name = matcher.group(1);
+        } else {
+            name = s;
+        }
+        return name;
+    }
+
+    public static Optional<Integer> getIndex(String s) {
+        Optional<Integer> fileNum = Optional.empty();
+        Matcher matcher = INDEX_PATTERN.matcher(s);
+        Matcher matcher2 = INDEX2_PATTERN.matcher(s);
+        if (matcher.matches()) {
+            fileNum = Optional.of(Integer.parseInt(matcher.group(1)));
+        } else if (matcher2.matches()) {
+            fileNum = Optional.of(Integer.parseInt(matcher2.group(1)));
+        }
+        return fileNum;
+    }
+
     public final void setActive() {
         PropertyChangeEvent event = new PropertyChangeEvent(this, "project", null, this);
         activeProject = this;
@@ -134,9 +184,25 @@ public class ProjectBase {
         }
     }
 
+    public static void addSaveframeProcessor(String category, SaveframeProcessor saveframeProcessor) {
+        saveframeProcessors.put(category, saveframeProcessor);
+    }
+
     public void writeSaveframes(Writer chan) throws ParseException, IOException {
         for (SaveframeWriter saveframeWriter : extraSaveframes) {
             saveframeWriter.write(chan);
+        }
+    }
+
+    public static void processExtraSaveFrames(STAR3 star3) throws ParseException {
+        for (Saveframe saveframe : star3.getSaveFrames().values()) {
+            if (saveframeProcessors.containsKey(saveframe.getCategoryName())) {
+                try {
+                    saveframeProcessors.get(saveframe.getCategoryName()).process(saveframe);
+                } catch (IOException e) {
+                    throw new ParseException(e.getMessage());
+                }
+            }
         }
     }
 
@@ -263,6 +329,7 @@ public class ProjectBase {
         molecules.clear();
     }
 
+
     public boolean hasDirectory() {
         return projectDir != null;
     }
@@ -284,15 +351,15 @@ public class ProjectBase {
         datasets.clear();
     }
 
-    public Path getProjectDir() {
-        return this.projectDir;
-    }
-
     public void setProjectDir(Path projectDir) {
         this.projectDir = projectDir;
         if (pcs != null) {
             pcs.firePropertyChange(new PropertyChangeEvent(this, "project", null, this));
         }
+    }
+
+    public Path getProjectDir() {
+        return this.projectDir;
     }
 
     // used in subclasses
@@ -543,70 +610,40 @@ public class ProjectBase {
         return peakPaths;
     }
 
-    public static ProjectBase getNewProject(String name) {
-        ProjectBase projectBase;
-        try {
-            Class<?> c = Class.forName("org.nmrfx.processor.gui.project.GUIProject");
-            Class[] parameterTypes = {String.class};
-            Constructor constructor = c.getDeclaredConstructor(parameterTypes);
-            projectBase = (ProjectBase) constructor.newInstance(name);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException |
-                 InvocationTargetException | NoSuchMethodException | SecurityException ex) {
-            projectBase = new ProjectBase(name);
-        }
-        return projectBase;
-    }
+    public static class FileComparator implements Comparator<Path> {
 
-    public static ProjectBase getActive() {
-        ProjectBase project = activeProject;
-        if (project == null) {
-            project = getNewProject("Untitled 1");
-        }
-        activeProject = project;
-        return project;
-    }
-
-    public static void setPCS(PropertyChangeSupport newPCS) {
-        pcs = newPCS;
-    }
-
-    static String getName(String s) {
-        Matcher matcher = INDEX_PATTERN.matcher(s);
-        String name;
-        if (matcher.matches()) {
-            name = matcher.group(1);
-        } else {
-            name = s;
-        }
-        return name;
-    }
-
-    public static Optional<Integer> getIndex(String s) {
-        Optional<Integer> fileNum = Optional.empty();
-        Matcher matcher = INDEX_PATTERN.matcher(s);
-        Matcher matcher2 = INDEX2_PATTERN.matcher(s);
-        if (matcher.matches()) {
-            fileNum = Optional.of(Integer.parseInt(matcher.group(1)));
-        } else if (matcher2.matches()) {
-            fileNum = Optional.of(Integer.parseInt(matcher2.group(1)));
-        }
-        return fileNum;
-    }
-
-    public static void addSaveframeProcessor(String category, SaveframeProcessor saveframeProcessor) {
-        saveframeProcessors.put(category, saveframeProcessor);
-    }
-
-    public static void processExtraSaveFrames(STAR3 star3) throws ParseException {
-        for (Saveframe saveframe : star3.getSaveFrames().values()) {
-            if (saveframeProcessors.containsKey(saveframe.getCategoryName())) {
-                try {
-                    saveframeProcessors.get(saveframe.getCategoryName()).process(saveframe);
-                } catch (IOException e) {
-                    throw new ParseException(e.getMessage());
+        @Override
+        public int compare(Path p1, Path p2) {
+            String s1 = p1.getFileName().toString();
+            String s2 = p2.getFileName().toString();
+            int result;
+            Optional<Integer> f1 = getIndex(s1);
+            Optional<Integer> f2 = getIndex(s2);
+            if (f1.isPresent() && f2.isEmpty()) {
+                result = 1;
+            } else if (f1.isEmpty() && f2.isPresent()) {
+                result = -1;
+            } else if (f1.isPresent()) {
+                int i1 = f1.get();
+                int i2 = f2.get();
+                result = Integer.compare(i1, i2);
+            } else {
+                if (s1.endsWith(".seq") && !s2.endsWith(".seq")) {
+                    result = 1;
+                } else if (!s1.endsWith(".seq") && s2.endsWith(".seq")) {
+                    result = -1;
+                } else if (s1.endsWith(".pdb") && !s2.endsWith(".pdb")) {
+                    result = 1;
+                } else if (!s1.endsWith(".pdb") && s2.endsWith(".pdb")) {
+                    result = -1;
+                } else {
+                    result = s1.compareTo(s2);
                 }
+
             }
+            return result;
         }
+
     }
 
     /**
@@ -644,41 +681,5 @@ public class ProjectBase {
         } else {
             return pcs.getPropertyChangeListeners();
         }
-    }
-
-    public static class FileComparator implements Comparator<Path> {
-
-        @Override
-        public int compare(Path p1, Path p2) {
-            String s1 = p1.getFileName().toString();
-            String s2 = p2.getFileName().toString();
-            int result;
-            Optional<Integer> f1 = getIndex(s1);
-            Optional<Integer> f2 = getIndex(s2);
-            if (f1.isPresent() && f2.isEmpty()) {
-                result = 1;
-            } else if (f1.isEmpty() && f2.isPresent()) {
-                result = -1;
-            } else if (f1.isPresent()) {
-                int i1 = f1.get();
-                int i2 = f2.get();
-                result = Integer.compare(i1, i2);
-            } else {
-                if (s1.endsWith(".seq") && !s2.endsWith(".seq")) {
-                    result = 1;
-                } else if (!s1.endsWith(".seq") && s2.endsWith(".seq")) {
-                    result = -1;
-                } else if (s1.endsWith(".pdb") && !s2.endsWith(".pdb")) {
-                    result = 1;
-                } else if (!s1.endsWith(".pdb") && s2.endsWith(".pdb")) {
-                    result = -1;
-                } else {
-                    result = s1.compareTo(s2);
-                }
-
-            }
-            return result;
-        }
-
     }
 }

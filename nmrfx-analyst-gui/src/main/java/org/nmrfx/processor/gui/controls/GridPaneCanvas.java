@@ -40,11 +40,22 @@ import java.util.stream.IntStream;
  */
 public class GridPaneCanvas extends GridPane {
 
+    public enum ORIENTATION {
+        VERTICAL,
+        HORIZONTAL,
+        GRID
+    }
+
     private static final String GRID_DIM_VALID_INTEGER = "([1-9]|1[0-9]|20)";
-    final Canvas canvas;
+
+    public record GridDimensions(Integer rows, Integer cols) {
+    }
+
     FXMLController controller;
+    final Canvas canvas;
     int nRows = 1;
     private ORIENTATION orientation;
+
     public GridPaneCanvas(FXMLController controller, Canvas canvas) {
         this.controller = controller;
         this.canvas = canvas;
@@ -55,6 +66,20 @@ public class GridPaneCanvas extends GridPane {
             requestLayout();
         });
     }
+
+    public static ORIENTATION parseOrientationFromString(String name) {
+        name = name.toUpperCase();
+        if ("HORIZONTAL".startsWith(name)) {
+            return ORIENTATION.HORIZONTAL;
+        } else if ("VERTICAL".startsWith(name)) {
+            return ORIENTATION.VERTICAL;
+        } else if ("GRID".startsWith(name)) {
+            return ORIENTATION.GRID;
+        } else {
+            throw new IllegalArgumentException("Invalid orientation: " + name);
+        }
+    }
+
 
     @Override
     public void layoutChildren() {
@@ -108,13 +133,13 @@ public class GridPaneCanvas extends GridPane {
         return orientation;
     }
 
-    public int getRows() {
-        return nRows;
-    }
-
     public void setRows(int nRows) {
         this.nRows = nRows;
         updateGrid();
+    }
+
+    public int getRows() {
+        return nRows;
     }
 
     public int getColumns() {
@@ -223,22 +248,10 @@ public class GridPaneCanvas extends GridPane {
         }
     }
 
+
     private void disableCharts(List<PolyChart> nodes, boolean state) {
         for (var chart : nodes) {
             chart.setChartDisabled(state);
-        }
-    }
-
-    public static ORIENTATION parseOrientationFromString(String name) {
-        name = name.toUpperCase();
-        if ("HORIZONTAL".startsWith(name)) {
-            return ORIENTATION.HORIZONTAL;
-        } else if ("VERTICAL".startsWith(name)) {
-            return ORIENTATION.VERTICAL;
-        } else if ("GRID".startsWith(name)) {
-            return ORIENTATION.GRID;
-        } else {
-            throw new IllegalArgumentException("Invalid orientation: " + name);
         }
     }
 
@@ -294,15 +307,6 @@ public class GridPaneCanvas extends GridPane {
             change.setText("");
         }
         return change;
-    }
-
-    public enum ORIENTATION {
-        VERTICAL,
-        HORIZONTAL,
-        GRID
-    }
-
-    public record GridDimensions(Integer rows, Integer cols) {
     }
 
 }

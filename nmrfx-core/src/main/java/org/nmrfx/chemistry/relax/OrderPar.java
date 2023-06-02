@@ -64,9 +64,6 @@ public class OrderPar implements RelaxationValues {
             "Resonance_ID", " %5d"};
 
     private final ResonanceSource resSource;
-    private final Double sumSqErr;
-    private final Integer nValues;
-    private final Integer nPars;
     private Double value;
     private Double error;
     private Double TauE;
@@ -81,6 +78,9 @@ public class OrderPar implements RelaxationValues {
     private Double Sf2err;
     private Double Ss2;
     private Double Ss2err;
+    private final Double sumSqErr;
+    private final Integer nValues;
+    private final Integer nPars;
     private String model;
     private Double modelNum;
 
@@ -254,6 +254,26 @@ public class OrderPar implements RelaxationValues {
         return newPar;
     }
 
+    @Override
+    public String getName() {
+        return "S2";
+    }
+
+    public static String[] getNames() {
+        return PAR_NAMES;
+
+    }
+
+    @Override
+    public String[] getParNames() {
+        return PAR_NAMES;
+    }
+
+    @Override
+    public ResonanceSource getResonanceSource() {
+        return resSource;
+    }
+
     public String getModel() {
         return model;
     }
@@ -266,16 +286,6 @@ public class OrderPar implements RelaxationValues {
     @Override
     public Double getError() {
         return error;
-    }
-
-    @Override
-    public String[] getParNames() {
-        return PAR_NAMES;
-    }
-
-    @Override
-    public String getName() {
-        return "S2";
     }
 
     @Override
@@ -317,6 +327,26 @@ public class OrderPar implements RelaxationValues {
         }
     }
 
+    public double getChiSqr() {
+        return sumSqErr;
+    }
+
+    public double getReducedChiSqr() {
+        if ((nValues != null) && (nPars != null)) {
+            return sumSqErr / (nValues - nPars);
+        } else {
+            return 0.0;
+        }
+    }
+
+    public double getAIC() {
+        if ((nValues != null) && (nPars != null) && (sumSqErr != null)) {
+            return 2 * nPars + nValues * Math.log(sumSqErr);
+        } else {
+            return 0.0;
+        }
+    }
+
     @Override
     public Double getError(String name) {
         switch (name) {
@@ -340,28 +370,39 @@ public class OrderPar implements RelaxationValues {
         }
     }
 
-    @Override
-    public ResonanceSource getResonanceSource() {
-        return resSource;
+    public static Map<String, List<OrderPar>> getOrderParameters(List<Atom> atoms) {
+        var orderParData = new HashMap<String, List<OrderPar>>();
+        atoms.forEach((atom) -> {
+            for (var orderPars : atom.getOrderPars().entrySet()) {
+                String relaxKey = orderPars.getKey();
+                OrderPar orderPar = orderPars.getValue();
+                List<OrderPar> orderParList = orderParData.get(relaxKey);
+                if (!orderParData.containsKey(relaxKey)) {
+                    orderParList = new ArrayList<>();
+                    orderParData.put(relaxKey, orderParList);
+                }
+                orderParList.add(orderPar);
+            }
+        });
+        return orderParData;
     }
 
-    public double getChiSqr() {
-        return sumSqErr;
-    }
-
-    public double getReducedChiSqr() {
-        if ((nValues != null) && (nPars != null)) {
-            return sumSqErr / (nValues - nPars);
-        } else {
-            return 0.0;
+    public static void writeToFile(File file) throws IOException {
+        MoleculeBase moleculeBase = MoleculeFactory.getActive();
+        var orderParData = OrderPar.getOrderParameters(moleculeBase.getAtomArray());
+        for (var orderParList : orderParData.values()) {
+            writeToFile(file, orderParList);
         }
     }
 
-    public double getAIC() {
-        if ((nValues != null) && (nPars != null) && (sumSqErr != null)) {
-            return 2 * nPars + nValues * Math.log(sumSqErr);
-        } else {
-            return 0.0;
+    public static void writeToFile(File file, List<OrderPar> orderPars) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            fileWriter.write("Chain\tResidue\tAtom\tS2\tS2_err\tTauE\tTauE_err\tSf2\tSf2_err\tSs2\tSs2_err\tTauF\t" +
+                    "TauF_err\tTauS\tTauS_err\tRex\tRex_err\tmodel\tmodelNum\tchiSq\tredChiSq\tAIC\tnValues\tnPars\n");
+            for (var orderPar : orderPars) {
+                fileWriter.write(orderPar.toString());
+                fileWriter.write("\n");
+            }
         }
     }
 
@@ -430,47 +471,6 @@ public class OrderPar implements RelaxationValues {
                     default:
                         sBuilder.append(defaultValue);
                 }
-            }
-        }
-    }
-
-    public static String[] getNames() {
-        return PAR_NAMES;
-
-    }
-
-    public static Map<String, List<OrderPar>> getOrderParameters(List<Atom> atoms) {
-        var orderParData = new HashMap<String, List<OrderPar>>();
-        atoms.forEach((atom) -> {
-            for (var orderPars : atom.getOrderPars().entrySet()) {
-                String relaxKey = orderPars.getKey();
-                OrderPar orderPar = orderPars.getValue();
-                List<OrderPar> orderParList = orderParData.get(relaxKey);
-                if (!orderParData.containsKey(relaxKey)) {
-                    orderParList = new ArrayList<>();
-                    orderParData.put(relaxKey, orderParList);
-                }
-                orderParList.add(orderPar);
-            }
-        });
-        return orderParData;
-    }
-
-    public static void writeToFile(File file) throws IOException {
-        MoleculeBase moleculeBase = MoleculeFactory.getActive();
-        var orderParData = OrderPar.getOrderParameters(moleculeBase.getAtomArray());
-        for (var orderParList : orderParData.values()) {
-            writeToFile(file, orderParList);
-        }
-    }
-
-    public static void writeToFile(File file, List<OrderPar> orderPars) throws IOException {
-        try (FileWriter fileWriter = new FileWriter(file)) {
-            fileWriter.write("Chain\tResidue\tAtom\tS2\tS2_err\tTauE\tTauE_err\tSf2\tSf2_err\tSs2\tSs2_err\tTauF\t" +
-                    "TauF_err\tTauS\tTauS_err\tRex\tRex_err\tmodel\tmodelNum\tchiSq\tredChiSq\tAIC\tnValues\tnPars\n");
-            for (var orderPar : orderPars) {
-                fileWriter.write(orderPar.toString());
-                fileWriter.write("\n");
             }
         }
     }

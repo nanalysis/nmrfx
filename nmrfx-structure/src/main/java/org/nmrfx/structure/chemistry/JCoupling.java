@@ -30,8 +30,8 @@ import java.util.Arrays;
 public class JCoupling {
 
     final ArrayList<SpatialSet> spatialSets;
-    final int shell;
     Double dihedral = null;
+    final int shell;
 
     public JCoupling(final SpatialSet[] spatialSets, final int shell) {
         this.spatialSets = new ArrayList<SpatialSet>(Arrays.asList(spatialSets));
@@ -41,6 +41,37 @@ public class JCoupling {
     public JCoupling(final ArrayList<SpatialSet> spatialSets, final int shell) {
         this.spatialSets = spatialSets;
         this.shell = shell;
+    }
+
+    public static JCoupling couplingFromAtoms(final ArrayList<Atom> atoms, final int shell) {
+        ArrayList<SpatialSet> localSets = new ArrayList<SpatialSet>();
+
+        for (Atom atom : atoms) {
+            localSets.add(atom.spatialSet);
+        }
+        return new JCoupling(localSets, shell);
+    }
+
+    public static JCoupling couplingFromAtoms(final Atom[] atoms, final int shell) {
+        ArrayList<SpatialSet> localSets = new ArrayList<SpatialSet>();
+
+        for (Atom atom : atoms) {
+            localSets.add(atom.spatialSet);
+        }
+        return new JCoupling(localSets, shell);
+    }
+
+    public static JCoupling couplingFromAtoms(final Atom[] atoms, final int nAtoms, final int shell) {
+        ArrayList<SpatialSet> localSets = new ArrayList<SpatialSet>();
+        int i = 0;
+        for (Atom atom : atoms) {
+            if (i >= nAtoms) {
+                break;
+            }
+            localSets.add(atom.spatialSet);
+            i++;
+        }
+        return new JCoupling(localSets, shell);
     }
 
     public void updateDihedral(final int structureNum) {
@@ -86,36 +117,5 @@ public class JCoupling {
         }
         sBuilder.append(shell);
         return sBuilder.toString();
-    }
-
-    public static JCoupling couplingFromAtoms(final ArrayList<Atom> atoms, final int shell) {
-        ArrayList<SpatialSet> localSets = new ArrayList<SpatialSet>();
-
-        for (Atom atom : atoms) {
-            localSets.add(atom.spatialSet);
-        }
-        return new JCoupling(localSets, shell);
-    }
-
-    public static JCoupling couplingFromAtoms(final Atom[] atoms, final int shell) {
-        ArrayList<SpatialSet> localSets = new ArrayList<SpatialSet>();
-
-        for (Atom atom : atoms) {
-            localSets.add(atom.spatialSet);
-        }
-        return new JCoupling(localSets, shell);
-    }
-
-    public static JCoupling couplingFromAtoms(final Atom[] atoms, final int nAtoms, final int shell) {
-        ArrayList<SpatialSet> localSets = new ArrayList<SpatialSet>();
-        int i = 0;
-        for (Atom atom : atoms) {
-            if (i >= nAtoms) {
-                break;
-            }
-            localSets.add(atom.spatialSet);
-            i++;
-        }
-        return new JCoupling(localSets, shell);
     }
 }

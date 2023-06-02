@@ -48,18 +48,18 @@ public class FileMenuActions extends MenuActions {
                 graphicsMenu);
     }
 
+    public void addAdvancedMenuItem() {
+        MenuItem startAdvancedItem = new MenuItem("Start Advanced");
+        startAdvancedItem.setOnAction(e -> app.advanced(startAdvancedItem));
+        menu.getItems().add(startAdvancedItem);
+    }
+
     @Override
     protected void advanced() {
         MenuItem addMenuItem = new MenuItem("Open Dataset (No Display) ...");
         addMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().addNoDrawAction(e));
         menu.getItems().addAll(addMenuItem);
 
-    }
-
-    public void addAdvancedMenuItem() {
-        MenuItem startAdvancedItem = new MenuItem("Start Advanced");
-        startAdvancedItem.setOnAction(e -> app.advanced(startAdvancedItem));
-        menu.getItems().add(startAdvancedItem);
     }
 
     void showDataBrowser() {

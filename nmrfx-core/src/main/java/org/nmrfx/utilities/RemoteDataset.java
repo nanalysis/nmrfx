@@ -69,24 +69,10 @@ public class RemoteDataset {
     }
 
     /**
-     * @param path the path to set
-     */
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    /**
      * @return the type
      */
     public String getType() {
         return type;
-    }
-
-    /**
-     * @param type the type to set
-     */
-    public void setType(String type) {
-        this.type = type;
     }
 
     /**
@@ -97,24 +83,10 @@ public class RemoteDataset {
     }
 
     /**
-     * @param user the user to set
-     */
-    public void setUser(String user) {
-        this.user = user;
-    }
-
-    /**
      * @return the seq
      */
     public String getSeq() {
         return seq;
-    }
-
-    /**
-     * @param seq the seq to set
-     */
-    public void setSeq(String seq) {
-        this.seq = seq;
     }
 
     /**
@@ -125,24 +97,10 @@ public class RemoteDataset {
     }
 
     /**
-     * @param sf the sf to set
-     */
-    public void setSf(Double sf) {
-        this.sf = sf;
-    }
-
-    /**
      * @return the time
      */
     public String getTime() {
         return time;
-    }
-
-    /**
-     * @param time the time to set
-     */
-    public void setTime(String time) {
-        this.time = time;
     }
 
     /**
@@ -153,24 +111,10 @@ public class RemoteDataset {
     }
 
     /**
-     * @param tn the tn to set
-     */
-    public void setTn(String tn) {
-        this.tn = tn;
-    }
-
-    /**
      * @return the sol
      */
     public String getSol() {
         return sol;
-    }
-
-    /**
-     * @param sol the sol to set
-     */
-    public void setSol(String sol) {
-        this.sol = sol;
     }
 
     /**
@@ -181,24 +125,10 @@ public class RemoteDataset {
     }
 
     /**
-     * @param te the te to set
-     */
-    public void setTe(Double te) {
-        this.te = te;
-    }
-
-    /**
      * @return the pos
      */
     public String getPos() {
         return pos;
-    }
-
-    /**
-     * @param pos the pos to set
-     */
-    public void setPos(String pos) {
-        this.pos = pos;
     }
 
     /**
@@ -209,24 +139,10 @@ public class RemoteDataset {
     }
 
     /**
-     * @param nd the nd to set
-     */
-    public void setNd(Integer nd) {
-        this.nd = nd;
-    }
-
-    /**
      * @return the nv
      */
     public Integer getNv() {
         return nv;
-    }
-
-    /**
-     * @param nv the nv to set
-     */
-    public void setNv(Integer nv) {
-        this.nv = nv;
     }
 
     /**
@@ -237,24 +153,10 @@ public class RemoteDataset {
     }
 
     /**
-     * @param text the text to set
-     */
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    /**
      * @return the vnd
      */
     public String getVnd() {
         return vnd;
-    }
-
-    /**
-     * @param vnd the vnd to set
-     */
-    public void setVnd(String vnd) {
-        this.vnd = vnd;
     }
 
     /**
@@ -265,13 +167,6 @@ public class RemoteDataset {
     }
 
     /**
-     * @param nb the nb to set
-     */
-    public void setNb(String nb) {
-        this.nb = nb;
-    }
-
-    /**
      * @return the sample
      */
     public String getSample() {
@@ -279,24 +174,10 @@ public class RemoteDataset {
     }
 
     /**
-     * @param sample the sample to set
-     */
-    public void setSample(String sample) {
-        this.sample = sample;
-    }
-
-    /**
      * @return the iso
      */
     public String getIso() {
         return iso;
-    }
-
-    /**
-     * @param iso the iso to set
-     */
-    public void setIso(String iso) {
-        this.iso = iso;
     }
 
     public boolean isPresent() {
@@ -322,15 +203,128 @@ public class RemoteDataset {
         return hashKey;
     }
 
+    /**
+     * @param path the path to set
+     */
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    /**
+     * @param type the type to set
+     */
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    /**
+     * @param user the user to set
+     */
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    /**
+     * @param seq the seq to set
+     */
+    public void setSeq(String seq) {
+        this.seq = seq;
+    }
+
+    /**
+     * @param sf the sf to set
+     */
+    public void setSf(Double sf) {
+        this.sf = sf;
+    }
+
+    /**
+     * @param time the time to set
+     */
+    public void setTime(String time) {
+        this.time = time;
+    }
+
+    /**
+     * @param tn the tn to set
+     */
+    public void setTn(String tn) {
+        this.tn = tn;
+    }
+
+    /**
+     * @param sol the sol to set
+     */
+    public void setSol(String sol) {
+        this.sol = sol;
+    }
+
+    /**
+     * @param te the te to set
+     */
+    public void setTe(Double te) {
+        this.te = te;
+    }
+
+    /**
+     * @param pos the pos to set
+     */
+    public void setPos(String pos) {
+        this.pos = pos;
+    }
+
+    /**
+     * @param nd the nd to set
+     */
+    public void setNd(Integer nd) {
+        this.nd = nd;
+    }
+
+    /**
+     * @param nv the nv to set
+     */
+    public void setNv(Integer nv) {
+        this.nv = nv;
+    }
+
+    /**
+     * @param text the text to set
+     */
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    /**
+     * @param vnd the vnd to set
+     */
+    public void setVnd(String vnd) {
+        this.vnd = vnd;
+    }
+
+    /**
+     * @param nb the nb to set
+     */
+    public void setNb(String nb) {
+        this.nb = nb;
+    }
+
+    /**
+     * @param sample the sample to set
+     */
+    public void setSample(String sample) {
+        this.sample = sample;
+    }
+
+    /**
+     * @param iso the iso to set
+     */
+    public void setIso(String iso) {
+        this.iso = iso;
+    }
+
     @Override
     public String toString() {
         return "RemoteDataset{" + "path=" + path + ", type=" + type + ", user=" + user + ", seq=" + seq + ", sf=" + sf + ", time=" + time + ", tn=" + tn + ", sol=" + sol + ", te=" + te + ", pos=" + pos + ", nd=" + nd + ", nv=" + nv + ", text=" + text + ", vnd=" + vnd + ", nb=" + nb + ", sample=" + sample + ", iso=" + iso + '}';
-    }
-
-    public String toJson() {
-        Gson gson = new GsonBuilder().
-                excludeFieldsWithoutExposeAnnotation().create();
-        return gson.toJson(this);
     }
 
     public static List<RemoteDataset> datasetsFromJson(String jsonString) {
@@ -349,6 +343,12 @@ public class RemoteDataset {
         RemoteDataset dataset = gson.fromJson(jsonString, RemoteDataset.class);
         dataset.hashKey = hashKey;
         return dataset;
+    }
+
+    public String toJson() {
+        Gson gson = new GsonBuilder().
+                excludeFieldsWithoutExposeAnnotation().create();
+        return gson.toJson(this);
     }
 
     public static String toJson(List<RemoteDataset> items) {

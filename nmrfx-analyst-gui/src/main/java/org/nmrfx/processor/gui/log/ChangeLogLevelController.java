@@ -31,6 +31,28 @@ public class ChangeLogLevelController implements Initializable, StageBasedContro
     private TableView<Map.Entry<String, LogLevel>> changeLogLevelTable;
 
     /**
+     * Creates a new ChangeLogLevelController
+     *
+     * @param parentStage The parent stage of the new ChangeLogLevelController
+     * @return ChangeLogLevelController
+     */
+    public static ChangeLogLevelController create(Stage parentStage) {
+        Stage stage = new Stage(StageStyle.DECORATED);
+        stage.setTitle(TITLE);
+        stage.setResizable(false);
+        stage.initOwner(parentStage);
+        stage.initModality(Modality.WINDOW_MODAL);
+
+        // Center the stage on the parent once its rendered
+        stage.widthProperty().addListener(((observable, oldValue, newValue) -> stage.setX(parentStage.getX() + (parentStage.getWidth() - newValue.doubleValue()) / 2)));
+        stage.heightProperty().addListener(((observable, oldValue, newValue) -> stage.setY(parentStage.getY() + (parentStage.getHeight() - newValue.doubleValue()) / 2)));
+
+        return Fxml.load(ChangeLogLevelController.class, "ChangeLogLevelScene.fxml")
+                .withStage(stage)
+                .getController();
+    }
+
+    /**
      * Sets up the table view.
      *
      * @param location  The location used to resolve relative paths for the root object, or
@@ -114,27 +136,5 @@ public class ChangeLogLevelController implements Initializable, StageBasedContro
         Log.setLogLevel(loggerName, newLevel);
         changeLogLevelTable.getItems().clear();
         changeLogLevelTable.setItems(FXCollections.observableArrayList(Log.getModifiedLogLevels().entrySet()));
-    }
-
-    /**
-     * Creates a new ChangeLogLevelController
-     *
-     * @param parentStage The parent stage of the new ChangeLogLevelController
-     * @return ChangeLogLevelController
-     */
-    public static ChangeLogLevelController create(Stage parentStage) {
-        Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle(TITLE);
-        stage.setResizable(false);
-        stage.initOwner(parentStage);
-        stage.initModality(Modality.WINDOW_MODAL);
-
-        // Center the stage on the parent once its rendered
-        stage.widthProperty().addListener(((observable, oldValue, newValue) -> stage.setX(parentStage.getX() + (parentStage.getWidth() - newValue.doubleValue()) / 2)));
-        stage.heightProperty().addListener(((observable, oldValue, newValue) -> stage.setY(parentStage.getY() + (parentStage.getHeight() - newValue.doubleValue()) / 2)));
-
-        return Fxml.load(ChangeLogLevelController.class, "ChangeLogLevelScene.fxml")
-                .withStage(stage)
-                .getController();
     }
 }

@@ -49,6 +49,33 @@ public class DatasetPhaser {
         nDim = dataset.getNDim();
     }
 
+    class Index {
+
+        final double amax;
+        final int[][] pt;
+
+        Index(double max, int[][] pt) {
+            this.amax = max;
+            this.pt = new int[nDim][2];
+            for (int i = 0; i < nDim; i++) {
+                this.pt[i][0] = pt[i][0];
+                this.pt[i][1] = pt[i][1];
+            }
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            for (int i = 0; i < nDim; i++) {
+                sBuilder.append(pt[i][0]);
+                sBuilder.append(" ");
+            }
+            sBuilder.append(amax);
+            return sBuilder.toString();
+
+        }
+    }
+
     /**
      * Calculate phasing along the specified dataset dimension.
      *
@@ -210,32 +237,5 @@ public class DatasetPhaser {
         }
         dataset.setPh0(iDim, dataPh0);
         dataset.setPh1(iDim, dataPh1);
-    }
-
-    class Index {
-
-        final double amax;
-        final int[][] pt;
-
-        Index(double max, int[][] pt) {
-            this.amax = max;
-            this.pt = new int[nDim][2];
-            for (int i = 0; i < nDim; i++) {
-                this.pt[i][0] = pt[i][0];
-                this.pt[i][1] = pt[i][1];
-            }
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sBuilder = new StringBuilder();
-            for (int i = 0; i < nDim; i++) {
-                sBuilder.append(pt[i][0]);
-                sBuilder.append(" ");
-            }
-            sBuilder.append(amax);
-            return sBuilder.toString();
-
-        }
     }
 }

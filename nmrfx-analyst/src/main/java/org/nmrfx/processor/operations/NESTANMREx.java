@@ -210,15 +210,15 @@ public class NESTANMREx extends MatrixOperation {
         }
     }
 
-    public static File getExecutable() {
-        return nestaExecutable;
-    }
-
     public static void setExecutable(String path) {
         nestaExecutable = new File(path);
     }
 
     public static void setExecutable(File file) {
         nestaExecutable = new File(file.getPath());
+    }
+
+    public static File getExecutable() {
+        return nestaExecutable;
     }
 }

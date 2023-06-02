@@ -41,6 +41,23 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
     List<Atom>[] linkedAtoms = null;
     double[][] linkedValues;
 
+    public class Checker extends SimpleValueChecker {
+
+        public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
+            super(relativeThreshold, absoluteThreshold, maxIter);
+        }
+
+        public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
+            boolean converged = super.converged(iteration, previous, current);
+            if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
+                long time = System.currentTimeMillis();
+                long deltaTime = time - startTime;
+                report(iteration, nEvaluations, deltaTime, dihedrals.energyList.atomList.size(), current.getValue());
+            }
+            return converged;
+        }
+    }
+
     public CmaesRefinement(final Dihedral dihedrals) {
         super(dihedrals);
         this.molecule = dihedrals.molecule;
@@ -341,23 +358,6 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
             }
         }
         return ranfact;
-    }
-
-    public class Checker extends SimpleValueChecker {
-
-        public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
-            super(relativeThreshold, absoluteThreshold, maxIter);
-        }
-
-        public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
-            boolean converged = super.converged(iteration, previous, current);
-            if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
-                long time = System.currentTimeMillis();
-                long deltaTime = time - startTime;
-                report(iteration, nEvaluations, deltaTime, dihedrals.energyList.atomList.size(), current.getValue());
-            }
-            return converged;
-        }
     }
 
 }

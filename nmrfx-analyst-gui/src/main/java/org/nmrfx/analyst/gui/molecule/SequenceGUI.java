@@ -36,8 +36,8 @@ import java.util.List;
  */
 public class SequenceGUI {
 
-    static Stage stage = null;
     AnalystApp analystApp;
+    static Stage stage = null;
     ChoiceBox<String> polymerType;
     BorderPane borderPane = new BorderPane();
     Scene stageScene = new Scene(borderPane, 900, 600);
@@ -47,6 +47,17 @@ public class SequenceGUI {
 
     public SequenceGUI(AnalystApp analystApp) {
         this.analystApp = analystApp;
+    }
+
+    public static void showGUI(AnalystApp analystApp) {
+        if (stage == null) {
+            SequenceGUI seqGui = new SequenceGUI(analystApp);
+            seqGui.create();
+        }
+        if (stage != null) {
+            stage.show();
+            stage.toFront();
+        }
     }
 
     void create() {
@@ -110,17 +121,6 @@ public class SequenceGUI {
                 GUIUtils.warn("Sequence Error", ex.getMessage());
             }
             textArea.setText("");
-        }
-    }
-
-    public static void showGUI(AnalystApp analystApp) {
-        if (stage == null) {
-            SequenceGUI seqGui = new SequenceGUI(analystApp);
-            seqGui.create();
-        }
-        if (stage != null) {
-            stage.show();
-            stage.toFront();
         }
     }
 }

@@ -35,9 +35,54 @@ public class Saveframe {
 
     final STAR3Base star3;
     final String name;
+    String saveframeCategory;
     final LinkedHashMap loops = new LinkedHashMap();
     final LinkedHashMap categoryMap = new LinkedHashMap();
-    String saveframeCategory;
+
+    /**
+     * Creates a new instance of Saveframe
+     */
+    public class Category {
+
+        private boolean isLoop = false;
+        private final String name;
+        final LinkedHashMap<String, String> tagMap = new LinkedHashMap<>();
+
+        private Category(String name) {
+            this.name = name;
+        }
+
+        void addTag(String tag, String value) {
+            tagMap.put(tag, value);
+        }
+
+        public String get(String tag) {
+            return (String) tagMap.get(tag);
+        }
+
+        public List<String> getTags() {
+            List<String> list = new ArrayList<String>();
+            list.addAll(tagMap.keySet());
+            return list;
+        }
+
+        public boolean isLoop() {
+            return isLoop;
+        }
+
+        void setLoop(boolean value) {
+            isLoop = value;
+        }
+    }
+
+    public Category getCategory(String name) {
+        Category category = (Category) categoryMap.get(name);
+        if (category == null) {
+            category = new Category(name);
+            categoryMap.put(name, category);
+        }
+        return category;
+    }
 
     public Saveframe(STAR3Base star3, String name) {
         this.star3 = star3;
@@ -48,15 +93,6 @@ public class Saveframe {
         this.star3 = star3;
         this.name = name;
         this.saveframeCategory = saveframeCategory;
-    }
-
-    public Category getCategory(String name) {
-        Category category = (Category) categoryMap.get(name);
-        if (category == null) {
-            category = new Category(name);
-            categoryMap.put(name, category);
-        }
-        return category;
     }
 
     public STAR3Base getSTAR3() {
@@ -384,41 +420,5 @@ public class Saveframe {
             throw new ParseException("Can't find loop \"" + tagCategory + "." + tag + "\"");
         }
         return loop.getColumn(tag);
-    }
-
-    /**
-     * Creates a new instance of Saveframe
-     */
-    public class Category {
-
-        final LinkedHashMap<String, String> tagMap = new LinkedHashMap<>();
-        private final String name;
-        private boolean isLoop = false;
-
-        private Category(String name) {
-            this.name = name;
-        }
-
-        void addTag(String tag, String value) {
-            tagMap.put(tag, value);
-        }
-
-        public String get(String tag) {
-            return (String) tagMap.get(tag);
-        }
-
-        public List<String> getTags() {
-            List<String> list = new ArrayList<String>();
-            list.addAll(tagMap.keySet());
-            return list;
-        }
-
-        public boolean isLoop() {
-            return isLoop;
-        }
-
-        void setLoop(boolean value) {
-            isLoop = value;
-        }
     }
 }

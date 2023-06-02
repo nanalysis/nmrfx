@@ -28,9 +28,10 @@ import org.nmrfx.chemistry.Point3;
  */
 public class AtomDistancePair {
 
-    final double methylCorrection;
     private final Atom[] atoms1;
     private final Atom[] atoms2;
+
+    final double methylCorrection;
 
     /**
      * Simple Constructor

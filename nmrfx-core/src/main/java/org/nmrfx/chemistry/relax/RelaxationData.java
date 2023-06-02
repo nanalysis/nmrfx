@@ -34,6 +34,22 @@ import java.util.stream.Collectors;
 @PluginAPI("ring")
 public class RelaxationData implements RelaxationValues {
 
+    public enum relaxTypes {
+        R1("R1"), R2("R2"), T1RHO("T1rho"),
+        NOE("NOE"), S2("S2"),
+        RQ("RQ"), RAP("RAP");
+
+        private final String name;
+
+        relaxTypes(final String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
     private final String id;
     private final relaxTypes expType;
     private final ResonanceSource resSource;
@@ -81,40 +97,41 @@ public class RelaxationData implements RelaxationValues {
         return key;
     }
 
+    public static void add(String id, String type, ResonanceSource resSource, double field, double value, double error) {
+        type = type.toUpperCase();
+        if (type.equals("T1")) {
+            type = "R1";
+        } else if (type.equals("T2")) {
+            type = "R2";
+        }
+        relaxTypes relaxType = relaxTypes.valueOf(type.toUpperCase());
+        RelaxationData rData = new RelaxationData(id, relaxType, resSource,
+                field,
+                25.0, value, error, Collections.emptyMap());
+        resSource.getAtom().addRelaxationData(id, rData);
+    }
+
     public String getId() {
         return id;
+    }
+
+    @Override
+    public String getName() {
+        return getExpType().getName();
+    }
+
+    @Override
+    public ResonanceSource getResonanceSource() {
+        return resSource;
     }
 
     public relaxTypes getExpType() {
         return expType;
     }
 
-    public double getField() {
-        return field;
-    }
-
-    public double getTemperature() {
-        return temperature;
-    }
-
-    @Override
-    public Double getValue() {
-        return value;
-    }
-
-    @Override
-    public Double getError() {
-        return error;
-    }
-
     @Override
     public String[] getParNames() {
         return new String[]{getExpType().getName()};
-    }
-
-    @Override
-    public String getName() {
-        return getExpType().getName();
     }
 
     @Override
@@ -135,27 +152,26 @@ public class RelaxationData implements RelaxationValues {
         }
     }
 
+    public double getField() {
+        return field;
+    }
+
+    public double getTemperature() {
+        return temperature;
+    }
+
     @Override
-    public ResonanceSource getResonanceSource() {
-        return resSource;
+    public Double getValue() {
+        return value;
+    }
+
+    @Override
+    public Double getError() {
+        return error;
     }
 
     public Map<String, String> getExtras() {
         return extras;
-    }
-
-    public static void add(String id, String type, ResonanceSource resSource, double field, double value, double error) {
-        type = type.toUpperCase();
-        if (type.equals("T1")) {
-            type = "R1";
-        } else if (type.equals("T2")) {
-            type = "R2";
-        }
-        relaxTypes relaxType = relaxTypes.valueOf(type.toUpperCase());
-        RelaxationData rData = new RelaxationData(id, relaxType, resSource,
-                field,
-                25.0, value, error, Collections.emptyMap());
-        resSource.getAtom().addRelaxationData(id, rData);
     }
 
     public static Map<Long, EnumMap<relaxTypes, RelaxationData>> assembleAtomData(Atom atom) {
@@ -250,21 +266,5 @@ public class RelaxationData implements RelaxationValues {
             }
         });
         return relaxationData;
-    }
-
-    public enum relaxTypes {
-        R1("R1"), R2("R2"), T1RHO("T1rho"),
-        NOE("NOE"), S2("S2"),
-        RQ("RQ"), RAP("RAP");
-
-        private final String name;
-
-        relaxTypes(final String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
     }
 }

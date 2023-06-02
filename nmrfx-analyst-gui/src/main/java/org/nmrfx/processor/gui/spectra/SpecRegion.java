@@ -124,6 +124,15 @@ public class SpecRegion implements Comparator, Comparable {
         return endIntensity[dim * 2];
     }
 
+    public String toString() {
+        if (x == null) {
+            return "";
+        } else {
+            // fixme only works for x.length = 2;
+            return x[0] + " " + x[1];
+        }
+    }
+
     public int compare(Object o1, Object o2) {
         // FIXME do we need to test type of object?
         int result = 0;
@@ -158,15 +167,6 @@ public class SpecRegion implements Comparator, Comparable {
             return false;
         }
         return (compare(this, o2) == 0);
-    }
-
-    public String toString() {
-        if (x == null) {
-            return "";
-        } else {
-            // fixme only works for x.length = 2;
-            return x[0] + " " + x[1];
-        }
     }
 
     public boolean overlapOnDim(Object o2, int iDim) {

@@ -24,10 +24,6 @@ public class JournalFormatPeaks {
 
     static Map<String, JournalFormat> journalFormats = new HashMap<>();
 
-    public void loadFormats() {
-
-    }
-
     static JournalFormat parseYamlMap(Map<String, Object> map) {
         JournalFormat jformat = new JournalFormat();
         jformat.name = (String) map.get("name");
@@ -43,6 +39,10 @@ public class JournalFormatPeaks {
         ;
         jformat.broad = (Double) map.get("broad");
         return jformat;
+    }
+
+    public void loadFormats() {
+
     }
 
     public static void loadYaml(String fileName) throws FileNotFoundException, IOException {

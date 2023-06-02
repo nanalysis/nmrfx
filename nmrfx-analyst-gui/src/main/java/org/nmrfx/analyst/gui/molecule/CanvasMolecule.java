@@ -26,13 +26,14 @@ import java.util.List;
 
 public class CanvasMolecule implements CanvasAnnotation {
     private static final Logger log = LoggerFactory.getLogger(CanvasMolecule.class);
+
+    PolyChart chart = null;
+    ChartMenu menu = null;
     private static final int BY_ATOM = 0;
     private static final int BY_VALUE = 1;
     private static final int CIRCLE_SHAPE = 0;
     private static final int SQUARE_SHAPE = 1;
     private static final int TRIANGLE_SHAPE = 2;
-    PolyChart chart = null;
-    ChartMenu menu = null;
     float radius = 0.4f;
     float valueScale = 10.0f;
     float valueZero = 0.0f;
@@ -105,6 +106,16 @@ public class CanvasMolecule implements CanvasAnnotation {
 
     public void setPosition(double x1, double y1, double x2, double y2) {
         setPosition(x1, y1, x2, y2, POSTYPE.PIXEL, POSTYPE.PIXEL);
+    }
+
+    @Override
+    public POSTYPE getXPosType() {
+        return xPosType;
+    }
+
+    @Override
+    public POSTYPE getYPosType() {
+        return yPosType;
     }
 
     void calcBounds() {
@@ -272,6 +283,14 @@ public class CanvasMolecule implements CanvasAnnotation {
         return true;
     }
 
+    @Override
+    public ChartMenu getMenu() {
+        if ((chart != null) && (menu == null)) {
+            menu = new MoleculeMenu(chart, this);
+        }
+        return menu;
+    }
+
     String getHit() {
         if (hitAtom == -1) {
             return ("");
@@ -309,36 +328,6 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
     }
 
-    public void zoom(double factor) {
-        double deltaBx = (factor - 1.0) * (bx2 - bx1);
-        double deltaBy = (factor - 1.0) * (by2 - by1);
-        bx1 = bx1 + deltaBx;
-        by1 = by1 + deltaBy;
-        bx2 = bx2 - deltaBx;
-        by2 = by2 - deltaBy;
-        if (chart != null) {
-            chart.drawPeakLists(false);
-        }
-
-    }
-
-    public void draw(GraphicsContextInterface gC, double[][] canvasBounds, double[][] worldBounds) {
-        x1 = xPosType.transform(bx1, canvasBounds[0], worldBounds[0]);
-        x2 = xPosType.transform(bx2, canvasBounds[0], worldBounds[0]);
-        y1 = yPosType.transform(by1, canvasBounds[1], worldBounds[1]);
-        y2 = yPosType.transform(by2, canvasBounds[1], worldBounds[1]);
-        double xMin = Math.min(x1, x2);
-        double yMin = Math.min(y1, y2);
-        double width = Math.abs(x2 - x1);
-        double height = Math.abs(y2 - y1);
-
-        bounds2D = new Rectangle2D(xMin, yMin, width, height);
-        transformValid = false;
-        paintShape(gC);
-        if (isSelected()) {
-            drawHandles(gC);
-        }
-    }
 
     @Override
     public boolean hit(double x, double y, boolean selectMode) {
@@ -407,61 +396,35 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
     }
 
-    @Override
-    public ChartMenu getMenu() {
-        if ((chart != null) && (menu == null)) {
-            menu = new MoleculeMenu(chart, this);
+    public void zoom(double factor) {
+        double deltaBx = (factor - 1.0) * (bx2 - bx1);
+        double deltaBy = (factor - 1.0) * (by2 - by1);
+        bx1 = bx1 + deltaBx;
+        by1 = by1 + deltaBy;
+        bx2 = bx2 - deltaBx;
+        by2 = by2 - deltaBy;
+        if (chart != null) {
+            chart.drawPeakLists(false);
         }
-        return menu;
+
     }
 
-    @Override
-    public POSTYPE getXPosType() {
-        return xPosType;
-    }
+    public void draw(GraphicsContextInterface gC, double[][] canvasBounds, double[][] worldBounds) {
+        x1 = xPosType.transform(bx1, canvasBounds[0], worldBounds[0]);
+        x2 = xPosType.transform(bx2, canvasBounds[0], worldBounds[0]);
+        y1 = yPosType.transform(by1, canvasBounds[1], worldBounds[1]);
+        y2 = yPosType.transform(by2, canvasBounds[1], worldBounds[1]);
+        double xMin = Math.min(x1, x2);
+        double yMin = Math.min(y1, y2);
+        double width = Math.abs(x2 - x1);
+        double height = Math.abs(y2 - y1);
 
-    @Override
-    public POSTYPE getYPosType() {
-        return yPosType;
-    }
-
-    @Override
-    public void drawHandles(GraphicsContextInterface gC) {
-        drawHandle(gC, bounds2D.getMinX(), bounds2D.getMinY(), Pos.BOTTOM_RIGHT);
-        drawHandle(gC, bounds2D.getMaxX(), bounds2D.getMinY(), Pos.BOTTOM_LEFT);
-        drawHandle(gC, bounds2D.getMaxX(), bounds2D.getMaxY(), Pos.TOP_LEFT);
-        drawHandle(gC, bounds2D.getMinX(), bounds2D.getMaxY(), Pos.TOP_RIGHT);
-    }
-
-    @Override
-    public boolean isSelected() {
-        return selected;
-    }
-
-    @Override
-    public boolean isSelectable() {
-        return selectable;
-    }
-
-    @Override
-    public void setSelectable(boolean state) {
-        selectable = state;
-    }
-
-    @Override
-    public int hitHandle(double x, double y) {
-        if (hitHandle(x, y, Pos.BOTTOM_RIGHT, bounds2D.getMinX(), bounds2D.getMinY())) {
-            activeHandle = 0;
-        } else if (hitHandle(x, y, Pos.BOTTOM_LEFT, bounds2D.getMaxX(), bounds2D.getMinY())) {
-            activeHandle = 1;
-        } else if (hitHandle(x, y, Pos.TOP_LEFT, bounds2D.getMaxX(), bounds2D.getMaxY())) {
-            activeHandle = 2;
-        } else if (hitHandle(x, y, Pos.TOP_RIGHT, bounds2D.getMinX(), bounds2D.getMaxY())) {
-            activeHandle = 3;
-        } else {
-            activeHandle = -1;
+        bounds2D = new Rectangle2D(xMin, yMin, width, height);
+        transformValid = false;
+        paintShape(gC);
+        if (isSelected()) {
+            drawHandles(gC);
         }
-        return activeHandle;
     }
 
     public void paintShape(GraphicsContextInterface g2) {
@@ -898,6 +861,45 @@ public class CanvasMolecule implements CanvasAnnotation {
                 log.error(ex.getMessage(), ex);
             }
         }
+    }
+
+    @Override
+    public void drawHandles(GraphicsContextInterface gC) {
+        drawHandle(gC, bounds2D.getMinX(), bounds2D.getMinY(), Pos.BOTTOM_RIGHT);
+        drawHandle(gC, bounds2D.getMaxX(), bounds2D.getMinY(), Pos.BOTTOM_LEFT);
+        drawHandle(gC, bounds2D.getMaxX(), bounds2D.getMaxY(), Pos.TOP_LEFT);
+        drawHandle(gC, bounds2D.getMinX(), bounds2D.getMaxY(), Pos.TOP_RIGHT);
+    }
+
+    @Override
+    public boolean isSelected() {
+        return selected;
+    }
+
+    @Override
+    public boolean isSelectable() {
+        return selectable;
+    }
+
+    @Override
+    public void setSelectable(boolean state) {
+        selectable = state;
+    }
+
+    @Override
+    public int hitHandle(double x, double y) {
+        if (hitHandle(x, y, Pos.BOTTOM_RIGHT, bounds2D.getMinX(), bounds2D.getMinY())) {
+            activeHandle = 0;
+        } else if (hitHandle(x, y, Pos.BOTTOM_LEFT, bounds2D.getMaxX(), bounds2D.getMinY())) {
+            activeHandle = 1;
+        } else if (hitHandle(x, y, Pos.TOP_LEFT, bounds2D.getMaxX(), bounds2D.getMaxY())) {
+            activeHandle = 2;
+        } else if (hitHandle(x, y, Pos.TOP_RIGHT, bounds2D.getMinX(), bounds2D.getMaxY())) {
+            activeHandle = 3;
+        } else {
+            activeHandle = -1;
+        }
+        return activeHandle;
     }
 
 }

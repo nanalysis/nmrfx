@@ -94,59 +94,31 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
     private static final String[] basicOps = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] commonOps = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
-    static AtomicBoolean aListUpdated = new AtomicBoolean(false);
-    final ObservableList<String> operationList = FXCollections.observableArrayList();
-    private final Circle statusCircle = new Circle(10.0, Color.GREEN);
-    private final List<String> realImagChoices = new ArrayList<>();
-    private final ProcessDataset processDataset = new ProcessDataset();
-    final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
-    private final ObjectProperty<Boolean> processorAvailable = new SimpleObjectProperty<>();
-    private final ProcessorAvailableStatusListener processorAvailableStatusListener = this::processorAvailableStatusUpdated;
+
+    private enum DisplayMode {
+        FID("FID"),
+        FID_OPS("FID w/ OPs"),
+        SPECTRUM("Spectrum");
+        private final String strValue;
+
+        DisplayMode(String strValue) {
+            this.strValue = strValue;
+        }
+
+        @Override
+        public String toString() {
+            return this.strValue;
+        }
+    }
+
     Pane processorPane;
     Pane pane;
-    EventHandler<ActionEvent> menuHandler;
-    PopOver popOver = new PopOver();
-    ChangeListener<String> dimListener;
-    ChangeListener<Number> refDimListener;
-    PropertyManager propertyManager;
-    RefManager refManager;
-    @FXML
-    PropertySheet propertySheet;
-    @FXML
-    PropertySheet refSheet;
-    // script tab fields
-    @FXML
-    CodeArea textArea;
-    @FXML
-    CheckBox autoProcess;
-    @FXML
-    ToolBar fidParToolBar;
-    @FXML
-    TableView<VendorPar> fidParTableView;
-    @FXML
-    HBox navHBox;
-    @FXML
-    VBox navDetailsVBox;
-    ToggleGroup rowToggleGroup = new ToggleGroup();
-    ChangeListener<String> vecNumListener;
-    int[] rowIndices;
-    int[] vecSizes;
-    CheckBox genLSCatalog;
-    TextField nLSCatFracField;
-    TextField[][] lsTextFields;
-    List<RadioButton> vectorDimButtons = new ArrayList<>();
-    ChartProcessor chartProcessor;
-    DocWindowController dwc = null;
-    PolyChart chart;
-    ListChangeListener<String> opListListener = null;
-    Throwable processingThrowable;
-    String currentText = "";
-    ProcessingCodeAreaUtil codeAreaUtil;
-    ScheduledFuture futureUpdate = null;
+
     @FXML
     private ToolBar toolBar;
     @FXML
     private TextField opTextField;
+
     @FXML
     private ChoiceBox<String> dimChoice;
     @FXML
@@ -169,17 +141,50 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private ListView<String> scriptView;
     @FXML
     private StatusBar statusBar;
+    private final Circle statusCircle = new Circle(10.0, Color.GREEN);
+
     @FXML
     private MenuButton opMenuButton;
+    final ObservableList<String> operationList = FXCollections.observableArrayList();
+    EventHandler<ActionEvent> menuHandler;
+    PopOver popOver = new PopOver();
+
+    ChangeListener<String> dimListener;
+    ChangeListener<Number> refDimListener;
+
+    PropertyManager propertyManager;
+    RefManager refManager;
+
+    @FXML
+    PropertySheet propertySheet;
+
+    @FXML
+    PropertySheet refSheet;
+
+    // script tab fields
+    @FXML
+    CodeArea textArea;
+    @FXML
+    CheckBox autoProcess;
+
+    @FXML
+    ToolBar fidParToolBar;
+    @FXML
+    TableView<VendorPar> fidParTableView;
+    @FXML
+    HBox navHBox;
     @FXML
     private VBox dimVBox;
     @FXML
     private Slider vecNum1;
+    @FXML
+    VBox navDetailsVBox;
     private TextField[] rowTextBoxes = new TextField[0];
     @FXML
     private TextField fileIndexTextBox;
     @FXML
     private ListView<DatasetGroupIndex> corruptedIndicesListView;
+    ToggleGroup rowToggleGroup = new ToggleGroup();
     @FXML
     private ChoiceBox<String> realImagChoiceBox;
     @FXML
@@ -196,12 +201,57 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private ChoiceBox<Integer> scanMaxN;
     @FXML
     private ChoiceBox<Double> scanRatio;
+    private final List<String> realImagChoices = new ArrayList<>();
+    ChangeListener<String> vecNumListener;
+    int[] rowIndices;
+    int[] vecSizes;
+
+    CheckBox genLSCatalog;
+    TextField nLSCatFracField;
+    TextField[][] lsTextFields;
+    List<RadioButton> vectorDimButtons = new ArrayList<>();
+
+    ChartProcessor chartProcessor;
+    DocWindowController dwc = null;
+    PolyChart chart;
     private AtomicBoolean idleMode = new AtomicBoolean(false);
     private AtomicBoolean isProcessing = new AtomicBoolean(false);
     private AtomicBoolean doProcessWhenDone = new AtomicBoolean(false);
+    private final ProcessDataset processDataset = new ProcessDataset();
+    ListChangeListener<String> opListListener = null;
+
+    final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
+    private final ObjectProperty<Boolean> processorAvailable = new SimpleObjectProperty<>();
+    private final ProcessorAvailableStatusListener processorAvailableStatusListener = this::processorAvailableStatusUpdated;
+    Throwable processingThrowable;
+    String currentText = "";
+
+    ProcessingCodeAreaUtil codeAreaUtil;
     private ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
+    static AtomicBoolean aListUpdated = new AtomicBoolean(false);
     private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     private AtomicReference<Dataset> saveObject = new AtomicReference<>();
+    ScheduledFuture futureUpdate = null;
+
+
+    public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
+        Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml")
+                .withParent(processorPane);
+        ProcessorController controller = builder.getController();
+
+        controller.chart = chart;
+        chart.setProcessorController(controller);
+        controller.chartProcessor.setChart(chart);
+        controller.chartProcessor.fxmlController = fxmlController;
+        controller.processorPane = processorPane;
+        controller.pane = builder.getNode();
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        closeButton.setOnAction(e -> controller.hide());
+        controller.toolBar.getItems().add(closeButton);
+        fxmlController.processorCreated(controller.pane);
+
+        return controller;
+    }
 
     public void show() {
         if (processorPane.getChildren().isEmpty()) {
@@ -229,16 +279,33 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         operationList.clear();
     }
 
-    protected List<String> getOperationList() {
-        return operationList;
-    }
-
     protected void setOperationList(ArrayList<String> scriptList) {
         operationList.setAll(scriptList);
     }
 
+    protected List<String> getOperationList() {
+        return operationList;
+    }
+
     protected String getFullScript() {
         return chartProcessor.buildScript();
+    }
+
+    class UpdateTask implements Runnable {
+        @Override
+        public void run() {
+            if (aListUpdated.get()) {
+                needToFireEvent.set(true);
+                aListUpdated.set(false);
+                startTimer();
+            } else if (needToFireEvent.get()) {
+                needToFireEvent.set(false);
+                Fx.runOnFxThread(() -> saveDataset(saveObject.getAndSet(null)));
+                if (aListUpdated.get()) {
+                    startTimer();
+                }
+            }
+        }
     }
 
     synchronized void startTimer() {
@@ -471,6 +538,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             deleteItem();
         }
     }
+
 
     public void deleteOp() {
         deleteItem();
@@ -962,6 +1030,72 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         aListUpdated.set(true);
         saveObject.set(dataset);
         startTimer();
+    }
+
+    private class ProcessDataset {
+        Processor processor;
+        String script;
+        public Worker<Integer> worker;
+
+        private ProcessDataset() {
+            worker = new Service<>() {
+
+                protected Task createTask() {
+                    return new Task() {
+                        protected Object call() {
+                            doProcessWhenDone.set(false);
+                            isProcessing.set(true);
+                            Processor.getProcessor().setProcessorAvailableStatus(false);
+                            script = textArea.getText();
+                            try (PythonInterpreter processInterp = new PythonInterpreter()) {
+                                updateStatus("Start processing");
+                                updateTitle("Start Processing");
+                                processInterp.exec("from pyproc import *");
+                                processor = Processor.getProcessor();
+                                processor.keepDatasetOpen(true);
+                                processor.setTempFileMode(idleMode.get());
+                                processor.clearDataset();
+                                processInterp.exec("useProcessor(inNMRFx=True)");
+                                processInterp.exec(FormatUtils.formatStringForPythonInterpreter(script));
+                            }
+                            return 0;
+                        }
+                    };
+                }
+            };
+
+            ((Service<Integer>) worker).setOnSucceeded(event -> {
+                Dataset dataset = processor.releaseDataset(null);
+                if (dataset != null) {
+                    dataset.script(script);
+                } else {
+                    try {
+                        writeScript(script);
+                    } catch (IOException ioE) {
+                        log.error(ioE.getMessage(), ioE);
+                    }
+                }
+                finishProcessing(dataset);
+                isProcessing.set(false);
+                if (doProcessWhenDone.get()) {
+                    processIfIdle();
+                }
+            });
+            ((Service<Integer>) worker).setOnCancelled(event -> {
+                processor.clearDataset();
+                isProcessing.set(false);
+                setProcessingStatus("cancelled", false);
+            });
+            ((Service<Integer>) worker).setOnFailed(event -> {
+                processor.clearDataset();
+                isProcessing.set(false);
+                // Processing is finished if it has ended with errors
+                Processor.getProcessor().setProcessorAvailableStatus(true);
+                final Throwable exception = worker.getException();
+                setProcessingStatus(exception.getMessage(), false, exception);
+            });
+
+        }
     }
 
     public void writeScript(String script) throws IOException {
@@ -1552,124 +1686,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 DatasetGroupIndex datasetGroupIndex = new DatasetGroupIndex(field);
                 nmrData.addSkipGroup(datasetGroupIndex);
             }
-        }
-    }
-
-    public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
-        Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml")
-                .withParent(processorPane);
-        ProcessorController controller = builder.getController();
-
-        controller.chart = chart;
-        chart.setProcessorController(controller);
-        controller.chartProcessor.setChart(chart);
-        controller.chartProcessor.fxmlController = fxmlController;
-        controller.processorPane = processorPane;
-        controller.pane = builder.getNode();
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
-        closeButton.setOnAction(e -> controller.hide());
-        controller.toolBar.getItems().add(closeButton);
-        fxmlController.processorCreated(controller.pane);
-
-        return controller;
-    }
-
-    private enum DisplayMode {
-        FID("FID"),
-        FID_OPS("FID w/ OPs"),
-        SPECTRUM("Spectrum");
-        private final String strValue;
-
-        DisplayMode(String strValue) {
-            this.strValue = strValue;
-        }
-
-        @Override
-        public String toString() {
-            return this.strValue;
-        }
-    }
-
-    class UpdateTask implements Runnable {
-        @Override
-        public void run() {
-            if (aListUpdated.get()) {
-                needToFireEvent.set(true);
-                aListUpdated.set(false);
-                startTimer();
-            } else if (needToFireEvent.get()) {
-                needToFireEvent.set(false);
-                Fx.runOnFxThread(() -> saveDataset(saveObject.getAndSet(null)));
-                if (aListUpdated.get()) {
-                    startTimer();
-                }
-            }
-        }
-    }
-
-    private class ProcessDataset {
-        public Worker<Integer> worker;
-        Processor processor;
-        String script;
-
-        private ProcessDataset() {
-            worker = new Service<>() {
-
-                protected Task createTask() {
-                    return new Task() {
-                        protected Object call() {
-                            doProcessWhenDone.set(false);
-                            isProcessing.set(true);
-                            Processor.getProcessor().setProcessorAvailableStatus(false);
-                            script = textArea.getText();
-                            try (PythonInterpreter processInterp = new PythonInterpreter()) {
-                                updateStatus("Start processing");
-                                updateTitle("Start Processing");
-                                processInterp.exec("from pyproc import *");
-                                processor = Processor.getProcessor();
-                                processor.keepDatasetOpen(true);
-                                processor.setTempFileMode(idleMode.get());
-                                processor.clearDataset();
-                                processInterp.exec("useProcessor(inNMRFx=True)");
-                                processInterp.exec(FormatUtils.formatStringForPythonInterpreter(script));
-                            }
-                            return 0;
-                        }
-                    };
-                }
-            };
-
-            ((Service<Integer>) worker).setOnSucceeded(event -> {
-                Dataset dataset = processor.releaseDataset(null);
-                if (dataset != null) {
-                    dataset.script(script);
-                } else {
-                    try {
-                        writeScript(script);
-                    } catch (IOException ioE) {
-                        log.error(ioE.getMessage(), ioE);
-                    }
-                }
-                finishProcessing(dataset);
-                isProcessing.set(false);
-                if (doProcessWhenDone.get()) {
-                    processIfIdle();
-                }
-            });
-            ((Service<Integer>) worker).setOnCancelled(event -> {
-                processor.clearDataset();
-                isProcessing.set(false);
-                setProcessingStatus("cancelled", false);
-            });
-            ((Service<Integer>) worker).setOnFailed(event -> {
-                processor.clearDataset();
-                isProcessing.set(false);
-                // Processing is finished if it has ended with errors
-                Processor.getProcessor().setProcessorAvailableStatus(true);
-                final Throwable exception = worker.getException();
-                setProcessingStatus(exception.getMessage(), false, exception);
-            });
-
         }
     }
 }

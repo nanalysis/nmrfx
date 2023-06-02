@@ -48,24 +48,24 @@ import java.util.regex.Pattern;
  */
 public class CSVRE {
 
+    /**
+     * The rather involved pattern used to match CSV's consists of three alternations: the first matches quoted fields,
+     * the second unquoted, the third null fields
+     */
+    private static String sepStr = ",";
     public static final String CSV_PATTERN
             = //	"\"([^\"\\\\]*(\\\\.[^\"\\\\]*)*)\",?|([^,]+),?|,";
             "\"(([^\"])|(\"\"))+\",?|([^,]+),?|,";
     public static final String TAB_PATTERN = "\"(([^\"])|(\"\"))+\"\t?|([^\t]+)\t?|\t";
     public static final String SPACE_PATTERN = "\"(([^\"])|(\"\"))+\" ?|([^ ]+) ?| ";
+    public static final String GEN_PATTERN = "\"(([^\"])|(\"\"))+\"" + sepStr
+            + "?|([^" + sepStr + "]+)" + sepStr + "?|" + sepStr;
     static Pattern tabPattern = null;
     static Pattern commaPattern = null;
     static Pattern spacePattern = null;
     static Pattern tabPattern2 = null;
     static Pattern commaPattern2 = null;
     static Pattern spacePattern2 = null;
-    /**
-     * The rather involved pattern used to match CSV's consists of three alternations: the first matches quoted fields,
-     * the second unquoted, the third null fields
-     */
-    private static String sepStr = ",";
-    public static final String GEN_PATTERN = "\"(([^\"])|(\"\"))+\"" + sepStr
-            + "?|([^" + sepStr + "]+)" + sepStr + "?|" + sepStr;
 
     static {
         sepStr = "\t";
@@ -90,6 +90,18 @@ public class CSVRE {
 
     static Pattern makePattern2(String sepStr) {
         return Pattern.compile("(" + sepStr + "$)");
+    }
+
+    public static void main(String[] argv) throws IOException {
+        String line;
+
+        // Construct a new Regular Expression parser.
+        BufferedReader is = new BufferedReader(new InputStreamReader(System.in));
+
+        // For each line...
+        while ((line = is.readLine()) != null) {
+            parseLine(" ", line);
+        }
     }
 
     public static String[] parseLine(String sepStr, String line) {
@@ -137,17 +149,5 @@ public class CSVRE {
         resultFields = (String[]) resultVec.toArray(resultFields);
 
         return resultFields;
-    }
-
-    public static void main(String[] argv) throws IOException {
-        String line;
-
-        // Construct a new Regular Expression parser.
-        BufferedReader is = new BufferedReader(new InputStreamReader(System.in));
-
-        // For each line...
-        while ((line = is.readLine()) != null) {
-            parseLine(" ", line);
-        }
     }
 }

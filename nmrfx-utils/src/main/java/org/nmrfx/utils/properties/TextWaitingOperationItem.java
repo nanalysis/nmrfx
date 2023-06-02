@@ -43,11 +43,11 @@ import java.util.function.Consumer;
  */
 public class TextWaitingOperationItem extends OperationItem implements ObservableStringValue {
 
-    static Background activeBackground = new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY));
     ChangeListener<? super String> listener;
     Consumer<Item> f;
     String value;
     String defaultValue;
+    static Background activeBackground = new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
 
     public TextWaitingOperationItem(ChangeListener listener, Consumer<Item> f, String defaultValue, String category, String name, String description) {
@@ -61,11 +61,6 @@ public class TextWaitingOperationItem extends OperationItem implements Observabl
     @Override
     public Class<?> getType() {
         return TextWaitingOperationItem.class;
-    }
-
-    @Override
-    public String getValue() {
-        return value;
     }
 
     @Override
@@ -100,11 +95,6 @@ public class TextWaitingOperationItem extends OperationItem implements Observabl
     }
 
     @Override
-    public String getStringRep() {
-        return '\'' + value + '\'';
-    }
-
-    @Override
     public String get() {
         return value;
     }
@@ -124,6 +114,16 @@ public class TextWaitingOperationItem extends OperationItem implements Observabl
 
     @Override
     public void removeListener(InvalidationListener listener) {
+    }
+
+    @Override
+    public String getValue() {
+        return value;
+    }
+
+    @Override
+    public String getStringRep() {
+        return '\'' + value + '\'';
     }
 
     public void keyReleased(TextField textField, KeyEvent event) {

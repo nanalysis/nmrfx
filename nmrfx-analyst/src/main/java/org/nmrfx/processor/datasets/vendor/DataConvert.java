@@ -28,6 +28,29 @@ public class DataConvert {
 
 // copy read data into double array
 
+    /**
+     *
+     */
+    public enum DataType {
+
+        /**
+         *
+         */
+        FLOAT,
+        /**
+         *
+         */
+        DOUBLE,
+        /**
+         *
+         */
+        SHORT,
+        /**
+         *
+         */
+        INT;
+    }
+
     private DataConvert() {
     }
 
@@ -147,29 +170,6 @@ public class DataConvert {
             break;
         }
         return data;
-    }
-
-    /**
-     *
-     */
-    public enum DataType {
-
-        /**
-         *
-         */
-        FLOAT,
-        /**
-         *
-         */
-        DOUBLE,
-        /**
-         *
-         */
-        SHORT,
-        /**
-         *
-         */
-        INT;
     }
 
 }

@@ -28,23 +28,9 @@ import java.util.List;
 
 public class RingCurrentShift {
 
-    //￼1.05 0.92 1.04 0.90 0.43
-    static final String[] pheAtoms0 = {"CG", "CD2", "CE2", "CZ", "CE1", "CD1"};
-    static final String[] tyrAtoms0 = {"CG", "CD2", "CE2", "CZ", "CE1", "CD1"};
-    static final String[] trpAtoms0 = {"CD2", "CE3", "CZ3", "CH2", "CZ2", "CE2"};
-    static final String[] trpAtoms1 = {"CG", "CD2", "CE2", "NE1", "CD1"};
-    static final String[] hisAtoms0 = {"CG", "ND1", "CE1", "NE2", "CD2"};
-    static final String[] radeAtoms0 = {"N1", "C2", "N3", "C4", "C5", "C6"};
-    static final String[] radeAtoms1 = {"C4", "C5", "N7", "C8", "N9"};
-    static final String[] rguaAtoms0 = {"N1", "C2", "N3", "C4", "C5", "C6"};
-    static final String[] rguaAtoms1 = {"C4", "C5", "N7", "C8", "N9"};
-    static final String[] rcytAtoms0 = {"N1", "C2", "N3", "C4", "C5", "C6"};
-    static final String[] ruraAtoms0 = {"N1", "C2", "N3", "C4", "C5", "C6"};
-    static final String[] rthyAtoms0 = {"N1", "C2", "N3", "C4", "C5", "C6"};
-    static final HashMap<String, RingType> ringAtoms = new HashMap<String, RingType>();
-    private static final HashMap<String, PPMv> refShifts = new HashMap<String, PPMv>();
-    public static List<SpatialSet> refSP = null;
+    private ArrayList<FusedRing> fusedRingList = new ArrayList<FusedRing>();
     private static HashMap<String, Ring> stdRings = new HashMap<String, Ring>();
+    private static final HashMap<String, PPMv> refShifts = new HashMap<String, PPMv>();
 
     static {
         refShifts.put("U.H6", new PPMv(8.00));
@@ -80,6 +66,98 @@ public class RingCurrentShift {
         refShifts.put("A.H2'", new PPMv(4.48));
     }
 
+    static class RingType {
+
+        final String name;
+        final String[] atomNames;
+        double ringFactor = 1.0;
+
+        RingType(final String name, final String[] atomNames, final double ringFactor) {
+            this.name = name;
+            this.atomNames = atomNames;
+            this.ringFactor = ringFactor;
+        }
+
+        void setRingFactor(final double ringFactor) {
+            this.ringFactor = ringFactor;
+        }
+    }
+
+    static class FusedRing {
+
+        ArrayList<Ring> rings = new ArrayList<Ring>();
+
+        void add(Ring ring) {
+            rings.add(ring);
+        }
+
+        boolean hasSpatialSet(final SpatialSet targetParent) {
+            boolean sameRing = false;
+            for (Ring ring : rings) {
+                if (ring.hasSpatialSet(targetParent)) {
+                    sameRing = true;
+                    break;
+                }
+            }
+            return sameRing;
+        }
+    }
+
+    static class Ring {
+
+        final RingType type;
+        ArrayList<SpatialSet> spatialSets = new ArrayList<SpatialSet>();
+        ArrayList<Vector3D> points = new ArrayList<Vector3D>();
+        Plane plane = null;
+        Vector3D normal = null;
+
+        Ring(final RingType type, final ArrayList<SpatialSet> spatialSets) {
+            this.type = type;
+            this.spatialSets = spatialSets;
+        }
+
+        void setPoints(final ArrayList<Vector3D> points) {
+            this.points = points;
+        }
+
+        void setPlane(final Plane plane, final Vector3D normal) {
+            this.plane = plane;
+            this.normal = normal;
+        }
+
+        boolean isPlaneSet() {
+            return !(plane == null);
+        }
+
+        boolean hasSpatialSet(final SpatialSet targetParent) {
+            boolean sameRing = false;
+            for (SpatialSet spatialSet : spatialSets) {
+                if (spatialSet == targetParent) {
+                    sameRing = true;
+                    break;
+                }
+            }
+            return sameRing;
+        }
+    }
+
+    //￼1.05 0.92 1.04 0.90 0.43
+    static final String[] pheAtoms0 = {"CG", "CD2", "CE2", "CZ", "CE1", "CD1"};
+    static final String[] tyrAtoms0 = {"CG", "CD2", "CE2", "CZ", "CE1", "CD1"};
+    static final String[] trpAtoms0 = {"CD2", "CE3", "CZ3", "CH2", "CZ2", "CE2"};
+    static final String[] trpAtoms1 = {"CG", "CD2", "CE2", "NE1", "CD1"};
+    static final String[] hisAtoms0 = {"CG", "ND1", "CE1", "NE2", "CD2"};
+    static final String[] radeAtoms0 = {"N1", "C2", "N3", "C4", "C5", "C6"};
+    static final String[] radeAtoms1 = {"C4", "C5", "N7", "C8", "N9"};
+    static final String[] rguaAtoms0 = {"N1", "C2", "N3", "C4", "C5", "C6"};
+    static final String[] rguaAtoms1 = {"C4", "C5", "N7", "C8", "N9"};
+    static final String[] rcytAtoms0 = {"N1", "C2", "N3", "C4", "C5", "C6"};
+    static final String[] ruraAtoms0 = {"N1", "C2", "N3", "C4", "C5", "C6"};
+    static final String[] rthyAtoms0 = {"N1", "C2", "N3", "C4", "C5", "C6"};
+    static final HashMap<String, RingType> ringAtoms = new HashMap<String, RingType>();
+// Nucleic acid rings from Case, J. Bio. NMR 6:341
+// Protein rings from Wishart, J. Bio. NMR 26:215
+
     static {
         ringAtoms.put("PHE0", new RingType("PHE0", pheAtoms0, 1.05));
         ringAtoms.put("TYR0", new RingType("TYR0", tyrAtoms0, 0.92));
@@ -96,10 +174,62 @@ public class RingCurrentShift {
         makeBenzene();
     }
 
-    private ArrayList<FusedRing> fusedRingList = new ArrayList<FusedRing>();
     private MoleculeBase molecule;
-// Nucleic acid rings from Case, J. Bio. NMR 6:341
-// Protein rings from Wishart, J. Bio. NMR 26:215
+
+    static void makeBenzene() {
+        final String[] benAtoms0 = {"C1", "C2", "C3", "C4", "C5", "C6"};
+        RingType benzeneType = new RingType("BENZENE", benAtoms0, 1.0);
+        Vector3D pt1 = new Vector3D(-0.0103, -1.3948, 0.0);
+        Vector3D pt2 = new Vector3D(1.2028, -0.7063, 0.0);
+        Vector3D pt3 = new Vector3D(1.2131, 0.6884, 0.00);
+        Vector3D pt4 = new Vector3D(0.0104, 1.3948, -0.0);
+        Vector3D pt5 = new Vector3D(-1.2028, 0.7064, 0.0);
+        Vector3D pt6 = new Vector3D(-1.2131, -0.6884, 0.0);
+        ArrayList<Vector3D> points = new ArrayList<Vector3D>();
+        points.add(pt1);
+        points.add(pt2);
+        points.add(pt3);
+        points.add(pt4);
+        points.add(pt5);
+        points.add(pt6);
+        points.add(pt1);
+        Ring ring = new Ring(benzeneType, null);
+        ring.setPoints(points);
+        setRingConformationFromPoints(ring);
+        stdRings.put("benzene", ring);
+    }
+
+    public static void setRingFactor(final String ringName, final double ringFactor) {
+        RingType ringType = ringAtoms.get(ringName);
+        ringType.setRingFactor(ringFactor);
+    }
+
+    public static double getRingFactor(final String ringName) {
+        RingType ringType = ringAtoms.get(ringName);
+        return ringType.ringFactor;
+    }
+
+    public static void setRingConformation(Ring ring, int iStruct) {
+        ArrayList<SpatialSet> spatialSets = ring.spatialSets;
+        ring.points.clear();
+        for (SpatialSet spatialSet : spatialSets) {
+            Point3 pt = spatialSet.getPoint(iStruct);
+            if (pt == null) {
+                System.out.println("Null point for " + spatialSet.getFullName() + " for struct " + iStruct);
+            }
+            ring.points.add(pt);
+        }
+        setRingConformationFromPoints(ring);
+    }
+
+    static void setRingConformationFromPoints(Ring ring) {
+        Vector3D pt0 = ring.points.get(0);
+        Vector3D pt1 = ring.points.get(1);
+        Vector3D pt2 = ring.points.get(ring.points.size() - 2);
+        Plane plane = new Plane(pt0, pt1, pt2);
+        Vector3D normal = plane.getNormal();
+        ring.setPlane(plane, normal);
+    }
 
     public double test(double x, double y, double z, double targetFactor) {
         int iStruct = 0;
@@ -107,6 +237,8 @@ public class RingCurrentShift {
         Ring ring = stdRings.get("benzene");
         return calcRingContributions(ring, pt, targetFactor, iStruct);
     }
+
+    public static List<SpatialSet> refSP = null;
 
     public void setBasePPMs(List<SpatialSet> targetSpatialSets) {
         for (SpatialSet sp : targetSpatialSets) {
@@ -318,136 +450,6 @@ public class RingCurrentShift {
                     }
                 }
             }
-        }
-    }
-
-    static void makeBenzene() {
-        final String[] benAtoms0 = {"C1", "C2", "C3", "C4", "C5", "C6"};
-        RingType benzeneType = new RingType("BENZENE", benAtoms0, 1.0);
-        Vector3D pt1 = new Vector3D(-0.0103, -1.3948, 0.0);
-        Vector3D pt2 = new Vector3D(1.2028, -0.7063, 0.0);
-        Vector3D pt3 = new Vector3D(1.2131, 0.6884, 0.00);
-        Vector3D pt4 = new Vector3D(0.0104, 1.3948, -0.0);
-        Vector3D pt5 = new Vector3D(-1.2028, 0.7064, 0.0);
-        Vector3D pt6 = new Vector3D(-1.2131, -0.6884, 0.0);
-        ArrayList<Vector3D> points = new ArrayList<Vector3D>();
-        points.add(pt1);
-        points.add(pt2);
-        points.add(pt3);
-        points.add(pt4);
-        points.add(pt5);
-        points.add(pt6);
-        points.add(pt1);
-        Ring ring = new Ring(benzeneType, null);
-        ring.setPoints(points);
-        setRingConformationFromPoints(ring);
-        stdRings.put("benzene", ring);
-    }
-
-    public static void setRingFactor(final String ringName, final double ringFactor) {
-        RingType ringType = ringAtoms.get(ringName);
-        ringType.setRingFactor(ringFactor);
-    }
-
-    public static double getRingFactor(final String ringName) {
-        RingType ringType = ringAtoms.get(ringName);
-        return ringType.ringFactor;
-    }
-
-    public static void setRingConformation(Ring ring, int iStruct) {
-        ArrayList<SpatialSet> spatialSets = ring.spatialSets;
-        ring.points.clear();
-        for (SpatialSet spatialSet : spatialSets) {
-            Point3 pt = spatialSet.getPoint(iStruct);
-            if (pt == null) {
-                System.out.println("Null point for " + spatialSet.getFullName() + " for struct " + iStruct);
-            }
-            ring.points.add(pt);
-        }
-        setRingConformationFromPoints(ring);
-    }
-
-    static void setRingConformationFromPoints(Ring ring) {
-        Vector3D pt0 = ring.points.get(0);
-        Vector3D pt1 = ring.points.get(1);
-        Vector3D pt2 = ring.points.get(ring.points.size() - 2);
-        Plane plane = new Plane(pt0, pt1, pt2);
-        Vector3D normal = plane.getNormal();
-        ring.setPlane(plane, normal);
-    }
-
-    static class RingType {
-
-        final String name;
-        final String[] atomNames;
-        double ringFactor = 1.0;
-
-        RingType(final String name, final String[] atomNames, final double ringFactor) {
-            this.name = name;
-            this.atomNames = atomNames;
-            this.ringFactor = ringFactor;
-        }
-
-        void setRingFactor(final double ringFactor) {
-            this.ringFactor = ringFactor;
-        }
-    }
-
-    static class FusedRing {
-
-        ArrayList<Ring> rings = new ArrayList<Ring>();
-
-        void add(Ring ring) {
-            rings.add(ring);
-        }
-
-        boolean hasSpatialSet(final SpatialSet targetParent) {
-            boolean sameRing = false;
-            for (Ring ring : rings) {
-                if (ring.hasSpatialSet(targetParent)) {
-                    sameRing = true;
-                    break;
-                }
-            }
-            return sameRing;
-        }
-    }
-
-    static class Ring {
-
-        final RingType type;
-        ArrayList<SpatialSet> spatialSets = new ArrayList<SpatialSet>();
-        ArrayList<Vector3D> points = new ArrayList<Vector3D>();
-        Plane plane = null;
-        Vector3D normal = null;
-
-        Ring(final RingType type, final ArrayList<SpatialSet> spatialSets) {
-            this.type = type;
-            this.spatialSets = spatialSets;
-        }
-
-        void setPoints(final ArrayList<Vector3D> points) {
-            this.points = points;
-        }
-
-        void setPlane(final Plane plane, final Vector3D normal) {
-            this.plane = plane;
-            this.normal = normal;
-        }
-
-        boolean isPlaneSet() {
-            return !(plane == null);
-        }
-
-        boolean hasSpatialSet(final SpatialSet targetParent) {
-            boolean sameRing = false;
-            for (SpatialSet spatialSet : spatialSets) {
-                if (spatialSet == targetParent) {
-                    sameRing = true;
-                    break;
-                }
-            }
-            return sameRing;
         }
     }
 }

@@ -88,6 +88,14 @@ public class PeakWriter {
             "_Assigned_peak_chem_shift.Resonance_ID",
             "_Assigned_peak_chem_shift.Spectral_peak_list_ID",};
 
+    public static void writePeaksXPK2(String fileName, PeakList peakList) throws IOException, InvalidPeakException {
+        try (FileWriter writer = new FileWriter(fileName)) {
+            PeakWriter peakWriter = new PeakWriter();
+            peakWriter.writePeaksXPK2(writer, peakList);
+            writer.close();
+        }
+    }
+
     public void writePeaksXPK2(Writer chan, PeakList peakList) throws IOException, InvalidPeakException {
 
         Map<String, String> properties = peakList.getProperties();
@@ -495,7 +503,7 @@ public class PeakWriter {
     public void writePeaksToSparky(Writer chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         /*
                   Assignment       w1      w2      w3   Data Height
-
+  
      ?-?-?  125.395   55.758    8.310      2164733.500
      ?-?-?  122.041   54.953    8.450      1275542.375
 
@@ -513,14 +521,6 @@ public class PeakWriter {
             }
             chan.write(peak.toSparkyString());
             chan.write("\n");
-        }
-    }
-
-    public static void writePeaksXPK2(String fileName, PeakList peakList) throws IOException, InvalidPeakException {
-        try (FileWriter writer = new FileWriter(fileName)) {
-            PeakWriter peakWriter = new PeakWriter();
-            peakWriter.writePeaksXPK2(writer, peakList);
-            writer.close();
         }
     }
 }

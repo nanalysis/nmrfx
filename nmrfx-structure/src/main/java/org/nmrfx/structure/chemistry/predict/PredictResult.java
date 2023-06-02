@@ -8,9 +8,9 @@ package org.nmrfx.structure.chemistry.predict;
  * @author brucejohnson
  */
 public class PredictResult {
-    final int shell;
     HOSEStat cStat;
     HOSEStat hStat;
+    final int shell;
 
     public PredictResult(HOSEStat cStat, HOSEStat hStat, final int shell) {
         this.cStat = cStat;

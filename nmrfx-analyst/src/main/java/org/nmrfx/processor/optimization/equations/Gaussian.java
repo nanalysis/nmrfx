@@ -114,11 +114,6 @@ public class Gaussian extends OptFunction {
     }
 
     @Override
-    public String getFunctionName() {
-        return "y = a * (exp(-(x-f)^2 / b)";
-    }
-
-    @Override
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
         double xMid = DataUtil.getMidValue1Side(VecID.Y, VecID.X, getDataSetPtr());
@@ -139,5 +134,10 @@ public class Gaussian extends OptFunction {
                 }
             }
         }
+    }
+
+    @Override
+    public String getFunctionName() {
+        return "y = a * (exp(-(x-f)^2 / b)";
     }
 }

@@ -48,49 +48,15 @@ public class NMRStarWriter {
 
     protected static final String[] entityCompIndexLoopStrings = {"_Entity_comp_index.ID", "_Entity_comp_index.Auth_seq_ID", "_Entity_comp_index.Comp_ID", "_Entity_comp_index.Comp_label", "_Entity_comp_index.Entity_ID"};
     protected static final String[] entityAssemblyLoopStrings = {"_Entity_assembly.ID", "_Entity_assembly.Entity_assembly_name", "_Entity_assembly.Entity_ID", "_Entity_assembly.Entity_label", "_Entity_assembly.Asym_ID", "_Entity_assembly.Experimental_data_reported", "_Entity_assembly.Physical_state", "_Entity_assembly.Conformational_isomer", "_Entity_assembly.Chemical_exchange_state", "_Entity_assembly.Magnetic_equivalence_group_code", "_Entity_assembly.Role", "_Entity_assembly.Details", "_Entity_assembly.Assembly_ID"};
-    protected static final String[] entityBondLoopStrings = {"_Entity_bond.ID", "_Entity_bond.Type", "_Entity_bond.Value_order", "_Entity_bond.Comp_index_ID_1", "_Entity_bond.Comp_ID_1", "_Entity_bond.Atom_ID_1", "_Entity_bond.Comp_index_ID_2", "_Entity_bond.Comp_ID_2", "_Entity_bond.Atom_ID_2", "_Entity_bond.Entity_ID"};
-    protected static final String[] entityChemCompDeletedLoopStrings = {"_Entity_chem_comp_deleted_atom.ID", "_Entity_chem_comp_deleted_atom.Comp_index_ID", "_Entity_chem_comp_deleted_atom.Comp_ID", "_Entity_chem_comp_deleted_atom.Atom_ID", "_Entity_chem_comp_deleted_atom.Entity_ID"};
     private static final String[] entityCommonNameLoopStrings = {"_Entity_common_name.Name", "_Entity_common_name.Type", "_Entity_common_name.Entity_ID"};
+    protected static final String[] entityBondLoopStrings = {"_Entity_bond.ID", "_Entity_bond.Type", "_Entity_bond.Value_order", "_Entity_bond.Comp_index_ID_1", "_Entity_bond.Comp_ID_1", "_Entity_bond.Atom_ID_1", "_Entity_bond.Comp_index_ID_2", "_Entity_bond.Comp_ID_2", "_Entity_bond.Atom_ID_2", "_Entity_bond.Entity_ID"};
     private static final String[] chemCompEntityIndexLoopStrings = {"_Entity_comp_index.ID", "_Entity_comp_index.Auth_seq_ID", "_Entity_comp_index.Comp_ID", "_Entity_comp_index.Comp_label", "_Entity_comp_index.Entry_ID", "_Entity_comp_index.Entity_ID"};
+    protected static final String[] entityChemCompDeletedLoopStrings = {"_Entity_chem_comp_deleted_atom.ID", "_Entity_chem_comp_deleted_atom.Comp_index_ID", "_Entity_chem_comp_deleted_atom.Comp_ID", "_Entity_chem_comp_deleted_atom.Atom_ID", "_Entity_chem_comp_deleted_atom.Entity_ID"};
     private static final String[] chemCompBondLoopStrings = {"_Chem_comp_bond.Bond_ID", "_Chem_comp_bond.Type", "_Chem_comp_bond.Value_order", "_Chem_comp_bond.Atom_ID_1", "_Chem_comp_bond.Atom_ID_2", "_Chem_comp_bond.PDB_atom_ID_1", "_Chem_comp_bond.PDB_atom_ID_2", "_Chem_comp_bond.Details", "_Chem_comp_bond.Entry_ID", "_Chem_comp_bond.Comp_ID"};
-    private static final String[] chemCompAtomLoopStrings = {"_Chem_comp_atom.Atom_ID", "_Chem_comp_atom.PDB_atom_ID", "_Chem_comp_atom.Alt_atom_ID", "_Chem_comp_atom.Auth_atom_ID", "_Chem_comp_atom.Type_symbol", "_Chem_comp_atom.Isotope_number", "_Chem_comp_atom.Chirality", "_Chem_comp_atom.Charge", "_Chem_comp_atom.Partial_charge", "_Chem_comp_atom.Oxidation_number", "_Chem_comp_atom.PDBx_aromatic_flag", "_Chem_comp_atom.PDBx_leaving_atom_flag", "_Chem_comp_atom.Substruct_code", "_Chem_comp_atom.Ionizable", "_Chem_comp_atom.Details", "_Chem_comp_atom.Entry_ID", "_Chem_comp_atom.Comp_ID", "_Chem_comp_atom.Unpaired_electron_number"};
-    private static final String[] atomCoordinateLoopStrings = {"_Atom_site.Assembly_ID", "_Atom_site.Model_ID", "_Atom_site.Model_site_ID", "_Atom_site.ID", "_Atom_site.Assembly_atom_ID", "_Atom_site.Label_entity_assembly_ID", "_Atom_site.Label_entity_ID", "_Atom_site.Label_comp_index_ID", "_Atom_site.Label_comp_ID", "_Atom_site.Label_atom_ID", "_Atom_site.Type_symbol", "_Atom_site.Cartn_x", "_Atom_site.Cartn_y", "_Atom_site.Cartn_z", "_Atom_site.Cartn_x_esd", "_Atom_site.Cartn_y_esd", "_Atom_site.Cartn_z_esd", "_Atom_site.Occupancy", "_Atom_site.Occupancy_esd", "_Atom_site.Uncertainty", "_Atom_site.Ordered_flag", "_Atom_site.Footnote_ID", "_Atom_site.Details", "_Atom_site.Entry_ID", "_Atom_site.Conformer_family_coord_set_ID"};
     public static String[] entityPolySeqLoopStrings = {"_Entity_poly_seq.Hetero", "_Entity_poly_seq.Mon_ID", "_Entity_poly_seq.Num", "_Entity_poly_seq.Comp_index_ID", "_Entity_poly_seq.Entity_ID"};
+    private static final String[] chemCompAtomLoopStrings = {"_Chem_comp_atom.Atom_ID", "_Chem_comp_atom.PDB_atom_ID", "_Chem_comp_atom.Alt_atom_ID", "_Chem_comp_atom.Auth_atom_ID", "_Chem_comp_atom.Type_symbol", "_Chem_comp_atom.Isotope_number", "_Chem_comp_atom.Chirality", "_Chem_comp_atom.Charge", "_Chem_comp_atom.Partial_charge", "_Chem_comp_atom.Oxidation_number", "_Chem_comp_atom.PDBx_aromatic_flag", "_Chem_comp_atom.PDBx_leaving_atom_flag", "_Chem_comp_atom.Substruct_code", "_Chem_comp_atom.Ionizable", "_Chem_comp_atom.Details", "_Chem_comp_atom.Entry_ID", "_Chem_comp_atom.Comp_ID", "_Chem_comp_atom.Unpaired_electron_number"};
     static String[] chemShiftAssignmentStrings = {"_Atom_chem_shift.ID", "_Atom_chem_shift.Assembly_atom_ID", "_Atom_chem_shift.Entity_assembly_ID", "_Atom_chem_shift.Entity_ID", "_Atom_chem_shift.Comp_index_ID", "_Atom_chem_shift.Seq_ID", "_Atom_chem_shift.Comp_ID", "_Atom_chem_shift.Atom_ID", "_Atom_chem_shift.Atom_type", "_Atom_chem_shift.Atom_isotope_number", "_Atom_chem_shift.Val", "_Atom_chem_shift.Val_err", "_Atom_chem_shift.Assign_fig_of_merit", "_Atom_chem_shift.Ambiguity_code", "_Atom_chem_shift.Occupancy", "_Atom_chem_shift.Resonance_ID", "_Atom_chem_shift.Auth_seq_ID", "_Atom_chem_shift.Auth_comp_ID", "_Atom_chem_shift.Auth_atom_ID", "_Atom_chem_shift.Details", "_Atom_chem_shift.Assigned_chem_shift_list_ID"};
-
-    String toSTAR3PolySeqString(int ID, Residue residue, int entityID) {
-        StringBuilder result = new StringBuilder();
-        String sep = " ";
-        result.append(".");
-        result.append(sep);
-        result.append(residue.name);
-        result.append(sep);
-        result.append(ID);
-        result.append(sep);
-        result.append(ID);
-        result.append(sep);
-        result.append(entityID);
-        return result.toString();
-    }
-
-    void writeExperiment(Writer chan, String catName, int expID, String nmrExpType, int sampleID, String sampleLabel,
-                         String idType, int listID) throws IOException {
-        chan.write("   loop_\n");
-        chan.write("   " + catName + "_experiment.Experiment_ID\n");
-        chan.write("   " + catName + "_experiment.Experiment_name\n");
-        chan.write("   " + catName + "_experiment.Sample_ID\n");
-        chan.write("   " + catName + "_experiment.Sample_label\n");
-        chan.write("   " + catName + "_experiment.Sample_state\n");
-        chan.write("   " + catName + "_experiment.Entry_ID\n");
-        chan.write("   " + catName + "_experiment." + idType + "\n");
-        chan.write("\n");
-
-        String result1 = String.format("%-2d %-7s %-7s %-9s %-2s %-2s %-2d", expID, STAR3.quote(nmrExpType), sampleID, sampleLabel, ".", ".", listID);
-
-        chan.write("      " + result1 + "\n");
-        chan.write("   stop_\n\n");
-
-    }
+    private static final String[] atomCoordinateLoopStrings = {"_Atom_site.Assembly_ID", "_Atom_site.Model_ID", "_Atom_site.Model_site_ID", "_Atom_site.ID", "_Atom_site.Assembly_atom_ID", "_Atom_site.Label_entity_assembly_ID", "_Atom_site.Label_entity_ID", "_Atom_site.Label_comp_index_ID", "_Atom_site.Label_comp_ID", "_Atom_site.Label_atom_ID", "_Atom_site.Type_symbol", "_Atom_site.Cartn_x", "_Atom_site.Cartn_y", "_Atom_site.Cartn_z", "_Atom_site.Cartn_x_esd", "_Atom_site.Cartn_y_esd", "_Atom_site.Cartn_z_esd", "_Atom_site.Occupancy", "_Atom_site.Occupancy_esd", "_Atom_site.Uncertainty", "_Atom_site.Ordered_flag", "_Atom_site.Footnote_ID", "_Atom_site.Details", "_Atom_site.Entry_ID", "_Atom_site.Conformer_family_coord_set_ID"};
 
     public static void initSaveFrameOutput(StringBuilder sBuilder, String category, String categoryName, String id) {
         sBuilder.append("save_").append(categoryName).append("_").append(id).append("\n");
@@ -819,11 +785,26 @@ public class NMRStarWriter {
         }
         chan.write("\nstop_\n\n");
     }
-    // "Auth_entity_assembly_ID", "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID",
 
     public static String[] getCoordLoopStrings() {
         return atomCoordinateLoopStrings.clone();
     }
+
+    String toSTAR3PolySeqString(int ID, Residue residue, int entityID) {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        result.append(".");
+        result.append(sep);
+        result.append(residue.name);
+        result.append(sep);
+        result.append(ID);
+        result.append(sep);
+        result.append(ID);
+        result.append(sep);
+        result.append(entityID);
+        return result.toString();
+    }
+    // "Auth_entity_assembly_ID", "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID",
 
     static void buildAuthorAtomString(StringBuilder sBuilder, Atom atom) {
         String resNum = ".";
@@ -882,6 +863,25 @@ public class NMRStarWriter {
         sBuilder.append(String.format("%-4s ", atomName));
         sBuilder.append(String.format("%-4s ", nucName));
         sBuilder.append(String.format("%-4d ", isotope));
+    }
+
+    void writeExperiment(Writer chan, String catName, int expID, String nmrExpType, int sampleID, String sampleLabel,
+                         String idType, int listID) throws IOException {
+        chan.write("   loop_\n");
+        chan.write("   " + catName + "_experiment.Experiment_ID\n");
+        chan.write("   " + catName + "_experiment.Experiment_name\n");
+        chan.write("   " + catName + "_experiment.Sample_ID\n");
+        chan.write("   " + catName + "_experiment.Sample_label\n");
+        chan.write("   " + catName + "_experiment.Sample_state\n");
+        chan.write("   " + catName + "_experiment.Entry_ID\n");
+        chan.write("   " + catName + "_experiment." + idType + "\n");
+        chan.write("\n");
+
+        String result1 = String.format("%-2d %-7s %-7s %-9s %-2s %-2s %-2d", expID, STAR3.quote(nmrExpType), sampleID, sampleLabel, ".", ".", listID);
+
+        chan.write("      " + result1 + "\n");
+        chan.write("   stop_\n\n");
+
     }
 
     /**

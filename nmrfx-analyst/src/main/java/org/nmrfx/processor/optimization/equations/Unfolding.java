@@ -133,10 +133,6 @@ public class Unfolding extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = (a-b)/(1.0+exp(-m*(c-x)))+b";
-    }
-
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
 
@@ -161,5 +157,9 @@ public class Unfolding extends OptFunction {
                 }
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = (a-b)/(1.0+exp(-m*(c-x)))+b";
     }
 }

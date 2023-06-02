@@ -51,11 +51,11 @@ public class Ring {
         return atoms.size() - 1;
     }
 
-    public int getRingNumber() {
-        return this.ringNumber;
-    }
-
     public void setRingNumber(int i) {
         this.ringNumber = i;
+    }
+
+    public int getRingNumber() {
+        return this.ringNumber;
     }
 }

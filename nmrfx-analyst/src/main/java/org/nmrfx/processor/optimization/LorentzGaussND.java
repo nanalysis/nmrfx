@@ -139,6 +139,13 @@ public class LorentzGaussND implements MultivariateFunction {
         }
     }
 
+    public static void dumpArray(final double[] parameters) {
+        for (double par : parameters) {
+            System.out.print(par + " ");
+        }
+        System.out.println("");
+    }
+
     public double value(final double[] parameters) {
         return valueWithUnScaled(unscalePar(parameters));
     }
@@ -323,13 +330,6 @@ public class LorentzGaussND implements MultivariateFunction {
             }
         }
 
-    }
-
-    public static void dumpArray(final double[] parameters) {
-        for (double par : parameters) {
-            System.out.print(par + " ");
-        }
-        System.out.println("");
     }
 
     public static void main(String[] args) {

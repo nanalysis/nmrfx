@@ -7,25 +7,32 @@ import javafx.scene.transform.Translate;
 
 public class CameraTransformer extends Group {
 
+    public enum RotateOrder {
+        XYZ, XZY, YXZ, YZX, ZXY, ZYX
+    }
+
     public Translate t = new Translate();
     public Translate p = new Translate();
     public Translate ip = new Translate();
     public Rotate rx = new Rotate();
-    public Rotate ry = new Rotate();
-    public Rotate rz = new Rotate();
-    public Scale s = new Scale();
 
     {
         rx.setAxis(Rotate.X_AXIS);
     }
 
+    public Rotate ry = new Rotate();
+
     {
         ry.setAxis(Rotate.Y_AXIS);
     }
 
+    public Rotate rz = new Rotate();
+
     {
         rz.setAxis(Rotate.Z_AXIS);
     }
+
+    public Scale s = new Scale();
 
     public CameraTransformer() {
         super();
@@ -174,9 +181,5 @@ public class CameraTransformer extends Group {
         ip.setX(0.0);
         ip.setY(0.0);
         ip.setZ(0.0);
-    }
-
-    public enum RotateOrder {
-        XYZ, XZY, YXZ, YZX, ZXY, ZYX
     }
 }

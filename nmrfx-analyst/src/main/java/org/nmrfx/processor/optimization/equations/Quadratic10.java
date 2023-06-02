@@ -126,13 +126,6 @@ public class Quadratic10 extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "f = A + (C - A) * "
-                + "((p + x + 10^b) - "
-                + "((p + x + 10^b)^2 - "
-                + "4px)^0.5)) / (2p)";
-    }
-
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
 
@@ -157,5 +150,12 @@ public class Quadratic10 extends OptFunction {
             }
         }
 
+    }
+
+    public String getFunctionName() {
+        return "f = A + (C - A) * "
+                + "((p + x + 10^b) - "
+                + "((p + x + 10^b)^2 - "
+                + "4px)^0.5)) / (2p)";
     }
 }

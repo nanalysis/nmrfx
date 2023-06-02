@@ -35,8 +35,15 @@ import java.util.stream.Stream;
 public class Sequence {
 
     private static final Logger log = LoggerFactory.getLogger(Sequence.class);
+    private Atom connectAtom = null;
+    private Bond connectBond = null;
+    private Atom connectBranch = null;
+    private int connectPosition = -1;
+    private MoleculeBase molecule;
     private final static Map<String, String> residueAliases = new HashMap<>();
     private final static List<String> AMINO_ACID_NAMES = new ArrayList<>();
+    private String entryAtomName = null;
+    private String exitAtomName = null;
     public static boolean useCoarse = false;
 
     static {
@@ -83,14 +90,6 @@ public class Sequence {
 
     }
 
-    private Atom connectAtom = null;
-    private Bond connectBond = null;
-    private Atom connectBranch = null;
-    private int connectPosition = -1;
-    private MoleculeBase molecule;
-    private String entryAtomName = null;
-    private String exitAtomName = null;
-
     public Sequence() {
     }
 
@@ -131,6 +130,250 @@ public class Sequence {
 
     private void addNonStandardResidue(Residue residue) {
         residue.molecule.addNonStandardResidue(this, residue);
+    }
+
+    public enum PRFFields {
+
+        ATOM("ATOM", 7, 8) {
+            @Override
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
+                    throws MoleculeIOException {
+                checkFieldCount(fields);
+                String aName = fields[1];
+                String aType = fields[2];
+                if (aType.endsWith("cg") && !useCoarse) {
+                    return;
+                }
+                if (fields.length > 7) {
+                    if (!checkQualifier(fields[7], resPos)) {
+                        return;
+                    }
+                }
+                Atom atom = Atom.genAtomWithType(aName, aType);
+                atom.entity = residue;
+                atom.name = aName;
+                residue.addAtom(atom);
+                atom.setType(aType);
+
+                atom.bondLength = Float.parseFloat(fields[3]);
+                atom.valanceAngle = (float) (Float.parseFloat(fields[4]) * Math.PI / 180.0);
+                atom.dihedralAngle = (float) (Float.parseFloat(fields[5]) * Math.PI / 180.0);
+                atom.charge = Float.parseFloat(fields[6]);
+            }
+        },
+        FAMILY("FAMILY", 3, 10) {
+            @Override
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
+                    throws MoleculeIOException {
+
+                checkFieldCount(fields);
+                int nFields = fields.length;
+                String lastField = fields[nFields - 1];
+
+                boolean hasQualifier = lastField.contains("middle")
+                        || lastField.contains("start") || lastField.contains("end") || lastField.contains("nop");
+                if (hasQualifier) {
+                    if (!checkQualifier(lastField, resPos)) {
+                        return;
+                    } else {
+                        nFields--;
+                    }
+                }
+                final Atom parent;
+                String parentField = fields[1];
+                Atom refAtom = residue.getAtom(fields[2]);
+                if (refAtom == null) {
+                    log.error("{}", Arrays.asList(fields));
+                    throw new MoleculeIOException("No refAtom " + fields[2]);
+                }
+                boolean connectee = false;
+                if (parentField.equals("-")) {
+                    if (sequence.connectAtom != null) {
+                        parent = sequence.connectAtom;
+                        Bond connectBond = new Bond(parent, refAtom);
+                        parent.bonds.add(sequence.connectPosition, connectBond);
+                        connectee = true;
+                    } else {
+                        parent = null;
+                    }
+                } else {
+                    parent = residue.getAtom(parentField);
+                }
+                Bond bond = null;
+                if (parent != null) {
+                    if (connectee) {
+                        bond = new Bond(parent, refAtom);
+                        parent.addBond(bond);
+                        residue.addBond(bond);
+                    }
+                    refAtom.parent = parent;
+                    bond = new Bond(refAtom, parent);
+                    refAtom.addBond(bond);
+                }
+                for (int iField = 3; iField < nFields; iField++) {
+                    String atomName = fields[iField];
+                    if (atomName.endsWith("c") && !useCoarse) {
+                        continue;
+                    }
+                    Order order = Order.SINGLE;
+                    if (atomName.charAt(0) == '=') {
+                        atomName = atomName.substring(1);
+                        order = Order.DOUBLE;
+                    }
+                    Atom daughterAtom = null;
+                    boolean ringClosure = false;
+                    boolean connector = false;
+                    if (atomName.equals("+")) {
+                        sequence.connectAtom = refAtom;
+                        connector = true;
+                        sequence.connectPosition = iField - 3;
+                    } else if (atomName.startsWith("r")) { // close ring
+                        daughterAtom = residue.getAtom(atomName.substring(1));
+                        ringClosure = true;
+                    } else if (atomName.startsWith("-")) { // close ring
+                        daughterAtom = residue.getAtom(atomName.substring(1));
+                        ringClosure = true;
+                    } else {
+                        daughterAtom = residue.getAtom(atomName);
+                    }
+                    if (!connector && (daughterAtom == null)) {
+                        throw new MoleculeIOException("Can't find daughter atom \""
+                                + atomName + "\"" + " while adding "
+                                + residue.getName() + residue.getNumber()
+                                + " " + resPos);
+                    }
+                    //                    if (!connector && daughterAtom.getName().startsWith("H")) {
+                    if (!connector && !ringClosure) {
+                        bond = new Bond(daughterAtom, refAtom);
+                        daughterAtom.addBond(bond);
+                        daughterAtom.parent = refAtom;
+                    }
+                    if (!connector && ringClosure) {
+                        bond = new Bond(daughterAtom, refAtom);
+                        bond.setRingClosure(true);
+                        daughterAtom.addBond(bond);
+                    }
+                    if (!connector) {
+                        bond = new Bond(refAtom, daughterAtom, order);
+                        bond.setRingClosure(ringClosure);
+                        refAtom.addBond(bond);
+                        if (!connector && !ringClosure) {
+                            daughterAtom.parent = refAtom;
+                        }
+                        residue.addBond(bond);
+                    }
+                }
+            }
+        },
+        ANGLE("ANGLE", 4, 5) {
+            @Override
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
+                    throws MoleculeIOException {
+                checkFieldCount(fields);
+
+                if (fields.length > 4) {
+                    if (!checkQualifier(fields[4], resPos)) {
+                        return;
+
+                    }
+                }
+                Atom angleAtom = residue.getAtom(fields[1]);
+                angleAtom.irpIndex = Integer.parseInt(fields[3]);
+            }
+        },
+        PSEUDO("PSEUDO", 4, 12) {
+            @Override
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
+                    throws MoleculeIOException {
+                checkFieldCount(fields);
+                String pseudoAtomName = fields[1];
+                ArrayList<String> pseudoArray = new ArrayList<String>();
+                for (int iField = 2; iField < fields.length; iField++) {
+                    String atomName = fields[iField];
+                    pseudoArray.add(atomName);
+                }
+                residue.addPseudoAtoms(pseudoAtomName, pseudoArray);
+            }
+        },
+        CRAD("CRAD", 6, 6) {
+            @Override
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
+                    throws MoleculeIOException {
+            }
+        },
+        ATREE("ATREE", 6, 6) {
+            @Override
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
+                    throws MoleculeIOException {
+                Atom atom1 = residue.getAtom(fields[1]);
+                if (sequence.connectBranch != null) {
+                    sequence.connectBranch.branchAtoms[sequence.connectBranch.branchAtoms.length - 1] = atom1;
+                    sequence.connectBranch = null;
+                }
+                if (atom1.getParent() != null) {
+                    atom1.branchAtoms = new Atom[fields.length - 2];
+                    for (int iBranch = 0; iBranch < (fields.length - 2); iBranch++) {
+                        String branchField = fields[iBranch + 2];
+                        if (branchField.equals("-")) {
+                        } else if (branchField.equals("+")) {
+                            sequence.connectBranch = atom1;
+                        } else {
+                            Atom atom = residue.getAtom(branchField);
+                            atom1.branchAtoms[iBranch] = atom;
+                        }
+                    }
+                }
+            }
+        },
+        ;
+        private String description;
+        private int minFields;
+        private int maxFields;
+
+        PRFFields(final String description, final int minFields, final int maxFields) {
+            this.description = description;
+            this.minFields = minFields;
+            this.maxFields = maxFields;
+        }
+
+        public abstract void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
+                throws MoleculeIOException;
+
+        String getFieldString(String[] fields) {
+            StringBuilder sBuilder = new StringBuilder();
+            for (String field : fields) {
+                sBuilder.append(field);
+                sBuilder.append(' ');
+            }
+            return sBuilder.toString();
+        }
+
+        int getMinFields() {
+            return minFields;
+        }
+
+        void checkFieldCount(final String[] fields) throws IllegalArgumentException {
+            if (fields.length < minFields) {
+                throw new IllegalArgumentException(
+                        "Must have at least \"" + minFields + "\" fields for \"" + description + "\"");
+            }
+            if (fields.length > maxFields) {
+                throw new IllegalArgumentException(
+                        "Must have less than \"" + maxFields + "\" fields for \"" + description + "\"");
+            }
+        }
+
+        boolean checkQualifier(String field, RES_POSITION resPos) {
+            boolean result = false;
+            String[] qualifiers = field.split("\\|");
+            for (String qualifier : qualifiers) {
+                if (resPos.name().equalsIgnoreCase(qualifier)) {
+                    result = true;
+                    break;
+                }
+            }
+            return result;
+        }
     }
 
     public MoleculeBase getMolecule() {
@@ -417,8 +660,8 @@ public class Sequence {
             } else if (newPolymer) {
                 if (coordSetNames.isEmpty()) {
                     coordSetName = polymerName;
-                    // Prevent new molecules from being created everytime
-                    // readSequence is called
+                    // Prevent new molecules from being created everytime 
+                    // readSequence is called 
                     molName = molecule == null ? polymerName : molecule.getName();
                     coordSetNames.add(coordSetName);
                 }
@@ -583,6 +826,14 @@ public class Sequence {
         return polymer;
     }
 
+    public static String getAliased(String name) {
+        String newName = residueAliases.get(name);
+        if (newName == null) {
+            newName = name;
+        }
+        return newName;
+    }
+
     public void createLinker(int numLinks,
                              double linkLen, double valAngle, double dihAngle) {
         /**
@@ -607,258 +858,6 @@ public class Sequence {
         }
 
         log.info("create linker {}", numLinks);
-    }
-
-    public static String getAliased(String name) {
-        String newName = residueAliases.get(name);
-        if (newName == null) {
-            newName = name;
-        }
-        return newName;
-    }
-
-    public enum PRFFields {
-
-        ATOM("ATOM", 7, 8) {
-            @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
-                    throws MoleculeIOException {
-                checkFieldCount(fields);
-                String aName = fields[1];
-                String aType = fields[2];
-                if (aType.endsWith("cg") && !useCoarse) {
-                    return;
-                }
-                if (fields.length > 7) {
-                    if (!checkQualifier(fields[7], resPos)) {
-                        return;
-                    }
-                }
-                Atom atom = Atom.genAtomWithType(aName, aType);
-                atom.entity = residue;
-                atom.name = aName;
-                residue.addAtom(atom);
-                atom.setType(aType);
-
-                atom.bondLength = Float.parseFloat(fields[3]);
-                atom.valanceAngle = (float) (Float.parseFloat(fields[4]) * Math.PI / 180.0);
-                atom.dihedralAngle = (float) (Float.parseFloat(fields[5]) * Math.PI / 180.0);
-                atom.charge = Float.parseFloat(fields[6]);
-            }
-        },
-        FAMILY("FAMILY", 3, 10) {
-            @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
-                    throws MoleculeIOException {
-
-                checkFieldCount(fields);
-                int nFields = fields.length;
-                String lastField = fields[nFields - 1];
-
-                boolean hasQualifier = lastField.contains("middle")
-                        || lastField.contains("start") || lastField.contains("end") || lastField.contains("nop");
-                if (hasQualifier) {
-                    if (!checkQualifier(lastField, resPos)) {
-                        return;
-                    } else {
-                        nFields--;
-                    }
-                }
-                final Atom parent;
-                String parentField = fields[1];
-                Atom refAtom = residue.getAtom(fields[2]);
-                if (refAtom == null) {
-                    log.error("{}", Arrays.asList(fields));
-                    throw new MoleculeIOException("No refAtom " + fields[2]);
-                }
-                boolean connectee = false;
-                if (parentField.equals("-")) {
-                    if (sequence.connectAtom != null) {
-                        parent = sequence.connectAtom;
-                        Bond connectBond = new Bond(parent, refAtom);
-                        parent.bonds.add(sequence.connectPosition, connectBond);
-                        connectee = true;
-                    } else {
-                        parent = null;
-                    }
-                } else {
-                    parent = residue.getAtom(parentField);
-                }
-                Bond bond = null;
-                if (parent != null) {
-                    if (connectee) {
-                        bond = new Bond(parent, refAtom);
-                        parent.addBond(bond);
-                        residue.addBond(bond);
-                    }
-                    refAtom.parent = parent;
-                    bond = new Bond(refAtom, parent);
-                    refAtom.addBond(bond);
-                }
-                for (int iField = 3; iField < nFields; iField++) {
-                    String atomName = fields[iField];
-                    if (atomName.endsWith("c") && !useCoarse) {
-                        continue;
-                    }
-                    Order order = Order.SINGLE;
-                    if (atomName.charAt(0) == '=') {
-                        atomName = atomName.substring(1);
-                        order = Order.DOUBLE;
-                    }
-                    Atom daughterAtom = null;
-                    boolean ringClosure = false;
-                    boolean connector = false;
-                    if (atomName.equals("+")) {
-                        sequence.connectAtom = refAtom;
-                        connector = true;
-                        sequence.connectPosition = iField - 3;
-                    } else if (atomName.startsWith("r")) { // close ring
-                        daughterAtom = residue.getAtom(atomName.substring(1));
-                        ringClosure = true;
-                    } else if (atomName.startsWith("-")) { // close ring
-                        daughterAtom = residue.getAtom(atomName.substring(1));
-                        ringClosure = true;
-                    } else {
-                        daughterAtom = residue.getAtom(atomName);
-                    }
-                    if (!connector && (daughterAtom == null)) {
-                        throw new MoleculeIOException("Can't find daughter atom \""
-                                + atomName + "\"" + " while adding "
-                                + residue.getName() + residue.getNumber()
-                                + " " + resPos);
-                    }
-                    //                    if (!connector && daughterAtom.getName().startsWith("H")) {
-                    if (!connector && !ringClosure) {
-                        bond = new Bond(daughterAtom, refAtom);
-                        daughterAtom.addBond(bond);
-                        daughterAtom.parent = refAtom;
-                    }
-                    if (!connector && ringClosure) {
-                        bond = new Bond(daughterAtom, refAtom);
-                        bond.setRingClosure(true);
-                        daughterAtom.addBond(bond);
-                    }
-                    if (!connector) {
-                        bond = new Bond(refAtom, daughterAtom, order);
-                        bond.setRingClosure(ringClosure);
-                        refAtom.addBond(bond);
-                        if (!connector && !ringClosure) {
-                            daughterAtom.parent = refAtom;
-                        }
-                        residue.addBond(bond);
-                    }
-                }
-            }
-        },
-        ANGLE("ANGLE", 4, 5) {
-            @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
-                    throws MoleculeIOException {
-                checkFieldCount(fields);
-
-                if (fields.length > 4) {
-                    if (!checkQualifier(fields[4], resPos)) {
-                        return;
-
-                    }
-                }
-                Atom angleAtom = residue.getAtom(fields[1]);
-                angleAtom.irpIndex = Integer.parseInt(fields[3]);
-            }
-        },
-        PSEUDO("PSEUDO", 4, 12) {
-            @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
-                    throws MoleculeIOException {
-                checkFieldCount(fields);
-                String pseudoAtomName = fields[1];
-                ArrayList<String> pseudoArray = new ArrayList<String>();
-                for (int iField = 2; iField < fields.length; iField++) {
-                    String atomName = fields[iField];
-                    pseudoArray.add(atomName);
-                }
-                residue.addPseudoAtoms(pseudoAtomName, pseudoArray);
-            }
-        },
-        CRAD("CRAD", 6, 6) {
-            @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
-                    throws MoleculeIOException {
-            }
-        },
-        ATREE("ATREE", 6, 6) {
-            @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
-                    throws MoleculeIOException {
-                Atom atom1 = residue.getAtom(fields[1]);
-                if (sequence.connectBranch != null) {
-                    sequence.connectBranch.branchAtoms[sequence.connectBranch.branchAtoms.length - 1] = atom1;
-                    sequence.connectBranch = null;
-                }
-                if (atom1.getParent() != null) {
-                    atom1.branchAtoms = new Atom[fields.length - 2];
-                    for (int iBranch = 0; iBranch < (fields.length - 2); iBranch++) {
-                        String branchField = fields[iBranch + 2];
-                        if (branchField.equals("-")) {
-                        } else if (branchField.equals("+")) {
-                            sequence.connectBranch = atom1;
-                        } else {
-                            Atom atom = residue.getAtom(branchField);
-                            atom1.branchAtoms[iBranch] = atom;
-                        }
-                    }
-                }
-            }
-        },
-        ;
-        private String description;
-        private int minFields;
-        private int maxFields;
-
-        PRFFields(final String description, final int minFields, final int maxFields) {
-            this.description = description;
-            this.minFields = minFields;
-            this.maxFields = maxFields;
-        }
-
-        public abstract void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
-                throws MoleculeIOException;
-
-        String getFieldString(String[] fields) {
-            StringBuilder sBuilder = new StringBuilder();
-            for (String field : fields) {
-                sBuilder.append(field);
-                sBuilder.append(' ');
-            }
-            return sBuilder.toString();
-        }
-
-        int getMinFields() {
-            return minFields;
-        }
-
-        void checkFieldCount(final String[] fields) throws IllegalArgumentException {
-            if (fields.length < minFields) {
-                throw new IllegalArgumentException(
-                        "Must have at least \"" + minFields + "\" fields for \"" + description + "\"");
-            }
-            if (fields.length > maxFields) {
-                throw new IllegalArgumentException(
-                        "Must have less than \"" + maxFields + "\" fields for \"" + description + "\"");
-            }
-        }
-
-        boolean checkQualifier(String field, RES_POSITION resPos) {
-            boolean result = false;
-            String[] qualifiers = field.split("\\|");
-            for (String qualifier : qualifiers) {
-                if (resPos.name().equalsIgnoreCase(qualifier)) {
-                    result = true;
-                    break;
-                }
-            }
-            return result;
-        }
     }
 
 }

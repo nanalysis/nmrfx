@@ -34,35 +34,12 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
 
     double value;
     double defaultValue;
-    ChangeListener<? super Number> listener;
-    char lastChar = (char) -1;
     private Double min = null;
     private Double max = null;
     private Double amin = null;
     private Double amax = null;
-
-    public DoubleOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
-        super(category, name, description);
-        this.defaultValue = defaultValue;
-        this.value = defaultValue;
-        this.listener = listener;
-    }
-
-    public DoubleOperationItem(ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
-        this(listener, defaultValue, category, name, description);
-        this.min = min;
-        this.max = max;
-        this.amin = min;
-        this.amax = max;
-    }
-
-    public DoubleOperationItem(ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
-        this(listener, defaultValue, category, name, description);
-        this.min = min;
-        this.max = max;
-        this.amin = amin;
-        this.amax = amax;
-    }
+    ChangeListener<? super Number> listener;
+    char lastChar = (char) -1;
 
     /**
      * @return the max
@@ -92,6 +69,34 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
         return amax;
     }
 
+    public DoubleOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
+        super(category, name, description);
+        this.defaultValue = defaultValue;
+        this.value = defaultValue;
+        this.listener = listener;
+    }
+
+    public DoubleOperationItem(ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
+        this(listener, defaultValue, category, name, description);
+        this.min = min;
+        this.max = max;
+        this.amin = min;
+        this.amax = max;
+    }
+
+    public DoubleOperationItem(ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
+        this(listener, defaultValue, category, name, description);
+        this.min = min;
+        this.max = max;
+        this.amin = amin;
+        this.amax = amax;
+    }
+
+    @Override
+    public Double getValue() {
+        return value;
+    }
+
     @Override
     public Class<?> getType() {
         return DoubleOperationItem.class;
@@ -113,11 +118,6 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
     }
 
     @Override
-    public Double getValue() {
-        return value;
-    }
-
-    @Override
     public void setValue(Object o) {
         double oldValue = value;
         if (o instanceof Double) {
@@ -134,40 +134,6 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
             if ((value != oldValue) && (listener != null)) {
                 listener.changed(this, oldValue, value);
             }
-        }
-    }
-
-    @Override
-    public boolean isDefault() {
-        return (Math.abs(value - defaultValue) < 1.0e-9);
-    }
-
-    @Override
-    public void setFromString(String sValue) {
-        if (sValue.startsWith("'") && sValue.endsWith("'")) {
-            sValue = sValue.substring(1, sValue.length() - 1);
-        }
-        if (sValue.length() > 1) {
-            char endChar = sValue.charAt(sValue.length() - 1);
-            if (Character.isLetter(endChar)) {
-                sValue = sValue.substring(0, sValue.length() - 1);
-                lastChar = endChar;
-            }
-        }
-        value = Double.parseDouble(sValue);
-    }
-
-    @Override
-    public void setToDefault() {
-        value = defaultValue;
-    }
-
-    @Override
-    public String getStringRep() {
-        if (lastChar != (char) -1) {
-            return '\'' + Double.toString(value) + lastChar + '\'';
-        } else {
-            return Double.toString(value);
         }
     }
 
@@ -213,12 +179,46 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
     public void removeListener(InvalidationListener listener) {
     }
 
-    public char getLastChar() {
-        return lastChar;
+    @Override
+    public boolean isDefault() {
+        return (Math.abs(value - defaultValue) < 1.0e-9);
+    }
+
+    @Override
+    public void setFromString(String sValue) {
+        if (sValue.startsWith("'") && sValue.endsWith("'")) {
+            sValue = sValue.substring(1, sValue.length() - 1);
+        }
+        if (sValue.length() > 1) {
+            char endChar = sValue.charAt(sValue.length() - 1);
+            if (Character.isLetter(endChar)) {
+                sValue = sValue.substring(0, sValue.length() - 1);
+                lastChar = endChar;
+            }
+        }
+        value = Double.parseDouble(sValue);
+    }
+
+    @Override
+    public void setToDefault() {
+        value = defaultValue;
     }
 
     public void setLastChar(char lastChar) {
         this.lastChar = lastChar;
+    }
+
+    public char getLastChar() {
+        return lastChar;
+    }
+
+    @Override
+    public String getStringRep() {
+        if (lastChar != (char) -1) {
+            return '\'' + Double.toString(value) + lastChar + '\'';
+        } else {
+            return Double.toString(value);
+        }
     }
 
 }

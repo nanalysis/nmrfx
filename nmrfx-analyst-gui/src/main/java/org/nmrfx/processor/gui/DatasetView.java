@@ -30,10 +30,10 @@ public class DatasetView {
     ContentController attributesController;
     ListSelectionView<String> datasetView;
     ListChangeListener<String> datasetTargetListener;
-    private final ListChangeListener<DatasetAttributes> datasetAttributesListChangeListener = this::chartDatasetAttributesListener;
     Integer startIndex = null;
     boolean moveItemIsSelected = false;
     Node startNode = null;
+    private final ListChangeListener<DatasetAttributes> datasetAttributesListChangeListener = this::chartDatasetAttributesListener;
 
     public DatasetView(FXMLController fxmlController, ContentController controller) {
         this.fxmlController = fxmlController;
@@ -135,12 +135,14 @@ public class DatasetView {
         chart.refresh();
     }
 
-    private void refreshAction() {
-    }
 
     class DatasetListCell<T> extends ListCell<T> implements ChangeListener<String> {
 
         private final ListSelectionView<String> listView;
+
+        @Override
+        public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+        }
 
         DatasetListCell(ListSelectionView<String> listView) {
             this.listView = listView;
@@ -191,9 +193,6 @@ public class DatasetView {
             });
         }
 
-        @Override
-        public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-        }
 
         boolean isSelectedDataset(String text) {
             for (String item : listView.getTargetItems()) {
@@ -246,6 +245,9 @@ public class DatasetView {
             }
             refreshAction();
         }
+    }
+
+    private void refreshAction() {
     }
 }
 

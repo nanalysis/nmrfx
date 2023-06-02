@@ -37,6 +37,42 @@ import java.util.Random;
 public class Simulation {
 
     Random rNum = new Random();
+
+    private class SortableParam implements Comparable {
+
+        private final double[] values;
+        private final int sIndex;
+
+        SortableParam(PointVectorValuePair v, int sIndex) {
+            values = v.getPoint();
+            this.sIndex = sIndex;
+        }
+
+        public double[] getValues() {
+            return values;
+        }
+
+        public double getValueToSort() {
+            return values[sIndex];
+        }
+
+        public int compareTo(Object o) {
+            SortableParam sp = (SortableParam) o;
+            double cVal1, cVal2;
+
+            cVal1 = this.getValueToSort();
+            cVal2 = sp.getValueToSort();
+
+            if (cVal1 < cVal2) {
+                return -1;
+            } else if (cVal1 > cVal2) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    }
+
     private int iterations;
     private double[] wt;
     private PointVectorValuePair[] dSet;
@@ -134,40 +170,5 @@ public class Simulation {
         }
 
         return rVals;
-    }
-
-    private class SortableParam implements Comparable {
-
-        private final double[] values;
-        private final int sIndex;
-
-        SortableParam(PointVectorValuePair v, int sIndex) {
-            values = v.getPoint();
-            this.sIndex = sIndex;
-        }
-
-        public double[] getValues() {
-            return values;
-        }
-
-        public double getValueToSort() {
-            return values[sIndex];
-        }
-
-        public int compareTo(Object o) {
-            SortableParam sp = (SortableParam) o;
-            double cVal1, cVal2;
-
-            cVal1 = this.getValueToSort();
-            cVal2 = sp.getValueToSort();
-
-            if (cVal1 < cVal2) {
-                return -1;
-            } else if (cVal1 > cVal2) {
-                return 1;
-            } else {
-                return 0;
-            }
-        }
     }
 }

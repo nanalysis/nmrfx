@@ -10,13 +10,34 @@ import java.util.Map;
 
 public class AtomQuartets {
 
+    AtomContainer ac = null;
     static Map map = new HashMap();
     static Iterator iter = null;
-    AtomContainer ac = null;
 
     public AtomQuartets(AtomContainer ac) {
         this.ac = ac;
         execute();
+    }
+
+    public static void clear() {
+        map.clear();
+    }
+
+    public static void reset() {
+        iter = map.keySet().iterator();
+    }
+
+    public static boolean hasNext() {
+        if (iter == null) {
+            iter = map.keySet().iterator();
+        }
+        return iter.hasNext();
+    }
+
+    public static String next() {
+        String key = (String) iter.next();
+        Integer value = (Integer) map.get(key);
+        return (key + " " + value);
     }
 
     private void execute() {
@@ -66,26 +87,5 @@ public class AtomQuartets {
 
         iValue++;
         map.put(aQuartet, iValue);
-    }
-
-    public static void clear() {
-        map.clear();
-    }
-
-    public static void reset() {
-        iter = map.keySet().iterator();
-    }
-
-    public static boolean hasNext() {
-        if (iter == null) {
-            iter = map.keySet().iterator();
-        }
-        return iter.hasNext();
-    }
-
-    public static String next() {
-        String key = (String) iter.next();
-        Integer value = (Integer) map.get(key);
-        return (key + " " + value);
     }
 }

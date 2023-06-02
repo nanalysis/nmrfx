@@ -35,19 +35,6 @@ public class Blackman extends Apodization implements Invertible {
     final int apodSize;
     final int dim;
 
-    public Blackman(double offset, double end, double c, int apodSize, int dim) {
-        this(offset, end, c, apodSize, dim, false);
-    }
-
-    public Blackman(double offset, double end, double c, int apodSize, int dim, boolean inverse) {
-        this.offset = offset;
-        this.end = end;
-        this.c = c;
-        this.apodSize = apodSize;
-        this.invertOp = inverse;
-        this.dim = dim;
-    }
-
     @Override
     public Blackman eval(Vec vector) throws ProcessingException {
         apply(vector);
@@ -62,6 +49,19 @@ public class Blackman extends Apodization implements Invertible {
             apply(matrixND, dim, vSizes[dim]);
         }
         return this;
+    }
+
+    public Blackman(double offset, double end, double c, int apodSize, int dim) {
+        this(offset, end, c, apodSize, dim, false);
+    }
+
+    public Blackman(double offset, double end, double c, int apodSize, int dim, boolean inverse) {
+        this.offset = offset;
+        this.end = end;
+        this.c = c;
+        this.apodSize = apodSize;
+        this.invertOp = inverse;
+        this.dim = dim;
     }
 
     public void setupApod(int dataSize, int vStart) {

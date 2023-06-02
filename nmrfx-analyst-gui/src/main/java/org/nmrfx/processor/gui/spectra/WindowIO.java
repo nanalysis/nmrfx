@@ -63,8 +63,8 @@ public class WindowIO implements FileWatchListener {
     Stage stage;
     BorderPane borderPane;
     ListView<String> listView;
-    Path dir;
     private NMRFxFileWatcher watcher;
+    Path dir;
 
     public void create() {
         stage = new Stage(StageStyle.DECORATED);
@@ -128,25 +128,6 @@ public class WindowIO implements FileWatchListener {
                 log.warn(ex.getMessage(), ex);
             }
         }
-    }
-
-    void updateFavoritesOnFxThread() {
-        Fx.runOnFxThread(this::updateFavorites);
-    }
-
-    @Override
-    public void onCreated(File file) {
-        updateFavoritesOnFxThread();
-    }
-
-    @Override
-    public void onModified(File file) {
-        updateFavoritesOnFxThread();
-    }
-
-    @Override
-    public void onDeleted(File file) {
-        updateFavoritesOnFxThread();
     }
 
     public static void loadWindow() {
@@ -303,6 +284,25 @@ public class WindowIO implements FileWatchListener {
             i++;
         }
         GUIScripter.setController(activeController);
+    }
+
+    void updateFavoritesOnFxThread() {
+        Fx.runOnFxThread(this::updateFavorites);
+    }
+
+    @Override
+    public void onCreated(File file) {
+        updateFavoritesOnFxThread();
+    }
+
+    @Override
+    public void onModified(File file) {
+        updateFavoritesOnFxThread();
+    }
+
+    @Override
+    public void onDeleted(File file) {
+        updateFavoritesOnFxThread();
     }
 
 }

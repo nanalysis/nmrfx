@@ -462,6 +462,27 @@ public class NOEAssign {
         noe.setPpmError(Math.exp(-1.0 * sum / 2.0));
     }
 
+    public static class AssignResult {
+
+        final int nPeaks;
+        final int nAssigned;
+        final int nMaxAmbig;
+        final int nTotal;
+
+        AssignResult(int nPeaks, int nAssigned, int nMaxAmbig, int nTotal) {
+            this.nPeaks = nPeaks;
+            this.nAssigned = nAssigned;
+            this.nMaxAmbig = nMaxAmbig;
+            this.nTotal = nTotal;
+        }
+
+        public String toString() {
+            String result = String.format("nPeaks %d nAssignd %d nMaxAmbig %d nTotal %d", nPeaks, nAssigned, nMaxAmbig, nTotal);
+            return result;
+        }
+
+    }
+
     public static void extractNoePeaksSlow(NoeSet noeSet, PeakList peakList, int mode) throws InvalidMoleculeException {
         Peak peak;
         double scale = 1.0;
@@ -543,6 +564,8 @@ public class NOEAssign {
             }
         }
     }
+    // mode == 0  only extract contraints for peaks with one assignment
+    // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
 
     public static double findMax(PeakList peakList, int dim, double mult) throws InvalidMoleculeException, IllegalArgumentException {
         boolean strict = true;
@@ -567,29 +590,6 @@ public class NOEAssign {
         }
         peakList.getSpectralDim(dim).setIdTol(bestTol);
         return bestTol;
-    }
-    // mode == 0  only extract contraints for peaks with one assignment
-    // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
-
-    public static class AssignResult {
-
-        final int nPeaks;
-        final int nAssigned;
-        final int nMaxAmbig;
-        final int nTotal;
-
-        AssignResult(int nPeaks, int nAssigned, int nMaxAmbig, int nTotal) {
-            this.nPeaks = nPeaks;
-            this.nAssigned = nAssigned;
-            this.nMaxAmbig = nMaxAmbig;
-            this.nTotal = nTotal;
-        }
-
-        public String toString() {
-            String result = String.format("nPeaks %d nAssignd %d nMaxAmbig %d nTotal %d", nPeaks, nAssigned, nMaxAmbig, nTotal);
-            return result;
-        }
-
     }
 
 }

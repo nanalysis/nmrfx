@@ -19,9 +19,6 @@ package org.nmrfx.structure.chemistry.energy;
 
 public class ForceWeight {
 
-    final double cutoffSq = 64.0;
-    final double cutoffSwitchSq = 36.0;
-    final double cutoffDem = 28.0;
     private final double electrostatic;
     private final double dihedralProb;
     private final double dihedral;
@@ -34,6 +31,9 @@ public class ForceWeight {
     private final double irp;
     private final double stacking;
     private final double nbMin;
+    final double cutoffSq = 64.0;
+    final double cutoffSwitchSq = 36.0;
+    final double cutoffDem = 28.0;
 
     public ForceWeight() {
         this(-1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 0.5);

@@ -111,9 +111,8 @@ public class Combine extends Operation {
         return this;
     }
 
-    public Combine clone() {
-        Combine temp = new Combine(numInputVec, numOutputVec, coef, keepImag);
-        return temp;
+    public static ArrayList<Vec> getArrayList() {
+        return new ArrayList<Vec>();
     }
 
     public void combine(List<Vec> vectors) {
@@ -215,7 +214,8 @@ public class Combine extends Operation {
         }
     }
 
-    public static ArrayList<Vec> getArrayList() {
-        return new ArrayList<Vec>();
+    public Combine clone() {
+        Combine temp = new Combine(numInputVec, numOutputVec, coef, keepImag);
+        return temp;
     }
 }

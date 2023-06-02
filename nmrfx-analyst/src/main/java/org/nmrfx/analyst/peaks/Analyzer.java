@@ -40,26 +40,41 @@ public class Analyzer {
     Dataset dataset;
     PeakList peakList;
     boolean analyzed = false;
+
+    private double trimRatio = 2.0;
     boolean scaleToLargest = true;
     int nWin = 32;
     double maxRatio = 20.0;
     double sdRatio = 30.0;
+
     int regionWindow = 20;
     double regionRatio = 50.0;
     double regionWidth = 1.0;
     double joinWidth = 1.0;
     double regionExtend = 9.0;
+
     double artifactRatio = 50;
     double threshold = 0.0;
     Double positionRestraint = null;
     Optional<Double> manThreshold = Optional.empty();
     Solvents solvents;
-    private double trimRatio = 2.0;
 
     public Analyzer(Dataset dataset) {
         this.dataset = dataset;
         solvents = new Solvents();
         Solvents.loadYaml();
+    }
+
+    public static Analyzer getAnalyzer(Dataset dataset) {
+        Object analyzerObject = dataset.getAnalyzerObject();
+        Analyzer analyzer;
+        if (analyzerObject == null) {
+            analyzer = new Analyzer(dataset);
+            dataset.setAnalyzerObject(analyzer);
+        } else {
+            analyzer = (Analyzer) analyzerObject;
+        }
+        return analyzer;
     }
 
     public PeakFitParameters getFitParameters() {
@@ -77,12 +92,12 @@ public class Analyzer {
         this.dataset = dataset;
     }
 
-    public PeakList getPeakList() {
-        return peakList;
-    }
-
     public void setPeakList(PeakList peakList) {
         this.peakList = peakList;
+    }
+
+    public PeakList getPeakList() {
+        return peakList;
     }
 
     public void setRegionRatio(double value) {
@@ -93,12 +108,12 @@ public class Analyzer {
         manThreshold = Optional.empty();
     }
 
-    public double getThreshold() {
-        return manThreshold.orElseGet(() -> threshold);
-    }
-
     public void setThreshold(double value) {
         manThreshold = Optional.of(value);
+    }
+
+    public double getThreshold() {
+        return manThreshold.orElseGet(() -> threshold);
     }
 
     void updateThreshold() {
@@ -520,6 +535,36 @@ public class Analyzer {
 
     public Optional<DatasetRegion> getRegion(double shift) {
         return getRegion(getReadOnlyRegions(), 0, shift);
+    }
+
+    public static Optional<DatasetRegion> getRegion(List<DatasetRegion> dRegions, int rDim, double shift) {
+        Optional<DatasetRegion> found = Optional.empty();
+        if (dRegions != null) {
+            for (DatasetRegion region : dRegions) {
+                double start = region.getRegionStart(rDim);
+                double end = region.getRegionEnd(rDim);
+                if ((start < shift) && (end >= shift)) {
+                    found = Optional.of(region);
+                    break;
+                }
+            }
+        }
+        return found;
+    }
+
+    public static double[] getBounds(DatasetRegion region, int rDim) {
+        double start = region.getRegionStart(rDim);
+        double end = region.getRegionEnd(rDim);
+        return new double[]{start, end};
+    }
+
+    public static double[] getRegionBounds(List<DatasetRegion> dRegions, int rDim, double shift) {
+        Optional<DatasetRegion> found = getRegion(dRegions, rDim, shift);
+        double[] bounds = null;
+        if (found.isPresent()) {
+            bounds = getBounds(found.get(), rDim);
+        }
+        return bounds;
     }
 
     public void integrate() throws IOException {
@@ -1200,47 +1245,5 @@ public class Analyzer {
 
     public void setTrimRatio(double trimRatio) {
         this.trimRatio = trimRatio;
-    }
-
-    public static Analyzer getAnalyzer(Dataset dataset) {
-        Object analyzerObject = dataset.getAnalyzerObject();
-        Analyzer analyzer;
-        if (analyzerObject == null) {
-            analyzer = new Analyzer(dataset);
-            dataset.setAnalyzerObject(analyzer);
-        } else {
-            analyzer = (Analyzer) analyzerObject;
-        }
-        return analyzer;
-    }
-
-    public static Optional<DatasetRegion> getRegion(List<DatasetRegion> dRegions, int rDim, double shift) {
-        Optional<DatasetRegion> found = Optional.empty();
-        if (dRegions != null) {
-            for (DatasetRegion region : dRegions) {
-                double start = region.getRegionStart(rDim);
-                double end = region.getRegionEnd(rDim);
-                if ((start < shift) && (end >= shift)) {
-                    found = Optional.of(region);
-                    break;
-                }
-            }
-        }
-        return found;
-    }
-
-    public static double[] getBounds(DatasetRegion region, int rDim) {
-        double start = region.getRegionStart(rDim);
-        double end = region.getRegionEnd(rDim);
-        return new double[]{start, end};
-    }
-
-    public static double[] getRegionBounds(List<DatasetRegion> dRegions, int rDim, double shift) {
-        Optional<DatasetRegion> found = getRegion(dRegions, rDim, shift);
-        double[] bounds = null;
-        if (found.isPresent()) {
-            bounds = getBounds(found.get(), rDim);
-        }
-        return bounds;
     }
 }

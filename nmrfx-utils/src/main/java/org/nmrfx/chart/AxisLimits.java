@@ -27,9 +27,9 @@ public interface AxisLimits {
 
     void setReverse(boolean state);
 
-    String getLabel();
-
     void setLabel(String label);
+
+    String getLabel();
 
     double getDisplayPosition(Number value);
 }

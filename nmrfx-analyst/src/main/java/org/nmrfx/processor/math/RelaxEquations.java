@@ -9,21 +9,23 @@ import java.util.Map;
  */
 public class RelaxEquations {
 
+    static final int S = 1;
+    static final int ImS = 2;
+    static final int I = 3;
+    static final int IpS = 4;
     public final static double SQRT2 = Math.sqrt(2.0);
+
     public final static double MU0 = 4.0e-7 * Math.PI;
     public final static double GAMMA_N = -2.71e7;
     public final static double GAMMA_C = 6.72828e7;
     public final static double GAMMA_H = 2.68e8;
+
     public final static double PLANCK = 1.054e-34;
     public final static double R_HN = 1.02e-10;
     public final static double R_HC = 1.104e-10;
     public final static Map<String, Double> GAMMA_MAP = new HashMap<>();
     public final static Map<String, Double> R_MAP = new HashMap<>();
     public final static Map<String, Double> CSA_MAP = new HashMap<>();
-    static final int S = 1;
-    static final int ImS = 2;
-    static final int I = 3;
-    static final int IpS = 4;
 
     static {
         GAMMA_MAP.put("H", GAMMA_H);

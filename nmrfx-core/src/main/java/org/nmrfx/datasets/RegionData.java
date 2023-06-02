@@ -32,7 +32,7 @@ package org.nmrfx.datasets;
 public class RegionData {
 
     static final private String[] FIELDS = {"Min", "Max", "Extreme", "Center", "RVolume", "EVolume", "Mean", "RMS", "N", "MaxPt"};
-    private final DatasetBase dataset;
+
     protected int npoints = 0;
     protected int nEllipse = 0;
     protected double value = 0.0;
@@ -50,6 +50,7 @@ public class RegionData {
     protected double mean = 0.0;
     int[] maxPoint;
     double[] dmaxPoint;
+    private final DatasetBase dataset;
 
     public RegionData(DatasetBase dataset) {
         this.dataset = dataset;
@@ -314,6 +315,10 @@ public class RegionData {
         this.dmaxPoint = maxD.clone();
     }
 
+    public static String[] getFields() {
+        return FIELDS;
+    }
+
     public double getValue(String name) {
         double result = 0.0;
         switch (name) {
@@ -343,9 +348,5 @@ public class RegionData {
                 break;
         }
         return result;
-    }
-
-    public static String[] getFields() {
-        return FIELDS;
     }
 }

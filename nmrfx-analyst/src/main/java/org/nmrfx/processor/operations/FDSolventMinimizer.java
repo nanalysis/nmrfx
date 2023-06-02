@@ -31,17 +31,6 @@ public class FDSolventMinimizer extends BracketMinimizer {
     Vec phaseVec = null;
     Vec vector = null;
 
-    public FDSolventMinimizer(Vec vector, double gridStart, double gridEnd, double gridDelta, double tol) {
-        super(gridStart, gridEnd, gridDelta, tol);
-        this.vector = vector;
-        testVec = new Vec(vector.getSize());
-        phaseVec = new Vec(vector.getSize());
-        testVec.resize(vector.getSize(), false);
-        vector.copy(phaseVec);
-
-        phaseVec.hft();
-    }
-
     void genTest(double p0) {
         double degtorad = Math.PI / 180.0;
         double re = Math.cos(p0 * degtorad);
@@ -53,6 +42,17 @@ public class FDSolventMinimizer extends BracketMinimizer {
             testVec.set(i, (phaseVec.getReal(i) * re)
                     - (phaseVec.getImag(i) * im));
         }
+    }
+
+    public FDSolventMinimizer(Vec vector, double gridStart, double gridEnd, double gridDelta, double tol) {
+        super(gridStart, gridEnd, gridDelta, tol);
+        this.vector = vector;
+        testVec = new Vec(vector.getSize());
+        phaseVec = new Vec(vector.getSize());
+        testVec.resize(vector.getSize(), false);
+        vector.copy(phaseVec);
+
+        phaseVec.hft();
     }
 
     public double getScore(double value) {

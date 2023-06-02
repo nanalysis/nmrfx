@@ -26,12 +26,12 @@ public class ColorProperty extends SimpleObjectProperty<Color> {
         super(object, name, color);
     }
 
-    public Color getColor() {
-        return get();
-    }
-
     public void setColor(Color color) {
         set(color);
+    }
+
+    public Color getColor() {
+        return get();
     }
 
     public String getColorAsRGB() {

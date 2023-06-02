@@ -281,6 +281,23 @@ public class PeakNetworkMatch {
         return deltaSqSum;
     }
 
+    static class MatchItem {
+
+        final int itemIndex;
+        final double[] values;
+
+        MatchItem(final int itemIndex, final double[] values) {
+            this.itemIndex = itemIndex;
+            this.values = values;
+        }
+
+        MatchItem(final int itemIndex, final double value) {
+            this.itemIndex = itemIndex;
+            double[] valueArray = {value};
+            this.values = valueArray;
+        }
+    }
+
     List<MatchItem> getMatchingItems(PeakList peakList, int[] dims, final double[][] boundary) {
         List<MatchItem> matchList = new ArrayList<>();
         int nPeaks = peakList.size();
@@ -328,6 +345,19 @@ public class PeakNetworkMatch {
             matchList.add(matchItem);
         }
         return matchList;
+    }
+
+    class MatchResult {
+
+        final double score;
+        final int nMatches;
+        final int[] matching;
+
+        MatchResult(final int[] matching, final int nMatches, final double score) {
+            this.matching = matching;
+            this.score = score;
+            this.nMatches = nMatches;
+        }
     }
 
     private MatchResult doBPMatch(List<MatchItem> iMList, final double[] iOffsets, List<MatchItem> jMList, final double[] jOffsets, double[] tol, final boolean doLinkMatch) {
@@ -458,36 +488,6 @@ public class PeakNetworkMatch {
             System.out.println(v);
         }
 
-    }
-
-    static class MatchItem {
-
-        final int itemIndex;
-        final double[] values;
-
-        MatchItem(final int itemIndex, final double[] values) {
-            this.itemIndex = itemIndex;
-            this.values = values;
-        }
-
-        MatchItem(final int itemIndex, final double value) {
-            this.itemIndex = itemIndex;
-            double[] valueArray = {value};
-            this.values = valueArray;
-        }
-    }
-
-    class MatchResult {
-
-        final double score;
-        final int nMatches;
-        final int[] matching;
-
-        MatchResult(final int[] matching, final int nMatches, final double score) {
-            this.matching = matching;
-            this.score = score;
-            this.nMatches = nMatches;
-        }
     }
 
 }

@@ -35,13 +35,13 @@ public class FileProperty extends SimpleObjectProperty<File> {
     }
 
     @Override
-    public void set(File file) {
+    public void setValue(File file) {
         this.file = file;
         this.fireValueChangedEvent();
     }
 
     @Override
-    public void setValue(File file) {
+    public void set(File file) {
         this.file = file;
         this.fireValueChangedEvent();
     }

@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.net.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.collections.FXCollections?>
-<?import org.controlsfx.control.*?>
-<?import org.nmrfx.processor.gui.*?>
-<?import org.fxmisc.richtext.CodeArea?>
 
-
-<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="mainBox" prefHeight="400.0" prefWidth="500.0" styleClass="mainFxmlClass"  fx:controller="org.nmrfx.processor.gui.PreferencesController">
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import org.controlsfx.control.PropertySheet?>
+<?import java.net.URL?>
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="mainBox" prefHeight="400.0"
+      prefWidth="500.0" styleClass="mainFxmlClass" fx:controller="org.nmrfx.processor.gui.PreferencesController">
     <stylesheets>
-        <URL value="@/styles/Styles.css" />
+        <URL value="@/styles/Styles.css"/>
     </stylesheets>
     <children>
         <HBox BorderPane.alignment="CENTER" spacing="12">

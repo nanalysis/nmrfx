@@ -60,24 +60,6 @@ public class Zipper extends SimpleFileVisitor<Path> {
         }
     }
 
-    // Print each directory visited.
-    @Override
-    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-        String filePath = dir.toString();
-        int filePathLen = filePath.length();
-        int startLen = startingDir.getAbsolutePath().length();
-        if (startLen < filePathLen) {
-            try {
-                ZipEntry ze = new ZipEntry(filePath.substring(startingDir.getAbsolutePath().length() + 1, filePath.length()) + "/");
-                zos.putNextEntry(ze);
-                zos.closeEntry();
-            } catch (IOException ioE) {
-                log.warn(ioE.getMessage(), ioE);
-            }
-        }
-        return FileVisitResult.CONTINUE;
-    }
-
     @Override
     public FileVisitResult visitFile(Path path, BasicFileAttributes attr) {
         if (attr.isSymbolicLink()) {
@@ -97,6 +79,24 @@ public class Zipper extends SimpleFileVisitor<Path> {
                 writeEntry(path.toString());
             }
         } else {
+        }
+        return FileVisitResult.CONTINUE;
+    }
+
+    // Print each directory visited.
+    @Override
+    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+        String filePath = dir.toString();
+        int filePathLen = filePath.length();
+        int startLen = startingDir.getAbsolutePath().length();
+        if (startLen < filePathLen) {
+            try {
+                ZipEntry ze = new ZipEntry(filePath.substring(startingDir.getAbsolutePath().length() + 1, filePath.length()) + "/");
+                zos.putNextEntry(ze);
+                zos.closeEntry();
+            } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
+            }
         }
         return FileVisitResult.CONTINUE;
     }

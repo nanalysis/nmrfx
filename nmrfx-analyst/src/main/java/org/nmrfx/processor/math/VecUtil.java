@@ -125,6 +125,40 @@ public class VecUtil {
         return result;
     }
 
+    static class AbsDevBFunc implements UnivariateFunction {
+
+        double[] x = null;
+        double[] y = null;
+        int n = 0;
+        double a = 0.0;
+        double sumAbsDev = 0.0;
+
+        AbsDevBFunc(double[] x, double[] y, int numPoints) {
+            this.n = numPoints;
+            this.x = x;
+            this.y = y;
+        }
+
+        public double value(double b) {
+            double sum = 0;
+            for (int i = 0; i < n; i++) {
+                double delta = y[i] - (x[i] * b);
+                sumAbsDev += Math.abs(delta);
+                sum += x[i] * Math.signum(delta);
+            }
+            return sum;
+
+        }
+
+        public double getA() {
+            return a;
+        }
+
+        public double getMeanDev() {
+            return sumAbsDev / n;
+        }
+    }
+
     public static double[] fitAbsDev(double[] x, double[] y, double[] sigmaY) {
         double[] parameters = fitLinear(x, y, sigmaY);
 
@@ -234,7 +268,7 @@ public class VecUtil {
      */
     public static void hift(final double[][] x, final int n, double fpMul) {
         int factor = 0;
-        // fixme we don't resize here, assumes x already correct size. Either remove some of
+        // fixme we don't resize here, assumes x already correct size. Either remove some of 
         //       the following code, or actually do a resize
         int newSize = (int) Math.round(Math.pow(2, Math.ceil((Math.log(n) / Math.log(2)) + factor)));
         for (int i = 0; i < n; i++) {
@@ -476,40 +510,6 @@ public class VecUtil {
             Complex hold = c[i];
             c[i] = c[n - i - 1];
             c[n - i - 1] = hold;
-        }
-    }
-
-    static class AbsDevBFunc implements UnivariateFunction {
-
-        double[] x = null;
-        double[] y = null;
-        int n = 0;
-        double a = 0.0;
-        double sumAbsDev = 0.0;
-
-        AbsDevBFunc(double[] x, double[] y, int numPoints) {
-            this.n = numPoints;
-            this.x = x;
-            this.y = y;
-        }
-
-        public double value(double b) {
-            double sum = 0;
-            for (int i = 0; i < n; i++) {
-                double delta = y[i] - (x[i] * b);
-                sumAbsDev += Math.abs(delta);
-                sum += x[i] * Math.signum(delta);
-            }
-            return sum;
-
-        }
-
-        public double getA() {
-            return a;
-        }
-
-        public double getMeanDev() {
-            return sumAbsDev / n;
         }
     }
 

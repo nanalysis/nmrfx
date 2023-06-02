@@ -14,16 +14,16 @@ import java.util.HashMap;
  */
 public class RDC {
 
+    public static boolean CALC_MAX_RDC = true;
     static final double HBAR = 1.054E-34;
     static final double MU0 = 4.0E-7 * Math.PI;
     static final double PREFACTOR = -(MU0 * HBAR) / (4 * (Math.PI * Math.PI));
     static final HashMap<String, Double> disDict = new HashMap<>();
     static final HashMap<String, Double> gammaIDict = new HashMap();
-    static final HashMap<String, Double> gammaSDict = new HashMap();
-    static final HashMap<String, Double> maxRDCDict = new HashMap<>();
-    public static boolean CALC_MAX_RDC = true;
     static double gammaN = -2.71E7;
     static double gammaH = 2.68e8;
+    static final HashMap<String, Double> gammaSDict = new HashMap();
+    static final HashMap<String, Double> maxRDCDict = new HashMap<>();
     static double scaleHN = (gammaH * gammaN) / ((1.0E-10) * (1.0E-10) * (1.0E-10));
 
     static {
@@ -43,90 +43,6 @@ public class RDC {
         gammaSDict.put("N", -2.71e7);
         gammaSDict.put("C", 6.73e7);
         gammaSDict.put("H", 2.68e8);
-    }
-
-    Atom atom1;
-    Atom atom2;
-    Vector3D vector;
-    Double rdcPred;
-    Double rdcExp;
-    Double error;
-    double maxRDC;
-    public RDC(Atom atom1, Atom atom2) {
-        this.atom1 = atom1;
-        this.atom2 = atom2;
-        this.vector = atom2.getPoint().subtract(atom1.getPoint());
-        String elemName1 = atom1.getElementName();
-        String elemName2 = atom2.getElementName();
-        maxRDC = calcMaxRDC(vector, elemName1, elemName2, CALC_MAX_RDC, false);
-    }
-
-    public RDC(Atom atom1, Atom atom2, Vector3D vector) {
-        this.atom1 = atom1;
-        this.atom2 = atom2;
-        this.vector = vector;
-        String elemName1 = atom1.getElementName();
-        String elemName2 = atom2.getElementName();
-        maxRDC = calcMaxRDC(vector, elemName1, elemName2, CALC_MAX_RDC, false);
-    }
-
-    public Double getRDC() {
-        return rdcPred;
-    }
-
-    public void setRDC(double rdc) {
-        this.rdcPred = rdc;
-    }
-
-    public Double getExpRDC() {
-        return rdcExp;
-    }
-
-    public void setExpRDC(double rdc) {
-        this.rdcExp = rdc;
-    }
-
-    public Double getNormRDC() {
-        return rdcPred / maxRDC;
-    }
-
-    public Double getNormExpRDC() {
-        return rdcExp / maxRDC;
-    }
-
-    public Double getError() {
-        return error;
-    }
-
-    public void setError(double err) {
-        this.error = err;
-    }
-
-    public Atom getAtom1() {
-        return atom1;
-    }
-
-    public Atom getAtom2() {
-        return atom2;
-    }
-
-    public double getMaxRDC() {
-        return maxRDC;
-    }
-
-    public Vector3D getVector() {
-        return vector;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append(atom1.getFullName()).append(" ").append(atom1.getEntity().getName()).append(" ");
-        sBuilder.append(atom2.getFullName()).append(" ").append(atom2.getEntity().getName()).append(" ");
-        sBuilder.append(String.format("%.2f", rdcPred)).append(" ");
-        sBuilder.append(String.format("%.2f", rdcExp)).append(" ");
-        sBuilder.append(String.format("%.2f", error));
-        return sBuilder.toString();
     }
 
     /**
@@ -170,6 +86,91 @@ public class RDC {
             }
         }
         return maxRDC;
+    }
+
+    Atom atom1;
+    Atom atom2;
+    Vector3D vector;
+    Double rdcPred;
+    Double rdcExp;
+    Double error;
+    double maxRDC;
+
+    public RDC(Atom atom1, Atom atom2) {
+        this.atom1 = atom1;
+        this.atom2 = atom2;
+        this.vector = atom2.getPoint().subtract(atom1.getPoint());
+        String elemName1 = atom1.getElementName();
+        String elemName2 = atom2.getElementName();
+        maxRDC = calcMaxRDC(vector, elemName1, elemName2, CALC_MAX_RDC, false);
+    }
+
+    public RDC(Atom atom1, Atom atom2, Vector3D vector) {
+        this.atom1 = atom1;
+        this.atom2 = atom2;
+        this.vector = vector;
+        String elemName1 = atom1.getElementName();
+        String elemName2 = atom2.getElementName();
+        maxRDC = calcMaxRDC(vector, elemName1, elemName2, CALC_MAX_RDC, false);
+    }
+
+    public Double getRDC() {
+        return rdcPred;
+    }
+
+    public Double getExpRDC() {
+        return rdcExp;
+    }
+
+    public Double getNormRDC() {
+        return rdcPred / maxRDC;
+    }
+
+    public Double getNormExpRDC() {
+        return rdcExp / maxRDC;
+    }
+
+    public Double getError() {
+        return error;
+    }
+
+    public void setRDC(double rdc) {
+        this.rdcPred = rdc;
+    }
+
+    public void setExpRDC(double rdc) {
+        this.rdcExp = rdc;
+    }
+
+    public void setError(double err) {
+        this.error = err;
+    }
+
+    public Atom getAtom1() {
+        return atom1;
+    }
+
+    public Atom getAtom2() {
+        return atom2;
+    }
+
+    public double getMaxRDC() {
+        return maxRDC;
+    }
+
+    public Vector3D getVector() {
+        return vector;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(atom1.getFullName()).append(" ").append(atom1.getEntity().getName()).append(" ");
+        sBuilder.append(atom2.getFullName()).append(" ").append(atom2.getEntity().getName()).append(" ");
+        sBuilder.append(String.format("%.2f", rdcPred)).append(" ");
+        sBuilder.append(String.format("%.2f", rdcExp)).append(" ");
+        sBuilder.append(String.format("%.2f", error));
+        return sBuilder.toString();
     }
 
 }

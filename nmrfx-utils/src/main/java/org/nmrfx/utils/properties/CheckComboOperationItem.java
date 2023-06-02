@@ -37,10 +37,10 @@ import java.util.List;
  */
 public class CheckComboOperationItem extends OperationItem implements ObservableStringValue {
 
-    private final Collection<?> choices;
     String defaultValue;
     String value;
     ListChangeListener listener;
+    private final Collection<?> choices;
     private List<String> values = new ArrayList<>();
 
     public CheckComboOperationItem(ListChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
@@ -73,6 +73,10 @@ public class CheckComboOperationItem extends OperationItem implements Observable
         }
     }
 
+    public List<String> getValues() {
+        return values;
+    }
+
     @Override
     public boolean isDefault() {
         if (defaultValue == null) {
@@ -100,17 +104,12 @@ public class CheckComboOperationItem extends OperationItem implements Observable
     }
 
     @Override
-    public String getStringRep() {
-        return '\'' + value + '\'';
-    }
-
-    public List<String> getValues() {
-        return values;
+    public String get() {
+        return value;
     }
 
     @Override
-    public String get() {
-        return value;
+    public void removeListener(ChangeListener<? super String> listener) {
     }
 
     @Override
@@ -126,10 +125,11 @@ public class CheckComboOperationItem extends OperationItem implements Observable
     }
 
     @Override
-    public void addListener(ChangeListener<? super String> cl) {
+    public String getStringRep() {
+        return '\'' + value + '\'';
     }
 
     @Override
-    public void removeListener(ChangeListener<? super String> listener) {
+    public void addListener(ChangeListener<? super String> cl) {
     }
 }

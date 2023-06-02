@@ -33,11 +33,12 @@ public class NESTAMath {
     final int statWinSize = 10;
     final boolean zeroAtStart;
     final double threshold;
+    double tolFinal;
+    double muFinal;
     final MatrixND matrix;
     final int[] zeroList;
     final double[] phase;
-    double tolFinal;
-    double muFinal;
+
     int totalIterations = 0;
     double initialL1Norm = 0.0;
     double finalL1Norm = 0.0;

@@ -42,6 +42,10 @@ public class PeakAssignTool implements ControllerTool {
     boolean removePeakOnClose = false;
     ASSIGN_MODE mode = ASSIGN_MODE.SIMPLE;
 
+    enum ASSIGN_MODE {
+        SIMPLE;
+    }
+
     public PeakAssignTool(FXMLController controller, Consumer<PeakAssignTool> closeAction) {
         this.controller = controller;
         this.closeAction = closeAction;
@@ -319,9 +323,5 @@ public class PeakAssignTool implements ControllerTool {
             }
             i++;
         }
-    }
-
-    enum ASSIGN_MODE {
-        SIMPLE;
     }
 }

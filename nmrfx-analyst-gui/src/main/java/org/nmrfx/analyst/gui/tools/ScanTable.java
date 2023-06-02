@@ -1241,6 +1241,11 @@ public class ScanTable {
         }
     }
 
+    public static Color getGroupColor(int index) {
+        index = Math.min(index, COLORS.length - 1);
+        return COLORS[index];
+    }
+
     public void getGroups() {
         for (var column : tableView.getColumns()) {
             setColumnGraphic(column);
@@ -1263,10 +1268,5 @@ public class ScanTable {
             maxValue = Math.max(maxValue, iValue);
         }
         groupSize = maxValue + 1;
-    }
-
-    public static Color getGroupColor(int index) {
-        index = Math.min(index, COLORS.length - 1);
-        return COLORS[index];
     }
 }

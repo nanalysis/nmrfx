@@ -32,19 +32,19 @@ import static org.nmrfx.processor.math.Vec.apache_ift;
 @PythonAPI("pyproc")
 public class Ift extends Operation {
 
+    @Override
+    public Operation eval(Vec vector) throws ProcessingException {
+        vector.setGroupDelay(0.0);
+        ift(vector);
+        return this;
+    }
+
     /**
      * Create operation for inverse Fourier transform.
      *
      * @throws ProcessingException
      */
     public Ift() throws ProcessingException {
-    }
-
-    @Override
-    public Operation eval(Vec vector) throws ProcessingException {
-        vector.setGroupDelay(0.0);
-        ift(vector);
-        return this;
     }
 
     private void ift(Vec vector) throws ProcessingException {

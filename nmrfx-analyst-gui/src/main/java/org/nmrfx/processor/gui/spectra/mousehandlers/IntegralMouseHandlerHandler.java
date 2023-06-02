@@ -16,6 +16,23 @@ public class IntegralMouseHandlerHandler extends MouseHandler {
         this.integralHit = integralHit;
     }
 
+    public static Optional<IntegralHit> handlerOverIntegral(MouseBindings mouseBindings) {
+        PolyChart chart = mouseBindings.getChart();
+        Optional<IntegralHit> hit = chart.hitIntegral(mouseBindings.getMouseX(), mouseBindings.getMouseY());
+        return hit;
+    }
+
+    public static Optional<MouseHandler> handler(MouseBindings mouseBindings) {
+        PolyChart chart = mouseBindings.getChart();
+        Optional<IntegralHit> intHitOpt = chart.selectIntegral(mouseBindings.getMouseX(), mouseBindings.getMouseY());
+        IntegralMouseHandlerHandler handler = null;
+        if (intHitOpt.isPresent()) {
+            handler = new IntegralMouseHandlerHandler(mouseBindings, intHitOpt.get());
+            chart.refresh();
+        }
+        return Optional.ofNullable(handler);
+    }
+
     @Override
     public void mousePressed(MouseEvent mouseEvent) {
         PolyChart chart = mouseBindings.getChart();
@@ -68,22 +85,5 @@ public class IntegralMouseHandlerHandler extends MouseHandler {
         chart.getChartProperties().setIntegralLowPos(lowpos);
         chart.getChartProperties().setIntegralHighPos(highpos);
         chart.refresh();
-    }
-
-    public static Optional<IntegralHit> handlerOverIntegral(MouseBindings mouseBindings) {
-        PolyChart chart = mouseBindings.getChart();
-        Optional<IntegralHit> hit = chart.hitIntegral(mouseBindings.getMouseX(), mouseBindings.getMouseY());
-        return hit;
-    }
-
-    public static Optional<MouseHandler> handler(MouseBindings mouseBindings) {
-        PolyChart chart = mouseBindings.getChart();
-        Optional<IntegralHit> intHitOpt = chart.selectIntegral(mouseBindings.getMouseX(), mouseBindings.getMouseY());
-        IntegralMouseHandlerHandler handler = null;
-        if (intHitOpt.isPresent()) {
-            handler = new IntegralMouseHandlerHandler(mouseBindings, intHitOpt.get());
-            chart.refresh();
-        }
-        return Optional.ofNullable(handler);
     }
 }

@@ -52,7 +52,6 @@ public class PeakSlider implements ControllerTool {
 
     private static final Logger log = LoggerFactory.getLogger(PeakSlider.class);
     private static final String SLIDER_MENU_NAME = "Slider";
-    private final ListChangeListener<PolyChart> chartsListener = this::updateKeyBindings;
     VBox vBox;
     ToolBar sliderToolBar;
     FXMLController controller;
@@ -73,6 +72,7 @@ public class PeakSlider implements ControllerTool {
     PeakClusterMatcher[] matchers = new PeakClusterMatcher[2];
     RandomDataGenerator rand = new RandomDataGenerator();
     private InvalidationListener selectedPeaksListener;
+    private final ListChangeListener<PolyChart> chartsListener = this::updateKeyBindings;
 
     public PeakSlider(FXMLController controller, Consumer<PeakSlider> closeAction) {
         this.controller = controller;
@@ -964,6 +964,9 @@ public class PeakSlider implements ControllerTool {
         return isNull;
     }
 
+    record MatchListPair(PeakList refList, PeakList movingList) {
+    }
+
     Optional<MatchListPair> createNDMatcher() {
         PolyChart chart = controller.getActiveChart();
         List<PeakList> movingLists = new ArrayList<>();
@@ -1023,6 +1026,7 @@ public class PeakSlider implements ControllerTool {
             }
         });
     }
+
 
     public void autoAlign() {
         Optional<PeakList> hmqcPredListOpt = Optional.empty();
@@ -1357,8 +1361,5 @@ public class PeakSlider implements ControllerTool {
             gd = result.get();
         }
         return gd;
-    }
-
-    record MatchListPair(PeakList refList, PeakList movingList) {
     }
 }

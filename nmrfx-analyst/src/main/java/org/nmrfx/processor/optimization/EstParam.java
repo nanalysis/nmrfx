@@ -66,16 +66,16 @@ public class EstParam {
         pendingApproximation = status;
     }
 
+    public void setBound(boolean bound) {
+        this.bound = bound;
+    }
+
     public boolean isPending() {
         return pendingApproximation;
     }
 
     public boolean isBound() {
         return bound;
-    }
-
-    public void setBound(boolean bound) {
-        this.bound = bound;
     }
 
     public double getEstimate() {

@@ -57,15 +57,6 @@ import java.util.Collection;
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
 
     private static final Logger log = LoggerFactory.getLogger(NvFxPropertyEditorFactory.class);
-    private static Class<?>[] numericTypes = new Class[]{
-            byte.class, Byte.class,
-            short.class, Short.class,
-            int.class, Integer.class,
-            long.class, Long.class,
-            float.class, Float.class,
-            double.class, Double.class,
-            BigInteger.class, BigDecimal.class
-    };
 
     public NvFxPropertyEditorFactory() {
         super();
@@ -161,6 +152,16 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
         }
         return super.call(item);
     }
+
+    private static Class<?>[] numericTypes = new Class[]{
+            byte.class, Byte.class,
+            short.class, Short.class,
+            int.class, Integer.class,
+            long.class, Long.class,
+            float.class, Float.class,
+            double.class, Double.class,
+            BigInteger.class, BigDecimal.class
+    };
 
     // there should be better ways to do this
     private static boolean isNumber(Class<?> type) {

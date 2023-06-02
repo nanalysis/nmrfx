@@ -39,16 +39,16 @@ import java.nio.channels.FileChannel;
 public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(MappedSubMatrixFile.class);
-    final boolean writable;
+    private RandomAccessFile raFile;
     private final Dataset dataset;
     private final File file;
+    private long totalSize;
     private final int dataType;
-    private final int BYTES = Float.BYTES;
+    final boolean writable;
+    private MappedByteBuffer mappedBuffer;
     DatasetLayout layout;
     FloatBuffer floatBuffer;
-    private RandomAccessFile raFile;
-    private long totalSize;
-    private MappedByteBuffer mappedBuffer;
+    private final int BYTES = Float.BYTES;
 
     /**
      * An object that represents a mapping of specified dataset with a memory
@@ -111,11 +111,6 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
     }
 
     @Override
-    public boolean isWritable() {
-        return writable;
-    }
-
-    @Override
     public void setWritable(boolean state) throws IOException {
         if (writable != state) {
             if (state) {
@@ -126,6 +121,15 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
             }
             init();
         }
+    }
+
+    @Override
+    public boolean isWritable() {
+        return writable;
+    }
+
+    protected void startVecGet(int... offsets) {
+        // return start position, block, stride, nPoints 
     }
 
     @Override
@@ -221,10 +225,6 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
     @Override
     public void force() {
         mappedBuffer.force();
-    }
-
-    protected void startVecGet(int... offsets) {
-        // return start position, block, stride, nPoints
     }
 
     private void clean(MappedByteBuffer mapping) {

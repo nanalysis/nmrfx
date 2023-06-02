@@ -53,13 +53,17 @@ import java.util.ResourceBundle;
  */
 public class SeqDisplayController implements Initializable, StageBasedController {
     private static final Logger log = LoggerFactory.getLogger(SeqDisplayController.class);
+
+    Color[] colors = {Color.BLUE, Color.RED, Color.BLACK, Color.GREEN, Color.CYAN, Color.MAGENTA, Color.YELLOW};
+
+    Color[] colors2ndStr = {Color.DARKRED, Color.DARKGREEN, Color.DARKGRAY, Color.DARKBLUE};
+    // red green gray blue
+
     static final String[] RNA_ATOMS = {"H5,H8", "H6,H2", "H1'", "H2'", "H3'", "H4'", "H5'",
             "C5,C8", "C6,C2", "C1'", "C2'", "C3'", "C4'", "C5'"
     };
+
     static final String[] PROTEIN_ATOMS = {"H", "N", "HA", "C", "CA", "CB"};
-    // red green gray blue
-    Color[] colors = {Color.BLUE, Color.RED, Color.BLACK, Color.GREEN, Color.CYAN, Color.MAGENTA, Color.YELLOW};
-    Color[] colors2ndStr = {Color.DARKRED, Color.DARKGREEN, Color.DARKGRAY, Color.DARKBLUE};
     Stage stage = null;
     @FXML
     MasterDetailPane masterDetailPane;
@@ -233,13 +237,22 @@ public class SeqDisplayController implements Initializable, StageBasedController
 
     }
 
-    public Stage getStage() {
-        return stage;
+    public static SeqDisplayController create() {
+        SeqDisplayController controller = Fxml.load(SeqDisplayController.class, "SeqDisplayScene.fxml")
+                .withNewStage("Sequence Display")
+                .getController();
+        controller.stage.show();
+        controller.stage.toFront();
+        return controller;
     }
 
     @Override
     public void setStage(Stage stage) {
         this.stage = stage;
+    }
+
+    public Stage getStage() {
+        return stage;
     }
 
     public List<List<String>> getValidAtoms(Polymer polymer) {
@@ -600,6 +613,14 @@ public class SeqDisplayController implements Initializable, StageBasedController
         drawCanvas(gC, CANVAS_MODE.DRAW);
     }
 
+    enum CANVAS_MODE {
+        DRAW,
+        SIZE,
+        PICK;
+    }
+
+    ;
+
     private void get2ndStrPredictor(Molecule mol) {
         if (show2ndStrDItem.getValue()) {
             try {
@@ -872,8 +893,6 @@ public class SeqDisplayController implements Initializable, StageBasedController
 
     }
 
-    ;
-
     @FXML
     public void exportPDFAction(ActionEvent event
     ) {
@@ -927,21 +946,6 @@ public class SeqDisplayController implements Initializable, StageBasedController
             svgGC.saveFile();
         }
         stage.setResizable(true);
-    }
-
-    public static SeqDisplayController create() {
-        SeqDisplayController controller = Fxml.load(SeqDisplayController.class, "SeqDisplayScene.fxml")
-                .withNewStage("Sequence Display")
-                .getController();
-        controller.stage.show();
-        controller.stage.toFront();
-        return controller;
-    }
-
-    enum CANVAS_MODE {
-        DRAW,
-        SIZE,
-        PICK;
     }
 
 }

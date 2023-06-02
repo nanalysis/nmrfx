@@ -77,11 +77,6 @@ public abstract class AnnoShape implements CanvasAnnotation {
     }
 
     @Override
-    public boolean getClipInAxes() {
-        return clipInAxes;
-    }
-
-    @Override
     public POSTYPE getXPosType() {
         return xPosType;
     }
@@ -89,6 +84,15 @@ public abstract class AnnoShape implements CanvasAnnotation {
     @Override
     public POSTYPE getYPosType() {
         return yPosType;
+    }
+
+    @Override
+    public boolean getClipInAxes() {
+        return clipInAxes;
+    }
+
+    public void setClipInAxes(boolean state) {
+        clipInAxes = state;
     }
 
     @Override
@@ -104,10 +108,6 @@ public abstract class AnnoShape implements CanvasAnnotation {
     @Override
     public void setSelectable(boolean state) {
         selectable = state;
-    }
-
-    public void setClipInAxes(boolean state) {
-        clipInAxes = state;
     }
 
 }

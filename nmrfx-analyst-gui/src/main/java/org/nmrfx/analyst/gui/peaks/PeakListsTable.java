@@ -32,6 +32,17 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
     private static final String NUMBER_UNASSIGNED_COLUMN_NAME = "Unassigned";
     MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakLists();
 
+    private String getPeakListLabels(PeakList peakList) {
+        StringBuilder sBuilder = new StringBuilder();
+        for (var sDim : peakList.getSpectralDims()) {
+            if (sBuilder.length() != 0) {
+                sBuilder.append(" ");
+            }
+            sBuilder.append(sDim.getDimName());
+        }
+        return sBuilder.toString();
+    }
+
     public PeakListsTable() {
         setPlaceholder(new Label("No peakLists to display"));
 
@@ -73,17 +84,6 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
         getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         updatePeakLists();
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
-    }
-
-    private String getPeakListLabels(PeakList peakList) {
-        StringBuilder sBuilder = new StringBuilder();
-        for (var sDim : peakList.getSpectralDims()) {
-            if (sBuilder.length() != 0) {
-                sBuilder.append(" ");
-            }
-            sBuilder.append(sDim.getDimName());
-        }
-        return sBuilder.toString();
     }
 
     /**

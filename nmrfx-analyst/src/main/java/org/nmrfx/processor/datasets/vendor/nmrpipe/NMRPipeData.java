@@ -57,20 +57,30 @@ public class NMRPipeData implements NMRData {
     static private final int DIMSIZE = 4;
     static private final int MAXDIM = 10;
     static private final int MAX_FILECHANNELS = 16;
+    private final String dirName;
+    private final String fpath;
+    private FileChannel fc = null;
+    private double groupDelay = 0.0;
+    private final double scale = 1.0e6;
+    String template = "%03d.ft";
+    private Double[] Ref = new Double[MAXDIM];
+    private Double[] Sw = new Double[MAXDIM];
+    private Double[] Sf = new Double[MAXDIM];
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
+
+    Header fileHeader;
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
+
+    private SampleSchedule sampleSchedule = null;
+    Map<Integer, FileChannel> fcMap;
+
+    boolean swapBits = true;
     /**
      * open Varian parameter and data files
      *
      * @param path : full path to the .fid directory, fid file or spectrum
      */
     static final private int FILEHEADERSIZE = 2048;
-    private final String dirName;
-    private final String fpath;
-    private final double scale = 1.0e6;
-    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
-    String template = "%03d.ft";
-    Header fileHeader;
-    Map<Integer, FileChannel> fcMap;
-    boolean swapBits = true;
     int ebytes = 4;
     int tbytes;
     int np;
@@ -79,13 +89,6 @@ public class NMRPipeData implements NMRData {
     int[] sizes;
     Dataset dataSource = null;
     File nusFile = null;
-    private FileChannel fc = null;
-    private double groupDelay = 0.0;
-    private Double[] Ref = new Double[MAXDIM];
-    private Double[] Sw = new Double[MAXDIM];
-    private Double[] Sf = new Double[MAXDIM];
-    private DatasetType preferredDatasetType = DatasetType.NMRFX;
-    private SampleSchedule sampleSchedule = null;
 
     public NMRPipeData(String path, File nusFile) throws IOException {
         this.nusFile = nusFile;
@@ -191,6 +194,36 @@ public class NMRPipeData implements NMRData {
         tbytes = np * ebytes;
     }
 
+    public static boolean findFID(StringBuilder bpath) {
+        return findFIDFiles(bpath.toString());
+    }
+
+    public static boolean findFIDFiles(String dpath) {
+        boolean found = false;
+        File file = new File(dpath);
+        String dirName = file.getParent();
+        String fileName = file.getName();
+        if (fileName.contains("%")) {
+            fileName = String.format(fileName, 1);
+            file = Paths.get(dirName, fileName).toFile();
+        }
+        if (file.exists() && file.isFile()) {
+            try (FileReader reader = new FileReader(file)) {
+                boolean ok = true;
+                for (int i = 0; i < 4; i++) {
+                    if (reader.read() != 0) {
+                        ok = false;
+                        break;
+                    }
+                }
+                found = ok;
+            } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
+            }
+        }
+        return found;
+    } // findFIDFiles
+
     private FileChannel openDataFile(String dirPath, String templateFileName) {
         Path path = Paths.get(dirPath, templateFileName);
         FileChannel fileChannel = null;
@@ -228,8 +261,27 @@ public class NMRPipeData implements NMRData {
     }
 
     @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
+    }
+
+    @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        for (FIELDS field : FIELDS.values()) {
+            vendorPars.add(new VendorPar(field.name(), field.getString(fileHeader)));
+        }
+        return vendorPars;
     }
 
     @Override
@@ -248,17 +300,13 @@ public class NMRPipeData implements NMRData {
     }
 
     @Override
-    public List<VendorPar> getPars() {
-        List<VendorPar> vendorPars = new ArrayList<>();
-        for (FIELDS field : FIELDS.values()) {
-            vendorPars.add(new VendorPar(field.name(), field.getString(fileHeader)));
-        }
-        return vendorPars;
+    public int getNVectors() {
+        return FIELDS.FDSPECNUM.getInt(fileHeader);
     }
 
     @Override
-    public int getNVectors() {
-        return FIELDS.FDSPECNUM.getInt(fileHeader);
+    public String getFTType(int iDim) {
+        return "ft";
     }
 
     @Override
@@ -273,6 +321,10 @@ public class NMRPipeData implements NMRData {
 
     public void setNDim(int value) {
         FIELDS.FDDIMCOUNT.setInt(fileHeader, value);
+    }
+
+    public void setDimOrder(int dim, int value) {
+        FIELDS.setDimOrder(fileHeader, dim, value);
     }
 
     @Override
@@ -299,9 +351,17 @@ public class NMRPipeData implements NMRData {
         return FIELDS.FDTEMPERATURE.getFloat(fileHeader);
     }
 
+    public final double getDMXValue() {
+        return FIELDS.FDDMXVAL.getFloat(fileHeader);
+    }
+
     @Override
     public String getSequence() {
         return "";
+    }
+
+    public String getLabel(int dim) {
+        return FIELDS.getString(fileHeader, dim, "LABEL");
     }
 
     @Override
@@ -382,11 +442,6 @@ public class NMRPipeData implements NMRData {
     @Override
     public boolean isComplex(int dim) {
         return true; // fixme
-    }
-
-    @Override
-    public String getFTType(int iDim) {
-        return "ft";
     }
 
     @Override
@@ -552,62 +607,6 @@ public class NMRPipeData implements NMRData {
         }
     }
 
-    @Override
-    public void resetAcqOrder() {
-    }
-
-    @Override
-    public String[] getAcqOrder() {
-        int nDim = getNDim() - 1;
-        String[] acqOrder = new String[nDim * 2];
-        for (int i = 0; i < nDim; i++) {
-            acqOrder[i * 2] = "p" + (i + 1);
-            acqOrder[i * 2 + 1] = "d" + (i + 1);
-        }
-        return acqOrder;
-    }
-
-    @Override
-    public void setAcqOrder(String[] acqOrder) {
-    }
-
-    @Override
-    public SampleSchedule getSampleSchedule() {
-        return sampleSchedule;
-    }
-
-    @Override
-    public void setSampleSchedule(SampleSchedule sampleSchedule) {
-        this.sampleSchedule = sampleSchedule;
-    }
-
-    @Override
-    public DatasetType getPreferredDatasetType() {
-        return preferredDatasetType;
-    }
-
-    @Override
-    public void setPreferredDatasetType(DatasetType datasetType) {
-        this.preferredDatasetType = datasetType;
-    }
-
-    @Override
-    public List<DatasetGroupIndex> getSkipGroups() {
-        return datasetGroupIndices;
-    }
-
-    public void setDimOrder(int dim, int value) {
-        FIELDS.setDimOrder(fileHeader, dim, value);
-    }
-
-    public final double getDMXValue() {
-        return FIELDS.FDDMXVAL.getFloat(fileHeader);
-    }
-
-    public String getLabel(int dim) {
-        return FIELDS.getString(fileHeader, dim, "LABEL");
-    }
-
     public void readVector(int iDim, int iVec, Complex[] cdata) {
         int size = getSize(iDim);
         int nPer = getGroupSize(iDim);
@@ -641,6 +640,35 @@ public class NMRPipeData implements NMRData {
             double py = fbuf.get(j + 1);
             cdata[j / 2] = new Complex(px / scale, py / scale);
         }
+    }
+
+    @Override
+    public void resetAcqOrder() {
+    }
+
+    @Override
+    public String[] getAcqOrder() {
+        int nDim = getNDim() - 1;
+        String[] acqOrder = new String[nDim * 2];
+        for (int i = 0; i < nDim; i++) {
+            acqOrder[i * 2] = "p" + (i + 1);
+            acqOrder[i * 2 + 1] = "d" + (i + 1);
+        }
+        return acqOrder;
+    }
+
+    @Override
+    public void setAcqOrder(String[] acqOrder) {
+    }
+
+    @Override
+    public SampleSchedule getSampleSchedule() {
+        return sampleSchedule;
+    }
+
+    @Override
+    public void setSampleSchedule(SampleSchedule sampleSchedule) {
+        this.sampleSchedule = sampleSchedule;
     }
 
     FileChannel getFileChannel(int i) {
@@ -798,6 +826,11 @@ public class NMRPipeData implements NMRData {
         }
     }
 
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
+    }
+
     String getTemplateFile(int index) {
         int cube = index / (sizes[1] * sizes[2]);
         int plane = index;
@@ -815,108 +848,98 @@ public class NMRPipeData implements NMRData {
         return planeIndex;
     }
 
-    public void saveFile(String template) throws IOException {
-        this.template = template;
-        ByteOrder byteOrder = ByteOrder.LITTLE_ENDIAN;
-        int[] indices = new int[2];
-        int nBytes = dataSource.getSizeTotal(0) * Float.BYTES;
-        int nPlanes = dataSource.getNDim() > 2 ? dataSource.getSizeTotal(2) : 1;
-        for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
-            indices[1] = iPlane;
-            String fileName = getTemplateFile(iPlane);
-            try (RandomAccessFile outFile = new RandomAccessFile(fileName, "rw")) {
-                outFile.write(fileHeader.bBuffer.array());
-                ByteBuffer byteBuffer = ByteBuffer.allocate(nBytes);
-                FloatBuffer floatBuffer = byteBuffer.order(byteOrder).asFloatBuffer();
-                Vec vec = new Vec(dataSource.getSizeTotal(0));
-                for (int i = 0, nRows = dataSource.getSizeTotal(1); i < nRows; i++) {
-                    indices[0] = i;
-                    dataSource.readVector(vec, indices, 0);
-                    for (int j = 0, n = vec.getSize(); j < n; j++) {
-                        floatBuffer.put(j, (float) vec.getReal(j));
-                    }
-                    outFile.write(byteBuffer.array());
-                }
-            }
+    class FileChannelMap extends LRUMap<Integer, FileChannel> {
+
+        public FileChannelMap(int maxEntries) {
+            super(maxEntries);
         }
-    }
 
-    public final void readHeader(String fileName) {
-        ByteBuffer buffer = null;
-        try (FileChannel fileChannel = FileChannel.open(Paths.get(fileName), StandardOpenOption.READ)) {
-            buffer = ByteBuffer.allocate(2048);
-            int nBytes = fileChannel.read(buffer);
-            buffer.position(0);
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-        } catch (IOException ioE) {
-            throw new IllegalArgumentException("File doesn't exist");
-        }
-        fileHeader = new Header(buffer);
-    }
-
-    public void dumpHeader() {
-        dumpHeader(fileHeader);
-
-    }
-
-    private void dumpHeader(Header header) {
-        int nDim = FIELDS.FDDIMCOUNT.getInt(header);
-        String[] pars = {"MAGIC", "FLTFORMAT", "FLTORDER", "SIZE", "SPECNUM", "QUADFLAG", "2DPHASE", "TRANSPOSED", "DIMCOUNT",
-                "DIMORDER", "DIMORDER1", "DIMORDER2", "DIMORDER3", "DIMORDER4", "NUSDIM",
-                "PIPEFLAG", "PIPECOUNT", "SLICECOUNT0", "SLICECOUNT1", "FILECOUNT", "THREADCOUNT", "THREADID",
-                "FIRSTPLANE", "LASTPLANE", "PARTITION", "MAX", "MIN", "SCALEFLAG", "DISPMAX", "DISPMIN", "PTHRESH",
-                "NTHRESH", "MONTH", "DAY", "YEAR", "HOURS", "MINS", "SECS", "MCFLAG", "NOISE", "TEMPERATURE",
-                "TAU", "TITLE", "COMMENT"
-        };
-        String[] dimPars = {"SIZE", "APOD", "SW", "OBS", "SW", "ORIG", "FTFLAG", "QUADFLAG", "LABEL", "OBSMID", "AQSIGN", "P0", "P1",
-                "CAR", "CENTER", "OFFPPM", "APODQ1", "APODQ2", "APODQ3", "LB", "GB", "GOFF", "C1",
-                "UNITS",
-                "APODCODE", "ZF",
-                "X1", "XN", "FTSIZE", "TDSIZE"};
-        System.out.println("ndim " + nDim);
-        for (String par : dimPars) {
-            System.out.printf("%-10s", par + ":");
-            for (int i = 0; i < nDim; i++) {
-                System.out.printf("%12s", FIELDS.getString(header, i, par));
-            }
-            System.out.println("");
-        }
-        for (String par : pars) {
-            System.out.printf("%-10s", par + ":");
-            System.out.printf("%12s", FIELDS.getString(header, par));
-            System.out.println("");
-        }
-    }
-
-    public static boolean findFID(StringBuilder bpath) {
-        return findFIDFiles(bpath.toString());
-    }
-
-    public static boolean findFIDFiles(String dpath) {
-        boolean found = false;
-        File file = new File(dpath);
-        String dirName = file.getParent();
-        String fileName = file.getName();
-        if (fileName.contains("%")) {
-            fileName = String.format(fileName, 1);
-            file = Paths.get(dirName, fileName).toFile();
-        }
-        if (file.exists() && file.isFile()) {
-            try (FileReader reader = new FileReader(file)) {
-                boolean ok = true;
-                for (int i = 0; i < 4; i++) {
-                    if (reader.read() != 0) {
-                        ok = false;
-                        break;
-                    }
-                }
-                found = ok;
+        @Override
+        protected boolean removeLRU(LinkEntry<Integer, FileChannel> entry) {
+            FileChannel fileChannel = entry.getValue();
+            try {
+                fileChannel.close();
             } catch (IOException ioE) {
                 log.warn(ioE.getMessage(), ioE);
             }
+            return true;  // actually delete entry
         }
-        return found;
-    } // findFIDFiles
+    }
+
+    class NMRPipeFPMult extends FPMult {
+
+        NMRPipeFPMult(int iDim) {
+            float value = FIELDS.getFloat(fileHeader, iDim, "C1");
+            if (value != 0.0) {
+                value += 1.0f;
+                fpmult = value;
+                exists = true;
+            }
+
+        }
+    }
+
+    class Header {
+
+        FloatBuffer fBuffer;
+        ByteBuffer bBuffer;
+        private int[] dimMap = new int[DIMSIZE];
+
+        Header(ByteBuffer bBuffer) {
+            this.bBuffer = bBuffer;
+            fBuffer = bBuffer.asFloatBuffer();
+        }
+
+        byte[] getByteArray(int index, int size) {
+            byte[] bytes = new byte[size];
+            for (int i = 0; i < size; i++) {
+                bytes[i] = bBuffer.get(index + i);
+            }
+            return bytes;
+        }
+
+        void setByteArray(int index, int size, byte[] bytes, int maxLen) {
+            for (int i = 0; i < size; i++) {
+                bBuffer.put(index + i, bytes[i]);
+            }
+            for (int i = size; i < maxLen; i++) {
+                bBuffer.put(index + i, (byte) 0);
+            }
+        }
+
+        String getString(int index, int size) {
+            byte[] bytes = getByteArray(index, size);
+            int length = bytes.length;
+            for (int i = 0; i < bytes.length; i++) {
+                if (bytes[i] == 0) {
+                    length = i;
+                    break;
+                }
+            }
+            String string = new String(bytes, 0, length);
+            return string;
+        }
+
+        float getFloat(int index) {
+            return fBuffer.get(index);
+        }
+
+        void setFloat(int index, float value) {
+            fBuffer.put(index, value);
+        }
+
+        int getInt(int index) {
+            return (int) Math.round(fBuffer.get(index));
+        }
+
+        void setInt(int index, int value) {
+            fBuffer.put(index, value);
+        }
+
+        int getDim(int iDim) {
+            return dimMap[iDim];
+        }
+    }
 
     enum FTYPES {
         INT {
@@ -1262,16 +1285,6 @@ public class NMRPipeData implements NMRData {
             header.setByteArray(offset * 4, bytes.length, bytes, maxLen);
         }
 
-        void setSW(Header header, int iDim, float value) {
-            int jDim = header.getDim(iDim);
-            valueOf("FDF" + (jDim + 1) + "SW").setFloat(header, value);
-        }
-
-        void setValue(Header header, int iDim, String name, float value) {
-            int jDim = header.getDim(iDim);
-            valueOf("FDF" + (jDim + 1) + name).setFloat(header, value);
-        }
-
         static int getSize(Header header, int iDim) {
             int size = 0;
             switch (iDim) {
@@ -1316,6 +1329,11 @@ public class NMRPipeData implements NMRData {
         static float getSW(Header header, int iDim) {
             int jDim = header.getDim(iDim);
             return valueOf("FDF" + (jDim + 1) + "SW").getFloat(header);
+        }
+
+        void setSW(Header header, int iDim, float value) {
+            int jDim = header.getDim(iDim);
+            valueOf("FDF" + (jDim + 1) + "SW").setFloat(header, value);
         }
 
         static float getFloat(Header header, int iDim, String name) {
@@ -1366,6 +1384,11 @@ public class NMRPipeData implements NMRData {
             valueOf("FDF" + (jDim + 1) + name).setByteArray(header, bytes, maxLen);
         }
 
+        void setValue(Header header, int iDim, String name, float value) {
+            int jDim = header.getDim(iDim);
+            valueOf("FDF" + (jDim + 1) + name).setFloat(header, value);
+        }
+
         static void setDimOrder(Header header, int iDim, int value) {
             valueOf("FDDIMORDER" + (iDim + 1)).setInt(header, value);
         }
@@ -1390,96 +1413,76 @@ public class NMRPipeData implements NMRData {
 
     }
 
-    class FileChannelMap extends LRUMap<Integer, FileChannel> {
-
-        public FileChannelMap(int maxEntries) {
-            super(maxEntries);
-        }
-
-        @Override
-        protected boolean removeLRU(LinkEntry<Integer, FileChannel> entry) {
-            FileChannel fileChannel = entry.getValue();
-            try {
-                fileChannel.close();
-            } catch (IOException ioE) {
-                log.warn(ioE.getMessage(), ioE);
-            }
-            return true;  // actually delete entry
-        }
-    }
-
-    class NMRPipeFPMult extends FPMult {
-
-        NMRPipeFPMult(int iDim) {
-            float value = FIELDS.getFloat(fileHeader, iDim, "C1");
-            if (value != 0.0) {
-                value += 1.0f;
-                fpmult = value;
-                exists = true;
-            }
-
-        }
-    }
-
-    class Header {
-
-        FloatBuffer fBuffer;
-        ByteBuffer bBuffer;
-        private int[] dimMap = new int[DIMSIZE];
-
-        Header(ByteBuffer bBuffer) {
-            this.bBuffer = bBuffer;
-            fBuffer = bBuffer.asFloatBuffer();
-        }
-
-        byte[] getByteArray(int index, int size) {
-            byte[] bytes = new byte[size];
-            for (int i = 0; i < size; i++) {
-                bytes[i] = bBuffer.get(index + i);
-            }
-            return bytes;
-        }
-
-        void setByteArray(int index, int size, byte[] bytes, int maxLen) {
-            for (int i = 0; i < size; i++) {
-                bBuffer.put(index + i, bytes[i]);
-            }
-            for (int i = size; i < maxLen; i++) {
-                bBuffer.put(index + i, (byte) 0);
-            }
-        }
-
-        String getString(int index, int size) {
-            byte[] bytes = getByteArray(index, size);
-            int length = bytes.length;
-            for (int i = 0; i < bytes.length; i++) {
-                if (bytes[i] == 0) {
-                    length = i;
-                    break;
+    public void saveFile(String template) throws IOException {
+        this.template = template;
+        ByteOrder byteOrder = ByteOrder.LITTLE_ENDIAN;
+        int[] indices = new int[2];
+        int nBytes = dataSource.getSizeTotal(0) * Float.BYTES;
+        int nPlanes = dataSource.getNDim() > 2 ? dataSource.getSizeTotal(2) : 1;
+        for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
+            indices[1] = iPlane;
+            String fileName = getTemplateFile(iPlane);
+            try (RandomAccessFile outFile = new RandomAccessFile(fileName, "rw")) {
+                outFile.write(fileHeader.bBuffer.array());
+                ByteBuffer byteBuffer = ByteBuffer.allocate(nBytes);
+                FloatBuffer floatBuffer = byteBuffer.order(byteOrder).asFloatBuffer();
+                Vec vec = new Vec(dataSource.getSizeTotal(0));
+                for (int i = 0, nRows = dataSource.getSizeTotal(1); i < nRows; i++) {
+                    indices[0] = i;
+                    dataSource.readVector(vec, indices, 0);
+                    for (int j = 0, n = vec.getSize(); j < n; j++) {
+                        floatBuffer.put(j, (float) vec.getReal(j));
+                    }
+                    outFile.write(byteBuffer.array());
                 }
             }
-            String string = new String(bytes, 0, length);
-            return string;
         }
+    }
 
-        float getFloat(int index) {
-            return fBuffer.get(index);
+    public final void readHeader(String fileName) {
+        ByteBuffer buffer = null;
+        try (FileChannel fileChannel = FileChannel.open(Paths.get(fileName), StandardOpenOption.READ)) {
+            buffer = ByteBuffer.allocate(2048);
+            int nBytes = fileChannel.read(buffer);
+            buffer.position(0);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+        } catch (IOException ioE) {
+            throw new IllegalArgumentException("File doesn't exist");
         }
+        fileHeader = new Header(buffer);
+    }
 
-        void setFloat(int index, float value) {
-            fBuffer.put(index, value);
+    public void dumpHeader() {
+        dumpHeader(fileHeader);
+
+    }
+
+    private void dumpHeader(Header header) {
+        int nDim = FIELDS.FDDIMCOUNT.getInt(header);
+        String[] pars = {"MAGIC", "FLTFORMAT", "FLTORDER", "SIZE", "SPECNUM", "QUADFLAG", "2DPHASE", "TRANSPOSED", "DIMCOUNT",
+                "DIMORDER", "DIMORDER1", "DIMORDER2", "DIMORDER3", "DIMORDER4", "NUSDIM",
+                "PIPEFLAG", "PIPECOUNT", "SLICECOUNT0", "SLICECOUNT1", "FILECOUNT", "THREADCOUNT", "THREADID",
+                "FIRSTPLANE", "LASTPLANE", "PARTITION", "MAX", "MIN", "SCALEFLAG", "DISPMAX", "DISPMIN", "PTHRESH",
+                "NTHRESH", "MONTH", "DAY", "YEAR", "HOURS", "MINS", "SECS", "MCFLAG", "NOISE", "TEMPERATURE",
+                "TAU", "TITLE", "COMMENT"
+        };
+        String[] dimPars = {"SIZE", "APOD", "SW", "OBS", "SW", "ORIG", "FTFLAG", "QUADFLAG", "LABEL", "OBSMID", "AQSIGN", "P0", "P1",
+                "CAR", "CENTER", "OFFPPM", "APODQ1", "APODQ2", "APODQ3", "LB", "GB", "GOFF", "C1",
+                "UNITS",
+                "APODCODE", "ZF",
+                "X1", "XN", "FTSIZE", "TDSIZE"};
+        System.out.println("ndim " + nDim);
+        for (String par : dimPars) {
+            System.out.printf("%-10s", par + ":");
+            for (int i = 0; i < nDim; i++) {
+                System.out.printf("%12s", FIELDS.getString(header, i, par));
+            }
+            System.out.println("");
         }
-
-        int getInt(int index) {
-            return (int) Math.round(fBuffer.get(index));
-        }
-
-        void setInt(int index, int value) {
-            fBuffer.put(index, value);
-        }
-
-        int getDim(int iDim) {
-            return dimMap[iDim];
+        for (String par : pars) {
+            System.out.printf("%-10s", par + ":");
+            System.out.printf("%12s", FIELDS.getString(header, par));
+            System.out.println("");
         }
     }
 }

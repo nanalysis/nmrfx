@@ -40,6 +40,10 @@ public class PeakLabeller {
     static Pattern rPat3 = Pattern.compile("^(.+:)?([a-zA-Z]+)([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
     static Pattern rPat4 = Pattern.compile("^(.+:)?([a-zA-Z]+)?([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
 
+    public record ChainResAtomSpecifier(String chain, String resName, int resNum, String atomName) {
+    }
+
+
     public static Optional<ChainResAtomSpecifier> parse(String specifier) {
         Matcher matcher = rPat4.matcher(specifier);
         ChainResAtomSpecifier chainResAtomSpecifier = null;
@@ -104,8 +108,5 @@ public class PeakLabeller {
                     }
                 }
         );
-    }
-
-    public record ChainResAtomSpecifier(String chain, String resName, int resNum, String atomName) {
     }
 }

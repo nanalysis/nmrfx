@@ -250,6 +250,57 @@ public class Align {
         return VecCorrelation.correlation(rvec1, rvec2, wvec);
     }
 
+    static <T> Stream<T> iteratorToFiniteStream(final Iterator<T> iterator) {
+        final Iterable<T> iterable = () -> iterator;
+        return StreamSupport.stream(iterable.spliterator(), false);
+    }
+
+    static <T> Stream<T> iteratorToInfiniteStream(final Iterator<T> iterator) {
+        return Stream.generate(iterator::next);
+    }
+
+    public class AlignRegion {
+
+        int min;
+        int max;
+
+        public AlignRegion(int min, int max) {
+            this.min = min;
+            this.max = max;
+        }
+    }
+
+    class Alignment {
+
+        int pt1;
+        int pt2;
+        int pt1s;
+        int pt2s;
+        int shift;
+        int shift2;
+        double corrValue;
+        double ratio;
+        boolean use;
+
+        public Alignment(int pt1, int pt2, int pt1s, int pt2s, int shift, int shift2, double corrValue, double ratio, boolean use) {
+            this.pt1 = pt1;
+            this.pt2 = pt2;
+            this.pt1s = pt1s;
+            this.pt2s = pt2s;
+            this.shift = shift;
+            this.shift2 = shift2;
+            this.corrValue = corrValue;
+            this.ratio = ratio;
+            this.use = use;
+        }
+
+        @Override
+        public String toString() {
+            return "Alignment{" + "pt1=" + pt1 + ", pt2=" + pt2 + ", pt1s=" + pt1s + ", pt2s=" + pt2s + ", shift=" + shift + ", shift2=" + shift2 + ", corrValue=" + corrValue + ", ratio=" + ratio + ", use=" + use + '}';
+        }
+
+    }
+
     boolean overlapsRegion(RealMatrix rM, int pt1, int pt2) {
         int nRows = rM.getRowDimension();
         boolean overlaps = false;
@@ -454,56 +505,5 @@ public class Align {
                 }
             }
         }
-    }
-
-    static <T> Stream<T> iteratorToFiniteStream(final Iterator<T> iterator) {
-        final Iterable<T> iterable = () -> iterator;
-        return StreamSupport.stream(iterable.spliterator(), false);
-    }
-
-    static <T> Stream<T> iteratorToInfiniteStream(final Iterator<T> iterator) {
-        return Stream.generate(iterator::next);
-    }
-
-    public class AlignRegion {
-
-        int min;
-        int max;
-
-        public AlignRegion(int min, int max) {
-            this.min = min;
-            this.max = max;
-        }
-    }
-
-    class Alignment {
-
-        int pt1;
-        int pt2;
-        int pt1s;
-        int pt2s;
-        int shift;
-        int shift2;
-        double corrValue;
-        double ratio;
-        boolean use;
-
-        public Alignment(int pt1, int pt2, int pt1s, int pt2s, int shift, int shift2, double corrValue, double ratio, boolean use) {
-            this.pt1 = pt1;
-            this.pt2 = pt2;
-            this.pt1s = pt1s;
-            this.pt2s = pt2s;
-            this.shift = shift;
-            this.shift2 = shift2;
-            this.corrValue = corrValue;
-            this.ratio = ratio;
-            this.use = use;
-        }
-
-        @Override
-        public String toString() {
-            return "Alignment{" + "pt1=" + pt1 + ", pt2=" + pt2 + ", pt1s=" + pt1s + ", pt2s=" + pt2s + ", shift=" + shift + ", shift2=" + shift2 + ", corrValue=" + corrValue + ", ratio=" + ratio + ", use=" + use + '}';
-        }
-
     }
 }

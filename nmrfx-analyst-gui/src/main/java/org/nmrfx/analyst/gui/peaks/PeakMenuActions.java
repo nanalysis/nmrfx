@@ -23,12 +23,12 @@ import java.util.List;
 
 public class PeakMenuActions extends MenuActions {
     private static PeakTableController peakTableController;
-    private static PeakGeneratorGUI peakGeneratorGUI;
     private LigandScannerController scannerController;
     private NOETableController noeTableController;
     private AtomBrowser atomBrowser;
     private CheckMenuItem assignOnPick;
     private PeakAtomPicker peakAtomPicker;
+    private static PeakGeneratorGUI peakGeneratorGUI;
 
     public PeakMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);
@@ -86,6 +86,25 @@ public class PeakMenuActions extends MenuActions {
 
     public void showPeakTable() {
         showPeakTable(null);
+    }
+
+    public static void showPeakTable(PeakList peakList) {
+        if (peakTableController == null) {
+            peakTableController = PeakTableController.create();
+        }
+        if (peakList == null) {
+            List<String> names = Project.getActive().getPeakListNames();
+            if (!names.isEmpty()) {
+                peakList = Project.getActive().getPeakList(names.get(0));
+            }
+        }
+        if (peakTableController != null) {
+            if (peakList != null) {
+                peakTableController.setPeakList(peakList);
+            }
+            peakTableController.getStage().show();
+            peakTableController.getStage().toFront();
+        }
     }
 
     private void showPeakListsTable() {
@@ -173,25 +192,6 @@ public class PeakMenuActions extends MenuActions {
             peakGeneratorGUI.create();
         }
         peakGeneratorGUI.show(300, 300);
-    }
-
-    public static void showPeakTable(PeakList peakList) {
-        if (peakTableController == null) {
-            peakTableController = PeakTableController.create();
-        }
-        if (peakList == null) {
-            List<String> names = Project.getActive().getPeakListNames();
-            if (!names.isEmpty()) {
-                peakList = Project.getActive().getPeakList(names.get(0));
-            }
-        }
-        if (peakTableController != null) {
-            if (peakList != null) {
-                peakTableController.setPeakList(peakList);
-            }
-            peakTableController.getStage().show();
-            peakTableController.getStage().toFront();
-        }
     }
 
 

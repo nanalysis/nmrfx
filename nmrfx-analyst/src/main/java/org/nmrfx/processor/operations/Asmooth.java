@@ -37,6 +37,12 @@ public class Asmooth extends Operation {
     private final int m;
     private final int n;
 
+    @Override
+    public Asmooth eval(Vec vector) throws ProcessingException {
+        Asmooth(vector);
+        return this;
+    }
+
     public Asmooth(double[] w, double[] y, double[] z, double[] a, double lambda, int m, int n) {
         this.w = w;
         this.y = y;
@@ -45,12 +51,6 @@ public class Asmooth extends Operation {
         this.lambda = lambda;
         this.m = m;
         this.n = n;
-    }
-
-    @Override
-    public Asmooth eval(Vec vector) throws ProcessingException {
-        Asmooth(vector);
-        return this;
     }
 
     /* Program 3. Smoothing and interpolation with any difference equation. */

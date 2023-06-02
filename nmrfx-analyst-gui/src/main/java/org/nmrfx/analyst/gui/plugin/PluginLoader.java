@@ -16,6 +16,16 @@ import java.util.stream.Collectors;
 public class PluginLoader {
     private static final Logger log = LoggerFactory.getLogger(PluginLoader.class);
     private static final PluginLoader instance = new PluginLoader();
+
+    /**
+     * Get the single instance.
+     *
+     * @return the plugin loader instance.
+     */
+    public static PluginLoader getInstance() {
+        return instance;
+    }
+
     private final List<NMRFxPlugin> plugins;
 
     private PluginLoader() {
@@ -46,14 +56,5 @@ public class PluginLoader {
         plugins.stream()
                 .filter(plugin -> plugin.getSupportedEntryPoints().contains(entryPoint))
                 .forEach(plugin -> plugin.registerOnEntryPoint(entryPoint, object));
-    }
-
-    /**
-     * Get the single instance.
-     *
-     * @return the plugin loader instance.
-     */
-    public static PluginLoader getInstance() {
-        return instance;
     }
 }

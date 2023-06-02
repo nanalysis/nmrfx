@@ -367,6 +367,76 @@ public class ComplexSingularValueDecomposition {
     }
 
     /**
+     * Premultiplies the Householder transformation contained in a Vector into a Matrix A[r1:r2,c1:c2] and overwrites
+     * Matrix A[r1:r2,c1:c2] with the results. If r1 &gt; r2 or c1 &gt; c2 the method does nothing.
+     *
+     * @param u  The Householder vector
+     * @param A  The Matrix to which the transformation is to be applied (altered)
+     * @param r1 The index of the first row to which the transformation is to be applied
+     * @param r2 The index of the last row to which the transformation is to be applied
+     * @param c1 The index of the first column to which the transformation is index of the to be applied
+     * @param c2 The index of the last column to which the transformation is to be applied
+     * @param v  A work array of length at least c2-c1+1
+     * @throws Exception if arrays to small
+     */
+    public static void premultiplyA(Complex[] u, Complex[][] A, int r1, int r2, int c1,
+                                    int c2, Complex[] v) throws Exception {
+        int i, j;
+
+        if (r2 < r1 || c2 < c1) {
+            return;
+        }
+
+        if (r2 - r1 - 1 > u.length) {
+            throw new Exception("Householder vector too short.");
+        }
+
+        if (c2 - c1 - 1 > v.length) {
+            throw new Exception("Work vector too short.");
+        }
+
+        for (j = c1; j <= c2; j++) {
+            v[j - c1] = Complex.ZERO;
+        }
+        double real, imag;
+        for (i = r1; i <= r2; i++) {
+            for (j = c1; j <= c2; j++) {
+
+                real = v[j - c1].getReal() + u[i - r1].getReal()
+                        * A[i][j].getReal() + u[i - r1].getImaginary()
+                        * A[i][j].getImaginary();
+                imag = v[j - c1].getImaginary() + u[i - r1].getReal()
+                        * A[i][j].getImaginary() - u[i - r1].getImaginary()
+                        * A[i][j].getReal();
+                v[j - c1] = new Complex(real, imag);
+            }
+        }
+
+        for (i = r1; i <= r2; i++) {
+            for (j = c1; j <= c2; j++) {
+                real = A[i][j].getReal() - u[i - r1].getReal()
+                        * v[j - c1].getReal() + u[i - r1].getImaginary()
+                        * v[j - c1].getImaginary();
+                imag = A[i][j].getImaginary() - u[i - r1].getReal()
+                        * v[j - c1].getImaginary() - u[i - r1].getImaginary()
+                        * v[j - c1].getReal();
+                A[i][j] = new Complex(real, imag);
+            }
+        }
+    }
+
+    public static void premultiplyA(Complex[] u, Complex[][] A, int r1, int r2, int c1,
+                                    int c2) throws Exception {
+
+        if (c1 > c2) {
+            return;
+        }
+
+        premultiplyA(u, A, r1, r2, c1, c2, new ArrayFieldVector<>(c2 - c1 + 1,
+                Complex.ZERO).getDataRef());
+    }
+
+    /**
      * Multiply Complex matrix A by Householder transformation vector
      *
      * @param A  The matrix to which the transformation is to be applied (altered)
@@ -441,76 +511,6 @@ public class ComplexSingularValueDecomposition {
         }
 
         transformAwithU(A, u, r1, r2, c1, c2, new ArrayFieldVector<>(r2 - r1 + 1,
-                Complex.ZERO).getDataRef());
-    }
-
-    /**
-     * Premultiplies the Householder transformation contained in a Vector into a Matrix A[r1:r2,c1:c2] and overwrites
-     * Matrix A[r1:r2,c1:c2] with the results. If r1 &gt; r2 or c1 &gt; c2 the method does nothing.
-     *
-     * @param u  The Householder vector
-     * @param A  The Matrix to which the transformation is to be applied (altered)
-     * @param r1 The index of the first row to which the transformation is to be applied
-     * @param r2 The index of the last row to which the transformation is to be applied
-     * @param c1 The index of the first column to which the transformation is index of the to be applied
-     * @param c2 The index of the last column to which the transformation is to be applied
-     * @param v  A work array of length at least c2-c1+1
-     * @throws Exception if arrays to small
-     */
-    public static void premultiplyA(Complex[] u, Complex[][] A, int r1, int r2, int c1,
-                                    int c2, Complex[] v) throws Exception {
-        int i, j;
-
-        if (r2 < r1 || c2 < c1) {
-            return;
-        }
-
-        if (r2 - r1 - 1 > u.length) {
-            throw new Exception("Householder vector too short.");
-        }
-
-        if (c2 - c1 - 1 > v.length) {
-            throw new Exception("Work vector too short.");
-        }
-
-        for (j = c1; j <= c2; j++) {
-            v[j - c1] = Complex.ZERO;
-        }
-        double real, imag;
-        for (i = r1; i <= r2; i++) {
-            for (j = c1; j <= c2; j++) {
-
-                real = v[j - c1].getReal() + u[i - r1].getReal()
-                        * A[i][j].getReal() + u[i - r1].getImaginary()
-                        * A[i][j].getImaginary();
-                imag = v[j - c1].getImaginary() + u[i - r1].getReal()
-                        * A[i][j].getImaginary() - u[i - r1].getImaginary()
-                        * A[i][j].getReal();
-                v[j - c1] = new Complex(real, imag);
-            }
-        }
-
-        for (i = r1; i <= r2; i++) {
-            for (j = c1; j <= c2; j++) {
-                real = A[i][j].getReal() - u[i - r1].getReal()
-                        * v[j - c1].getReal() + u[i - r1].getImaginary()
-                        * v[j - c1].getImaginary();
-                imag = A[i][j].getImaginary() - u[i - r1].getReal()
-                        * v[j - c1].getImaginary() - u[i - r1].getImaginary()
-                        * v[j - c1].getReal();
-                A[i][j] = new Complex(real, imag);
-            }
-        }
-    }
-
-    public static void premultiplyA(Complex[] u, Complex[][] A, int r1, int r2, int c1,
-                                    int c2) throws Exception {
-
-        if (c1 > c2) {
-            return;
-        }
-
-        premultiplyA(u, A, r1, r2, c1, c2, new ArrayFieldVector<>(c2 - c1 + 1,
                 Complex.ZERO).getDataRef());
     }
 
@@ -642,6 +642,10 @@ public class ComplexSingularValueDecomposition {
     public static class Rot {
 
         /**
+         * The cosine of the rotation
+         */
+        protected double c;
+        /**
          * The sine of the rotation
          */
         public Complex s;
@@ -649,10 +653,6 @@ public class ComplexSingularValueDecomposition {
          * The transformed vector
          */
         public Complex z;
-        /**
-         * The cosine of the rotation
-         */
-        protected double c;
 
         /**
          * Given a real 2-vector, genc generates a real plane rotation P such that

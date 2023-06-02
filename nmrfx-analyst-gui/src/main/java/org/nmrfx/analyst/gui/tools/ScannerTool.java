@@ -62,23 +62,27 @@ import java.util.regex.Pattern;
  */
 public class ScannerTool implements ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(ScannerTool.class);
-    static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
-    static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
-    static final Pattern[] PATS = {WPAT, RPAT};
-    static Consumer createControllerAction = null;
+
     BorderPane borderPane;
+
     ToolBar scannerBar;
+    private TableView<FileTableItem> tableView;
     Consumer<ScannerTool> closeAction;
+
     FXMLController controller;
     PolyChart chart;
     Stage stage;
     ScanTable scanTable;
     ToggleGroup measureTypeGroup = new ToggleGroup();
     ToggleGroup offsetTypeGroup = new ToggleGroup();
+
+    static Consumer createControllerAction = null;
     TRACTGUI tractGUI = null;
     TablePlotGUI plotGUI = null;
     MinerController miner;
-    private TableView<FileTableItem> tableView;
+    static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
+    static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
+    static final Pattern[] PATS = {WPAT, RPAT};
 
     public ScannerTool(FXMLController controller, Consumer<ScannerTool> closeAction) {
         this.controller = controller;
@@ -104,6 +108,10 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
+    }
+
+    public static void addCreateAction(Consumer<ScannerTool> action) {
+        createControllerAction = action;
     }
 
     @Override
@@ -698,25 +706,6 @@ public class ScannerTool implements ControllerTool {
         }
     }
 
-    void showPlotGUI() {
-        if (plotGUI == null) {
-            plotGUI = new TablePlotGUI(tableView);
-        }
-        plotGUI.showPlotStage();
-    }
-
-    void showTRACTGUI() {
-        if (tractGUI == null) {
-            tractGUI = new TRACTGUI(this);
-
-        }
-        tractGUI.showMCplot();
-    }
-
-    public static void addCreateAction(Consumer<ScannerTool> action) {
-        createControllerAction = action;
-    }
-
     public static Optional<Measure> matchHeader(String header) {
         Optional<Measure> result = Optional.empty();
         String columnName;
@@ -762,6 +751,21 @@ public class ScannerTool implements ControllerTool {
         }
         return result;
 
+    }
+
+    void showPlotGUI() {
+        if (plotGUI == null) {
+            plotGUI = new TablePlotGUI(tableView);
+        }
+        plotGUI.showPlotStage();
+    }
+
+    void showTRACTGUI() {
+        if (tractGUI == null) {
+            tractGUI = new TRACTGUI(this);
+
+        }
+        tractGUI.showMCplot();
     }
 
 }

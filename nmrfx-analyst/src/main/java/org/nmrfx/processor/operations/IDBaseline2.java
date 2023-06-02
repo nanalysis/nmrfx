@@ -25,22 +25,29 @@ import org.nmrfx.processor.math.Vec;
  */
 public class IDBaseline2 extends Operation {
 
+    public enum ThreshMode {
+        SDEV,
+        AUTO,
+        FRACTION,
+        ABS;
+    }
+
     private final int minSize;
     private final int[] limits;
     private final double ratio;
     private final ThreshMode mode;
     private boolean[] signalPoints;
 
+    public IDBaseline2 eval(Vec vector) throws OperationException {
+        analyzeWithSDev(vector);
+        return this;
+    }
+
     public IDBaseline2(int minSize, int[] limits, double ratio, ThreshMode mode) {
         this.minSize = minSize;
         this.limits = limits;
         this.ratio = ratio;
         this.mode = mode;
-    }
-
-    public IDBaseline2 eval(Vec vector) throws OperationException {
-        analyzeWithSDev(vector);
-        return this;
     }
 
     public boolean[] getResult() //what if this is called n times?
@@ -167,12 +174,5 @@ public class IDBaseline2 extends Operation {
         }
         return threshold;
 
-    }
-
-    public enum ThreshMode {
-        SDEV,
-        AUTO,
-        FRACTION,
-        ABS;
     }
 }

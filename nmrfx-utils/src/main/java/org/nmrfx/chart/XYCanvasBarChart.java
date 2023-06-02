@@ -59,6 +59,10 @@ public class XYCanvasBarChart extends XYCanvasChart {
         drawChart(gC);
     }
 
+    public void annotate(GraphicsContextInterface gC) {
+
+    }
+
     @Override
     public void drawChart(GraphicsContextInterface gC) {
         double width = getWidth();
@@ -101,18 +105,14 @@ public class XYCanvasBarChart extends XYCanvasChart {
         gC.restore();
     }
 
+    void drawSeries(GraphicsContextInterface gC) {
+        doSeries(gC, null);
+    }
+
     @Override
     public Optional<Hit> pickChart(double mouseX, double mouseY, double hitRadius) {
         PickPoint pickPt = new PickPoint(mouseX, mouseY, hitRadius);
         return doSeries(null, pickPt);
-    }
-
-    public void annotate(GraphicsContextInterface gC) {
-
-    }
-
-    void drawSeries(GraphicsContextInterface gC) {
-        doSeries(gC, null);
     }
 
     Optional<Hit> doSeries(GraphicsContextInterface gC, PickPoint pickPt) {

@@ -62,6 +62,12 @@ public class FFilter extends Operation {
      */
     private final String mode;
 
+    @Override
+    public Operation eval(Vec vector) throws ProcessingException {
+        filter(vector);
+        return this;
+    }
+
     /**
      * Create FIR Filter.
      *
@@ -94,12 +100,6 @@ public class FFilter extends Operation {
         this.mode = mode;
         firFilter = new FirFilter(factor, ncoefs, type);
         firFilter.setOffset(offset);
-    }
-
-    @Override
-    public Operation eval(Vec vector) throws ProcessingException {
-        filter(vector);
-        return this;
     }
 
     /**

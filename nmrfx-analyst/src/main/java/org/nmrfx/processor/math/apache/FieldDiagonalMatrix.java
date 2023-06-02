@@ -47,6 +47,16 @@ public class FieldDiagonalMatrix<T extends FieldElement<T>> extends AbstractFiel
     private final Field<T> field;
 
     /**
+     * Get a reference to the underlying data array. This methods returns internal data, <strong>not</strong> a fresh
+     * copy of it.
+     *
+     * @return the 2-dimensional array of entries.
+     */
+    public T[] getDataRef() {
+        return data;
+    }
+
+    /**
      * Create a new {@code FieldDiagonalMatrix<T>} with the supplied row and column dimensions.
      *
      * @param field           Field to which the elements belong.
@@ -160,13 +170,19 @@ public class FieldDiagonalMatrix<T extends FieldElement<T>> extends AbstractFiel
     }
 
     /**
-     * Get a reference to the underlying data array. This methods returns internal data, <strong>not</strong> a fresh
-     * copy of it.
-     *
-     * @return the 2-dimensional array of entries.
+     * {@inheritDoc}
      */
-    public T[] getDataRef() {
-        return data;
+    @Override
+    public int getRowDimension() {
+        return data.length;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getColumnDimension() {
+        return data.length;
     }
 
     @Override
@@ -217,21 +233,5 @@ public class FieldDiagonalMatrix<T extends FieldElement<T>> extends AbstractFiel
             MatrixUtils.checkRowIndex(this, row);
             data[row] = data[row].multiply(factor);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getRowDimension() {
-        return data.length;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getColumnDimension() {
-        return data.length;
     }
 }

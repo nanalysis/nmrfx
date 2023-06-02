@@ -37,6 +37,8 @@ import java.util.Map;
 public class AtomResonance extends SimpleResonance {
 
     private static final Logger log = LoggerFactory.getLogger(AtomResonance.class);
+
+    Atom atom = null;
     public final static String[] resonanceLoopStrings = {
             "_Resonance.ID",
             "_Resonance.Name",
@@ -46,7 +48,7 @@ public class AtomResonance extends SimpleResonance {
     public final static String[] resonanceCovalentLinkStrings = {
             "_Resonance_covalent_link.Resonance_ID_1",
             "_Resonance_covalent_link.Resonance_ID_2",};
-    Atom atom = null;
+
     Object resonanceSet = null;
     Object ssID = null;
     boolean labelValid = true;
@@ -68,15 +70,6 @@ public class AtomResonance extends SimpleResonance {
         labelValid = valid;
     }
 
-    @Override
-    public String getAtomName() {
-        if (atom != null) {
-            return atom.getFullName();
-        } else {
-            return super.getAtomName();
-        }
-    }
-
     private boolean isLabelValid(String name) {
         MoleculeBase molBase = MoleculeFactory.getActive();
         boolean result = true;
@@ -92,12 +85,21 @@ public class AtomResonance extends SimpleResonance {
         return labelValid;
     }
 
-    public Atom getAtom() {
-        return atom;
+    @Override
+    public String getAtomName() {
+        if (atom != null) {
+            return atom.getFullName();
+        } else {
+            return super.getAtomName();
+        }
     }
 
     public void setAtom(Atom atom) {
         this.atom = atom;
+    }
+
+    public Atom getAtom() {
+        return atom;
     }
 
     public Atom getPossibleAtom() {
@@ -112,29 +114,6 @@ public class AtomResonance extends SimpleResonance {
             }
             return possibleAtom;
         }
-    }
-
-    public String toSTARResonanceString() {
-        StringBuilder result = new StringBuilder();
-        String sep = " ";
-        char stringQuote = '"';
-        result.append(String.valueOf(getID())).append(sep);
-        result.append(stringQuote);
-        result.append(getName());
-        result.append(stringQuote);
-        result.append(sep);
-        if (resonanceSet == null) {
-            result.append(".");
-        }
-        result.append(sep);
-        if (ssID == null) {
-            result.append(".");
-        } else {
-            result.append(ssID);
-        }
-        result.append(sep);
-        result.append("1");
-        return result.toString();
     }
 
     public static void processSTAR3ResonanceList(final NMRStarReader nmrStar,
@@ -234,6 +213,29 @@ public class AtomResonance extends SimpleResonance {
                 }
             }
         }
+    }
+
+    public String toSTARResonanceString() {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        char stringQuote = '"';
+        result.append(String.valueOf(getID())).append(sep);
+        result.append(stringQuote);
+        result.append(getName());
+        result.append(stringQuote);
+        result.append(sep);
+        if (resonanceSet == null) {
+            result.append(".");
+        }
+        result.append(sep);
+        if (ssID == null) {
+            result.append(".");
+        } else {
+            result.append(ssID);
+        }
+        result.append(sep);
+        result.append("1");
+        return result.toString();
     }
 
 }

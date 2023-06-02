@@ -39,7 +39,6 @@ import java.util.List;
  */
 public class PeakNeighbors {
 
-    private static final int[][] OFFSETS2D_FULL = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {0, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}};
     String[] dimNames;
     double[] cellSizes;
     int[] strides;
@@ -50,7 +49,10 @@ public class PeakNeighbors {
     int[][] cellIndex = new int[2][];
     double[][] meanWidth = new double[2][];
     int[][] dims = new int[2][];
+
     int nCells;
+
+    private static final int[][] OFFSETS2D_FULL = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {0, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}};
 
     public PeakNeighbors(PeakList peakList, int nCells, String[] dimNames) {
         this.peakLists[0] = peakList;

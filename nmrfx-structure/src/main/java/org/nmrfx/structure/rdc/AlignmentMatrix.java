@@ -36,9 +36,6 @@ public class AlignmentMatrix {
     static final HashMap<String, Double> maxRDCDict = new HashMap<>();
     static final HashMap<String, Double> gammaIDict = new HashMap();
     static final HashMap<String, Double> gammaSDict = new HashMap();
-    static double gammaH = 2.68e8;
-    static double gammaN = -2.71e7;
-    static double scaleHN = (gammaH * gammaN) / ((1.0e-10) * (1.0e-10) * (1.0e-10));
 
     static {
         disDict.put("HN", 1.04);
@@ -59,12 +56,16 @@ public class AlignmentMatrix {
         gammaSDict.put("H", 2.68e8);
     }
 
+    static double gammaH = 2.68e8;
+    static double gammaN = -2.71e7;
+    static double scaleHN = (gammaH * gammaN) / ((1.0e-10) * (1.0e-10) * (1.0e-10));
+
     final RealMatrix saupeMat;
-    final double globalScale;
     RealVector eigenValues;
     RealMatrix eigenVectors;
     EigenDecomposition eig;
     RealMatrix Sdiag;
+    final double globalScale;
     double[][] euler;
 
     public AlignmentMatrix(RealMatrix matrix, double globalScale) {
@@ -90,6 +91,24 @@ public class AlignmentMatrix {
         double[][] s = {{sXX, sXY, sXZ}, {sXY, sYY, sYZ}, {sXZ, sYZ, sZZ}};
         saupeMat = new Array2DRowRealMatrix(s);
         this.globalScale = 1.0;
+    }
+
+    public static AlignmentMatrix getValidMatrix(double sXX, double sYY, double sZZ, double sXY, double sXZ, double sYZ) {
+        AlignmentMatrix aMat = new AlignmentMatrix(sXX, sYY, sZZ, sXY, sXZ, sYZ);
+        if (aMat.validate()) {
+            System.out.println("valid 1");
+            aMat.eig = new EigenDecomposition(aMat.saupeMat);
+            aMat.Sdiag = aMat.eig.getD();
+            double Sxx = aMat.Sdiag.getEntry(0, 0);
+            double Syy = aMat.Sdiag.getEntry(1, 1);
+            double Szz = aMat.Sdiag.getEntry(2, 2);
+            if ((Sxx >= -0.5 && Sxx <= 1.0) && (Syy >= -0.5 && Syy <= 1.0) && (Szz >= -0.5 && Szz <= 1.0)) {
+                System.out.println("valid 2");
+                aMat.sortEigen(aMat.eig);
+                return aMat;
+            }
+        }
+        return null;
     }
 
     public boolean validate() {
@@ -338,85 +357,6 @@ public class AlignmentMatrix {
         }
     }
 
-    public void calcRDC(RealMatrix directionMatrix, List<RDC> vectors) {
-        RealMatrix scaledMat = saupeMat;
-        double sYY = scaledMat.getEntry(1, 1);
-        double sZZ = scaledMat.getEntry(2, 2);
-        double sXY = scaledMat.getEntry(0, 1);
-        double sXZ = scaledMat.getEntry(0, 2);
-        double sYZ = scaledMat.getEntry(1, 2);
-        double[] vals = {sYY, sZZ, sXY, sXZ, sYZ};
-        RealVector sVec = new ArrayRealVector(vals);
-        RealVector result = directionMatrix.operate(sVec);
-
-        for (int i = 0; i < vectors.size(); i++) {
-            RDC rdcVec = vectors.get(i);
-            double rdc = result.getEntry(i) * Math.abs(rdcVec.getMaxRDC());
-            rdcVec.setRDC(rdc);
-        }
-    }
-
-    public String toString() {
-        double rhombicity = Math.abs(calcRhombicity());
-        double axial = calcSAxial();
-        double rhombic = calcSRhombic();
-        double Sxx = getSxx();
-        double Syy = getSyy();
-        double Szz = getSzz();
-        double eta = calcEta();
-        RealMatrix ssMat = saupeMat;
-        StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append("Saupe Matrix\n");
-        sBuilder.append(String.format("Szz %10.4e Sxx-Syy %10.4e Sxy %10.4e Sxz %10.4e Syz %10.4e\n",
-                ssMat.getEntry(2, 2),
-                ssMat.getEntry(0, 0) - ssMat.getEntry(1, 1),
-                ssMat.getEntry(0, 1), ssMat.getEntry(0, 2), ssMat.getEntry(1, 2)));
-
-        sBuilder.append("\n");
-        sBuilder.append(String.format("Rhombicity %.6e\naxial %.6e\nrhombic %.6e\neta %.6e\n", rhombicity, axial, rhombic, eta));
-        sBuilder.append("\nEigenvalues\n");
-        sBuilder.append(String.format("Sxx %.6e Syy %.6e Szz %.6e\n", Sxx, Syy, Szz));
-        sBuilder.append("\n");
-        RealMatrix eigenVecs = eig.getVT();
-        sBuilder.append("Eigenvectors\n");
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                if (j != 0) {
-                    sBuilder.append(" ");
-                }
-                sBuilder.append(String.format("%12.4e", eigenVectors.getEntry(i, j)));
-            }
-            sBuilder.append("\n");
-        }
-        sBuilder.append("\nEuler Angles for clockwise rotation about z, y', z''\n");
-        sBuilder.append(String.format("%7s %7s %7s\n", "Alpha", "Beta", "Gamma"));
-
-        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[1][0] + 180., euler[1][1], euler[1][2]));
-        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[1][0], euler[1][1], euler[1][2]));
-        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[0][0] + 180., euler[0][1], euler[0][2] + 180.0));
-        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[0][0], euler[0][1], euler[0][2] + 180.0));
-        return sBuilder.toString();
-
-    }
-
-    public static AlignmentMatrix getValidMatrix(double sXX, double sYY, double sZZ, double sXY, double sXZ, double sYZ) {
-        AlignmentMatrix aMat = new AlignmentMatrix(sXX, sYY, sZZ, sXY, sXZ, sYZ);
-        if (aMat.validate()) {
-            System.out.println("valid 1");
-            aMat.eig = new EigenDecomposition(aMat.saupeMat);
-            aMat.Sdiag = aMat.eig.getD();
-            double Sxx = aMat.Sdiag.getEntry(0, 0);
-            double Syy = aMat.Sdiag.getEntry(1, 1);
-            double Szz = aMat.Sdiag.getEntry(2, 2);
-            if ((Sxx >= -0.5 && Sxx <= 1.0) && (Syy >= -0.5 && Syy <= 1.0) && (Szz >= -0.5 && Szz <= 1.0)) {
-                System.out.println("valid 2");
-                aMat.sortEigen(aMat.eig);
-                return aMat;
-            }
-        }
-        return null;
-    }
-
     public static RealMatrix setupDirectionMatrix(List<RDC> rdcs) {
         int nVectors = rdcs.size();
         double[][] A = new double[nVectors][5];
@@ -439,6 +379,24 @@ public class AlignmentMatrix {
         }
         RealMatrix directionMatrix = new Array2DRowRealMatrix(A);
         return directionMatrix;
+    }
+
+    public void calcRDC(RealMatrix directionMatrix, List<RDC> vectors) {
+        RealMatrix scaledMat = saupeMat;
+        double sYY = scaledMat.getEntry(1, 1);
+        double sZZ = scaledMat.getEntry(2, 2);
+        double sXY = scaledMat.getEntry(0, 1);
+        double sXZ = scaledMat.getEntry(0, 2);
+        double sYZ = scaledMat.getEntry(1, 2);
+        double[] vals = {sYY, sZZ, sXY, sXZ, sYZ};
+        RealVector sVec = new ArrayRealVector(vals);
+        RealVector result = directionMatrix.operate(sVec);
+
+        for (int i = 0; i < vectors.size(); i++) {
+            RDC rdcVec = vectors.get(i);
+            double rdc = result.getEntry(i) * Math.abs(rdcVec.getMaxRDC());
+            rdcVec.setRDC(rdc);
+        }
     }
 
     /**
@@ -484,5 +442,48 @@ public class AlignmentMatrix {
             }
         }
         return maxRDC;
+    }
+
+    public String toString() {
+        double rhombicity = Math.abs(calcRhombicity());
+        double axial = calcSAxial();
+        double rhombic = calcSRhombic();
+        double Sxx = getSxx();
+        double Syy = getSyy();
+        double Szz = getSzz();
+        double eta = calcEta();
+        RealMatrix ssMat = saupeMat;
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append("Saupe Matrix\n");
+        sBuilder.append(String.format("Szz %10.4e Sxx-Syy %10.4e Sxy %10.4e Sxz %10.4e Syz %10.4e\n",
+                ssMat.getEntry(2, 2),
+                ssMat.getEntry(0, 0) - ssMat.getEntry(1, 1),
+                ssMat.getEntry(0, 1), ssMat.getEntry(0, 2), ssMat.getEntry(1, 2)));
+
+        sBuilder.append("\n");
+        sBuilder.append(String.format("Rhombicity %.6e\naxial %.6e\nrhombic %.6e\neta %.6e\n", rhombicity, axial, rhombic, eta));
+        sBuilder.append("\nEigenvalues\n");
+        sBuilder.append(String.format("Sxx %.6e Syy %.6e Szz %.6e\n", Sxx, Syy, Szz));
+        sBuilder.append("\n");
+        RealMatrix eigenVecs = eig.getVT();
+        sBuilder.append("Eigenvectors\n");
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (j != 0) {
+                    sBuilder.append(" ");
+                }
+                sBuilder.append(String.format("%12.4e", eigenVectors.getEntry(i, j)));
+            }
+            sBuilder.append("\n");
+        }
+        sBuilder.append("\nEuler Angles for clockwise rotation about z, y', z''\n");
+        sBuilder.append(String.format("%7s %7s %7s\n", "Alpha", "Beta", "Gamma"));
+
+        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[1][0] + 180., euler[1][1], euler[1][2]));
+        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[1][0], euler[1][1], euler[1][2]));
+        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[0][0] + 180., euler[0][1], euler[0][2] + 180.0));
+        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[0][0], euler[0][1], euler[0][2] + 180.0));
+        return sBuilder.toString();
+
     }
 }

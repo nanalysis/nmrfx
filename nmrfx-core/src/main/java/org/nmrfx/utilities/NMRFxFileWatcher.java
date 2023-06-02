@@ -19,9 +19,9 @@ import static java.nio.file.StandardWatchEventKinds.*;
 public class NMRFxFileWatcher implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(NMRFxFileWatcher.class);
+    File watchDir;
     protected static final Map<String, WatchService> watchServices = new HashMap<>();
     protected List<FileWatchListener> listeners = new ArrayList<>();
-    File watchDir;
 
     public NMRFxFileWatcher(File dir) {
         this.watchDir = dir;
@@ -38,10 +38,26 @@ public class NMRFxFileWatcher implements Runnable {
         }
     }
 
+    public static WatchService getWatcher(String pathString) {
+        return watchServices.get(pathString);
+    }
+
     public NMRFxFileWatcher addListener(FileWatchListener listener) {
         listeners.add(listener);
         return this;
 
+    }
+
+    public static boolean remove(String pathString) {
+        WatchService service = watchServices.remove(pathString);
+        if (service != null) {
+            try {
+                service.close();
+            } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
+            }
+        }
+        return service != null;
     }
 
     @Override
@@ -87,21 +103,5 @@ public class NMRFxFileWatcher implements Runnable {
                 listener.onModified(file);
             }
         }
-    }
-
-    public static WatchService getWatcher(String pathString) {
-        return watchServices.get(pathString);
-    }
-
-    public static boolean remove(String pathString) {
-        WatchService service = watchServices.remove(pathString);
-        if (service != null) {
-            try {
-                service.close();
-            } catch (IOException ex) {
-                log.warn(ex.getMessage(), ex);
-            }
-        }
-        return service != null;
     }
 }

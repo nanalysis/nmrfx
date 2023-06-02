@@ -9,12 +9,12 @@ import java.util.zip.ZipFile;
 
 public class UnZipper extends SimpleFileVisitor<Path> {
 
-    final static int BUFFER_SIZE = 16384;
     // Print information about
     // each type of file.
     final byte[] buffer;
     final File zipFile;
     final File destDir;
+    final static int BUFFER_SIZE = 16384;
 
     public UnZipper(File destDir, String zipFileName) throws FileNotFoundException, IOException {
         buffer = new byte[16384];

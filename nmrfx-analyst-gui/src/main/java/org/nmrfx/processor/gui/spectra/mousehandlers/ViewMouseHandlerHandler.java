@@ -13,6 +13,19 @@ public class ViewMouseHandlerHandler extends MouseHandler {
         super(mouseBindings);
     }
 
+    public static Optional<ViewMouseHandlerHandler> handler(MouseBindings mouseBindings) {
+        PolyChart chart = mouseBindings.getChart();
+        ChartBorder border = chart.hitBorder(mouseBindings.getMouseX(), mouseBindings.getMouseY());
+        ViewMouseHandlerHandler handler = null;
+
+        if (border != ChartBorder.NONE) {
+            handler = new ViewMouseHandlerHandler(mouseBindings);
+            handler.border = border;
+            chart.refresh();
+        }
+        return Optional.ofNullable(handler);
+    }
+
     @Override
     public void mousePressed(MouseEvent mouseEvent) {
 
@@ -48,18 +61,5 @@ public class ViewMouseHandlerHandler extends MouseHandler {
             }
             mouseBindings.getChart().scroll(dx, dy);
         }
-    }
-
-    public static Optional<ViewMouseHandlerHandler> handler(MouseBindings mouseBindings) {
-        PolyChart chart = mouseBindings.getChart();
-        ChartBorder border = chart.hitBorder(mouseBindings.getMouseX(), mouseBindings.getMouseY());
-        ViewMouseHandlerHandler handler = null;
-
-        if (border != ChartBorder.NONE) {
-            handler = new ViewMouseHandlerHandler(mouseBindings);
-            handler.border = border;
-            chart.refresh();
-        }
-        return Optional.ofNullable(handler);
     }
 }

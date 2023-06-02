@@ -32,7 +32,6 @@ package org.nmrfx.processor.translate;
  */
 public class Crypt {
 
-    public static final String alphabet = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static final int ITERATIONS = 16;
     private static final boolean[] shifts2 = {
             false, false, true, true, true, true, true, true, false, true, true,
@@ -283,6 +282,7 @@ public class Crypt {
                     0x08000000, 0x08200020, 0x00008000, 0x00208020
             }
     };
+    public static final String alphabet = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
     private Crypt() {
     }

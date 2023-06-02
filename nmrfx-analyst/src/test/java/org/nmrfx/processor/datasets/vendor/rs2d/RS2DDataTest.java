@@ -22,15 +22,27 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeFalse;
 
 public class RS2DDataTest {
+    private static final String FID_SUBMODULE_LOCATION = "nmrfx-test-data/testfids/";
+    private static String fidHome;
+    private static String tmpHome;
+    private static final String ERR_MSG = "File doesn't exist: ";
+
     @ClassRule
     public static final TemporaryFolder tmpFolder = TemporaryFolder.builder()
             .parentFolder(new File(System.getProperty("user.dir")))
             .assureDeletion()
             .build();
-    private static final String FID_SUBMODULE_LOCATION = "nmrfx-test-data/testfids/";
-    private static final String ERR_MSG = "File doesn't exist: ";
-    private static String fidHome;
-    private static String tmpHome;
+
+    @BeforeClass
+    public static void setup() {
+        fidHome = FileSystems.getDefault()
+                .getPath("")
+                .toAbsolutePath()
+                .getParent()
+                .resolve(FID_SUBMODULE_LOCATION)
+                .toString();
+        tmpHome = tmpFolder.getRoot().toString();
+    }
 
     boolean testFilesMissing(File testFile) throws FileNotFoundException {
         if (!testFile.exists()) {
@@ -112,16 +124,5 @@ public class RS2DDataTest {
 
         int lastProcNum = RS2DProcUtil.findLastProcId(seriesDirectory).orElse(-1);
         assertEquals(0, lastProcNum);
-    }
-
-    @BeforeClass
-    public static void setup() {
-        fidHome = FileSystems.getDefault()
-                .getPath("")
-                .toAbsolutePath()
-                .getParent()
-                .resolve(FID_SUBMODULE_LOCATION)
-                .toString();
-        tmpHome = tmpFolder.getRoot().toString();
     }
 }

@@ -14,6 +14,17 @@ public class RegionMouseHandlerHandler extends MouseHandler {
         this.integralHit = integralHit;
     }
 
+    public static Optional<MouseHandler> handler(MouseBindings mouseBindings) {
+        PolyChart chart = mouseBindings.getChart();
+        Optional<IntegralHit> hit = chart.hitRegion(true, mouseBindings.getMouseX(), mouseBindings.getMouseY());
+        RegionMouseHandlerHandler handler = null;
+        if (hit.isPresent()) {
+            handler = new RegionMouseHandlerHandler(mouseBindings, hit.get());
+            chart.refresh();
+        }
+        return Optional.ofNullable(handler);
+    }
+
     @Override
     public void mousePressed(MouseEvent mouseEvent) {
     }
@@ -35,16 +46,5 @@ public class RegionMouseHandlerHandler extends MouseHandler {
         double[] dragStart = mouseBindings.getDragStart();
         mouseBindings.getChart().dragRegion(integralHit, x, y);
 
-    }
-
-    public static Optional<MouseHandler> handler(MouseBindings mouseBindings) {
-        PolyChart chart = mouseBindings.getChart();
-        Optional<IntegralHit> hit = chart.hitRegion(true, mouseBindings.getMouseX(), mouseBindings.getMouseY());
-        RegionMouseHandlerHandler handler = null;
-        if (hit.isPresent()) {
-            handler = new RegionMouseHandlerHandler(mouseBindings, hit.get());
-            chart.refresh();
-        }
-        return Optional.ofNullable(handler);
     }
 }

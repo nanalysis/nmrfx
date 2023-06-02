@@ -139,11 +139,6 @@ public class ModHH extends OptFunction {
         });
     }
 
-    @Override
-    public String getFunctionName() {
-        return "y = A*(1- (1+10^(n*(pK-pH)))^-1) + B*(1+10^(n*(pK-pH)))^-1";
-    }
-
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
 
@@ -166,5 +161,10 @@ public class ModHH extends OptFunction {
             }
         }
 
+    }
+
+    @Override
+    public String getFunctionName() {
+        return "y = A*(1- (1+10^(n*(pK-pH)))^-1) + B*(1+10^(n*(pK-pH)))^-1";
     }
 }

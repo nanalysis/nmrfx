@@ -45,32 +45,6 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
 
     }
 
-    public ViolationStats getError(int i, double limitVal, double weight) {
-        Atom[] atoms = eCoords.atoms;
-        String modeType = "Dis";
-
-        int iAtom = iAtoms[i];
-        int jAtom = jAtoms[i];
-        double r2 = disSq[i];
-        double r = Math.sqrt(r2);
-        double dif = 0.0;
-        if (r2 <= rDis2[i]) {
-            r = Math.sqrt(r2);
-            dif = rDis[i] - r;
-        } else if (r2 >= rUp2[i]) {
-            r = Math.sqrt(r2);
-            dif = rUp[i] - r;
-        }
-        String result = "";
-        ViolationStats stat = null;
-        if (Math.abs(dif) > limitVal) {
-            double energy = weights[i] * weight * dif * dif;
-            stat = new ViolationStats(0, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], rUp[i], energy, eCoords);
-        }
-
-        return stat;
-    }
-
     public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group, double weight) {
         if (i != j) {
             resize(nPairs + 1);
@@ -329,6 +303,32 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
         }
 
         return sum;
+    }
+
+    public ViolationStats getError(int i, double limitVal, double weight) {
+        Atom[] atoms = eCoords.atoms;
+        String modeType = "Dis";
+
+        int iAtom = iAtoms[i];
+        int jAtom = jAtoms[i];
+        double r2 = disSq[i];
+        double r = Math.sqrt(r2);
+        double dif = 0.0;
+        if (r2 <= rDis2[i]) {
+            r = Math.sqrt(r2);
+            dif = rDis[i] - r;
+        } else if (r2 >= rUp2[i]) {
+            r = Math.sqrt(r2);
+            dif = rUp[i] - r;
+        }
+        String result = "";
+        ViolationStats stat = null;
+        if (Math.abs(dif) > limitVal) {
+            double energy = weights[i] * weight * dif * dif;
+            stat = new ViolationStats(0, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], rUp[i], energy, eCoords);
+        }
+
+        return stat;
     }
 
     public void dumpRestraints(String fileName) {

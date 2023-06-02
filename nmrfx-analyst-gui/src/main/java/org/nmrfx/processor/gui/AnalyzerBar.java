@@ -38,12 +38,12 @@ import java.util.function.Consumer;
  */
 public class AnalyzerBar {
 
-    private final Map<String, TextField> fieldMap = new HashMap<>();
     FXMLController controller;
     Consumer closeAction = null;
     VBox vBox;
     GridPane gridPane;
     DatasetBase dataset;
+    private final Map<String, TextField> fieldMap = new HashMap<>();
     Optional<RegionData> result = Optional.empty();
     String[] fieldNames = {"Max", "Min", "RVolume", "N", "Mean", "RMS", "S/N", "DNoise"};
 

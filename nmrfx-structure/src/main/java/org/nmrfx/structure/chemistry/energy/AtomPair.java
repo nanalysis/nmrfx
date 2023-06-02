@@ -29,41 +29,49 @@ import org.nmrfx.chemistry.SpatialSet;
 public class AtomPair {
 
     /**
-     * array for energy and derivative result with zero values
-     */
-    static final double[] zeroEnergy = {0.0, 0.0};
-    /**
      * First Atom
      */
     final SpatialSet spSet1;
+
     /**
      * Second Atom
      */
     final SpatialSet spSet2;
+
     /**
      * Branch unit1 for recurrent derivatives
      */
     final int unit1;
+
     /**
      * Branch unit2 for recurrent derivatives
      */
     final int unit2;
-    /**
-     * Energy Pair between both atoms
-     */
-    final EnergyPair ePair;
+
     /**
      * energy radius
      */
     final private double r0;
+
     /**
      * energy radius squared
      */
     final private double r02;
+
     /**
      * weight for contact energy
      */
     double weight = 1.0;
+
+    /**
+     * array for energy and derivative result with zero values
+     */
+    static final double[] zeroEnergy = {0.0, 0.0};
+
+    /**
+     * Energy Pair between both atoms
+     */
+    final EnergyPair ePair;
 
     /**
      * Simple Constructor

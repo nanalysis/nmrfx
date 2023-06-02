@@ -24,18 +24,6 @@ public final class BlockID {
     private final int hashCode;
     private final long accessTime;
 
-    public BlockID(Dataset theFile, int fileBlock) {
-        this.theFile = theFile;
-        this.fileBlock = fileBlock;
-        hashCode = calculateHashCode();
-        accessTime = System.currentTimeMillis();
-    }
-
-    @Override
-    public int hashCode() {
-        return hashCode;
-    }
-
     @Override
     public boolean equals(Object that) {
         if (this == that) {
@@ -52,8 +40,8 @@ public final class BlockID {
     }
 
     @Override
-    public String toString() {
-        return theFile.getFileName() + ":" + fileBlock;
+    public int hashCode() {
+        return hashCode;
     }
 
     public int calculateHashCode() {
@@ -63,12 +51,24 @@ public final class BlockID {
         return result;
     }
 
+    public BlockID(Dataset theFile, int fileBlock) {
+        this.theFile = theFile;
+        this.fileBlock = fileBlock;
+        hashCode = calculateHashCode();
+        accessTime = System.currentTimeMillis();
+    }
+
     public Dataset getFile() {
         return theFile;
     }
 
     public int getBlock() {
         return fileBlock;
+    }
+
+    @Override
+    public String toString() {
+        return theFile.getFileName() + ":" + fileBlock;
     }
 
     public void close() {

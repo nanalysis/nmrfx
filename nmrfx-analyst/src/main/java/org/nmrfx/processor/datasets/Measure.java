@@ -29,15 +29,58 @@ import java.util.List;
  */
 public class Measure {
 
+    String name = "";
+    final int iDim;
     public final double ppm1;
     public final double ppm2;
-    final int iDim;
+
     final double wppm1;
     final double wppm2;
     final int extra;
     final OffsetTypes offsetType;
     final MeasureTypes measureType;
-    String name = "";
+
+    public enum MeasureTypes {
+        V("V", "Volume"), M("M", "Maximum"), m("m", "Minimum"), E("E", "Extreme");
+
+        final String name;
+        final String symbol;
+
+        MeasureTypes(String symbol, String name) {
+            this.symbol = symbol;
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+
+        public String getSymbol() {
+            return symbol;
+        }
+
+    }
+
+    public enum OffsetTypes {
+        N("None"), R("Region"), W("Window");
+
+        final String name;
+
+        OffsetTypes(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+
+        public String getSymbol() {
+            return name.substring(0, 1);
+        }
+
+    }
 
     public Measure(String name, int iDim, double ppm1, double ppm2) {
         this.name = name;
@@ -246,48 +289,6 @@ public class Measure {
 
     public String getFileString() {
         return name + " " + getColumnDescriptor().replace('_', ' ').trim();
-    }
-
-    public enum MeasureTypes {
-        V("V", "Volume"), M("M", "Maximum"), m("m", "Minimum"), E("E", "Extreme");
-
-        final String name;
-        final String symbol;
-
-        MeasureTypes(String symbol, String name) {
-            this.symbol = symbol;
-            this.name = name;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-
-        public String getSymbol() {
-            return symbol;
-        }
-
-    }
-
-    public enum OffsetTypes {
-        N("None"), R("Region"), W("Window");
-
-        final String name;
-
-        OffsetTypes(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-
-        public String getSymbol() {
-            return name.substring(0, 1);
-        }
-
     }
 
 }

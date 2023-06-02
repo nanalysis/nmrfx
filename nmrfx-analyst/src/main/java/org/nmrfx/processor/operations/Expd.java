@@ -30,16 +30,16 @@ public class Expd extends Apodization implements Invertible {
     private final double lb;
     private final double fPoint;
 
-    public Expd(double lb, double fPoint, boolean inverse) {
-        this.lb = lb;
-        this.fPoint = fPoint;
-        this.invertOp = inverse;
-    }
-
     @Override
     public Expd eval(Vec vector) throws ProcessingException {
         expd(vector);
         return this;
+    }
+
+    public Expd(double lb, double fPoint, boolean inverse) {
+        this.lb = lb;
+        this.fPoint = fPoint;
+        this.invertOp = inverse;
     }
 
     /**

@@ -67,11 +67,6 @@ public abstract class OperationItem implements Item {
     @Override
     public abstract void setValue(Object o);
 
-    @Override
-    public Optional<ObservableValue<? extends Object>> getObservableValue() {
-        return Optional.empty();
-    }
-
     public abstract boolean isDefault();
 
     public abstract void setFromString(String sValue);
@@ -80,6 +75,11 @@ public abstract class OperationItem implements Item {
 
     public String getStringRep() {
         return getValue().toString();
+    }
+
+    @Override
+    public Optional<ObservableValue<? extends Object>> getObservableValue() {
+        return Optional.empty();
     }
 
 }

@@ -21,10 +21,11 @@ import java.util.stream.Stream;
  */
 public class LogConsoleController implements Initializable, StageBasedController {
 
+    private static LogConsoleController logConsoleController = null;
+
     private static final String ANY_LEVEL = "-- LEVEL --";
     private static final String ANY_SECTION = "-- SECTION --";
     private static final String CONSOLE_TITLE = "Log Console";
-    private static LogConsoleController logConsoleController = null;
     private LogListener logListener = null;
     private Stage stage;
 
@@ -40,6 +41,30 @@ public class LogConsoleController implements Initializable, StageBasedController
     private MasterDetailPane logDisplayMasterDetail;
 
     private LogTable table;
+
+    /**
+     * Creates a new LogConsoleController and sets the static LogConsoleController.
+     *
+     * @return The newly created LogConsoleController
+     */
+    public static LogConsoleController create() {
+        logConsoleController = Fxml.load(LogConsoleController.class, "LogConsoleScene.fxml")
+                .withNewStage(CONSOLE_TITLE)
+                .getController();
+        logConsoleController.logListener = logConsoleController::logPublished;
+
+        // Only listen for new log messages if the log console is showing
+        logConsoleController.stage.showingProperty().addListener((observable, oldValue, newValue) -> {
+            if (Boolean.TRUE.equals(newValue)) {
+                logConsoleController.addLogRecords();
+                Log.addLogListener(logConsoleController.logListener);
+            } else {
+                Log.removeLogListener(logConsoleController.logListener);
+            }
+        });
+
+        return logConsoleController;
+    }
 
     /**
      * Sets values in filter controls and adds listeners to changes.
@@ -179,30 +204,6 @@ public class LogConsoleController implements Initializable, StageBasedController
     @FXML
     private void changeLogLevelButtonClicked() {
         ChangeLogLevelController.create(stage).showAndWait();
-    }
-
-    /**
-     * Creates a new LogConsoleController and sets the static LogConsoleController.
-     *
-     * @return The newly created LogConsoleController
-     */
-    public static LogConsoleController create() {
-        logConsoleController = Fxml.load(LogConsoleController.class, "LogConsoleScene.fxml")
-                .withNewStage(CONSOLE_TITLE)
-                .getController();
-        logConsoleController.logListener = logConsoleController::logPublished;
-
-        // Only listen for new log messages if the log console is showing
-        logConsoleController.stage.showingProperty().addListener((observable, oldValue, newValue) -> {
-            if (Boolean.TRUE.equals(newValue)) {
-                logConsoleController.addLogRecords();
-                Log.addLogListener(logConsoleController.logListener);
-            } else {
-                Log.removeLogListener(logConsoleController.logListener);
-            }
-        });
-
-        return logConsoleController;
     }
 
     /**

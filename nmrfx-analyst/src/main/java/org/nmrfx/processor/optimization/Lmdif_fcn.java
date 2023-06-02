@@ -21,9 +21,9 @@ public interface Lmdif_fcn {
 
     int getN();
 
-    void setN(int newN);
-
     String[] getAuxNames();
+
+    void setN(int newN);
 
     public double[] guess();
 

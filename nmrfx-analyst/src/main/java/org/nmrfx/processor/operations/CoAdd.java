@@ -78,9 +78,8 @@ public class CoAdd extends Operation {
         return this;
     }
 
-    public CoAdd clone() {
-        CoAdd temp = new CoAdd(coef);
-        return temp;
+    public static ArrayList<Vec> getArrayList() {
+        return new ArrayList<Vec>();
     }
 
     public void combine(List<Vec> vectors) {
@@ -114,7 +113,8 @@ public class CoAdd extends Operation {
         }
     }
 
-    public static ArrayList<Vec> getArrayList() {
-        return new ArrayList<Vec>();
+    public CoAdd clone() {
+        CoAdd temp = new CoAdd(coef);
+        return temp;
     }
 }

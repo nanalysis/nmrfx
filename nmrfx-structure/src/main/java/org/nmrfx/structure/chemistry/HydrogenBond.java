@@ -42,93 +42,6 @@ public class HydrogenBond {
         return validate(hydrogen, acceptor, structureNum);
     }
 
-    public double getHADistance(int structureNum) {
-        return getHADistance(hydrogen, acceptor, structureNum);
-    }
-
-    public double getAngle(int structureNum) {
-        return getAngle(hydrogen, acceptor, structureNum);
-    }
-
-    public String toString() {
-        StringBuilder sBuild = new StringBuilder();
-        sBuild.append(hydrogen.getFullName());
-        sBuild.append(" ");
-        sBuild.append(acceptor.getFullName());
-        sBuild.append(" ");
-        double distance = getHADistance(hydrogen, acceptor, 0);
-        sBuild.append(distance);
-        sBuild.append(" ");
-        double angle = getAngle(hydrogen, acceptor, 0) * 180.0 / Math.PI;
-        sBuild.append(angle);
-        sBuild.append(" ");
-        double shift = getShift(0);
-        sBuild.append(shift);
-        return sBuild.toString();
-    }
-
-    public double getShiftOld(int structureNum) {
-        SpatialSet donor = hydrogen.atom.getParent().spatialSet;
-        Atom donorAtom = hydrogen.atom.getParent();
-        double shift = 0.0;
-        if (donorAtom.getAtomicNumber() == 7) {
-            double distance = getHADistance(hydrogen, acceptor, structureNum);
-            double dis3 = distance * distance * distance;
-            shift = 0.75 / dis3 - 0.99;
-        } else {
-            double distance = getDistance(donor, acceptor, structureNum);
-            double dis3 = distance * distance * distance;
-            if (distance < 2.77) {
-                if (distance > 2.61) {
-                    distance = 2.61;
-                }
-                if (distance < 2.27) {
-                    distance = 2.27;
-                }
-                shift = 15.69 / dis3 - 0.67;
-            }
-        }
-        return shift;
-    }
-
-    public double getShift(int structureNum) {
-        return getShift(structureNum, 3.0);
-    }
-
-    public double getShift(int structureNum, double power) {
-        Atom donorAtom = hydrogen.atom.getParent();
-        double distance = getHADistance(hydrogen, acceptor, structureNum);
-        double angle = getAngle(hydrogen, acceptor, structureNum);
-        double shift = 0.0;
-        double tolerance;
-        double maxDistance;
-        double minDistance;
-        if (donorAtom.getAtomicNumber() == 7) {
-            tolerance = toleranceHN;
-            maxDistance = toleranceHN;
-            minDistance = 1.5;
-        } else {
-            tolerance = toleranceHA;
-            maxDistance = 2.61;
-            minDistance = 2.27;
-        }
-        if (distance < tolerance) {
-            if (distance > maxDistance) {
-                distance = maxDistance;
-            }
-            if (distance < minDistance) {
-                distance = minDistance;
-            }
-
-            double disP = Math.pow(distance, power);
-            double maxP = Math.pow(maxDistance, power);
-            shift = 1.0 / disP - 1.0 / maxP;
-            double cos = Math.abs(Math.cos(angle));
-            shift = shift * (1.0 + 1.0 * (cos * cos - 1.0));
-        }
-        return shift;
-    }
-
     /**
      * Test if two atoms have the correct geometry to be in a hydrogen bond
      *
@@ -223,6 +136,14 @@ public class HydrogenBond {
 
     }
 
+    public double getHADistance(int structureNum) {
+        return getHADistance(hydrogen, acceptor, structureNum);
+    }
+
+    public double getAngle(int structureNum) {
+        return getAngle(hydrogen, acceptor, structureNum);
+    }
+
     public static double getHADistance(SpatialSet hydrogen, SpatialSet acceptor, int structureNum) {
         Point3 hydrogenPt = hydrogen.getPoint(structureNum);
         Point3 acceptorPt = acceptor.getPoint(structureNum);
@@ -235,6 +156,85 @@ public class HydrogenBond {
         Point3 acceptorPt = acceptor.getPoint(structureNum);
         double distance = Atom.calcDistance(donorPt, acceptorPt);
         return distance;
+    }
+
+    public String toString() {
+        StringBuilder sBuild = new StringBuilder();
+        sBuild.append(hydrogen.getFullName());
+        sBuild.append(" ");
+        sBuild.append(acceptor.getFullName());
+        sBuild.append(" ");
+        double distance = getHADistance(hydrogen, acceptor, 0);
+        sBuild.append(distance);
+        sBuild.append(" ");
+        double angle = getAngle(hydrogen, acceptor, 0) * 180.0 / Math.PI;
+        sBuild.append(angle);
+        sBuild.append(" ");
+        double shift = getShift(0);
+        sBuild.append(shift);
+        return sBuild.toString();
+    }
+
+    public double getShiftOld(int structureNum) {
+        SpatialSet donor = hydrogen.atom.getParent().spatialSet;
+        Atom donorAtom = hydrogen.atom.getParent();
+        double shift = 0.0;
+        if (donorAtom.getAtomicNumber() == 7) {
+            double distance = getHADistance(hydrogen, acceptor, structureNum);
+            double dis3 = distance * distance * distance;
+            shift = 0.75 / dis3 - 0.99;
+        } else {
+            double distance = getDistance(donor, acceptor, structureNum);
+            double dis3 = distance * distance * distance;
+            if (distance < 2.77) {
+                if (distance > 2.61) {
+                    distance = 2.61;
+                }
+                if (distance < 2.27) {
+                    distance = 2.27;
+                }
+                shift = 15.69 / dis3 - 0.67;
+            }
+        }
+        return shift;
+    }
+
+    public double getShift(int structureNum) {
+        return getShift(structureNum, 3.0);
+    }
+
+    public double getShift(int structureNum, double power) {
+        Atom donorAtom = hydrogen.atom.getParent();
+        double distance = getHADistance(hydrogen, acceptor, structureNum);
+        double angle = getAngle(hydrogen, acceptor, structureNum);
+        double shift = 0.0;
+        double tolerance;
+        double maxDistance;
+        double minDistance;
+        if (donorAtom.getAtomicNumber() == 7) {
+            tolerance = toleranceHN;
+            maxDistance = toleranceHN;
+            minDistance = 1.5;
+        } else {
+            tolerance = toleranceHA;
+            maxDistance = 2.61;
+            minDistance = 2.27;
+        }
+        if (distance < tolerance) {
+            if (distance > maxDistance) {
+                distance = maxDistance;
+            }
+            if (distance < minDistance) {
+                distance = minDistance;
+            }
+
+            double disP = Math.pow(distance, power);
+            double maxP = Math.pow(maxDistance, power);
+            shift = 1.0 / disP - 1.0 / maxP;
+            double cos = Math.abs(Math.cos(angle));
+            shift = shift * (1.0 + 1.0 * (cos * cos - 1.0));
+        }
+        return shift;
     }
 
 }

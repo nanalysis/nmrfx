@@ -45,7 +45,7 @@ import java.util.Optional;
  */
 public class MultipletTool implements SetChangeListener<MultipletSelection> {
     private static final Logger log = LoggerFactory.getLogger(MultipletTool.class);
-    private final PolyChart chart;
+
     Stage stage = null;
     VBox vBox;
     TextField multipletIdField;
@@ -62,6 +62,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     Button mergeButton;
     Button extractButton;
     Button transferButton;
+
+    private final PolyChart chart;
     Optional<Multiplet> activeMultiplet = Optional.empty();
     boolean ignoreCouplingChanges = false;
     ChangeListener<String> patternListener;
@@ -78,6 +80,15 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     public boolean popoverInitialized() {
         return vBox != null;
+    }
+
+    public static MultipletTool getTool(PolyChart chart) {
+        MultipletTool multipletTool = (MultipletTool) chart.getPopoverTool(MultipletTool.class.getName());
+        if (multipletTool == null) {
+            multipletTool = new MultipletTool(chart);
+            chart.setPopoverTool(MultipletTool.class.getName(), multipletTool);
+        }
+        return multipletTool;
     }
 
     public void initializePopover(PopOver popOver) {
@@ -104,6 +115,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         popOver.setContentNode(vBox);
         this.popOver = popOver;
     }
+
 
     private void updateCouplingGrid(int nCouplings) {
         if (nCouplings + 1 != patternChoices.length) {
@@ -525,6 +537,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         }
     }
 
+
     public void addRegion(DatasetRegion region) {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
@@ -722,6 +735,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         }
     }
 
+
     public List<Multiplet> getTransferMultiplets() {
         List<MultipletSelection> mSet = chart.getSelectedMultiplets();
         List<Multiplet> multiplets = getSelMultiplets(mSet);
@@ -741,6 +755,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         }
         return result;
     }
+
 
     public void transferPeaks() {
         List<Multiplet> multiplets = getTransferMultiplets();
@@ -886,14 +901,5 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                 });
             }
         }
-    }
-
-    public static MultipletTool getTool(PolyChart chart) {
-        MultipletTool multipletTool = (MultipletTool) chart.getPopoverTool(MultipletTool.class.getName());
-        if (multipletTool == null) {
-            multipletTool = new MultipletTool(chart);
-            chart.setPopoverTool(MultipletTool.class.getName(), multipletTool);
-        }
-        return multipletTool;
     }
 }

@@ -23,41 +23,41 @@ import java.nio.file.Paths;
 public class AnalystPrefs {
 
     static IntegerProperty libraryVectorSize = null;
-    static DoubleProperty libraryVectorSF = null;
-    static DoubleProperty libraryVectorSW = null;
-    static DoubleProperty libraryVectorLB = null;
-    static DoubleProperty libraryVectorREF = null;
-    static BooleanProperty useRemotePassword = null;
-    static StringProperty remoteUserName = null;
-    static StringProperty remoteHostName = null;
-    static StringProperty remoteDirectory = null;
-    static StringProperty localDirectory = null;
-    static StringProperty localResidueDirectory = null;
 
     public static Integer getLibraryVectorSize() {
         libraryVectorSize = PreferencesController.getInteger(libraryVectorSize, "LIBRARY_VECTOR_SIZE", 14);
         return libraryVectorSize.getValue();
     }
 
+    static DoubleProperty libraryVectorSF = null;
+
     public static Double getLibraryVectorSF() {
         libraryVectorSF = PreferencesController.getDouble(libraryVectorSF, "LIBRARY_VECTOR_SF", 600.0);
         return libraryVectorSF.getValue();
     }
+
+    static DoubleProperty libraryVectorSW = null;
 
     public static Double getLibraryVectorSW() {
         libraryVectorSW = PreferencesController.getDouble(libraryVectorSW, "LIBRARY_VECTOR_SW", 10000.0);
         return libraryVectorSW.getValue();
     }
 
+    static DoubleProperty libraryVectorLB = null;
+
     public static Double getLibraryVectorLB() {
         libraryVectorLB = PreferencesController.getDouble(libraryVectorLB, "LIBRARY_VECTOR_LB", 0.5);
         return libraryVectorLB.getValue();
     }
 
+    static DoubleProperty libraryVectorREF = null;
+
     public static Double getLibraryVectorREF() {
         libraryVectorREF = PreferencesController.getDouble(libraryVectorREF, "LIBRARY_VECTOR_REF", 4.73);
         return libraryVectorREF.getValue();
     }
+
+    static BooleanProperty useRemotePassword = null;
 
     public static Boolean getUseRemotePassword() {
         useRemotePassword = PreferencesController.getBoolean(useRemotePassword, "REMOTE_USE_PASSWORD", false);
@@ -69,6 +69,8 @@ public class AnalystPrefs {
         PreferencesController.setBoolean("REMOTE_USE_PASSWORD", value);
     }
 
+    static StringProperty remoteUserName = null;
+
     public static String getRemoteUserName() {
         remoteUserName = PreferencesController.getString(remoteUserName, "REMOTE_USER_NAME", "");
         return remoteUserName.getValue();
@@ -78,6 +80,8 @@ public class AnalystPrefs {
         remoteUserName.setValue(name);
         PreferencesController.setString("REMOTE_USER_NAME", name);
     }
+
+    static StringProperty remoteHostName = null;
 
     public static String getRemoteHostName() {
         remoteHostName = PreferencesController.getString(remoteHostName, "REMOTE_HOST", "");
@@ -89,6 +93,8 @@ public class AnalystPrefs {
         PreferencesController.setString("REMOTE_HOST", name);
     }
 
+    static StringProperty remoteDirectory = null;
+
     public static String getRemoteDirectory() {
         remoteDirectory = PreferencesController.getString(remoteDirectory, "REMOTE_DIRECTORY", "");
         return remoteDirectory.getValue();
@@ -98,6 +104,8 @@ public class AnalystPrefs {
         remoteDirectory.setValue(name);
         PreferencesController.setString("REMOTE_DIRECTORY", name);
     }
+
+    static StringProperty localDirectory = null;
 
     public static String getLocalDirectory() {
         Path defaultDir = Paths.get(System.getProperty("user.home"), "nmrdata");
@@ -109,6 +117,8 @@ public class AnalystPrefs {
         localDirectory.setValue(name);
         PreferencesController.setString("LOCAL_DIRECTORY", name);
     }
+
+    static StringProperty localResidueDirectory = null;
 
     public static String getLocalResidueDirectory() {
         Path defaultDir = Paths.get(System.getProperty("user.home"), "nmrfx_residues");

@@ -58,23 +58,13 @@ public interface GraphicsContextInterface {
 
     Paint getFill();
 
-    void setFill(Paint p);
-
     Font getFont();
-
-    void setFont(Font f);
 
     double getLineWidth();
 
-    void setLineWidth(double lw);
-
     Paint getStroke();
 
-    void setStroke(Paint p);
-
     Affine getTransform();
-
-    void setTransform(Affine xform);
 
     void lineTo(double x1, double y1);
 
@@ -90,15 +80,25 @@ public interface GraphicsContextInterface {
 
     void setEffect(Effect e);
 
+    void setFill(Paint p);
+
+    void setFont(Font f);
+
     void setGlobalAlpha(double alpha);
 
     void setLineCap(StrokeLineCap cap);
 
     void setLineDashes(double... dashes);
 
+    void setLineWidth(double lw);
+
+    void setStroke(Paint p);
+
     void setTextAlign(TextAlignment align);
 
     void setTextBaseline(VPos baseline);
+
+    void setTransform(Affine xform);
 
     void stroke();
 

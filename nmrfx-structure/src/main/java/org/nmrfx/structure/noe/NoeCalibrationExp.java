@@ -25,7 +25,6 @@ import org.nmrfx.chemistry.constraints.Noe;
  */
 public class NoeCalibrationExp extends NoeCalibration {
 
-    static final double INTENSITY_FLOOR = 1.0e-16;
     final double lower;
     final double referenceValue;
     final double referenceDist;
@@ -33,6 +32,7 @@ public class NoeCalibrationExp extends NoeCalibration {
     final double minBound;
     final double maxBound;
     final double fError;
+    static final double INTENSITY_FLOOR = 1.0e-16;
 
     public NoeCalibrationExp(final String measurementMode, final double lower, final double referenceValue, final double referenceDist, final double expValue, final double minBound, final double maxBound, final double fError, final boolean removeRedundant) {
         this.mMode = MeasurementMode.select(measurementMode);

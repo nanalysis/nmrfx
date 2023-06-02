@@ -43,7 +43,6 @@ public class RegionsTableController implements Initializable, StageBasedControll
     private static final Logger log = LoggerFactory.getLogger(RegionsTableController.class);
     private static RegionsTableController regionsTableController = null;
     private RegionsTable regionsTable;
-    private final DatasetRegionsListListener datasetRegionsListListener = this::setRegions;
     private PolyChart chart;
     private Stage stage;
     @FXML
@@ -58,8 +57,19 @@ public class RegionsTableController implements Initializable, StageBasedControll
     private Button removeRegionButton;
     @FXML
     private Button removeAllButton;
-    private ChangeListener<DatasetRegion> selectedRowRegionsTableListener;
+
     private final ChangeListener<DatasetRegion> activeDatasetRegionListener = this::updateActiveRegion;
+    private final DatasetRegionsListListener datasetRegionsListListener = this::setRegions;
+
+    private ChangeListener<DatasetRegion> selectedRowRegionsTableListener;
+
+    public static RegionsTableController create() {
+        regionsTableController = Fxml.load(RegionsTableController.class, "RegionsScene.fxml")
+                .withNewStage("Regions")
+                .getController();
+
+        return regionsTableController;
+    }
 
     public void show() {
         stage.show();
@@ -272,14 +282,6 @@ public class RegionsTableController implements Initializable, StageBasedControll
         chart.getChartProperties().setRegions(true);
         chart.getChartProperties().setIntegrals(true);
         chart.refresh();
-    }
-
-    public static RegionsTableController create() {
-        regionsTableController = Fxml.load(RegionsTableController.class, "RegionsScene.fxml")
-                .withNewStage("Regions")
-                .getController();
-
-        return regionsTableController;
     }
 
     /**

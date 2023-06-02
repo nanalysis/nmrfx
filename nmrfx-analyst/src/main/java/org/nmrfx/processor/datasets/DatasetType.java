@@ -19,34 +19,6 @@ public enum DatasetType {
         this.extension = extension;
     }
 
-    private String addExtension(String fileName) {
-        if (typeFromName(fileName).isEmpty()) {
-            fileName = fileName + extension;
-        }
-        return fileName;
-    }
-
-    /**
-     * Adds, if not already present, the correct file extension for .nv and .ucsf files
-     * or the filename (data.data) for SPINit files.
-     *
-     * @param file the file to check
-     * @return the file with added extension (or SPINit fileName).
-     */
-
-    public File addExtension(File file) {
-        String fileName = file.getName();
-        if (this == SPINit) {
-            if (!fileName.equals(extension)) {
-                file = file.toPath().resolve(extension).toFile();
-            }
-        } else {
-            fileName = addExtension(fileName);
-            file = file.getParentFile().toPath().resolve(fileName).toFile();
-        }
-        return file;
-    }
-
     /**
      * Determine the type of the file from the fileName.
      *
@@ -74,6 +46,34 @@ public enum DatasetType {
             }
         }
         return Optional.empty();
+    }
+
+    private String addExtension(String fileName) {
+        if (typeFromName(fileName).isEmpty()) {
+            fileName = fileName + extension;
+        }
+        return fileName;
+    }
+
+    /**
+     * Adds, if not already present, the correct file extension for .nv and .ucsf files
+     * or the filename (data.data) for SPINit files.
+     *
+     * @param file the file to check
+     * @return the file with added extension (or SPINit fileName).
+     */
+
+    public File addExtension(File file) {
+        String fileName = file.getName();
+        if (this == SPINit) {
+            if (!fileName.equals(extension)) {
+                file = file.toPath().resolve(extension).toFile();
+            }
+        } else {
+            fileName = addExtension(fileName);
+            file = file.getParentFile().toPath().resolve(fileName).toFile();
+        }
+        return file;
     }
 
     public static List<String> names() {

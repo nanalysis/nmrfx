@@ -42,11 +42,6 @@ public class ProteinHelix extends SecondaryStructure {
     }
 
     @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
     public void getInvolvedRes() {
         int i = 0;
         while (i < secResidues.size()) {
@@ -57,5 +52,10 @@ public class ProteinHelix extends SecondaryStructure {
                     + ":" + res2.getName() + res2.getResNum() + " ");
             i += 2;
         }
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

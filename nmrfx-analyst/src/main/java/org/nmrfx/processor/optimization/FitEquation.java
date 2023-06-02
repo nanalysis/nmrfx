@@ -14,6 +14,33 @@ public abstract class FitEquation {
     double[] bestPars;
     double[] parErrs;
 
+    record Guesses(double[] start, double[] lower, double[] upper) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Guesses guesses = (Guesses) o;
+            return Arrays.equals(start, guesses.start) && Arrays.equals(lower, guesses.lower) && Arrays.equals(upper, guesses.upper);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Arrays.hashCode(start);
+            result = 31 * result + Arrays.hashCode(lower);
+            result = 31 * result + Arrays.hashCode(upper);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "Guesses{" +
+                    "start=" + Arrays.toString(start) +
+                    "\nlower=" + Arrays.toString(lower) +
+                    "\nupper=" + Arrays.toString(upper) +
+                    '}';
+        }
+    }
+
     public abstract String[] parNames();
 
     public abstract int nY();
@@ -67,6 +94,7 @@ public abstract class FitEquation {
         return Math.sqrt(sum / n);
     }
 
+
     public double[] getPars() {
         return bestPars;
     }
@@ -90,32 +118,5 @@ public abstract class FitEquation {
             }
         }
         return null;
-    }
-
-    record Guesses(double[] start, double[] lower, double[] upper) {
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Guesses guesses = (Guesses) o;
-            return Arrays.equals(start, guesses.start) && Arrays.equals(lower, guesses.lower) && Arrays.equals(upper, guesses.upper);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = Arrays.hashCode(start);
-            result = 31 * result + Arrays.hashCode(lower);
-            result = 31 * result + Arrays.hashCode(upper);
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return "Guesses{" +
-                    "start=" + Arrays.toString(start) +
-                    "\nlower=" + Arrays.toString(lower) +
-                    "\nupper=" + Arrays.toString(upper) +
-                    '}';
-        }
     }
 }

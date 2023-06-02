@@ -24,6 +24,26 @@ import java.util.List;
 public class Normalize {
     private static final Logger log = LoggerFactory.getLogger(Normalize.class);
 
+    public enum NORMALIZE {
+        SUM() {
+            MathArrays.Function getInstance() {
+                return new Sum();
+            }
+        },
+        MEDIAN() {
+            MathArrays.Function getInstance() {
+                return new Median();
+            }
+        },
+        MAX() {
+            MathArrays.Function getInstance() {
+                return new Max();
+            }
+        };
+
+        abstract MathArrays.Function getInstance();
+    }
+
     public synchronized MathArrays.Function getFunction() {
         MathArrays.Function function = new Percentile(50);
         return function;
@@ -104,25 +124,5 @@ public class Normalize {
                 log.error(ex.getMessage(), ex);
             }
         });
-    }
-
-    public enum NORMALIZE {
-        SUM() {
-            MathArrays.Function getInstance() {
-                return new Sum();
-            }
-        },
-        MEDIAN() {
-            MathArrays.Function getInstance() {
-                return new Median();
-            }
-        },
-        MAX() {
-            MathArrays.Function getInstance() {
-                return new Max();
-            }
-        };
-
-        abstract MathArrays.Function getInstance();
     }
 }

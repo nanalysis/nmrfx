@@ -88,10 +88,6 @@ public class XExpAB extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = a * x * exp(-x * b)";
-    }
-
     @Override
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
@@ -108,5 +104,9 @@ public class XExpAB extends OptFunction {
                 }
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = a * x * exp(-x * b)";
     }
 }

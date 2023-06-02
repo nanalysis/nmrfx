@@ -26,20 +26,10 @@ import java.util.function.IntFunction;
 
 public class CustomIntegerTextField extends CustomTextField {
 
-    private final SimpleIntegerProperty number = new SimpleIntegerProperty();
     int min = Integer.MIN_VALUE;
     int max = Integer.MAX_VALUE;
+    private final SimpleIntegerProperty number = new SimpleIntegerProperty();
     IntFunction callbackFunction = null;
-
-    public CustomIntegerTextField() {
-        this(new Integer(0));
-    }
-
-    public CustomIntegerTextField(Integer value) {
-        super();
-        initHandlers();
-        setNumber(value);
-    }
 
     public final Integer getNumber() {
         return number.get();
@@ -51,6 +41,16 @@ public class CustomIntegerTextField extends CustomTextField {
 
     public SimpleIntegerProperty numberProperty() {
         return number;
+    }
+
+    public CustomIntegerTextField() {
+        this(new Integer(0));
+    }
+
+    public CustomIntegerTextField(Integer value) {
+        super();
+        initHandlers();
+        setNumber(value);
     }
 
     private void initHandlers() {

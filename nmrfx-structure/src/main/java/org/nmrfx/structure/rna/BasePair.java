@@ -65,11 +65,6 @@ public class BasePair {
         return type;
     }
 
-    @Override
-    public String toString() {
-        return res1.iRes + ":" + res2.iRes;
-    }
-
     public static int getBasePairType(Residue residue1, Residue residue2) {
         int bpCount;
         boolean valid = false;
@@ -129,6 +124,11 @@ public class BasePair {
             }
         }
         return 0;
+    }
+
+    @Override
+    public String toString() {
+        return res1.iRes + ":" + res2.iRes;
     }
 
     public static boolean isCanonical(Residue res1, Residue res2) {

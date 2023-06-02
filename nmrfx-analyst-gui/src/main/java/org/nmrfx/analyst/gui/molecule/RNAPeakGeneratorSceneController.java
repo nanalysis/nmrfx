@@ -88,7 +88,11 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
     TextField firstResidueField;
     @FXML
     TextField lastResidueField;
+    @FXML
+    private ComboBox<String> genDatasetNameField;
+
     ObservableList<String> selGroupList;
+
     Stage stage;
     String[][] baseAtoms = {
             {"H2", "C2", "H8", "C8"}, // Adenine
@@ -102,9 +106,8 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
     };
     String[] riboseAtoms = {"H1'", "H2'", "H3'", "C1'", "C2'", "C3'", "H4'", "H5'", "H5''", "C4'", "C5'"};
     String[] baseChars = {"A", "G", "U", "C"};
+
     CheckBox[][][] checkBoxes = new CheckBox[4][3][];
-    @FXML
-    private ComboBox<String> genDatasetNameField;
 
     /**
      * Initializes the controller class.
@@ -626,13 +629,13 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
 
     }
 
-    public Stage getStage() {
-        return stage;
-    }
-
     @Override
     public void setStage(Stage stage) {
         this.stage = stage;
+    }
+
+    public Stage getStage() {
+        return stage;
     }
 
     public static RNAPeakGeneratorSceneController create() {

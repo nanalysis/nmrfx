@@ -40,6 +40,15 @@ public class IntegralTool {
         return vBox != null;
     }
 
+    public static IntegralTool getTool(PolyChart chart) {
+        IntegralTool integralTool = (IntegralTool) chart.getPopoverTool(IntegralTool.class.getName());
+        if (integralTool == null) {
+            integralTool = new IntegralTool(chart);
+            chart.setPopoverTool(IntegralTool.class.getName(), integralTool);
+        }
+        return integralTool;
+    }
+
     public void initializePopover(PopOver popOver) {
         this.vBox = new VBox();
         vBox.setPadding(new Insets(0, 1, 0, 1));
@@ -146,14 +155,5 @@ public class IntegralTool {
         analyzer.getDataset().removeRegion(region);
         chart.refresh();
         AnalystApp.getAnalystApp().hidePopover(false);
-    }
-
-    public static IntegralTool getTool(PolyChart chart) {
-        IntegralTool integralTool = (IntegralTool) chart.getPopoverTool(IntegralTool.class.getName());
-        if (integralTool == null) {
-            integralTool = new IntegralTool(chart);
-            chart.setPopoverTool(IntegralTool.class.getName(), integralTool);
-        }
-        return integralTool;
     }
 }

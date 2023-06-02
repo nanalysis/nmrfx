@@ -43,12 +43,13 @@ import java.util.concurrent.Callable;
 public class ProcessOps implements Callable<Object> {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessOps.class);
-    private static int numProcessesCreated = 0;
+
     private ArrayList<Operation> operations = null;
     private List<Vec> vectors = null;
     private boolean hasStarted = false;
     private boolean hasFinished = false;
     private String name;
+    private static int numProcessesCreated = 0;
     private int vectorsProcessed;
     private int[] dims = {0};
     private boolean isMatrix = false;
@@ -56,6 +57,22 @@ public class ProcessOps implements Callable<Object> {
     private boolean isUndo = false;
 
     private String completionMessage;
+
+    public synchronized boolean getHasFinished() {
+        return hasFinished;
+    }
+
+    public synchronized void setHasFinished() {
+        hasFinished = true;
+    }
+
+    public synchronized boolean getHasStarted() {
+        return hasStarted;
+    }
+
+    public synchronized void setHasStarted() {
+        hasStarted = true;
+    }
 
     public ProcessOps() {
         this("p" + (numProcessesCreated));
@@ -101,20 +118,10 @@ public class ProcessOps implements Callable<Object> {
         isMatrix = newDims.length > 1;
     }
 
-    public synchronized boolean getHasFinished() {
-        return hasFinished;
-    }
-
-    public synchronized void setHasFinished() {
-        hasFinished = true;
-    }
-
-    public synchronized boolean getHasStarted() {
-        return hasStarted;
-    }
-
-    public synchronized void setHasStarted() {
-        hasStarted = true;
+    public static ProcessOps createDatasetProcess() {
+        ProcessOps process = new ProcessOps("dataset");
+        process.setDataset();
+        return process;
     }
 
     public String getName() {
@@ -479,6 +486,10 @@ public class ProcessOps implements Callable<Object> {
         vectors = new ArrayList<>();
     }
 
+    public static void resetNumProcessesCreated() {
+        numProcessesCreated = 0;
+    }
+
     boolean useInSimVec(Operation op) {
         boolean result = false;
         if (op instanceof Apodization) {
@@ -510,15 +521,5 @@ public class ProcessOps implements Callable<Object> {
             }
 
         }
-    }
-
-    public static ProcessOps createDatasetProcess() {
-        ProcessOps process = new ProcessOps("dataset");
-        process.setDataset();
-        return process;
-    }
-
-    public static void resetNumProcessesCreated() {
-        numProcessesCreated = 0;
     }
 }

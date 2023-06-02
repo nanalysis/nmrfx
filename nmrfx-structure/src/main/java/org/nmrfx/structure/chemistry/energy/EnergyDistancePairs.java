@@ -44,33 +44,6 @@ public class EnergyDistancePairs extends EnergyPairs {
         }
     }
 
-    public ViolationStats getError(int i, double limitVal, double weight) {
-        String modeType = "Rep";
-        Atom[] atoms = eCoords.atoms;
-        int iAtom = iAtoms[i];
-        int jAtom = jAtoms[i];
-        double r2 = disSq[i];
-        double r = Math.sqrt(r2);
-        double dif = 0.0;
-        if (r2 <= rDis2[i]) {
-            r = Math.sqrt(r2);
-            dif = rDis[i] - r;
-        }
-        String result = "";
-        ViolationStats stat = null;
-        if (Math.abs(dif) > limitVal) {
-            double energy = weights[i] * weight * dif * dif;
-            stat = new ViolationStats(1, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], 0.0, energy, eCoords);
-        }
-
-        return stat;
-    }
-
-    @Override
-    public ViolationStats getError(int i, double limitVal, double weight, double eWeight) {
-        return getError(i, limitVal, weight);
-    }
-
     public double calcEnergy(boolean calcDeriv, double weight, double eWeight) {
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         double sum = 0.0;
@@ -98,5 +71,32 @@ public class EnergyDistancePairs extends EnergyPairs {
         }
 
         return sum;
+    }
+
+    @Override
+    public ViolationStats getError(int i, double limitVal, double weight, double eWeight) {
+        return getError(i, limitVal, weight);
+    }
+
+    public ViolationStats getError(int i, double limitVal, double weight) {
+        String modeType = "Rep";
+        Atom[] atoms = eCoords.atoms;
+        int iAtom = iAtoms[i];
+        int jAtom = jAtoms[i];
+        double r2 = disSq[i];
+        double r = Math.sqrt(r2);
+        double dif = 0.0;
+        if (r2 <= rDis2[i]) {
+            r = Math.sqrt(r2);
+            dif = rDis[i] - r;
+        }
+        String result = "";
+        ViolationStats stat = null;
+        if (Math.abs(dif) > limitVal) {
+            double energy = weights[i] * weight * dif * dif;
+            stat = new ViolationStats(1, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], 0.0, energy, eCoords);
+        }
+
+        return stat;
     }
 }

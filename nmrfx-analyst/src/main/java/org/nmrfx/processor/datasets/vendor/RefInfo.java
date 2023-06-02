@@ -15,8 +15,9 @@ import java.util.Map;
  */
 @PythonAPI("autoscript")
 public class RefInfo {
-    static public final String[] PROP_NAMES = {"skip", "label", "acqarray", "acqsize", "tdsize", "sf", "sw", "ref"};
     String directRef = "";
+
+    static public final String[] PROP_NAMES = {"skip", "label", "acqarray", "acqsize", "tdsize", "sf", "sw", "ref"};
     Map<String, Object> refMap = new HashMap<>();
 
     String getArraySizes(NMRData nmrData) {

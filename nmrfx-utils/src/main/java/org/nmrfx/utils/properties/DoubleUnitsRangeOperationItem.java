@@ -50,6 +50,14 @@ public class DoubleUnitsRangeOperationItem extends DoubleOperationItem {
         return DoubleUnitsRangeOperationItem.class;
     }
 
+    public void setZoomSlider(ZoomSlider slider) {
+        this.slider = slider;
+        if (Character.isLetter(getLastChar())) {
+            slider.setIconLabel(String.valueOf(getLastChar()));
+        }
+
+    }
+
     @Override
     public void setFromString(String sValue) {
         if (sValue.startsWith("'") && sValue.endsWith("'")) {
@@ -84,14 +92,6 @@ public class DoubleUnitsRangeOperationItem extends DoubleOperationItem {
         } else {
             return strValue;
         }
-    }
-
-    public void setZoomSlider(ZoomSlider slider) {
-        this.slider = slider;
-        if (Character.isLetter(getLastChar())) {
-            slider.setIconLabel(String.valueOf(getLastChar()));
-        }
-
     }
 
 }

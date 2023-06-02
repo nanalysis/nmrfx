@@ -40,11 +40,11 @@ public class PeakPickParameters {
     public double level;
     public double regionWidth = 0;
     public int thickness = 0;
+    boolean useAll = false;
     public double sDevN = 0.0;
     public int nPeakDim = 0;
     public int posNeg = 1;
     public double noiseLimit = 0.0;
-    boolean useAll = false;
 
     public PeakPickParameters(Dataset dataset, String listName) {
         this.theFile = dataset;

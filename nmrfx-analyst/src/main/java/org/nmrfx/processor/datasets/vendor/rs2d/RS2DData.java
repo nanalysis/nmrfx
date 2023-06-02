@@ -74,14 +74,25 @@ import static org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil.writeDocument;
  * RS2D data support.
  */
 public class RS2DData implements NMRData {
-    private static final Logger log = LoggerFactory.getLogger(RS2DData.class);
     public static final DatasetType DATASET_TYPE = DatasetType.SPINit;
     public static final String DATA_FILE_NAME = "data.dat";
     public static final String HEADER_FILE_NAME = "header.xml";
     public static final String SERIES_FILE_NAME = "Serie.xml";
     public static final String PROC_DIR = "Proc";
+
     private static final int MAXDIM = 4;
+
+    private static final Logger log = LoggerFactory.getLogger(RS2DData.class);
+
+
     private final String fpath;
+    private FileChannel fc = null;
+    private Header header;
+    private Document seriesDocument;
+
+    File nusFile;
+
+    int nDim = 0;
     private final int[] tdsize = new int[MAXDIM];
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
@@ -94,9 +105,13 @@ public class RS2DData implements NMRData {
     private final String[] f1coefS = new String[MAXDIM];
     private final String[] fttype = new String[MAXDIM];
     private final String[] sfNames = new String[MAXDIM];
+    private double groupDelay = 0.0;
+    private SampleSchedule sampleSchedule = null;
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
-    File nusFile;
-    int nDim = 0;
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
+    private ZonedDateTime zonedDateTime = null;
+
+    private String[] acqOrder;
     int nvectors = 1;
     int np = 1;
     int tbytes = 1;
@@ -105,14 +120,6 @@ public class RS2DData implements NMRData {
     String obsNucleus = "";
     double scale = 1.0;
     double tempK = 298.15;
-    private FileChannel fc = null;
-    private Header header;
-    private Document seriesDocument;
-    private double groupDelay = 0.0;
-    private SampleSchedule sampleSchedule = null;
-    private DatasetType preferredDatasetType = DatasetType.NMRFX;
-    private ZonedDateTime zonedDateTime = null;
-    private String[] acqOrder;
 
     public RS2DData(String path, File nusFile) throws IOException {
         if (path.endsWith(File.separator)) {
@@ -193,6 +200,37 @@ public class RS2DData implements NMRData {
 
     }
 
+    /**
+     * Finds FID data, given a path to search for vendor-specific files and
+     * directories.
+     *
+     * @param bpath full path for FID data
+     * @return if FID data was successfully found or not
+     */
+    public static boolean findFID(StringBuilder bpath) {
+        boolean found = false;
+        if (findFIDFiles(bpath.toString())) {
+            found = true;
+        } else {
+            File f = new File(bpath.toString());
+            File parent = f.getParentFile();
+            if (findFIDFiles(parent.getAbsolutePath())) {
+                String fileName = f.getName();
+                if (fileName.equals(DATA_FILE_NAME)) {
+                    found = true;
+                }
+                bpath.setLength(0);
+                bpath.append(parent);
+            }
+        }
+        return found;
+    }
+
+    @Override
+    public boolean isFID() {
+        return getState(0) == 0;
+    }
+
     public int getState(int dim) {
         if (header.contains(STATE)) {
             List<Integer> states = header.get(STATE).intListValue();
@@ -203,6 +241,12 @@ public class RS2DData implements NMRData {
 
         log.debug("Unable to find state parameter. Setting state to FID.");
         return 0;
+    }
+
+    private static boolean findFIDFiles(String dirPath) {
+        Path headerPath = Paths.get(dirPath, HEADER_FILE_NAME);
+        Path dataPath = Paths.get(dirPath, DATA_FILE_NAME);
+        return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
     private void openParFile(String parpath) throws IOException {
@@ -376,6 +420,11 @@ public class RS2DData implements NMRData {
     }
 
     @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
+    }
+
+    @Override
     public void close() {
         try {
             fc.close();
@@ -467,6 +516,38 @@ public class RS2DData implements NMRData {
                 // it is necessary to call getPar() to convert specific parameters such as SPECTRAL_WIDTH or OFFSETs
                 .map(value -> new VendorPar(value.getName(), getPar(value.getName())))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Some parameter may need internal conversion before use.
+     * This is needed for parameters which could be stored in Hz or ppm, but can only be used in Hz internally.
+     * This includes SPECTRAL_WIDTH* and OFFSET_FREQ_* parameters.
+     *
+     * @param name the parameter name
+     * @return a converted value, or null if there is no need for conversion.
+     */
+    private Number getConvertedNumberValue(String name) {
+        boolean needsConversion = SW_PARAMS.stream().anyMatch(p -> p.name().equals(name))
+                || OFFSET_FREQ_PARAMS.stream().anyMatch(p -> p.name().equals(name));
+        return needsConversion ? getParameterAsHertz(name) : null;
+    }
+
+    /**
+     * Some parameter may need internal conversion before use.
+     * This is needed for parameters which could be stored in Hz or ppm, but can only be used in Hz internally.
+     * This includes only SR (Spectral Reference).
+     *
+     * @param name the parameter name
+     * @return a converted list of values, or null if there is no need for conversion.
+     */
+    private List<? extends Number> getConvertedListNumberValue(String name) {
+        boolean needsConversion = SR.name().equals(name);
+        return needsConversion ? getParameterAsHertzList(name) : null;
+    }
+
+    @Override
+    public String getFTType(int iDim) {
+        return fttype[iDim];
     }
 
     @Override
@@ -568,6 +649,30 @@ public class RS2DData implements NMRData {
         Sw[dim] = null;
     }
 
+    private double getSpectralWidthAsHertz() {
+        return getParameterAsHertz(SPECTRAL_WIDTH);
+    }
+
+    private double getOffsetAsHertz(int iDim) {
+        return getParameterAsHertz(OFFSET_FREQ_PARAMS.get(iDim));
+    }
+
+    private double getParameterAsHertz(Parameter param) {
+        return header.<NumberValue>get(param).getValueAs(Unit.Hertz, header);
+    }
+
+    private double getParameterAsHertz(String paramName) {
+        return header.<NumberValue>get(paramName).getValueAs(Unit.Hertz, header);
+    }
+
+    private List<Double> getParameterAsHertzList(Parameter param) {
+        return header.<ListNumberValue>get(param).getValueAs(Unit.Hertz, header);
+    }
+
+    private List<Double> getParameterAsHertzList(String paramName) {
+        return header.<ListNumberValue>get(paramName).getValueAs(Unit.Hertz, header);
+    }
+
     @Override
     public double getRef(int iDim) {
         // try cache value first
@@ -635,18 +740,13 @@ public class RS2DData implements NMRData {
     }
 
     @Override
-    public boolean getNegatePairs(int dim) {
-        return "negate".equals(getFTType(dim));
-    }
-
-    @Override
-    public String getFTType(int iDim) {
-        return fttype[iDim];
-    }
-
-    @Override
     public boolean getNegateImag(int iDim) {
         return negateImag[iDim];
+    }
+
+    @Override
+    public boolean getNegatePairs(int dim) {
+        return "negate".equals(getFTType(dim));
     }
 
     @Override
@@ -730,11 +830,6 @@ public class RS2DData implements NMRData {
     }
 
     @Override
-    public long getDate() {
-        return zonedDateTime.toEpochSecond();
-    }
-
-    @Override
     public void readVector(int iVec, Vec dvec) {
         dvec.setGroupDelay(groupDelay);
         if (dvec.isComplex()) {
@@ -751,6 +846,62 @@ public class RS2DData implements NMRData {
         dvec.centerFreq = getSF(0);
 
         dvec.setRefValue(getRef(0));
+    }
+
+    private void copyFloatVecData(byte[] dataBuf, Complex[] cdata) {
+        FloatBuffer dBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
+        double px, py;
+        for (int j = 0; j < np; j += 2) {
+            px = dBuffer.get(j);
+            py = dBuffer.get(j + 1);
+            if (exchangeXY) {
+                cdata[j / 2] = new Complex(py / scale, px / scale);
+            } else {
+                cdata[j / 2] = new Complex(px / scale, -(double) py / scale);
+            }
+        }
+        if (negatePairs) {
+            Vec.negatePairs(cdata);
+        }
+
+    }
+
+    private void copyFloatVecData(byte[] dataBuf, double[] rdata, double[] idata) {
+        FloatBuffer dBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
+        double px, py;
+        for (int j = 0; j < np; j += 2) {
+            px = dBuffer.get(j);
+            py = dBuffer.get(j + 1);
+            if (exchangeXY) {
+                rdata[j / 2] = py / scale;
+                idata[j / 2] = px / scale;
+            } else {
+                rdata[j / 2] = px / scale;
+                idata[j / 2] = -(double) py / scale;
+            }
+        }
+        if (negatePairs) {
+            Vec.negatePairs(rdata, idata);
+        }
+    }
+
+    private void copyFloatVecData(byte[] dataBuf, double[] data) {
+        FloatBuffer dBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
+        double px, py;
+        for (int j = 0; j < np; j += 2) {
+            px = dBuffer.get(j);
+            py = dBuffer.get(j + 1);
+            if (exchangeXY) {
+                data[j] = py / scale;
+                data[j + 1] = px / scale;
+            } else {
+                data[j] = px / scale;
+                data[j + 1] = -py / scale;
+            }
+        }
+        if (negatePairs) {
+            Vec.negatePairs(data);
+        }
     }
 
     @Override
@@ -800,6 +951,123 @@ public class RS2DData implements NMRData {
             dvec.setGroupDelay(0.0);
         }
     }
+
+    public void readVector(int iDim, int iVec, Complex[] cdata) {
+        int size = getSize(iDim);
+        int nPer = getGroupSize(iDim);
+        int nPoints = size * nPer;
+        byte[] dataBuf = new byte[nPoints * Float.BYTES * 2];
+        FloatBuffer floatBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
+        for (int j = 0; j < (nPoints * 2); j++) {
+            floatBuffer.put(j, 0);
+        }
+        int stride = tbytes;
+        for (int i = 1; i < iDim; i++) {
+            stride *= getSize(i) * 2;
+        }
+
+        for (int i = 0; i < (nPoints); i++) {
+            if (sampleSchedule != null) {
+                int[] point = {i / 2};
+                int index = sampleSchedule.getIndex(point);
+                if (index != -1) {
+                    index = index * 2 + (i % 2);
+                    readValue(iDim, stride, index, i, iVec, dataBuf);
+                }
+            } else {
+                readValue(iDim, stride, i, i, iVec, dataBuf);
+            }
+        }
+        for (int j = 0; j < (nPoints * 2); j += 2) {
+            double px = floatBuffer.get(j);
+            double py = floatBuffer.get(j + 1);
+            cdata[j / 2] = new Complex(px / scale, py / scale);
+        }
+    }
+
+    public void readVector(int iDim, int iVec, double[] data) {
+        int size = getSize(iDim);
+        int nPer = getGroupSize(iDim);
+        int nPoints = size * nPer;
+        byte[] dataBuf = new byte[nPoints * Float.BYTES];
+        FloatBuffer floatBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
+        for (int j = 0; j < nPoints; j++) {
+            floatBuffer.put(j, 0);
+        }
+        int stride = tbytes;
+        for (int i = 1; i < iDim; i++) {
+            stride *= getSize(i) * nPer;
+        }
+
+        for (int i = 0; i < nPoints; i++) {
+            if (sampleSchedule != null) {
+                int[] point = {i / 2};
+                int index = sampleSchedule.getIndex(point);
+                if (index != -1) {
+                    index = index * 2 + (i % 2);
+                    readValue(iDim, stride, index, i, iVec, dataBuf);
+                }
+            } else {
+                readValue(iDim, stride, i, i, iVec, dataBuf);
+            }
+        }
+        for (int j = 0; j < nPoints; j++) {
+            double px = floatBuffer.get(j);
+            data[j] = px / scale;
+        }
+    }
+    // read value along dim
+    // fixme only works for 2nd dim
+
+    private void readValue(int iDim, int stride, int fileIndex, int vecIndex, int xCol, byte[] dataBuf) {
+        try {
+            int nPer = isComplex(iDim) ? 2 : 1;
+            int skips = fileIndex * stride + xCol * 4 * 2;
+            ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * nPer, 4 * nPer);
+            int nread = fc.read(buf, skips);
+            if (nread != 4 * nPer) {
+                log.warn("Could not read requested bytes");
+                if (fc != null) {
+                    try {
+                        fc.close();
+                    } catch (IOException ex) {
+                        log.warn(ex.getMessage(), ex);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log.warn(e.getMessage(), e);
+            if (fc != null) {
+                try {
+                    fc.close();
+                } catch (IOException ex) {
+                    log.warn(ex.getMessage(), ex);
+                }
+            }
+        }
+    }
+
+    // read i'th data block
+    private void readVecBlock(int i, byte[] dataBuf) {
+        try {
+            int skips = i * tbytes;
+            ByteBuffer buf = ByteBuffer.wrap(dataBuf);
+            int nread = fc.read(buf, skips);
+            if (nread < tbytes) // nread < tbytes, nread < np
+            {
+                throw new ArrayIndexOutOfBoundsException("file index " + i + " out of bounds " + nread + " " + tbytes);
+            }
+        } catch (IOException e) {
+            log.warn(e.getMessage(), e);
+            if (fc != null) {
+                try {
+                    fc.close();
+                } catch (IOException ex) {
+                    log.warn(ex.getMessage(), ex);
+                }
+            }
+        }
+    }  // end readVecBlock
 
     @Override
     public void resetAcqOrder() {
@@ -906,11 +1174,6 @@ public class RS2DData implements NMRData {
     }
 
     @Override
-    public boolean isFID() {
-        return getState(0) == 0;
-    }
-
-    @Override
     public SampleSchedule getSampleSchedule() {
         return sampleSchedule;
     }
@@ -921,243 +1184,67 @@ public class RS2DData implements NMRData {
     }
 
     @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
+    }
+
+    @Override
     public DatasetType getPreferredDatasetType() {
         return preferredDatasetType;
     }
 
     @Override
-    public void setPreferredDatasetType(DatasetType datasetType) {
-        this.preferredDatasetType = datasetType;
+    public long getDate() {
+        return zonedDateTime.toEpochSecond();
     }
 
-    @Override
-    public List<DatasetGroupIndex> getSkipGroups() {
-        return datasetGroupIndices;
-    }
-
-    /**
-     * Some parameter may need internal conversion before use.
-     * This is needed for parameters which could be stored in Hz or ppm, but can only be used in Hz internally.
-     * This includes SPECTRAL_WIDTH* and OFFSET_FREQ_* parameters.
-     *
-     * @param name the parameter name
-     * @return a converted value, or null if there is no need for conversion.
-     */
-    private Number getConvertedNumberValue(String name) {
-        boolean needsConversion = SW_PARAMS.stream().anyMatch(p -> p.name().equals(name))
-                || OFFSET_FREQ_PARAMS.stream().anyMatch(p -> p.name().equals(name));
-        return needsConversion ? getParameterAsHertz(name) : null;
-    }
-
-    /**
-     * Some parameter may need internal conversion before use.
-     * This is needed for parameters which could be stored in Hz or ppm, but can only be used in Hz internally.
-     * This includes only SR (Spectral Reference).
-     *
-     * @param name the parameter name
-     * @return a converted list of values, or null if there is no need for conversion.
-     */
-    private List<? extends Number> getConvertedListNumberValue(String name) {
-        boolean needsConversion = SR.name().equals(name);
-        return needsConversion ? getParameterAsHertzList(name) : null;
-    }
-
-    private double getSpectralWidthAsHertz() {
-        return getParameterAsHertz(SPECTRAL_WIDTH);
-    }
-
-    private double getOffsetAsHertz(int iDim) {
-        return getParameterAsHertz(OFFSET_FREQ_PARAMS.get(iDim));
-    }
-
-    private double getParameterAsHertz(Parameter param) {
-        return header.<NumberValue>get(param).getValueAs(Unit.Hertz, header);
-    }
-
-    private double getParameterAsHertz(String paramName) {
-        return header.<NumberValue>get(paramName).getValueAs(Unit.Hertz, header);
-    }
-    // read value along dim
-    // fixme only works for 2nd dim
-
-    private List<Double> getParameterAsHertzList(Parameter param) {
-        return header.<ListNumberValue>get(param).getValueAs(Unit.Hertz, header);
-    }
-
-    private List<Double> getParameterAsHertzList(String paramName) {
-        return header.<ListNumberValue>get(paramName).getValueAs(Unit.Hertz, header);
-    }
-
-    private void copyFloatVecData(byte[] dataBuf, Complex[] cdata) {
-        FloatBuffer dBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
-        double px, py;
-        for (int j = 0; j < np; j += 2) {
-            px = dBuffer.get(j);
-            py = dBuffer.get(j + 1);
-            if (exchangeXY) {
-                cdata[j / 2] = new Complex(py / scale, px / scale);
-            } else {
-                cdata[j / 2] = new Complex(px / scale, -(double) py / scale);
-            }
+    private static void writeRow(Dataset dataset, Vec vec, int[] pt, BufferedOutputStream fOut) throws IOException {
+        if (dataset.getComplex(0)) {
+            vec.makeComplex();
+        } else {
+            vec.makeReal();
         }
-        if (negatePairs) {
-            Vec.negatePairs(cdata);
+        dataset.readVector(vec, pt, 0);
+        if (!dataset.getComplex(0)) {
+            vec.makeComplex();
         }
+        byte[] array = vec.toFloatBytes(ByteOrder.BIG_ENDIAN);
+        fOut.write(array);
 
     }
 
-    private void copyFloatVecData(byte[] dataBuf, double[] rdata, double[] idata) {
-        FloatBuffer dBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
-        double px, py;
-        for (int j = 0; j < np; j += 2) {
-            px = dBuffer.get(j);
-            py = dBuffer.get(j + 1);
-            if (exchangeXY) {
-                rdata[j / 2] = py / scale;
-                idata[j / 2] = px / scale;
-            } else {
-                rdata[j / 2] = px / scale;
-                idata[j / 2] = -(double) py / scale;
-            }
-        }
-        if (negatePairs) {
-            Vec.negatePairs(rdata, idata);
-        }
-    }
-
-    private void copyFloatVecData(byte[] dataBuf, double[] data) {
-        FloatBuffer dBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
-        double px, py;
-        for (int j = 0; j < np; j += 2) {
-            px = dBuffer.get(j);
-            py = dBuffer.get(j + 1);
-            if (exchangeXY) {
-                data[j] = py / scale;
-                data[j + 1] = px / scale;
-            } else {
-                data[j] = px / scale;
-                data[j + 1] = -py / scale;
-            }
-        }
-        if (negatePairs) {
-            Vec.negatePairs(data);
-        }
-    }
-
-    public void readVector(int iDim, int iVec, Complex[] cdata) {
-        int size = getSize(iDim);
-        int nPer = getGroupSize(iDim);
-        int nPoints = size * nPer;
-        byte[] dataBuf = new byte[nPoints * Float.BYTES * 2];
-        FloatBuffer floatBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
-        for (int j = 0; j < (nPoints * 2); j++) {
-            floatBuffer.put(j, 0);
-        }
-        int stride = tbytes;
-        for (int i = 1; i < iDim; i++) {
-            stride *= getSize(i) * 2;
-        }
-
-        for (int i = 0; i < (nPoints); i++) {
-            if (sampleSchedule != null) {
-                int[] point = {i / 2};
-                int index = sampleSchedule.getIndex(point);
-                if (index != -1) {
-                    index = index * 2 + (i % 2);
-                    readValue(iDim, stride, index, i, iVec, dataBuf);
+    public static void saveToRS2DFile(Dataset dataset, String filePath) throws IOException {
+        try (BufferedOutputStream fOut = new BufferedOutputStream(new FileOutputStream(filePath))) {
+            int nDim = dataset.getNDim();
+            if (dataset.getNDim() == 1) {
+                Vec vec = dataset.readVector(0, 0);
+                if (!vec.isComplex()) {
+                    vec.hft();
                 }
+                byte[] array = vec.toFloatBytes(ByteOrder.BIG_ENDIAN);
+                fOut.write(array);
             } else {
-                readValue(iDim, stride, i, i, iVec, dataBuf);
-            }
-        }
-        for (int j = 0; j < (nPoints * 2); j += 2) {
-            double px = floatBuffer.get(j);
-            double py = floatBuffer.get(j + 1);
-            cdata[j / 2] = new Complex(px / scale, py / scale);
-        }
-    }
-
-    public void readVector(int iDim, int iVec, double[] data) {
-        int size = getSize(iDim);
-        int nPer = getGroupSize(iDim);
-        int nPoints = size * nPer;
-        byte[] dataBuf = new byte[nPoints * Float.BYTES];
-        FloatBuffer floatBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
-        for (int j = 0; j < nPoints; j++) {
-            floatBuffer.put(j, 0);
-        }
-        int stride = tbytes;
-        for (int i = 1; i < iDim; i++) {
-            stride *= getSize(i) * nPer;
-        }
-
-        for (int i = 0; i < nPoints; i++) {
-            if (sampleSchedule != null) {
-                int[] point = {i / 2};
-                int index = sampleSchedule.getIndex(point);
-                if (index != -1) {
-                    index = index * 2 + (i % 2);
-                    readValue(iDim, stride, index, i, iVec, dataBuf);
+                int[] sizes = new int[dataset.getNDim() - 1];
+                for (int i = 1; i < dataset.getNDim(); i++) {
+                    sizes[nDim - i - 1] = dataset.getSizeReal(i);
                 }
-            } else {
-                readValue(iDim, stride, i, i, iVec, dataBuf);
-            }
-        }
-        for (int j = 0; j < nPoints; j++) {
-            double px = floatBuffer.get(j);
-            data[j] = px / scale;
-        }
-    }
-
-    private void readValue(int iDim, int stride, int fileIndex, int vecIndex, int xCol, byte[] dataBuf) {
-        try {
-            int nPer = isComplex(iDim) ? 2 : 1;
-            int skips = fileIndex * stride + xCol * 4 * 2;
-            ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * nPer, 4 * nPer);
-            int nread = fc.read(buf, skips);
-            if (nread != 4 * nPer) {
-                log.warn("Could not read requested bytes");
-                if (fc != null) {
-                    try {
-                        fc.close();
-                    } catch (IOException ex) {
-                        log.warn(ex.getMessage(), ex);
+                Vec vec = new Vec(dataset.getSizeReal(0), dataset.getComplex(0));
+                MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
+                var counterIterator = counter.iterator();
+                int[] pt = new int[sizes.length];
+                while (counterIterator.hasNext()) {
+                    counterIterator.next();
+                    int[] counts = counterIterator.getCounts();
+                    for (int i = 0; i < counts.length; i++) {
+                        pt[i] = counts[counts.length - i - 1];
                     }
-                }
-            }
-        } catch (IOException e) {
-            log.warn(e.getMessage(), e);
-            if (fc != null) {
-                try {
-                    fc.close();
-                } catch (IOException ex) {
-                    log.warn(ex.getMessage(), ex);
+                    int lastRow = sizes[sizes.length - 1] - 1;
+                    pt[0] = lastRow - pt[0];
+                    writeRow(dataset, vec, pt, fOut);
                 }
             }
         }
     }
-
-    // read i'th data block
-    private void readVecBlock(int i, byte[] dataBuf) {
-        try {
-            int skips = i * tbytes;
-            ByteBuffer buf = ByteBuffer.wrap(dataBuf);
-            int nread = fc.read(buf, skips);
-            if (nread < tbytes) // nread < tbytes, nread < np
-            {
-                throw new ArrayIndexOutOfBoundsException("file index " + i + " out of bounds " + nread + " " + tbytes);
-            }
-        } catch (IOException e) {
-            log.warn(e.getMessage(), e);
-            if (fc != null) {
-                try {
-                    fc.close();
-                } catch (IOException ex) {
-                    log.warn(ex.getMessage(), ex);
-                }
-            }
-        }
-    }  // end readVecBlock
 
     public void setHeaderMatrixDimensions(Dataset dataset) throws XPathExpressionException {
         for (int iDim = 0; (iDim < RS2DData.MAXDIM) && (iDim < dataset.getNDim()); iDim++) {
@@ -1247,86 +1334,6 @@ public class RS2DData implements NMRData {
             }
         } catch (TransformerException | ParserConfigurationException e) {
             throw new IOException(e);
-        }
-    }
-
-    /**
-     * Finds FID data, given a path to search for vendor-specific files and
-     * directories.
-     *
-     * @param bpath full path for FID data
-     * @return if FID data was successfully found or not
-     */
-    public static boolean findFID(StringBuilder bpath) {
-        boolean found = false;
-        if (findFIDFiles(bpath.toString())) {
-            found = true;
-        } else {
-            File f = new File(bpath.toString());
-            File parent = f.getParentFile();
-            if (findFIDFiles(parent.getAbsolutePath())) {
-                String fileName = f.getName();
-                if (fileName.equals(DATA_FILE_NAME)) {
-                    found = true;
-                }
-                bpath.setLength(0);
-                bpath.append(parent);
-            }
-        }
-        return found;
-    }
-
-    private static boolean findFIDFiles(String dirPath) {
-        Path headerPath = Paths.get(dirPath, HEADER_FILE_NAME);
-        Path dataPath = Paths.get(dirPath, DATA_FILE_NAME);
-        return headerPath.toFile().exists() && dataPath.toFile().exists();
-    }
-
-    private static void writeRow(Dataset dataset, Vec vec, int[] pt, BufferedOutputStream fOut) throws IOException {
-        if (dataset.getComplex(0)) {
-            vec.makeComplex();
-        } else {
-            vec.makeReal();
-        }
-        dataset.readVector(vec, pt, 0);
-        if (!dataset.getComplex(0)) {
-            vec.makeComplex();
-        }
-        byte[] array = vec.toFloatBytes(ByteOrder.BIG_ENDIAN);
-        fOut.write(array);
-
-    }
-
-    public static void saveToRS2DFile(Dataset dataset, String filePath) throws IOException {
-        try (BufferedOutputStream fOut = new BufferedOutputStream(new FileOutputStream(filePath))) {
-            int nDim = dataset.getNDim();
-            if (dataset.getNDim() == 1) {
-                Vec vec = dataset.readVector(0, 0);
-                if (!vec.isComplex()) {
-                    vec.hft();
-                }
-                byte[] array = vec.toFloatBytes(ByteOrder.BIG_ENDIAN);
-                fOut.write(array);
-            } else {
-                int[] sizes = new int[dataset.getNDim() - 1];
-                for (int i = 1; i < dataset.getNDim(); i++) {
-                    sizes[nDim - i - 1] = dataset.getSizeReal(i);
-                }
-                Vec vec = new Vec(dataset.getSizeReal(0), dataset.getComplex(0));
-                MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
-                var counterIterator = counter.iterator();
-                int[] pt = new int[sizes.length];
-                while (counterIterator.hasNext()) {
-                    counterIterator.next();
-                    int[] counts = counterIterator.getCounts();
-                    for (int i = 0; i < counts.length; i++) {
-                        pt[i] = counts[counts.length - i - 1];
-                    }
-                    int lastRow = sizes[sizes.length - 1] - 1;
-                    pt[0] = lastRow - pt[0];
-                    writeRow(dataset, vec, pt, fOut);
-                }
-            }
         }
     }
 }

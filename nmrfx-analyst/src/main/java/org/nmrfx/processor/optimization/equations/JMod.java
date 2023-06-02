@@ -130,11 +130,6 @@ public class JMod extends OptFunction {
     }
 
     @Override
-    public String getFunctionName() {
-        return "y = c * exp(-2.0*b*x) * (-a+cos(2.0*PI*J*x)";
-    }
-
-    @Override
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
         double xMin = DataUtil.getXAtMinValue(VecID.Y, VecID.X, getDataSetPtr());
@@ -169,5 +164,10 @@ public class JMod extends OptFunction {
                 }
             }
         }
+    }
+
+    @Override
+    public String getFunctionName() {
+        return "y = c * exp(-2.0*b*x) * (-a+cos(2.0*PI*J*x)";
     }
 }

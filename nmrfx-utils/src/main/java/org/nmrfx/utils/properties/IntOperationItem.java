@@ -34,9 +34,23 @@ public class IntOperationItem extends OperationItem implements ObservableInteger
 
     int value;
     int defaultValue;
-    ChangeListener<? super Number> listener;
     private Integer min = null;
     private Integer max = null;
+    ChangeListener<? super Number> listener;
+
+    /**
+     * @return the min
+     */
+    public Integer getMin() {
+        return min;
+    }
+
+    /**
+     * @return the max
+     */
+    public Integer getMax() {
+        return max;
+    }
 
     public IntOperationItem(ChangeListener listener, int defaultValue, String category, String name, String description) {
         super(category, name, description);
@@ -52,18 +66,9 @@ public class IntOperationItem extends OperationItem implements ObservableInteger
         this.max = max;
     }
 
-    /**
-     * @return the min
-     */
-    public Integer getMin() {
-        return min;
-    }
-
-    /**
-     * @return the max
-     */
-    public Integer getMax() {
-        return max;
+    @Override
+    public Integer getValue() {
+        return value;
     }
 
     @Override
@@ -87,11 +92,6 @@ public class IntOperationItem extends OperationItem implements ObservableInteger
     }
 
     @Override
-    public Integer getValue() {
-        return value;
-    }
-
-    @Override
     public void setValue(Object o) {
         int oldValue = value;
         if (o instanceof Number) {
@@ -107,21 +107,6 @@ public class IntOperationItem extends OperationItem implements ObservableInteger
                 listener.changed(this, oldValue, value);
             }
         }
-    }
-
-    @Override
-    public boolean isDefault() {
-        return (value == defaultValue);
-    }
-
-    @Override
-    public void setFromString(String sValue) {
-        value = Integer.parseInt(sValue);
-    }
-
-    @Override
-    public void setToDefault() {
-        value = defaultValue;
     }
 
     @Override
@@ -164,6 +149,21 @@ public class IntOperationItem extends OperationItem implements ObservableInteger
 
     @Override
     public void removeListener(InvalidationListener listener) {
+    }
+
+    @Override
+    public boolean isDefault() {
+        return (value == defaultValue);
+    }
+
+    @Override
+    public void setFromString(String sValue) {
+        value = Integer.parseInt(sValue);
+    }
+
+    @Override
+    public void setToDefault() {
+        value = defaultValue;
     }
 
 }

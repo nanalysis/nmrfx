@@ -22,11 +22,6 @@ import static org.junit.Assume.assumeFalse;
 
 public class ProcessTest {
 
-    @ClassRule
-    public static final TemporaryFolder tmpFolder = TemporaryFolder.builder()
-            .parentFolder(new File(System.getProperty("user.dir")))
-            .assureDeletion()
-            .build();
     private static final String VALID_SUBMODULE_LOCATION = "nmrfx-test-data/valid";
     private static final String FID_SUBMODULE_LOCATION = "nmrfx-test-data/testfids/";
     private static final String ERR_MSG = "File doesn't exist: ";
@@ -35,6 +30,24 @@ public class ProcessTest {
     private static String fidHome;
     private static String tmpHome;
     private static String validHome;
+
+    @ClassRule
+    public static final TemporaryFolder tmpFolder = TemporaryFolder.builder()
+            .parentFolder(new File(System.getProperty("user.dir")))
+            .assureDeletion()
+            .build();
+
+    @BeforeClass
+    public static void setup() {
+        Path parent = FileSystems.getDefault()
+                .getPath("")
+                .toAbsolutePath()
+                .getParent();
+        // Python scripts expect path with / not \, so replace if present
+        fidHome = parent.resolve(FID_SUBMODULE_LOCATION).toString().replace("\\", "/") + "/";
+        validHome = parent.resolve(VALID_SUBMODULE_LOCATION).toString().replace("\\", "/") + "/";
+        tmpHome = tmpFolder.getRoot().toString().replace("\\", "/") + "/";
+    }
 
     public void executeScript(String fileName) {
         Path path = Path.of(scriptHome, fileName + ".py");
@@ -231,18 +244,6 @@ public class ProcessTest {
     public void test_rs2d_2d() throws IOException {
         long result = runAndCompare("rs2d_2dhetero");
         assertEquals(-1, result);
-    }
-
-    @BeforeClass
-    public static void setup() {
-        Path parent = FileSystems.getDefault()
-                .getPath("")
-                .toAbsolutePath()
-                .getParent();
-        // Python scripts expect path with / not \, so replace if present
-        fidHome = parent.resolve(FID_SUBMODULE_LOCATION).toString().replace("\\", "/") + "/";
-        validHome = parent.resolve(VALID_SUBMODULE_LOCATION).toString().replace("\\", "/") + "/";
-        tmpHome = tmpFolder.getRoot().toString().replace("\\", "/") + "/";
     }
 
 

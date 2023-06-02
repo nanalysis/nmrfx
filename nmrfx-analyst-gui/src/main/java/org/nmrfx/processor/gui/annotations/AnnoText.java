@@ -37,7 +37,7 @@ import java.util.List;
  */
 public class AnnoText implements CanvasAnnotation {
     private static final Logger log = LoggerFactory.getLogger(AnnoText.class);
-    protected String text;
+
     double x1;
     double y1;
     double x2;
@@ -49,9 +49,11 @@ public class AnnoText implements CanvasAnnotation {
     boolean selected = false;
     boolean selectable = true;
     int activeHandle = -1;
+
     POSTYPE xPosType;
     POSTYPE yPosType;
     Bounds bounds2D;
+    protected String text;
     Font font = Font.font("Liberation Sans", 12);
 
     Color fill = Color.BLACK;
@@ -67,12 +69,12 @@ public class AnnoText implements CanvasAnnotation {
         this.text = text;
     }
 
-    public String getText() {
-        return text;
-    }
-
     public void setText(String text) {
         this.text = text;
+    }
+
+    public String getText() {
+        return text;
     }
 
     public Font getFont() {
@@ -97,8 +99,52 @@ public class AnnoText implements CanvasAnnotation {
         this.fill = fill;
     }
 
+    @Override
+    public boolean hit(double x, double y, boolean selectMode) {
+        boolean hit = (bounds2D != null) && bounds2D.contains(x, y);
+        if (hit) {
+            startX1 = x1;
+            startX2 = x2;
+            startY1 = y1;
+            startY2 = y2;
+        }
+        if (selectMode && selectable) {
+            selected = hit;
+        }
+        return hit;
+    }
+
     public Bounds getBounds() {
         return bounds2D;
+    }
+
+    /**
+     * Moves the annotext around the canvas. If a handle is selected, the handle can be
+     * moved to adjust the size of the molecule but, it cannot be moved past another handle.
+     * (i.e. The text cannot be sized to a negative width)
+     *
+     * @param bounds The bounds of the canvas.
+     * @param world  The bounds of the canvas in the units of the canvas axis.
+     * @param start  The starting position.
+     * @param pos    The new position.
+     */
+    @Override
+    public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
+        double dx = pos[0] - start[0];
+        double dy = pos[1] - start[1];
+        double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
+        if (activeHandle < 0) {
+            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+            y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+        } else if (activeHandle == 0) {
+            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            x1 = Math.min(x1, x2 - handleSeparationLimit);
+        } else if (activeHandle == 1) {
+            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            x2 = Math.max(x1 + handleSeparationLimit, x2);
+        }
     }
 
     @Override
@@ -135,50 +181,6 @@ public class AnnoText implements CanvasAnnotation {
             }
         } catch (Exception ex) {
             log.warn(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public boolean hit(double x, double y, boolean selectMode) {
-        boolean hit = (bounds2D != null) && bounds2D.contains(x, y);
-        if (hit) {
-            startX1 = x1;
-            startX2 = x2;
-            startY1 = y1;
-            startY2 = y2;
-        }
-        if (selectMode && selectable) {
-            selected = hit;
-        }
-        return hit;
-    }
-
-    /**
-     * Moves the annotext around the canvas. If a handle is selected, the handle can be
-     * moved to adjust the size of the molecule but, it cannot be moved past another handle.
-     * (i.e. The text cannot be sized to a negative width)
-     *
-     * @param bounds The bounds of the canvas.
-     * @param world  The bounds of the canvas in the units of the canvas axis.
-     * @param start  The starting position.
-     * @param pos    The new position.
-     */
-    @Override
-    public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
-        double dx = pos[0] - start[0];
-        double dy = pos[1] - start[1];
-        double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
-        if (activeHandle < 0) {
-            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-            y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-            y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
-        } else if (activeHandle == 0) {
-            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-            x1 = Math.min(x1, x2 - handleSeparationLimit);
-        } else if (activeHandle == 1) {
-            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-            x2 = Math.max(x1 + handleSeparationLimit, x2);
         }
     }
 

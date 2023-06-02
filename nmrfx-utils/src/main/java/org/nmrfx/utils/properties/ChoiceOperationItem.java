@@ -37,10 +37,10 @@ import java.util.Collection;
 // @PluginAPI("ring")
 public class ChoiceOperationItem extends OperationItem implements ObservableStringValue {
 
-    private final Collection<?> choices;
     String defaultValue;
     String value;
     ChangeListener<? super String> listener;
+    private final Collection<?> choices;
 
     public ChoiceOperationItem(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
         super(category, name, description);
@@ -105,11 +105,6 @@ public class ChoiceOperationItem extends OperationItem implements ObservableStri
     }
 
     @Override
-    public String getStringRep() {
-        return '\'' + value + '\'';
-    }
-
-    @Override
     public String get() {
         return value;
     }
@@ -133,5 +128,10 @@ public class ChoiceOperationItem extends OperationItem implements ObservableStri
 
     public Collection<?> getChoices() {
         return choices;
+    }
+
+    @Override
+    public String getStringRep() {
+        return '\'' + value + '\'';
     }
 }

@@ -14,11 +14,11 @@ import java.util.ArrayList;
  */
 public class HOSEStat {
 
+    DescriptiveStatistics dStat = new DescriptiveStatistics();
+    double[] weights;
     final double range;
     final int nValues;
     final double wmean;
-    DescriptiveStatistics dStat = new DescriptiveStatistics();
-    double[] weights;
 
     HOSEStat(ArrayList<Double> ppms, ArrayList<Double> distArray) {
         nValues = ppms.size();

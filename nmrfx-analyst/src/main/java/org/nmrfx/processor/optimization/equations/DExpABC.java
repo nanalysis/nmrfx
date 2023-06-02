@@ -113,10 +113,6 @@ public class DExpABC extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = a * (exp(-x / b) + exp(-x / c))";
-    }
-
     @Override
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
@@ -139,5 +135,9 @@ public class DExpABC extends OptFunction {
                 }
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = a * (exp(-x / b) + exp(-x / c))";
     }
 }

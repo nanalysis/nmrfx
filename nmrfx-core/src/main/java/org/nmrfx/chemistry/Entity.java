@@ -25,18 +25,6 @@ import java.util.*;
 @PluginAPI("ring")
 public class Entity implements AtomContainer, Serializable, ITree {
 
-    public final static String[] entityCompIndexLoopStrings = {
-            "_Entity_comp_index.ID",
-            "_Entity_comp_index.Auth_seq_ID",
-            "_Entity_comp_index.Comp_ID",
-            "_Entity_comp_index.Comp_label",
-            "_Entity_comp_index.Entity_ID",};
-    public final static String[] entityPolySeqLoopStrings = {
-            "_Entity_poly_seq.Hetero",
-            "_Entity_poly_seq.Mon_ID",
-            "_Entity_poly_seq.Num",
-            "_Entity_poly_seq.Comp_index_ID",
-            "_Entity_poly_seq.Entity_ID",};
     public static String[] entityStrings = {
             "_Entity.Ambiguous_conformational_states",
             "_Entity.Ambiguous_chem_comp_sites",
@@ -50,11 +38,25 @@ public class Entity implements AtomContainer, Serializable, ITree {
             "_Entity.Thiol_state",
             "_Entity.Src_method",
             "_Entity.Fragment",};
+    public final static String[] entityCompIndexLoopStrings = {
+            "_Entity_comp_index.ID",
+            "_Entity_comp_index.Auth_seq_ID",
+            "_Entity_comp_index.Comp_ID",
+            "_Entity_comp_index.Comp_label",
+            "_Entity_comp_index.Entity_ID",};
+    public final static String[] entityPolySeqLoopStrings = {
+            "_Entity_poly_seq.Hetero",
+            "_Entity_poly_seq.Mon_ID",
+            "_Entity_poly_seq.Num",
+            "_Entity_poly_seq.Comp_index_ID",
+            "_Entity_poly_seq.Entity_ID",};
     public String name = null;
     public String label = null;
+    String pdbChain = "";
     public MoleculeBase molecule = null;
     public List<Atom> atoms = new ArrayList<Atom>();
     public List<Bond> bonds = new ArrayList<Bond>();
+    boolean hasEquivalentAtoms = false;
     public CoordSet coordSet = null;
     public int entityID = 0;
     public int assemblyID = 0;
@@ -64,8 +66,6 @@ public class Entity implements AtomContainer, Serializable, ITree {
     public String magneticEquivalenceGroupCode = "?";
     public String role = "?";
     public String details = "?";
-    String pdbChain = "";
-    boolean hasEquivalentAtoms = false;
     HashMap<String, String> propertyMap = new HashMap<>();
     Map<String, Object> propertyObjectMap = new HashMap<>();
     ArrayList<EntityCommonName> commonNames = new ArrayList<>();
@@ -78,11 +78,6 @@ public class Entity implements AtomContainer, Serializable, ITree {
     @Override
     public int getBondCount() {
         return bonds.size();
-    }
-
-    @Override
-    public Atom getAtom(int index) {
-        return atoms.get(index);
     }
 
     @Override
@@ -170,6 +165,25 @@ public class Entity implements AtomContainer, Serializable, ITree {
         return index;
     }
 
+    public static class EntityCommonName {
+
+        String name = "";
+        String type = "?";
+
+        EntityCommonName(String name, String type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getType() {
+            return type;
+        }
+    }
+
     public String getName() {
         return name;
     }
@@ -188,12 +202,12 @@ public class Entity implements AtomContainer, Serializable, ITree {
         }
     }
 
-    public String getPDBChain() {
-        return pdbChain;
-    }
-
     public void setPDBChain(String name) {
         pdbChain = name;
+    }
+
+    public String getPDBChain() {
+        return pdbChain;
     }
 
     public void setProperty(String propName, String propValue) {
@@ -231,8 +245,8 @@ public class Entity implements AtomContainer, Serializable, ITree {
     }
 
     @Override
-    public List<Bond> getBondList() {
-        return bonds;
+    public Atom getAtom(int index) {
+        return atoms.get(index);
     }
 
     public Atom getLastAtom() {
@@ -270,6 +284,11 @@ public class Entity implements AtomContainer, Serializable, ITree {
         bonds.remove(bond);
     }
 
+    @Override
+    public List<Bond> getBondList() {
+        return bonds;
+    }
+
     public void setHasEquivalentAtoms(boolean state) {
         hasEquivalentAtoms = state;
     }
@@ -284,25 +303,6 @@ public class Entity implements AtomContainer, Serializable, ITree {
 
     public void sortByIndex() {
         Collections.sort(atoms, Atom::compareByIndex);
-    }
-
-    public static class EntityCommonName {
-
-        String name = "";
-        String type = "?";
-
-        EntityCommonName(String name, String type) {
-            this.name = name;
-            this.type = type;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getType() {
-            return type;
-        }
     }
 
 }

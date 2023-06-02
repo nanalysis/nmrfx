@@ -51,8 +51,10 @@ public class GUIProject extends ProjectBase {
     private static final Logger log = LoggerFactory.getLogger(GUIProject.class);
 
     static String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
-    private static boolean commitActive = false;
+
     Git git;
+
+    private static boolean commitActive = false;
 
     public GUIProject(String name) {
         super(name);
@@ -61,6 +63,19 @@ public class GUIProject extends ProjectBase {
         datasetMap = FXCollections.observableHashMap();
         datasets = FXCollections.observableArrayList();
         setActive();
+    }
+
+    public static GUIProject replace(String name, GUIProject project) {
+        log.info("replace to {}", name);
+        GUIProject newProject = new GUIProject(name);
+        project.copySaveFrames(newProject);
+        newProject.datasetMap.putAll(project.datasetMap);
+        newProject.peakLists.putAll(project.peakLists);
+        newProject.peakPaths.putAll(project.peakPaths);
+        newProject.compoundMap.putAll(project.compoundMap);
+        newProject.molecules.putAll(project.molecules);
+        newProject.activeMol = project.activeMol;
+        return newProject;
     }
 
     public Git createAndInitializeGitObject(File gitDirectory) {
@@ -135,6 +150,14 @@ public class GUIProject extends ProjectBase {
         return System.getenv(name);
     }
 
+    public static GUIProject getActive() {
+        ProjectBase project = ProjectBase.getActive();
+        if (project == null) {
+            project = new GUIProject("Untitled 1");
+        }
+        return (GUIProject) project;
+    }
+
     private void writeIgnore() {
         if (git != null) {
             Path path = Paths.get(projectDir.toString(), ".gitignore");
@@ -153,6 +176,14 @@ public class GUIProject extends ProjectBase {
         AnalystApp.closeAll();
         // Clear the project directory or else a user may accidentally overwrite their previously closed project
         setProjectDir(null);
+    }
+
+    public static boolean checkProjectActive() {
+        ProjectBase project = ProjectBase.getActive();
+        boolean hasMolecules = !MoleculeFactory.getMolecules().isEmpty();
+        boolean hasDatasets = project != null && !project.getDatasets().isEmpty();
+        boolean hasPeakLists = project != null && !project.getPeakLists().isEmpty();
+        return hasMolecules || hasDatasets || hasPeakLists;
     }
 
     public void loadGUIProject(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {
@@ -222,6 +253,30 @@ public class GUIProject extends ProjectBase {
 
     }
 
+    public void saveProject() throws IOException {
+        ProjectBase currentProject = getActive();
+        setActive();
+        try {
+            if (projectDir == null) {
+                throw new IllegalArgumentException("Project directory not set");
+            }
+            checkSubDirs(projectDir);
+            super.saveProject();
+            NMRStarWriter.writeAll(getSTAR3FileName());
+            saveShifts(false);
+            saveShifts(true);
+        } catch (ParseException | InvalidPeakException | InvalidMoleculeException ex) {
+            throw new IOException(ex.getMessage());
+        }
+        if (currentProject == this) {
+            saveWindows(projectDir);
+        }
+        gitCommitOnThread();
+        PreferencesController.saveRecentProjects(projectDir.toString());
+        currentProject.setActive();
+        currentProject.setActive();
+    }
+
     boolean loadSTAR3(Path directory) throws IOException {
         File starFile = getSTAR3FileName(directory);
         boolean result = false;
@@ -279,6 +334,24 @@ public class GUIProject extends ProjectBase {
             }
         }
 
+    }
+
+    public static void loadMolecule(Path file) throws MoleculeIOException {
+        if (file.toString().endsWith(".pdb")) {
+            PDBFile pdbReader = new PDBFile();
+            pdbReader.readSequence(file.toString(), false, 0);
+        } else if (file.toString().endsWith(".sdf")) {
+            SDFile.read(file.toString(), null);
+        } else if (file.toString().endsWith(".mol")) {
+            SDFile.read(file.toString(), null);
+        } else if (file.toString().endsWith(".seq")) {
+            Sequence seq = new Sequence();
+            seq.read(file.toString());
+        }
+        if (MoleculeFactory.getActive() == null) {
+            throw new MoleculeIOException("Couldn't open any molecules");
+        }
+        log.info("active mol {}", MoleculeFactory.getActive().getName());
     }
 
     void loadMoleculeEntities(Path directory) throws MoleculeIOException, IOException {
@@ -376,6 +449,10 @@ public class GUIProject extends ProjectBase {
         th.start();
     }
 
+    public static boolean isCommitting() {
+        return commitActive;
+    }
+
     boolean gitCommit() {
         boolean didSomething = false;
         commitActive = true;
@@ -451,6 +528,14 @@ public class GUIProject extends ProjectBase {
 
     }
 
+    void loadWindows(Path dir) throws IOException {
+        WindowIO.loadWindows(dir);
+    }
+
+    void saveWindows(Path dir) throws IOException {
+        WindowIO.saveWindows(dir);
+    }
+
     public void addPeakListListener(Object mapChangeListener) {
         ObservableMap obsMap = (ObservableMap) peakLists;
         obsMap.addListener((MapChangeListener<String, PeakList>) mapChangeListener);
@@ -461,38 +546,6 @@ public class GUIProject extends ProjectBase {
         obsMap.addListener((MapChangeListener<String, Dataset>) mapChangeListener);
     }
 
-    public void saveProject() throws IOException {
-        ProjectBase currentProject = getActive();
-        setActive();
-        try {
-            if (projectDir == null) {
-                throw new IllegalArgumentException("Project directory not set");
-            }
-            checkSubDirs(projectDir);
-            super.saveProject();
-            NMRStarWriter.writeAll(getSTAR3FileName());
-            saveShifts(false);
-            saveShifts(true);
-        } catch (ParseException | InvalidPeakException | InvalidMoleculeException ex) {
-            throw new IOException(ex.getMessage());
-        }
-        if (currentProject == this) {
-            saveWindows(projectDir);
-        }
-        gitCommitOnThread();
-        PreferencesController.saveRecentProjects(projectDir.toString());
-        currentProject.setActive();
-        currentProject.setActive();
-    }
-
-    void loadWindows(Path dir) throws IOException {
-        WindowIO.loadWindows(dir);
-    }
-
-    void saveWindows(Path dir) throws IOException {
-        WindowIO.saveWindows(dir);
-    }
-
     public void checkSubDirs(Path projectDir) throws IOException {
         for (String subDir : SUB_DIR_TYPES) {
             Path subDirectory = Path.of(projectDir.toString(), subDir);
@@ -501,57 +554,6 @@ public class GUIProject extends ProjectBase {
             }
         }
         setProjectDir(projectDir);
-    }
-
-    public static GUIProject replace(String name, GUIProject project) {
-        log.info("replace to {}", name);
-        GUIProject newProject = new GUIProject(name);
-        project.copySaveFrames(newProject);
-        newProject.datasetMap.putAll(project.datasetMap);
-        newProject.peakLists.putAll(project.peakLists);
-        newProject.peakPaths.putAll(project.peakPaths);
-        newProject.compoundMap.putAll(project.compoundMap);
-        newProject.molecules.putAll(project.molecules);
-        newProject.activeMol = project.activeMol;
-        return newProject;
-    }
-
-    public static GUIProject getActive() {
-        ProjectBase project = ProjectBase.getActive();
-        if (project == null) {
-            project = new GUIProject("Untitled 1");
-        }
-        return (GUIProject) project;
-    }
-
-    public static boolean checkProjectActive() {
-        ProjectBase project = ProjectBase.getActive();
-        boolean hasMolecules = !MoleculeFactory.getMolecules().isEmpty();
-        boolean hasDatasets = project != null && !project.getDatasets().isEmpty();
-        boolean hasPeakLists = project != null && !project.getPeakLists().isEmpty();
-        return hasMolecules || hasDatasets || hasPeakLists;
-    }
-
-    public static void loadMolecule(Path file) throws MoleculeIOException {
-        if (file.toString().endsWith(".pdb")) {
-            PDBFile pdbReader = new PDBFile();
-            pdbReader.readSequence(file.toString(), false, 0);
-        } else if (file.toString().endsWith(".sdf")) {
-            SDFile.read(file.toString(), null);
-        } else if (file.toString().endsWith(".mol")) {
-            SDFile.read(file.toString(), null);
-        } else if (file.toString().endsWith(".seq")) {
-            Sequence seq = new Sequence();
-            seq.read(file.toString());
-        }
-        if (MoleculeFactory.getActive() == null) {
-            throw new MoleculeIOException("Couldn't open any molecules");
-        }
-        log.info("active mol {}", MoleculeFactory.getActive().getName());
-    }
-
-    public static boolean isCommitting() {
-        return commitActive;
     }
 
 }

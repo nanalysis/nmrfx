@@ -60,10 +60,15 @@ import java.util.ResourceBundle;
  */
 public class LigandScannerController implements Initializable, StageBasedController {
     private static final Logger log = LoggerFactory.getLogger(LigandScannerController.class);
+
+    private Stage stage;
+
     @FXML
     SplitPane splitPane;
     TableView<LigandScannerInfo> ligandTableView;
     XYChartPane chartPane;
+    @FXML
+    private ToolBar menuBar;
     ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
     MatrixAnalyzer matrixAnalyzer = new MatrixAnalyzer();
     String[] dimNames = null;
@@ -76,9 +81,6 @@ public class LigandScannerController implements Initializable, StageBasedControl
     ChoiceBox<String> xArrayChoice;
     ChoiceBox<String> yArrayChoice;
     int nPCA = 5;
-    private Stage stage;
-    @FXML
-    private ToolBar menuBar;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -103,13 +105,21 @@ public class LigandScannerController implements Initializable, StageBasedControl
         }
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
 
-    @Override
-    public void setStage(Stage stage) {
-        this.stage = stage;
+    public static LigandScannerController create() {
+        LigandScannerController controller = Fxml.load(LigandScannerController.class, "LigandScannerScene.fxml")
+                .withNewStage("Ligand Scanner")
+                .getController();
+        controller.stage.show();
+        return controller;
     }
 
     void initMenuBar() {
@@ -287,6 +297,7 @@ public class LigandScannerController implements Initializable, StageBasedControl
         return fileListItems;
     }
 
+
     public void updateDataFrame() {
 
     }
@@ -352,14 +363,6 @@ public class LigandScannerController implements Initializable, StageBasedControl
             activeChart.autoScale(true);
         }
 
-    }
-
-    public static LigandScannerController create() {
-        LigandScannerController controller = Fxml.load(LigandScannerController.class, "LigandScannerScene.fxml")
-                .withNewStage("Ligand Scanner")
-                .getController();
-        controller.stage.show();
-        return controller;
     }
 
 }

@@ -40,64 +40,6 @@ public class ElectrostaticInteraction {
         return validate(target, source, structureNum);
     }
 
-    public double getHADistance(int structureNum) {
-        return getHADistance(target, source, structureNum);
-    }
-
-    public double getAngle(int structureNum) {
-        return getAngle(target, source, structureNum);
-    }
-
-    public String toString() {
-        StringBuilder sBuild = new StringBuilder();
-        sBuild.append(target.getFullName());
-        sBuild.append(" ");
-        sBuild.append(source.getFullName());
-        sBuild.append(" ");
-        sBuild.append(source.getFullName());
-        sBuild.append(" ");
-        double distance = getHADistance(target, source, 0);
-        sBuild.append(distance);
-        sBuild.append(" ");
-        distance = getDistance(target, source, 0);
-        sBuild.append(distance);
-        sBuild.append(" ");
-        double angle = getAngle(target, source, 0);
-        sBuild.append(angle);
-        sBuild.append(" ");
-        double shift = getShift(0);
-        sBuild.append(shift);
-        return sBuild.toString();
-    }
-
-    public double getShift(int structureNum) {
-        Atom donorAtom = target.atom.getParent();
-        double distance = getHADistance(target, source, structureNum);
-        double angle = getAngle(target, source, structureNum);
-        double shift = 0.0;
-        double minDistance = 1.5;
-        if (distance < tolerance) {
-            if (distance < minDistance) {
-                distance = minDistance;
-            }
-            String sourceName = source.atom.getName();
-            double pCharge = 0.0;
-            if (sourceName.charAt(0) == 'O') {
-                pCharge = -0.51;
-            } else if (sourceName.charAt(0) == 'C') {
-                pCharge = 0.51;
-            } else if (sourceName.charAt(0) == 'N') {
-                pCharge = -0.47;
-            } else if (sourceName.charAt(0) == 'H') {
-                pCharge = 0.31;
-            }
-
-            double cos = Math.abs(Math.cos(angle));
-            shift = pCharge * cos / (distance * distance);
-        }
-        return shift;
-    }
-
     public static boolean validate(SpatialSet target, SpatialSet source, int structureNum) {
         boolean valid = false;
         Atom donor = target.atom.getParent();
@@ -154,6 +96,14 @@ public class ElectrostaticInteraction {
         return angle;
     }
 
+    public double getHADistance(int structureNum) {
+        return getHADistance(target, source, structureNum);
+    }
+
+    public double getAngle(int structureNum) {
+        return getAngle(target, source, structureNum);
+    }
+
     public static double getHADistance(SpatialSet target, SpatialSet source, int structureNum) {
         Point3 targetPt = target.getPoint(structureNum);
         Point3 sourcePt = source.getPoint(structureNum);
@@ -166,6 +116,56 @@ public class ElectrostaticInteraction {
         Point3 sourcePt = source.getPoint(structureNum);
         double distance = Atom.calcDistance(donorPt, sourcePt);
         return distance;
+    }
+
+    public String toString() {
+        StringBuilder sBuild = new StringBuilder();
+        sBuild.append(target.getFullName());
+        sBuild.append(" ");
+        sBuild.append(source.getFullName());
+        sBuild.append(" ");
+        sBuild.append(source.getFullName());
+        sBuild.append(" ");
+        double distance = getHADistance(target, source, 0);
+        sBuild.append(distance);
+        sBuild.append(" ");
+        distance = getDistance(target, source, 0);
+        sBuild.append(distance);
+        sBuild.append(" ");
+        double angle = getAngle(target, source, 0);
+        sBuild.append(angle);
+        sBuild.append(" ");
+        double shift = getShift(0);
+        sBuild.append(shift);
+        return sBuild.toString();
+    }
+
+    public double getShift(int structureNum) {
+        Atom donorAtom = target.atom.getParent();
+        double distance = getHADistance(target, source, structureNum);
+        double angle = getAngle(target, source, structureNum);
+        double shift = 0.0;
+        double minDistance = 1.5;
+        if (distance < tolerance) {
+            if (distance < minDistance) {
+                distance = minDistance;
+            }
+            String sourceName = source.atom.getName();
+            double pCharge = 0.0;
+            if (sourceName.charAt(0) == 'O') {
+                pCharge = -0.51;
+            } else if (sourceName.charAt(0) == 'C') {
+                pCharge = 0.51;
+            } else if (sourceName.charAt(0) == 'N') {
+                pCharge = -0.47;
+            } else if (sourceName.charAt(0) == 'H') {
+                pCharge = 0.31;
+            }
+
+            double cos = Math.abs(Math.cos(angle));
+            shift = pCharge * cos / (distance * distance);
+        }
+        return shift;
     }
 
 }

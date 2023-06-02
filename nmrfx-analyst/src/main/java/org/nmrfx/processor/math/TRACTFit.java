@@ -52,6 +52,19 @@ public class TRACTFit {
         return parErrs.clone();
     }
 
+    class MatchFunction implements UnivariateFunction {
+
+        MatchFunction() {
+        }
+
+        @Override
+        public double value(double tauC) {
+            double nab2 = relaxEquations[0].TRACTdeltaAlphaBeta(tauC);
+            double value = Math.abs((rB - rA) - nab2);
+            return value;
+        }
+    }
+
     public double multiValue(double[] pars, double[][] values) {
         int n = values[0].length;
         double csa = pars[0];
@@ -122,18 +135,5 @@ public class TRACTFit {
 
         best = optValue.getPoint();
         return best;
-    }
-
-    class MatchFunction implements UnivariateFunction {
-
-        MatchFunction() {
-        }
-
-        @Override
-        public double value(double tauC) {
-            double nab2 = relaxEquations[0].TRACTdeltaAlphaBeta(tauC);
-            double value = Math.abs((rB - rA) - nab2);
-            return value;
-        }
     }
 }

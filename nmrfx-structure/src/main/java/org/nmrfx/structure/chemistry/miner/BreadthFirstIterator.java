@@ -97,8 +97,7 @@ public class BreadthFirstIterator implements Iterator {
         return addedAtom;
     }
 
-    public boolean hasNext() {
-        return bfIterate();
+    public void remove() {
     }
 
     public Object next() {
@@ -109,6 +108,7 @@ public class BreadthFirstIterator implements Iterator {
         return sphereOfAtoms;
     }
 
-    public void remove() {
+    public boolean hasNext() {
+        return bfIterate();
     }
 }

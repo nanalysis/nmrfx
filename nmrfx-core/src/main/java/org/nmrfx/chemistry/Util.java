@@ -33,12 +33,12 @@ public class Util {
 
     static boolean strictlyNEF;
 
-    static public boolean isStrictlyNEF() {
-        return strictlyNEF;
-    }
-
     static public void setStrictlyNEF(boolean state) {
         strictlyNEF = state;
+    }
+
+    static public boolean isStrictlyNEF() {
+        return strictlyNEF;
     }
 
     public static boolean hasSameShift(Atom atom, Atom partnerAtom) {

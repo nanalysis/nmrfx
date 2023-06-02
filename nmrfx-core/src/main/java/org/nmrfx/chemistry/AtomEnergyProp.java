@@ -31,15 +31,11 @@ public class AtomEnergyProp {
     private static final Logger log = LoggerFactory.getLogger(AtomEnergyProp.class);
 
     static final Pattern dihPattern = Pattern.compile("(^\\S.)-(\\S.)-(\\S.)-(\\S.)\\s+([\\d]+)\\s+([-.0-9]+)\\s+([-.0-9]+)\\s+([-.0-9]+)\\s*(.*)");
-    //scaling factor
-    private static final double rscale = 0.68;
-    private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
-    private static final double hbondDelta = 0.30;
-    private static final Map<Integer, AtomEnergyProp> DEFAULT_MAP = new HashMap<>();
     public static double[][][] irpTable;
-    protected static Map<String, Integer> torsionMap = new HashMap<>();
+
     private static boolean FILE_LOADED = false;
     private static boolean PARM_FILE_LOADED = false;
+
     final String name;
     private final int aNum;
     //leonard-jones a parameter
@@ -58,6 +54,12 @@ public class AtomEnergyProp {
     private final double mass;
     // hbond donor (1), acceptor (-1)
     private final int hbondMode;
+    //scaling factor
+    private static final double rscale = 0.68;
+    private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
+    private static final double hbondDelta = 0.30;
+    private static final Map<Integer, AtomEnergyProp> DEFAULT_MAP = new HashMap<>();
+    protected static Map<String, Integer> torsionMap = new HashMap<>();
 
     public AtomEnergyProp(final String name, int aNum, final double a, final double b, final double r, final double rh, final double e, final double c, final double mass, final int hbondMode) {
         this.name = name;
@@ -70,53 +72,6 @@ public class AtomEnergyProp {
         this.c = c;
         this.mass = mass;
         this.hbondMode = hbondMode;
-    }
-
-    public void clear() {
-        propMap.clear();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getAtomNumber() {
-        return aNum;
-    }
-
-    /**
-     * @return the a
-     */
-    public double getA() {
-        return a;
-    }
-
-    public double getB() {
-        return b;
-    }
-
-    public double getC() {
-        return c;
-    }
-
-    public double getR() {
-        return r;
-    }
-
-    public double getRh() {
-        return rh;
-    }
-
-    public double getE() {
-        return e;
-    }
-
-    public double getMass() {
-        return mass;
-    }
-
-    public int getHBondMode() {
-        return hbondMode;
     }
 
     public static void readPropFile() throws IOException {
@@ -287,6 +242,10 @@ public class AtomEnergyProp {
         return 0;
     }
 
+    public void clear() {
+        propMap.clear();
+    }
+
     public static void add(final String atomType, final AtomEnergyProp prop) {
         propMap.put(atomType, prop);
     }
@@ -307,6 +266,49 @@ public class AtomEnergyProp {
             log.error(ex.getMessage(), ex);
         }
         return DEFAULT_MAP.get(aNum);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getAtomNumber() {
+        return aNum;
+    }
+
+    /**
+     * @return the a
+     */
+    public double getA() {
+        return a;
+    }
+
+    public double getB() {
+        return b;
+    }
+
+    public double getC() {
+        return c;
+    }
+
+    public double getR() {
+        return r;
+    }
+
+    public double getRh() {
+        return rh;
+    }
+
+    public double getE() {
+        return e;
+    }
+
+    public double getMass() {
+        return mass;
+    }
+
+    public int getHBondMode() {
+        return hbondMode;
     }
 
     /**

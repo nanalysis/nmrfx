@@ -28,7 +28,9 @@ package org.nmrfx.structure.cluster;
  */
 public class Datum extends Object {
 
+    int nDim;
     public double[] v;
+    double w;
     public int next;
     public int last;
     public boolean act;
@@ -36,8 +38,6 @@ public class Datum extends Object {
     public int[] proto;
     public int idNum;
     public int group = -1;
-    int nDim;
-    double w;
 
     /**
      * Creates new Datum

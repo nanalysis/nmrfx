@@ -73,10 +73,10 @@ public class DatasetBase {
     protected Double noiseLevel = null;
     protected Double threshold = null;
     protected double[][] values;
-    protected DatasetStorageInterface dataFile = null;
     List<DatasetRegion> regions;
     // Listeners for changes in the list of regions
     Set<DatasetRegionsListListener> regionsListListeners = new HashSet<>();
+    protected DatasetStorageInterface dataFile = null;
     private boolean lvlSet = false;
     private double norm = 1.0;
     private String solvent = null;
@@ -139,15 +139,6 @@ public class DatasetBase {
     }
 
     /**
-     * Get the byte order for this dataset.
-     *
-     * @return the byte order
-     */
-    public ByteOrder getByteOrder() {
-        return littleEndian ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
-    }
-
-    /**
      * Set the byte order. This does not change the actual data file, so the
      * existing data format must be consistent with the specified value.
      *
@@ -157,8 +148,28 @@ public class DatasetBase {
         littleEndian = order == ByteOrder.LITTLE_ENDIAN;
     }
 
+    /**
+     * Get the byte order for this dataset.
+     *
+     * @return the byte order
+     */
+    public ByteOrder getByteOrder() {
+        return littleEndian ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
+    }
+
     public void close() {
 
+    }
+
+    /**
+     * Set the number of dimensions for this dataset. Will reset all reference
+     * information.
+     *
+     * @param nDim Number of dataset dimensions
+     */
+    public final void setNDim(int nDim) {
+        this.nDim = nDim;
+        setNDim();
     }
 
     /**
@@ -436,6 +447,79 @@ public class DatasetBase {
     }
 
     /**
+     * Return the Dataset object with the specified name.
+     *
+     * @param fileName name of Dataset to find
+     * @return the Dataset or null if it doesn't exist
+     */
+    synchronized public static DatasetBase getDataset(String fileName) {
+        if (fileName == null) {
+            return null;
+        } else {
+            return ProjectBase.getActive().getDataset(fileName);
+        }
+    }
+
+    public static double foldPPM(double ppm, double[] foldLimits) {
+        double min = foldLimits[0];
+        double max = foldLimits[1];
+        if (min > max) {
+            double hold = min;
+            min = max;
+            max = hold;
+        }
+        if ((ppm < min) || (ppm > max)) {
+            double fDelta = max - min;
+            if (min != max) {
+                while (ppm > max) {
+                    ppm -= fDelta;
+                }
+                while (ppm < min) {
+                    ppm += fDelta;
+                }
+            }
+        }
+        return ppm;
+    }
+
+    /**
+     * Return a list of the open datasets
+     *
+     * @return List of datasets.
+     */
+    synchronized public static Collection<DatasetBase> datasets() {
+        return ProjectBase.getActive().getDatasets();
+    }
+
+    public static void setMinimumTitles() {
+        String[] names = new String[DatasetBase.datasets().size()];
+        int i = 0;
+        for (DatasetBase dataset : DatasetBase.datasets()) {
+            names[i++] = dataset.getName();
+        }
+        String prefix = StringUtils.getCommonPrefix(names);
+        System.out.println("prefix " + prefix);
+        DatasetBase.datasets().forEach((dataset) -> {
+            String name = dataset.getName();
+            String title = StringUtils.removeStart(name, prefix);
+            title = StringUtils.removeEndIgnoreCase(title, ".nv");
+            System.out.println("title " + title);
+            dataset.setTitle(title);
+        });
+    }
+
+    /**
+     * Set the type of the data values. At present, only single precision float
+     * values are used in the dataset. This is indicated with a return value of
+     * 0.
+     *
+     * @param value the datatype to set
+     */
+    public final void setDataType(int value) {
+        dataType = value;
+    }
+
+    /**
      * Get the canonical file path for this Dataset
      *
      * @return String object, null if data stored in Vec
@@ -466,17 +550,6 @@ public class DatasetBase {
      */
     public int getDataType() {
         return dataType;
-    }
-
-    /**
-     * Set the type of the data values. At present, only single precision float
-     * values are used in the dataset. This is indicated with a return value of
-     * 0.
-     *
-     * @param value the datatype to set
-     */
-    public final void setDataType(int value) {
-        dataType = value;
     }
 
     protected void removeFile(String datasetName) {
@@ -706,6 +779,7 @@ public class DatasetBase {
     public boolean isMemoryFile() {
         return false;
     }
+
 
     /**
      * Get the File object corresponding to the data file for this Dataset
@@ -1374,6 +1448,7 @@ public class DatasetBase {
         this.axisReversed[iDim] = axisReversed;
     }
 
+
     /**
      * Get the frequency domain mode of the specified dimension
      *
@@ -1913,17 +1988,6 @@ public class DatasetBase {
     }
 
     /**
-     * Set the number of dimensions for this dataset. Will reset all reference
-     * information.
-     *
-     * @param nDim Number of dataset dimensions
-     */
-    public final void setNDim(int nDim) {
-        this.nDim = nDim;
-        setNDim();
-    }
-
-    /**
      * Get the number of dimensions represent frequencies (as opposed to, for
      * example, relaxation time increments).
      *
@@ -2139,68 +2203,6 @@ public class DatasetBase {
         }
         updateDatasetRegionsListListeners();
         return newRegion;
-    }
-
-    /**
-     * Return the Dataset object with the specified name.
-     *
-     * @param fileName name of Dataset to find
-     * @return the Dataset or null if it doesn't exist
-     */
-    synchronized public static DatasetBase getDataset(String fileName) {
-        if (fileName == null) {
-            return null;
-        } else {
-            return ProjectBase.getActive().getDataset(fileName);
-        }
-    }
-
-    public static double foldPPM(double ppm, double[] foldLimits) {
-        double min = foldLimits[0];
-        double max = foldLimits[1];
-        if (min > max) {
-            double hold = min;
-            min = max;
-            max = hold;
-        }
-        if ((ppm < min) || (ppm > max)) {
-            double fDelta = max - min;
-            if (min != max) {
-                while (ppm > max) {
-                    ppm -= fDelta;
-                }
-                while (ppm < min) {
-                    ppm += fDelta;
-                }
-            }
-        }
-        return ppm;
-    }
-
-    /**
-     * Return a list of the open datasets
-     *
-     * @return List of datasets.
-     */
-    synchronized public static Collection<DatasetBase> datasets() {
-        return ProjectBase.getActive().getDatasets();
-    }
-
-    public static void setMinimumTitles() {
-        String[] names = new String[DatasetBase.datasets().size()];
-        int i = 0;
-        for (DatasetBase dataset : DatasetBase.datasets()) {
-            names[i++] = dataset.getName();
-        }
-        String prefix = StringUtils.getCommonPrefix(names);
-        System.out.println("prefix " + prefix);
-        DatasetBase.datasets().forEach((dataset) -> {
-            String name = dataset.getName();
-            String title = StringUtils.removeStart(name, prefix);
-            title = StringUtils.removeEndIgnoreCase(title, ".nv");
-            System.out.println("title " + title);
-            dataset.setTitle(title);
-        });
     }
 
     /**

@@ -18,8 +18,8 @@ public enum LogSection {
             "org.nmrfx.project", "org.nmrfx.star", "org.nmrfx.utilities"),
     GENERAL("General");
 
-    private final String[] prefixes;
     private String sectionName;
+    private final String[] prefixes;
 
     LogSection(String sectionName, String... prefixes) {
         this.sectionName = sectionName;

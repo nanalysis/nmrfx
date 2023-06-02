@@ -44,14 +44,14 @@ public interface Resonance {
 
     void merge(Resonance resB);
 
+    static void merge(Resonance resA, Resonance resB) {
+        resA.merge(resB);
+    }
+
     void add(PeakDim peakDim);
 
     default boolean isLabelValid() {
         return true;
-    }
-
-    static void merge(Resonance resA, Resonance resB) {
-        resA.merge(resB);
     }
 
 }

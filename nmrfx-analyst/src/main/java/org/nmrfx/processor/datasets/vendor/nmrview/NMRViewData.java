@@ -45,11 +45,11 @@ import java.util.List;
  */
 public class NMRViewData implements NMRData {
     private final String fpath;
-    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
     private Dataset dataset;
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     /**
      * open NMRView parameter and data files
@@ -70,9 +70,49 @@ public class NMRViewData implements NMRData {
         dataset.close();
     }
 
+    public static boolean findFID(StringBuilder bpath) {
+        return findFIDFiles(bpath.toString());
+    }
+
+    private static boolean findFIDFiles(String dpath) {
+        boolean found = false;
+        if (dpath.endsWith(".nv")) {
+            found = true;
+        } else if (dpath.endsWith(".ucsf")) {
+            found = true;
+        }
+        return found;
+    }
+
+    @Override
+    public String toString() {
+        return fpath;
+    }
+
+    @Override
+    public String getVendor() {
+        return "nmrviewj";
+    }
+
     @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+
+        return new ArrayList<>();
     }
 
     @Override
@@ -88,12 +128,6 @@ public class NMRViewData implements NMRData {
     @Override
     public Integer getParInt(String parname) {
         return null;
-    }
-
-    @Override
-    public List<VendorPar> getPars() {
-
-        return new ArrayList<>();
     }
 
     @Override
@@ -115,264 +149,13 @@ public class NMRViewData implements NMRData {
         return np;
     }
 
+    public boolean isSpectrum() {
+        return true;
+    }
+
     @Override
     public int getNDim() {
         return dataset.getNDim();
-    }
-
-    @Override
-    public int getSize(int iDim) {
-        int size = dataset.getSizeTotal(iDim);
-        if (dataset.getComplex(iDim)) {
-            size /= 2;
-        }
-        return size;
-    }
-
-    @Override
-    public void setSize(int dim, int size) {
-        // can't change size of nmrview dataset
-    }
-
-    @Override
-    public String getSolvent() {
-        return dataset.getSolvent();
-    }
-
-    @Override
-    public double getTempK() {
-        return 298.0;
-
-    }
-
-    @Override
-    public String getSequence() {
-        return "unknown";
-    }
-
-    @Override
-    public double getSF(int iDim) {
-        return dataset.getSf(iDim);
-    }
-
-    @Override
-    public void setSF(int iDim, double value) {
-        dataset.setSf(iDim, value);
-    }
-
-    @Override
-    public void resetSF(int iDim) {
-    }
-
-    @Override
-    public double getSW(int iDim) {
-        return dataset.getSw(iDim);
-    }
-
-    @Override
-    public void setSW(int iDim, double value) {
-        dataset.setSw(iDim, value);
-    }
-
-    @Override
-    public void resetSW(int iDim) {
-    }
-
-    @Override
-    public double getRef(int iDim) {
-        return dataset.getRefValue(iDim);
-    }
-
-    @Override
-    public void setRef(int iDim, double ref) {
-        dataset.setRefValue(iDim, ref);
-    }
-
-    @Override
-    public void resetRef(int iDim) {
-    }
-
-    @Override
-    public double getRefPoint(int iDim) {
-        return dataset.getRefPt(iDim);
-    }
-
-    @Override
-    public String getTN(int iDim) {
-        return dataset.getNucleus(iDim).getName();
-    }
-
-    @Override
-    public boolean isComplex(int idim) {
-        return dataset.getComplex(idim);
-    }
-
-    @Override
-    public boolean getNegatePairs(int iDim) {
-        return false;
-    }
-
-    @Override
-    public String getFTType(int iDim) {
-        return "ft";
-    }
-
-    @Override
-    public double[] getCoefs(int iDim) {
-        String name = "f" + iDim + "coef";
-        double[] dcoefs = {1, 0, 0, 0}; // reasonable for noesy, tocsy
-        String s;
-        if ((s = getPar(name)) == null) {
-            s = "";
-        }
-        if (!s.equals("")) {
-            String[] coefs = s.split(" ");
-            dcoefs = new double[coefs.length];
-            for (int i = 0; i < coefs.length; i++) {
-                dcoefs[i] = Double.parseDouble(coefs[i]);
-            }
-        }
-        return dcoefs;
-    }
-
-    @Override
-    public String getSymbolicCoefs(int idim) {
-        return null;
-    }
-
-    @Override
-    public String getVendor() {
-        return "nmrviewj";
-    }
-
-    @Override
-    public double getPH0(int iDim) {
-        return dataset.getPh0(iDim);
-    }
-
-    @Override
-    public double getPH1(int iDim) {
-        return dataset.getPh1(iDim);
-    }
-
-    @Override
-    public int getLeftShift(int iDim) {
-        return 0;
-    }
-
-    @Override
-    public double getExpd(int iDim) {
-        return 0.0;
-    }
-
-    @Override
-    public SinebellWt getSinebellWt(int iDim) {
-        return null;
-    }
-
-    @Override
-    public GaussianWt getGaussianWt(int iDim) {
-        return null;
-    }
-
-    @Override
-    public FPMult getFPMult(int iDim) {
-        return null;
-    }
-
-    @Override
-    public LPParams getLPParams(int iDim) {
-        return null;
-    }
-
-    @Override
-    public String[] getSFNames() {
-        int nDim = getNDim();
-        String[] names = new String[nDim];
-        for (int i = 0; i < nDim; i++) {
-            names[i] = "sf" + (i + 1);
-        }
-        return names;
-    }
-
-    @Override
-    public String[] getSWNames() {
-        int nDim = getNDim();
-        String[] names = new String[nDim];
-        for (int i = 0; i < nDim; i++) {
-            names[i] = "sw" + (i + 1);
-        }
-        return names;
-    }
-
-    @Override
-    public String[] getLabelNames() {
-        int nDim = getNDim();
-        String[] names = new String[nDim];
-        for (int i = 0; i < nDim; i++) {
-            names[i] = getTN(i) + "_" + (i + 1);
-        }
-        return names;
-    }
-
-    @Override
-    public List<Double> getValues(int dim) {
-        double[] values = dataset.getValues(dim);
-        if (values == null) {
-            return Collections.emptyList();
-        } else {
-            List<Double> valueList = new ArrayList<>();
-            for (double value : values) {
-                valueList.add(value);
-            }
-            return valueList;
-        }
-    }
-
-    @Override
-    public void readVector(int iVec, Vec dvec) {
-        int nDim = getNDim();
-        int[][] pt = new int[nDim][2];
-        int[] dim = new int[nDim];
-        pt[0][0] = 0;
-        pt[0][1] = dataset.getSizeTotal(0) - 1;
-        int[] strides = new int[nDim];
-        strides[0] = 1;
-        int nIndirect = nDim - 1;
-
-        for (int i = 1; i < nIndirect; i++) {
-            strides[i] = strides[i - 1] * dataset.getSizeTotal(i);
-        }
-        for (int i = nIndirect; i > 0; i--) {
-            int index = iVec / strides[i - 1];
-            pt[i][0] = index;
-            pt[i][1] = index;
-            iVec = iVec % strides[i - 1];
-        }
-        for (int i = 0; i < nDim; i++) {
-            dim[i] = i;
-        }
-        try {
-            dataset.readVectorFromDatasetFile(pt, dim, dvec);
-        } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
-        }
-    }
-
-    @Override
-    public void readVector(int iVec, Complex[] cdata) {
-    }
-
-    @Override
-    public void readVector(int iVec, double[] rdata, double[] idata) {
-    }
-
-    @Override
-    public void readVector(int iVec, double[] data) {
-    }
-
-    @Override
-    public void readVector(int iDim, int iVec, Vec dvec) {
     }
 
     @Override
@@ -458,6 +241,145 @@ public class NMRViewData implements NMRData {
     }
 
     @Override
+    public SampleSchedule getSampleSchedule() {
+        return sampleSchedule;
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
+    }
+
+    @Override
+    public void setSampleSchedule(SampleSchedule sampleSchedule) {
+        this.sampleSchedule = sampleSchedule;
+    }
+
+    @Override
+    public String getSymbolicCoefs(int idim) {
+        return null;
+    }
+
+    @Override
+    public double[] getCoefs(int iDim) {
+        String name = "f" + iDim + "coef";
+        double[] dcoefs = {1, 0, 0, 0}; // reasonable for noesy, tocsy
+        String s;
+        if ((s = getPar(name)) == null) {
+            s = "";
+        }
+        if (!s.equals("")) {
+            String[] coefs = s.split(" ");
+            dcoefs = new double[coefs.length];
+            for (int i = 0; i < coefs.length; i++) {
+                dcoefs[i] = Double.parseDouble(coefs[i]);
+            }
+        }
+        return dcoefs;
+    }
+
+    @Override
+    public double getSF(int iDim) {
+        return dataset.getSf(iDim);
+    }
+
+    @Override
+    public void setSF(int iDim, double value) {
+        dataset.setSf(iDim, value);
+    }
+
+    @Override
+    public void resetSF(int iDim) {
+    }
+
+    @Override
+    public double getSW(int iDim) {
+        return dataset.getSw(iDim);
+    }
+
+    @Override
+    public void setSW(int iDim, double value) {
+        dataset.setSw(iDim, value);
+    }
+
+    @Override
+    public void resetSW(int iDim) {
+    }
+
+    @Override
+    public String[] getSFNames() {
+        int nDim = getNDim();
+        String[] names = new String[nDim];
+        for (int i = 0; i < nDim; i++) {
+            names[i] = "sf" + (i + 1);
+        }
+        return names;
+    }
+
+    @Override
+    public String[] getSWNames() {
+        int nDim = getNDim();
+        String[] names = new String[nDim];
+        for (int i = 0; i < nDim; i++) {
+            names[i] = "sw" + (i + 1);
+        }
+        return names;
+    }
+
+    @Override
+    public String[] getLabelNames() {
+        int nDim = getNDim();
+        String[] names = new String[nDim];
+        for (int i = 0; i < nDim; i++) {
+            names[i] = getTN(i) + "_" + (i + 1);
+        }
+        return names;
+    }
+
+    @Override
+    public String getFTType(int iDim) {
+        return "ft";
+    }
+
+    @Override
+    public String getTN(int iDim) {
+        return dataset.getNucleus(iDim).getName();
+    }
+
+    @Override
+    public void setRef(int iDim, double ref) {
+        dataset.setRefValue(iDim, ref);
+    }
+
+    @Override
+    public void resetRef(int iDim) {
+    }
+
+    @Override
+    public double getRef(int iDim) {
+        return dataset.getRefValue(iDim);
+    }
+
+    @Override
+    public double getRefPoint(int iDim) {
+        return dataset.getRefPt(iDim);
+    }
+
+    @Override
+    public int getSize(int iDim) {
+        int size = dataset.getSizeTotal(iDim);
+        if (dataset.getComplex(iDim)) {
+            size /= 2;
+        }
+        return size;
+    }
+
+    @Override
+    public void setSize(int dim, int size) {
+        // can't change size of nmrview dataset
+    }
+
+    @Override
     public boolean isFID() {
         // freqDomain parameter might not be set in older
         // datasets so do somewhat complex check here to
@@ -479,37 +401,129 @@ public class NMRViewData implements NMRData {
     }
 
     @Override
-    public SampleSchedule getSampleSchedule() {
-        return sampleSchedule;
+    public boolean isComplex(int idim) {
+        return dataset.getComplex(idim);
     }
 
     @Override
-    public void setSampleSchedule(SampleSchedule sampleSchedule) {
-        this.sampleSchedule = sampleSchedule;
+    public boolean getNegatePairs(int iDim) {
+        return false;
     }
 
     @Override
-    public DatasetType getPreferredDatasetType() {
-        return preferredDatasetType;
+    public String getSolvent() {
+        return dataset.getSolvent();
     }
 
     @Override
-    public void setPreferredDatasetType(DatasetType datasetType) {
-        this.preferredDatasetType = datasetType;
+    public double getTempK() {
+        return 298.0;
+
     }
 
     @Override
-    public List<DatasetGroupIndex> getSkipGroups() {
-        return datasetGroupIndices;
+    public String getSequence() {
+        return "unknown";
     }
 
     @Override
-    public String toString() {
-        return fpath;
+    public double getPH0(int iDim) {
+        return dataset.getPh0(iDim);
     }
 
-    public boolean isSpectrum() {
-        return true;
+    @Override
+    public double getPH1(int iDim) {
+        return dataset.getPh1(iDim);
+    }
+
+    @Override
+    public int getLeftShift(int iDim) {
+        return 0;
+    }
+
+    @Override
+    public double getExpd(int iDim) {
+        return 0.0;
+    }
+
+    @Override
+    public SinebellWt getSinebellWt(int iDim) {
+        return null;
+    }
+
+    @Override
+    public GaussianWt getGaussianWt(int iDim) {
+        return null;
+    }
+
+    @Override
+    public FPMult getFPMult(int iDim) {
+        return null;
+    }
+
+    @Override
+    public LPParams getLPParams(int iDim) {
+        return null;
+    }
+
+    @Override
+    public List<Double> getValues(int dim) {
+        double[] values = dataset.getValues(dim);
+        if (values == null) {
+            return Collections.emptyList();
+        } else {
+            List<Double> valueList = new ArrayList<>();
+            for (double value : values) {
+                valueList.add(value);
+            }
+            return valueList;
+        }
+    }
+
+    @Override
+    public void readVector(int iVec, Vec dvec) {
+        int nDim = getNDim();
+        int[][] pt = new int[nDim][2];
+        int[] dim = new int[nDim];
+        pt[0][0] = 0;
+        pt[0][1] = dataset.getSizeTotal(0) - 1;
+        int[] strides = new int[nDim];
+        strides[0] = 1;
+        int nIndirect = nDim - 1;
+
+        for (int i = 1; i < nIndirect; i++) {
+            strides[i] = strides[i - 1] * dataset.getSizeTotal(i);
+        }
+        for (int i = nIndirect; i > 0; i--) {
+            int index = iVec / strides[i - 1];
+            pt[i][0] = index;
+            pt[i][1] = index;
+            iVec = iVec % strides[i - 1];
+        }
+        for (int i = 0; i < nDim; i++) {
+            dim[i] = i;
+        }
+        try {
+            dataset.readVectorFromDatasetFile(pt, dim, dvec);
+        } catch (IOException ioE) {
+            System.out.println(ioE.getMessage());
+        }
+    }
+
+    @Override
+    public void readVector(int iDim, int iVec, Vec dvec) {
+    }
+
+    @Override
+    public void readVector(int iVec, Complex[] cdata) {
+    }
+
+    @Override
+    public void readVector(int iVec, double[] data) {
+    }
+
+    @Override
+    public void readVector(int iVec, double[] rdata, double[] idata) {
     }
 
     // open NMRView data file, read header
@@ -528,19 +542,5 @@ public class NMRViewData implements NMRData {
 
     public Dataset getDataset() {
         return dataset;
-    }
-
-    public static boolean findFID(StringBuilder bpath) {
-        return findFIDFiles(bpath.toString());
-    }
-
-    private static boolean findFIDFiles(String dpath) {
-        boolean found = false;
-        if (dpath.endsWith(".nv")) {
-            found = true;
-        } else if (dpath.endsWith(".ucsf")) {
-            found = true;
-        }
-        return found;
     }
 }

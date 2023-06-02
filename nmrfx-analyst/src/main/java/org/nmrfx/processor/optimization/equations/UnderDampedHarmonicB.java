@@ -137,10 +137,6 @@ public class UnderDampedHarmonicB extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = exp(-B * x) * (Ccos(Wx) + Dsin(Wx)";
-    }
-
     @Override
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
@@ -163,5 +159,9 @@ public class UnderDampedHarmonicB extends OptFunction {
                 }
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = exp(-B * x) * (Ccos(Wx) + Dsin(Wx)";
     }
 }

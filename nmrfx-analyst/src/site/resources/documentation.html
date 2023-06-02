@@ -1,471 +1,492 @@
 <html>
-    <body>
-        <h3>Tk Widget Commands that are supported in Swank</h3>
+<body>
+<h3>Tk Widget Commands that are supported in Swank</h3>
 
-        These commands create visible widgets on the screen and are designed to work very similarly to the corresponding Tk widgets.
-        They may not, however, have exactly the same behaviour or configuration options as the Tk widgets.  The links are
-        to the original Tk documentation. 
-        After each command name, is a link to the Java Swing widget that is used for the
-        acutal implementation in Swank.
+These commands create visible widgets on the screen and are designed to work very similarly to the corresponding Tk
+widgets.
+They may not, however, have exactly the same behaviour or configuration options as the Tk widgets. The links are
+to the original Tk documentation.
+After each command name, is a link to the Java Swing widget that is used for the
+acutal implementation in Swank.
 
-        <table>
-            <tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/button.htm">button</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JButton.html">JButton</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/menubutton.htm">menubutton</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JMenuButton.html">JMenuButton</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_chooseDirectory.htm">tk_chooseDirectory</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JFileChooser.html">JFileChooser</a>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/canvas.htm">canvas</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JPanel.html">JPanel</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/message.htm">message</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTextArea.html">JTextArea</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_dialog.htm">tk_dialog</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JOptionPane.html">JOptionPane</a>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/checkbutton.htm">checkbutton</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JCheckBox.html">JCheckBox</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/panedwindow.htm">panedwindow</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JSplitPane.html">JSplitPane</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_getOpenFile.htm">tk_getOpenFile</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JFileChooser.html">JFileChooser</a>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/entry.htm">entry</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTextField.html">JTextField</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/radiobutton.htm">radiobutton</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JRadioBox.html">JRadioBox</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_getSaveFile.htm">tk_getSaveFile</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JFileChooser.html">JFileChooser</a>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/frame.htm">frame</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JPanel.html">JPanel</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/scale.htm">scale</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JSlider.html">JSlider</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_optionMenu.htm">tk_optionMenu</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JComboBox.html">JComboBox</a>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/label.htm">label</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTextField.html">JTextField</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/scrollbar.htm">scrollbar</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JScrollbar.html">JScrollbar</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tkerror.htm">tkerror</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/.html"></a>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/labelframe.htm">labelframe</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JPanel.html">JPanel</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/spinbox.htm">spinbox</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JSpinner.html">JSpinner</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_messageBox.htm">tk_messageBox</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JOptionPane.html">JOptionPane</a>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/listbox.htm">listbox</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JList.html">JList</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/text.htm">text</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTextPane.html">JTextPane</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/toplevel.htm">toplevel</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JFrame.html">JFrame</a>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/menu.htm">menu</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JMenu.html">JMenu</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_chooseColor.htm">tk_chooseColor</a>
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JColorChooser.html">JColorChooser</a>
-                </td>
-            </tr>
-        </table>
-        <h3>Tk Commands that are supported in Swank</h3>
-        <table>
-            <tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/bell.htm">bell</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/colors.htm">colors</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/focus.htm">focus</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/lower.htm">lower</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/selection.htm">selection</a>
-                </td>
-                <td>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/bind.htm">bind</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/cursor.htm">cursor</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/font.htm">font</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/pack.htm">pack</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/winfo.htm">winfo</a>
-                </td>
-                <td>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/bindtags.htm">bindtags</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/destroy.htm">destroy</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/grid.htm">grid</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/place.htm">place</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/wm.htm">wm</a>
-                </td>
-                <td>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/clipboard.htm">clipboard</a>
-                </td>
-            </tr>
-        </table>
-        <h3>Tk Commands that are not present in Swank</h3>
-        We haven't yet implemented these commands.
+<table>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/button.htm">button</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JButton.html">JButton</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/menubutton.htm">menubutton</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JMenuButton.html">JMenuButton</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_chooseDirectory.htm">tk_chooseDirectory</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JFileChooser.html">JFileChooser</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/canvas.htm">canvas</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JPanel.html">JPanel</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/message.htm">message</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTextArea.html">JTextArea</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_dialog.htm">tk_dialog</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JOptionPane.html">JOptionPane</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/checkbutton.htm">checkbutton</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JCheckBox.html">JCheckBox</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/panedwindow.htm">panedwindow</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JSplitPane.html">JSplitPane</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_getOpenFile.htm">tk_getOpenFile</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JFileChooser.html">JFileChooser</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/entry.htm">entry</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTextField.html">JTextField</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/radiobutton.htm">radiobutton</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JRadioBox.html">JRadioBox</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_getSaveFile.htm">tk_getSaveFile</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JFileChooser.html">JFileChooser</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/frame.htm">frame</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JPanel.html">JPanel</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/scale.htm">scale</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JSlider.html">JSlider</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_optionMenu.htm">tk_optionMenu</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JComboBox.html">JComboBox</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/label.htm">label</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTextField.html">JTextField</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/scrollbar.htm">scrollbar</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JScrollbar.html">JScrollbar</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tkerror.htm">tkerror</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/.html"></a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/labelframe.htm">labelframe</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JPanel.html">JPanel</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/spinbox.htm">spinbox</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JSpinner.html">JSpinner</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_messageBox.htm">tk_messageBox</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JOptionPane.html">JOptionPane</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/listbox.htm">listbox</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JList.html">JList</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/text.htm">text</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTextPane.html">JTextPane</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/toplevel.htm">toplevel</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JFrame.html">JFrame</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/menu.htm">menu</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JMenu.html">JMenu</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_chooseColor.htm">tk_chooseColor</a>
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JColorChooser.html">JColorChooser</a>
+        </td>
+    </tr>
+</table>
+<h3>Tk Commands that are supported in Swank</h3>
+<table>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/bell.htm">bell</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/colors.htm">colors</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/focus.htm">focus</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/lower.htm">lower</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/selection.htm">selection</a>
+        </td>
+        <td>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/bind.htm">bind</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/cursor.htm">cursor</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/font.htm">font</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/pack.htm">pack</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/winfo.htm">winfo</a>
+        </td>
+        <td>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/bindtags.htm">bindtags</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/destroy.htm">destroy</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/grid.htm">grid</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/place.htm">place</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/wm.htm">wm</a>
+        </td>
+        <td>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/clipboard.htm">clipboard</a>
+        </td>
+    </tr>
+</table>
+<h3>Tk Commands that are not present in Swank</h3>
+We haven't yet implemented these commands.
 
-        <table>
-            <tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/bitmap.htm">bitmap</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/loadTk.htm">loadTk</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk.htm">tk</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_focusNext.htm">tk_focusNext</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_popup.htm">tk_popup</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_textCut.htm">tk_textCut</a>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/console.htm">console</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/photo.htm">photo</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_bisque.htm">tk_bisque</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_focusPrev.htm">tk_focusPrev</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_setPalette.htm">tk_setPalette</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_textPaste.htm">tk_textPaste</a>
-                </td>
-            </tr><tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/keysyms.htm">keysyms</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/send.htm">send</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_focusFollowsMouse.htm">tk_focusFollowsMouse</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_menuSetFocus.htm">tk_menuSetFocus</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_textCopy.htm">tk_textCopy</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tkwait.htm">tkwait</a>
-                </td>
-            </tr><tr>
-            </tr>
-        </table>
-        <h3>Tk Commands that are present in Swank but do nothing</h3>
-        These commands  are basically stubs.  They don't
-        do anything, but their presence helps avoid some errors that would occur in running Tk scripts if they didn't exist.
+<table>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/bitmap.htm">bitmap</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/loadTk.htm">loadTk</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk.htm">tk</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_focusNext.htm">tk_focusNext</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_popup.htm">tk_popup</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_textCut.htm">tk_textCut</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/console.htm">console</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/photo.htm">photo</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_bisque.htm">tk_bisque</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_focusPrev.htm">tk_focusPrev</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_setPalette.htm">tk_setPalette</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_textPaste.htm">tk_textPaste</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/keysyms.htm">keysyms</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/send.htm">send</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_focusFollowsMouse.htm">tk_focusFollowsMouse</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_menuSetFocus.htm">tk_menuSetFocus</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tk_textCopy.htm">tk_textCopy</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/tkwait.htm">tkwait</a>
+        </td>
+    </tr>
+    <tr>
+    </tr>
+</table>
+<h3>Tk Commands that are present in Swank but do nothing</h3>
+These commands are basically stubs. They don't
+do anything, but their presence helps avoid some errors that would occur in running Tk scripts if they didn't exist.
 
-        <table>
-            <tr>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/option.htm">option</a>
-                </td>
-                <td>
-                    <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/grab.htm">grab</a>
-                </td>
-            </tr>
-        </table>
-        <h3>Swank Widget Commands that are not present in Tk</h3>
-        These commands either don't exist in Tk, or their behaviour is fairly different from  a similar Tk command.
-        Some, like jfilechooser, are used to implement Tk commands like tk_getOpenFile.  Their presense as actual commands
-        gives lower level access to the widget.
-        After each command name, is a link to the Java Swing widget that is used for the
-        acutal implementation in Swank.
+<table>
+    <tr>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/option.htm">option</a>
+        </td>
+        <td>
+            <a href="http://www.tcl.tk/man/tcl8.4/TkCmd/grab.htm">grab</a>
+        </td>
+    </tr>
+</table>
+<h3>Swank Widget Commands that are not present in Tk</h3>
+These commands either don't exist in Tk, or their behaviour is fairly different from a similar Tk command.
+Some, like jfilechooser, are used to implement Tk commands like tk_getOpenFile. Their presense as actual commands
+gives lower level access to the widget.
+After each command name, is a link to the Java Swing widget that is used for the
+acutal implementation in Swank.
 
-        <table>
-            <tr>
-                <td>
-                    filedialog
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/java/awt/FileDialog.html">FileDialog</a>
-                </td>
-                <td>
-                    jinternaframe
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JInternalFrame.html">JInternalFrame</a>
-                </td>
-                <td>
-                    jtabbedpane
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTabbedPane.html">JTabbedPane</a>
-                </td>
-            </tr><tr>
-                <td>
-                    html
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JEditorPane.html">JEditorPane</a>
-                </td>
-                <td>
-                    jmenubar
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JMenuBox.html">JMenuBox</a>
-                </td>
-                <td>
-                    jtable
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTable.html">JTable</a>
-                </td>
-            </tr><tr>
-                <td>
-                    jcolorchooser
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JColorChooser.html">JColorChooser</a>
-                </td>
-                <td>
-                    jpasswordfield
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JPasswordField.html">JPasswordField</a>
-                </td>
-                <td>
-                    jtoolbar
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JToolbar.html">JToolbar</a>
-                </td>
-            </tr><tr>
-                <td>
-                    jcombobox
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JComboBox.html">JComboBox</a>
-                </td>
-                <td>
-                    jpopupmenu
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JPopupMenu.html">JPopupMenu</a>
-                </td>
-                <td>
-                    jtree
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTree.html">JTree</a>
-                </td>
-            </tr><tr>
-                <td>
-                    jdesktoppane
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JDesktopPane.html">JDesktopPane</a>
-                </td>
-                <td>
-                    jprogressbar
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JProgressBar.html">JProgressBar</a>
-                </td>
-                <td>
-                    jwindow
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JWindow.html">JWindow</a>
-                </td>
-            </tr><tr>
-                <td>
-                    jdialog
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JDialog.html">JDialog</a>
-                </td>
-                <td>
-                    jscrollpane
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JScrollpane.html">JScrollpane</a>
-                </td>
-                <td>
-                    password
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/.html"></a>
-                </td>
-            </tr><tr>
-                <td>
-                    jfilechooser
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JFileChooser.html">JFileChooser</a>
-                </td>
-                <td>
-                    jsplitpane
-                </td>
-                <td width="150">
-                    <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JSplitPane.html">JSplitPane</a>
-                </td>
-            </tr>
-        </table>
-        <h3>Swank Commands that are not present in Tk</h3>
-        <table>
-            <tr>
-                <td>
-                    embed
-                </td>
-                <td>
-                    eventrecorder
-                </td>
-                <td>
-                    thread
-                </td>
-            </tr>
-        </table>
-    </body>
+<table>
+    <tr>
+        <td>
+            filedialog
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/java/awt/FileDialog.html">FileDialog</a>
+        </td>
+        <td>
+            jinternaframe
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JInternalFrame.html">JInternalFrame</a>
+        </td>
+        <td>
+            jtabbedpane
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTabbedPane.html">JTabbedPane</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            html
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JEditorPane.html">JEditorPane</a>
+        </td>
+        <td>
+            jmenubar
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JMenuBox.html">JMenuBox</a>
+        </td>
+        <td>
+            jtable
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTable.html">JTable</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            jcolorchooser
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JColorChooser.html">JColorChooser</a>
+        </td>
+        <td>
+            jpasswordfield
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JPasswordField.html">JPasswordField</a>
+        </td>
+        <td>
+            jtoolbar
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JToolbar.html">JToolbar</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            jcombobox
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JComboBox.html">JComboBox</a>
+        </td>
+        <td>
+            jpopupmenu
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JPopupMenu.html">JPopupMenu</a>
+        </td>
+        <td>
+            jtree
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JTree.html">JTree</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            jdesktoppane
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JDesktopPane.html">JDesktopPane</a>
+        </td>
+        <td>
+            jprogressbar
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JProgressBar.html">JProgressBar</a>
+        </td>
+        <td>
+            jwindow
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JWindow.html">JWindow</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            jdialog
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JDialog.html">JDialog</a>
+        </td>
+        <td>
+            jscrollpane
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JScrollpane.html">JScrollpane</a>
+        </td>
+        <td>
+            password
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/.html"></a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            jfilechooser
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JFileChooser.html">JFileChooser</a>
+        </td>
+        <td>
+            jsplitpane
+        </td>
+        <td width="150">
+            <a href="http://download.oracle.com/javase/1.5.0/docs/api/javax/swing/JSplitPane.html">JSplitPane</a>
+        </td>
+    </tr>
+</table>
+<h3>Swank Commands that are not present in Tk</h3>
+<table>
+    <tr>
+        <td>
+            embed
+        </td>
+        <td>
+            eventrecorder
+        </td>
+        <td>
+            thread
+        </td>
+    </tr>
+</table>
+</body>
 </html>

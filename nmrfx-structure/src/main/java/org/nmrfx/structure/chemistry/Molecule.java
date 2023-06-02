@@ -54,11 +54,17 @@ import java.util.*;
 @PluginAPI("residuegen")
 public class Molecule extends MoleculeBase {
     private static final Logger log = LoggerFactory.getLogger(Molecule.class);
+
+    public final Map<String, List<SpatialSet>> sites = new HashMap<>();
+    public static int selCycleCount = 0;
     public static final LinkedHashMap labelTypes = new LinkedHashMap();
     public static final LinkedHashSet displayTypes = new LinkedHashSet();
     public static final LinkedHashSet colorTypes = new LinkedHashSet();
     public static final LinkedHashSet shapeTypes = new LinkedHashSet();
-    public static int selCycleCount = 0;
+
+    public Map<Atom, Map<Atom, Double>> ringClosures;
+    List<List<Atom>> atomTree = null;
+    HashMap<String, List> allowedSourcesMap = new HashMap<>();
 
     static {
         labelTypes.put(Integer.valueOf(LABEL_NONE), "none");
@@ -119,8 +125,6 @@ public class Molecule extends MoleculeBase {
         shapeTypes.add("triangle");
     }
 
-    public final Map<String, List<SpatialSet>> sites = new HashMap<>();
-    public Map<Atom, Map<Atom, Double>> ringClosures;
     public boolean labelsCurrent = false;
     public String originalName = null;
     public String source = null;
@@ -133,16 +137,17 @@ public class Molecule extends MoleculeBase {
     public float[][] view = new float[4][4];
     public float[] values = new float[10];
     public float[] color = new float[3];
+    double[] center = new double[3];
     public float[] titlePosition = new float[3];
     public String energyType = null;
     public boolean deleted = false;
+    float bondSpace = 12.0f;
     // FIXME should be crystal object
     public String crystal = null;
-    List<List<Atom>> atomTree = null;
-    HashMap<String, List> allowedSourcesMap = new HashMap<>();
-    double[] center = new double[3];
-    float bondSpace = 12.0f;
+    private ArrayList<Atom> angleAtoms = null;
+    private ArrayList<Atom> pseudoAngleAtoms = null;
     List<Atom> treeAtoms;
+
     int genVecs[][] = null;
     EnergyCoords eCoords = new EnergyCoords();
     Dihedral dihedrals = null;
@@ -150,8 +155,6 @@ public class Molecule extends MoleculeBase {
     EnergyLists energyList;
     ProteinHelix helix;
     Sheet sheets;
-    private ArrayList<Atom> angleAtoms = null;
-    private ArrayList<Atom> pseudoAngleAtoms = null;
 
     // fixme    public EnergyLists energyList = null;
     public Molecule(String name) {
@@ -179,8 +182,36 @@ public class Molecule extends MoleculeBase {
         this.treeAtoms = treeAtoms;
     }
 
+    public static boolean isAnyChanged() {
+        boolean anyChanged = false;
+        Collection<MoleculeBase> molecules = MoleculeFactory.getMolecules();
+        for (MoleculeBase checkMol : molecules) {
+            if (checkMol.isChanged()) {
+                anyChanged = true;
+                break;
+
+            }
+        }
+        return anyChanged;
+    }
+
+    public static void clearAllChanged() {
+        Collection<MoleculeBase> molecules = MoleculeFactory.getMolecules();
+        for (MoleculeBase checkMol : molecules) {
+            checkMol.clearChanged();
+        }
+    }
+
     public void setActive() {
         MoleculeFactory.setActive(this);
+    }
+
+    public static Molecule getActive() {
+        return (Molecule) MoleculeFactory.getActive();
+    }
+
+    public void setTitle(final String value) {
+        title = value.trim();
     }
 
     public String getTitle() {
@@ -191,8 +222,7 @@ public class Molecule extends MoleculeBase {
         return value;
     }
 
-    public void setTitle(final String value) {
-        title = value.trim();
+    public static void addMoleculeModel() {
     }
 
     /**
@@ -240,28 +270,36 @@ public class Molecule extends MoleculeBase {
         updateAtomArray();
     }
 
-    public Dihedral getDihedrals() {
-        return dihedrals;
+    public static Molecule get(String name) {
+        if (name == null) {
+            return null;
+        } else {
+            return (Molecule) MoleculeFactory.getMolecule(name);
+        }
     }
 
     public void setDihedrals(Dihedral dihedrals) {
         this.dihedrals = dihedrals;
     }
 
-    public EnergyLists getEnergyLists() {
-        return energyList;
+    public Dihedral getDihedrals() {
+        return dihedrals;
     }
 
     public void setEnergyLists(EnergyLists eLists) {
         this.energyList = eLists;
     }
 
-    public Sheet getSheets() {
-        return sheets;
+    public EnergyLists getEnergyLists() {
+        return energyList;
     }
 
     public void setSheets(Sheet sheets) {
         this.sheets = sheets;
+    }
+
+    public Sheet getSheets() {
+        return sheets;
     }
 
     public String getDotBracket() {
@@ -272,6 +310,89 @@ public class Molecule extends MoleculeBase {
 
     public void setRDCResults(AlignmentMatrix results) {
         alignmentMat = results;
+    }
+
+    public static Point3 avgCoords(MolFilter molFilter1) throws IllegalArgumentException, InvalidMoleculeException {
+        List<SpatialSet> selected1 = matchAtoms(molFilter1);
+        Point3 pt1 = Atom.avgAtom(selected1, molFilter1.getStructureNum());
+        if (pt1 == null) {
+            throw new IllegalArgumentException("No coordinates for atom " + molFilter1.getString());
+        }
+        return pt1;
+    }
+
+    public static double calcDistance(String aname0, String aname1) {
+        int structureNum = 0;
+        Atom[] atoms = new Atom[2];
+        atoms[0] = getAtomByName(aname0);
+        atoms[1] = getAtomByName(aname1);
+        SpatialSet[] spSets = new SpatialSet[2];
+        Point3[] pts = new Point3[2];
+        int i = 0;
+        for (Atom atom : atoms) {
+            if (atom == null) {
+                log.warn("{} {}", aname0, aname1);
+                throw new IllegalArgumentException("No atom for " + i);
+            }
+            spSets[i] = atom.spatialSet;
+            pts[i] = spSets[i].getPoint(structureNum);
+            if (pts[i] == null) {
+                throw new IllegalArgumentException("No coordinates for atom " + atom.getFullName());
+            }
+            i++;
+        }
+        return Atom.calcDistance(pts[0], pts[1]);
+    }
+
+    public static double calcDistance(MolFilter molFilter1, MolFilter molFilter2)
+            throws MissingCoordinatesException, InvalidMoleculeException {
+        return calcDistance(molFilter1, molFilter2, molFilter1.getStructureNum());
+    }
+
+    public static double calcDistance(MolFilter molFilter1, MolFilter molFilter2,
+                                      int structureNum)
+            throws MissingCoordinatesException, InvalidMoleculeException {
+        List<SpatialSet> selected1 = matchAtoms(molFilter1);
+        List<SpatialSet> selected2 = matchAtoms(molFilter2);
+        Point3 pt1 = Atom.avgAtom(selected1, structureNum);
+        Point3 pt2 = Atom.avgAtom(selected2, structureNum);
+        if (pt1 == null) {
+            throw new MissingCoordinatesException("No coordinates for atom " + molFilter1.getString());
+        }
+        if (pt2 == null) {
+            throw new MissingCoordinatesException("No coordinates for atom " + molFilter2.getString());
+        }
+        return (Atom.calcDistance(pt1, pt2));
+    }
+
+    public static double calcAngle(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3)
+            throws MissingCoordinatesException {
+        SpatialSet spSet1 = getSpatialSet(molFilter1);
+        SpatialSet spSet2 = getSpatialSet(molFilter2);
+        SpatialSet spSet3 = getSpatialSet(molFilter3);
+        if (spSet1 == null) {
+            throw new MissingCoordinatesException("No coordinates for atom " + molFilter1.getString());
+        }
+        if (spSet2 == null) {
+            throw new MissingCoordinatesException("No coordinates for atom " + molFilter2.getString());
+        }
+        if (spSet3 == null) {
+            throw new MissingCoordinatesException("No coordinates for atom " + molFilter3.getString());
+        }
+
+        Point3 pt1 = spSet1.getPoint(molFilter1.getStructureNum());
+        Point3 pt2 = spSet2.getPoint(molFilter2.getStructureNum());
+        Point3 pt3 = spSet3.getPoint(molFilter3.getStructureNum());
+        if (pt1 == null) {
+            throw new MissingCoordinatesException("No coordinates for atom " + molFilter1.getString());
+        }
+        if (pt2 == null) {
+            throw new MissingCoordinatesException("No coordinates for atom " + molFilter2.getString());
+        }
+        if (pt3 == null) {
+            throw new MissingCoordinatesException("No coordinates for atom " + molFilter3.getString());
+        }
+        return (Atom.calcAngle(pt1, pt2, pt3));
     }
 
     public double calcAngle(final String aname0, final String aname1, final String aname2) {
@@ -323,6 +444,27 @@ public class Molecule extends MoleculeBase {
             pts[i] = spSets[i].getPoint(structureNum);
             if (pts[i] == null) {
                 throw new IllegalArgumentException("No coordinates for atom " + molFilter.getString());
+            }
+            i++;
+        }
+        return (Atom.calcDihedral(pts[0], pts[1], pts[2], pts[3]));
+    }
+
+    public static double calcDihedral(final Atom[] atoms) throws MissingCoordinatesException {
+        int structureNum = 0;
+        return calcDihedral(atoms, structureNum);
+    }
+
+    public static double calcDihedral(final Atom[] atoms, int structureNum) throws MissingCoordinatesException {
+        SpatialSet[] spSets = new SpatialSet[4];
+        Point3[] pts = new Point3[4];
+        int i = 0;
+        for (Atom atom : atoms) {
+            spSets[i] = atom.spatialSet;
+            pts[i] = spSets[i].getPoint(structureNum);
+            if (pts[i] == null) {
+                throw new MissingCoordinatesException("No coordinates for atom "
+                        + atom.getFullName() + " in structure " + structureNum);
             }
             i++;
         }
@@ -446,8 +588,23 @@ public class Molecule extends MoleculeBase {
         genVecs = null;
     }
 
+    public void fillEntityCoords() {
+        for (Entity entity : getEntities()) {
+            AngleTreeGenerator.fillCoordinates(entity, null);
+        }
+    }
+
     public int genCoords() throws RuntimeException {
         return genCoordsFast(null, false, 0);
+    }
+
+    public int genCoords(int iStructure, boolean fillCoords) throws RuntimeException {
+        return genCoordsFast(null, fillCoords, iStructure);
+    }
+
+    @Override
+    public int genCoords(boolean fillCoords) throws RuntimeException {
+        return genCoordsFast(null, fillCoords, 0);
     }
 
     public int genCoords(boolean fillCoords, final double[] dihedralAngles) throws RuntimeException {
@@ -1752,6 +1909,32 @@ public class Molecule extends MoleculeBase {
         return i;
     }
 
+    public static List<Bond> matchBonds() throws IllegalArgumentException {
+        List<Bond> selected = new ArrayList<>(32);
+        Atom atomB;
+        Atom atomE;
+        Molecule molecule = (Molecule) MoleculeFactory.getActive();
+
+        if (molecule == null) {
+            throw new IllegalArgumentException("No active molecule ");
+        }
+
+        molecule.updateBondArray();
+        for (Bond bond : molecule.bonds) {
+            atomB = bond.begin;
+            atomE = bond.end;
+
+            if ((atomB != null) && (atomE != null)) {
+                if ((atomB.getSelected() > 0) && (atomE.getSelected() > 0)) {
+                    bond.setProperty(Bond.SELECT);
+                    selected.add(bond);
+                }
+            }
+        }
+
+        return (selected);
+    }
+
     public List<Atom> getAtoms() {
         List<Atom> atomVector = new ArrayList<>(32);
         updateAtomArray();
@@ -2113,99 +2296,6 @@ public class Molecule extends MoleculeBase {
         }
     }
 
-    public void setupIRPTypes() {
-        try {
-            AtomEnergyProp.makeIrpMap();
-        } catch (IOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-        List<Atom> atomList;
-        if (treeAtoms == null) {
-            atomList = atoms;
-        } else {
-            atomList = treeAtoms;
-        }
-        for (Atom iAtom : atomList) {
-            Atom parent = iAtom.getParent();
-            Atom grandparent = parent != null ? parent.getParent() : null;
-            Atom daughter = iAtom.daughterAtom;
-            if ((parent != null) && (grandparent != null) && (daughter != null) && (iAtom.irpIndex > 0) && (iAtom.rotActive)) {
-                String aType = iAtom.getType();
-                String pType = parent.getType();
-                String gType = grandparent.getType();
-                String dType = daughter.getType();
-                String torsionType = gType + "-" + pType + "-" + aType + "-" + dType;
-                int irpIndex = AtomEnergyProp.getTorsionIndex(torsionType);
-                if (irpIndex == 0) {
-                    irpIndex = 9999;
-                }
-                iAtom.irpIndex = irpIndex;
-            }
-        }
-    }
-
-    public Map<Atom, Map<Atom, Double>> getRingClosures() {
-        if (ringClosures == null) {
-            ringClosures = new HashMap<>();
-        }
-        return ringClosures;
-    }
-
-    public void setRingClosures(Map<Atom, Map<Atom, Double>> bonds) {
-        if (ringClosures == null) {
-            ringClosures = bonds;
-        } else {
-            for (Atom atom1 : bonds.keySet()) {
-                if (ringClosures.containsKey(atom1)) {
-                    for (Atom atom2 : bonds.get(atom1).keySet()) {
-                        if (ringClosures.get(atom1).containsKey(atom2)) {
-                            // This will prevent overwriting if a value exists
-                            continue;
-                        } else {
-                            ringClosures.get(atom1).put(atom2, bonds.get(atom1).get(atom2));
-                        }
-                    }
-                } else {
-                    ringClosures.put(atom1, bonds.get(atom1));
-                }
-            }
-        }
-    }
-
-    public void setRiboseActive(boolean state) {
-        updateAtomArray();
-        atoms.stream().filter((iAtom) -> (iAtom.getName().equalsIgnoreCase("C3'") || iAtom.getName().equalsIgnoreCase("C2'")
-                || iAtom.getName().equalsIgnoreCase("C1'"))).forEachOrdered((iAtom) -> {
-            boolean current = iAtom.rotActive;
-            iAtom.rotActive = state;
-        });
-        setupRotGroups();
-        setupAngles();
-    }
-
-    public List<Atom> getAngleAtoms() {
-        return angleAtoms;
-    }
-
-    @Override
-    public List<Atom> setupAngles() {
-        if (genVecs == null) {
-            setupGenCoords();
-        }
-        angleAtoms = new ArrayList<Atom>();
-
-        for (int i = 0; i < genVecs.length; i++) {
-            if (genVecs[i].length > 3) {
-                Atom angleAtom = treeAtoms.get(genVecs[i][2]);
-                if ((angleAtom.getParent() != null) && (angleAtom.irpIndex > 0) && angleAtom.rotActive) {
-                    angleAtoms.add(angleAtom);
-                }
-            }
-
-        }
-        return angleAtoms;
-    }
-
     @Override
     public void setupRotGroups() {
         int rotUnit = 0;
@@ -2238,6 +2328,76 @@ public class Molecule extends MoleculeBase {
         setupIRPTypes();
     }
 
+    public void setupIRPTypes() {
+        try {
+            AtomEnergyProp.makeIrpMap();
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        List<Atom> atomList;
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
+        }
+        for (Atom iAtom : atomList) {
+            Atom parent = iAtom.getParent();
+            Atom grandparent = parent != null ? parent.getParent() : null;
+            Atom daughter = iAtom.daughterAtom;
+            if ((parent != null) && (grandparent != null) && (daughter != null) && (iAtom.irpIndex > 0) && (iAtom.rotActive)) {
+                String aType = iAtom.getType();
+                String pType = parent.getType();
+                String gType = grandparent.getType();
+                String dType = daughter.getType();
+                String torsionType = gType + "-" + pType + "-" + aType + "-" + dType;
+                int irpIndex = AtomEnergyProp.getTorsionIndex(torsionType);
+                if (irpIndex == 0) {
+                    irpIndex = 9999;
+                }
+                iAtom.irpIndex = irpIndex;
+            }
+        }
+    }
+
+    public void setRingClosures(Map<Atom, Map<Atom, Double>> bonds) {
+        if (ringClosures == null) {
+            ringClosures = bonds;
+        } else {
+            for (Atom atom1 : bonds.keySet()) {
+                if (ringClosures.containsKey(atom1)) {
+                    for (Atom atom2 : bonds.get(atom1).keySet()) {
+                        if (ringClosures.get(atom1).containsKey(atom2)) {
+                            // This will prevent overwriting if a value exists
+                            continue;
+                        } else {
+                            ringClosures.get(atom1).put(atom2, bonds.get(atom1).get(atom2));
+                        }
+                    }
+                } else {
+                    ringClosures.put(atom1, bonds.get(atom1));
+                }
+            }
+        }
+    }
+
+    public Map<Atom, Map<Atom, Double>> getRingClosures() {
+        if (ringClosures == null) {
+            ringClosures = new HashMap<>();
+        }
+        return ringClosures;
+    }
+
+    public void setRiboseActive(boolean state) {
+        updateAtomArray();
+        atoms.stream().filter((iAtom) -> (iAtom.getName().equalsIgnoreCase("C3'") || iAtom.getName().equalsIgnoreCase("C2'")
+                || iAtom.getName().equalsIgnoreCase("C1'"))).forEachOrdered((iAtom) -> {
+            boolean current = iAtom.rotActive;
+            iAtom.rotActive = state;
+        });
+        setupRotGroups();
+        setupAngles();
+    }
+
     @Override
     public void setMethylRotationActive(boolean state) {
         for (Atom iAtom : atoms) {
@@ -2252,63 +2412,27 @@ public class Molecule extends MoleculeBase {
         setupAngles();
     }
 
-    public void fillEntityCoords() {
-        for (Entity entity : getEntities()) {
-            AngleTreeGenerator.fillCoordinates(entity, null);
-        }
+    public List<Atom> getAngleAtoms() {
+        return angleAtoms;
     }
 
     @Override
-    public int genCoords(boolean fillCoords) throws RuntimeException {
-        return genCoordsFast(null, fillCoords, 0);
-    }
-
-    public int genCoords(int iStructure, boolean fillCoords) throws RuntimeException {
-        return genCoordsFast(null, fillCoords, iStructure);
-    }
-
-    @Override
-    public void addNonStandardResidue(Sequence sequence, Residue residue) {
-        boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
-        residue.setNonStandard();
-        Atom startAtom;
-        if (residue.isCompliant()) {
-            residue.addConnectors();
-            startAtom = residue.getAtom("X");
-        } else {
-            if (residue.getFirstBackBoneAtom() != null) {
-                startAtom = residue.getFirstBackBoneAtom();
-            } else {
-                startAtom = isProtein ? residue.getAtom("CAX") : residue.getAtom("C3'X");
-            }
+    public List<Atom> setupAngles() {
+        if (genVecs == null) {
+            setupGenCoords();
         }
+        angleAtoms = new ArrayList<Atom>();
 
-        residue.getLastBackBoneAtom().setProperty("connector", true);
-        PathIterator pI = new PathIterator(residue);
-        NodeValidator nV = new NodeValidator();
-        pI.init(nV);
-        pI.processPatterns();
-        pI.setProperties("ar", "AROMATIC");
-        pI.setProperties("res", "RESONANT");
-        pI.setProperties("r", "RING");
-        pI.setHybridization();
-        AngleTreeGenerator.genMeasuredTree(residue, startAtom);
-        residue.removeConnectors();
-
-        sequence.makeConnection(residue);
-
-        // fixme this needs to be changed for non-amino acid residue atoms
-        if (isProtein) {
-            Atom refAtom = residue.getAtom("O");
-            if (refAtom != null) {
-                residue.getAtom("O").dihedralAngle = (float) Math.PI;
-            } else {
-                List<Atom> atoms = residue.getLastBackBoneAtom().getChildren();
-                if (atoms.size() == 1) {
-                    atoms.get(0).dihedralAngle = (float) Math.PI;
+        for (int i = 0; i < genVecs.length; i++) {
+            if (genVecs[i].length > 3) {
+                Atom angleAtom = treeAtoms.get(genVecs[i][2]);
+                if ((angleAtom.getParent() != null) && (angleAtom.irpIndex > 0) && angleAtom.rotActive) {
+                    angleAtoms.add(angleAtom);
                 }
             }
+
         }
+        return angleAtoms;
     }
 
     public List<Atom> getAllAngleAtoms() {
@@ -2532,6 +2656,148 @@ public class Molecule extends MoleculeBase {
         return pairs;
     }
 
+    public static void getCouplings(final Entity entity, final ArrayList<JCoupling> jCouplings,
+                                    final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks,
+                                    int nShells, int minShells, int tocsyShells, int hmbcShells) {
+        MoleculeBase molecule = entity.molecule;
+        molecule.getAtomTypes();
+
+        MTree mTree = new MTree();
+        MTree mTreeJ = new MTree();
+        HashMap<Atom, Integer> hash = new HashMap<>();
+        HashMap<Atom, Integer> hashJ = new HashMap<>();
+        List<Atom> eAtomList = new ArrayList<>();
+        List<Atom> eAtomListJ = new ArrayList<>();
+        int i = 0;
+
+        for (Atom atom : entity.atoms) {
+            // entity check ensures that only atoms in same residue are used
+            if (atom.entity == entity) {
+                if (atom.isMethyl() && !atom.isFirstInMethyl()) {
+                    continue;
+                }
+                Atom parent = atom.getParent();
+                if (parent != null) {
+                    if ((parent.getAtomicNumber() == 7) && atom.isMethylene()) {
+                        continue;
+                    }
+                    // skip hydroxyl protons
+                    if ((atom.getAtomicNumber() == 1) && (parent.getAtomicNumber() == 8)) {
+                        continue;
+                    }
+                }
+                hash.put(atom, i);
+                eAtomList.add(atom);
+                MNode mNode = mTree.addNode();
+                mNode.setAtom(atom);
+                i++;
+            }
+        }
+        for (Atom atom : entity.atoms) {
+            for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
+                Bond bond = atom.bonds.get(iBond);
+                Integer iNodeBegin = hash.get(bond.begin);
+                Integer iNodeEnd = hash.get(bond.end);
+
+                if ((iNodeBegin != null) && (iNodeEnd != null)) {
+                    mTree.addEdge(iNodeBegin, iNodeEnd);
+                }
+            }
+
+        }
+
+        // get breadth first path from each atom
+        Atom[] atoms = new Atom[nShells + 1];
+        int iAtom = 0;
+        for (int j = 0, n = eAtomList.size(); j < n; j++) {
+            Atom atomStart = eAtomList.get(j);
+            if (atomStart.aNum != 1) {
+                continue;
+            }
+
+            mTree.broad_path(j);
+            ArrayList<MNode> pathNodes = mTree.getPathNodes();
+            for (MNode mNode : pathNodes) {
+                Atom atomEnd = mNode.getAtom();
+                int shell = mNode.getShell();
+                if (shell > nShells) {
+                    break;
+                } else if (shell < minShells) {
+                    continue;
+                }
+
+                MNode nNode = mNode;
+                int nOx = 0;
+                for (int iShell = shell; iShell >= 0; iShell--) {
+                    atoms[iShell] = nNode.getAtom();
+                    if (atoms[iShell].getAtomicNumber() == 8) {
+                        nOx++;
+                    }
+                    nNode = nNode.getParent();
+                }
+                boolean gotJ = false;
+
+                if ((nOx == 0) && (shell > 1) && (atoms[shell].aNum == 1)) {
+                    gotJ = true;
+                    JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
+                    jCouplings.add(jCoupling);
+                } else if ((nOx < 2) && (shell > 1) && (atoms[0].aNum == 1) && (atoms[shell].aNum == 6) && (shell <= hmbcShells)) {
+                    JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
+                    hmbcLinks.add(jCoupling);
+                }
+                if (gotJ) {
+                    if (!hashJ.containsKey(atomStart)) {
+                        hashJ.put(atomStart, iAtom);
+                        eAtomListJ.add(atomStart);
+                        MNode jNode = mTreeJ.addNode();
+                        jNode.setAtom(atomStart);
+                        iAtom++;
+                    }
+                    if (!hashJ.containsKey(atomEnd)) {
+                        hashJ.put(atomEnd, iAtom);
+                        eAtomListJ.add(atomEnd);
+                        MNode jNode = mTreeJ.addNode();
+                        jNode.setAtom(atomEnd);
+                        iAtom++;
+                    }
+                    Integer iNodeBegin = hashJ.get(atomStart);
+                    Integer iNodeEnd = hashJ.get(atomEnd);
+
+                    if ((iNodeBegin != null) && (iNodeEnd != null) && (iNodeBegin.intValue() != iNodeEnd.intValue()) && (iNodeBegin < iNodeEnd)) {
+                        mTreeJ.addEdge(iNodeBegin, iNodeEnd);
+                    }
+                }
+            }
+        }
+
+        for (int j = 0, n = eAtomListJ.size(); j < n; j++) {
+            Atom atomStart = eAtomListJ.get(j);
+            if (atomStart.aNum != 1) {
+                continue;
+            }
+
+            mTreeJ.broad_path(j);
+            List<MNode> pathNodes = mTreeJ.getPathNodes();
+            int numNodes = pathNodes.size();
+            int shell;
+
+            for (int k = 1; k < numNodes; k++) {
+                MNode cNode = pathNodes.get(k);
+                if (cNode.isRingClosure()) {
+                    continue;
+                }
+                Atom atomEnd = cNode.getAtom();
+                shell = cNode.getShell();
+                if ((shell > 0) && (shell <= tocsyShells)) {
+                    atoms[0] = atomStart;
+                    atoms[1] = atomEnd;
+                    JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, 2, shell);
+                    tocsyLinks.add(jCoupling);
+                }
+            }
+        }
+    }
+
     public void genAngleBranches() {
         getAtomTypes();
         List<Atom> atomList;
@@ -2603,6 +2869,130 @@ public class Molecule extends MoleculeBase {
             }
         }
 
+    }
+
+    public static Atom getStartAtom(Molecule molecule) {
+        List<Atom> atoms = molecule.getAtoms();
+        int maxValue = 0;
+        int maxAtom = 0;
+
+        for (int i = 0, n = atoms.size(); i < n; i++) {
+            Atom atom = atoms.get(i);
+
+            if (atom.canonValue > maxValue) {
+                maxValue = atom.canonValue;
+                maxAtom = i;
+            }
+        }
+
+        return atoms.get(maxAtom);
+    }
+
+    public static int buildTree(Molecule molecule, Atom startAtom, List<Atom> atomList, MTree mTree) {
+        Map<Atom, Integer> hash = new HashMap<>();
+
+        Entity entity = startAtom.entity;
+        int i = 0;
+        int iStart = 0;
+
+        for (Atom atom : entity.atoms) {
+            if (atom == startAtom) {
+                iStart = i;
+            }
+
+            if (atom.entity == entity) {
+                hash.put(atom, i);
+                atomList.add(atom);
+
+                MNode mNode = mTree.addNode();
+                mNode.setValue(atom.canonValue);
+                mNode.setAtom(atom);
+
+                i++;
+            }
+
+        }
+
+        for (Atom atom : entity.atoms) {
+            for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
+                Bond bond = atom.bonds.get(iBond);
+                Integer iNodeBegin = hash.get(bond.begin);
+                Integer iNodeEnd = hash.get(bond.end);
+
+                if ((iNodeBegin != null) && (iNodeEnd != null)) {
+                    mTree.addEdge(iNodeBegin.intValue(), iNodeEnd.intValue());
+                }
+            }
+        }
+
+        mTree.sortNodes();
+
+        return iStart;
+    }
+
+    static Bond findBond(Atom atomB, Atom atomE) {
+        Bond bond = null;
+
+        for (int iBond = 0; iBond < atomB.bonds.size(); iBond++) {
+            bond = atomB.bonds.get(iBond);
+
+            if (((bond.begin == atomB) && (bond.end == atomE)) || ((bond.begin == atomE) && (bond.end == atomB))) {
+                return bond;
+            }
+        }
+
+        for (int iBond = 0; iBond < atomE.bonds.size(); iBond++) {
+            bond = atomE.bonds.get(iBond);
+
+            if (((bond.begin == atomB) && (bond.end == atomE)) || ((bond.begin == atomE) && (bond.end == atomB))) {
+                return bond;
+            }
+        }
+
+        log.warn("no bond");
+
+        return null;
+    }
+
+    public static List<String> getLabelTypes() {
+        List<String> list = new ArrayList<>();
+
+        for (int i = 0; i <= LABEL_PPM; i++) {
+            list.add((String) labelTypes.get(i));
+        }
+
+        return list;
+    }
+
+    public static List<String> getDisplayTypes() {
+        List<String> list = new ArrayList<>();
+        Iterator iter = displayTypes.iterator();
+
+        while (iter.hasNext()) {
+            list.add((String) iter.next());
+        }
+
+        return list;
+    }
+
+    public static List<String> getShapeTypes() {
+        List<String> list = new ArrayList<>();
+        Iterator iter = shapeTypes.iterator();
+
+        while (iter.hasNext()) {
+            list.add((String) iter.next());
+        }
+
+        return list;
+    }
+
+    public static List<String> getColorTypes() {
+        List<String> list = new ArrayList<>();
+        Iterator iter = colorTypes.iterator();
+        while (iter.hasNext()) {
+            list.add((String) iter.next());
+        }
+        return list;
     }
 
     public void updateLabels() {
@@ -2895,435 +3285,48 @@ public class Molecule extends MoleculeBase {
         return newAtoms;
     }
 
-    public static boolean isAnyChanged() {
-        boolean anyChanged = false;
-        Collection<MoleculeBase> molecules = MoleculeFactory.getMolecules();
-        for (MoleculeBase checkMol : molecules) {
-            if (checkMol.isChanged()) {
-                anyChanged = true;
-                break;
-
-            }
-        }
-        return anyChanged;
-    }
-
-    public static void clearAllChanged() {
-        Collection<MoleculeBase> molecules = MoleculeFactory.getMolecules();
-        for (MoleculeBase checkMol : molecules) {
-            checkMol.clearChanged();
-        }
-    }
-
-    public static Molecule getActive() {
-        return (Molecule) MoleculeFactory.getActive();
-    }
-
-    public static void addMoleculeModel() {
-    }
-
-    public static Molecule get(String name) {
-        if (name == null) {
-            return null;
+    @Override
+    public void addNonStandardResidue(Sequence sequence, Residue residue) {
+        boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
+        residue.setNonStandard();
+        Atom startAtom;
+        if (residue.isCompliant()) {
+            residue.addConnectors();
+            startAtom = residue.getAtom("X");
         } else {
-            return (Molecule) MoleculeFactory.getMolecule(name);
-        }
-    }
-
-    public static Point3 avgCoords(MolFilter molFilter1) throws IllegalArgumentException, InvalidMoleculeException {
-        List<SpatialSet> selected1 = matchAtoms(molFilter1);
-        Point3 pt1 = Atom.avgAtom(selected1, molFilter1.getStructureNum());
-        if (pt1 == null) {
-            throw new IllegalArgumentException("No coordinates for atom " + molFilter1.getString());
-        }
-        return pt1;
-    }
-
-    public static double calcDistance(String aname0, String aname1) {
-        int structureNum = 0;
-        Atom[] atoms = new Atom[2];
-        atoms[0] = getAtomByName(aname0);
-        atoms[1] = getAtomByName(aname1);
-        SpatialSet[] spSets = new SpatialSet[2];
-        Point3[] pts = new Point3[2];
-        int i = 0;
-        for (Atom atom : atoms) {
-            if (atom == null) {
-                log.warn("{} {}", aname0, aname1);
-                throw new IllegalArgumentException("No atom for " + i);
+            if (residue.getFirstBackBoneAtom() != null) {
+                startAtom = residue.getFirstBackBoneAtom();
+            } else {
+                startAtom = isProtein ? residue.getAtom("CAX") : residue.getAtom("C3'X");
             }
-            spSets[i] = atom.spatialSet;
-            pts[i] = spSets[i].getPoint(structureNum);
-            if (pts[i] == null) {
-                throw new IllegalArgumentException("No coordinates for atom " + atom.getFullName());
-            }
-            i++;
-        }
-        return Atom.calcDistance(pts[0], pts[1]);
-    }
-
-    public static double calcDistance(MolFilter molFilter1, MolFilter molFilter2)
-            throws MissingCoordinatesException, InvalidMoleculeException {
-        return calcDistance(molFilter1, molFilter2, molFilter1.getStructureNum());
-    }
-
-    public static double calcDistance(MolFilter molFilter1, MolFilter molFilter2,
-                                      int structureNum)
-            throws MissingCoordinatesException, InvalidMoleculeException {
-        List<SpatialSet> selected1 = matchAtoms(molFilter1);
-        List<SpatialSet> selected2 = matchAtoms(molFilter2);
-        Point3 pt1 = Atom.avgAtom(selected1, structureNum);
-        Point3 pt2 = Atom.avgAtom(selected2, structureNum);
-        if (pt1 == null) {
-            throw new MissingCoordinatesException("No coordinates for atom " + molFilter1.getString());
-        }
-        if (pt2 == null) {
-            throw new MissingCoordinatesException("No coordinates for atom " + molFilter2.getString());
-        }
-        return (Atom.calcDistance(pt1, pt2));
-    }
-
-    public static double calcAngle(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3)
-            throws MissingCoordinatesException {
-        SpatialSet spSet1 = getSpatialSet(molFilter1);
-        SpatialSet spSet2 = getSpatialSet(molFilter2);
-        SpatialSet spSet3 = getSpatialSet(molFilter3);
-        if (spSet1 == null) {
-            throw new MissingCoordinatesException("No coordinates for atom " + molFilter1.getString());
-        }
-        if (spSet2 == null) {
-            throw new MissingCoordinatesException("No coordinates for atom " + molFilter2.getString());
-        }
-        if (spSet3 == null) {
-            throw new MissingCoordinatesException("No coordinates for atom " + molFilter3.getString());
         }
 
-        Point3 pt1 = spSet1.getPoint(molFilter1.getStructureNum());
-        Point3 pt2 = spSet2.getPoint(molFilter2.getStructureNum());
-        Point3 pt3 = spSet3.getPoint(molFilter3.getStructureNum());
-        if (pt1 == null) {
-            throw new MissingCoordinatesException("No coordinates for atom " + molFilter1.getString());
-        }
-        if (pt2 == null) {
-            throw new MissingCoordinatesException("No coordinates for atom " + molFilter2.getString());
-        }
-        if (pt3 == null) {
-            throw new MissingCoordinatesException("No coordinates for atom " + molFilter3.getString());
-        }
-        return (Atom.calcAngle(pt1, pt2, pt3));
-    }
+        residue.getLastBackBoneAtom().setProperty("connector", true);
+        PathIterator pI = new PathIterator(residue);
+        NodeValidator nV = new NodeValidator();
+        pI.init(nV);
+        pI.processPatterns();
+        pI.setProperties("ar", "AROMATIC");
+        pI.setProperties("res", "RESONANT");
+        pI.setProperties("r", "RING");
+        pI.setHybridization();
+        AngleTreeGenerator.genMeasuredTree(residue, startAtom);
+        residue.removeConnectors();
 
-    public static double calcDihedral(final Atom[] atoms) throws MissingCoordinatesException {
-        int structureNum = 0;
-        return calcDihedral(atoms, structureNum);
-    }
+        sequence.makeConnection(residue);
 
-    public static double calcDihedral(final Atom[] atoms, int structureNum) throws MissingCoordinatesException {
-        SpatialSet[] spSets = new SpatialSet[4];
-        Point3[] pts = new Point3[4];
-        int i = 0;
-        for (Atom atom : atoms) {
-            spSets[i] = atom.spatialSet;
-            pts[i] = spSets[i].getPoint(structureNum);
-            if (pts[i] == null) {
-                throw new MissingCoordinatesException("No coordinates for atom "
-                        + atom.getFullName() + " in structure " + structureNum);
-            }
-            i++;
-        }
-        return (Atom.calcDihedral(pts[0], pts[1], pts[2], pts[3]));
-    }
-
-    public static List<Bond> matchBonds() throws IllegalArgumentException {
-        List<Bond> selected = new ArrayList<>(32);
-        Atom atomB;
-        Atom atomE;
-        Molecule molecule = (Molecule) MoleculeFactory.getActive();
-
-        if (molecule == null) {
-            throw new IllegalArgumentException("No active molecule ");
-        }
-
-        molecule.updateBondArray();
-        for (Bond bond : molecule.bonds) {
-            atomB = bond.begin;
-            atomE = bond.end;
-
-            if ((atomB != null) && (atomE != null)) {
-                if ((atomB.getSelected() > 0) && (atomE.getSelected() > 0)) {
-                    bond.setProperty(Bond.SELECT);
-                    selected.add(bond);
+        // fixme this needs to be changed for non-amino acid residue atoms
+        if (isProtein) {
+            Atom refAtom = residue.getAtom("O");
+            if (refAtom != null) {
+                residue.getAtom("O").dihedralAngle = (float) Math.PI;
+            } else {
+                List<Atom> atoms = residue.getLastBackBoneAtom().getChildren();
+                if (atoms.size() == 1) {
+                    atoms.get(0).dihedralAngle = (float) Math.PI;
                 }
             }
         }
-
-        return (selected);
-    }
-
-    public static void getCouplings(final Entity entity, final ArrayList<JCoupling> jCouplings,
-                                    final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks,
-                                    int nShells, int minShells, int tocsyShells, int hmbcShells) {
-        MoleculeBase molecule = entity.molecule;
-        molecule.getAtomTypes();
-
-        MTree mTree = new MTree();
-        MTree mTreeJ = new MTree();
-        HashMap<Atom, Integer> hash = new HashMap<>();
-        HashMap<Atom, Integer> hashJ = new HashMap<>();
-        List<Atom> eAtomList = new ArrayList<>();
-        List<Atom> eAtomListJ = new ArrayList<>();
-        int i = 0;
-
-        for (Atom atom : entity.atoms) {
-            // entity check ensures that only atoms in same residue are used
-            if (atom.entity == entity) {
-                if (atom.isMethyl() && !atom.isFirstInMethyl()) {
-                    continue;
-                }
-                Atom parent = atom.getParent();
-                if (parent != null) {
-                    if ((parent.getAtomicNumber() == 7) && atom.isMethylene()) {
-                        continue;
-                    }
-                    // skip hydroxyl protons
-                    if ((atom.getAtomicNumber() == 1) && (parent.getAtomicNumber() == 8)) {
-                        continue;
-                    }
-                }
-                hash.put(atom, i);
-                eAtomList.add(atom);
-                MNode mNode = mTree.addNode();
-                mNode.setAtom(atom);
-                i++;
-            }
-        }
-        for (Atom atom : entity.atoms) {
-            for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = atom.bonds.get(iBond);
-                Integer iNodeBegin = hash.get(bond.begin);
-                Integer iNodeEnd = hash.get(bond.end);
-
-                if ((iNodeBegin != null) && (iNodeEnd != null)) {
-                    mTree.addEdge(iNodeBegin, iNodeEnd);
-                }
-            }
-
-        }
-
-        // get breadth first path from each atom
-        Atom[] atoms = new Atom[nShells + 1];
-        int iAtom = 0;
-        for (int j = 0, n = eAtomList.size(); j < n; j++) {
-            Atom atomStart = eAtomList.get(j);
-            if (atomStart.aNum != 1) {
-                continue;
-            }
-
-            mTree.broad_path(j);
-            ArrayList<MNode> pathNodes = mTree.getPathNodes();
-            for (MNode mNode : pathNodes) {
-                Atom atomEnd = mNode.getAtom();
-                int shell = mNode.getShell();
-                if (shell > nShells) {
-                    break;
-                } else if (shell < minShells) {
-                    continue;
-                }
-
-                MNode nNode = mNode;
-                int nOx = 0;
-                for (int iShell = shell; iShell >= 0; iShell--) {
-                    atoms[iShell] = nNode.getAtom();
-                    if (atoms[iShell].getAtomicNumber() == 8) {
-                        nOx++;
-                    }
-                    nNode = nNode.getParent();
-                }
-                boolean gotJ = false;
-
-                if ((nOx == 0) && (shell > 1) && (atoms[shell].aNum == 1)) {
-                    gotJ = true;
-                    JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
-                    jCouplings.add(jCoupling);
-                } else if ((nOx < 2) && (shell > 1) && (atoms[0].aNum == 1) && (atoms[shell].aNum == 6) && (shell <= hmbcShells)) {
-                    JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
-                    hmbcLinks.add(jCoupling);
-                }
-                if (gotJ) {
-                    if (!hashJ.containsKey(atomStart)) {
-                        hashJ.put(atomStart, iAtom);
-                        eAtomListJ.add(atomStart);
-                        MNode jNode = mTreeJ.addNode();
-                        jNode.setAtom(atomStart);
-                        iAtom++;
-                    }
-                    if (!hashJ.containsKey(atomEnd)) {
-                        hashJ.put(atomEnd, iAtom);
-                        eAtomListJ.add(atomEnd);
-                        MNode jNode = mTreeJ.addNode();
-                        jNode.setAtom(atomEnd);
-                        iAtom++;
-                    }
-                    Integer iNodeBegin = hashJ.get(atomStart);
-                    Integer iNodeEnd = hashJ.get(atomEnd);
-
-                    if ((iNodeBegin != null) && (iNodeEnd != null) && (iNodeBegin.intValue() != iNodeEnd.intValue()) && (iNodeBegin < iNodeEnd)) {
-                        mTreeJ.addEdge(iNodeBegin, iNodeEnd);
-                    }
-                }
-            }
-        }
-
-        for (int j = 0, n = eAtomListJ.size(); j < n; j++) {
-            Atom atomStart = eAtomListJ.get(j);
-            if (atomStart.aNum != 1) {
-                continue;
-            }
-
-            mTreeJ.broad_path(j);
-            List<MNode> pathNodes = mTreeJ.getPathNodes();
-            int numNodes = pathNodes.size();
-            int shell;
-
-            for (int k = 1; k < numNodes; k++) {
-                MNode cNode = pathNodes.get(k);
-                if (cNode.isRingClosure()) {
-                    continue;
-                }
-                Atom atomEnd = cNode.getAtom();
-                shell = cNode.getShell();
-                if ((shell > 0) && (shell <= tocsyShells)) {
-                    atoms[0] = atomStart;
-                    atoms[1] = atomEnd;
-                    JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, 2, shell);
-                    tocsyLinks.add(jCoupling);
-                }
-            }
-        }
-    }
-
-    public static Atom getStartAtom(Molecule molecule) {
-        List<Atom> atoms = molecule.getAtoms();
-        int maxValue = 0;
-        int maxAtom = 0;
-
-        for (int i = 0, n = atoms.size(); i < n; i++) {
-            Atom atom = atoms.get(i);
-
-            if (atom.canonValue > maxValue) {
-                maxValue = atom.canonValue;
-                maxAtom = i;
-            }
-        }
-
-        return atoms.get(maxAtom);
-    }
-
-    public static int buildTree(Molecule molecule, Atom startAtom, List<Atom> atomList, MTree mTree) {
-        Map<Atom, Integer> hash = new HashMap<>();
-
-        Entity entity = startAtom.entity;
-        int i = 0;
-        int iStart = 0;
-
-        for (Atom atom : entity.atoms) {
-            if (atom == startAtom) {
-                iStart = i;
-            }
-
-            if (atom.entity == entity) {
-                hash.put(atom, i);
-                atomList.add(atom);
-
-                MNode mNode = mTree.addNode();
-                mNode.setValue(atom.canonValue);
-                mNode.setAtom(atom);
-
-                i++;
-            }
-
-        }
-
-        for (Atom atom : entity.atoms) {
-            for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = atom.bonds.get(iBond);
-                Integer iNodeBegin = hash.get(bond.begin);
-                Integer iNodeEnd = hash.get(bond.end);
-
-                if ((iNodeBegin != null) && (iNodeEnd != null)) {
-                    mTree.addEdge(iNodeBegin.intValue(), iNodeEnd.intValue());
-                }
-            }
-        }
-
-        mTree.sortNodes();
-
-        return iStart;
-    }
-
-    static Bond findBond(Atom atomB, Atom atomE) {
-        Bond bond = null;
-
-        for (int iBond = 0; iBond < atomB.bonds.size(); iBond++) {
-            bond = atomB.bonds.get(iBond);
-
-            if (((bond.begin == atomB) && (bond.end == atomE)) || ((bond.begin == atomE) && (bond.end == atomB))) {
-                return bond;
-            }
-        }
-
-        for (int iBond = 0; iBond < atomE.bonds.size(); iBond++) {
-            bond = atomE.bonds.get(iBond);
-
-            if (((bond.begin == atomB) && (bond.end == atomE)) || ((bond.begin == atomE) && (bond.end == atomB))) {
-                return bond;
-            }
-        }
-
-        log.warn("no bond");
-
-        return null;
-    }
-
-    public static List<String> getLabelTypes() {
-        List<String> list = new ArrayList<>();
-
-        for (int i = 0; i <= LABEL_PPM; i++) {
-            list.add((String) labelTypes.get(i));
-        }
-
-        return list;
-    }
-
-    public static List<String> getDisplayTypes() {
-        List<String> list = new ArrayList<>();
-        Iterator iter = displayTypes.iterator();
-
-        while (iter.hasNext()) {
-            list.add((String) iter.next());
-        }
-
-        return list;
-    }
-
-    public static List<String> getShapeTypes() {
-        List<String> list = new ArrayList<>();
-        Iterator iter = shapeTypes.iterator();
-
-        while (iter.hasNext()) {
-            list.add((String) iter.next());
-        }
-
-        return list;
-    }
-
-    public static List<String> getColorTypes() {
-        List<String> list = new ArrayList<>();
-        Iterator iter = colorTypes.iterator();
-        while (iter.hasNext()) {
-            list.add((String) iter.next());
-        }
-        return list;
     }
 
 }

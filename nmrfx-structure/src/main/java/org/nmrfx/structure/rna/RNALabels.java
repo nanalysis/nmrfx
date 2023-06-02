@@ -213,6 +213,48 @@ public class RNALabels {
         }
     }
 
+    public static class NucleicAcidAtomType {
+
+        final boolean hydroxyl;
+        final boolean sugar;
+        final boolean exchangable;
+
+        public NucleicAcidAtomType(Atom atom) {
+            if ((atom.parent != null) && (atom.getParent().getElementName().equals("O"))) {
+                hydroxyl = true;
+            } else {
+                hydroxyl = false;
+            }
+            if (atom.getName().endsWith("'") || atom.getName().endsWith("\"")) {
+                sugar = true;
+            } else {
+                sugar = false;
+            }
+            if (atom.getElementName().equals("H") && (atom.parent != null) && (atom.getParent().getElementName().equals("N") || hydroxyl)) {
+                exchangable = true;
+            } else {
+                exchangable = false;
+            }
+        }
+    }
+
+    public static class SelGroup {
+
+        public final Integer firstRes;
+        public final Integer lastRes;
+        public final String entityStr;
+        public final String[] resTypes;
+        public final String[] gAtomNames;
+
+        SelGroup(Integer startRes, Integer endRes, String entityStr, String[] resTypes, String[] gAtomNames) {
+            this.firstRes = startRes;
+            this.lastRes = endRes;
+            this.entityStr = entityStr;
+            this.resTypes = resTypes;
+            this.gAtomNames = gAtomNames;
+        }
+    }
+
     public static SelGroup parseSelGroup(String group) {
         Matcher matcher = pattern.matcher(group.trim());
         Integer startRes = null;
@@ -285,48 +327,6 @@ public class RNALabels {
         }
         return ok;
 
-    }
-
-    public static class NucleicAcidAtomType {
-
-        final boolean hydroxyl;
-        final boolean sugar;
-        final boolean exchangable;
-
-        public NucleicAcidAtomType(Atom atom) {
-            if ((atom.parent != null) && (atom.getParent().getElementName().equals("O"))) {
-                hydroxyl = true;
-            } else {
-                hydroxyl = false;
-            }
-            if (atom.getName().endsWith("'") || atom.getName().endsWith("\"")) {
-                sugar = true;
-            } else {
-                sugar = false;
-            }
-            if (atom.getElementName().equals("H") && (atom.parent != null) && (atom.getParent().getElementName().equals("N") || hydroxyl)) {
-                exchangable = true;
-            } else {
-                exchangable = false;
-            }
-        }
-    }
-
-    public static class SelGroup {
-
-        public final Integer firstRes;
-        public final Integer lastRes;
-        public final String entityStr;
-        public final String[] resTypes;
-        public final String[] gAtomNames;
-
-        SelGroup(Integer startRes, Integer endRes, String entityStr, String[] resTypes, String[] gAtomNames) {
-            this.firstRes = startRes;
-            this.lastRes = endRes;
-            this.entityStr = entityStr;
-            this.resTypes = resTypes;
-            this.gAtomNames = gAtomNames;
-        }
     }
 
 }

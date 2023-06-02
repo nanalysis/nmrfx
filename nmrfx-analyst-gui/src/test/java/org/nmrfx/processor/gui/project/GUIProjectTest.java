@@ -16,12 +16,12 @@ import static org.mockito.ArgumentMatchers.any;
 
 
 public class GUIProjectTest {
+    GUIProject testProject = Mockito.spy(new GUIProject("A Test Project"));
     @ClassRule
     public static final TemporaryFolder tmpFolder = TemporaryFolder.builder()
             .parentFolder(new File(System.getProperty("user.dir")))
             .assureDeletion()
             .build();
-    GUIProject testProject = Mockito.spy(new GUIProject("A Test Project"));
 
     @Before
     public void setUp() {

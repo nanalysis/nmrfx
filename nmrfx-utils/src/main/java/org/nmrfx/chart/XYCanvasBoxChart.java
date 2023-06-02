@@ -40,6 +40,13 @@ public class XYCanvasBoxChart extends XYCanvasChart {
     private static final Logger log = LoggerFactory.getLogger(XYCanvasBoxChart.class);
     Orientation orientation = Orientation.VERTICAL;
 
+    public static XYCanvasBoxChart buildChart(Canvas canvas) {
+        Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 400, 100.0);
+        Axis yAxis = new Axis(Orientation.VERTICAL, 0, 1.0, 100, 400);
+        yAxis.setZeroIncluded(true);
+        return new XYCanvasBoxChart(canvas, xAxis, yAxis);
+    }
+
     public XYCanvasBoxChart(Canvas canvas, final Axis... AXIS) {
         super(canvas, AXIS);
         xAxis = AXIS[0];
@@ -50,45 +57,6 @@ public class XYCanvasBoxChart extends XYCanvasChart {
         showLegend = false;
     }
 
-    public void annotate(GraphicsContextInterface gC) {
-
-    }
-
-    @Override
-    public double[] calcAutoScale() {
-        if (!data.isEmpty()) {
-            double pMin = 0.5;
-            double pMax = data.size() + 0.5;
-            double vMax = Double.NEGATIVE_INFINITY;
-            double vMin = Double.MAX_VALUE;
-            boolean ok = false;
-            for (DataSeries dataSeries : data) {
-                if (!dataSeries.getValues().isEmpty()) {
-                    ok = true;
-                    vMax = Math.max(vMax, dataSeries.getValues().stream().
-                            mapToDouble(v
-                                    -> ((BoxPlotData) v.getExtraValue()).max)
-                            .max().getAsDouble());
-
-                    vMin = Math.min(vMin, dataSeries.getValues().stream().
-                            mapToDouble(v
-                                    -> ((BoxPlotData) v.getExtraValue()).min)
-                            .min().getAsDouble());
-                }
-            }
-            if (ok) {
-                if (orientation == Orientation.VERTICAL) {
-                    double[] bounds = {pMin, pMax, vMin, vMax};
-                    return bounds;
-                } else {
-                    double[] bounds = {vMin, vMax, pMin, pMax};
-                    return bounds;
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     public void drawChart() {
         double width = getWidth();
@@ -97,6 +65,10 @@ public class XYCanvasBoxChart extends XYCanvasChart {
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         gC.clearRect(xPos, yPos, width, height);
         drawChart(gC);
+    }
+
+    public void annotate(GraphicsContextInterface gC) {
+
     }
 
     @Override
@@ -143,13 +115,48 @@ public class XYCanvasBoxChart extends XYCanvasChart {
     }
 
     @Override
-    public Optional<Hit> pickChart(double mouseX, double mouseY, double hitRadius) {
-        PickPoint pickPt = new PickPoint(mouseX, mouseY, hitRadius);
-        return doSeries(null, pickPt);
+    public double[] calcAutoScale() {
+        if (!data.isEmpty()) {
+            double pMin = 0.5;
+            double pMax = data.size() + 0.5;
+            double vMax = Double.NEGATIVE_INFINITY;
+            double vMin = Double.MAX_VALUE;
+            boolean ok = false;
+            for (DataSeries dataSeries : data) {
+                if (!dataSeries.getValues().isEmpty()) {
+                    ok = true;
+                    vMax = Math.max(vMax, dataSeries.getValues().stream().
+                            mapToDouble(v
+                                    -> ((BoxPlotData) v.getExtraValue()).max)
+                            .max().getAsDouble());
+
+                    vMin = Math.min(vMin, dataSeries.getValues().stream().
+                            mapToDouble(v
+                                    -> ((BoxPlotData) v.getExtraValue()).min)
+                            .min().getAsDouble());
+                }
+            }
+            if (ok) {
+                if (orientation == Orientation.VERTICAL) {
+                    double[] bounds = {pMin, pMax, vMin, vMax};
+                    return bounds;
+                } else {
+                    double[] bounds = {vMin, vMax, pMin, pMax};
+                    return bounds;
+                }
+            }
+        }
+        return null;
     }
 
     void drawSeries(GraphicsContextInterface gC) {
         doSeries(gC, null);
+    }
+
+    @Override
+    public Optional<Hit> pickChart(double mouseX, double mouseY, double hitRadius) {
+        PickPoint pickPt = new PickPoint(mouseX, mouseY, hitRadius);
+        return doSeries(null, pickPt);
     }
 
     Optional<Hit> doSeries(GraphicsContextInterface gC, PickPoint pickPt) {
@@ -180,13 +187,6 @@ public class XYCanvasBoxChart extends XYCanvasChart {
             }
         }
         return hitOpt;
-    }
-
-    public static XYCanvasBoxChart buildChart(Canvas canvas) {
-        Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 400, 100.0);
-        Axis yAxis = new Axis(Orientation.VERTICAL, 0, 1.0, 100, 400);
-        yAxis.setZeroIncluded(true);
-        return new XYCanvasBoxChart(canvas, xAxis, yAxis);
     }
 
 }

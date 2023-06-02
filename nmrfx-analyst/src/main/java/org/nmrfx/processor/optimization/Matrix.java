@@ -189,6 +189,32 @@ public class Matrix implements Cloneable, java.io.Serializable {
      * ------------------------ */
 
     /**
+     * Construct a matrix from a copy of a 2-D array.
+     *
+     * @param A Two-dimensional array of doubles.
+     * @throws IllegalArgumentException All rows must have the same length
+     */
+    public static Matrix constructWithCopy(double[][] A) {
+        int m = A.length;
+        int n = A[0].length;
+        Matrix X = new Matrix(m, n);
+        double[][] C = X.getArray();
+
+        for (int i = 0; i < m; i++) {
+            if (A[i].length != n) {
+                throw new IllegalArgumentException(
+                        "All rows must have the same length.");
+            }
+
+            for (int j = 0; j < n; j++) {
+                C[i][j] = A[i][j];
+            }
+        }
+
+        return X;
+    }
+
+    /**
      * Make a deep copy of a matrix
      */
     public Matrix copy() {
@@ -879,117 +905,6 @@ public class Matrix implements Cloneable, java.io.Serializable {
     }
 
     /**
-     * Print the matrix to stdout. Line the elements up in columns with a Fortran-like 'Fw.d' style format.
-     *
-     * @param w Column width.
-     * @param d Number of digits after the decimal.
-     */
-    public void print(int w, int d) {
-        print(new PrintWriter(System.out, true), w, d);
-    }
-
-    /**
-     * Print the matrix to the output stream. Line the elements up in columns with a Fortran-like 'Fw.d' style format.
-     *
-     * @param output Output stream.
-     * @param w      Column width.
-     * @param d      Number of digits after the decimal.
-     */
-    public void print(PrintWriter output, int w, int d) {
-        DecimalFormat format = new DecimalFormat();
-        format.setDecimalFormatSymbols(new DecimalFormatSymbols(Locale.US));
-        format.setMinimumIntegerDigits(1);
-        format.setMaximumFractionDigits(d);
-        format.setMinimumFractionDigits(d);
-        format.setGroupingUsed(false);
-        print(output, format, w + 2);
-    }
-
-    /**
-     * Print the matrix to stdout. Line the elements up in columns. Use the format object, and right justify within
-     * columns of width characters. Note that is the matrix is to be read back in, you probably will want to use a
-     * NumberFormat that is set to US Locale.
-     *
-     * @param format A Formatting object for individual elements.
-     * @param width  Field width for each column.
-     * @see java.text.DecimalFormat#setDecimalFormatSymbols
-     */
-    public void print(NumberFormat format, int width) {
-        print(new PrintWriter(System.out, true), format, width);
-    }
-
-    /**
-     * Print the matrix to the output stream. Line the elements up in columns. Use the format object, and right justify
-     * within columns of width characters. Note that is the matrix is to be read back in, you probably will want to use
-     * a NumberFormat that is set to US Locale.
-     *
-     * @param output the output stream.
-     * @param format A formatting object to format the matrix elements
-     * @param width  Column width.
-     * @see java.text.DecimalFormat#setDecimalFormatSymbols
-     */
-    public void print(PrintWriter output, NumberFormat format, int width) {
-        output.println(); // start on new line.
-
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                String s = format.format(A[i][j]); // format the number
-                int padding = Math.max(1, width - s.length()); // At _least_ 1 space
-
-                for (int k = 0; k < padding; k++) {
-                    output.print(' ');
-                }
-
-                output.print(s);
-            }
-
-            output.println();
-        }
-
-        output.println(); // end with blank line.
-    }
-
-    /**
-     * Check if size(A) == size(B) *
-     */
-    private void checkMatrixDimensions(Matrix B) {
-        if ((B.m != m) || (B.n != n)) {
-            throw new IllegalArgumentException("Matrix dimensions must agree.");
-        }
-    }
-
-    /**
-     * Construct a matrix from a copy of a 2-D array.
-     *
-     * @param A Two-dimensional array of doubles.
-     * @throws IllegalArgumentException All rows must have the same length
-     */
-    public static Matrix constructWithCopy(double[][] A) {
-        int m = A.length;
-        int n = A[0].length;
-        Matrix X = new Matrix(m, n);
-        double[][] C = X.getArray();
-
-        for (int i = 0; i < m; i++) {
-            if (A[i].length != n) {
-                throw new IllegalArgumentException(
-                        "All rows must have the same length.");
-            }
-
-            for (int j = 0; j < n; j++) {
-                C[i][j] = A[i][j];
-            }
-        }
-
-        return X;
-    }
-
-    // DecimalFormat is a little disappointing coming from Fortran or C's printf.
-    // Since it doesn't pad on the left, the elements will come out different
-    // widths.  Consequently, we'll pass the desired column width in as an
-    // argument and do the extra padding ourselves.
-
-    /**
      * Generate matrix with random elements
      *
      * @param m Number of rows.
@@ -1029,9 +944,81 @@ public class Matrix implements Cloneable, java.io.Serializable {
         return A;
     }
 
-    /* ------------------------
-     Private Methods
-     * ------------------------ */
+    /**
+     * Print the matrix to stdout. Line the elements up in columns with a Fortran-like 'Fw.d' style format.
+     *
+     * @param w Column width.
+     * @param d Number of digits after the decimal.
+     */
+    public void print(int w, int d) {
+        print(new PrintWriter(System.out, true), w, d);
+    }
+
+    /**
+     * Print the matrix to the output stream. Line the elements up in columns with a Fortran-like 'Fw.d' style format.
+     *
+     * @param output Output stream.
+     * @param w      Column width.
+     * @param d      Number of digits after the decimal.
+     */
+    public void print(PrintWriter output, int w, int d) {
+        DecimalFormat format = new DecimalFormat();
+        format.setDecimalFormatSymbols(new DecimalFormatSymbols(Locale.US));
+        format.setMinimumIntegerDigits(1);
+        format.setMaximumFractionDigits(d);
+        format.setMinimumFractionDigits(d);
+        format.setGroupingUsed(false);
+        print(output, format, w + 2);
+    }
+
+    /**
+     * Print the matrix to stdout. Line the elements up in columns. Use the format object, and right justify within
+     * columns of width characters. Note that is the matrix is to be read back in, you probably will want to use a
+     * NumberFormat that is set to US Locale.
+     *
+     * @param format A Formatting object for individual elements.
+     * @param width  Field width for each column.
+     * @see java.text.DecimalFormat#setDecimalFormatSymbols
+     */
+    public void print(NumberFormat format, int width) {
+        print(new PrintWriter(System.out, true), format, width);
+    }
+
+    // DecimalFormat is a little disappointing coming from Fortran or C's printf.
+    // Since it doesn't pad on the left, the elements will come out different
+    // widths.  Consequently, we'll pass the desired column width in as an
+    // argument and do the extra padding ourselves.
+
+    /**
+     * Print the matrix to the output stream. Line the elements up in columns. Use the format object, and right justify
+     * within columns of width characters. Note that is the matrix is to be read back in, you probably will want to use
+     * a NumberFormat that is set to US Locale.
+     *
+     * @param output the output stream.
+     * @param format A formatting object to format the matrix elements
+     * @param width  Column width.
+     * @see java.text.DecimalFormat#setDecimalFormatSymbols
+     */
+    public void print(PrintWriter output, NumberFormat format, int width) {
+        output.println(); // start on new line.
+
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                String s = format.format(A[i][j]); // format the number
+                int padding = Math.max(1, width - s.length()); // At _least_ 1 space
+
+                for (int k = 0; k < padding; k++) {
+                    output.print(' ');
+                }
+
+                output.print(s);
+            }
+
+            output.println();
+        }
+
+        output.println(); // end with blank line.
+    }
 
     /**
      * Read a matrix from a stream. The format is the same the print method, so printed matrices can be read back in
@@ -1105,5 +1092,18 @@ public class Matrix implements Cloneable, java.io.Serializable {
         v.copyInto(A); // copy the rows out of the vector
 
         return new Matrix(A);
+    }
+
+    /* ------------------------
+     Private Methods
+     * ------------------------ */
+
+    /**
+     * Check if size(A) == size(B) *
+     */
+    private void checkMatrixDimensions(Matrix B) {
+        if ((B.m != m) || (B.n != n)) {
+            throw new IllegalArgumentException("Matrix dimensions must agree.");
+        }
     }
 }

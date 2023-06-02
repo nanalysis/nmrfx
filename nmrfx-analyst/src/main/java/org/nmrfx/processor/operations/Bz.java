@@ -32,10 +32,20 @@ import org.nmrfx.processor.processing.ProcessingException;
 public class Bz extends Operation {
 
     private final String alg;
+    private double groupDelay;
     private final double mult;   // vector mult
     private final double phase;  // phase for mult
     private final double mult2;  // 2nd point mult
-    private double groupDelay;
+
+    @Override
+    public Operation eval(Vec vector) throws ProcessingException {
+        try {
+            bz(vector);
+        } catch (IllegalArgumentException iae) {
+            throw new ProcessingException(iae.getMessage());
+        }
+        return this;
+    }
 
     /**
      * Create operation for Bruker baseline correction.
@@ -49,16 +59,6 @@ public class Bz extends Operation {
         this.mult = -mult;
         this.phase = Math.PI * phase / 180.0;
         this.mult2 = mult2;
-    }
-
-    @Override
-    public Operation eval(Vec vector) throws ProcessingException {
-        try {
-            bz(vector);
-        } catch (IllegalArgumentException iae) {
-            throw new ProcessingException(iae.getMessage());
-        }
-        return this;
     }
 
     private void bz(Vec vector) throws IllegalArgumentException {

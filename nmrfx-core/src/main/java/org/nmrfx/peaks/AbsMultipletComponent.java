@@ -10,12 +10,12 @@ import java.util.List;
  */
 public class AbsMultipletComponent extends MultipletComponent {
 
-    public AbsMultipletComponent(Multiplet multiplet, double offset, double intensity, double volume, double lw) {
-        super(multiplet, offset, intensity, volume, lw);
-    }
-
     public void setOffset(double offset) {
         this.offset = offset;
+    }
+
+    public AbsMultipletComponent(Multiplet multiplet, double offset, double intensity, double volume, double lw) {
+        super(multiplet, offset, intensity, volume, lw);
     }
 
     public RelMultipletComponent toRelative(double center, double sf) {

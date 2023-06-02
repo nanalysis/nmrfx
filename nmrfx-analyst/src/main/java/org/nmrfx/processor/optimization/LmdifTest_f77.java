@@ -90,18 +90,18 @@ public class LmdifTest_f77 {
         }
     }
 
-    public void setN(int newN) {
-        if (lmdifFunc != null) {
-            lmdifFunc.setN(newN);
-        }
-    }
-
     public String[] getAuxNames() {
         String[] auxNames = new String[0];
         if (lmdifFunc != null) {
             auxNames = lmdifFunc.getAuxNames();
         }
         return auxNames;
+    }
+
+    public void setN(int newN) {
+        if (lmdifFunc != null) {
+            lmdifFunc.setN(newN);
+        }
     }
 
     public void setLengths(int n) {
@@ -316,6 +316,23 @@ public class LmdifTest_f77 {
         }
     }
 
+    public static void main(String[] args) {
+        LmdifTest_f77 lmdifTest = new LmdifTest_f77();
+        lmdifTest.setFunc(7);
+        lmdifTest.setLengths(64);
+
+        for (int i = 0; i < lmdifTest.xv.length; i++) {
+            lmdifTest.xv[i] = i;
+        }
+
+        lmdifTest.initpt();
+        lmdifTest.simulate(0.02);
+        lmdifTest.dumpXY();
+        lmdifTest.randomizeGuess(0.5);
+        lmdifTest.doMin();
+        System.out.println(lmdifTest.rms());
+    }
+
     class fexpc_f77 implements Lmdif_fcn {
 
         static final int nPar = 3;
@@ -324,15 +341,33 @@ public class LmdifTest_f77 {
         public fexpc_f77() {
         }
 
+        public int getEvaluationCount() {
+            return evaluationCount;
+        }
+
+        public void clearEvaluationCount() {
+            evaluationCount = 0;
+        }
+
+        public String getEquation() {
+            return "A*exp(-x*B)+C";
+        }
+
         public int getN() {
             return nPar;
+        }
+
+        public String[] getAuxNames() {
+            return auxNames;
         }
 
         public void setN(int newN) {
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 0.5;
+            a[3] = 0.0;
         }
 
         public double[] guess() {
@@ -344,20 +379,6 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "A*exp(-x*B)+C";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 0.5;
-            a[3] = 0.0;
-        }
-
-        public double calculate(double[] a, double x) {
-            return (a[1] * Math.exp(-x * a[2])) + a[3];
-        }
-
         public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
@@ -366,12 +387,8 @@ public class LmdifTest_f77 {
             }
         }
 
-        public int getEvaluationCount() {
-            return evaluationCount;
-        }
-
-        public void clearEvaluationCount() {
-            evaluationCount = 0;
+        public double calculate(double[] a, double x) {
+            return (a[1] * Math.exp(-x * a[2])) + a[3];
         }
     }
 
@@ -391,11 +408,25 @@ public class LmdifTest_f77 {
             evaluationCount = 0;
         }
 
+        public String getEquation() {
+            return "A*exp(-x*B)+C";
+        }
+
         public int getN() {
             return nPar;
         }
 
+        public String[] getAuxNames() {
+            return auxNames;
+        }
+
         public void setN(int newN) {
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 0.5;
+            a[3] = 0.0;
         }
 
         public double[] guess() {
@@ -405,20 +436,6 @@ public class LmdifTest_f77 {
             a[3] = 0.0;
 
             return a;
-        }
-
-        public String getEquation() {
-            return "A*exp(-x*B)+C";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 0.5;
-            a[3] = 0.0;
-        }
-
-        public double calculate(double[] a, double x) {
-            return (a[1] * Math.exp(-x * a[2])) + a[3];
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
@@ -437,8 +454,8 @@ public class LmdifTest_f77 {
             }
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public double calculate(double[] a, double x) {
+            return (a[1] * Math.exp(-x * a[2])) + a[3];
         }
 
         public void derivative(double[] a, double x, double[][] fjac, int i) {
@@ -454,15 +471,32 @@ public class LmdifTest_f77 {
         static final int nPar = 2;
         String[] auxNames = new String[0];
 
+        public int getEvaluationCount() {
+            return evaluationCount;
+        }
+
+        public void clearEvaluationCount() {
+            evaluationCount = 0;
+        }
+
+        public String getEquation() {
+            return "A*exp(-x*B)";
+        }
+
         public int getN() {
             return nPar;
+        }
+
+        public String[] getAuxNames() {
+            return auxNames;
         }
 
         public void setN(int newN) {
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 0.5;
         }
 
         public double[] guess() {
@@ -473,19 +507,6 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "A*exp(-x*B)";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 0.5;
-        }
-
-        public double calculate(double[] a, double x) {
-            return a[1] * Math.exp(-x * a[2]);
-        }
-
         public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
@@ -494,12 +515,8 @@ public class LmdifTest_f77 {
             }
         }
 
-        public int getEvaluationCount() {
-            return evaluationCount;
-        }
-
-        public void clearEvaluationCount() {
-            evaluationCount = 0;
+        public double calculate(double[] a, double x) {
+            return a[1] * Math.exp(-x * a[2]);
         }
     }
 
@@ -508,15 +525,32 @@ public class LmdifTest_f77 {
         static final int nPar = 2;
         String[] auxNames = new String[0];
 
+        public int getEvaluationCount() {
+            return evaluationCount;
+        }
+
+        public void clearEvaluationCount() {
+            evaluationCount = 0;
+        }
+
+        public String getEquation() {
+            return "A*x*exp(-x*B)";
+        }
+
         public int getN() {
             return nPar;
+        }
+
+        public String[] getAuxNames() {
+            return auxNames;
         }
 
         public void setN(int newN) {
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public final void initpt(double[] a) {
+            a[1] = 1.0;
+            a[2] = 0.5;
         }
 
         public double[] guess() {
@@ -527,19 +561,6 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "A*x*exp(-x*B)";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.0;
-            a[2] = 0.5;
-        }
-
-        public double calculate(double[] a, double x) {
-            return a[1] * x * Math.exp(-x * a[2]);
-        }
-
         public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
@@ -548,12 +569,8 @@ public class LmdifTest_f77 {
             }
         }
 
-        public int getEvaluationCount() {
-            return evaluationCount;
-        }
-
-        public void clearEvaluationCount() {
-            evaluationCount = 0;
+        public double calculate(double[] a, double x) {
+            return a[1] * x * Math.exp(-x * a[2]);
         }
     }
 
@@ -562,15 +579,33 @@ public class LmdifTest_f77 {
         static final int nPar = 3;
         String[] auxNames = new String[0];
 
+        public int getEvaluationCount() {
+            return evaluationCount;
+        }
+
+        public void clearEvaluationCount() {
+            evaluationCount = 0;
+        }
+
+        public String getEquation() {
+            return "A*exp(-((x-B)/C)^2)";
+        }
+
         public int getN() {
             return nPar;
+        }
+
+        public String[] getAuxNames() {
+            return auxNames;
         }
 
         public void setN(int newN) {
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 0.0;
+            a[3] = 1.0;
         }
 
         public double[] guess() {
@@ -587,23 +622,6 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "A*exp(-((x-B)/C)^2)";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 0.0;
-            a[3] = 1.0;
-        }
-
-        public double calculate(double[] a, double x) {
-            double arg = (x - a[2]) / a[3];
-            double ex = Math.exp(-arg * arg);
-
-            return a[1] * ex;
-        }
-
         public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
@@ -612,12 +630,11 @@ public class LmdifTest_f77 {
             }
         }
 
-        public int getEvaluationCount() {
-            return evaluationCount;
-        }
+        public double calculate(double[] a, double x) {
+            double arg = (x - a[2]) / a[3];
+            double ex = Math.exp(-arg * arg);
 
-        public void clearEvaluationCount() {
-            evaluationCount = 0;
+            return a[1] * ex;
         }
     }
 
@@ -626,15 +643,34 @@ public class LmdifTest_f77 {
         static final int nPar = 4;
         String[] auxNames = new String[0];
 
+        public int getEvaluationCount() {
+            return evaluationCount;
+        }
+
+        public void clearEvaluationCount() {
+            evaluationCount = 0;
+        }
+
+        public String getEquation() {
+            return "((D-A)*x^C)/(x^C+B^C)+A";
+        }
+
         public int getN() {
             return nPar;
+        }
+
+        public String[] getAuxNames() {
+            return auxNames;
         }
 
         public void setN(int newN) {
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public final void initpt(double[] a) {
+            a[1] = 0.0;
+            a[2] = 0.4;
+            a[3] = 1.0;
+            a[4] = 1.0;
         }
 
         public double[] guess() {
@@ -652,22 +688,6 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "((D-A)*x^C)/(x^C+B^C)+A";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 0.0;
-            a[2] = 0.4;
-            a[3] = 1.0;
-            a[4] = 1.0;
-        }
-
-        public double calculate(double[] a, double x) {
-            return (((a[4] - a[1]) * Math.pow(x, a[3])) / (Math.pow(x, a[3])
-                    + Math.pow(a[2], a[3]))) + a[1];
-        }
-
         public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
@@ -676,12 +696,9 @@ public class LmdifTest_f77 {
             }
         }
 
-        public int getEvaluationCount() {
-            return evaluationCount;
-        }
-
-        public void clearEvaluationCount() {
-            evaluationCount = 0;
+        public double calculate(double[] a, double x) {
+            return (((a[4] - a[1]) * Math.pow(x, a[3])) / (Math.pow(x, a[3])
+                    + Math.pow(a[2], a[3]))) + a[1];
         }
     }
 
@@ -690,15 +707,33 @@ public class LmdifTest_f77 {
         static final int nPar = 3;
         String[] auxNames = new String[0];
 
+        public int getEvaluationCount() {
+            return evaluationCount;
+        }
+
+        public void clearEvaluationCount() {
+            evaluationCount = 0;
+        }
+
+        public String getEquation() {
+            return "((C-A)*x)/(x+B)+A";
+        }
+
         public int getN() {
             return nPar;
+        }
+
+        public String[] getAuxNames() {
+            return auxNames;
         }
 
         public void setN(int newN) {
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public final void initpt(double[] a) {
+            a[1] = 0.0;
+            a[2] = 0.4;
+            a[3] = 1.0;
         }
 
         public double[] guess() {
@@ -715,20 +750,6 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "((C-A)*x)/(x+B)+A";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 0.0;
-            a[2] = 0.4;
-            a[3] = 1.0;
-        }
-
-        public double calculate(double[] a, double x) {
-            return (((a[3] - a[1]) * x) / (x + a[2])) + a[1];
-        }
-
         public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
@@ -737,12 +758,8 @@ public class LmdifTest_f77 {
             }
         }
 
-        public int getEvaluationCount() {
-            return evaluationCount;
-        }
-
-        public void clearEvaluationCount() {
-            evaluationCount = 0;
+        public double calculate(double[] a, double x) {
+            return (((a[3] - a[1]) * x) / (x + a[2])) + a[1];
         }
     }
 
@@ -751,15 +768,33 @@ public class LmdifTest_f77 {
         static final int nPar = 3;
         final String auxNames[] = {"Pt"};
 
+        public int getEvaluationCount() {
+            return evaluationCount;
+        }
+
+        public void clearEvaluationCount() {
+            evaluationCount = 0;
+        }
+
+        public String getEquation() {
+            return "A+(C-A)*((Pt+10^x+B)+((Pt+10^x+B)^2-4*Pt*10^x)^1/2))/(2*Pt)";
+        }
+
         public int getN() {
             return nPar;
+        }
+
+        public String[] getAuxNames() {
+            return auxNames;
         }
 
         public void setN(int newN) {
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public final void initpt(double[] a) {
+            a[1] = 0.0;
+            a[2] = 0.4;
+            a[3] = 1.0;
         }
 
         public double[] guess() {
@@ -776,14 +811,12 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "A+(C-A)*((Pt+10^x+B)+((Pt+10^x+B)^2-4*Pt*10^x)^1/2))/(2*Pt)";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 0.0;
-            a[2] = 0.4;
-            a[3] = 1.0;
+        public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
+            for (int i = 1; i <= m; i++) {
+                double t = xv[i - 1];
+                double yval = calculate(a, t);
+                fvec[i] = yval - yv[i - 1];
+            }
         }
 
         public double calculate(double[] a, double x) {
@@ -794,14 +827,12 @@ public class LmdifTest_f77 {
             double f = (n1 - s1) / (2 * Pt);
             return a[1] + delta * f;
         }
+    }
 
-        public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
-            for (int i = 1; i <= m; i++) {
-                double t = xv[i - 1];
-                double yval = calculate(a, t);
-                fvec[i] = yval - yv[i - 1];
-            }
-        }
+    class fexp2_f77 implements Lmdif_fcn {
+
+        static final int nPar = 3;
+        String[] auxNames = new String[0];
 
         public int getEvaluationCount() {
             return evaluationCount;
@@ -810,22 +841,26 @@ public class LmdifTest_f77 {
         public void clearEvaluationCount() {
             evaluationCount = 0;
         }
-    }
 
-    class fexp2_f77 implements Lmdif_fcn {
-
-        static final int nPar = 3;
-        String[] auxNames = new String[0];
+        public String getEquation() {
+            return "A*(exp(-x/B)+exp(-x/C))";
+        }
 
         public int getN() {
             return nPar;
         }
 
+        public String[] getAuxNames() {
+            return auxNames;
+        }
+
         public void setN(int newN) {
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 1.0;
+            a[3] = 0.5;
         }
 
         public double[] guess() {
@@ -837,20 +872,6 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "A*(exp(-x/B)+exp(-x/C))";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 1.0;
-            a[3] = 0.5;
-        }
-
-        public double calculate(double[] a, double x) {
-            return a[1] * (Math.exp(-x / a[2]) + Math.exp(-x / a[3]));
-        }
-
         public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
@@ -859,12 +880,8 @@ public class LmdifTest_f77 {
             }
         }
 
-        public int getEvaluationCount() {
-            return evaluationCount;
-        }
-
-        public void clearEvaluationCount() {
-            evaluationCount = 0;
+        public double calculate(double[] a, double x) {
+            return a[1] * (Math.exp(-x / a[2]) + Math.exp(-x / a[3]));
         }
     }
 
@@ -877,11 +894,29 @@ public class LmdifTest_f77 {
             return nPar;
         }
 
+        public String[] getAuxNames() {
+            return auxNames;
+        }
+
         public void setN(int newN) {
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public int getEvaluationCount() {
+            return evaluationCount;
+        }
+
+        public void clearEvaluationCount() {
+            evaluationCount = 0;
+        }
+
+        public String getEquation() {
+            return "A*exp(-x*C)*exp(-i*x*B)";
+        }
+
+        public final void initpt(double[] a) {
+            a[1] = 1.0;
+            a[2] = 0.1;
+            a[3] = 0.1;
         }
 
         public double[] guess() {
@@ -893,14 +928,12 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "A*exp(-x*C)*exp(-i*x*B)";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.0;
-            a[2] = 0.1;
-            a[3] = 0.1;
+        public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
+            for (int i = 1; i <= m; i++) {
+                double t = xv[i - 1];
+                double yval = calculate(a, t);
+                fvec[i] = yval - yv[i - 1];
+            }
         }
 
         public double calculate(double[] a, double x) {
@@ -943,14 +976,12 @@ public class LmdifTest_f77 {
 
             return yval;
         }
+    }
 
-        public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
-            for (int i = 1; i <= m; i++) {
-                double t = xv[i - 1];
-                double yval = calculate(a, t);
-                fvec[i] = yval - yv[i - 1];
-            }
-        }
+    class fexpd_f77 implements Lmdif_fcn {
+
+        static final int nPar = 2;
+        String[] auxNames = new String[0];
 
         public int getEvaluationCount() {
             return evaluationCount;
@@ -959,22 +990,25 @@ public class LmdifTest_f77 {
         public void clearEvaluationCount() {
             evaluationCount = 0;
         }
-    }
 
-    class fexpd_f77 implements Lmdif_fcn {
-
-        static final int nPar = 2;
-        String[] auxNames = new String[0];
+        public String getEquation() {
+            return "-2.0*A*exp(-x/B)+A";
+        }
 
         public int getN() {
             return nPar;
         }
 
+        public String[] getAuxNames() {
+            return auxNames;
+        }
+
         public void setN(int newN) {
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 2.0;
         }
 
         public double[] guess() {
@@ -985,19 +1019,6 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "-2.0*A*exp(-x/B)+A";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 2.0;
-        }
-
-        public double calculate(double[] a, double x) {
-            return ((-2.0 * a[1] * Math.exp(-x / a[2])) + a[1]);
-        }
-
         public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
@@ -1006,12 +1027,8 @@ public class LmdifTest_f77 {
             }
         }
 
-        public int getEvaluationCount() {
-            return evaluationCount;
-        }
-
-        public void clearEvaluationCount() {
-            evaluationCount = 0;
+        public double calculate(double[] a, double x) {
+            return ((-2.0 * a[1] * Math.exp(-x / a[2])) + a[1]);
         }
     }
 
@@ -1026,8 +1043,24 @@ public class LmdifTest_f77 {
         double[] ys = new double[xy_ndim];
         double[] xs = new double[xy_ndim];
 
+        public int getEvaluationCount() {
+            return evaluationCount;
+        }
+
+        public void clearEvaluationCount() {
+            evaluationCount = 0;
+        }
+
+        public String getEquation() {
+            return "Gaussian Line";
+        }
+
         public int getN() {
             return nPar;
+        }
+
+        public String[] getAuxNames() {
+            return auxNames;
         }
 
         public void setN(int newN) {
@@ -1035,8 +1068,10 @@ public class LmdifTest_f77 {
             xy_nsig = nPar / ((xy_ndim * 2) + 1);
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 1.0;
+            a[3] = 0.5;
         }
 
         public double[] guess() {
@@ -1048,14 +1083,12 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "Gaussian Line";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 1.0;
-            a[3] = 0.5;
+        public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
+            for (int i = 1; i <= m; i++) {
+                double t = xv[i - 1];
+                double yval = calculate(a, t);
+                fvec[i] = yval - yv[i - 1];
+            }
         }
 
         public double calculate(double[] a, double x) {
@@ -1088,22 +1121,6 @@ public class LmdifTest_f77 {
             }
 
             return y;
-        }
-
-        public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
-            for (int i = 1; i <= m; i++) {
-                double t = xv[i - 1];
-                double yval = calculate(a, t);
-                fvec[i] = yval - yv[i - 1];
-            }
-        }
-
-        public int getEvaluationCount() {
-            return evaluationCount;
-        }
-
-        public void clearEvaluationCount() {
-            evaluationCount = 0;
         }
 
         public double gShape(double[] a, int start, double x, int jcal) {
@@ -1139,8 +1156,24 @@ public class LmdifTest_f77 {
         double[] ys = new double[xy_ndim];
         double[] xs = new double[xy_ndim];
 
+        public int getEvaluationCount() {
+            return evaluationCount;
+        }
+
+        public void clearEvaluationCount() {
+            evaluationCount = 0;
+        }
+
+        public String getEquation() {
+            return "Lorentzian Line";
+        }
+
         public int getN() {
             return nPar;
+        }
+
+        public String[] getAuxNames() {
+            return auxNames;
         }
 
         public void setN(int newN) {
@@ -1148,8 +1181,10 @@ public class LmdifTest_f77 {
             xy_nsig = nPar / ((xy_ndim * 2) + 1);
         }
 
-        public String[] getAuxNames() {
-            return auxNames;
+        public final void initpt(double[] a) {
+            a[1] = 1.3;
+            a[2] = 1.0;
+            a[3] = 0.5;
         }
 
         public double[] guess() {
@@ -1161,14 +1196,12 @@ public class LmdifTest_f77 {
             return a;
         }
 
-        public String getEquation() {
-            return "Lorentzian Line";
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 1.0;
-            a[3] = 0.5;
+        public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
+            for (int i = 1; i <= m; i++) {
+                double t = xv[i - 1];
+                double yval = calculate(a, t);
+                fvec[i] = yval - yv[i - 1];
+            }
         }
 
         public double calculate(double[] a, double x) {
@@ -1203,22 +1236,6 @@ public class LmdifTest_f77 {
             return y;
         }
 
-        public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
-            for (int i = 1; i <= m; i++) {
-                double t = xv[i - 1];
-                double yval = calculate(a, t);
-                fvec[i] = yval - yv[i - 1];
-            }
-        }
-
-        public int getEvaluationCount() {
-            return evaluationCount;
-        }
-
-        public void clearEvaluationCount() {
-            evaluationCount = 0;
-        }
-
         public double lShape(double[] a, int start, double x, int jcal) {
             double y = 0.0;
             double freq = a[start + 1];
@@ -1242,23 +1259,6 @@ public class LmdifTest_f77 {
 
             return y;
         }
-    }
-
-    public static void main(String[] args) {
-        LmdifTest_f77 lmdifTest = new LmdifTest_f77();
-        lmdifTest.setFunc(7);
-        lmdifTest.setLengths(64);
-
-        for (int i = 0; i < lmdifTest.xv.length; i++) {
-            lmdifTest.xv[i] = i;
-        }
-
-        lmdifTest.initpt();
-        lmdifTest.simulate(0.02);
-        lmdifTest.dumpXY();
-        lmdifTest.randomizeGuess(0.5);
-        lmdifTest.doMin();
-        System.out.println(lmdifTest.rms());
     }
 
 }

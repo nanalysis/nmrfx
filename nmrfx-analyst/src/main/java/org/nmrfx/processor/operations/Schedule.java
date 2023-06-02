@@ -31,9 +31,9 @@ public class Schedule extends Operation {
 
     private static SampleSchedule schedule = null;
     private final double fraction;
+    private int[] zero_samples;
     private final boolean endOnly;
     private final String fileName;
-    private int[] zero_samples;
 
     /**
      * @param fraction The fraction of points to keep.

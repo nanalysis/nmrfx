@@ -27,10 +27,19 @@ import org.nmrfx.chemistry.SpatialSet;
 public class RDCConstraint extends RDC implements Constraint {
 
     private final static DistanceStat defaultStat = new DistanceStat();
+
+    /**
+     * @return the defaultStat
+     */
+    public static DistanceStat getDefaultStat() {
+        return defaultStat;
+    }
+
     private final static double tolerance = 5.0;
     private int idNum = 0;
     private DistanceStat disStat = defaultStat;
     private int active = 1;
+
     public RDCConstraint(RDCConstraintSet set, final Atom atom1, final Atom atom2, final double value, final double err) {
         super(atom1, atom2);
         setExpRDC(value);
@@ -45,21 +54,45 @@ public class RDCConstraint extends RDC implements Constraint {
     }
 
     @Override
-    public boolean isUserActive() {
-        return getActive() > 0;
-    }
-
-    @Override
     public DistanceStat getStat() {
         return getDisStat();
     }
 
-    /**
-     * @return the lower
-     */
     @Override
-    public double getValue() {
-        return getExpRDC();
+    public boolean isUserActive() {
+        return getActive() > 0;
+    }
+
+    public void setActive(int state) {
+        active = state;
+    }
+
+    public int getActive() {
+        return active;
+    }
+
+    /**
+     * @return the spSets
+     */
+    public SpatialSet[] getSpSets() {
+        SpatialSet[] spSet = {getAtom1().spatialSet, getAtom2().spatialSet};
+        return spSet;
+    }
+
+    public String getViolChars(DistanceStat dStat) {
+        for (int i = 0; i < AngleConstraintSet.violCharArray.length; i++) {
+            if (dStat.getViolStructures().get(i)) {
+                AngleConstraintSet.violCharArray[i] = (char) ((i % 10) + '0');
+            } else {
+                AngleConstraintSet.violCharArray[i] = '_';
+            }
+        }
+        return new String(AngleConstraintSet.violCharArray);
+    }
+
+    public double getViol(double rdc) {
+        double viol = getRDC() - rdc;
+        return viol;
     }
 
     @Override
@@ -88,43 +121,19 @@ public class RDCConstraint extends RDC implements Constraint {
         return result.toString();
     }
 
-    public int getActive() {
-        return active;
-    }
-
-    public void setActive(int state) {
-        active = state;
-    }
-
-    /**
-     * @return the spSets
-     */
-    public SpatialSet[] getSpSets() {
-        SpatialSet[] spSet = {getAtom1().spatialSet, getAtom2().spatialSet};
-        return spSet;
-    }
-
-    public String getViolChars(DistanceStat dStat) {
-        for (int i = 0; i < AngleConstraintSet.violCharArray.length; i++) {
-            if (dStat.getViolStructures().get(i)) {
-                AngleConstraintSet.violCharArray[i] = (char) ((i % 10) + '0');
-            } else {
-                AngleConstraintSet.violCharArray[i] = '_';
-            }
-        }
-        return new String(AngleConstraintSet.violCharArray);
-    }
-
-    public double getViol(double rdc) {
-        double viol = getRDC() - rdc;
-        return viol;
-    }
-
     /**
      * @return the idNum
      */
     public int getIdNum() {
         return idNum;
+    }
+
+    /**
+     * @return the lower
+     */
+    @Override
+    public double getValue() {
+        return getExpRDC();
     }
 
     /**
@@ -154,13 +163,6 @@ public class RDCConstraint extends RDC implements Constraint {
      */
     public void setDisStat(DistanceStat disStat) {
         this.disStat = disStat;
-    }
-
-    /**
-     * @return the defaultStat
-     */
-    public static DistanceStat getDefaultStat() {
-        return defaultStat;
     }
 
 }

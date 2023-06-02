@@ -30,6 +30,16 @@ public class Ft extends Operation implements Invertible {
     private final boolean negateImaginary;
     private final boolean negatePairs;
 
+    @Override
+    public Ft eval(Vec vector) throws ProcessingException {
+        if (!invertOp) {
+            ft(vector);
+        } else {
+            ift(vector);
+        }
+        return this;
+    }
+
     /**
      * Fourier Transform Operation.
      *
@@ -41,16 +51,6 @@ public class Ft extends Operation implements Invertible {
     public Ft(boolean negateImaginary, boolean negatePairs) throws ProcessingException {
         this.negateImaginary = negateImaginary;
         this.negatePairs = negatePairs;
-    }
-
-    @Override
-    public Ft eval(Vec vector) throws ProcessingException {
-        if (!invertOp) {
-            ft(vector);
-        } else {
-            ift(vector);
-        }
-        return this;
     }
 
     private void ft(Vec vector) throws ProcessingException {

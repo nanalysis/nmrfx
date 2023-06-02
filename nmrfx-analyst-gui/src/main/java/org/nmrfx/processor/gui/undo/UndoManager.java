@@ -27,10 +27,11 @@ import java.util.List;
  */
 public class UndoManager {
 
-    public SimpleBooleanProperty undoable = new SimpleBooleanProperty(false);
-    public SimpleBooleanProperty redoable = new SimpleBooleanProperty(false);
     List<UndoRedo> queue = new ArrayList<>();
     int index = -1;
+
+    public SimpleBooleanProperty undoable = new SimpleBooleanProperty(false);
+    public SimpleBooleanProperty redoable = new SimpleBooleanProperty(false);
 
     public void add(String name, ChartUndo undo, ChartUndo redo) {
         UndoRedo newItem = new UndoRedo(name, undo, redo);

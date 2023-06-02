@@ -29,84 +29,6 @@ import org.nmrfx.processor.gui.spectra.ChartMenu;
 public interface CanvasAnnotation {
     double HANDLE_WIDTH = 10;
 
-    void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world);
-
-    boolean hit(double x, double y, boolean selectMode);
-
-    default void move(double[] start, double[] pos) {
-    }
-
-    default void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
-    }
-
-    default ChartMenu getMenu() {
-        return null;
-    }
-
-    default boolean getClipInAxes() {
-        return false;
-    }
-
-    default void drawHandle(GraphicsContextInterface gC, double x, double y, Pos pos) {
-        gC.setStroke(Color.ORANGE);
-        double hOffset = getHOffset(pos);
-        double vOffset = getVOffset(pos);
-        gC.strokeRect(x + hOffset, y + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
-    }
-
-    public POSTYPE getXPosType();
-
-    public POSTYPE getYPosType();
-
-    /**
-     * Get the separation limit between two handles converted to POSTYPE.
-     *
-     * @param bounds The bounds.
-     * @param world  The bounds in world units.
-     * @return The converted handle width value.
-     */
-    default double getHandleSeparationLimit(double[][] bounds, double[][] world) {
-        double width = switch (getXPosType()) {
-            case PIXEL -> HANDLE_WIDTH;
-            case FRACTION -> HANDLE_WIDTH / (bounds[0][1] - bounds[0][0]);
-            case WORLD -> HANDLE_WIDTH / (world[0][1] - world[0][0]);
-        };
-        return width * 2;
-    }
-
-    void drawHandles(GraphicsContextInterface gC);
-
-    boolean isSelected();
-
-    boolean isSelectable();
-
-    void setSelectable(boolean state);
-
-    int hitHandle(double x, double y);
-
-    default boolean hitHandle(double x, double y, Pos pos, double handleX, double handleY) {
-        double hOffset = getHOffset(pos);
-        double vOffset = getVOffset(pos);
-        Rectangle2D rect = new Rectangle2D(handleX + hOffset, handleY + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
-        return rect.contains(x, y);
-    }
-
-    private static double getHOffset(Pos pos) {
-        return switch (pos.getHpos()) {
-            case LEFT -> HANDLE_WIDTH;
-            case RIGHT -> -HANDLE_WIDTH;
-            case CENTER -> HANDLE_WIDTH / 2;
-        };
-    }
-
-    private static double getVOffset(Pos pos) {
-        return switch (pos.getVpos()) {
-            case TOP -> HANDLE_WIDTH;
-            case CENTER -> HANDLE_WIDTH / 2;
-            case BOTTOM, BASELINE -> -HANDLE_WIDTH;
-        };
-    }
-
     enum POSTYPE {
         PIXEL {
             @Override
@@ -156,6 +78,84 @@ public interface CanvasAnnotation {
             return itransform(vp + dp, b, w);
         }
 
+    }
+
+    void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world);
+
+    boolean hit(double x, double y, boolean selectMode);
+
+    default void move(double[] start, double[] pos) {
+    }
+
+    default void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
+    }
+
+    default ChartMenu getMenu() {
+        return null;
+    }
+
+    default boolean getClipInAxes() {
+        return false;
+    }
+
+    private static double getHOffset(Pos pos) {
+        return switch (pos.getHpos()) {
+            case LEFT -> HANDLE_WIDTH;
+            case RIGHT -> -HANDLE_WIDTH;
+            case CENTER -> HANDLE_WIDTH / 2;
+        };
+    }
+
+    private static double getVOffset(Pos pos) {
+        return switch (pos.getVpos()) {
+            case TOP -> HANDLE_WIDTH;
+            case CENTER -> HANDLE_WIDTH / 2;
+            case BOTTOM, BASELINE -> -HANDLE_WIDTH;
+        };
+    }
+
+    default void drawHandle(GraphicsContextInterface gC, double x, double y, Pos pos) {
+        gC.setStroke(Color.ORANGE);
+        double hOffset = getHOffset(pos);
+        double vOffset = getVOffset(pos);
+        gC.strokeRect(x + hOffset, y + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
+    }
+
+    public POSTYPE getXPosType();
+
+    public POSTYPE getYPosType();
+
+    /**
+     * Get the separation limit between two handles converted to POSTYPE.
+     *
+     * @param bounds The bounds.
+     * @param world  The bounds in world units.
+     * @return The converted handle width value.
+     */
+    default double getHandleSeparationLimit(double[][] bounds, double[][] world) {
+        double width = switch (getXPosType()) {
+            case PIXEL -> HANDLE_WIDTH;
+            case FRACTION -> HANDLE_WIDTH / (bounds[0][1] - bounds[0][0]);
+            case WORLD -> HANDLE_WIDTH / (world[0][1] - world[0][0]);
+        };
+        return width * 2;
+    }
+
+    void drawHandles(GraphicsContextInterface gC);
+
+    boolean isSelected();
+
+    boolean isSelectable();
+
+    void setSelectable(boolean state);
+
+    int hitHandle(double x, double y);
+
+    default boolean hitHandle(double x, double y, Pos pos, double handleX, double handleY) {
+        double hOffset = getHOffset(pos);
+        double vOffset = getVOffset(pos);
+        Rectangle2D rect = new Rectangle2D(handleX + hOffset, handleY + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
+        return rect.contains(x, y);
     }
 
 }

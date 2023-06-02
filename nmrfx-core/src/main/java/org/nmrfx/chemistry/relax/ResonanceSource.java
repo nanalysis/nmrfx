@@ -36,6 +36,16 @@ public class ResonanceSource implements Comparable<ResonanceSource> {
     }
 
     @Override
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append("peak ").append(peak).append(" atoms:");
+        for (Atom atom : atoms) {
+            sBuilder.append(" ").append(atom.getFullName());
+        }
+        return sBuilder.toString();
+    }
+
+    @Override
     public int hashCode() {
         int hash = 7;
         hash = 13 * hash + Objects.hashCode(this.peak);
@@ -61,16 +71,6 @@ public class ResonanceSource implements Comparable<ResonanceSource> {
             return false;
         }
         return Arrays.deepEquals(this.atoms, other.atoms);
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append("peak ").append(peak).append(" atoms:");
-        for (Atom atom : atoms) {
-            sBuilder.append(" ").append(atom.getFullName());
-        }
-        return sBuilder.toString();
     }
 
     private String makeAtomKey(Atom[] keyAtoms) {

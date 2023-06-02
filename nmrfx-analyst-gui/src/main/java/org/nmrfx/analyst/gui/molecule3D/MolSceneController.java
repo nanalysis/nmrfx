@@ -52,7 +52,8 @@ import static org.nmrfx.analyst.gui.molecule3D.MolSceneController.StructureCalcu
 
 public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
-    static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
+
+    private Stage stage;
     SSViewer ssViewer;
     MolViewer molViewer;
 
@@ -86,18 +87,21 @@ public class MolSceneController implements Initializable, StageBasedController, 
     CheckMenuItem activeCheckBox = new CheckMenuItem("Active");
     CheckMenuItem numbersCheckBox = new CheckMenuItem("Numbers");
     ToggleGroup predictionTypeGroup = new ToggleGroup();
+
+    @FXML
+    private StatusBar statusBar;
+    private Circle statusCircle = new Circle(10.0, Color.GREEN);
     Throwable processingThrowable;
+
     List<CheckMenuItem> atomCheckItems = new ArrayList<>();
+
+    static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     StackPane stackPane = new StackPane();
     Pane twoDPane = new Pane();
     Pane ligandCanvasPane;
     PeakList peakList = null;
     int itemIndex = 0;
-    private Stage stage;
-    @FXML
-    private StatusBar statusBar;
-    private Circle statusCircle = new Circle(10.0, Color.GREEN);
     private StructureCalculator structureCalculator = new StructureCalculator();
 
     @Override
@@ -213,13 +217,21 @@ public class MolSceneController implements Initializable, StageBasedController, 
         ssViewer.updateAtoms(atomNames);
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
 
-    @Override
-    public void setStage(Stage stage) {
-        this.stage = stage;
+    public static MolSceneController create() {
+        MolSceneController controller = Fxml.load(MolSceneController.class, "MolScene.fxml")
+                .withNewStage("Molecular Viewer")
+                .getController();
+        controller.stage.show();
+        return controller;
     }
 
     @FXML
@@ -905,6 +917,55 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     }
 
+    class StructureCalculator {
+        enum StructureMode {INIT, REFINE, ANNEAL}
+
+        ;
+        String script;
+        public Worker<Integer> worker;
+        StructureMode mode;
+
+        public void setMode(StructureMode mode) {
+            this.mode = mode;
+        }
+
+        private StructureCalculator() {
+            worker = new Service<Integer>() {
+
+                protected Task createTask() {
+                    return new Task() {
+                        protected Object call() {
+                            script = getScript(mode);
+                            try (PythonInterpreter processInterp = new PythonInterpreter()) {
+                                updateStatus("Start calculating");
+                                updateTitle("Start calculating");
+                                processInterp.exec("import os\nfrom refine import *\nfrom molio import readYamlString\nimport osfiles");
+                                processInterp.set("yamlString", genYaml(mode));
+                                processInterp.exec(script);
+                            }
+                            return 0;
+                        }
+                    };
+                }
+            };
+
+            ((Service<Integer>) worker).setOnSucceeded(event -> {
+                finishProcessing();
+            });
+            ((Service<Integer>) worker).setOnCancelled(event -> {
+                setProcessingOff();
+                setProcessingStatus("cancelled", false);
+            });
+            ((Service<Integer>) worker).setOnFailed(event -> {
+                setProcessingOff();
+                final Throwable exception = worker.getException();
+                setProcessingStatus(exception.getMessage(), false, exception);
+
+            });
+
+        }
+    }
+
     @Override
     public void updateProgress(double f) {
     }
@@ -964,64 +1025,6 @@ public class MolSceneController implements Initializable, StageBasedController, 
     public void clearProcessingTextLabel() {
         statusBar.setText("");
         statusCircle.setFill(Color.GREEN);
-    }
-
-    public static MolSceneController create() {
-        MolSceneController controller = Fxml.load(MolSceneController.class, "MolScene.fxml")
-                .withNewStage("Molecular Viewer")
-                .getController();
-        controller.stage.show();
-        return controller;
-    }
-
-    class StructureCalculator {
-        public Worker<Integer> worker;
-
-        ;
-        String script;
-        StructureMode mode;
-
-        private StructureCalculator() {
-            worker = new Service<Integer>() {
-
-                protected Task createTask() {
-                    return new Task() {
-                        protected Object call() {
-                            script = getScript(mode);
-                            try (PythonInterpreter processInterp = new PythonInterpreter()) {
-                                updateStatus("Start calculating");
-                                updateTitle("Start calculating");
-                                processInterp.exec("import os\nfrom refine import *\nfrom molio import readYamlString\nimport osfiles");
-                                processInterp.set("yamlString", genYaml(mode));
-                                processInterp.exec(script);
-                            }
-                            return 0;
-                        }
-                    };
-                }
-            };
-
-            ((Service<Integer>) worker).setOnSucceeded(event -> {
-                finishProcessing();
-            });
-            ((Service<Integer>) worker).setOnCancelled(event -> {
-                setProcessingOff();
-                setProcessingStatus("cancelled", false);
-            });
-            ((Service<Integer>) worker).setOnFailed(event -> {
-                setProcessingOff();
-                final Throwable exception = worker.getException();
-                setProcessingStatus(exception.getMessage(), false, exception);
-
-            });
-
-        }
-
-        public void setMode(StructureMode mode) {
-            this.mode = mode;
-        }
-
-        enum StructureMode {INIT, REFINE, ANNEAL}
     }
 
 }

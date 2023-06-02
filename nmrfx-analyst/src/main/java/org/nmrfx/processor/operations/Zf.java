@@ -30,6 +30,16 @@ public class Zf extends Operation implements Invertible {
     private final int newSize;
     private final int pad;
 
+    @Override
+    public Zf eval(Vec vector) throws OperationException {
+        if (invertOp) {
+            izf(vector);
+        } else {
+            zf(vector);
+        }
+        return this;
+    }
+
     public Zf(Integer factor, Integer newSize, Integer pad) throws OperationException {
         this(factor, newSize, pad, false);
     }
@@ -69,16 +79,6 @@ public class Zf extends Operation implements Invertible {
             throw new OperationException("ZF: factor must be <= 10");
         }
         this.invertOp = inverse;
-    }
-
-    @Override
-    public Zf eval(Vec vector) throws OperationException {
-        if (invertOp) {
-            izf(vector);
-        } else {
-            zf(vector);
-        }
-        return this;
     }
 
     private void zf(Vec vector) throws OperationException {

@@ -18,9 +18,9 @@ public interface IAtom {
 
     public void setPoint2d(Point2d pt);
 
-    public int getID();
-
     public void setID(int value);
+
+    public int getID();
 
     public void setProperty(String name, Object value);
 

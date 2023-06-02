@@ -58,13 +58,13 @@ import java.util.List;
  */
 public class RDCGUI {
 
-    public ChoiceBox<String> setChoice = new ChoiceBox<>();
-    public Label bmrbFile = new Label("");
     AnalystApp analystApp;
     Stage stage = null;
     XYCanvasChart activeChart;
     BorderPane borderPane = new BorderPane();
     Scene stageScene = new Scene(borderPane, 900, 600);
+
+    public ChoiceBox<String> setChoice = new ChoiceBox<>();
     DataSeries series0 = new DataSeries();
     DataSeries series1 = new DataSeries();
     TextField qRMSField = new TextField("");
@@ -74,8 +74,10 @@ public class RDCGUI {
     Slider fracSlider = new Slider(0.1, 15, 5);
     ChoiceBox<String> modeBox = new ChoiceBox();
     ChoiceBox<String> stericBox = new ChoiceBox();
+
     RDCConstraintSet localRDCSet;
     Label pdbFile = new Label("");
+    public Label bmrbFile = new Label("");
     SVDFit svdFit;
     AlignmentMatrix aMat;
 

@@ -1068,33 +1068,6 @@ public class NodeValidator implements NodeValidatorInterface {
         return bondValid;
     }
 
-    public List getParams(List path, final int patternIndex) {
-        List<Object> result = new ArrayList<>();
-        int[] props = propertyValues[patternIndex];
-        for (int i = 0; i < props.length; i++) {
-            if (props[i] >= 0) {
-                int atomIndex = (Integer) path.get(i);
-                result.add(atomIndex);
-                int k = props[i];
-                int nStr = Integer.parseInt(paramValues[k]) / 2;
-                for (int j = 0; j < nStr; j++) {
-                    String name = paramValues[++k];
-                    String value = paramValues[++k];
-                    result.add(name);
-                    result.add(value);
-                }
-            }
-        }
-        return result;
-    }
-
-    public String[] getPropertyNames() {
-        return propertyNames;
-    }
-
-    public boolean[][] getProperties() {
-        return p;
-    }
 
     public void init(int nAtoms) {
         p = new boolean[nAtoms][propertyNames.length];
@@ -1116,6 +1089,26 @@ public class NodeValidator implements NodeValidatorInterface {
         return jumpPositions[patternIndex][pathIndex];
     }
 
+    public List getParams(List path, final int patternIndex) {
+        List<Object> result = new ArrayList<>();
+        int[] props = propertyValues[patternIndex];
+        for (int i = 0; i < props.length; i++) {
+            if (props[i] >= 0) {
+                int atomIndex = (Integer) path.get(i);
+                result.add(atomIndex);
+                int k = props[i];
+                int nStr = Integer.parseInt(paramValues[k]) / 2;
+                for (int j = 0; j < nStr; j++) {
+                    String name = paramValues[++k];
+                    String value = paramValues[++k];
+                    result.add(name);
+                    result.add(value);
+                }
+            }
+        }
+        return result;
+    }
+
     public void assignProps(List path, final int patternIndex) {
         int[] props = propertyValues[patternIndex];
         for (int i = 0; i < props.length; i++) {
@@ -1134,6 +1127,14 @@ public class NodeValidator implements NodeValidatorInterface {
                 p[atomIndex][props[i]] = true;
             }
         }
+    }
+
+    public String[] getPropertyNames() {
+        return propertyNames;
+    }
+
+    public boolean[][] getProperties() {
+        return p;
     }
 
     public boolean ringClosed(final int[] currentPath, final int bondOrder, final int atomIndex, final int ringIndex, Map bondMap) {

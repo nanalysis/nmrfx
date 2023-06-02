@@ -47,46 +47,12 @@ public class HanserRingFinder implements RingFinder {
         maxRingSize = -1;
     }
 
-    public int getMaximumRingSize() {
-        return this.maxRingSize;
-    }
-
     public void setMaximumRingSize(int max) {
         this.maxRingSize = max;
     }
 
-    public Collection<Ring> findRings(ITree itree) {
-        rings.clear();
-
-        PathGraph graph = new PathGraph(itree);
-
-        graph.setMaximumRingSize(maxRingSize);
-        List<Atom> atoms = itree.getAtomArray();
-        for (Atom atom : atoms) {
-            List<PathEdge> edges = graph.remove(atom);
-            for (PathEdge edge : edges) {
-                Ring ring = new Ring(edge.getAtoms());
-                rings.add(ring);
-            }
-        }
-        return rings;
-    }
-
-    public Collection<Ring> findSmallestRings(ITree itree) {
-        findRings(itree);
-
-        Collections.sort(rings, new Comparator<Ring>() {
-            public int compare(Ring ring1, Ring ring2) {
-                return ring1.size() - ring2.size();
-            }
-        });
-        List<Bond> edges = getAllEdges(rings);
-        List<List<Boolean>> edgeMap = generateEdgeMap(rings, edges);
-        rings = removeLargeRings(edgeMap);
-
-        setAtomRings(itree.getAtomArray());
-
-        return rings;
+    public int getMaximumRingSize() {
+        return this.maxRingSize;
     }
 
     public List<Bond> getAllEdges(List<Ring> rings) {
@@ -162,9 +128,9 @@ public class HanserRingFinder implements RingFinder {
                     Ring smallRing2 = rings.get(k);
                     int difference = smallRing1.size() + smallRing2.size() - largeRing.size();
                     // The - 1 at the end accounts that each ring has the same atom represented twice. Each size should reflect this with minus 1
-                    // -2 - (-1) = -1
+                    // -2 - (-1) = -1 
                     if (difference < 0 || difference % 2 != 0) {
-                        continue; // Already know the two smaller rings cannot make up larger
+                        continue; // Already know the two smaller rings cannot make up larger 
                     }
                     for (int edgeIndex = 0; edgeIndex < largeRow.size(); edgeIndex++) {
                         if (smallRow1.get(edgeIndex) ^ Objects.equals(smallRow2.get(edgeIndex), largeRow.get(edgeIndex))) {
@@ -210,5 +176,39 @@ public class HanserRingFinder implements RingFinder {
             }
             ringNumber++;
         }
+    }
+
+    public Collection<Ring> findSmallestRings(ITree itree) {
+        findRings(itree);
+
+        Collections.sort(rings, new Comparator<Ring>() {
+            public int compare(Ring ring1, Ring ring2) {
+                return ring1.size() - ring2.size();
+            }
+        });
+        List<Bond> edges = getAllEdges(rings);
+        List<List<Boolean>> edgeMap = generateEdgeMap(rings, edges);
+        rings = removeLargeRings(edgeMap);
+
+        setAtomRings(itree.getAtomArray());
+
+        return rings;
+    }
+
+    public Collection<Ring> findRings(ITree itree) {
+        rings.clear();
+
+        PathGraph graph = new PathGraph(itree);
+
+        graph.setMaximumRingSize(maxRingSize);
+        List<Atom> atoms = itree.getAtomArray();
+        for (Atom atom : atoms) {
+            List<PathEdge> edges = graph.remove(atom);
+            for (PathEdge edge : edges) {
+                Ring ring = new Ring(edge.getAtoms());
+                rings.add(ring);
+            }
+        }
+        return rings;
     }
 }

@@ -33,12 +33,13 @@ import java.nio.IntBuffer;
 
 public class MemoryFile implements DatasetStorageInterface, Closeable {
     private static final Logger log = LoggerFactory.getLogger(MemoryFile.class);
-    final boolean writable;
+
     private final int[] sizes;
     private final long[] strides;
     private final long totalSize;
     private final int dataType;
     private final DatasetLayout layout;
+    final boolean writable;
     private final FloatBuffer floatBuffer;
     private final IntBuffer intBuffer;
     int BYTES = Float.BYTES;
@@ -81,12 +82,12 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
     }
 
     @Override
-    public boolean isWritable() {
-        return writable;
+    public void setWritable(boolean state) {
     }
 
     @Override
-    public void setWritable(boolean state) {
+    public boolean isWritable() {
+        return writable;
     }
 
     @Override

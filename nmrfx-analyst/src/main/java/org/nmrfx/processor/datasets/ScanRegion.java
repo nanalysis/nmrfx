@@ -24,11 +24,6 @@ import java.util.ArrayList;
 
 public class ScanRegion {
 
-    private final ArrayList<int[]> scanVector = new ArrayList<>(512);
-    private final int[] blockSize;
-    private final int[] nBlocks;
-    private final int[] vecRange;
-    ArrayList<int[]> indexList = null;
     private int nDim = 3;
     private int[][] block;
     private int[][] iPoint;
@@ -37,10 +32,15 @@ public class ScanRegion {
     private int[] iVec;
     private int[] iBlock;
     private int[] iPointAbs = null;
+    private final ArrayList<int[]> scanVector = new ArrayList<>(512);
     private int scanIn = 0;
     private int[][] pt = null;
     private int[] dim = null;
+    private final int[] blockSize;
+    private final int[] nBlocks;
     private int[] offsetBlocks;
+    private final int[] vecRange;
+    ArrayList<int[]> indexList = null;
 
     public ScanRegion(final int[][] pt, final int[] dim, final String datasetName) {
         nDim = dim.length;

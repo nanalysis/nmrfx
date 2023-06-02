@@ -37,9 +37,21 @@ import java.util.*;
  */
 public class MolViewer extends Pane {
     private static final Logger log = LoggerFactory.getLogger(MolViewer.class);
+
+    private double mousePosX;
+    private double mousePosY;
+    private double mouseOldX;
+    private double mouseOldY;
+    private double mouseDeltaX;
+    private double mouseDeltaY;
+    private boolean mouseMoved = false;
     private final double cameraDistance = 100;
-    private final CameraTransformer cameraTransform = new CameraTransformer();
+
     MolSceneController controller;
+    private Group rootGroup;
+    private SubScene subScene;
+    private PerspectiveCamera camera;
+    private final CameraTransformer cameraTransform = new CameraTransformer();
     Xform molGroup;
     Xform selGroup;
     Text text = null;
@@ -48,21 +60,23 @@ public class MolViewer extends Pane {
     Affine transTransform = new Affine();
     List<LabelNode> labelNodes = new ArrayList<>();
     Pane twoDPane;
+
     ArrayList<MolSelectionListener> selectionListeners = new ArrayList<>();
-    private double mousePosX;
-    private double mousePosY;
-    private double mouseOldX;
-    private double mouseOldY;
-    private double mouseDeltaX;
-    private double mouseDeltaY;
-    private boolean mouseMoved = false;
-    private Group rootGroup;
-    private SubScene subScene;
-    private PerspectiveCamera camera;
 
     public MolViewer(MolSceneController controller, Pane twoDPane) {
         this.controller = controller;
         this.twoDPane = twoDPane;
+    }
+
+    class LabelNode {
+
+        final Node node;
+        final Label label;
+
+        LabelNode(Node node, Label label) {
+            this.node = node;
+            this.label = label;
+        }
     }
 
     @Override
@@ -152,7 +166,7 @@ public class MolViewer extends Pane {
                 return;
             }
             PickResult res = event.getPickResult();
-            //you can get a reference to the clicked node like this
+            //you can get a reference to the clicked node like this 
             boolean clearIt = true;
             if (res.getIntersectedNode() instanceof Node) {
                 Node node = (Node) res.getIntersectedNode();
@@ -325,6 +339,23 @@ public class MolViewer extends Pane {
             createItems("tube");
         } else {
             createItems("lines");
+        }
+    }
+
+    class MolPrimitives {
+
+        final ArrayList<Bond> bonds;
+        final ArrayList<Atom> atoms;
+        final ArrayList<BondLine> bondLines;
+        final ArrayList<AtomSphere> atomSpheres;
+        final Molecule mol;
+
+        MolPrimitives(Molecule molecule, int iStructure) {
+            this.mol = molecule;
+            bonds = molecule.getBondList();
+            atoms = molecule.getAtomList();
+            bondLines = MolCoords.createBondLines(bonds, iStructure);
+            atomSpheres = MolCoords.createAtomList(atoms, iStructure);
         }
     }
 
@@ -794,33 +825,5 @@ public class MolViewer extends Pane {
             }
         }
         controller.updateRemoveMenu(items);
-    }
-
-    class LabelNode {
-
-        final Node node;
-        final Label label;
-
-        LabelNode(Node node, Label label) {
-            this.node = node;
-            this.label = label;
-        }
-    }
-
-    class MolPrimitives {
-
-        final ArrayList<Bond> bonds;
-        final ArrayList<Atom> atoms;
-        final ArrayList<BondLine> bondLines;
-        final ArrayList<AtomSphere> atomSpheres;
-        final Molecule mol;
-
-        MolPrimitives(Molecule molecule, int iStructure) {
-            this.mol = molecule;
-            bonds = molecule.getBondList();
-            atoms = molecule.getAtomList();
-            bondLines = MolCoords.createBondLines(bonds, iStructure);
-            atomSpheres = MolCoords.createAtomList(atoms, iStructure);
-        }
     }
 }

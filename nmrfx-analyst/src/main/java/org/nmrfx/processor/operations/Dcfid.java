@@ -28,14 +28,14 @@ public class Dcfid extends Operation {
 
     private final double val;
 
-    public Dcfid(double val) {
-        this.val = val;
-    }
-
     @Override
     public Dcfid eval(Vec vector) throws OperationException {
         dcfid(vector);
         return this;
+    }
+
+    public Dcfid(double val) {
+        this.val = val;
     }
 
     private void dcfid(Vec vector) throws OperationException {

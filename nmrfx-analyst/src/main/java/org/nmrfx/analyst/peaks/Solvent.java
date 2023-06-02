@@ -21,6 +21,27 @@ public class Solvent {
     List<SolventPeak> hPeaks = new ArrayList<>();
     List<SolventPeak> cPeaks = new ArrayList<>();
 
+    class SolventPeak {
+
+        double shift;
+        double j;
+        int n;
+
+        SolventPeak(double shift, double j, int n) {
+            this.shift = shift;
+            this.j = j;
+            this.n = n;
+        }
+
+        boolean overlaps(double sf, double testShift) {
+            double tol = 0.05;
+            double width = n * (j / sf) + tol;
+            double min = shift - width / 2;
+            double max = shift + width / 2;
+            return (testShift >= min) && (testShift <= max);
+        }
+    }
+
     public Solvent(String name, String isoname, List<String> synonyms, Double h2oShift) {
         this.name = name;
         this.isoname = isoname;
@@ -69,27 +90,6 @@ public class Solvent {
             }
         }
         return result;
-    }
-
-    class SolventPeak {
-
-        double shift;
-        double j;
-        int n;
-
-        SolventPeak(double shift, double j, int n) {
-            this.shift = shift;
-            this.j = j;
-            this.n = n;
-        }
-
-        boolean overlaps(double sf, double testShift) {
-            double tol = 0.05;
-            double width = n * (j / sf) + tol;
-            double min = shift - width / 2;
-            double max = shift + width / 2;
-            return (testShift >= min) && (testShift <= max);
-        }
     }
 
 }

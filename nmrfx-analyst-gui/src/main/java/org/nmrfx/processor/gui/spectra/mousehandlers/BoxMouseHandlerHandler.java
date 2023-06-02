@@ -12,6 +12,11 @@ public class BoxMouseHandlerHandler extends MouseHandler {
         super(mouseBindings);
     }
 
+    public static Optional<BoxMouseHandlerHandler> handler(MouseBindings mouseBindings) {
+        BoxMouseHandlerHandler handler = new BoxMouseHandlerHandler(mouseBindings);
+        return Optional.of(handler);
+    }
+
     @Override
     public void mousePressed(MouseEvent mouseEvent) {
         var cursor = mouseBindings.chart.getCanvasCursor();
@@ -39,10 +44,5 @@ public class BoxMouseHandlerHandler extends MouseHandler {
     @Override
     public void mouseDragged(MouseEvent mouseEvent) {
         mouseBindings.getChart().dragBox(mouseAction, mouseBindings.getDragStart(), mouseBindings.getMouseX(), mouseBindings.getMouseY());
-    }
-
-    public static Optional<BoxMouseHandlerHandler> handler(MouseBindings mouseBindings) {
-        BoxMouseHandlerHandler handler = new BoxMouseHandlerHandler(mouseBindings);
-        return Optional.of(handler);
     }
 }

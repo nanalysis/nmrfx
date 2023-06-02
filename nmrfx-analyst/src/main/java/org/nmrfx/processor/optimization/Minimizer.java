@@ -25,9 +25,9 @@ public class Minimizer {
 
     // epsmch is the machine precision
     static final double EPSMCH = 2.22044604926e-9;
+    int nfev = 0;
     public double[] xv = null;
     public double[] yv = null;
-    int nfev = 0;
     double[] a = null;
     java.util.Random generator = null;
     Lmdif_fcn lmdifFunc = null;

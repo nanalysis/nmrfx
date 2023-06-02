@@ -24,6 +24,44 @@ public class SeqFragment {
         id = ++lastID;
     }
 
+    public static void setFragmentScoreProbability(double value) {
+        fragmentScoreProbability = value;
+    }
+
+    public static SeqFragment getTestFragment(SpinSystemMatch spinSysMatch) {
+        SpinSystem spinSysA = spinSysMatch.spinSystemA;
+        SpinSystem spinSysB = spinSysMatch.spinSystemB;
+        SeqFragment result = new SeqFragment();
+        SeqFragment fragmentA = null;
+        SeqFragment fragmentB = null;
+        if (spinSysA.fragment.isPresent()) {
+            fragmentA = spinSysA.fragment.get();
+        }
+        if (spinSysB.fragment.isPresent()) {
+            fragmentB = spinSysB.fragment.get();
+        }
+        if ((fragmentA != null) && (fragmentA == fragmentB)) {
+            result.spinSystemMatches.addAll(fragmentA.spinSystemMatches);
+        } else if (fragmentA != null) {
+            result.spinSystemMatches.addAll(fragmentA.spinSystemMatches);
+            result.spinSystemMatches.add(spinSysMatch);
+            if (fragmentB != null) {
+                result.spinSystemMatches.addAll(fragmentB.spinSystemMatches);
+            }
+        } else if (fragmentB != null) {
+            result.spinSystemMatches.add(spinSysMatch);
+            result.spinSystemMatches.addAll(fragmentB.spinSystemMatches);
+        } else {
+            result.spinSystemMatches.add(spinSysMatch);
+        }
+        for (int i = result.getSpinSystemMatches().size() - 1; i >= 1; i--) {
+            if (result.getSpinSystemMatches().get(i) == result.getSpinSystemMatches().get(i - 1)) {
+                result.getSpinSystemMatches().remove(i);
+            }
+        }
+        return result;
+    }
+
     public ResidueSeqScore getResSeqScore() {
         return resSeqScore;
     }
@@ -32,12 +70,12 @@ public class SeqFragment {
         this.resSeqScore = residueSeqScore;
     }
 
-    public int getId() {
-        return id;
-    }
-
     public void setId(int value) {
         id = value;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public boolean isFrozen() {
@@ -46,6 +84,35 @@ public class SeqFragment {
 
     public void setFrozen(boolean frozen) {
         this.frozen = frozen;
+    }
+
+    public static SeqFragment join(SpinSystemMatch spinSysMatch, boolean testMode) {
+        SpinSystem spinSysA = spinSysMatch.spinSystemA;
+        SpinSystem spinSysB = spinSysMatch.spinSystemB;
+        SeqFragment result = null;
+        if (spinSysA.fragment.isEmpty() && spinSysB.fragment.isEmpty()) {
+            result = new SeqFragment();
+            result.spinSystemMatches.add(spinSysMatch);
+        } else if (spinSysA.fragment.isPresent() && spinSysB.fragment.isPresent()) {
+            if (spinSysA.fragment.get() != spinSysB.fragment.get()) {
+                result = spinSysA.fragment.get();
+                result.spinSystemMatches.add(spinSysMatch);
+                result.spinSystemMatches.addAll(spinSysB.fragment.get().spinSystemMatches);
+            }
+
+        } else if (spinSysA.fragment.isPresent()) {
+            result = spinSysA.fragment.get();
+            result.spinSystemMatches.add(spinSysMatch);
+
+        } else {
+            result = spinSysB.fragment.get();
+            result.spinSystemMatches.add(0, spinSysMatch);
+        }
+        if ((result != null) && !testMode) {
+            result.updateFragment();
+        }
+        return result;
+
     }
 
     public List<SpinSystemMatch> getSpinSystemMatches() {
@@ -76,6 +143,63 @@ public class SeqFragment {
             System.out.println(match.toString());
         }
 
+    }
+
+    public static List<SeqFragment> remove(SpinSystemMatch spinSysMatch, boolean testMode) {
+        SpinSystem spinSysA = spinSysMatch.spinSystemA;
+        SpinSystem spinSysB = spinSysMatch.spinSystemB;
+        List<SeqFragment> result = new ArrayList<>();
+        if (spinSysA.fragment.isPresent() && spinSysB.fragment.isPresent()) {
+            SeqFragment currentFragment = spinSysA.fragment.get();
+            List<SpinSystemMatch> spinSystemMatches = currentFragment.spinSystemMatches;
+
+            currentFragment.dump();
+
+            SpinSystemMatch firstMatch = spinSystemMatches.get(0);
+            SpinSystemMatch lastMatch = spinSystemMatches.get(spinSystemMatches.size() - 1);
+            spinSysMatch.spinSystemA.fragment = Optional.empty();
+            spinSysMatch.spinSystemB.fragment = Optional.empty();
+            if (spinSysMatch == firstMatch) {
+                spinSystemMatches.remove(0);
+                result.add(null);
+                result.add(currentFragment);
+                currentFragment.updateFragment();
+            } else if (spinSysMatch == lastMatch) {
+                spinSystemMatches.remove(spinSystemMatches.size() - 1);
+                currentFragment.updateFragment();
+                result.add(currentFragment);
+                result.add(null);
+            } else {
+                SeqFragment newFragment = new SeqFragment();
+                int index = getIndex(spinSystemMatches, spinSysMatch);
+                if (index != -1) {
+                    List<SpinSystemMatch> prevMatches = spinSystemMatches.subList(0, index);
+                    List<SpinSystemMatch> clearMatches = spinSystemMatches.subList(0, index + 1);
+                    newFragment.spinSystemMatches.addAll(prevMatches);
+                    clearMatches.clear();
+                    newFragment.updateFragment();
+                    currentFragment.updateFragment();
+                    result.add(newFragment);
+                    result.add(currentFragment);
+                } else {
+                    result.add(null);
+                    result.add(null);
+                }
+            }
+        }
+        return result;
+
+    }
+
+    static int getIndex(List<SpinSystemMatch> matches, SpinSystemMatch match) {
+        int index = -1;
+        for (int i = 0; i < matches.size(); i++) {
+            SpinSystemMatch testMatch = matches.get(i);
+            if ((testMatch.spinSystemA == match.spinSystemA) && (testMatch.spinSystemB == match.spinSystemB)) {
+                index = i;
+            }
+        }
+        return index;
     }
 
     void updateFragment() {
@@ -241,142 +365,6 @@ public class SeqFragment {
         }
     }
 
-    String getFragmentSTARString() {
-        String polyID = frozen && resSeqScore != null ?
-                String.valueOf(resSeqScore.getFirstResidue().getPolymer().getIDNum()) : ".";
-        String resID = frozen && resSeqScore != null ?
-                String.valueOf(resSeqScore.getFirstResidue().getResNum()) : ".";
-        String nResidues = frozen && resSeqScore != null ?
-                String.valueOf(resSeqScore.nResidues) : ".";
-        String score = frozen && resSeqScore != null ?
-                String.format("%9.5f", resSeqScore.score) : ".";
-        return String.format("%3d %3s %3s %3s %9s\n", id, polyID, resID, nResidues, score);
-    }
-
-    public static void setFragmentScoreProbability(double value) {
-        fragmentScoreProbability = value;
-    }
-
-    public static SeqFragment getTestFragment(SpinSystemMatch spinSysMatch) {
-        SpinSystem spinSysA = spinSysMatch.spinSystemA;
-        SpinSystem spinSysB = spinSysMatch.spinSystemB;
-        SeqFragment result = new SeqFragment();
-        SeqFragment fragmentA = null;
-        SeqFragment fragmentB = null;
-        if (spinSysA.fragment.isPresent()) {
-            fragmentA = spinSysA.fragment.get();
-        }
-        if (spinSysB.fragment.isPresent()) {
-            fragmentB = spinSysB.fragment.get();
-        }
-        if ((fragmentA != null) && (fragmentA == fragmentB)) {
-            result.spinSystemMatches.addAll(fragmentA.spinSystemMatches);
-        } else if (fragmentA != null) {
-            result.spinSystemMatches.addAll(fragmentA.spinSystemMatches);
-            result.spinSystemMatches.add(spinSysMatch);
-            if (fragmentB != null) {
-                result.spinSystemMatches.addAll(fragmentB.spinSystemMatches);
-            }
-        } else if (fragmentB != null) {
-            result.spinSystemMatches.add(spinSysMatch);
-            result.spinSystemMatches.addAll(fragmentB.spinSystemMatches);
-        } else {
-            result.spinSystemMatches.add(spinSysMatch);
-        }
-        for (int i = result.getSpinSystemMatches().size() - 1; i >= 1; i--) {
-            if (result.getSpinSystemMatches().get(i) == result.getSpinSystemMatches().get(i - 1)) {
-                result.getSpinSystemMatches().remove(i);
-            }
-        }
-        return result;
-    }
-
-    public static SeqFragment join(SpinSystemMatch spinSysMatch, boolean testMode) {
-        SpinSystem spinSysA = spinSysMatch.spinSystemA;
-        SpinSystem spinSysB = spinSysMatch.spinSystemB;
-        SeqFragment result = null;
-        if (spinSysA.fragment.isEmpty() && spinSysB.fragment.isEmpty()) {
-            result = new SeqFragment();
-            result.spinSystemMatches.add(spinSysMatch);
-        } else if (spinSysA.fragment.isPresent() && spinSysB.fragment.isPresent()) {
-            if (spinSysA.fragment.get() != spinSysB.fragment.get()) {
-                result = spinSysA.fragment.get();
-                result.spinSystemMatches.add(spinSysMatch);
-                result.spinSystemMatches.addAll(spinSysB.fragment.get().spinSystemMatches);
-            }
-
-        } else if (spinSysA.fragment.isPresent()) {
-            result = spinSysA.fragment.get();
-            result.spinSystemMatches.add(spinSysMatch);
-
-        } else {
-            result = spinSysB.fragment.get();
-            result.spinSystemMatches.add(0, spinSysMatch);
-        }
-        if ((result != null) && !testMode) {
-            result.updateFragment();
-        }
-        return result;
-
-    }
-
-    public static List<SeqFragment> remove(SpinSystemMatch spinSysMatch, boolean testMode) {
-        SpinSystem spinSysA = spinSysMatch.spinSystemA;
-        SpinSystem spinSysB = spinSysMatch.spinSystemB;
-        List<SeqFragment> result = new ArrayList<>();
-        if (spinSysA.fragment.isPresent() && spinSysB.fragment.isPresent()) {
-            SeqFragment currentFragment = spinSysA.fragment.get();
-            List<SpinSystemMatch> spinSystemMatches = currentFragment.spinSystemMatches;
-
-            currentFragment.dump();
-
-            SpinSystemMatch firstMatch = spinSystemMatches.get(0);
-            SpinSystemMatch lastMatch = spinSystemMatches.get(spinSystemMatches.size() - 1);
-            spinSysMatch.spinSystemA.fragment = Optional.empty();
-            spinSysMatch.spinSystemB.fragment = Optional.empty();
-            if (spinSysMatch == firstMatch) {
-                spinSystemMatches.remove(0);
-                result.add(null);
-                result.add(currentFragment);
-                currentFragment.updateFragment();
-            } else if (spinSysMatch == lastMatch) {
-                spinSystemMatches.remove(spinSystemMatches.size() - 1);
-                currentFragment.updateFragment();
-                result.add(currentFragment);
-                result.add(null);
-            } else {
-                SeqFragment newFragment = new SeqFragment();
-                int index = getIndex(spinSystemMatches, spinSysMatch);
-                if (index != -1) {
-                    List<SpinSystemMatch> prevMatches = spinSystemMatches.subList(0, index);
-                    List<SpinSystemMatch> clearMatches = spinSystemMatches.subList(0, index + 1);
-                    newFragment.spinSystemMatches.addAll(prevMatches);
-                    clearMatches.clear();
-                    newFragment.updateFragment();
-                    currentFragment.updateFragment();
-                    result.add(newFragment);
-                    result.add(currentFragment);
-                } else {
-                    result.add(null);
-                    result.add(null);
-                }
-            }
-        }
-        return result;
-
-    }
-
-    static int getIndex(List<SpinSystemMatch> matches, SpinSystemMatch match) {
-        int index = -1;
-        for (int i = 0; i < matches.size(); i++) {
-            SpinSystemMatch testMatch = matches.get(i);
-            if ((testMatch.spinSystemA == match.spinSystemA) && (testMatch.spinSystemB == match.spinSystemB)) {
-                index = i;
-            }
-        }
-        return index;
-    }
-
     public static boolean testFrag(SpinSystemMatch spinSystemMatch) {
         SeqFragment fragment = getTestFragment(spinSystemMatch);
         Molecule molecule = Molecule.getActive();
@@ -389,5 +377,17 @@ public class SeqFragment {
             }
         }
         return ok;
+    }
+
+    String getFragmentSTARString() {
+        String polyID = frozen && resSeqScore != null ?
+                String.valueOf(resSeqScore.getFirstResidue().getPolymer().getIDNum()) : ".";
+        String resID = frozen && resSeqScore != null ?
+                String.valueOf(resSeqScore.getFirstResidue().getResNum()) : ".";
+        String nResidues = frozen && resSeqScore != null ?
+                String.valueOf(resSeqScore.nResidues) : ".";
+        String score = frozen && resSeqScore != null ?
+                String.format("%9.5f", resSeqScore.score) : ".";
+        return String.format("%3d %3s %3s %3s %9s\n", id, polyID, resID, nResidues, score);
     }
 }

@@ -10,12 +10,13 @@ import java.util.*;
 @PluginAPI("residuegen")
 public class PathIterator implements Iterator<List<Integer>> {
     private static final Logger log = LoggerFactory.getLogger(PathIterator.class);
-    public static boolean debug = false;
+
     AtomContainer ac;
     List<List<Integer>> pathAtoms = null;
     List<List<Integer>> pathBonds = null;
     Map<String, Integer> bondMap = new HashMap<>();
     List<Integer> path = null;
+    public static boolean debug = false;
     int pathLength = 0;
     int pathPos = 0;
     int lastAtom;
@@ -421,6 +422,17 @@ public class PathIterator implements Iterator<List<Integer>> {
         return true;
     }
 
+    public void remove() {
+    }
+
+    public List<Integer> next() {
+        log.debug("############ next #################");
+        if ((path == null) || (pathLength == 0)) {
+            throw new NoSuchElementException();
+        }
+        return path;
+    }
+
     public boolean hasNext() {
         while (true) {
             if (pathLength == 0) {
@@ -436,17 +448,6 @@ public class PathIterator implements Iterator<List<Integer>> {
         }
 
         return ((path != null) && (pathLength != 0));
-    }
-
-    public List<Integer> next() {
-        log.debug("############ next #################");
-        if ((path == null) || (pathLength == 0)) {
-            throw new NoSuchElementException();
-        }
-        return path;
-    }
-
-    public void remove() {
     }
 
     public void processPatterns() {

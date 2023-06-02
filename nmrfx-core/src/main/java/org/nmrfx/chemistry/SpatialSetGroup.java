@@ -65,13 +65,6 @@ public class SpatialSetGroup {
         return sp.getName();
     }
 
-    /**
-     * @param name the name to set
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public void add(SpatialSet spSet) {
         spSets.add(spSet);
     }
@@ -175,5 +168,12 @@ public class SpatialSetGroup {
      */
     public void setSpSets(Set<SpatialSet> spSets) {
         this.spSets = spSets;
+    }
+
+    /**
+     * @param name the name to set
+     */
+    public void setName(String name) {
+        this.name = name;
     }
 }

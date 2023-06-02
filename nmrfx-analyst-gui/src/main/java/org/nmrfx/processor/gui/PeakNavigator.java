@@ -39,7 +39,6 @@ import java.util.function.Consumer;
  */
 public class PeakNavigator implements PeakListener {
 
-    static Background deleteBackground = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
     ToolBar navigatorToolBar;
     TextField peakIdField;
     MenuButton peakListMenuButton;
@@ -47,6 +46,7 @@ public class PeakNavigator implements PeakListener {
     PeakNavigable peakNavigable;
     PeakList peakList;
     Peak currentPeak;
+    static Background deleteBackground = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
     Optional<List<Peak>> matchPeaks = Optional.empty();
     int matchIndex = 0;
@@ -63,6 +63,10 @@ public class PeakNavigator implements PeakListener {
 
     private PeakNavigator(PeakNavigable peakNavigable) {
         this.peakNavigable = peakNavigable;
+    }
+
+    public static PeakNavigator create(PeakNavigable peakNavigable) {
+        return new PeakNavigator(peakNavigable);
     }
 
     public PeakNavigator onClose(Consumer<PeakNavigator> closeAction) {
@@ -394,6 +398,7 @@ public class PeakNavigator implements PeakListener {
         }
     }
 
+
     public void firstPeak(ActionEvent event) {
         if (filtered()) {
             firstPeakFiltered();
@@ -458,6 +463,7 @@ public class PeakNavigator implements PeakListener {
         }
     }
 
+
     public void lastPeak(ActionEvent event) {
         if (filtered()) {
             lastPeakFiltered();
@@ -480,6 +486,7 @@ public class PeakNavigator implements PeakListener {
             }
         }
     }
+
 
     public List<Peak> matchPeaks(String pattern) {
         List<Peak> result;
@@ -588,9 +595,5 @@ public class PeakNavigator implements PeakListener {
         if (peakEvent.getSource() instanceof PeakList sourceList && sourceList == peakList) {
             Fx.runOnFxThread(this::handlePeakListChangedEvent);
         }
-    }
-
-    public static PeakNavigator create(PeakNavigable peakNavigable) {
-        return new PeakNavigator(peakNavigable);
     }
 }

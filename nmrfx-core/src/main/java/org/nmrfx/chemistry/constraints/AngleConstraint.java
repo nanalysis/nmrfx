@@ -27,8 +27,10 @@ import java.util.List;
  */
 public class AngleConstraint implements Constraint {
 
-    final static double toRad = Math.PI / 180.0;
     private static DistanceStat defaultStat = new DistanceStat();
+
+    protected int idNum = 0;
+
     /**
      * Upper Angle Bound
      */
@@ -37,6 +39,8 @@ public class AngleConstraint implements Constraint {
      * Lower Angle Bound
      */
     final double lower;
+
+    private Atom[] atoms = null;
     /**
      * Scale
      */
@@ -57,14 +61,13 @@ public class AngleConstraint implements Constraint {
      * name
      */
     final String name;
-    protected int idNum = 0;
-    private Atom[] atoms = null;
     /**
      * Index to list of angles
      */
     private int active = 1;
     private int index = -1;
     private DistanceStat disStat = defaultStat;
+    final static double toRad = Math.PI / 180.0;
 
     public AngleConstraint(Atom[] atoms, double lower, double upper, final double scale,
                            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
@@ -145,12 +148,26 @@ public class AngleConstraint implements Constraint {
 
     }
 
-    public int getIndex() {
-        return index;
+    public static boolean allowRotation(List<String> atomNames) {
+
+        int arrayLength = atomNames.size();
+        if (arrayLength != 4) {
+            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
+        }
+        Atom[] atoms = new Atom[4];
+        for (int i = 0; i < arrayLength; i++) {
+            atoms[i] = MoleculeBase.getAtomByName(atomNames.get(i));
+        }
+
+        return !((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2]));
     }
 
     public void setIndex(final int index) {
         this.index = index;
+    }
+
+    public int getIndex() {
+        return index;
     }
 
     public Atom getAtom() {
@@ -210,12 +227,12 @@ public class AngleConstraint implements Constraint {
         return name;
     }
 
-    public int getActive() {
-        return active;
-    }
-
     public void setActive(int state) {
         active = state;
+    }
+
+    public int getActive() {
+        return active;
     }
 
     public double getViol(double angle) {
@@ -319,19 +336,5 @@ public class AngleConstraint implements Constraint {
         result.append(sep);
         result.append("1");
         return result.toString();
-    }
-
-    public static boolean allowRotation(List<String> atomNames) {
-
-        int arrayLength = atomNames.size();
-        if (arrayLength != 4) {
-            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
-        }
-        Atom[] atoms = new Atom[4];
-        for (int i = 0; i < arrayLength; i++) {
-            atoms[i] = MoleculeBase.getAtomByName(atomNames.get(i));
-        }
-
-        return !((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2]));
     }
 }

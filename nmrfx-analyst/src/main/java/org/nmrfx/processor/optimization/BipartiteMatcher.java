@@ -76,32 +76,6 @@ import java.util.StringTokenizer;
  */
 public class BipartiteMatcher {
 
-    static final int NO_LABEL = -1;
-    static final int EMPTY_LABEL = -2;
-    /**
-     * Tolerance for comparisons to zero, to account for floating-point
-     * imprecision. We consider a positive number to be essentially zero if it
-     * is strictly less than TOL.
-     */
-    private static final double TOL = 1e-10;
-    int n;
-    double[][] weights;
-    HashMap[] hashedWeights;
-    double minWeight;
-    double maxWeight;
-    boolean useHashMap = false;
-    // If (i, j) is in the mapping, then sMatches[i] = j and tMatches[j] = i.
-    // If i is unmatched, then sMatches[i] = -1 (and likewise for tMatches).
-    int[] sMatches;
-    int[] tMatches;
-    int[] sLabels;
-    int[] tLabels;
-    double[] u;
-    double[] v;
-    double[] pi;
-    List<Integer> eligibleS = new ArrayList<>();
-    List<Integer> eligibleT = new ArrayList<>();
-
     /**
      * Creates a BipartiteMatcher without specifying the graph size. Calling any
      * other method before calling reset will yield an IllegalStateException.
@@ -269,8 +243,8 @@ public class BipartiteMatcher {
         }
 
         while (true) {
-            // Augment the matching until we can't augment any more given the
-            // current settings of the dual variables.
+            // Augment the matching until we can't augment any more given the 
+            // current settings of the dual variables.  
             while (true) {
                 // Steps 1.1-1.4: Find an augmenting path
                 int lastNode = findAugmentingPath();
@@ -316,8 +290,8 @@ public class BipartiteMatcher {
             }
 
             if (delta1 < delta2) {
-                // In order to make another pi[j] equal 0, we'd need to
-                // make some u[i] negative.
+                // In order to make another pi[j] equal 0, we'd need to 
+                // make some u[i] negative.  
                 break; // we have a maximum-weight matching
             }
 
@@ -385,13 +359,13 @@ public class BipartiteMatcher {
         while (lastNode != EMPTY_LABEL) {
             int parent = tLabels[lastNode];
 
-            // Add (parent, lastNode) to matching.  We don't need to
-            // explicitly remove any edges from the matching because:
-            //  * We know at this point that there is no i such that
-            //    sMatches[i] = lastNode.
+            // Add (parent, lastNode) to matching.  We don't need to 
+            // explicitly remove any edges from the matching because: 
+            //  * We know at this point that there is no i such that 
+            //    sMatches[i] = lastNode.  
             //  * Although there might be some j such that tMatches[j] =
-            //    parent, that j must be sLabels[parent], and will change
-            //    tMatches[j] in the next time through this loop.
+            //    parent, that j must be sLabels[parent], and will change 
+            //    tMatches[j] in the next time through this loop.  
             sMatches[parent] = lastNode;
             tMatches[lastNode] = parent;
 
@@ -447,6 +421,32 @@ public class BipartiteMatcher {
             System.out.println("");
         }
     }
+
+    /**
+     * Tolerance for comparisons to zero, to account for floating-point
+     * imprecision. We consider a positive number to be essentially zero if it
+     * is strictly less than TOL.
+     */
+    private static final double TOL = 1e-10;
+    int n;
+    double[][] weights;
+    HashMap[] hashedWeights;
+    double minWeight;
+    double maxWeight;
+    boolean useHashMap = false;
+    // If (i, j) is in the mapping, then sMatches[i] = j and tMatches[j] = i.  
+    // If i is unmatched, then sMatches[i] = -1 (and likewise for tMatches). 
+    int[] sMatches;
+    int[] tMatches;
+    static final int NO_LABEL = -1;
+    static final int EMPTY_LABEL = -2;
+    int[] sLabels;
+    int[] tLabels;
+    double[] u;
+    double[] v;
+    double[] pi;
+    List<Integer> eligibleS = new ArrayList<>();
+    List<Integer> eligibleT = new ArrayList<>();
 
     public static void main(String[] args) {
         BufferedReader reader

@@ -30,10 +30,22 @@ import java.util.function.DoubleFunction;
 public class CustomNumberTextField extends CustomTextField {
 
     private final NumberFormat nf;
-    private final SimpleDoubleProperty number = new SimpleDoubleProperty();
     double min = Double.NEGATIVE_INFINITY;
     double max = Double.MAX_VALUE;
+    private final SimpleDoubleProperty number = new SimpleDoubleProperty();
     Optional<DoubleFunction> callbackFunction = Optional.empty();
+
+    public final Double getNumber() {
+        return number.get();
+    }
+
+    public final void setNumber(Double value) {
+        number.set(value);
+    }
+
+    public SimpleDoubleProperty numberProperty() {
+        return number;
+    }
 
     public CustomNumberTextField() {
         this(new Double(0.0));
@@ -49,18 +61,6 @@ public class CustomNumberTextField extends CustomTextField {
         this.nf = nf;
         initHandlers();
         setNumber(value);
-    }
-
-    public final Double getNumber() {
-        return number.get();
-    }
-
-    public final void setNumber(Double value) {
-        number.set(value);
-    }
-
-    public SimpleDoubleProperty numberProperty() {
-        return number;
     }
 
     private void initHandlers() {

@@ -120,10 +120,6 @@ public class ExpF extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = a * exp(-((x - b) / c) ^ 2)";
-    }
-
     @Override
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
@@ -149,5 +145,9 @@ public class ExpF extends OptFunction {
                 }
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = a * exp(-((x - b) / c) ^ 2)";
     }
 }

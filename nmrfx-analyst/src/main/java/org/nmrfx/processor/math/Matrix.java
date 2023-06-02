@@ -40,11 +40,11 @@ import java.nio.channels.FileChannel;
  */
 public class Matrix implements MatrixType {
 
-    private final static int NPHASE = 4;
     /**
      * Output point to write matrix.
      */
     private int[][] pt = null;
+
     /**
      * Matrix data store.
      */
@@ -57,6 +57,68 @@ public class Matrix implements MatrixType {
     public Matrix(int nRows, int nColumns, int[][] pt) {
         this.pt = pt;
         matrix = new double[nRows][nColumns];
+    }
+
+    @Override
+    public String exportData(String rootName, String suffix) throws IOException {
+        return exportData(rootName, suffix, false);
+    }
+
+    @Override
+    public String exportData(String rootName, String suffix, boolean littleEndian) throws IOException {
+        int index = getIndex();
+        String outFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
+
+        try (FileOutputStream oStream = new FileOutputStream(outFileName)) {
+            int size = pt.length * pt[0].length;
+            ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8);
+            if (littleEndian) {
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            }
+            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
+            int k = 0;
+            for (int i = 0; i < (matrix.length); i++) {
+                for (int j = 0; j < (matrix[0].length); j++) {
+                    doubleBuffer.put(k++, matrix[i][j]);
+                }
+            }
+            FileChannel channel = oStream.getChannel();
+            channel.write(byteBuffer);
+        } catch (IOException ioE) {
+            throw ioE;
+        }
+        return outFileName;
+    }
+
+    @Override
+    public String importData(String rootName, String suffix) throws IOException {
+        return importData(rootName, suffix, false);
+    }
+
+    @Override
+    public String importData(String rootName, String suffix, boolean littleEndian) throws IOException {
+        int index = getIndex();
+        String inFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
+        try (FileInputStream oStream = new FileInputStream(inFileName)) {
+            int size = pt.length * pt[0].length;
+            ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8);
+            if (littleEndian) {
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            }
+            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
+            FileChannel channel = oStream.getChannel();
+            channel.read(byteBuffer);
+            int k = 0;
+            for (int i = 0; i < (matrix.length); i++) {
+                for (int j = 0; j < (matrix[0].length); j++) {
+                    matrix[i][j] = doubleBuffer.get(k++);
+                }
+            }
+        } catch (IOException ioE) {
+            throw ioE;
+        }
+        return inFileName;
+
     }
 
     public Matrix zeroFill() {
@@ -78,20 +140,25 @@ public class Matrix implements MatrixType {
         return dd;
     }
 
+    public void setMatrix(double[][] matrix) {
+        this.matrix = matrix;
+    }
+
     public double[][] getMatrix() {
         return matrix;
     }
 
-    public void setMatrix(double[][] matrix) {
-        this.matrix = matrix;
+    public void setPt(int[][] pt) {
+        this.pt = pt;
     }
 
     public int[][] getPt() {
         return pt;
     }
 
-    public void setPt(int[][] pt) {
-        this.pt = pt;
+    @Override
+    public int getIndex() {
+        return pt[pt.length - 1][0];
     }
 
     public void copyMatrix(double[][] src) {
@@ -131,6 +198,28 @@ public class Matrix implements MatrixType {
 
     public void dump() throws IOException {
         dump(null);
+    }
+
+    @Override
+    public void dump(String outName) throws IOException {
+        FileWriter fileWriter = null;
+        if (outName != null) {
+            fileWriter = new FileWriter(outName);
+        }
+        try (FileWriter fw = fileWriter) {
+            int k = 0;
+            for (int i = 0; i < matrix.length; i++) {
+                for (int j = 0; j < matrix[i].length; j++) {
+                    String dump = String.format("%3d %3d %3d %.5f%n", i, j, k++, matrix[i][j]);
+                    if (fw != null) {
+                        fw.write(dump);
+                    } else {
+                        System.out.printf(dump);
+                    }
+
+                }
+            }
+        }
     }
 
     private void row2ri(int row, double[][] dataRI) {
@@ -406,6 +495,8 @@ public class Matrix implements MatrixType {
         }
     }
 
+    private final static int NPHASE = 4;
+
     @Override
     public void phase(double[] ph) {
         if (ph.length < 1) {
@@ -420,95 +511,6 @@ public class Matrix implements MatrixType {
         }
         phaseRows(phase[0], phase[1], false);  // p0, p1 for rows
         phaseCols(phase[2], phase[3], false);  // p0, p1 for columns
-    }
-
-    @Override
-    public void dump(String outName) throws IOException {
-        FileWriter fileWriter = null;
-        if (outName != null) {
-            fileWriter = new FileWriter(outName);
-        }
-        try (FileWriter fw = fileWriter) {
-            int k = 0;
-            for (int i = 0; i < matrix.length; i++) {
-                for (int j = 0; j < matrix[i].length; j++) {
-                    String dump = String.format("%3d %3d %3d %.5f%n", i, j, k++, matrix[i][j]);
-                    if (fw != null) {
-                        fw.write(dump);
-                    } else {
-                        System.out.printf(dump);
-                    }
-
-                }
-            }
-        }
-    }
-
-    @Override
-    public int getIndex() {
-        return pt[pt.length - 1][0];
-    }
-
-    @Override
-    public String exportData(String rootName, String suffix) throws IOException {
-        return exportData(rootName, suffix, false);
-    }
-
-    @Override
-    public String exportData(String rootName, String suffix, boolean littleEndian) throws IOException {
-        int index = getIndex();
-        String outFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
-
-        try (FileOutputStream oStream = new FileOutputStream(outFileName)) {
-            int size = pt.length * pt[0].length;
-            ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8);
-            if (littleEndian) {
-                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            }
-            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
-            int k = 0;
-            for (int i = 0; i < (matrix.length); i++) {
-                for (int j = 0; j < (matrix[0].length); j++) {
-                    doubleBuffer.put(k++, matrix[i][j]);
-                }
-            }
-            FileChannel channel = oStream.getChannel();
-            channel.write(byteBuffer);
-        } catch (IOException ioE) {
-            throw ioE;
-        }
-        return outFileName;
-    }
-
-    @Override
-    public String importData(String rootName, String suffix) throws IOException {
-        return importData(rootName, suffix, false);
-    }
-
-    @Override
-    public String importData(String rootName, String suffix, boolean littleEndian) throws IOException {
-        int index = getIndex();
-        String inFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
-        try (FileInputStream oStream = new FileInputStream(inFileName)) {
-            int size = pt.length * pt[0].length;
-            ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8);
-            if (littleEndian) {
-                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            }
-            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
-            FileChannel channel = oStream.getChannel();
-            channel.read(byteBuffer);
-            int k = 0;
-            for (int i = 0; i < (matrix.length); i++) {
-                for (int j = 0; j < (matrix[0].length); j++) {
-                    matrix[i][j] = doubleBuffer.get(k++);
-                }
-            }
-        } catch (IOException ioE) {
-            throw ioE;
-        }
-        return inFileName;
-
     }
 
 }

@@ -24,10 +24,6 @@ package org.nmrfx.structure.chemistry.energy;
 public class AtomEnergy {
 
     /**
-     * Instance of Atom Energy with 0 Energy
-     */
-    public static final AtomEnergy ZERO = new AtomEnergy(0, 0);
-    /**
      * energy
      */
     private final double energy;
@@ -35,6 +31,10 @@ public class AtomEnergy {
      * deriv - derivative of Energy with respect to some parameter
      */
     private final double deriv;
+    /**
+     * Instance of Atom Energy with 0 Energy
+     */
+    public static final AtomEnergy ZERO = new AtomEnergy(0, 0);
 
     /**
      * Simple Constructor

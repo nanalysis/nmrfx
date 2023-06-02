@@ -46,16 +46,17 @@ import static java.util.Comparator.comparing;
  */
 public class PeakFitter {
     private static final Logger log = LoggerFactory.getLogger(PeakFitter.class);
-    final Dataset theFile;
-    final int[][] p2;
-    final int[] pdim;
+
     int[][] splitCount;
+    final Dataset theFile;
     boolean rootedPeaks;
     PeakFitParameters fitParameters;
     Double positionRestraint = null;
     Peak[] peaks;
+    final int[][] p2;
     boolean fixWeakDoublet = true;
     boolean fitAmps = true;
+    final int[] pdim;
     double BIC;
 
     public PeakFitter(final Dataset theFile, boolean rootedPeaks, PeakFitParameters fitParameters) {

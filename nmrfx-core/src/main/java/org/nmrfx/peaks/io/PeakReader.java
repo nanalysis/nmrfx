@@ -36,8 +36,8 @@ import java.util.regex.Pattern;
 @PythonAPI("pscript")
 public class PeakReader {
 
-    final boolean linkResonances;
     Map<Long, List<PeakDim>> resMap = null;
+    final boolean linkResonances;
 
     public PeakReader() {
         this(false);
@@ -414,6 +414,23 @@ public class PeakReader {
     }
 
     /*
+    dataset ndim
+    C_nhsqcsegr_b.nv        2
+    id      label   units   sf      sw      fp      idtol   pattern relation        folding abspos  acqdim
+    1       HN"ppm  499.83770751953125      2617.1875       0.0     0.007815036643363612                    0.0     circular        true    true
+    2       N"ppm   50.653602600097656      2000.0  0.0     0.15423384712985722                     0.0     circular        true    false
+    index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     N.P     N.WH    N.B     N.E     N.J     N.U     volume  intensity       status  comment flags
+    0       0               8.94238 0.03142 0.03220 ++                              132.96933       0.39033 0.40230 ++                      0.0     1.5329096       0               0
+     */
+    public static Map<String, Integer> headerMap(String[] header) {
+        Map<String, Integer> map = new HashMap<>();
+        for (int i = 0; i < header.length; i++) {
+            map.put(header[i], i);
+        }
+        return map;
+    }
+
+    /*
 
     if {[gets $fileid fields] == -1} {
         error "Can't read first line"
@@ -549,23 +566,6 @@ public class PeakReader {
             return peakList;
         }
 
-    }
-
-    /*
-    dataset ndim
-    C_nhsqcsegr_b.nv        2
-    id      label   units   sf      sw      fp      idtol   pattern relation        folding abspos  acqdim
-    1       HN"ppm  499.83770751953125      2617.1875       0.0     0.007815036643363612                    0.0     circular        true    true
-    2       N"ppm   50.653602600097656      2000.0  0.0     0.15423384712985722                     0.0     circular        true    false
-    index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     N.P     N.WH    N.B     N.E     N.J     N.U     volume  intensity       status  comment flags
-    0       0               8.94238 0.03142 0.03220 ++                              132.96933       0.39033 0.40230 ++                      0.0     1.5329096       0               0
-     */
-    public static Map<String, Integer> headerMap(String[] header) {
-        Map<String, Integer> map = new HashMap<>();
-        for (int i = 0; i < header.length; i++) {
-            map.put(header[i], i);
-        }
-        return map;
     }
 
     /**

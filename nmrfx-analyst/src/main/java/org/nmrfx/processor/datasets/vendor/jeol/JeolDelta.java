@@ -48,21 +48,19 @@ import java.util.Map;
  */
 public class JeolDelta implements NMRData {
     private static final Logger log = LoggerFactory.getLogger(JeolDelta.class);
-    static final String[] axisNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"}; // are these right (after Z)
-    static final private int[] subMatrixEdges = {8, 32, 8, 8, 4, 4, 2, 2};
+
     private final JeolDeltaAxis[] axes;
     private final File file;
     private final RandomAccessFile raFile;
     private final int dataStart;
-    private final int nPoints;                   // TD,1
-    private final int nVectors;             // NS,1
-    private final int nDim;                // from acqu[n]s files
-    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
     private int nSections = 1;
     private Strip[] strips;
     private int subMatrixPointCount;
     private int sectionByteCount;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
+    private final int nPoints;                   // TD,1
+    private final int nVectors;             // NS,1
+    private final int nDim;                // from acqu[n]s files
     private Double[] sw;
     private Double[] sf;
     private String[] swNames;
@@ -77,68 +75,40 @@ public class JeolDelta implements NMRData {
     private String solvent = "";
     private String sequence = "";
     private double tempK;
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
+
     private Map<String, JeolPar> parMap = new HashMap<>();
-
-    public JeolDelta(final String fileName) throws IOException {
-        file = new File(fileName);
-        if (!file.exists()) {
-            throw new IOException("File " + fileName + " doesn't exist");
-        }
-
-        raFile = new RandomAccessFile(file, "r");
-        byte[] header = new byte[1360];
-        readBytes(header, 0, 1360);
-        parseHeader(header);
-        //    public JeolDeltaAxis(final int nPoints, final int subMatrixEdge, final int start, final int stop, final AxisType type) {
-
-        dataStart = JeolPars.Data_Start.getInteger(header);
-        int dataLength = JeolPars.Data_Length.getInteger(header);
-        int dataStop = dataStart + dataLength - 1;
-        nDim = JeolPars.Data_Dimension_Number.getInteger(header);
-        nPoints = JeolPars.Data_Points.convertNumber(header)[0].intValue();
-        subMatrixPointCount = subMatrixEdges[nDim - 1];
-        axes = new JeolDeltaAxis[nDim];
-        dimSizes = new int[nDim];
-        int nV = 1;
-        Number[] headerDimSizes = JeolPars.Data_Points.convertNumber(header);
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            int dimSize = headerDimSizes[iDim].intValue();
-            dimSizes[iDim] = dimSize;
-            int dType = JeolPars.Data_Axis_Type.getInteger(header, iDim);
-            axes[iDim] = new JeolDeltaAxis(iDim, dimSize, subMatrixPointCount, 0, 0, dType);
-            if (iDim > 0) {
-                nV *= dimSize * 2;
-            }
-        }
-        /*
-    for {set iDim 1} {$iDim <= $nDim} {incr iDim} {
-        set f(dataAxisType,$iDim) [$cmd get $parH Data_Axis_Type,$iDim]
-        set nPoints [$cmd get $parH Data_Points,$iDim]
-        set f(subCount,$iDim) [expr {$nPoints/$f(subMatrixEdge)}]
-    }
-
-         */
-        standardize();
-        nVectors = nV;
-        setup();
-
-    }
-
-    public void readToVector(int iVec, Vec dvec) {
-        readVector(iVec, dvec);
-    }
-
-    public void close() {
-        try {
-            raFile.close();
-        } catch (IOException e) {
-            log.warn(e.getMessage(), e);
-        }
-    }
 
     @Override
     public String getFilePath() {
         return file.getAbsolutePath();
+    }
+
+    @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        for (Map.Entry<String, JeolPar> par : parMap.entrySet()) {
+            vendorPars.add(new VendorPar(par.getKey(), par.getValue().getString()));
+        }
+        for (int i = 0; i < nDim; i++) {
+            VendorPar axPar = new VendorPar("dtype," + (i + 1), axes[i].type.toString());
+            vendorPars.add(axPar);
+            VendorPar sPar = new VendorPar("sections," + (i + 1), String.valueOf(axes[i].getSectionCount()));
+            vendorPars.add(sPar);
+            VendorPar sizePar = new VendorPar("size," + (i + 1), String.valueOf(axes[i].nPoints));
+            vendorPars.add(sizePar);
+        }
+        return vendorPars;
     }
 
     @Override
@@ -169,20 +139,8 @@ public class JeolDelta implements NMRData {
     }
 
     @Override
-    public List<VendorPar> getPars() {
-        List<VendorPar> vendorPars = new ArrayList<>();
-        for (Map.Entry<String, JeolPar> par : parMap.entrySet()) {
-            vendorPars.add(new VendorPar(par.getKey(), par.getValue().getString()));
-        }
-        for (int i = 0; i < nDim; i++) {
-            VendorPar axPar = new VendorPar("dtype," + (i + 1), axes[i].type.toString());
-            vendorPars.add(axPar);
-            VendorPar sPar = new VendorPar("sections," + (i + 1), String.valueOf(axes[i].getSectionCount()));
-            vendorPars.add(sPar);
-            VendorPar sizePar = new VendorPar("size," + (i + 1), String.valueOf(axes[i].nPoints));
-            vendorPars.add(sizePar);
-        }
-        return vendorPars;
+    public String getFTType(int iDim) {
+        return "ft";
     }
 
     @Override
@@ -308,11 +266,6 @@ public class JeolDelta implements NMRData {
     }
 
     @Override
-    public String getFTType(int iDim) {
-        return "ft";
-    }
-
-    @Override
     public double[] getCoefs(int dim) {
         double dcoefs[] = {1, 0, 0, 0, 0, 0, -1, 0}; // fixme
         return dcoefs;
@@ -390,6 +343,10 @@ public class JeolDelta implements NMRData {
             names.add(name);
         }
         return names.toArray(new String[names.size()]);
+    }
+
+    public void readToVector(int iVec, Vec dvec) {
+        readVector(iVec, dvec);
     }
 
     @Override
@@ -473,10 +430,6 @@ public class JeolDelta implements NMRData {
     public void setAcqOrder(String[] acqOrder) {
     }
 
-    public double getTrim() {
-        return dspTrim;
-    }
-
     @Override
     public SampleSchedule getSampleSchedule() {
         return null;
@@ -486,19 +439,331 @@ public class JeolDelta implements NMRData {
     public void setSampleSchedule(SampleSchedule sampleSchedule) {
     }
 
-    @Override
-    public DatasetType getPreferredDatasetType() {
-        return preferredDatasetType;
+    static class JeolPar {
+
+        final String name;
+        final JeolUnits units;
+        final Number number;
+        final String string;
+
+        JeolPar(String name, Number number, JeolUnits units) {
+            this.name = name;
+            this.number = number;
+            this.units = units;
+            this.string = number.toString();
+        }
+
+        JeolPar(String name, String string) {
+            this.name = name;
+            this.number = null;
+            this.units = null;
+            this.string = string;
+        }
+
+        double getDouble() {
+            if (number != null) {
+                return number.doubleValue();
+            } else {
+                return 0.0;
+            }
+        }
+
+        int getInteger() {
+            if (number != null) {
+                return number.intValue();
+            } else {
+                return 0;
+            }
+        }
+
+        String getString() {
+            return string;
+        }
+
+        public String toString() {
+            return ">" + name + "<" + " " + string;
+        }
     }
 
-    @Override
-    public void setPreferredDatasetType(DatasetType datasetType) {
-        this.preferredDatasetType = datasetType;
+    static class JeolUnits {
+
+        final int prefix;
+        final int power;
+        final int unit;
+
+        JeolUnits(int prefix, int power, int unit) {
+            this.prefix = prefix;
+            this.power = power;
+            this.unit = unit;
+        }
+
+        static JeolUnits convert(byte b0, byte b1) {
+            int siPrefix = b0 >> 4;
+            int unitPower = b0 & 15;
+            return new JeolUnits(siPrefix, unitPower, b1);
+        }
+
+        @Override
+        public String toString() {
+            return prefix + " " + power + " " + unit;
+        }
     }
 
-    @Override
-    public List<DatasetGroupIndex> getSkipGroups() {
-        return datasetGroupIndices;
+    enum JeolPars {
+        File_Identifier(0, "a8", 1, "String", ""),
+        Endian(8, "B", 1, "Enum", ""),
+        Major_Version(9, "B", 1, "Unsigned", ""),
+        Minor_Version(10, "s", 1, "Unsigned", ""),
+        Data_Dimension_Number(12, "B", 1, "Unsigned", ""),
+        Data_Dimension_Exist(13, "b", 8, "1-Bit Boolean per axis", ""),
+        Data_Format(14, "B", 1, "Enum", ""),
+        Instrument(15, "B", 1, "Enum", ""),
+        Translate(16, "B", 8, "1-Byte Unsigned per axis", ""),
+        Data_Axis_Type(24, "B", 8, "1-Byte Enum per axis", ""),
+        Data_Units(32, "S", 8, "2-Byte Unit Structure per axis", ""),
+        Title(48, "a124", 1, "String", ""),
+        Data_Axis_Ranged(172, "b4", 8, "4-Bit Enum per axis", ""),
+        Data_Points(176, "i", 8, "4-Byte Unsigned per axis", ""),
+        Data_Offset_Start(208, "i", 8, "4-Byte Unsigned per axis", ""),
+        Data_Offset_Stop(240, "i", 8, "4-Byte Unsigned per axis", ""),
+        Data_Axis_Start(272, "d", 8, "Double per axis", ""),
+        Data_Axis_Stop(336, "d", 8, "Double per axis", ""),
+        Creation_Time(400, "T", 1, "Time Structure", ""),
+        Revision_Time(404, "T", 1, "Time Structure", ""),
+        Node_Name(408, "a16", 1, "String", ""),
+        Site(424, "a128", 1, "String", ""),
+        Author(552, "a128", 1, "String", ""),
+        Comment(680, "a128", 1, "String", ""),
+        Data_Axis_Titles(808, "a32", 8, "32-Byte String per axis", ""),
+        Base_Freq(1064, "d", 8, "Double per Axis", ""),
+        Zero_Point(1128, "d", 8, "Double per Axis", ""),
+        Reversed(1192, "b", 8, "1-Bit Boolean per axis", ""),
+        reserved(1200, "B3", 1, "Reserved", ""),
+        Annotation_Ok(1203, "b1", 1, "/8  1-Bit boolean", ""),
+        History_Used(1204, "i", 1, "Unsigned", ""),
+        History_Length(1208, "i", 1, "Unsigned", ""),
+        Param_Start(1212, "i", 1, "Unsigned", ""),
+        Param_Length(1216, "i", 1, "Unsigned", ""),
+        List_Start(1220, "i", 8, "4-Byte Unsigned per axis", "u4"),
+        List_Length(1252, "i", 8, "4-Byte Unsigned per axis", "u4"),
+        Data_Start(1284, "i", 1, "Unsigned", ""),
+        Data_Length(1288, "l", 1, "wUnsigned", ""),
+        Context_Start(1296, "l", 1, "wUnsigned", ""),
+        Context_Length(304, "i", 1, "wUnsigned", ""),
+        Annote_Start(1308, "l", 1, "wUnsigned", ""),
+        Annote_Length(1316, "i", 1, "Unsigned", ""),
+        Total_Size(1320, "l", 1, "wUnsigned", ""),
+        Unit_Location(1328, "B", 8, "1-Byte Unsigned per axis", ""),
+        Extended_Units(1336, "B24", 1, "2 12-Byte Unit Structures", "");
+
+        final int start;
+        final String type;
+        final int n;
+        final String annotation;
+        final String type2;
+
+        JeolPars(int start, String type, int n, String annotation, String type2) {
+            this.start = start;
+            this.type = type;
+            this.n = n;
+            this.annotation = annotation;
+            this.type2 = type2;
+        }
+
+        int getInteger(byte[] values) {
+            if (type.equals("B")) {
+                return values[start];
+            } else {
+                Number[] nums = convertNumber(values);
+                return nums[0].intValue();
+            }
+        }
+
+        int getInteger(byte[] values, int i) {
+            if (type.equals("B")) {
+                return values[start + i];
+            } else {
+                Number[] nums = convertNumber(values);
+                return nums[i].intValue();
+            }
+        }
+
+        Number[] convertNumber(byte[] values) {
+            // Note: method was incomplete for conversion of other datatypes and no data available at the time to check
+            // functionality so incomplete code was removed in commit 832d627beb1f505f12cbaef5210c6d75c7cf8ef0
+            return ByteConversion.convert(values, type, start, n);
+        }
+
+        String[] convertStr(byte[] values) {
+            String[] result = new String[n];
+            int nChars = Integer.parseInt(type.substring(1));
+            byte[] charBytes = new byte[nChars];
+            int length = nChars;
+            int offset = start;
+            for (int j = 0; j < n; j++) {
+                for (int i = 0; i < nChars; i++) {
+                    charBytes[i] = values[offset + i];
+                    if (charBytes[i] == 0) {
+                        length = i;
+                        break;
+                    }
+                }
+                result[j] = new String(charBytes, 0, length);
+            }
+            return result;
+        }
+
+        byte[][] convertBytes(byte[] values) {
+            if (type.length() == 1) {
+                byte[][] bytes = new byte[n][1];
+                int offset = start;
+                for (int j = 0; j < n; j++) {
+                    bytes[j][0] = values[offset];
+                    offset++;
+                }
+
+                return bytes;
+            } else {
+                int nBytes = Integer.parseInt(type.substring(1));
+                byte[][] bytes = new byte[n][nBytes];
+                int index = start;
+                for (int j = 0; j < n; j++) {
+                    for (int i = 0; i < nBytes; i++) {
+                        bytes[j][i] = values[index + i];
+                    }
+                    index += nBytes;
+                }
+                return bytes;
+            }
+        }
+
+        int[] convertBits(byte[] values) {
+            int nBits = 1;
+            if (type.length() > 1) {
+                nBits = Integer.parseInt(type.substring(1));
+            }
+            int[] bytes = new int[n];
+            for (int j = 0; j < n; j++) {
+                int offset = (j * nBits) / 8;
+                int shift = (j * nBits) % 8;
+                int bValue = values[start + offset];
+                int value = ((bValue & 0xff) >> (7 - shift)) & (int) Math.round(Math.pow(2, nBits) - 1);
+                bytes[j] = value;
+            }
+            return bytes;
+        }
+
+        void convertUnits(byte[] values) {
+            int offset = start;
+            for (int i = 0; i < n; i++) {
+                byte v0 = values[offset];
+                offset++;
+                byte v1 = values[offset];
+                offset++;
+                JeolUnits jUnit = JeolUnits.convert(v0, v1);
+            }
+
+        }
+
+        void convertTime(byte[] values) {
+            int offset = start;
+            Number[] shorts = ByteConversion.convert(values, "s", offset, 1);
+            short v0 = shorts[0].shortValue();
+            int year = ((v0 >> 9) & 127) + 1990;
+            int month = (v0 >> 5) & 15;
+            int day = (v0 >> 9) & 31;
+            offset += 2;
+            Number[] shortsF = ByteConversion.convert(values, "s", offset, 1);
+            short v1 = shorts[0].shortValue();
+            double seconds = (v1 & 0xffff) * 1.318379;
+            int hours = (int) Math.round(Math.floor(seconds / 3600));
+            seconds = Math.round(seconds - hours * 3600);
+            int minutes = (int) Math.round(Math.floor(seconds / 60));
+            seconds = Math.round(seconds - minutes * 60);
+
+        }
+
+    }
+
+    class Strip {
+
+        ByteBuffer byteBuffer;
+        DoubleBuffer doubleBuffer;
+        int start = -1;
+
+        Strip() {
+        }
+    }
+
+    static final private int[] subMatrixEdges = {8, 32, 8, 8, 4, 4, 2, 2};
+    static final String[] axisNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"}; // are these right (after Z)
+
+    public JeolDelta(final String fileName) throws IOException {
+        file = new File(fileName);
+        if (!file.exists()) {
+            throw new IOException("File " + fileName + " doesn't exist");
+        }
+
+        raFile = new RandomAccessFile(file, "r");
+        byte[] header = new byte[1360];
+        readBytes(header, 0, 1360);
+        parseHeader(header);
+        //    public JeolDeltaAxis(final int nPoints, final int subMatrixEdge, final int start, final int stop, final AxisType type) {
+
+        dataStart = JeolPars.Data_Start.getInteger(header);
+        int dataLength = JeolPars.Data_Length.getInteger(header);
+        int dataStop = dataStart + dataLength - 1;
+        nDim = JeolPars.Data_Dimension_Number.getInteger(header);
+        nPoints = JeolPars.Data_Points.convertNumber(header)[0].intValue();
+        subMatrixPointCount = subMatrixEdges[nDim - 1];
+        axes = new JeolDeltaAxis[nDim];
+        dimSizes = new int[nDim];
+        int nV = 1;
+        Number[] headerDimSizes = JeolPars.Data_Points.convertNumber(header);
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            int dimSize = headerDimSizes[iDim].intValue();
+            dimSizes[iDim] = dimSize;
+            int dType = JeolPars.Data_Axis_Type.getInteger(header, iDim);
+            axes[iDim] = new JeolDeltaAxis(iDim, dimSize, subMatrixPointCount, 0, 0, dType);
+            if (iDim > 0) {
+                nV *= dimSize * 2;
+            }
+        }
+        /*
+    for {set iDim 1} {$iDim <= $nDim} {incr iDim} {
+        set f(dataAxisType,$iDim) [$cmd get $parH Data_Axis_Type,$iDim]
+        set nPoints [$cmd get $parH Data_Points,$iDim]
+        set f(subCount,$iDim) [expr {$nPoints/$f(subMatrixEdge)}]
+    }
+
+         */
+        standardize();
+        nVectors = nV;
+        setup();
+
+    }
+
+    /**
+     * Finds FID data, given a path to search for vendor-specific files and
+     * directories.
+     *
+     * @param bpath full path for FID data
+     * @return if FID data was successfully found or not
+     */
+    public static boolean findFID(StringBuilder bpath) {
+        return bpath.toString().endsWith(".jdf");
+    }
+
+    private static boolean findFIDFiles(String dpath) {
+        return dpath.endsWith(".jdf");
+    }
+
+    public void close() {
+        try {
+            raFile.close();
+        } catch (IOException e) {
+            log.warn(e.getMessage(), e);
+        }
     }
 
     private void setup() {
@@ -524,6 +789,11 @@ public class JeolDelta implements NMRData {
         int parStart = JeolPars.Param_Start.getInteger(bytes);
         int parLength = JeolPars.Param_Length.getInteger(bytes);
         loadParams(parStart, parLength);
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
     }
 
     String getString(ByteBuffer byteBuffer, int valueStart, int nChars) {
@@ -774,275 +1044,8 @@ public class JeolDelta implements NMRData {
         return offset;
     }
 
-    /**
-     * Finds FID data, given a path to search for vendor-specific files and
-     * directories.
-     *
-     * @param bpath full path for FID data
-     * @return if FID data was successfully found or not
-     */
-    public static boolean findFID(StringBuilder bpath) {
-        return bpath.toString().endsWith(".jdf");
-    }
-
-    private static boolean findFIDFiles(String dpath) {
-        return dpath.endsWith(".jdf");
-    }
-
-    enum JeolPars {
-        File_Identifier(0, "a8", 1, "String", ""),
-        Endian(8, "B", 1, "Enum", ""),
-        Major_Version(9, "B", 1, "Unsigned", ""),
-        Minor_Version(10, "s", 1, "Unsigned", ""),
-        Data_Dimension_Number(12, "B", 1, "Unsigned", ""),
-        Data_Dimension_Exist(13, "b", 8, "1-Bit Boolean per axis", ""),
-        Data_Format(14, "B", 1, "Enum", ""),
-        Instrument(15, "B", 1, "Enum", ""),
-        Translate(16, "B", 8, "1-Byte Unsigned per axis", ""),
-        Data_Axis_Type(24, "B", 8, "1-Byte Enum per axis", ""),
-        Data_Units(32, "S", 8, "2-Byte Unit Structure per axis", ""),
-        Title(48, "a124", 1, "String", ""),
-        Data_Axis_Ranged(172, "b4", 8, "4-Bit Enum per axis", ""),
-        Data_Points(176, "i", 8, "4-Byte Unsigned per axis", ""),
-        Data_Offset_Start(208, "i", 8, "4-Byte Unsigned per axis", ""),
-        Data_Offset_Stop(240, "i", 8, "4-Byte Unsigned per axis", ""),
-        Data_Axis_Start(272, "d", 8, "Double per axis", ""),
-        Data_Axis_Stop(336, "d", 8, "Double per axis", ""),
-        Creation_Time(400, "T", 1, "Time Structure", ""),
-        Revision_Time(404, "T", 1, "Time Structure", ""),
-        Node_Name(408, "a16", 1, "String", ""),
-        Site(424, "a128", 1, "String", ""),
-        Author(552, "a128", 1, "String", ""),
-        Comment(680, "a128", 1, "String", ""),
-        Data_Axis_Titles(808, "a32", 8, "32-Byte String per axis", ""),
-        Base_Freq(1064, "d", 8, "Double per Axis", ""),
-        Zero_Point(1128, "d", 8, "Double per Axis", ""),
-        Reversed(1192, "b", 8, "1-Bit Boolean per axis", ""),
-        reserved(1200, "B3", 1, "Reserved", ""),
-        Annotation_Ok(1203, "b1", 1, "/8  1-Bit boolean", ""),
-        History_Used(1204, "i", 1, "Unsigned", ""),
-        History_Length(1208, "i", 1, "Unsigned", ""),
-        Param_Start(1212, "i", 1, "Unsigned", ""),
-        Param_Length(1216, "i", 1, "Unsigned", ""),
-        List_Start(1220, "i", 8, "4-Byte Unsigned per axis", "u4"),
-        List_Length(1252, "i", 8, "4-Byte Unsigned per axis", "u4"),
-        Data_Start(1284, "i", 1, "Unsigned", ""),
-        Data_Length(1288, "l", 1, "wUnsigned", ""),
-        Context_Start(1296, "l", 1, "wUnsigned", ""),
-        Context_Length(304, "i", 1, "wUnsigned", ""),
-        Annote_Start(1308, "l", 1, "wUnsigned", ""),
-        Annote_Length(1316, "i", 1, "Unsigned", ""),
-        Total_Size(1320, "l", 1, "wUnsigned", ""),
-        Unit_Location(1328, "B", 8, "1-Byte Unsigned per axis", ""),
-        Extended_Units(1336, "B24", 1, "2 12-Byte Unit Structures", "");
-
-        final int start;
-        final String type;
-        final int n;
-        final String annotation;
-        final String type2;
-
-        JeolPars(int start, String type, int n, String annotation, String type2) {
-            this.start = start;
-            this.type = type;
-            this.n = n;
-            this.annotation = annotation;
-            this.type2 = type2;
-        }
-
-        int getInteger(byte[] values) {
-            if (type.equals("B")) {
-                return values[start];
-            } else {
-                Number[] nums = convertNumber(values);
-                return nums[0].intValue();
-            }
-        }
-
-        int getInteger(byte[] values, int i) {
-            if (type.equals("B")) {
-                return values[start + i];
-            } else {
-                Number[] nums = convertNumber(values);
-                return nums[i].intValue();
-            }
-        }
-
-        Number[] convertNumber(byte[] values) {
-            // Note: method was incomplete for conversion of other datatypes and no data available at the time to check
-            // functionality so incomplete code was removed in commit 832d627beb1f505f12cbaef5210c6d75c7cf8ef0
-            return ByteConversion.convert(values, type, start, n);
-        }
-
-        String[] convertStr(byte[] values) {
-            String[] result = new String[n];
-            int nChars = Integer.parseInt(type.substring(1));
-            byte[] charBytes = new byte[nChars];
-            int length = nChars;
-            int offset = start;
-            for (int j = 0; j < n; j++) {
-                for (int i = 0; i < nChars; i++) {
-                    charBytes[i] = values[offset + i];
-                    if (charBytes[i] == 0) {
-                        length = i;
-                        break;
-                    }
-                }
-                result[j] = new String(charBytes, 0, length);
-            }
-            return result;
-        }
-
-        byte[][] convertBytes(byte[] values) {
-            if (type.length() == 1) {
-                byte[][] bytes = new byte[n][1];
-                int offset = start;
-                for (int j = 0; j < n; j++) {
-                    bytes[j][0] = values[offset];
-                    offset++;
-                }
-
-                return bytes;
-            } else {
-                int nBytes = Integer.parseInt(type.substring(1));
-                byte[][] bytes = new byte[n][nBytes];
-                int index = start;
-                for (int j = 0; j < n; j++) {
-                    for (int i = 0; i < nBytes; i++) {
-                        bytes[j][i] = values[index + i];
-                    }
-                    index += nBytes;
-                }
-                return bytes;
-            }
-        }
-
-        int[] convertBits(byte[] values) {
-            int nBits = 1;
-            if (type.length() > 1) {
-                nBits = Integer.parseInt(type.substring(1));
-            }
-            int[] bytes = new int[n];
-            for (int j = 0; j < n; j++) {
-                int offset = (j * nBits) / 8;
-                int shift = (j * nBits) % 8;
-                int bValue = values[start + offset];
-                int value = ((bValue & 0xff) >> (7 - shift)) & (int) Math.round(Math.pow(2, nBits) - 1);
-                bytes[j] = value;
-            }
-            return bytes;
-        }
-
-        void convertUnits(byte[] values) {
-            int offset = start;
-            for (int i = 0; i < n; i++) {
-                byte v0 = values[offset];
-                offset++;
-                byte v1 = values[offset];
-                offset++;
-                JeolUnits jUnit = JeolUnits.convert(v0, v1);
-            }
-
-        }
-
-        void convertTime(byte[] values) {
-            int offset = start;
-            Number[] shorts = ByteConversion.convert(values, "s", offset, 1);
-            short v0 = shorts[0].shortValue();
-            int year = ((v0 >> 9) & 127) + 1990;
-            int month = (v0 >> 5) & 15;
-            int day = (v0 >> 9) & 31;
-            offset += 2;
-            Number[] shortsF = ByteConversion.convert(values, "s", offset, 1);
-            short v1 = shorts[0].shortValue();
-            double seconds = (v1 & 0xffff) * 1.318379;
-            int hours = (int) Math.round(Math.floor(seconds / 3600));
-            seconds = Math.round(seconds - hours * 3600);
-            int minutes = (int) Math.round(Math.floor(seconds / 60));
-            seconds = Math.round(seconds - minutes * 60);
-
-        }
-
-    }
-
-    static class JeolPar {
-
-        final String name;
-        final JeolUnits units;
-        final Number number;
-        final String string;
-
-        JeolPar(String name, Number number, JeolUnits units) {
-            this.name = name;
-            this.number = number;
-            this.units = units;
-            this.string = number.toString();
-        }
-
-        JeolPar(String name, String string) {
-            this.name = name;
-            this.number = null;
-            this.units = null;
-            this.string = string;
-        }
-
-        double getDouble() {
-            if (number != null) {
-                return number.doubleValue();
-            } else {
-                return 0.0;
-            }
-        }
-
-        int getInteger() {
-            if (number != null) {
-                return number.intValue();
-            } else {
-                return 0;
-            }
-        }
-
-        String getString() {
-            return string;
-        }
-
-        public String toString() {
-            return ">" + name + "<" + " " + string;
-        }
-    }
-
-    static class JeolUnits {
-
-        final int prefix;
-        final int power;
-        final int unit;
-
-        JeolUnits(int prefix, int power, int unit) {
-            this.prefix = prefix;
-            this.power = power;
-            this.unit = unit;
-        }
-
-        @Override
-        public String toString() {
-            return prefix + " " + power + " " + unit;
-        }
-
-        static JeolUnits convert(byte b0, byte b1) {
-            int siPrefix = b0 >> 4;
-            int unitPower = b0 & 15;
-            return new JeolUnits(siPrefix, unitPower, b1);
-        }
-    }
-
-    class Strip {
-
-        ByteBuffer byteBuffer;
-        DoubleBuffer doubleBuffer;
-        int start = -1;
-
-        Strip() {
-        }
+    public double getTrim() {
+        return dspTrim;
     }
 
 }

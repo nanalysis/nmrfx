@@ -51,6 +51,51 @@ public class PDBFile {
     public PDBFile() {
     }
 
+    public static boolean isIUPACMode() {
+        return iupacMode;
+    }
+
+    public static void setIUPACMode(final boolean newValue) {
+        iupacMode = newValue;
+    }
+
+    /**
+     * setLocalResLibDir is used to specify a directory of user generated
+     * residues.
+     *
+     * @param localDir provides a path to the directory
+     *                 <p>
+     *                 When specifying a sequence, if the residue name is not found within the
+     *                 standard library, this path will be parsed for the necessary file.
+     */
+    public static void setLocalResLibDir(final String dirName) {
+        localReslibDir = dirName;
+    }
+
+    public static String getLocalReslibDir() {
+        return localReslibDir;
+    }
+
+    public static void putReslibDir(final String name, final String dirName) {
+        reslibMap.put(name, dirName);
+    }
+
+    public static String getReslibDir(final String name) {
+        if ((name == null) || name.equals("")) {
+            return getReslibDir();
+        } else {
+            return reslibMap.get(name);
+        }
+    }
+
+    public static String getReslibDir() {
+        if (iupacMode) {
+            return reslibMap.get("IUPAC");
+        } else {
+            return reslibMap.get("XPLOR");
+        }
+    }
+
     public MoleculeBase read(String fileName) throws MoleculeIOException {
         return read(fileName, false);
     }
@@ -194,6 +239,13 @@ public class PDBFile {
             log.warn(e.getMessage(), e);
             return molecule;
         }
+    }
+
+    // fixme change capping atom names to new PDB standard H,H2  O,OXT,HXT
+    public static void capPolymer(Polymer polymer) {
+        polymer.getFirstResidue().capFirstResidue("");
+        polymer.getLastResidue().capLastResidue("");
+
     }
 
     public ArrayList<String> readSequence(String fileName, boolean listMode, int structureNum)
@@ -873,58 +925,6 @@ public class PDBFile {
             log.warn("Error reading \"{}\" : {}", fileName, e.getMessage(), e);
             return false;
         }
-    }
-
-    public static boolean isIUPACMode() {
-        return iupacMode;
-    }
-
-    public static void setIUPACMode(final boolean newValue) {
-        iupacMode = newValue;
-    }
-
-    /**
-     * setLocalResLibDir is used to specify a directory of user generated
-     * residues.
-     *
-     * @param localDir provides a path to the directory
-     *                 <p>
-     *                 When specifying a sequence, if the residue name is not found within the
-     *                 standard library, this path will be parsed for the necessary file.
-     */
-    public static void setLocalResLibDir(final String dirName) {
-        localReslibDir = dirName;
-    }
-
-    public static String getLocalReslibDir() {
-        return localReslibDir;
-    }
-
-    public static void putReslibDir(final String name, final String dirName) {
-        reslibMap.put(name, dirName);
-    }
-
-    public static String getReslibDir(final String name) {
-        if ((name == null) || name.equals("")) {
-            return getReslibDir();
-        } else {
-            return reslibMap.get(name);
-        }
-    }
-
-    public static String getReslibDir() {
-        if (iupacMode) {
-            return reslibMap.get("IUPAC");
-        } else {
-            return reslibMap.get("XPLOR");
-        }
-    }
-
-    // fixme change capping atom names to new PDB standard H,H2  O,OXT,HXT
-    public static void capPolymer(Polymer polymer) {
-        polymer.getFirstResidue().capFirstResidue("");
-        polymer.getLastResidue().capLastResidue("");
-
     }
 
     public static Compound readResidue(String fileName, String fileContent, MoleculeBase molecule, String coordSetName) throws MoleculeIOException {

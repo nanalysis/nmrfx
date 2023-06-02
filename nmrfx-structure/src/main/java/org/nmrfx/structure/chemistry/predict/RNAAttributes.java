@@ -27,13 +27,13 @@ public class RNAAttributes {
         }
     }
 
-    public static List<String> getTypes() {
-        return types;
-    }
-
     public static void setTypes(List<String> newTypes) {
         types.clear();
         types.addAll(newTypes);
+    }
+
+    public static List<String> getTypes() {
+        return types;
     }
 
     public static List<String> getAtomSources() {

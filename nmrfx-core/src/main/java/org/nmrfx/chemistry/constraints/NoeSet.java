@@ -31,9 +31,125 @@ import java.util.Map.Entry;
  */
 public class NoeSet implements ConstraintSet, Iterable {
 
+    private final MolecularConstraints molecularConstraints;
+
+    private final List<Noe> constraints = new ArrayList<>(64);
+    private final Map<Peak, List<Noe>> peakMap = new TreeMap<>();
+    private final String name;
     public static Peak lastPeakWritten = null;
     public static int memberID = 0;
     public static int ID = 0;
+    private boolean calibratable = true;
+    private boolean dirty = true;
+
+    private NoeSet(MolecularConstraints molecularConstraints,
+                   String name) {
+        this.name = name;
+        this.molecularConstraints = molecularConstraints;
+    }
+
+    public static NoeSet newSet(MolecularConstraints molecularConstraints,
+                                String name) {
+        NoeSet noeSet = new NoeSet(molecularConstraints,
+                name);
+        return noeSet;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getCategory() {
+        return "general_distance_constraints";
+    }
+
+    @Override
+    public String getListType() {
+        return "_Gen_dist_constraint_list";
+    }
+
+    @Override
+    public String getType() {
+        return "NOE";
+    }
+
+    @Override
+    public int getSize() {
+        return constraints.size();
+    }
+
+    @Override
+    public void clear() {
+        constraints.clear();
+        peakMap.clear();
+    }
+
+    @Override
+    public void add(Constraint constraint) {
+        Noe noe = (Noe) constraint;
+        noe.setID(constraints.size());
+        constraints.add(noe);
+        List<Noe> noeList = getConstraintsForPeak(noe.getPeak());
+        noeList.add(noe);
+        dirty = true;
+    }
+
+    public List<Noe> getConstraints() {
+        return constraints;
+    }
+
+    @Override
+    public Noe get(int i) {
+        return constraints.get(i);
+    }
+
+    @Override
+    public MolecularConstraints getMolecularConstraints() {
+        return molecularConstraints;
+    }
+
+    @Override
+    public Iterator iterator() {
+        return constraints.iterator();
+    }
+
+    public List<Noe> getConstraintsForPeak(Peak peak) {
+        List<Noe> noeList = peakMap.get(peak);
+        if (noeList == null) {
+            noeList = new ArrayList<>();
+            peakMap.put(peak, noeList);
+        }
+        return noeList;
+    }
+
+    public Set<Entry<Peak, List<Noe>>> getPeakMapEntries() {
+        return peakMap.entrySet();
+    }
+
+    @Override
+    public boolean isDirty() {
+        return dirty;
+    }
+
+    @Override
+    public void setDirty() {
+        dirty = true;
+    }
+
+    public void setDirty(boolean state) {
+        dirty = state;
+    }
+
+    public boolean isCalibratable() {
+        return calibratable;
+    }
+
+    public void setCalibratable(final boolean state) {
+        calibratable = state;
+    }
+
     static String[] noeLoopStrings = {
             "_Gen_dist_constraint.ID",
             "_Gen_dist_constraint.Member_ID",
@@ -69,79 +185,6 @@ public class NoeSet implements ConstraintSet, Iterable {
             "_Gen_dist_constraint.Spectral_peak_list_ID",
             "_Gen_dist_constraint.Entry_ID",
             "_Gen_dist_constraint.Gen_dist_constraint_list_ID",};
-    private final MolecularConstraints molecularConstraints;
-    private final List<Noe> constraints = new ArrayList<>(64);
-    private final Map<Peak, List<Noe>> peakMap = new TreeMap<>();
-    private final String name;
-    private boolean calibratable = true;
-    private boolean dirty = true;
-
-    private NoeSet(MolecularConstraints molecularConstraints,
-                   String name) {
-        this.name = name;
-        this.molecularConstraints = molecularConstraints;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public int getSize() {
-        return constraints.size();
-    }
-
-    @Override
-    public void clear() {
-        constraints.clear();
-        peakMap.clear();
-    }
-
-    @Override
-    public void add(Constraint constraint) {
-        Noe noe = (Noe) constraint;
-        noe.setID(constraints.size());
-        constraints.add(noe);
-        List<Noe> noeList = getConstraintsForPeak(noe.getPeak());
-        noeList.add(noe);
-        dirty = true;
-    }
-
-    @Override
-    public Noe get(int i) {
-        return constraints.get(i);
-    }
-
-    @Override
-    public void setDirty() {
-        dirty = true;
-    }
-
-    @Override
-    public boolean isDirty() {
-        return dirty;
-    }
-
-    @Override
-    public Iterator iterator() {
-        return constraints.iterator();
-    }
-
-    @Override
-    public String getType() {
-        return "NOE";
-    }
-
-    @Override
-    public String getCategory() {
-        return "general_distance_constraints";
-    }
-
-    @Override
-    public String getListType() {
-        return "_Gen_dist_constraint_list";
-    }
 
     @Override
     public String[] getLoopStrings() {
@@ -153,40 +196,6 @@ public class NoeSet implements ConstraintSet, Iterable {
         memberID = -1;
         lastPeakWritten = null;
         ID = 0;
-    }
-
-    @Override
-    public MolecularConstraints getMolecularConstraints() {
-        return molecularConstraints;
-    }
-
-    public void setDirty(boolean state) {
-        dirty = state;
-    }
-
-    public List<Noe> getConstraints() {
-        return constraints;
-    }
-
-    public List<Noe> getConstraintsForPeak(Peak peak) {
-        List<Noe> noeList = peakMap.get(peak);
-        if (noeList == null) {
-            noeList = new ArrayList<>();
-            peakMap.put(peak, noeList);
-        }
-        return noeList;
-    }
-
-    public Set<Entry<Peak, List<Noe>>> getPeakMapEntries() {
-        return peakMap.entrySet();
-    }
-
-    public boolean isCalibratable() {
-        return calibratable;
-    }
-
-    public void setCalibratable(final boolean state) {
-        calibratable = state;
     }
 
     public void writeNMRFxFile(File file) throws IOException {
@@ -206,13 +215,6 @@ public class NoeSet implements ConstraintSet, Iterable {
                 }
             }
         }
-    }
-
-    public static NoeSet newSet(MolecularConstraints molecularConstraints,
-                                String name) {
-        NoeSet noeSet = new NoeSet(molecularConstraints,
-                name);
-        return noeSet;
     }
 
 

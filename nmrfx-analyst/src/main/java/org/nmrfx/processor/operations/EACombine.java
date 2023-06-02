@@ -31,13 +31,13 @@ public class EACombine extends Operation {
 
     static private final double[] echoAntiEchoCoefs = {1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0};
 
-    public EACombine() {
-    }
-
     @Override
     public EACombine eval(Vec vector) throws ProcessingException {
         eaCombine(vector);
         return this;
+    }
+
+    public EACombine() {
     }
 
     /**

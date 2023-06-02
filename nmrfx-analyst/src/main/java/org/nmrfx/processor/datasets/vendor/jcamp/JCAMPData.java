@@ -53,11 +53,64 @@ public class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
     private static final double AMBIENT_TEMPERATURE = 298.0; // in K, around 25° C
     private static final double SCALE = 1.0;
+
+    /**
+     * JCamp-defined acquisition scheme.
+     */
+    enum AcquisitionScheme {
+        UNDEFINED("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
+        NOT_PHASE_SENSITIVE("sep", new double[0]),
+        TPPI("real", new double[0]),
+        STATES("hyper-r", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
+        STATES_TPPI("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
+        ECHO_ANTIECHO("echo-antiecho-r", new double[]{1, 0, -1, 0, 0, 1, 0, 1}),
+        QSEQ("real", new double[0]);
+
+        public final String symbolicCoefs;
+        public final double[] coefs;
+
+        AcquisitionScheme(String symbolicCoefs, double[] coefs) {
+            this.symbolicCoefs = symbolicCoefs;
+            this.coefs = coefs;
+        }
+    }
+
+    /**
+     * Bruker-specific acquisition scheme. Used only when the standard AcquisitionScheme isn't defined.
+     */
+    enum FnMode {
+        UNDEFINED(AcquisitionScheme.UNDEFINED),
+        QF(AcquisitionScheme.NOT_PHASE_SENSITIVE),
+        QSEQ(AcquisitionScheme.QSEQ),// Quadrature detection in sequential mode
+        TPPI(AcquisitionScheme.TPPI),
+        STATES(AcquisitionScheme.STATES),
+        STATES_TPPI(AcquisitionScheme.STATES_TPPI),
+        ECHO_ANTIECHO(AcquisitionScheme.ECHO_ANTIECHO),
+        QF_NO_FREQ(AcquisitionScheme.NOT_PHASE_SENSITIVE);
+
+        public final AcquisitionScheme acquisitionScheme;
+
+        FnMode(AcquisitionScheme scheme) {
+            this.acquisitionScheme = scheme;
+        }
+    }
+
+    /**
+     * Bruker-specific $WDW values. Used to select a specific apodization.
+     */
+    private enum Wdw {
+        NO, EM, GM, SINE, QSINE, TRAP, USER, SINC, QSINC, TRAF, TRAFS
+    }
+
     private final String path;
     private final JCampDocument document;
     private final JCampBlock block;
     private final double[][] real;
     private final double[][] imaginary;
+
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
+    private SampleSchedule sampleSchedule = null; // used for NUS acquisition - not supported by JCamp directly
+
     // these values can be overridden from the outside, we need to cache them so that we can
     // either read them from JCamp or take the user-defined value
     private final Map<Integer, Double> sf = new HashMap<>();
@@ -65,8 +118,6 @@ public class JCAMPData implements NMRData {
     private final Map<Integer, Double> ref = new HashMap<>();
     private final Map<Integer, Integer> size = new HashMap<>();
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
-    private DatasetType preferredDatasetType = DatasetType.NMRFX;
-    private SampleSchedule sampleSchedule = null; // used for NUS acquisition - not supported by JCamp directly
 
     public JCAMPData(String path) throws IOException {
         this.path = path;
@@ -114,6 +165,24 @@ public class JCAMPData implements NMRData {
     @Override
     public String getFilePath() {
         return path;
+    }
+
+    private JCampRecord getRecord(String name) {
+        // parse dimension from record name for multi-dimensional records
+        var items = name.split(":");
+        int index = 0;
+        if (items.length == 2) {
+            name = items[0];
+            index = Integer.parseInt(items[1]) - 1;
+        }
+
+        // try block-level records first
+        try {
+            return block.get(name, index);
+        } catch (NoSuchElementException e) {
+            // then try document-level records if they were not defined by the block
+            return document.get(name, index);
+        }
     }
 
     @Override
@@ -181,6 +250,19 @@ public class JCAMPData implements NMRData {
         return size.computeIfAbsent(dim, this::extractSize);
     }
 
+    private int extractSize(int dim) {
+        if (dim == 0) {
+            return getNPoints();
+        } else if (dim == 1) {
+            // size is expressed in number of complex pairs
+            // so if the dimension is complex, we should divide per two
+            int factor = isComplex(dim) ? 2 : 1;
+            return getNVectors() / factor;
+        } else {
+            return 1;
+        }
+    }
+
     @Override
     public void setSize(int dim, int value) {
         size.put(dim, value);
@@ -211,6 +293,11 @@ public class JCAMPData implements NMRData {
         return sf.computeIfAbsent(dim, this::extractSF);
     }
 
+    private double extractSF(int dim) {
+        Label label = getSFLabel(dim).orElseThrow(() -> new IllegalStateException("Unknown frequency, unable to extract SF for dimension " + dim));
+        return block.get(label, dim).getDouble();
+    }
+
     @Override
     public void setSF(int dim, double value) {
         sf.put(dim, value);
@@ -222,8 +309,48 @@ public class JCAMPData implements NMRData {
     }
 
     @Override
+    public String[] getSFNames() {
+        String[] names = new String[getNDim()];
+        Arrays.fill(names, "");
+        for (int dim = 0; dim < names.length; dim++) {
+            // multi-dimensional records are suffixed by ":dim", starting at 1.
+            String suffix = dim > 0 ? ":" + (dim + 1) : "";
+            names[dim] = getSFLabel(dim)
+                    .map(Label::normalized)
+                    .map(name -> name + suffix)
+                    .orElse("");
+        }
+        return names;
+    }
+
+    private Optional<Label> getSFLabel(int dim) {
+        return Stream.of($SFO1, _OBSERVE_FREQUENCY)
+                .filter(label -> block.optional(label, dim).isPresent())
+                .findFirst();
+    }
+
+    @Override
     public synchronized double getSW(int dim) {
         return sw.computeIfAbsent(dim, this::extractSW);
+    }
+
+    private double extractSW(int dim) {
+        // try from specific SW record first
+        // if none is present, then try to guess from first/last timestamps
+
+        Optional<Label> label = getSWLabel(dim);
+        if (label.isPresent()) {
+            return block.get(label.get(), dim).getDouble();
+        } else if (dim == 0 && block.contains(FIRST) && block.contains(LAST)) {
+            log.debug("Trying to guess SW from FIRST and LAST records for dimension {}", dim);
+            double first = block.get(FIRST).getDoubles()[0];
+            double last = block.get(LAST).getDoubles()[0];
+            double time = Math.abs(last - first);
+            int nbPoints = real[0].length;
+            return nbPoints / time;
+        } else {
+            throw new IllegalStateException("Unknown spectral width, unable to extract SW for dimension " + dim);
+        }
     }
 
     @Override
@@ -237,8 +364,36 @@ public class JCAMPData implements NMRData {
     }
 
     @Override
+    public String[] getSWNames() {
+        String[] names = new String[getNDim()];
+        Arrays.fill(names, "");
+
+        for (int dim = 0; dim < names.length; dim++) {
+            // multi-dimensional records are suffixed by ":dim", starting at 1.
+            String suffix = dim > 0 ? ":" + (dim + 1) : "";
+            names[dim] = getSWLabel(dim)
+                    .map(Label::normalized)
+                    .map(name -> name + suffix)
+                    .orElse("");
+        }
+
+        return names;
+    }
+
+    private Optional<Label> getSWLabel(int dim) {
+        return Stream.of($SW_H)
+                .filter(label -> block.optional(label, dim).isPresent())
+                .findFirst();
+    }
+
+    @Override
     public synchronized double getRef(int dim) {
         return ref.computeIfAbsent(dim, this::extractRef);
+    }
+
+    private double extractRef(int dim) {
+        double offsetHz = block.optional($O1, dim).map(JCampRecord::getDouble).orElse(0d);
+        return offsetHz / getSF(dim);
     }
 
     @Override
@@ -300,11 +455,6 @@ public class JCAMPData implements NMRData {
     }
 
     @Override
-    public boolean getNegatePairs(int dim) {
-        return "negate".equals(getFTType(dim));
-    }
-
-    @Override
     public String getFTType(int dim) {
         // known values: "ft", "rft" (real), "negate" (hypercomplex)
 
@@ -322,23 +472,6 @@ public class JCAMPData implements NMRData {
         }
 
         return isComplex(dim) ? "ft" : "rft";
-    }
-
-    @Override
-    public boolean getNegateImag(int dim) {
-        if (dim == 0) {
-            return false;
-        }
-
-        if ("sep".equals(getSymbolicCoefs(dim))) {
-            return false;
-        }
-        boolean reverse = block.optional($REVERSE, dim).map(JCampRecord::getString)
-                .map("yes"::equalsIgnoreCase)
-                .orElse(true);
-        AcquisitionScheme scheme = getAcquisitionScheme();
-        // For certain schemes use the opposite of reverse
-        return (scheme == AcquisitionScheme.ECHO_ANTIECHO || scheme == AcquisitionScheme.STATES_TPPI) != reverse;
     }
 
     @Override
@@ -476,38 +609,6 @@ public class JCAMPData implements NMRData {
     }
 
     @Override
-    public String[] getSFNames() {
-        String[] names = new String[getNDim()];
-        Arrays.fill(names, "");
-        for (int dim = 0; dim < names.length; dim++) {
-            // multi-dimensional records are suffixed by ":dim", starting at 1.
-            String suffix = dim > 0 ? ":" + (dim + 1) : "";
-            names[dim] = getSFLabel(dim)
-                    .map(Label::normalized)
-                    .map(name -> name + suffix)
-                    .orElse("");
-        }
-        return names;
-    }
-
-    @Override
-    public String[] getSWNames() {
-        String[] names = new String[getNDim()];
-        Arrays.fill(names, "");
-
-        for (int dim = 0; dim < names.length; dim++) {
-            // multi-dimensional records are suffixed by ":dim", starting at 1.
-            String suffix = dim > 0 ? ":" + (dim + 1) : "";
-            names[dim] = getSWLabel(dim)
-                    .map(Label::normalized)
-                    .map(name -> name + suffix)
-                    .orElse("");
-        }
-
-        return names;
-    }
-
-    @Override
     public String[] getLabelNames() {
         int nDim = getNDim();
 
@@ -522,9 +623,8 @@ public class JCAMPData implements NMRData {
         return names.toArray(new String[0]);
     }
 
-    @Override
-    public long getDate() {
-        return block.getDate().getTime() / 1000;
+    private int getGroupDelay() {
+        return block.optional($GRPDLY).map(JCampRecord::getInt).orElse(0);
     }
 
     @Override
@@ -585,132 +685,6 @@ public class JCAMPData implements NMRData {
         }
     }
 
-    @Override
-    public void resetAcqOrder() {
-        // Not implemented: changing acq order isn't supported.
-    }
-
-    @Override
-    public String[] getAcqOrder() {
-        if (getNDim() == 1) {
-            return new String[0];
-        } else {
-            return new String[]{"p1", "d1"};
-        }
-    }
-
-    @Override
-    public void setAcqOrder(String[] newOrder) {
-        // doesn't support changing the order.
-        // this is mostly useful for 3D, which isn't supported by JCamp
-    }
-
-    @Override
-    public boolean isFID() {
-        return block.getDataType().isFID();
-    }
-
-    @Override
-    public SampleSchedule getSampleSchedule() {
-        return sampleSchedule;
-    }
-
-    @Override
-    public void setSampleSchedule(SampleSchedule sampleSchedule) {
-        this.sampleSchedule = sampleSchedule;
-    }
-
-    @Override
-    public DatasetType getPreferredDatasetType() {
-        return preferredDatasetType;
-    }
-
-    @Override
-    public void setPreferredDatasetType(DatasetType datasetType) {
-        this.preferredDatasetType = datasetType;
-    }
-
-    @Override
-    public List<DatasetGroupIndex> getSkipGroups() {
-        return datasetGroupIndices;
-    }
-
-    private JCampRecord getRecord(String name) {
-        // parse dimension from record name for multi-dimensional records
-        var items = name.split(":");
-        int index = 0;
-        if (items.length == 2) {
-            name = items[0];
-            index = Integer.parseInt(items[1]) - 1;
-        }
-
-        // try block-level records first
-        try {
-            return block.get(name, index);
-        } catch (NoSuchElementException e) {
-            // then try document-level records if they were not defined by the block
-            return document.get(name, index);
-        }
-    }
-
-    private int extractSize(int dim) {
-        if (dim == 0) {
-            return getNPoints();
-        } else if (dim == 1) {
-            // size is expressed in number of complex pairs
-            // so if the dimension is complex, we should divide per two
-            int factor = isComplex(dim) ? 2 : 1;
-            return getNVectors() / factor;
-        } else {
-            return 1;
-        }
-    }
-
-    private double extractSF(int dim) {
-        Label label = getSFLabel(dim).orElseThrow(() -> new IllegalStateException("Unknown frequency, unable to extract SF for dimension " + dim));
-        return block.get(label, dim).getDouble();
-    }
-
-    private Optional<Label> getSFLabel(int dim) {
-        return Stream.of($SFO1, _OBSERVE_FREQUENCY)
-                .filter(label -> block.optional(label, dim).isPresent())
-                .findFirst();
-    }
-
-    private double extractSW(int dim) {
-        // try from specific SW record first
-        // if none is present, then try to guess from first/last timestamps
-
-        Optional<Label> label = getSWLabel(dim);
-        if (label.isPresent()) {
-            return block.get(label.get(), dim).getDouble();
-        } else if (dim == 0 && block.contains(FIRST) && block.contains(LAST)) {
-            log.debug("Trying to guess SW from FIRST and LAST records for dimension {}", dim);
-            double first = block.get(FIRST).getDoubles()[0];
-            double last = block.get(LAST).getDoubles()[0];
-            double time = Math.abs(last - first);
-            int nbPoints = real[0].length;
-            return nbPoints / time;
-        } else {
-            throw new IllegalStateException("Unknown spectral width, unable to extract SW for dimension " + dim);
-        }
-    }
-
-    private Optional<Label> getSWLabel(int dim) {
-        return Stream.of($SW_H)
-                .filter(label -> block.optional(label, dim).isPresent())
-                .findFirst();
-    }
-
-    private double extractRef(int dim) {
-        double offsetHz = block.optional($O1, dim).map(JCampRecord::getDouble).orElse(0d);
-        return offsetHz / getSF(dim);
-    }
-
-    private int getGroupDelay() {
-        return block.optional($GRPDLY).map(JCampRecord::getInt).orElse(0);
-    }
-
     public void readIndirectVector(int index, Vec dvec) {
         int n = getSize(1);
 
@@ -738,6 +712,83 @@ public class JCAMPData implements NMRData {
         dvec.centerFreq = getSF(1);
 
         dvec.setRefValue(getRef(1));
+    }
+
+    @Override
+    public void resetAcqOrder() {
+        // Not implemented: changing acq order isn't supported.
+    }
+
+    @Override
+    public String[] getAcqOrder() {
+        if (getNDim() == 1) {
+            return new String[0];
+        } else {
+            return new String[]{"p1", "d1"};
+        }
+    }
+
+    @Override
+    public void setAcqOrder(String[] newOrder) {
+        // doesn't support changing the order.
+        // this is mostly useful for 3D, which isn't supported by JCamp
+    }
+
+    @Override
+    public SampleSchedule getSampleSchedule() {
+        return sampleSchedule;
+    }
+
+    @Override
+    public void setSampleSchedule(SampleSchedule sampleSchedule) {
+        this.sampleSchedule = sampleSchedule;
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
+    }
+
+    @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
+    }
+
+    @Override
+    public boolean getNegatePairs(int dim) {
+        return "negate".equals(getFTType(dim));
+    }
+
+    @Override
+    public boolean getNegateImag(int dim) {
+        if (dim == 0) {
+            return false;
+        }
+
+        if ("sep".equals(getSymbolicCoefs(dim))) {
+            return false;
+        }
+        boolean reverse = block.optional($REVERSE, dim).map(JCampRecord::getString)
+                .map("yes"::equalsIgnoreCase)
+                .orElse(true);
+        AcquisitionScheme scheme = getAcquisitionScheme();
+        // For certain schemes use the opposite of reverse
+        return (scheme == AcquisitionScheme.ECHO_ANTIECHO || scheme == AcquisitionScheme.STATES_TPPI) != reverse;
+    }
+
+    @Override
+    public long getDate() {
+        return block.getDate().getTime() / 1000;
+    }
+
+    @Override
+    public boolean isFID() {
+        return block.getDataType().isFID();
     }
 
     @Override
@@ -779,6 +830,29 @@ public class JCAMPData implements NMRData {
             return Wdw.NO;
 
         return Wdw.values()[value];
+    }
+
+    /**
+     * Check whether the path contains a JCamp FID file
+     *
+     * @param bpath the path to check
+     * @return true if the path correspond to a JCamp FID file.
+     */
+    public static boolean findFID(StringBuilder bpath) {
+        String lower = bpath.toString().toLowerCase();
+        return MATCHING_EXTENSIONS.stream().anyMatch(lower::endsWith);
+    }
+
+
+    /**
+     * Check whether the path contains a JCamp dataset file
+     *
+     * @param bpath the path to check
+     * @return true if the path correspond to a JCamp dataset file.
+     */
+    public static boolean findData(StringBuilder bpath) {
+        // FID and Dataset have the same extensions
+        return findFID(bpath);
     }
 
     /**
@@ -866,76 +940,5 @@ public class JCAMPData implements NMRData {
         dataset.setDataType(0);
         dataset.writeHeader();
         return dataset;
-    }
-
-    /**
-     * Check whether the path contains a JCamp FID file
-     *
-     * @param bpath the path to check
-     * @return true if the path correspond to a JCamp FID file.
-     */
-    public static boolean findFID(StringBuilder bpath) {
-        String lower = bpath.toString().toLowerCase();
-        return MATCHING_EXTENSIONS.stream().anyMatch(lower::endsWith);
-    }
-
-
-    /**
-     * Check whether the path contains a JCamp dataset file
-     *
-     * @param bpath the path to check
-     * @return true if the path correspond to a JCamp dataset file.
-     */
-    public static boolean findData(StringBuilder bpath) {
-        // FID and Dataset have the same extensions
-        return findFID(bpath);
-    }
-
-    /**
-     * JCamp-defined acquisition scheme.
-     */
-    enum AcquisitionScheme {
-        UNDEFINED("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        NOT_PHASE_SENSITIVE("sep", new double[0]),
-        TPPI("real", new double[0]),
-        STATES("hyper-r", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        STATES_TPPI("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        ECHO_ANTIECHO("echo-antiecho-r", new double[]{1, 0, -1, 0, 0, 1, 0, 1}),
-        QSEQ("real", new double[0]);
-
-        public final String symbolicCoefs;
-        public final double[] coefs;
-
-        AcquisitionScheme(String symbolicCoefs, double[] coefs) {
-            this.symbolicCoefs = symbolicCoefs;
-            this.coefs = coefs;
-        }
-    }
-
-    /**
-     * Bruker-specific acquisition scheme. Used only when the standard AcquisitionScheme isn't defined.
-     */
-    enum FnMode {
-        UNDEFINED(AcquisitionScheme.UNDEFINED),
-        QF(AcquisitionScheme.NOT_PHASE_SENSITIVE),
-        QSEQ(AcquisitionScheme.QSEQ),// Quadrature detection in sequential mode
-        TPPI(AcquisitionScheme.TPPI),
-        STATES(AcquisitionScheme.STATES),
-        STATES_TPPI(AcquisitionScheme.STATES_TPPI),
-        ECHO_ANTIECHO(AcquisitionScheme.ECHO_ANTIECHO),
-        QF_NO_FREQ(AcquisitionScheme.NOT_PHASE_SENSITIVE);
-
-        public final AcquisitionScheme acquisitionScheme;
-
-        FnMode(AcquisitionScheme scheme) {
-            this.acquisitionScheme = scheme;
-        }
-    }
-
-    /**
-     * Bruker-specific $WDW values. Used to select a specific apodization.
-     */
-    private enum Wdw {
-        NO, EM, GM, SINE, QSINE, TRAP, USER, SINC, QSINC, TRAF, TRAFS
     }
 }

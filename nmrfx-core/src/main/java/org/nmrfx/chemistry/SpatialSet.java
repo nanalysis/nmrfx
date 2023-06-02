@@ -32,8 +32,38 @@ import java.util.Vector;
  */
 public class SpatialSet {
 
+    class Coords {
+
+        Point3 pt;
+        float occupancy = 1.0f;
+        float bfactor = 1.0f;
+        float order = 1.0f;
+
+        Coords() {
+            pt = new Point3(0.0, 0.0, 0.0);
+        }
+
+        Coords(double x, double y, double z, double occupancy, double bfactor) {
+            this.pt = new Point3(x, y, z);
+            this.occupancy = (float) occupancy;
+            this.bfactor = (float) bfactor;
+        }
+
+        Coords(Point3 pt) {
+            this.pt = new Point3(pt);
+        }
+
+        void setPoint(Point3 pt) {
+            this.pt = new Point3(pt);
+        }
+
+    }
+
     public Atom atom = null;
     public String altPos = null;
+    List<PPMv> ppms;
+    List<PPMv> refPPMVs = null;
+    List<Coords> coordsList;
     public boolean[] properties;
     public int selected = 0;
     public int labelStatus = 0;
@@ -41,9 +71,6 @@ public class SpatialSet {
     public float red = 1.0f;
     public float green = 0.0f;
     public float blue = 0.0f;
-    List<PPMv> ppms;
-    List<PPMv> refPPMVs = null;
-    List<Coords> coordsList;
 
     public SpatialSet(Atom atom) {
         this.atom = atom;
@@ -88,12 +115,12 @@ public class SpatialSet {
         }
     }
 
-    public int getSelected() {
-        return selected;
-    }
-
     public void setSelected(int value) {
         selected = value;
+    }
+
+    public int getSelected() {
+        return selected;
     }
 
     public void setLabelStatus(int value) {
@@ -102,6 +129,10 @@ public class SpatialSet {
 
     public void setDisplayStatus(int value) {
         displayStatus = value;
+    }
+
+    public void setOccupancy(float value) {
+        setOccupancy(0, value);
     }
 
     public void setOccupancy(int index, float value) {
@@ -115,12 +146,12 @@ public class SpatialSet {
         return getOccupancy(0);
     }
 
-    public void setOccupancy(float value) {
-        setOccupancy(0, value);
-    }
-
     public float getOccupancy(int index) {
         return getPointValidity(index) ? coordsList.get(index).occupancy : 1.0f;
+    }
+
+    public void setBFactor(float value) {
+        setBFactor(0, value);
     }
 
     public void setBFactor(int index, float value) {
@@ -134,12 +165,12 @@ public class SpatialSet {
         return getBFactor(0);
     }
 
-    public void setBFactor(float value) {
-        setBFactor(0, value);
-    }
-
     public float getBFactor(int index) {
         return getPointValidity(index) ? coordsList.get(index).bfactor : 1.0f;
+    }
+
+    public void setOrder(float value) {
+        setOrder(0, value);
     }
 
     public void setOrder(int index, float value) {
@@ -151,10 +182,6 @@ public class SpatialSet {
 
     public float getOrder() {
         return getOrder(0);
-    }
-
-    public void setOrder(float value) {
-        setOrder(0, value);
     }
 
     public float getOrder(int index) {
@@ -190,10 +217,6 @@ public class SpatialSet {
         return getPoint(0);
     }
 
-    public void setPoint(Point3 ptNew) {
-        setPoint(0, ptNew);
-    }
-
     public Point3 getPoint(int i) {
         Point3 gPt = null;
         if (i < coordsList.size()) {
@@ -225,10 +248,6 @@ public class SpatialSet {
         return getPointValidity(0);
     }
 
-    public void setPointValidity(boolean validity) {
-        setPointValidity(0, validity);
-    }
-
     public void setPointValidity(int index, boolean validity) {
 
         if (validity && (coordsList.size() <= index)) {
@@ -248,6 +267,10 @@ public class SpatialSet {
         atom.changed();
     }
 
+    public void setPointValidity(boolean validity) {
+        setPointValidity(0, validity);
+    }
+
     public void setPoint(int index, Point3 ptNew) {
         setPointValidity(index, true);
         Coords coord = coordsList.get(index);
@@ -258,6 +281,10 @@ public class SpatialSet {
         }
         coordsList.set(index, coord);
         atom.changed();
+    }
+
+    public void setPoint(Point3 ptNew) {
+        setPoint(0, ptNew);
     }
 
     public PPMv getRefPPM() {
@@ -495,7 +522,7 @@ public class SpatialSet {
 //                                                                             **  element          X
 //                                                                               ** charge          X
 // ATOM      1  N   TYR A 104      23.779   2.277  46.922  1.00 16.26           N                   X
-// TER    1272      HIS A  80
+// TER    1272      HIS A  80                                                      
     public String toPDBString(int iAtom, int structureNum) {
         Coords coord = getCoords(structureNum);
         if (coord == null) {
@@ -591,9 +618,9 @@ public class SpatialSet {
         double bFactor = coord.bfactor;
         //auth seq code
         Object authSeq = atom.entity.getPropertyObject("authSeqID");
-        //auth res name
+        //auth res name 
         Object authResName = atom.entity.getPropertyObject("authResName");
-        //auth chain id
+        //auth chain id 
         Object authChainID = atom.entity.getPropertyObject("authChainCode");
         //auth atom name
         Object authAName = atom.getProperty("authAtomName");
@@ -754,32 +781,5 @@ public class SpatialSet {
             result.append(" . . . . ");  // Occupancy_esd, uncertainty, ordered, footnote
         }
         return true;
-    }
-
-    class Coords {
-
-        Point3 pt;
-        float occupancy = 1.0f;
-        float bfactor = 1.0f;
-        float order = 1.0f;
-
-        Coords() {
-            pt = new Point3(0.0, 0.0, 0.0);
-        }
-
-        Coords(double x, double y, double z, double occupancy, double bfactor) {
-            this.pt = new Point3(x, y, z);
-            this.occupancy = (float) occupancy;
-            this.bfactor = (float) bfactor;
-        }
-
-        Coords(Point3 pt) {
-            this.pt = new Point3(pt);
-        }
-
-        void setPoint(Point3 pt) {
-            this.pt = new Point3(pt);
-        }
-
     }
 }

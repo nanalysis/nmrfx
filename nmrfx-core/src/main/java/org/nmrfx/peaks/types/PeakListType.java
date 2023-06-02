@@ -27,6 +27,15 @@ public class PeakListType {
         this.name = name;
     }
 
+    public static void setPeakList(PeakList peakList, String name) {
+        for (int i = 0; i < peakList.getNDim(); i++) {
+            var sDim = peakList.getSpectralDim(i);
+            sDim.setRelation("");
+            sDim.setPattern("");
+        }
+        peakList.setExperimentType(name);
+    }
+
     private SpectralDim getBondDim(Map<String, SpectralDim> sDims, String bondDim) {
         for (var entry : sDims.entrySet()) {
             String key = entry.getKey();
@@ -98,14 +107,5 @@ public class PeakListType {
                 "name='" + name + '\'' +
                 ", dims=" + dims +
                 '}';
-    }
-
-    public static void setPeakList(PeakList peakList, String name) {
-        for (int i = 0; i < peakList.getNDim(); i++) {
-            var sDim = peakList.getSpectralDim(i);
-            sDim.setRelation("");
-            sDim.setPattern("");
-        }
-        peakList.setExperimentType(name);
     }
 }

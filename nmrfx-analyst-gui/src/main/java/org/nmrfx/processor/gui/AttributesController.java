@@ -44,6 +44,12 @@ public class AttributesController implements Initializable {
         FORMATTER.setMaximumFractionDigits(3);
     }
 
+    enum SelectionChoice {
+        ITEM,
+        CHART,
+        WINDOW
+    }
+
     @FXML
     VBox applyVBox;
     @FXML
@@ -67,93 +73,6 @@ public class AttributesController implements Initializable {
     @FXML
     TitledPane peakAppearancePane;
     @FXML
-    CheckBox aspectCheckBox;
-    @FXML
-    Slider aspectSlider;
-    @FXML
-    Label aspectRatioValue;
-    @FXML
-    Slider scaleSlider;
-    @FXML
-    Slider xOffsetSlider;
-    @FXML
-    Slider yOffsetSlider;
-    @FXML
-    CheckBox axisColorCheckBox;
-    @FXML
-    CheckBox cross0ColorCheckBox;
-    @FXML
-    CheckBox cross1ColorCheckBox;
-    @FXML
-    CheckBox bgColorCheckBox;
-    @FXML
-    Slider lvlSlider;
-    @FXML
-    TextField lvlField;
-    @FXML
-    Slider lvlSlider1D;
-    @FXML
-    TextField lvlField1D;
-    @FXML
-    Slider stackXSlider;
-    @FXML
-    TextField stackXField;
-    @FXML
-    Slider stackYSlider;
-    @FXML
-    TextField stackYField;
-    @FXML
-    Slider clmSlider;
-    @FXML
-    TextField clmField;
-    @FXML
-    Slider nlvlsSlider;
-    @FXML
-    TextField nlvlsField;
-    @FXML
-    Slider offsetSlider;
-    @FXML
-    TextField offsetField;
-    ParSliderListener lvlSliderListener = new LvlSliderListener();
-    ParSliderListener nlvlsSliderListener = new NlvlSliderListener();
-    ParSliderListener clmSliderListener = new ClmSliderListener();
-    ParSliderListener offsetSliderListener = new OffsetSliderListener();
-    ParSliderListener posWidthSliderListener = new PosWidthSliderListener();
-    ParSliderListener negWidthSliderListener = new NegWidthSliderListener();
-    ChartSliderListener stackXListener = new StackXSliderListener();
-    ChartSliderListener stackYListener = new StackYSliderListener();
-    PosColorListener posColorListener = new PosColorListener();
-    NegColorListener negColorListener = new NegColorListener();
-    PosDrawOnListener posDrawOnListener = new PosDrawOnListener();
-    NegDrawOnListener negDrawOnListener = new NegDrawOnListener();
-    @FXML
-    Slider posWidthSlider;
-    @FXML
-    TextField posWidthField;
-    @FXML
-    Slider negWidthSlider;
-    @FXML
-    TextField negWidthField;
-    @FXML
-    CheckBox peakDisplayCheckBox;
-    @FXML
-    CheckBox simPeakDisplayCheckBox;
-    @FXML
-    CheckBox linkPeakDisplayCheckBox;
-    PeakOnColorListener peakOnColorListener = new PeakOnColorListener();
-    PeakOffColorListener peakOffColorListener = new PeakOffColorListener();
-    DrawPeaksListener drawPeaksListener = new DrawPeaksListener();
-    DrawSimPeaksListener drawSimPeaksListener = new DrawSimPeaksListener();
-    DrawLinkPeaksListener drawLinkPeaksListener = new DrawLinkPeaksListener();
-    PeakDisplayTypeListener peakDisplayTypeListener = new PeakDisplayTypeListener();
-    PeakColorTypeListener peakColorTypeListener = new PeakColorTypeListener();
-    PeakLabelTypeListener peakLabelTypeListener = new PeakLabelTypeListener();
-    boolean shiftState = false;
-    Boolean accordionIn1D = null;
-    PolyChart chart;
-    PolyChart boundChart = null;
-    FXMLController fxmlController;
-    @FXML
     private CheckBox integralCheckBox;
     @FXML
     private RangeSlider integralPosSlider;
@@ -163,6 +82,14 @@ public class AttributesController implements Initializable {
     private Label integralHighValue;
     @FXML
     private CheckBox regionCheckBox;
+    @FXML
+    CheckBox aspectCheckBox;
+    @FXML
+    Slider aspectSlider;
+    @FXML
+    Label aspectRatioValue;
+    @FXML
+    Slider scaleSlider;
     @FXML
     private CheckBox offsetTrackingCheckBox;
     @FXML
@@ -178,6 +105,20 @@ public class AttributesController implements Initializable {
     @FXML
     private ColorPicker slice2ColorPicker;
     @FXML
+    Slider xOffsetSlider;
+    @FXML
+    Slider yOffsetSlider;
+
+    @FXML
+    CheckBox axisColorCheckBox;
+    @FXML
+    CheckBox cross0ColorCheckBox;
+    @FXML
+    CheckBox cross1ColorCheckBox;
+    @FXML
+    CheckBox bgColorCheckBox;
+
+    @FXML
     private ColorPicker axisColorPicker;
     @FXML
     private ColorPicker cross0ColorPicker;
@@ -185,6 +126,7 @@ public class AttributesController implements Initializable {
     private ColorPicker cross1ColorPicker;
     @FXML
     private ColorPicker bgColorPicker;
+
     @FXML
     private ComboBox<Number> ticFontSizeComboBox;
     @FXML
@@ -205,18 +147,81 @@ public class AttributesController implements Initializable {
     private CheckBox titlesCheckBox;
     @FXML
     private CheckBox parametersCheckBox;
+
+    @FXML
+    Slider lvlSlider;
+    @FXML
+    TextField lvlField;
+    @FXML
+    Slider lvlSlider1D;
+    @FXML
+    TextField lvlField1D;
+
+    @FXML
+    Slider stackXSlider;
+    @FXML
+    TextField stackXField;
+    @FXML
+    Slider stackYSlider;
+    @FXML
+    TextField stackYField;
+
+    @FXML
+    Slider clmSlider;
+    @FXML
+    TextField clmField;
+
+    @FXML
+    Slider nlvlsSlider;
+    @FXML
+    TextField nlvlsField;
+
+    @FXML
+    Slider offsetSlider;
+    @FXML
+    TextField offsetField;
     @FXML
     private ColorPicker posColorPicker;
     @FXML
     private ColorPicker posColorPicker1D;
     @FXML
     private ColorPicker negColorPicker;
+
     @FXML
     private CheckBox posOnCheckbox;
     @FXML
     private CheckBox posOnCheckbox1D;
     @FXML
     private CheckBox negOnCheckbox;
+
+    ParSliderListener lvlSliderListener = new LvlSliderListener();
+    ParSliderListener nlvlsSliderListener = new NlvlSliderListener();
+    ParSliderListener clmSliderListener = new ClmSliderListener();
+    ParSliderListener offsetSliderListener = new OffsetSliderListener();
+    ParSliderListener posWidthSliderListener = new PosWidthSliderListener();
+    ParSliderListener negWidthSliderListener = new NegWidthSliderListener();
+    ChartSliderListener stackXListener = new StackXSliderListener();
+    ChartSliderListener stackYListener = new StackYSliderListener();
+
+    PosColorListener posColorListener = new PosColorListener();
+    NegColorListener negColorListener = new NegColorListener();
+    PosDrawOnListener posDrawOnListener = new PosDrawOnListener();
+    NegDrawOnListener negDrawOnListener = new NegDrawOnListener();
+    @FXML
+    Slider posWidthSlider;
+    @FXML
+    TextField posWidthField;
+    @FXML
+    Slider negWidthSlider;
+    @FXML
+    TextField negWidthField;
+
+    @FXML
+    CheckBox peakDisplayCheckBox;
+    @FXML
+    CheckBox simPeakDisplayCheckBox;
+    @FXML
+    CheckBox linkPeakDisplayCheckBox;
     @FXML
     private ColorPicker peakOnColorPicker;
     @FXML
@@ -227,6 +232,41 @@ public class AttributesController implements Initializable {
     private ComboBox<PeakDisplayParameters.DisplayTypes> peakDisplayModeComboBox;
     @FXML
     private ComboBox<PeakDisplayParameters.LabelTypes> peakLabelModeComboBox;
+    PeakOnColorListener peakOnColorListener = new PeakOnColorListener();
+    PeakOffColorListener peakOffColorListener = new PeakOffColorListener();
+    DrawPeaksListener drawPeaksListener = new DrawPeaksListener();
+    DrawSimPeaksListener drawSimPeaksListener = new DrawSimPeaksListener();
+    DrawLinkPeaksListener drawLinkPeaksListener = new DrawLinkPeaksListener();
+    PeakDisplayTypeListener peakDisplayTypeListener = new PeakDisplayTypeListener();
+    PeakColorTypeListener peakColorTypeListener = new PeakColorTypeListener();
+    PeakLabelTypeListener peakLabelTypeListener = new PeakLabelTypeListener();
+
+    boolean shiftState = false;
+    Boolean accordionIn1D = null;
+    PolyChart chart;
+    PolyChart boundChart = null;
+
+    FXMLController fxmlController;
+
+    public static AttributesController create(FXMLController fxmlController, Pane processorPane) {
+        AttributesController controller = Fxml.load(AttributesController.class, "AttributesController.fxml")
+                .withParent(processorPane)
+                .getController();
+
+        controller.fxmlController = fxmlController;
+        controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
+        controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
+        controller.itemChoiceState.setValue(SelectionChoice.CHART);
+        controller.datasetChoiceBox.disableProperty()
+                .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
+        controller.peakListChoiceBox.disableProperty()
+                .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
+        controller.setChart(fxmlController.getActiveChart());
+        controller.datasetChoiceBox.valueProperty().addListener(e -> controller.datasetChoiceChanged());
+        controller.peakListChoiceBox.valueProperty().addListener(e -> controller.peakListChoiceChanged());
+
+        return controller;
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -582,6 +622,36 @@ public class AttributesController implements Initializable {
         fxmlController.getCharts().forEach(c -> c.setSliceStatus(status));
     }
 
+    abstract class ChartSliderListener implements ChangeListener<Number> {
+
+        boolean active = true;
+
+        abstract void update(PolyChart chart, double value);
+
+        @Override
+        public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+            if (active) {
+                List<PolyChart> aCharts = getCharts(allCharts());
+                for (PolyChart aChart : aCharts) {
+                    update(aChart, newValue.doubleValue());
+                }
+                refreshCharts();
+            }
+        }
+    }
+
+    public class StackXSliderListener extends ChartSliderListener {
+        void update(PolyChart aChart, double value) {
+            aChart.getChartProperties().setStackX(value);
+        }
+    }
+
+    public class StackYSliderListener extends ChartSliderListener {
+        void update(PolyChart aChart, double value) {
+            aChart.getChartProperties().setStackY(value);
+        }
+    }
+
     void setChartSlider(ChartSliderListener sliderListener, Slider slider, double value) {
         if (!slider.isValueChanging()) {
             sliderListener.active = false;
@@ -596,6 +666,62 @@ public class AttributesController implements Initializable {
 
     void setStackYSlider() {
         setChartSlider(stackYListener, stackYSlider, chart.getChartProperties().getStackY());
+    }
+
+    abstract class ParSliderListener implements ChangeListener<Number> {
+
+        boolean active = true;
+
+        abstract void update(DatasetAttributes dataAttr, double value);
+
+        @Override
+        public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+            if (active) {
+                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+                for (DatasetAttributes dataAttr : dataAttrs) {
+                    update(dataAttr, newValue.doubleValue());
+                }
+                refreshCharts();
+            }
+        }
+    }
+
+    public class LvlSliderListener extends ParSliderListener {
+        void update(DatasetAttributes dataAttr, double value) {
+            dataAttr.setLvl(value);
+        }
+    }
+
+    public class ClmSliderListener extends ParSliderListener {
+        void update(DatasetAttributes dataAttr, double value) {
+            dataAttr.setClm(value);
+        }
+    }
+
+    public class OffsetSliderListener extends ParSliderListener {
+        void update(DatasetAttributes dataAttr, double value) {
+            dataAttr.setOffset(value);
+        }
+    }
+
+    public class NlvlSliderListener extends ParSliderListener {
+        void update(DatasetAttributes dataAttr, double value) {
+            int iValue = (int) Math.round(value);
+            nlvlsField.setText(String.format("%d", iValue));
+            dataAttr.setNlvls(iValue);
+        }
+    }
+
+    public class PosWidthSliderListener extends ParSliderListener {
+        void update(DatasetAttributes dataAttr, double value) {
+            dataAttr.setPosWidth(value);
+        }
+    }
+
+    public class NegWidthSliderListener extends ParSliderListener {
+        void update(DatasetAttributes dataAttr, double value) {
+            dataAttr.setNegWidth(value);
+        }
     }
 
     void setSlider(ParSliderListener sliderListener, Slider slider, double min, double max, double incrValue, double value) {
@@ -676,6 +802,36 @@ public class AttributesController implements Initializable {
         }
     }
 
+    abstract class ColorListener implements ChangeListener<Color> {
+
+        boolean active = true;
+
+        abstract void update(DatasetAttributes dataAttr, Color value);
+
+        @Override
+        public void changed(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
+            if (active) {
+                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+                for (DatasetAttributes dataAttr : dataAttrs) {
+                    update(dataAttr, newValue);
+                }
+                refreshCharts();
+            }
+        }
+    }
+
+    public class PosColorListener extends ColorListener {
+        void update(DatasetAttributes dataAttr, Color value) {
+            dataAttr.setPosColor(value);
+        }
+    }
+
+    public class NegColorListener extends ColorListener {
+        void update(DatasetAttributes dataAttr, Color value) {
+            dataAttr.setNegColor(value);
+        }
+    }
+
     void setContourColorControls(boolean posMode) {
         posColorListener.active = false;
         negColorListener.active = false;
@@ -695,6 +851,36 @@ public class AttributesController implements Initializable {
         negColorListener.active = true;
     }
 
+    abstract class DrawOnListener implements ChangeListener<Boolean> {
+
+        boolean active = true;
+
+        abstract void update(DatasetAttributes dataAttr, Boolean value);
+
+        @Override
+        public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+            if (active) {
+                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+                for (DatasetAttributes dataAttr : dataAttrs) {
+                    update(dataAttr, newValue);
+                }
+                refreshCharts();
+            }
+        }
+    }
+
+    public class PosDrawOnListener extends DrawOnListener {
+        void update(DatasetAttributes dataAttr, Boolean value) {
+            dataAttr.setPos(value);
+        }
+    }
+
+    public class NegDrawOnListener extends DrawOnListener {
+        void update(DatasetAttributes dataAttr, Boolean value) {
+            dataAttr.setNeg(value);
+        }
+    }
+
     void setDrawOnControls(boolean posMode) {
         posDrawOnListener.active = false;
         negDrawOnListener.active = false;
@@ -710,6 +896,36 @@ public class AttributesController implements Initializable {
         }
         posDrawOnListener.active = true;
         negDrawOnListener.active = true;
+    }
+
+    abstract class PeakColorListener implements ChangeListener<Color> {
+
+        boolean active = true;
+
+        abstract void update(PeakListAttributes peakListAttr, Color value);
+
+        @Override
+        public void changed(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
+            if (active) {
+                List<PeakListAttributes> peakListAttrs = getPeakListAttributes();
+                for (PeakListAttributes peakListAttr : peakListAttrs) {
+                    update(peakListAttr, newValue);
+                }
+                refreshCharts();
+            }
+        }
+    }
+
+    public class PeakOnColorListener extends PeakColorListener {
+        void update(PeakListAttributes peakListAttr, Color value) {
+            peakListAttr.setOnColor(value);
+        }
+    }
+
+    public class PeakOffColorListener extends PeakColorListener {
+        void update(PeakListAttributes peakListAttr, Color value) {
+            peakListAttr.setOffColor(value);
+        }
     }
 
     void setPeakColorControls(boolean onMode) {
@@ -730,6 +946,42 @@ public class AttributesController implements Initializable {
         peakOffColorListener.active = true;
     }
 
+    abstract class PeakCheckBoxListener implements ChangeListener<Boolean> {
+
+        boolean active = true;
+
+        abstract void update(PeakListAttributes peakListAttr, Boolean value);
+
+        @Override
+        public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+            if (active) {
+                List<PeakListAttributes> peakListAttrs = getPeakListAttributes();
+                for (PeakListAttributes peakListAttr : peakListAttrs) {
+                    update(peakListAttr, newValue);
+                }
+                refreshCharts();
+            }
+        }
+    }
+
+    public class DrawPeaksListener extends PeakCheckBoxListener {
+        void update(PeakListAttributes peakListAttr, Boolean value) {
+            peakListAttr.setDrawPeaks(value);
+        }
+    }
+
+    public class DrawSimPeaksListener extends PeakCheckBoxListener {
+        void update(PeakListAttributes peakListAttr, Boolean value) {
+            peakListAttr.setSimPeaks(value);
+        }
+    }
+
+    public class DrawLinkPeaksListener extends PeakCheckBoxListener {
+        void update(PeakListAttributes peakListAttr, Boolean value) {
+            peakListAttr.setDrawLinks(value);
+        }
+    }
+
     void setPeakCheckBoxes() {
         List<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
         if (!peakListAttrs.isEmpty()) {
@@ -746,6 +998,43 @@ public class AttributesController implements Initializable {
                 }
                 listener.active = true;
             }
+        }
+    }
+
+    abstract class PeakTypeListener<T> implements ChangeListener {
+        boolean active = true;
+
+        abstract void update(PeakListAttributes peakListAttributes, T obj);
+
+        @Override
+        public void changed(ObservableValue observable,
+                            Object oldValue, Object newValue) {
+            if (active) {
+                List<PeakListAttributes> peakListAttrs = getPeakListAttributes();
+                for (PeakListAttributes peakListAttr : peakListAttrs) {
+                    update(peakListAttr, (T) newValue);
+                }
+                refreshCharts();
+            }
+        }
+    }
+
+    class PeakColorTypeListener extends PeakTypeListener<PeakDisplayParameters.ColorTypes> {
+        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.ColorTypes value) {
+            peakListAttr.setColorType(value);
+        }
+    }
+
+
+    class PeakDisplayTypeListener extends PeakTypeListener<PeakDisplayParameters.DisplayTypes> {
+        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.DisplayTypes value) {
+            peakListAttr.setDisplayType(value);
+        }
+    }
+
+    class PeakLabelTypeListener extends PeakTypeListener<PeakDisplayParameters.LabelTypes> {
+        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.LabelTypes value) {
+            peakListAttr.setLabelType(value);
         }
     }
 
@@ -1038,280 +1327,6 @@ public class AttributesController implements Initializable {
             PauseTransition wait = new PauseTransition(Duration.millis(5.0));
             wait.setOnFinished(e -> Fx.runOnFxThread(aChart::refresh));
             wait.play();
-        }
-    }
-
-    public static AttributesController create(FXMLController fxmlController, Pane processorPane) {
-        AttributesController controller = Fxml.load(AttributesController.class, "AttributesController.fxml")
-                .withParent(processorPane)
-                .getController();
-
-        controller.fxmlController = fxmlController;
-        controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
-        controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
-        controller.itemChoiceState.setValue(SelectionChoice.CHART);
-        controller.datasetChoiceBox.disableProperty()
-                .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
-        controller.peakListChoiceBox.disableProperty()
-                .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
-        controller.setChart(fxmlController.getActiveChart());
-        controller.datasetChoiceBox.valueProperty().addListener(e -> controller.datasetChoiceChanged());
-        controller.peakListChoiceBox.valueProperty().addListener(e -> controller.peakListChoiceChanged());
-
-        return controller;
-    }
-
-    enum SelectionChoice {
-        ITEM,
-        CHART,
-        WINDOW
-    }
-
-    abstract class ChartSliderListener implements ChangeListener<Number> {
-
-        boolean active = true;
-
-        abstract void update(PolyChart chart, double value);
-
-        @Override
-        public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-            if (active) {
-                List<PolyChart> aCharts = getCharts(allCharts());
-                for (PolyChart aChart : aCharts) {
-                    update(aChart, newValue.doubleValue());
-                }
-                refreshCharts();
-            }
-        }
-    }
-
-    public class StackXSliderListener extends ChartSliderListener {
-        void update(PolyChart aChart, double value) {
-            aChart.getChartProperties().setStackX(value);
-        }
-    }
-
-    public class StackYSliderListener extends ChartSliderListener {
-        void update(PolyChart aChart, double value) {
-            aChart.getChartProperties().setStackY(value);
-        }
-    }
-
-    abstract class ParSliderListener implements ChangeListener<Number> {
-
-        boolean active = true;
-
-        abstract void update(DatasetAttributes dataAttr, double value);
-
-        @Override
-        public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-            if (active) {
-                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
-                for (DatasetAttributes dataAttr : dataAttrs) {
-                    update(dataAttr, newValue.doubleValue());
-                }
-                refreshCharts();
-            }
-        }
-    }
-
-    public class LvlSliderListener extends ParSliderListener {
-        void update(DatasetAttributes dataAttr, double value) {
-            dataAttr.setLvl(value);
-        }
-    }
-
-    public class ClmSliderListener extends ParSliderListener {
-        void update(DatasetAttributes dataAttr, double value) {
-            dataAttr.setClm(value);
-        }
-    }
-
-    public class OffsetSliderListener extends ParSliderListener {
-        void update(DatasetAttributes dataAttr, double value) {
-            dataAttr.setOffset(value);
-        }
-    }
-
-    public class NlvlSliderListener extends ParSliderListener {
-        void update(DatasetAttributes dataAttr, double value) {
-            int iValue = (int) Math.round(value);
-            nlvlsField.setText(String.format("%d", iValue));
-            dataAttr.setNlvls(iValue);
-        }
-    }
-
-    public class PosWidthSliderListener extends ParSliderListener {
-        void update(DatasetAttributes dataAttr, double value) {
-            dataAttr.setPosWidth(value);
-        }
-    }
-
-    public class NegWidthSliderListener extends ParSliderListener {
-        void update(DatasetAttributes dataAttr, double value) {
-            dataAttr.setNegWidth(value);
-        }
-    }
-
-    abstract class ColorListener implements ChangeListener<Color> {
-
-        boolean active = true;
-
-        abstract void update(DatasetAttributes dataAttr, Color value);
-
-        @Override
-        public void changed(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
-            if (active) {
-                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
-                for (DatasetAttributes dataAttr : dataAttrs) {
-                    update(dataAttr, newValue);
-                }
-                refreshCharts();
-            }
-        }
-    }
-
-    public class PosColorListener extends ColorListener {
-        void update(DatasetAttributes dataAttr, Color value) {
-            dataAttr.setPosColor(value);
-        }
-    }
-
-    public class NegColorListener extends ColorListener {
-        void update(DatasetAttributes dataAttr, Color value) {
-            dataAttr.setNegColor(value);
-        }
-    }
-
-    abstract class DrawOnListener implements ChangeListener<Boolean> {
-
-        boolean active = true;
-
-        abstract void update(DatasetAttributes dataAttr, Boolean value);
-
-        @Override
-        public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-            if (active) {
-                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
-                for (DatasetAttributes dataAttr : dataAttrs) {
-                    update(dataAttr, newValue);
-                }
-                refreshCharts();
-            }
-        }
-    }
-
-    public class PosDrawOnListener extends DrawOnListener {
-        void update(DatasetAttributes dataAttr, Boolean value) {
-            dataAttr.setPos(value);
-        }
-    }
-
-    public class NegDrawOnListener extends DrawOnListener {
-        void update(DatasetAttributes dataAttr, Boolean value) {
-            dataAttr.setNeg(value);
-        }
-    }
-
-    abstract class PeakColorListener implements ChangeListener<Color> {
-
-        boolean active = true;
-
-        abstract void update(PeakListAttributes peakListAttr, Color value);
-
-        @Override
-        public void changed(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
-            if (active) {
-                List<PeakListAttributes> peakListAttrs = getPeakListAttributes();
-                for (PeakListAttributes peakListAttr : peakListAttrs) {
-                    update(peakListAttr, newValue);
-                }
-                refreshCharts();
-            }
-        }
-    }
-
-    public class PeakOnColorListener extends PeakColorListener {
-        void update(PeakListAttributes peakListAttr, Color value) {
-            peakListAttr.setOnColor(value);
-        }
-    }
-
-    public class PeakOffColorListener extends PeakColorListener {
-        void update(PeakListAttributes peakListAttr, Color value) {
-            peakListAttr.setOffColor(value);
-        }
-    }
-
-    abstract class PeakCheckBoxListener implements ChangeListener<Boolean> {
-
-        boolean active = true;
-
-        abstract void update(PeakListAttributes peakListAttr, Boolean value);
-
-        @Override
-        public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-            if (active) {
-                List<PeakListAttributes> peakListAttrs = getPeakListAttributes();
-                for (PeakListAttributes peakListAttr : peakListAttrs) {
-                    update(peakListAttr, newValue);
-                }
-                refreshCharts();
-            }
-        }
-    }
-
-    public class DrawPeaksListener extends PeakCheckBoxListener {
-        void update(PeakListAttributes peakListAttr, Boolean value) {
-            peakListAttr.setDrawPeaks(value);
-        }
-    }
-
-    public class DrawSimPeaksListener extends PeakCheckBoxListener {
-        void update(PeakListAttributes peakListAttr, Boolean value) {
-            peakListAttr.setSimPeaks(value);
-        }
-    }
-
-    public class DrawLinkPeaksListener extends PeakCheckBoxListener {
-        void update(PeakListAttributes peakListAttr, Boolean value) {
-            peakListAttr.setDrawLinks(value);
-        }
-    }
-
-    abstract class PeakTypeListener<T> implements ChangeListener {
-        boolean active = true;
-
-        abstract void update(PeakListAttributes peakListAttributes, T obj);
-
-        @Override
-        public void changed(ObservableValue observable,
-                            Object oldValue, Object newValue) {
-            if (active) {
-                List<PeakListAttributes> peakListAttrs = getPeakListAttributes();
-                for (PeakListAttributes peakListAttr : peakListAttrs) {
-                    update(peakListAttr, (T) newValue);
-                }
-                refreshCharts();
-            }
-        }
-    }
-
-    class PeakColorTypeListener extends PeakTypeListener<PeakDisplayParameters.ColorTypes> {
-        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.ColorTypes value) {
-            peakListAttr.setColorType(value);
-        }
-    }
-
-    class PeakDisplayTypeListener extends PeakTypeListener<PeakDisplayParameters.DisplayTypes> {
-        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.DisplayTypes value) {
-            peakListAttr.setDisplayType(value);
-        }
-    }
-
-    class PeakLabelTypeListener extends PeakTypeListener<PeakDisplayParameters.LabelTypes> {
-        void update(PeakListAttributes peakListAttr, PeakDisplayParameters.LabelTypes value) {
-            peakListAttr.setLabelType(value);
         }
     }
 }

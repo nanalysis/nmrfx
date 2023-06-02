@@ -231,6 +231,33 @@ public class MatrixAnalyzer {
         return scannerRows;
     }
 
+    static String getStringValue(String[] fields, Map<String, Integer> headerMap, String colName, String defaultValue) {
+        String value = defaultValue;
+        Integer index = headerMap.get(colName);
+        if (index != null) {
+            value = fields[index];
+        }
+        return value;
+    }
+
+    static Double getDoubleValue(String[] fields, Map<String, Integer> headerMap, String colName, Double defaultValue) {
+        Double value = defaultValue;
+        Integer index = headerMap.get(colName);
+        if (index != null) {
+            value = Double.parseDouble(fields[index]);
+        }
+        return value;
+    }
+
+    static Integer getIntegerValue(String[] fields, Map<String, Integer> headerMap, String colName, Integer defaultValue) {
+        Integer value = defaultValue;
+        Integer index = headerMap.get(colName);
+        if (index != null) {
+            value = Integer.parseInt(fields[index]);
+        }
+        return value;
+    }
+
     public void readScannerFile(String fileName) throws IOException {
         Path path = Paths.get(fileName);
         FileSystem fileSystem = path.getFileSystem();
@@ -276,32 +303,5 @@ public class MatrixAnalyzer {
                 }
             }
         }
-    }
-
-    static String getStringValue(String[] fields, Map<String, Integer> headerMap, String colName, String defaultValue) {
-        String value = defaultValue;
-        Integer index = headerMap.get(colName);
-        if (index != null) {
-            value = fields[index];
-        }
-        return value;
-    }
-
-    static Double getDoubleValue(String[] fields, Map<String, Integer> headerMap, String colName, Double defaultValue) {
-        Double value = defaultValue;
-        Integer index = headerMap.get(colName);
-        if (index != null) {
-            value = Double.parseDouble(fields[index]);
-        }
-        return value;
-    }
-
-    static Integer getIntegerValue(String[] fields, Map<String, Integer> headerMap, String colName, Integer defaultValue) {
-        Integer value = defaultValue;
-        Integer index = headerMap.get(colName);
-        if (index != null) {
-            value = Integer.parseInt(fields[index]);
-        }
-        return value;
     }
 }

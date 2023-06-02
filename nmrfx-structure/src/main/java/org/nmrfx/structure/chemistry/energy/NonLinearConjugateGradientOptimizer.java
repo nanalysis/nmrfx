@@ -61,6 +61,71 @@ public class NonLinearConjugateGradientOptimizer
     private final LineSearch line;
 
     /**
+     * Available choices of update formulas for the updating the parameter
+     * that is used to compute the successive conjugate search directions.
+     * For non-linear conjugate gradients, there are
+     * two formulas:
+     * <ul>
+     *   <li>Fletcher-Reeves formula</li>
+     *   <li>Polak-Ribière formula</li>
+     * </ul>
+     * <p>
+     * On the one hand, the Fletcher-Reeves formula is guaranteed to converge
+     * if the start point is close enough of the optimum whether the
+     * Polak-Ribière formula may not converge in rare cases. On the
+     * other hand, the Polak-Ribière formula is often faster when it
+     * does converge. Polak-Ribière is often used.
+     *
+     * @since 2.0
+     */
+    public enum Formula {
+        /**
+         * Fletcher-Reeves formula.
+         */
+        FLETCHER_REEVES,
+        /**
+         * Polak-Ribière formula.
+         */
+        POLAK_RIBIERE
+    }
+
+    /**
+     * The initial step is a factor with respect to the search direction
+     * (which itself is roughly related to the gradient of the function).
+     * <br/>
+     * It is used to find an interval that brackets the optimum in line
+     * search.
+     *
+     * @since 3.1
+     * @deprecated As of v3.3, this class is not used anymore.
+     * This setting is replaced by the {@code initialBracketingRange}
+     * argument to the new constructors.
+     */
+    @Deprecated
+    public static class BracketingStep implements OptimizationData {
+        /**
+         * Initial step.
+         */
+        private final double initialStep;
+
+        /**
+         * @param step Initial step for the bracket search.
+         */
+        public BracketingStep(double step) {
+            initialStep = step;
+        }
+
+        /**
+         * Gets the initial step.
+         *
+         * @return the initial step.
+         */
+        public double getBracketingStep() {
+            return initialStep;
+        }
+    }
+
+    /**
      * Constructor with default tolerances for the line search (1e-8) and
      * {@link IdentityPreconditioner preconditioner}.
      *
@@ -191,16 +256,6 @@ public class NonLinearConjugateGradientOptimizer
         return super.optimize(optData);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void parseOptimizationData(OptimizationData... optData) {
-        // Allow base class to register its own data.
-        super.parseOptimizationData(optData);
-
-        checkParameters();
-    }
 
     /**
      * {@inheritDoc}
@@ -297,79 +352,14 @@ public class NonLinearConjugateGradientOptimizer
     }
 
     /**
-     * @throws MathUnsupportedOperationException if bounds were passed to the
-     *                                           {@link #optimize(OptimizationData[]) optimize} method.
+     * {@inheritDoc}
      */
-    private void checkParameters() {
-        if (getLowerBound() != null ||
-                getUpperBound() != null) {
-            throw new MathUnsupportedOperationException(LocalizedFormats.CONSTRAINT);
-        }
-    }
+    @Override
+    protected void parseOptimizationData(OptimizationData... optData) {
+        // Allow base class to register its own data.
+        super.parseOptimizationData(optData);
 
-    /**
-     * Available choices of update formulas for the updating the parameter
-     * that is used to compute the successive conjugate search directions.
-     * For non-linear conjugate gradients, there are
-     * two formulas:
-     * <ul>
-     *   <li>Fletcher-Reeves formula</li>
-     *   <li>Polak-Ribière formula</li>
-     * </ul>
-     * <p>
-     * On the one hand, the Fletcher-Reeves formula is guaranteed to converge
-     * if the start point is close enough of the optimum whether the
-     * Polak-Ribière formula may not converge in rare cases. On the
-     * other hand, the Polak-Ribière formula is often faster when it
-     * does converge. Polak-Ribière is often used.
-     *
-     * @since 2.0
-     */
-    public enum Formula {
-        /**
-         * Fletcher-Reeves formula.
-         */
-        FLETCHER_REEVES,
-        /**
-         * Polak-Ribière formula.
-         */
-        POLAK_RIBIERE
-    }
-
-    /**
-     * The initial step is a factor with respect to the search direction
-     * (which itself is roughly related to the gradient of the function).
-     * <br/>
-     * It is used to find an interval that brackets the optimum in line
-     * search.
-     *
-     * @since 3.1
-     * @deprecated As of v3.3, this class is not used anymore.
-     * This setting is replaced by the {@code initialBracketingRange}
-     * argument to the new constructors.
-     */
-    @Deprecated
-    public static class BracketingStep implements OptimizationData {
-        /**
-         * Initial step.
-         */
-        private final double initialStep;
-
-        /**
-         * @param step Initial step for the bracket search.
-         */
-        public BracketingStep(double step) {
-            initialStep = step;
-        }
-
-        /**
-         * Gets the initial step.
-         *
-         * @return the initial step.
-         */
-        public double getBracketingStep() {
-            return initialStep;
-        }
+        checkParameters();
     }
 
     /**
@@ -381,6 +371,17 @@ public class NonLinearConjugateGradientOptimizer
          */
         public double[] precondition(double[] variables, double[] r) {
             return r.clone();
+        }
+    }
+
+    /**
+     * @throws MathUnsupportedOperationException if bounds were passed to the
+     *                                           {@link #optimize(OptimizationData[]) optimize} method.
+     */
+    private void checkParameters() {
+        if (getLowerBound() != null ||
+                getUpperBound() != null) {
+            throw new MathUnsupportedOperationException(LocalizedFormats.CONSTRAINT);
         }
     }
 }

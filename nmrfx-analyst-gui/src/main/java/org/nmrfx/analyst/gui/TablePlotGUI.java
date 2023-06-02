@@ -76,6 +76,9 @@ public class TablePlotGUI {
         this.tableView = tableView;
     }
 
+    record ParItem(String columnName, int group, String parName, double value, double error) {
+    }
+
     /**
      * Creates and populates a new stage for the TablePlotGUI, if not already
      * created. The stage is displayed and raised to front.
@@ -205,6 +208,7 @@ public class TablePlotGUI {
         }
         chartPane.updateChart();
     }
+
 
     void updatePlotWithFitLines() {
         updateScatterPlot();
@@ -511,8 +515,5 @@ public class TablePlotGUI {
             series.setName(yElems.get(iSeries) + ":Fit");
         }
         return results;
-    }
-
-    record ParItem(String columnName, int group, String parName, double value, double error) {
     }
 }

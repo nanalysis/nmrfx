@@ -33,19 +33,20 @@ import java.util.ArrayList;
 
 
 public class SignalOpt implements MultivariateFunction {
-    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
     private final Complex[] values;
     private final Complex[] testVec;
     private final int vecSize;
     private final int nSignals;
     private final double[] parameters;
-    private final Complex[] fd;
-    private final Complex[] pa;
-    private final int start = 0;
     private double[] inputSigma;
     private double[][] boundaries = null;
     private double[][] normBoundaries = null;
     private double[] normValues;
+
+    private final Complex[] fd;
+    private final Complex[] pa;
+    private final int start = 0;
+    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
 
     public SignalOpt(Complex[] testVec, int vecSize, Complex[] fd, Complex[] pa) {
         this.testVec = testVec;

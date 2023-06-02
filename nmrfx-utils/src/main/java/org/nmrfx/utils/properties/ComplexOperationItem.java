@@ -39,12 +39,12 @@ import org.slf4j.LoggerFactory;
 public class ComplexOperationItem extends OperationItem implements ObservableObjectValue<String> {
 
     private static final Logger log = LoggerFactory.getLogger(ComplexOperationItem.class);
-    private final ComplexFormat cf;
     Complex value;
     Complex defaultValue;
     Complex min = null;
     Complex max = null;
     ChangeListener<? super String> listener;
+    private final ComplexFormat cf;
 
     public ComplexOperationItem(ChangeListener listener, Complex defaultValue, String category, String name, String description) {
         super(category, name, description);
@@ -66,13 +66,13 @@ public class ComplexOperationItem extends OperationItem implements ObservableObj
     }
 
     @Override
-    public Class<?> getType() {
-        return ComplexOperationItem.class;
+    public String getValue() {
+        return value.getReal() + " + " + value.getImaginary() + "j";
     }
 
     @Override
-    public String getValue() {
-        return value.getReal() + " + " + value.getImaginary() + "j";
+    public Class<?> getType() {
+        return ComplexOperationItem.class;
     }
 
     @Override
@@ -99,45 +99,6 @@ public class ComplexOperationItem extends OperationItem implements ObservableObj
             if ((value != oldValue) && (listener != null)) {
                 listener.changed(this, cf.format(oldValue), cf.format(value));
             }
-        }
-    }
-
-    @Override
-    public boolean isDefault() {
-        return Complex.equals(value, defaultValue);
-    }
-
-    @Override
-    public void setFromString(String sValue) {
-        ComplexFormat cfTemp = new ComplexFormat();
-        Complex oldValue = value;
-
-        Complex newValue = cfTemp.parse(sValue);
-        if (newValue == null) {
-            return;
-        }
-
-        value = newValue;
-
-        listener.changed(this, complexToString(oldValue),
-                complexToString(value));
-
-    }
-
-    @Override
-    public void setToDefault() {
-        Complex old = value;
-        if (value == null) {
-            value = defaultValue;
-        }
-    }
-
-    @Override
-    public String getStringRep() {
-        if (value == null) {
-            return "0 + 0j";
-        } else {
-            return value.getReal() + " + " + value.getImaginary() + "j";
         }
     }
 
@@ -172,6 +133,28 @@ public class ComplexOperationItem extends OperationItem implements ObservableObj
     public void removeListener(InvalidationListener listener) {
     }
 
+    @Override
+    public boolean isDefault() {
+        return Complex.equals(value, defaultValue);
+    }
+
+    @Override
+    public void setFromString(String sValue) {
+        ComplexFormat cfTemp = new ComplexFormat();
+        Complex oldValue = value;
+
+        Complex newValue = cfTemp.parse(sValue);
+        if (newValue == null) {
+            return;
+        }
+
+        value = newValue;
+
+        listener.changed(this, complexToString(oldValue),
+                complexToString(value));
+
+    }
+
     public void setFromPyComplex(PyComplex pc) {
         Complex oldValue = value;
         value = new Complex(pc.real, pc.imag);
@@ -184,5 +167,22 @@ public class ComplexOperationItem extends OperationItem implements ObservableObj
         value = new Complex(d);
         listener.changed(this, complexToString(oldValue), complexToString(value));
 
+    }
+
+    @Override
+    public void setToDefault() {
+        Complex old = value;
+        if (value == null) {
+            value = defaultValue;
+        }
+    }
+
+    @Override
+    public String getStringRep() {
+        if (value == null) {
+            return "0 + 0j";
+        } else {
+            return value.getReal() + " + " + value.getImaginary() + "j";
+        }
     }
 }

@@ -32,8 +32,8 @@ import java.util.Map;
  */
 public class CoordSet {
 
-    private final String name;
     public Map<String, Entity> entities = new LinkedHashMap<String, Entity>();
+    private final String name;
     private int id = 0;
 
     public CoordSet(String name, int id, Entity entity) {

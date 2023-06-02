@@ -30,14 +30,14 @@ public class Cwtd extends Operation {
 
     private final int halfWin;
 
-    public Cwtd(int halfWin) {
-        this.halfWin = halfWin;
-    }
-
     @Override
     public Cwtd eval(Vec vector) throws ProcessingException {
         cwtd(vector);
         return this;
+    }
+
+    public Cwtd(int halfWin) {
+        this.halfWin = halfWin;
     }
 
     private void cwtd(Vec vector) throws ProcessingException {

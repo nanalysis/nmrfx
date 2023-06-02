@@ -50,10 +50,11 @@ import java.util.Optional;
 @PythonAPI("dscript")
 public class PeakPicker {
     private static final Logger log = LoggerFactory.getLogger(PeakPicker.class);
-    private static final String MSG_PEAK_LIST = "Peak List ";
+
     private final Dataset dataset;
     private final PeakPickParameters peakPickPar;
     private final int nDim;
+    private static final String MSG_PEAK_LIST = "Peak List ";
     Peak lastPeakPicked = null;
     int nPeaks;
 

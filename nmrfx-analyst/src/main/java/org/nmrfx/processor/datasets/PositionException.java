@@ -12,14 +12,6 @@ class PositionException extends IOException {
     int position;
     int[] offsets;
 
-    PositionException(String message, long limit, int position, int... offsets) {
-        super();
-        this.message = message;
-        this.limit = limit;
-        this.position = position;
-        this.offsets = offsets;
-    }
-
     @Override
     public String getMessage() {
         StringBuilder sBuilder = new StringBuilder();
@@ -28,6 +20,14 @@ class PositionException extends IOException {
             sBuilder.append(" ").append(offset);
         }
         return sBuilder.toString();
+    }
+
+    PositionException(String message, long limit, int position, int... offsets) {
+        super();
+        this.message = message;
+        this.limit = limit;
+        this.position = position;
+        this.offsets = offsets;
     }
 
 }

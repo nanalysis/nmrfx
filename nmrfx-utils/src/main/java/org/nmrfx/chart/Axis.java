@@ -40,16 +40,18 @@
 //@PluginAPI("ring")
  public class Axis implements AxisLimits {
 
+     public enum Bound {
+         Lower, Upper
+     }
+
      private static final double GRID_MINOR_LINE_WIDTH = 0.5;
      private static final double GRID_MAJOR_LINE_WIDTH = 1.0;
      private static final double GRID_DASHES = 1;
      private static final double TARGET_PIX = 85.0;
+
      private static Font defaultFont = null;
+
      private final Orientation orientation;
-     private final double lineWidth = 1.0;
-     private final String fontFamily = "Liberation Sans";
-     private final double defaultUpper;
-     private final double defaultLower;
      private double ticSize = 10.0;
      private double width;
      private double height;
@@ -61,17 +63,32 @@
      private double yOrigin = 800.0;
      private double labelFontSize = 16;
      private double ticFontSize = 12;
+     private final double lineWidth = 1.0;
      private Color color = Color.BLACK;
+     private final String fontFamily = "Liberation Sans";
      private Font ticFont;
      private Font labelFont;
+     private final double defaultUpper;
+     private final double defaultLower;
      private boolean tickMarksVisible = true;
      private boolean tickLabelsVisible = true;
      private boolean labelVisible = true;
      private boolean autoRanging = false;
      private double gridLength = 0.0;
      private TickInfo tInfo = new TickInfo();
-     private DoubleProperty lowerBound;
-     private DoubleProperty upperBound;
+
+     private static void loadFont() {
+         InputStream iStream = Axis.class.getResourceAsStream("/LiberationSans-Regular.ttf");
+         defaultFont = Font.loadFont(iStream, 12);
+     }
+
+     public void setColor(Color value) {
+         color = value;
+     }
+
+     public Color getColor() {
+         return color;
+     }
 
      public Axis(Orientation orientation, double lowerBound, double upperBound, double width, double height) {
          this.orientation = orientation;
@@ -86,13 +103,7 @@
          labelFont = new Font("Liberation Sans", labelFontSize);
      }
 
-     public Color getColor() {
-         return color;
-     }
-
-     public void setColor(Color value) {
-         color = value;
-     }
+     private DoubleProperty lowerBound;
 
      public DoubleProperty lowerBoundProperty() {
          if (lowerBound == null) {
@@ -101,62 +112,29 @@
          return lowerBound;
      }
 
-     public double getLowerBound() {
-         return lowerBoundProperty().get();
-     }
-
      public void setLowerBound(double value) {
          lowerBoundProperty().set(value);
      }
 
-     public double getUpperBound() {
-         return upperBoundProperty().get();
+     public double getLowerBound() {
+         return lowerBoundProperty().get();
      }
 
-     public void setUpperBound(double value) {
-         upperBoundProperty().set(value);
-     }
-
-     public boolean isReversed() {
-         return reverse;
-     }
-
-     public void setReverse(boolean state) {
-         reverse = state;
-     }
-
-     public String getLabel() {
-         return label;
-     }
-
-     public void setLabel(String label) {
-         this.label = label;
-     }
-
-     public double getDisplayPosition(Number value) {
-         double f = (value.doubleValue() - getLowerBound()) / (getUpperBound() - getLowerBound());
-         double displayPosition;
-         if (orientation == HORIZONTAL) {
-             if (reverse) {
-                 displayPosition = xOrigin + width - f * width;
-             } else {
-                 displayPosition = xOrigin + f * width;
-             }
-         } else {
-             if (!reverse) {
-                 displayPosition = yOrigin - f * height;
-             } else {
-                 displayPosition = yOrigin - height + f * height;
-             }
-         }
-         return displayPosition;
-     }
+     private DoubleProperty upperBound;
 
      public DoubleProperty upperBoundProperty() {
          if (upperBound == null) {
              upperBound = new SimpleDoubleProperty(this, "upper", defaultUpper);
          }
          return upperBound;
+     }
+
+     public void setUpperBound(double value) {
+         upperBoundProperty().set(value);
+     }
+
+     public double getUpperBound() {
+         return upperBoundProperty().get();
      }
 
      public Number getValueForDisplay(double displayPosition) {
@@ -184,6 +162,25 @@
          return scaleValue;
      }
 
+     public double getDisplayPosition(Number value) {
+         double f = (value.doubleValue() - getLowerBound()) / (getUpperBound() - getLowerBound());
+         double displayPosition;
+         if (orientation == HORIZONTAL) {
+             if (reverse) {
+                 displayPosition = xOrigin + width - f * width;
+             } else {
+                 displayPosition = xOrigin + f * width;
+             }
+         } else {
+             if (!reverse) {
+                 displayPosition = yOrigin - f * height;
+             } else {
+                 displayPosition = yOrigin - height + f * height;
+             }
+         }
+         return displayPosition;
+     }
+
      public void setOrigin(double x, double y) {
          xOrigin = x;
          yOrigin = y;
@@ -197,28 +194,44 @@
          return yOrigin;
      }
 
-     public double getHeight() {
-         return height;
+     public void setLabel(String label) {
+         this.label = label;
+     }
+
+     public String getLabel() {
+         return label;
      }
 
      public void setHeight(double value) {
          height = value;
      }
 
-     public double getWidth() {
-         return width;
-     }
-
      public void setWidth(double value) {
          width = value;
      }
 
-     public boolean isZeroIncluded() {
-         return zeroIncluded;
+     public double getHeight() {
+         return height;
+     }
+
+     public double getWidth() {
+         return width;
+     }
+
+     public void setReverse(boolean state) {
+         reverse = state;
+     }
+
+     public boolean isReversed() {
+         return reverse;
      }
 
      public void setZeroIncluded(boolean state) {
          zeroIncluded = state;
+     }
+
+     public boolean isZeroIncluded() {
+         return zeroIncluded;
      }
 
      public Orientation getOrientation() {
@@ -233,12 +246,12 @@
          this.autoRanging = value;
      }
 
-     public double getGridLength() {
-         return gridLength;
-     }
-
      public void setGridLength(double value) {
          gridLength = value;
+     }
+
+     public double getGridLength() {
+         return gridLength;
      }
 
      public double[] autoRange(double min, double max, boolean tightMode) {
@@ -302,22 +315,38 @@
          return calcScale();
      }
 
+     public void setTickFontSize(double size) {
+         ticFontSize = size;
+         ticFont = new Font(fontFamily, ticFontSize);
+     }
+
      public double getTickFontSize() {
          return ticFontSize;
      }
 
-     public void setTickFontSize(double size) {
-         ticFontSize = size;
-         ticFont = new Font(fontFamily, ticFontSize);
+     public void setLabelFontSize(double size) {
+         labelFontSize = size;
+         labelFont = new Font(fontFamily, labelFontSize);
      }
 
      public double getLabelFontSize() {
          return labelFontSize;
      }
 
-     public void setLabelFontSize(double size) {
-         labelFontSize = size;
-         labelFont = new Font(fontFamily, labelFontSize);
+     static class TickInfo {
+
+         double minorSpace;
+         double majorSpace;
+         double minorStart;
+         double majorStart;
+         double majorEnd;
+         double incr;
+         boolean centerMode = false;
+         int nDecimals;
+
+         public String toString() {
+             return String.format("%.3f %.3f %.3f %.3f %.3f %3f", minorStart, minorSpace, majorStart, majorSpace, majorEnd, incr);
+         }
      }
 
      private void getTickPositions() {
@@ -566,20 +595,20 @@
          tickMarksVisible = state;
      }
 
-     public boolean isTickLabelsVisible() {
-         return tickLabelsVisible;
-     }
-
      public void setTickLabelsVisible(boolean state) {
          tickLabelsVisible = state;
      }
 
-     public boolean isLabelVisible() {
-         return labelVisible;
+     public boolean isTickLabelsVisible() {
+         return tickLabelsVisible;
      }
 
      public void setLabelVisible(boolean state) {
          labelVisible = state;
+     }
+
+     public boolean isLabelVisible() {
+         return labelVisible;
      }
 
      public void setTicksAndLabelsVisible(boolean visible) {
@@ -606,31 +635,4 @@
          newAxis.setTickFontSize(getTickFontSize());
          newAxis.setTickLabelsVisible(isTickLabelsVisible());
      }
-
-     private static void loadFont() {
-         InputStream iStream = Axis.class.getResourceAsStream("/LiberationSans-Regular.ttf");
-         defaultFont = Font.loadFont(iStream, 12);
-     }
-
-     public enum Bound {
-         Lower, Upper
-     }
-
-     static class TickInfo {
-
-         double minorSpace;
-         double majorSpace;
-         double minorStart;
-         double majorStart;
-         double majorEnd;
-         double incr;
-         boolean centerMode = false;
-         int nDecimals;
-
-         public String toString() {
-             return String.format("%.3f %.3f %.3f %.3f %.3f %3f", minorStart, minorSpace, majorStart, majorSpace, majorEnd, incr);
-         }
-     }
-
-
  }

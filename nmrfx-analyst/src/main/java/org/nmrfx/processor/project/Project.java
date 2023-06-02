@@ -22,8 +22,8 @@ import java.util.Map;
  */
 public class Project extends ProjectBase {
 
-    static final Map<String, Project> projects = new HashMap<>();
     static String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
+    static final Map<String, Project> projects = new HashMap<>();
     static Project activeProject = null;
     public ResonanceFactory resFactory;
 
@@ -35,6 +35,10 @@ public class Project extends ProjectBase {
         peakLists = new HashMap<>();
 
         setActive();
+    }
+
+    public static void setPCS(PropertyChangeSupport newPCS) {
+        pcs = newPCS;
     }
 
     private ResonanceFactory getNewResFactory() {
@@ -50,23 +54,6 @@ public class Project extends ProjectBase {
             resFact = new ResonanceFactory();
         }
         return resFact;
-    }
-
-    public void createProject(Path projectDir) throws IOException {
-        if (Files.exists(projectDir)) {
-            throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
-        }
-        FileSystem fileSystem = FileSystems.getDefault();
-        Files.createDirectory(projectDir);
-        for (String subDir : SUB_DIR_TYPES) {
-            Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
-            Files.createDirectory(subDirectory);
-        }
-        setProjectDir(projectDir);
-    }
-
-    public static void setPCS(PropertyChangeSupport newPCS) {
-        pcs = newPCS;
     }
 
     private static Project getNewStructureProject(String name) {
@@ -89,6 +76,19 @@ public class Project extends ProjectBase {
             project = new Project(name);
         }
         return project;
+    }
+
+    public void createProject(Path projectDir) throws IOException {
+        if (Files.exists(projectDir)) {
+            throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
+        }
+        FileSystem fileSystem = FileSystems.getDefault();
+        Files.createDirectory(projectDir);
+        for (String subDir : SUB_DIR_TYPES) {
+            Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
+            Files.createDirectory(subDirectory);
+        }
+        setProjectDir(projectDir);
     }
 
 

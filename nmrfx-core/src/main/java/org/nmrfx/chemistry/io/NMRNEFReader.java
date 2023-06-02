@@ -42,18 +42,58 @@ import java.util.*;
 @PluginAPI("ring")
 public class NMRNEFReader {
     private static final Logger log = LoggerFactory.getLogger(NMRNEFReader.class);
-    public static boolean DEBUG = false;
+
     final STAR3 nef;
     final File nefFile;
     final File nefDir;
+
     Map entities = new HashMap();
     boolean hasResonances = false;
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
+    public static boolean DEBUG = false;
 
     public NMRNEFReader(final File nefFile, final STAR3 nef) {
         this.nef = nef;
         this.nefFile = nefFile;
         this.nefDir = nefFile.getAbsoluteFile().getParentFile();
+    }
+
+    /**
+     * Read a NEF formatted file.
+     *
+     * @param nefFileName String. Name of the NEF file to read.
+     * @throws ParseException
+     */
+    public static void read(String nefFileName) throws ParseException, IOException {
+        File file = new File(nefFileName);
+        read(file);
+        log.info("read {}", nefFileName);
+    }
+
+    /**
+     * Read a NEF formatted file.
+     *
+     * @param nefFile File. NEF file to read.
+     * @throws ParseException
+     */
+    public static void read(File nefFile) throws ParseException {
+        FileReader fileReader;
+        try {
+            fileReader = new FileReader(nefFile);
+        } catch (FileNotFoundException ex) {
+            return;
+        }
+        BufferedReader bfR = new BufferedReader(fileReader);
+
+        STAR3 star = new STAR3(bfR, "star3");
+
+        try {
+            star.scanFile();
+        } catch (ParseException parseEx) {
+            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
+        }
+        NMRNEFReader reader = new NMRNEFReader(nefFile, star);
+        reader.processNEF();
     }
 
     void buildNEFChains(final Saveframe saveframe, MoleculeBase molecule, final String nomenclature) throws ParseException {
@@ -584,44 +624,6 @@ public class NMRNEFReader {
             buildNEFChemShifts(fromSet, toSet);
         }
         return molecule;
-    }
-
-    /**
-     * Read a NEF formatted file.
-     *
-     * @param nefFileName String. Name of the NEF file to read.
-     * @throws ParseException
-     */
-    public static void read(String nefFileName) throws ParseException, IOException {
-        File file = new File(nefFileName);
-        read(file);
-        log.info("read {}", nefFileName);
-    }
-
-    /**
-     * Read a NEF formatted file.
-     *
-     * @param nefFile File. NEF file to read.
-     * @throws ParseException
-     */
-    public static void read(File nefFile) throws ParseException {
-        FileReader fileReader;
-        try {
-            fileReader = new FileReader(nefFile);
-        } catch (FileNotFoundException ex) {
-            return;
-        }
-        BufferedReader bfR = new BufferedReader(fileReader);
-
-        STAR3 star = new STAR3(bfR, "star3");
-
-        try {
-            star.scanFile();
-        } catch (ParseException parseEx) {
-            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
-        }
-        NMRNEFReader reader = new NMRNEFReader(nefFile, star);
-        reader.processNEF();
     }
 
 }

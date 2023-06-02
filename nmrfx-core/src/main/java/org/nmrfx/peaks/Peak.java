@@ -20,19 +20,6 @@ import static java.util.Comparator.comparing;
 @PluginAPI("ring")
 public class Peak implements Comparable, PeakOrMulti {
 
-    static final public int NFLAGS = 16;
-    static final public int COMPOUND = 1;
-    static final public int MINOR = 2;
-    static final public int SOLVENT = 4;
-    static final public int ARTIFACT = 8;
-    static final public int IMPURITY = 16;
-    static final public int CHEMSHIFT_REF = 32;
-    static final public int QUANTITY_REF = 64;
-    static final public int COMBO_REF = 128;
-    static final public int WATER = 256;
-    static final public int[][] FREEZE_COLORS = {{255, 165, 0}, {255, 0, 255}, {255, 0, 0}};
-    protected static final int N_TYPES = 9;
-    protected static String[] peakTypes = new String[N_TYPES];
     static String peakStrings[] = {
             "_Peak.ID",
             "_Peak.Figure_of_merit",
@@ -68,17 +55,20 @@ public class Peak implements Comparable, PeakOrMulti {
             "_Peak_char.Detail",
             "_Peak_char.Coupling_detail",
             "_Peak_char.Frozen"};
+
     static String spectralTransitionStrings[] = {
             "_Spectral_transition.ID",
             "_Spectral_transition.Peak_ID",
             "_Spectral_transition.Figure_of_merit",
             "_Spectral_transition.Details",};
+
     static String spectralTransitionGeneralCharStrings[] = {
             "_Spectral_transition_general_char.Spectral_transition_ID",
             "_Spectral_transition_general_char.Peak_ID",
             "_Spectral_transition_general_char.Intensity_val",
             "_Spectral_transition_general_char.Intensity_val_err",
             "_Spectral_transition_general_char.Measurement_method",};
+
     static String spectralTransitionCharStrings[] = {
             "_Spectral_transition_char.Spectral_transition_ID",
             "_Spectral_transition_char.Peak_ID",
@@ -94,6 +84,7 @@ public class Peak implements Comparable, PeakOrMulti {
             "_Spectral_transition_char.Decay_rate_val",
             "_Spectral_transition_char.Decay_rate_val_err",
             "_Spectral_transition_char.Derivation_method_ID",};
+
     static String peakComplexCouplingStrings[] = {
             "_Peak_complex_multiplet.ID",
             "_Peak_complex_multiplet.Peak_ID",
@@ -121,6 +112,19 @@ public class Peak implements Comparable, PeakOrMulti {
             "_Peak_coupling.Intensity_val_err",
             "_Peak_coupling.Partner_Peak_coupling_ID"
     };
+    static final public int NFLAGS = 16;
+    static final public int COMPOUND = 1;
+    static final public int MINOR = 2;
+    static final public int SOLVENT = 4;
+    static final public int ARTIFACT = 8;
+    static final public int IMPURITY = 16;
+    static final public int CHEMSHIFT_REF = 32;
+    static final public int QUANTITY_REF = 64;
+    static final public int COMBO_REF = 128;
+    static final public int WATER = 256;
+    static final public int[][] FREEZE_COLORS = {{255, 165, 0}, {255, 0, 255}, {255, 0, 0}};
+    protected static final int N_TYPES = 9;
+    protected static String[] peakTypes = new String[N_TYPES];
 
     static {
         int j = 1;
@@ -133,7 +137,6 @@ public class Peak implements Comparable, PeakOrMulti {
 
 
     public PeakDim[] peakDims;
-    public PeakList peakList;
     protected float figureOfMerit = 1.0f;
     protected boolean valid = true;
     protected int idNum;
@@ -151,6 +154,7 @@ public class Peak implements Comparable, PeakOrMulti {
     protected Corner corner = new Corner("ne");
     private int index = -1;
     private int[] colorArray = null;
+    public PeakList peakList;
 
     public Peak(PeakList peakList, int nDim) {
         this(nDim);
@@ -172,6 +176,109 @@ public class Peak implements Comparable, PeakOrMulti {
         setStatus(0);
     }
 
+    public static Function<RegionData, Double> getMeasureFunction(String mode) {
+        Function<RegionData, Double> f;
+        switch (mode) {
+            case "center":
+                f = RegionData::getCenter;
+                break;
+            case "jitter":
+                f = RegionData::getJitter;
+                break;
+            case "max":
+                f = RegionData::getMax;
+                break;
+            case "min":
+                f = RegionData::getMin;
+                break;
+            case "extreme":
+                f = RegionData::getExtreme;
+                break;
+            case "volume":
+                f = RegionData::getVolume_r;
+                break;
+            case "evolume":
+                f = RegionData::getVolume_e;
+                break;
+            case "tvolume":
+                f = RegionData::getVolume_t;
+                break;
+            default:
+                f = null;
+        }
+        return f;
+    }
+
+    public static RegionData analyzePeakRegion(Peak peak, DatasetBase theFile, int[] planes, int[] pdim)
+            throws IOException {
+        int dataDim = theFile.getNDim();
+        int[][] p = new int[dataDim][2];
+        int[] cpt = new int[dataDim];
+        double[] width = new double[dataDim];
+        int[] dim = new int[dataDim];
+
+        if (dataDim != (peak.peakList.nDim + planes.length)) {
+            throw new IllegalArgumentException("Number of peak list dimensions not equal to number of dataset dimensions");
+        }
+
+        int k = 0;
+        peak.getPeakRegion(theFile, pdim, p, cpt, width, null);
+
+        for (int i = 0; i < dataDim; i++) {
+            dim[i] = i;
+
+            boolean ok = false;
+
+            for (int j = 0; j < peak.peakList.nDim; j++) {
+                if (pdim[j] == i) {
+                    ok = true;
+                }
+            }
+
+            if (!ok) {
+                cpt[i] = p[i][1] = p[i][0] = planes[k];
+                width[i] = 0.0;
+                k++;
+            }
+        }
+
+        RegionData regionData = theFile.analyzeRegion(p, cpt, width, dim);
+        return regionData;
+    }
+
+    public static Peak LinkStringToPeak(String string) {
+        Peak peak = null;
+
+        if (string.length() > 3) {
+            int start;
+            if (string.charAt(1) == ':') {
+                start = 2;
+            } else {
+                start = 0;
+            }
+
+            peak = PeakList.getAPeak(string.substring(start));
+        }
+
+        return (peak);
+    }
+
+    public static int LinkStringToDim(String string) {
+        int start;
+
+        if (string.charAt(2) == ':') {
+            start = 2;
+        } else {
+            start = 0;
+        }
+
+        if (string.length() < 3) {
+            return (0);
+        }
+
+        return (PeakList.getPeakDimNum(string.substring(start)));
+    }
+
     @Override
     public int compareTo(Object o) {
         int result = 1;
@@ -191,8 +298,123 @@ public class Peak implements Comparable, PeakOrMulti {
         return result;
     }
 
+    public static String[] getSTAR3Strings() {
+        return Peak.peakStrings;
+    }
+
+    public static String[] getSTAR3GeneralCharStrings() {
+        return Peak.peakGeneralCharStrings;
+    }
+
+    public static String[] getSTAR3CharStrings() {
+        return Peak.peakCharStrings;
+    }
+
+    public static String[] getSTAR3SpectralTransitionStrings() {
+        return Peak.spectralTransitionStrings;
+    }
+
+    public static String[] getSTAR3SpectralTransitionGeneralCharStrings() {
+        return Peak.spectralTransitionGeneralCharStrings;
+    }
+
+    public static String[] getSTAR3SpectralTransitionCharStrings() {
+        return Peak.spectralTransitionCharStrings;
+    }
+
+    public static String[] getSTAR3ComplexCouplingStrings() {
+        return Peak.peakComplexCouplingStrings;
+    }
+
+    public static String[] getSTAR3CouplingPatternStrings() {
+        return Peak.peakCouplingPatternStrings;
+    }
+
+    public static String[] getPeakTypes() {
+        return peakTypes;
+    }
+
+    @Override
+    public PeakList getPeakList() {
+        return peakList;
+    }
+
     public int getNDim() {
         return peakList.nDim;
+    }
+
+    public static int getType(String typeString) {
+        int type;
+
+        if ("compound".startsWith(typeString.toLowerCase())) {
+            type = COMPOUND;
+        } else if ("minor".startsWith(typeString.toLowerCase())) {
+            type = MINOR;
+        } else if ("solvent".startsWith(typeString.toLowerCase())) {
+            type = SOLVENT;
+        } else if ("contaminant".startsWith(typeString.toLowerCase())) {
+            type = IMPURITY;
+        } else if ("impurity".startsWith(typeString.toLowerCase())) {
+            type = IMPURITY;
+        } else if ("chemshiftref".startsWith(typeString.toLowerCase())) {
+            type = CHEMSHIFT_REF;
+        } else if ("quantityref".startsWith(typeString.toLowerCase())) {
+            type = QUANTITY_REF;
+        } else if ("comboref".startsWith(typeString.toLowerCase())) {
+            type = COMBO_REF;
+        } else if ("water".startsWith(typeString.toLowerCase())) {
+            type = WATER;
+        } else if ("artifact".startsWith(typeString.toLowerCase())) {
+            type = ARTIFACT;
+        } else {
+            type = -1;
+        }
+
+        return type;
+    }
+
+    public static String typesToString(int iTypes) {
+        int j = 1;
+        int n = 0;
+        StringBuilder sBuf = new StringBuilder();
+
+        for (int i = 0; i < N_TYPES; i++) {
+            if ((iTypes & j) != 0) {
+                if (n > 0) {
+                    sBuf.append(" ");
+                }
+
+                sBuf.append(Peak.typeToString(j));
+                n++;
+            }
+
+            j *= 2;
+        }
+
+        return sBuf.toString();
+    }
+
+    public static String typeToString(int type) {
+        switch (type) {
+            case Peak.COMPOUND:
+                return "compound";
+            case Peak.MINOR:
+                return "minor";
+            case Peak.SOLVENT:
+                return "solvent";
+            case Peak.IMPURITY:
+                return "impurity";
+            case Peak.CHEMSHIFT_REF:
+                return "chemshiftRef";
+            case Peak.QUANTITY_REF:
+                return "quantityRef";
+            case Peak.COMBO_REF:
+                return "comboRef";
+            case Peak.WATER:
+                return "water";
+            default:
+                return "artifact";
+        }
     }
 
     @Override
@@ -279,21 +501,6 @@ public class Peak implements Comparable, PeakOrMulti {
         return valid;
     }
 
-    @Override
-    public int getStatus() {
-        return status;
-    }
-
-    @Override
-    public PeakList getPeakList() {
-        return peakList;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
-        peakUpdated(this);
-    }
-
     public void markDeleted() {
         valid = false;
 
@@ -305,11 +512,6 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public int getType() {
         return type;
-    }
-
-    public void setType(int type) {
-        this.type = type;
-        peakUpdated(this);
     }
 
     public String typeToString() {
@@ -700,13 +902,13 @@ public class Peak implements Comparable, PeakOrMulti {
         return volume1;
     }
 
+    public float getVolume1Err() {
+        return volume1Err;
+    }
+
     public void setVolume1(float volume1) {
         this.volume1 = volume1;
         peakUpdated(this);
-    }
-
-    public float getVolume1Err() {
-        return volume1Err;
     }
 
     public void setVolume1Err(float err) {
@@ -718,13 +920,13 @@ public class Peak implements Comparable, PeakOrMulti {
         return intensity;
     }
 
+    public float getIntensityErr() {
+        return intensityErr;
+    }
+
     public void setIntensity(float intensity) {
         this.intensity = intensity;
         peakUpdated(this);
-    }
-
-    public float getIntensityErr() {
-        return intensityErr;
     }
 
     public void setIntensityErr(float err) {
@@ -736,13 +938,18 @@ public class Peak implements Comparable, PeakOrMulti {
         return volume2;
     }
 
+    public float getVolume2Err() {
+        return volume2Err;
+    }
+
     public void setVolume2(float volume2) {
         this.volume2 = volume2;
         peakUpdated(this);
     }
 
-    public float getVolume2Err() {
-        return volume2Err;
+    public void setType(int type) {
+        this.type = type;
+        peakUpdated(this);
     }
 
     public boolean isDeleted() {
@@ -751,6 +958,16 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public void delete() {
         setStatus(-1);
+    }
+
+    @Override
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+        peakUpdated(this);
     }
 
     public String getColorName() {
@@ -762,16 +979,16 @@ public class Peak implements Comparable, PeakOrMulti {
         return colorArray;
     }
 
-    public void setColor(String colorName) {
-        if (colorName != null) {
-            colorArray = NMRFxColor.parseColor(colorName);
+    public void setColorInt(int[] colors) {
+        if (colors != null) {
+            colorArray = colors.clone();
         }
         peakUpdated(this);
     }
 
-    public void setColorInt(int[] colors) {
-        if (colors != null) {
-            colorArray = colors.clone();
+    public void setColor(String colorName) {
+        if (colorName != null) {
+            colorArray = NMRFxColor.parseColor(colorName);
         }
         peakUpdated(this);
     }
@@ -826,6 +1043,18 @@ public class Peak implements Comparable, PeakOrMulti {
         peakUpdated(this);
     }
 
+    public void setFlag(String flagString) {
+        for (int i = 0; i < flag.length; i++) {
+            flag[i] = false;
+        }
+        for (int i = 0, n = flagString.length(); i < n; i++) {
+            if (flagString.charAt(i) != '0') {
+                this.flag[i] = true;
+            }
+        }
+        peakUpdated(this);
+    }
+
     public String getFlag() {
         StringBuilder flagResult = new StringBuilder();
         boolean nonZero = false;
@@ -842,18 +1071,6 @@ public class Peak implements Comparable, PeakOrMulti {
             result = flagResult.toString();
         }
         return result;
-    }
-
-    public void setFlag(String flagString) {
-        for (int i = 0; i < flag.length; i++) {
-            flag[i] = false;
-        }
-        for (int i = 0, n = flagString.length(); i < n; i++) {
-            if (flagString.charAt(i) != '0') {
-                this.flag[i] = true;
-            }
-        }
-        peakUpdated(this);
     }
 
     public String getFlag2() {
@@ -893,6 +1110,10 @@ public class Peak implements Comparable, PeakOrMulti {
     public void setCorner(char[] corner) {
         this.corner = new Corner(corner);
         peakUpdated(this);
+    }
+
+    public void setCorner(double x, double y) {
+        this.corner = new Corner(x, y);
     }
 
     public void setCorner(String cornerStr) {
@@ -941,10 +1162,6 @@ public class Peak implements Comparable, PeakOrMulti {
                 }
                 break;
         }
-    }
-
-    public void setCorner(double x, double y) {
-        this.corner = new Corner(x, y);
     }
 
     public float getFigureOfMerit() {
@@ -1033,12 +1250,12 @@ public class Peak implements Comparable, PeakOrMulti {
         return result;
     }
 
-    public Optional<double[][]> getMeasures() {
-        return measures;
-    }
-
     public void setMeasures(double[][] values) {
         measures = Optional.of(values);
+    }
+
+    public Optional<double[][]> getMeasures() {
+        return measures;
     }
 
     public void quantifyPeak(DatasetBase dataset, int[] pdim, Function<RegionData, Double> f, String mode) throws IOException, IllegalArgumentException {
@@ -1351,343 +1568,6 @@ public class Peak implements Comparable, PeakOrMulti {
         return overlaps;
     }
 
-    public PeakDim[] getPeakDims() {
-        return peakDims;
-    }
-
-    public void initPeakDimContribs() {
-        for (PeakDim peakDim : peakDims) {
-            peakDim.initResonance();
-        }
-    }
-
-    public PeakDim getPeakDim(int iDim) throws IllegalArgumentException {
-        PeakDim iPeakDim = null;
-        if ((iDim >= 0) && (iDim < peakList.nDim)) {
-            iPeakDim = peakDims[iDim];
-        }
-        if (iPeakDim == null) {
-            throw new IllegalArgumentException("Invalid peak dimension \"" + iDim + "\"");
-        }
-        return iPeakDim;
-    }
-
-    public PeakDim getPeakDim(String label) {
-        PeakDim matchDim = null;
-
-        for (int i = 0; i < peakList.nDim; i++) {
-            if (peakList.getSpectralDim(i).getDimName().equals(label)) {
-                matchDim = peakDims[i];
-            }
-        }
-
-        return matchDim;
-    }
-
-    public AssignmentLevel getAssignmentLevel() {
-        boolean assigned = true;
-        boolean someAssigned = false;
-        boolean invalid = false;
-        boolean ambiguous = false;
-        MoleculeBase molecule = MoleculeFactory.getActive();
-        if (isDeleted()) {
-            return AssignmentLevel.DELETED;
-        }
-        for (var peakDim : peakDims) {
-            String labels = peakDim.getLabel();
-            if (labels.isBlank()) {
-                assigned = false;
-            } else {
-                String[] fields = labels.split(" ");
-                if (fields.length > 1) {
-                    ambiguous = true;
-                }
-                for (String label : fields) {
-                    if (label.isBlank()) {
-                        assigned = false;
-                    } else {
-                        if ((molecule != null) && (molecule.findAtom(label) == null)) {
-                            invalid = true;
-                        }
-                        someAssigned = true;
-                    }
-                }
-            }
-        }
-        AssignmentLevel result;
-        if (!someAssigned) {
-            result = AssignmentLevel.UNASSIGNED;
-        } else if (assigned && !invalid && ambiguous) {
-            result = AssignmentLevel.AVM;
-        } else if (assigned && !invalid && !ambiguous) {
-            result = AssignmentLevel.AVU;
-        } else if (assigned && invalid && ambiguous) {
-            result = AssignmentLevel.AIM;
-        } else if (assigned && invalid && !ambiguous) {
-            result = AssignmentLevel.AIU;
-        } else if (someAssigned && !invalid && ambiguous) {
-            result = AssignmentLevel.SVM;
-        } else if (someAssigned && !invalid && !ambiguous) {
-            result = AssignmentLevel.SVU;
-        } else if (someAssigned && invalid && ambiguous) {
-            result = AssignmentLevel.SIM;
-        } else {
-            result = AssignmentLevel.SIU;
-        }
-        return result;
-    }
-
-    public static Function<RegionData, Double> getMeasureFunction(String mode) {
-        Function<RegionData, Double> f;
-        switch (mode) {
-            case "center":
-                f = RegionData::getCenter;
-                break;
-            case "jitter":
-                f = RegionData::getJitter;
-                break;
-            case "max":
-                f = RegionData::getMax;
-                break;
-            case "min":
-                f = RegionData::getMin;
-                break;
-            case "extreme":
-                f = RegionData::getExtreme;
-                break;
-            case "volume":
-                f = RegionData::getVolume_r;
-                break;
-            case "evolume":
-                f = RegionData::getVolume_e;
-                break;
-            case "tvolume":
-                f = RegionData::getVolume_t;
-                break;
-            default:
-                f = null;
-        }
-        return f;
-    }
-
-    public static RegionData analyzePeakRegion(Peak peak, DatasetBase theFile, int[] planes, int[] pdim)
-            throws IOException {
-        int dataDim = theFile.getNDim();
-        int[][] p = new int[dataDim][2];
-        int[] cpt = new int[dataDim];
-        double[] width = new double[dataDim];
-        int[] dim = new int[dataDim];
-
-        if (dataDim != (peak.peakList.nDim + planes.length)) {
-            throw new IllegalArgumentException("Number of peak list dimensions not equal to number of dataset dimensions");
-        }
-
-        int k = 0;
-        peak.getPeakRegion(theFile, pdim, p, cpt, width, null);
-
-        for (int i = 0; i < dataDim; i++) {
-            dim[i] = i;
-
-            boolean ok = false;
-
-            for (int j = 0; j < peak.peakList.nDim; j++) {
-                if (pdim[j] == i) {
-                    ok = true;
-                }
-            }
-
-            if (!ok) {
-                cpt[i] = p[i][1] = p[i][0] = planes[k];
-                width[i] = 0.0;
-                k++;
-            }
-        }
-
-        RegionData regionData = theFile.analyzeRegion(p, cpt, width, dim);
-        return regionData;
-    }
-
-    public static Peak LinkStringToPeak(String string) {
-        Peak peak = null;
-
-        if (string.length() > 3) {
-            int start;
-            if (string.charAt(1) == ':') {
-                start = 2;
-            } else {
-                start = 0;
-            }
-
-            peak = PeakList.getAPeak(string.substring(start));
-        }
-
-        return (peak);
-    }
-
-    public static int LinkStringToDim(String string) {
-        int start;
-
-        if (string.charAt(2) == ':') {
-            start = 2;
-        } else {
-            start = 0;
-        }
-
-        if (string.length() < 3) {
-            return (0);
-        }
-
-        return (PeakList.getPeakDimNum(string.substring(start)));
-    }
-
-    public static String[] getSTAR3Strings() {
-        return Peak.peakStrings;
-    }
-
-    public static String[] getSTAR3GeneralCharStrings() {
-        return Peak.peakGeneralCharStrings;
-    }
-
-    public static String[] getSTAR3CharStrings() {
-        return Peak.peakCharStrings;
-    }
-
-    public static String[] getSTAR3SpectralTransitionStrings() {
-        return Peak.spectralTransitionStrings;
-    }
-
-    public static String[] getSTAR3SpectralTransitionGeneralCharStrings() {
-        return Peak.spectralTransitionGeneralCharStrings;
-    }
-
-    public static String[] getSTAR3SpectralTransitionCharStrings() {
-        return Peak.spectralTransitionCharStrings;
-    }
-
-    public static String[] getSTAR3ComplexCouplingStrings() {
-        return Peak.peakComplexCouplingStrings;
-    }
-
-    public static String[] getSTAR3CouplingPatternStrings() {
-        return Peak.peakCouplingPatternStrings;
-    }
-
-    public static String[] getPeakTypes() {
-        return peakTypes;
-    }
-
-    public static int getType(String typeString) {
-        int type;
-
-        if ("compound".startsWith(typeString.toLowerCase())) {
-            type = COMPOUND;
-        } else if ("minor".startsWith(typeString.toLowerCase())) {
-            type = MINOR;
-        } else if ("solvent".startsWith(typeString.toLowerCase())) {
-            type = SOLVENT;
-        } else if ("contaminant".startsWith(typeString.toLowerCase())) {
-            type = IMPURITY;
-        } else if ("impurity".startsWith(typeString.toLowerCase())) {
-            type = IMPURITY;
-        } else if ("chemshiftref".startsWith(typeString.toLowerCase())) {
-            type = CHEMSHIFT_REF;
-        } else if ("quantityref".startsWith(typeString.toLowerCase())) {
-            type = QUANTITY_REF;
-        } else if ("comboref".startsWith(typeString.toLowerCase())) {
-            type = COMBO_REF;
-        } else if ("water".startsWith(typeString.toLowerCase())) {
-            type = WATER;
-        } else if ("artifact".startsWith(typeString.toLowerCase())) {
-            type = ARTIFACT;
-        } else {
-            type = -1;
-        }
-
-        return type;
-    }
-
-    public static String typesToString(int iTypes) {
-        int j = 1;
-        int n = 0;
-        StringBuilder sBuf = new StringBuilder();
-
-        for (int i = 0; i < N_TYPES; i++) {
-            if ((iTypes & j) != 0) {
-                if (n > 0) {
-                    sBuf.append(" ");
-                }
-
-                sBuf.append(Peak.typeToString(j));
-                n++;
-            }
-
-            j *= 2;
-        }
-
-        return sBuf.toString();
-    }
-
-    public static String typeToString(int type) {
-        switch (type) {
-            case Peak.COMPOUND:
-                return "compound";
-            case Peak.MINOR:
-                return "minor";
-            case Peak.SOLVENT:
-                return "solvent";
-            case Peak.IMPURITY:
-                return "impurity";
-            case Peak.CHEMSHIFT_REF:
-                return "chemshiftRef";
-            case Peak.QUANTITY_REF:
-                return "quantityRef";
-            case Peak.COMBO_REF:
-                return "comboRef";
-            case Peak.WATER:
-                return "water";
-            default:
-                return "artifact";
-        }
-    }
-
-    public enum AssignmentLevel {
-        DELETED("Deleted"),
-        UNASSIGNED("None assigned"),
-        AVM("All Assigned, Valid, Ambiguous"),
-        AVU("All Assigned, Valid, Unambiguous"),
-        AIM("All Assigned, Invalid, Ambiguous"),
-        AIU("All Assigned, Invalid, Unambiguous"),
-        SVM("Some Assigned, Valid, Ambiguous"),
-        SVU("Some Assigned, Valid, Unambiguous"),
-        SIM("Some Assigned, Invalid, Ambiguous"),
-        SIU("Some Assigned, Invalid, Unambiguous");
-
-        String description;
-
-        AssignmentLevel(String description) {
-            this.description = description;
-        }
-
-        @Override
-        public String toString() {
-            return description;
-        }
-
-        public static boolean match(AssignmentLevel level, String mode) {
-            return switch (mode) {
-                case "all" -> true;
-                case "ok" -> level != DELETED;
-                case "deleted" -> level == DELETED;
-                case "assigned" -> level == AVU || level == AVM;
-                case "partial" -> level == SVM || level == SVU;
-                case "unassigned" -> level == UNASSIGNED;
-                case "ambiguous" -> level == AVM || level == SVM;
-                case "invalid" -> level == AIM || level == AIU || level == SIM || level == SIU;
-                default -> true;
-            };
-        }
-    }
-
     public class Corner {
 
         private final double x;
@@ -1867,6 +1747,130 @@ public class Peak implements Comparable, PeakOrMulti {
             }
             return anchor;
         }
+    }
+
+    public PeakDim[] getPeakDims() {
+        return peakDims;
+    }
+
+    public void initPeakDimContribs() {
+        for (PeakDim peakDim : peakDims) {
+            peakDim.initResonance();
+        }
+    }
+
+    public PeakDim getPeakDim(int iDim) throws IllegalArgumentException {
+        PeakDim iPeakDim = null;
+        if ((iDim >= 0) && (iDim < peakList.nDim)) {
+            iPeakDim = peakDims[iDim];
+        }
+        if (iPeakDim == null) {
+            throw new IllegalArgumentException("Invalid peak dimension \"" + iDim + "\"");
+        }
+        return iPeakDim;
+    }
+
+    public PeakDim getPeakDim(String label) {
+        PeakDim matchDim = null;
+
+        for (int i = 0; i < peakList.nDim; i++) {
+            if (peakList.getSpectralDim(i).getDimName().equals(label)) {
+                matchDim = peakDims[i];
+            }
+        }
+
+        return matchDim;
+    }
+
+    public enum AssignmentLevel {
+        DELETED("Deleted"),
+        UNASSIGNED("None assigned"),
+        AVM("All Assigned, Valid, Ambiguous"),
+        AVU("All Assigned, Valid, Unambiguous"),
+        AIM("All Assigned, Invalid, Ambiguous"),
+        AIU("All Assigned, Invalid, Unambiguous"),
+        SVM("Some Assigned, Valid, Ambiguous"),
+        SVU("Some Assigned, Valid, Unambiguous"),
+        SIM("Some Assigned, Invalid, Ambiguous"),
+        SIU("Some Assigned, Invalid, Unambiguous");
+
+        String description;
+
+        AssignmentLevel(String description) {
+            this.description = description;
+        }
+
+        @Override
+        public String toString() {
+            return description;
+        }
+
+        public static boolean match(AssignmentLevel level, String mode) {
+            return switch (mode) {
+                case "all" -> true;
+                case "ok" -> level != DELETED;
+                case "deleted" -> level == DELETED;
+                case "assigned" -> level == AVU || level == AVM;
+                case "partial" -> level == SVM || level == SVU;
+                case "unassigned" -> level == UNASSIGNED;
+                case "ambiguous" -> level == AVM || level == SVM;
+                case "invalid" -> level == AIM || level == AIU || level == SIM || level == SIU;
+                default -> true;
+            };
+        }
+    }
+
+    public AssignmentLevel getAssignmentLevel() {
+        boolean assigned = true;
+        boolean someAssigned = false;
+        boolean invalid = false;
+        boolean ambiguous = false;
+        MoleculeBase molecule = MoleculeFactory.getActive();
+        if (isDeleted()) {
+            return AssignmentLevel.DELETED;
+        }
+        for (var peakDim : peakDims) {
+            String labels = peakDim.getLabel();
+            if (labels.isBlank()) {
+                assigned = false;
+            } else {
+                String[] fields = labels.split(" ");
+                if (fields.length > 1) {
+                    ambiguous = true;
+                }
+                for (String label : fields) {
+                    if (label.isBlank()) {
+                        assigned = false;
+                    } else {
+                        if ((molecule != null) && (molecule.findAtom(label) == null)) {
+                            invalid = true;
+                        }
+                        someAssigned = true;
+                    }
+                }
+            }
+        }
+        AssignmentLevel result;
+        if (!someAssigned) {
+            result = AssignmentLevel.UNASSIGNED;
+        } else if (assigned && !invalid && ambiguous) {
+            result = AssignmentLevel.AVM;
+        } else if (assigned && !invalid && !ambiguous) {
+            result = AssignmentLevel.AVU;
+        } else if (assigned && invalid && ambiguous) {
+            result = AssignmentLevel.AIM;
+        } else if (assigned && invalid && !ambiguous) {
+            result = AssignmentLevel.AIU;
+        } else if (someAssigned && !invalid && ambiguous) {
+            result = AssignmentLevel.SVM;
+        } else if (someAssigned && !invalid && !ambiguous) {
+            result = AssignmentLevel.SVU;
+        } else if (someAssigned && invalid && ambiguous) {
+            result = AssignmentLevel.SIM;
+        } else {
+            result = AssignmentLevel.SIU;
+        }
+        return result;
     }
 
     class CouplingUpdate {

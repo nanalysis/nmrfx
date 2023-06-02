@@ -71,6 +71,24 @@ public class PeakFit implements MultivariateFunction {
     int reportAt = 10;
     boolean fitAmps = false;
 
+    public class Checker extends SimpleValueChecker {
+
+        public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
+            super(relativeThreshold, absoluteThreshold, maxIter);
+        }
+
+        @Override
+        public boolean converged(final int iteration, final org.apache.commons.math3.optim.PointValuePair previous, final org.apache.commons.math3.optim.PointValuePair current) {
+            boolean converged = super.converged(iteration, previous, current);
+            if (reportFitness) {
+                if (converged) {
+                    System.out.println(previous.getValue() + " " + current.getValue());
+                }
+            }
+            return converged;
+        }
+    }
+
     public PeakFit(boolean fitAmps, PeakFitParameters fitParameters) {
         this.fitAmps = fitAmps;
         this.fitParameters = fitParameters;
@@ -309,6 +327,54 @@ public class PeakFit implements MultivariateFunction {
         System.out.println(nFit);
     }
 
+    public void setSignals(CouplingItem[][] cplItems) {
+        nSignals = cplItems.length;
+        lw = new double[nSignals];
+        amplitudes = new double[nSignals][];
+        freqs = new double[nSignals][];
+        this.cplItems = cplItems;
+        sigStarts = new int[nSignals];
+        nSigAmps = new int[nSignals];
+
+        int start = 0;
+        nSigAmpsTotal = 0;
+        nFit = 0;
+        for (int i = 0; i < nSignals; i++) {
+            Arrays.sort(cplItems[i]);
+            sigStarts[i] = start;
+            start++; // allow for linewidth par
+            nFit++;
+            int nFreqs = 1;
+
+            if ((cplItems[i].length == 1) && (cplItems[i][0].getNSplits() < 0)) { // generic multiplet
+                nFreqs = -cplItems[i][0].getNSplits();
+                start += nFreqs;
+                nFit += nFreqs;
+                if (fitAmps) {
+                    start += nFreqs;
+                    nFit += nFreqs;
+                }
+                nSigAmpsTotal += nFreqs;
+                nSigAmps[i] = nFreqs;
+            } else {
+                for (CouplingItem cplItem : cplItems[i]) {
+                    nFreqs = nFreqs * cplItem.getNSplits();
+                }
+                nSigAmpsTotal++;
+                nSigAmps[i] = 1;
+                start += (cplItems[i].length * 2 + 1);
+                nFit += (cplItems[i].length * 2 + 1);
+                if (fitAmps) {
+                    start++;
+                    nFit++;
+                }
+            }
+            amplitudes[i] = new double[nFreqs];
+            freqs[i] = new double[nFreqs];
+        }
+        sigAmps = new double[nSigAmpsTotal];
+    }
+
     public CouplingItem[] getCouplings(int iSig) {
         return cplItems[iSig];
     }
@@ -371,54 +437,6 @@ public class PeakFit implements MultivariateFunction {
         }
 
         return signalGroups;
-    }
-
-    public void setSignals(CouplingItem[][] cplItems) {
-        nSignals = cplItems.length;
-        lw = new double[nSignals];
-        amplitudes = new double[nSignals][];
-        freqs = new double[nSignals][];
-        this.cplItems = cplItems;
-        sigStarts = new int[nSignals];
-        nSigAmps = new int[nSignals];
-
-        int start = 0;
-        nSigAmpsTotal = 0;
-        nFit = 0;
-        for (int i = 0; i < nSignals; i++) {
-            Arrays.sort(cplItems[i]);
-            sigStarts[i] = start;
-            start++; // allow for linewidth par
-            nFit++;
-            int nFreqs = 1;
-
-            if ((cplItems[i].length == 1) && (cplItems[i][0].getNSplits() < 0)) { // generic multiplet
-                nFreqs = -cplItems[i][0].getNSplits();
-                start += nFreqs;
-                nFit += nFreqs;
-                if (fitAmps) {
-                    start += nFreqs;
-                    nFit += nFreqs;
-                }
-                nSigAmpsTotal += nFreqs;
-                nSigAmps[i] = nFreqs;
-            } else {
-                for (CouplingItem cplItem : cplItems[i]) {
-                    nFreqs = nFreqs * cplItem.getNSplits();
-                }
-                nSigAmpsTotal++;
-                nSigAmps[i] = 1;
-                start += (cplItems[i].length * 2 + 1);
-                nFit += (cplItems[i].length * 2 + 1);
-                if (fitAmps) {
-                    start++;
-                    nFit++;
-                }
-            }
-            amplitudes[i] = new double[nFreqs];
-            freqs[i] = new double[nFreqs];
-        }
-        sigAmps = new double[nSigAmpsTotal];
     }
 
     public double calculate(double[] a, double x) {
@@ -744,23 +762,5 @@ public class PeakFit implements MultivariateFunction {
         }
         boundaries[0] = lower;
         boundaries[1] = upper;
-    }
-
-    public class Checker extends SimpleValueChecker {
-
-        public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
-            super(relativeThreshold, absoluteThreshold, maxIter);
-        }
-
-        @Override
-        public boolean converged(final int iteration, final org.apache.commons.math3.optim.PointValuePair previous, final org.apache.commons.math3.optim.PointValuePair current) {
-            boolean converged = super.converged(iteration, previous, current);
-            if (reportFitness) {
-                if (converged) {
-                    System.out.println(previous.getValue() + " " + current.getValue());
-                }
-            }
-            return converged;
-        }
     }
 }

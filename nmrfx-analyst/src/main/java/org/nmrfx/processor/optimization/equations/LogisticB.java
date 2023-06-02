@@ -110,10 +110,6 @@ public class LogisticB extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = ((c - a) * x) / (x + B) + A";
-    }
-
     @Override
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
@@ -140,5 +136,9 @@ public class LogisticB extends OptFunction {
                 }
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = ((c - a) * x) / (x + B) + A";
     }
 }

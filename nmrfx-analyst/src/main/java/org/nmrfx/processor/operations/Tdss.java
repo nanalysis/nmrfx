@@ -32,6 +32,12 @@ public class Tdss extends Operation {
     private final double shiftPoints;
     private final Unit unit;
 
+    @Override
+    public Tdss eval(Vec vector) throws OperationException {
+        tdss(vector);
+        return this;
+    }
+
     public Tdss(int winSize, int nPasses, double shiftPoints) {
         this.winSize = winSize;
         this.nPasses = nPasses;
@@ -44,12 +50,6 @@ public class Tdss extends Operation {
         this.nPasses = nPasses;
         this.unit = unit;
         this.shiftPoints = 0;
-    }
-
-    @Override
-    public Tdss eval(Vec vector) throws OperationException {
-        tdss(vector);
-        return this;
     }
 
     private void tdss(Vec vector) throws OperationException {

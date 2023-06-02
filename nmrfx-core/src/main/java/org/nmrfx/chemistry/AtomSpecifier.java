@@ -51,6 +51,11 @@ public class AtomSpecifier {
         this.resName = resName;
     }
 
+    public AtomSpecifier setAtomName(String newName) {
+        return new AtomSpecifier(chainName, resNum, resName, newName);
+
+    }
+
     public String getResNumString() {
         return resNumStr;
     }
@@ -67,24 +72,6 @@ public class AtomSpecifier {
         return atomName;
     }
 
-    public AtomSpecifier setAtomName(String newName) {
-        return new AtomSpecifier(chainName, resNum, resName, newName);
-
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sBuilder = new StringBuilder();
-        if ((chainName != null) && !chainName.isBlank()) {
-            sBuilder.append(chainName).append(":");
-        }
-        if ((resName != null) && !resName.isBlank()) {
-            sBuilder.append(resName);
-        }
-        sBuilder.append(resNumStr).append(".").append(atomName);
-        return sBuilder.toString();
-    }
-
     public static AtomSpecifier parseString(String s) {
         Matcher matcher = RESIDUE_PATTERN.matcher(s);
         String chainName = "";
@@ -98,6 +85,19 @@ public class AtomSpecifier {
             atomName = matcher.group(6);
         }
         return new AtomSpecifier(chainName, resNumStr, resChar, atomName);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        if ((chainName != null) && !chainName.isBlank()) {
+            sBuilder.append(chainName).append(":");
+        }
+        if ((resName != null) && !resName.isBlank()) {
+            sBuilder.append(resName);
+        }
+        sBuilder.append(resNumStr).append(".").append(atomName);
+        return sBuilder.toString();
     }
 
 }

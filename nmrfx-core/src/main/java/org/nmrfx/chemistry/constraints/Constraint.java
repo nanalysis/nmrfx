@@ -23,16 +23,6 @@ package org.nmrfx.chemistry.constraints;
  */
 public interface Constraint {
 
-    public int getID();
-
-    public boolean isUserActive();
-
-    public DistanceStat getStat();
-
-    public double getValue();
-
-    public String toSTARString();
-
     enum GenTypes {
 
         MANUAL("manual", "Man") {
@@ -46,11 +36,6 @@ public interface Constraint {
         private final String description;
         private final String shortDesc;
 
-        GenTypes(String description, String shortDesc) {
-            this.description = description;
-            this.shortDesc = shortDesc;
-        }
-
         public String getDescription() {
             return description;
         }
@@ -58,5 +43,20 @@ public interface Constraint {
         public String getShortDescription() {
             return shortDesc;
         }
+
+        GenTypes(String description, String shortDesc) {
+            this.description = description;
+            this.shortDesc = shortDesc;
+        }
     }
+
+    public int getID();
+
+    public boolean isUserActive();
+
+    public DistanceStat getStat();
+
+    public double getValue();
+
+    public String toSTARString();
 }

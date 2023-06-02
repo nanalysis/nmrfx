@@ -41,17 +41,17 @@ import java.nio.channels.FileChannel;
 public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(MappedMatrixFile.class);
-    final boolean writable;
+    private RandomAccessFile raFile;
     private final Dataset dataset;
     private final File file;
     private final long[] strides;
+    private long totalSize;
     private final int dataType;
-    private final long BYTES = 4;
+    final boolean writable;
+    private MappedByteBuffer mappedBuffer;
     DatasetLayout layout;
     FloatBuffer floatBuffer;
-    private RandomAccessFile raFile;
-    private long totalSize;
-    private MappedByteBuffer mappedBuffer;
+    private final long BYTES = 4;
 
     /**
      * An object that represents a mapping of specified dataset with a memory
@@ -77,6 +77,33 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
         return layout;
     }
 
+    void init() throws IOException {
+        long size = 1;
+        for (int i = 0; i < layout.nDim; i++) {
+            size *= layout.sizes[i];
+            if (i == 0) {
+                strides[i] = 1;
+            } else {
+                strides[i] = strides[i - 1] * layout.sizes[i - 1];
+            }
+            log.info("mapped {} {} {}", i, dataset.getSizeTotal(i), strides[i]);
+        }
+        totalSize = size;
+        try {
+            long size2 = totalSize * Float.BYTES;
+            FileChannel.MapMode mapMode = FileChannel.MapMode.READ_ONLY;
+            if (writable) {
+                mapMode = FileChannel.MapMode.READ_WRITE;
+            }
+            mappedBuffer = this.raFile.getChannel().map(mapMode, layout.getFileHeaderSize(), size2);
+            mappedBuffer.order(dataset.getByteOrder());
+            floatBuffer = mappedBuffer.asFloatBuffer();
+        } catch (IOException e) {
+            this.raFile.close();
+            throw e;
+        }
+    }
+
     @Override
     public final synchronized void writeHeader(boolean nvExtra) {
         if (file != null) {
@@ -90,11 +117,6 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
     }
 
     @Override
-    public boolean isWritable() {
-        return writable;
-    }
-
-    @Override
     public void setWritable(boolean state) throws IOException {
         if (writable != state) {
             if (state) {
@@ -105,6 +127,15 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
             }
             init();
         }
+    }
+
+    @Override
+    public boolean isWritable() {
+        return writable;
+    }
+
+    protected void startVecGet(int... offsets) {
+        // return start position, block, stride, nPoints 
     }
 
     @Override
@@ -197,37 +228,6 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
     @Override
     public void force() {
         mappedBuffer.force();
-    }
-
-    void init() throws IOException {
-        long size = 1;
-        for (int i = 0; i < layout.nDim; i++) {
-            size *= layout.sizes[i];
-            if (i == 0) {
-                strides[i] = 1;
-            } else {
-                strides[i] = strides[i - 1] * layout.sizes[i - 1];
-            }
-            log.info("mapped {} {} {}", i, dataset.getSizeTotal(i), strides[i]);
-        }
-        totalSize = size;
-        try {
-            long size2 = totalSize * Float.BYTES;
-            FileChannel.MapMode mapMode = FileChannel.MapMode.READ_ONLY;
-            if (writable) {
-                mapMode = FileChannel.MapMode.READ_WRITE;
-            }
-            mappedBuffer = this.raFile.getChannel().map(mapMode, layout.getFileHeaderSize(), size2);
-            mappedBuffer.order(dataset.getByteOrder());
-            floatBuffer = mappedBuffer.asFloatBuffer();
-        } catch (IOException e) {
-            this.raFile.close();
-            throw e;
-        }
-    }
-
-    protected void startVecGet(int... offsets) {
-        // return start position, block, stride, nPoints
     }
 
     private void clean(MappedByteBuffer mapping) {

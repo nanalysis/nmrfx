@@ -32,17 +32,17 @@ public class Gen extends Operation {
     private final double amp;
     private final double ph;
 
+    @Override
+    public Gen eval(Vec vector) throws ProcessingException {
+        genSignal(vector);
+        return this;
+    }
+
     public Gen(double freq, double lw, double amp, double ph) {
         this.freq = freq;
         this.lw = lw;
         this.amp = amp;
         this.ph = ph;
-    }
-
-    @Override
-    public Gen eval(Vec vector) throws ProcessingException {
-        genSignal(vector);
-        return this;
     }
 
     /**

@@ -34,9 +34,6 @@ import java.util.Collections;
  */
 public class Util {
 
-    public Util() {
-    }
-
     /**
      * If the caller provides a list of points they must also set the proper
      * flag.
@@ -225,6 +222,9 @@ public class Util {
             }
         }
         return signalRegions;
+    }
+
+    public Util() {
     }
 
     public static boolean[] getSignalRegionByCWTD(Vec vector, int winSize, int minBase, double ratio, IDBaseline2.ThreshMode mode) {

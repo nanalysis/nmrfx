@@ -23,25 +23,6 @@ public class DimCounter implements Iterable<int[]> {
     private final int nDim;
     private final int counterSize;
 
-    public DimCounter(int... size) {
-        nDim = size.length;
-        this.size = size.clone();
-        int sizeTemp = 1;
-        for (int i = 0; i < nDim; i++) {
-            sizeTemp *= size[i];
-        }
-        counterSize = sizeTemp;
-    }
-
-    @Override
-    public Iterator iterator() {
-        return new Iterator();
-    }
-
-    public int getSize() {
-        return counterSize;
-    }
-
     public class Iterator implements java.util.Iterator<int[]> {
 
         private final int[] counter = new int[nDim];
@@ -78,5 +59,24 @@ public class DimCounter implements Iterable<int[]> {
         public void remove() {
             throw new UnsupportedOperationException();
         }
+    }
+
+    public DimCounter(int... size) {
+        nDim = size.length;
+        this.size = size.clone();
+        int sizeTemp = 1;
+        for (int i = 0; i < nDim; i++) {
+            sizeTemp *= size[i];
+        }
+        counterSize = sizeTemp;
+    }
+
+    @Override
+    public Iterator iterator() {
+        return new Iterator();
+    }
+
+    public int getSize() {
+        return counterSize;
     }
 }

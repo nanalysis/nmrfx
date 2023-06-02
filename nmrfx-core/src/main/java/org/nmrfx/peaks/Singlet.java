@@ -47,8 +47,28 @@ public class Singlet extends Coupling {
     }
 
     @Override
+    public boolean isCoupled() {
+        return false;
+    }
+
+    @Override
     public String getMultiplicity() {
         return "s";
+    }
+
+    @Override
+    public String getCouplingsAsString() {
+        return String.valueOf(0.0);
+
+    }
+
+    @Override
+    public String getCouplingsAsSimpleString() {
+        return "";
+    }
+
+    protected Coupling adjustCouplings(final Multiplet multiplet, final int iCoupling, final double newValue) {
+        return this;
     }
 
     @Override
@@ -77,26 +97,6 @@ public class Singlet extends Coupling {
         ArrayList<TreeLine> lines = new ArrayList<>();
         lines.add(new TreeLine(0.0, 0.0, 0.0, 0.0));
         return lines;
-    }
-
-    @Override
-    public String getCouplingsAsString() {
-        return String.valueOf(0.0);
-
-    }
-
-    @Override
-    public String getCouplingsAsSimpleString() {
-        return "";
-    }
-
-    @Override
-    public boolean isCoupled() {
-        return false;
-    }
-
-    protected Coupling adjustCouplings(final Multiplet multiplet, final int iCoupling, final double newValue) {
-        return this;
     }
 
 }

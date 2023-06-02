@@ -23,6 +23,64 @@ public class AngleTreeGenerator {
     List<Bond> closureBonds = new ArrayList<>();
     List<Atom> atomPathList = new ArrayList<>();
 
+    public static void genCoordinates(Entity entity, Atom startAtom) {
+        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
+        List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
+        List<Atom> atomList = aTreeGen.getPathList();
+        int[][] genVecs = CoordinateGenerator.setupCoords(atomTree);
+        CoordinateGenerator.prepareAtoms(atomList, false);
+        for (Atom atom : atomList) {
+            atom.setPointValidity(false);
+        }
+        CoordinateGenerator.genCoords(genVecs, atomList);
+    }
+
+    public static void fillCoordinates(Entity entity, Atom startAtom) {
+        if (startAtom == null) {
+            for (Atom atom : entity.atoms) {
+                if (atom.getPointValidity()) {
+                    startAtom = atom;
+                    break;
+                }
+            }
+        }
+        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
+        List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
+        List<Atom> atomList = aTreeGen.getPathList();
+        int[][] genVecs = CoordinateGenerator.setupCoords(atomTree);
+        CoordinateGenerator.prepareAtoms(atomList, true);
+        CoordinateGenerator.genCoords(genVecs, atomList);
+    }
+
+    public static void genMeasuredTree(Entity entity, Atom startAtom) {
+        if (startAtom == null) {
+            startAtom = entity.atoms.get(0);
+        }
+        Molecule molecule = (Molecule) startAtom.entity.molecule;
+
+        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
+        List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
+        aTreeGen.measureAtomTree(entity, atomTree, true, false);
+        molecule.setRingClosures(aTreeGen.getRingClosures());
+    }
+
+    static class BondSort implements Comparable<BondSort> {
+
+        final Bond bond;
+        final MNode mNode;
+
+        BondSort(Bond bond, MNode mNode) {
+            this.bond = bond;
+            this.mNode = mNode;
+        }
+
+        @Override
+        public int compareTo(BondSort o) {
+            return MNode.compareByParValue(mNode, o.mNode);
+        }
+
+    }
+
     public boolean checkStartAtom(Atom startAtom) {
         return startAtom.bonds.size() == 1;
     }
@@ -385,6 +443,17 @@ public class AngleTreeGenerator {
         }
     }
 
+    public static String dumpAtomTree(List<List<Atom>> atomTree) {
+        StringBuilder sBuilder = new StringBuilder();
+        for (List<Atom> branch : atomTree) {
+            for (Atom atom : branch) {
+                sBuilder.append(String.format("%8s", atom == null ? "____" : atom.getShortName()));
+            }
+            sBuilder.append(" " + branch.get(2).rotUnit + " " + branch.get(2).rotActive + "\n");
+        }
+        return sBuilder.toString();
+    }
+
     private List<MNode> getShellNodes(List<MNode> nodes, int iShell, int start) {
         List<MNode> shellNodes = new ArrayList<>();
         for (int i = start; i < nodes.size(); i++) {
@@ -397,73 +466,6 @@ public class AngleTreeGenerator {
         }
         // Sorting the shellNodes results in errors calculating dihedral angles
         return shellNodes;
-    }
-
-    public List<Atom> getPathList() {
-        return atomPathList;
-    }
-
-    private boolean testTerminal(Atom a) {
-        List<Atom> aList = a.getConnected();
-        List<Atom> appeared = new ArrayList<>();
-        for (Atom atom : aList) {
-            if (!appeared.contains(atom)) {
-                appeared.add(atom);
-            }
-        }
-        return appeared.size() == 1;
-    }
-
-    public static void genCoordinates(Entity entity, Atom startAtom) {
-        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
-        List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
-        List<Atom> atomList = aTreeGen.getPathList();
-        int[][] genVecs = CoordinateGenerator.setupCoords(atomTree);
-        CoordinateGenerator.prepareAtoms(atomList, false);
-        for (Atom atom : atomList) {
-            atom.setPointValidity(false);
-        }
-        CoordinateGenerator.genCoords(genVecs, atomList);
-    }
-
-    public static void fillCoordinates(Entity entity, Atom startAtom) {
-        if (startAtom == null) {
-            for (Atom atom : entity.atoms) {
-                if (atom.getPointValidity()) {
-                    startAtom = atom;
-                    break;
-                }
-            }
-        }
-        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
-        List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
-        List<Atom> atomList = aTreeGen.getPathList();
-        int[][] genVecs = CoordinateGenerator.setupCoords(atomTree);
-        CoordinateGenerator.prepareAtoms(atomList, true);
-        CoordinateGenerator.genCoords(genVecs, atomList);
-    }
-
-    public static void genMeasuredTree(Entity entity, Atom startAtom) {
-        if (startAtom == null) {
-            startAtom = entity.atoms.get(0);
-        }
-        Molecule molecule = (Molecule) startAtom.entity.molecule;
-
-        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
-        List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
-        aTreeGen.measureAtomTree(entity, atomTree, true, false);
-        molecule.setRingClosures(aTreeGen.getRingClosures());
-    }
-
-    public static String dumpAtomTree(List<List<Atom>> atomTree) {
-        StringBuilder sBuilder = new StringBuilder();
-        for (List<Atom> branch : atomTree) {
-            for (Atom atom : branch) {
-                sBuilder.append(String.format("%8s", atom == null ? "____" : atom.getShortName()));
-            }
-            sBuilder.append(" " + branch.get(2).rotUnit + " " + branch.get(2).rotActive + "\n");
-        }
-        return sBuilder.toString();
     }
 
     public static void addRingClosureSet(Map<Atom, Map<Atom, Double>> ringClosures, Atom begin, Atom end) {
@@ -500,20 +502,19 @@ public class AngleTreeGenerator {
         addRingClosure(ringClosures, begin, end);
     }
 
-    static class BondSort implements Comparable<BondSort> {
 
-        final Bond bond;
-        final MNode mNode;
+    public List<Atom> getPathList() {
+        return atomPathList;
+    }
 
-        BondSort(Bond bond, MNode mNode) {
-            this.bond = bond;
-            this.mNode = mNode;
+    private boolean testTerminal(Atom a) {
+        List<Atom> aList = a.getConnected();
+        List<Atom> appeared = new ArrayList<>();
+        for (Atom atom : aList) {
+            if (!appeared.contains(atom)) {
+                appeared.add(atom);
+            }
         }
-
-        @Override
-        public int compareTo(BondSort o) {
-            return MNode.compareByParValue(mNode, o.mNode);
-        }
-
+        return appeared.size() == 1;
     }
 }

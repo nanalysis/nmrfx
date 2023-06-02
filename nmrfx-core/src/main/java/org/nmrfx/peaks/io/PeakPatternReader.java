@@ -11,14 +11,6 @@ import java.util.Map;
 
 public class PeakPatternReader {
 
-    private void processYaml(Map<String, Object> yamlData) {
-        var typeList = (List<Map<String, Object>>) yamlData.get("types");
-        for (Map<String, Object> typeMap : typeList) {
-            String name = (String) typeMap.get("name");
-            String dims = (String) typeMap.get("dims");
-        }
-    }
-
     public static PeakListTypes loadYaml() throws IOException {
         Map<String, Object> yamlData = null;
         ClassLoader cl = ClassLoader.getSystemClassLoader();
@@ -26,6 +18,14 @@ public class PeakPatternReader {
             Yaml yaml = new Yaml(new Constructor(PeakListTypes.class));
             PeakListTypes types = yaml.load(istream);
             return types;
+        }
+    }
+
+    private void processYaml(Map<String, Object> yamlData) {
+        var typeList = (List<Map<String, Object>>) yamlData.get("types");
+        for (Map<String, Object> typeMap : typeList) {
+            String name = (String) typeMap.get("name");
+            String dims = (String) typeMap.get("dims");
         }
     }
 

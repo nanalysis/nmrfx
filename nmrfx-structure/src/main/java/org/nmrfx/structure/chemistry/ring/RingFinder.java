@@ -35,9 +35,9 @@ import java.util.Collection;
  */
 public interface RingFinder {
 
-    public int getMaximumRingSize();
-
     public void setMaximumRingSize(int max);
+
+    public int getMaximumRingSize();
 
     public Collection<Ring> findRings(ITree itree);
 

@@ -25,8 +25,8 @@ import java.util.HashMap;
  */
 public class AngleProp {
 
-    final static double toRad = Math.PI / 180.0;
     public static HashMap<String, AngleProp> map = new HashMap<String, AngleProp>();
+
     public static AngleProp alpha = new AngleProp("alpha", new double[]{-64.7029644001, 65.193527207, 162.224200013},
             new double[]{6.63879317909, 13.8651143009, 14.1769070028},
             new double[]{1, (108.241472644 / 873.847844017), (130.195437888 / 873.847844017)});
@@ -44,10 +44,13 @@ public class AngleProp {
             new double[]{2.65075237294, 4.19156080606},
             new double[]{1, 175.122237292 / 1102.78457069});
     public static AngleProp zeta = new AngleProp("zeta", new double[]{-70.0}, new double[]{6.7109}, new double[]{1.0});
+
     double[] sigma = null;
     double[] target = null;
     double[] height = null;
     String angleName = null;
+
+    final static double toRad = Math.PI / 180.0;
 
     public AngleProp(String name, double[] target, double[] sigma, double[] height) {
         this.sigma = sigma;

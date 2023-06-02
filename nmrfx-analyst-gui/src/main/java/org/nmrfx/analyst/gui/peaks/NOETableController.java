@@ -74,8 +74,15 @@ import java.util.ResourceBundle;
 public class NOETableController implements Initializable, StageBasedController {
 
     private static final Logger log = LoggerFactory.getLogger(NOETableController.class);
+    private Stage stage;
+    @FXML
+    private ToolBar toolBar;
     @FXML
     MasterDetailPane masterDetailPane;
+    @FXML
+    private TableView<Noe> tableView;
+    private NoeSet noeSet;
+
     MenuButton noeSetMenuItem;
     MenuButton peakListMenuButton;
     ObservableMap<String, NoeSet> noeSetMap;
@@ -89,12 +96,6 @@ public class NOETableController implements Initializable, StageBasedController {
     DoubleRangeOperationItem maxDisItem;
     DoubleRangeOperationItem fErrorItem;
     ChoiceOperationItem modeItem;
-    private Stage stage;
-    @FXML
-    private ToolBar toolBar;
-    @FXML
-    private TableView<Noe> tableView;
-    private NoeSet noeSet;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -143,17 +144,30 @@ public class NOETableController implements Initializable, StageBasedController {
         propertySheet.getItems().addAll(modeItem, refDistanceItem, expItem, minDisItem, maxDisItem, fErrorItem);
     }
 
-    public Stage getStage() {
-        return stage;
-    }
-
     @Override
     public void setStage(Stage stage) {
         this.stage = stage;
     }
 
+    public Stage getStage() {
+        return stage;
+    }
+
     private void refresh() {
         tableView.refresh();
+    }
+
+    public static NOETableController create() {
+        if (MoleculeFactory.getActive() == null) {
+            GUIUtils.warn("NOE Table", "No active molecule");
+            return null;
+        }
+
+        NOETableController controller = Fxml.load(NOETableController.class, "NoeTableScene.fxml")
+                .withNewStage("Peaks")
+                .getController();
+        controller.stage.show();
+        return controller;
     }
 
     void initToolBar() {
@@ -203,6 +217,24 @@ public class NOETableController implements Initializable, StageBasedController {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(ioE);
                 exceptionDialog.show();
             }
+        }
+    }
+
+    private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
+
+        @Override
+        public TableCell<S, T> call(TableColumn<S, T> arg0) {
+            return new TableCell<S, T>() {
+                @Override
+                protected void updateItem(T item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(new Label(format.format(item)));
+                    }
+                }
+            };
         }
     }
 
@@ -388,37 +420,6 @@ public class NOETableController implements Initializable, StageBasedController {
             FXMLController.showPeakAttr();
             FXMLController.getPeakAttrController().gotoPeak(peak);
             FXMLController.getPeakAttrController().getStage().toFront();
-        }
-    }
-
-    public static NOETableController create() {
-        if (MoleculeFactory.getActive() == null) {
-            GUIUtils.warn("NOE Table", "No active molecule");
-            return null;
-        }
-
-        NOETableController controller = Fxml.load(NOETableController.class, "NoeTableScene.fxml")
-                .withNewStage("Peaks")
-                .getController();
-        controller.stage.show();
-        return controller;
-    }
-
-    private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
-
-        @Override
-        public TableCell<S, T> call(TableColumn<S, T> arg0) {
-            return new TableCell<S, T>() {
-                @Override
-                protected void updateItem(T item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (item == null || empty) {
-                        setGraphic(null);
-                    } else {
-                        setGraphic(new Label(format.format(item)));
-                    }
-                }
-            };
         }
     }
 }

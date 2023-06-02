@@ -42,6 +42,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MouseBindings {
 
+    public enum MOUSE_ACTION {
+        NOTHING,
+        DRAG,
+        DRAG_SELECTION,
+        DRAG_VIEW,
+        DRAG_VIEWX,
+        DRAG_VIEWY,
+        DRAG_EXPAND,
+        DRAG_PEAK,
+        DRAG_PEAK_WIDTH,
+        DRAG_REGION,
+        DRAG_ADDREGION,
+        DRAG_ANNO,
+        DRAG_PEAKPICK,
+        CROSSHAIR
+    }
+
     PolyChart chart;
     MouseHandler handler;
     MouseEvent mouseEvent;
@@ -56,6 +73,7 @@ public class MouseBindings {
     PauseTransition pause = null;
     Object currentSelection;
     Bounds currentBounds;
+
     public MouseBindings(PolyChart chart) {
         this.chart = chart;
     }
@@ -230,6 +248,7 @@ public class MouseBindings {
         }
     }
 
+
     private void setHandler(MouseHandler handler) {
         this.handler = handler;
     }
@@ -356,23 +375,6 @@ public class MouseBindings {
             iCorner++;
         }
         return result;
-    }
-
-    public enum MOUSE_ACTION {
-        NOTHING,
-        DRAG,
-        DRAG_SELECTION,
-        DRAG_VIEW,
-        DRAG_VIEWX,
-        DRAG_VIEWY,
-        DRAG_EXPAND,
-        DRAG_PEAK,
-        DRAG_PEAK_WIDTH,
-        DRAG_REGION,
-        DRAG_ADDREGION,
-        DRAG_ANNO,
-        DRAG_PEAKPICK,
-        CROSSHAIR
     }
 
 }

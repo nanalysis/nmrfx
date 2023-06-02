@@ -31,8 +31,126 @@ import java.util.List;
  */
 public class DistanceConstraintSet implements ConstraintSet, Iterable {
 
+    private final MolecularConstraints molecularConstraints;
+    private final ArrayList<DistanceConstraint> constraints = new ArrayList<>();
+    int nStructures = 0;
+    private final String name;
+    boolean dirty = true;
     public static char[] violCharArray = new char[0];
     public static int ID = 1;
+    boolean containsBonds = false;
+
+    private DistanceConstraintSet(MolecularConstraints molecularConstraints,
+                                  String name) {
+        this.name = name;
+        this.molecularConstraints = molecularConstraints;
+    }
+
+    public static DistanceConstraintSet newSet(MolecularConstraints molecularConstraints,
+                                               String name) {
+        DistanceConstraintSet distanceSet = new DistanceConstraintSet(molecularConstraints,
+                name);
+        return distanceSet;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getCategory() {
+        return "distance_constraints";
+    }
+
+    @Override
+    public String getListType() {
+        return "_Distance_constraint_list";
+    }
+
+    @Override
+    public String getType() {
+        return "distance constraint";
+    }
+
+    @Override
+    public int getSize() {
+        return constraints.size();
+    }
+
+    @Override
+    public void clear() {
+        constraints.clear();
+    }
+
+    @Override
+    public void add(Constraint constraint) {
+        constraints.add((DistanceConstraint) constraint);
+        dirty = true;
+    }
+
+    public ArrayList<DistanceConstraint> get() {
+        if (dirty) {
+            updateData();
+        }
+        return constraints;
+    }
+
+    @Override
+    public DistanceConstraint get(int i) {
+        return constraints.get(i);
+    }
+
+    @Override
+    public MolecularConstraints getMolecularConstraints() {
+        return molecularConstraints;
+    }
+
+    @Override
+    public Iterator iterator() {
+        return constraints.iterator();
+    }
+
+    @Override
+    public boolean isDirty() {
+        return dirty;
+    }
+
+    @Override
+    public void setDirty() {
+        dirty = true;
+    }
+
+    public boolean containsBonds() {
+        return containsBonds;
+    }
+
+    public void containsBonds(boolean state) {
+        containsBonds = state;
+    }
+
+    public void updateData() {
+        MoleculeBase mol = molecularConstraints.molecule;
+        if (mol == null) {
+            return;
+        }
+        int[] structures = mol.getActiveStructures();
+        if (structures.length == 0) {
+            structures = new int[1];
+        }
+        int lastStruct = 0;
+        for (int iStruct : structures) {
+            lastStruct = iStruct > lastStruct ? iStruct : lastStruct;
+        }
+        nStructures = structures.length;
+        violCharArray = new char[lastStruct + 1];
+        SummaryStatistics sumStat = new SummaryStatistics();
+        constraints.forEach((_item) -> {
+            sumStat.clear();
+        });
+        dirty = false;
+    }
+
     private static String[] angleConstraintLoopStrings = {
             "_Torsion_angle_constraint.ID",
             "_Torsion_angle_constraint.Torsion_angle_name",
@@ -75,74 +193,6 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
             "_Torsion_angle_constraint.Angle_upper_bound_val",
             "_Torsion_angle_constraint.Entry_ID",
             "_Torsion_angle_constraint.Gen_dist_constraint_list_ID",};
-    private final MolecularConstraints molecularConstraints;
-    private final ArrayList<DistanceConstraint> constraints = new ArrayList<>();
-    private final String name;
-    int nStructures = 0;
-    boolean dirty = true;
-    boolean containsBonds = false;
-
-    private DistanceConstraintSet(MolecularConstraints molecularConstraints,
-                                  String name) {
-        this.name = name;
-        this.molecularConstraints = molecularConstraints;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public int getSize() {
-        return constraints.size();
-    }
-
-    @Override
-    public void clear() {
-        constraints.clear();
-    }
-
-    @Override
-    public void add(Constraint constraint) {
-        constraints.add((DistanceConstraint) constraint);
-        dirty = true;
-    }
-
-    @Override
-    public DistanceConstraint get(int i) {
-        return constraints.get(i);
-    }
-
-    @Override
-    public void setDirty() {
-        dirty = true;
-    }
-
-    @Override
-    public boolean isDirty() {
-        return dirty;
-    }
-
-    @Override
-    public Iterator iterator() {
-        return constraints.iterator();
-    }
-
-    @Override
-    public String getType() {
-        return "distance constraint";
-    }
-
-    @Override
-    public String getCategory() {
-        return "distance_constraints";
-    }
-
-    @Override
-    public String getListType() {
-        return "_Distance_constraint_list";
-    }
 
     @Override
     public String[] getLoopStrings() {
@@ -152,48 +202,6 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
     @Override
     public void resetWriting() {
         ID = 1;
-    }
-
-    @Override
-    public MolecularConstraints getMolecularConstraints() {
-        return molecularConstraints;
-    }
-
-    public ArrayList<DistanceConstraint> get() {
-        if (dirty) {
-            updateData();
-        }
-        return constraints;
-    }
-
-    public boolean containsBonds() {
-        return containsBonds;
-    }
-
-    public void containsBonds(boolean state) {
-        containsBonds = state;
-    }
-
-    public void updateData() {
-        MoleculeBase mol = molecularConstraints.molecule;
-        if (mol == null) {
-            return;
-        }
-        int[] structures = mol.getActiveStructures();
-        if (structures.length == 0) {
-            structures = new int[1];
-        }
-        int lastStruct = 0;
-        for (int iStruct : structures) {
-            lastStruct = iStruct > lastStruct ? iStruct : lastStruct;
-        }
-        nStructures = structures.length;
-        violCharArray = new char[lastStruct + 1];
-        SummaryStatistics sumStat = new SummaryStatistics();
-        constraints.forEach((_item) -> {
-            sumStat.clear();
-        });
-        dirty = false;
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
@@ -350,13 +358,6 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
             // fixme  distancePairMap.put(modelNum, distList);
         }
 
-    }
-
-    public static DistanceConstraintSet newSet(MolecularConstraints molecularConstraints,
-                                               String name) {
-        DistanceConstraintSet distanceSet = new DistanceConstraintSet(molecularConstraints,
-                name);
-        return distanceSet;
     }
 
 }

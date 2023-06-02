@@ -88,9 +88,8 @@ public class TDCombine extends Operation {
         return this;
     }
 
-    public TDCombine clone() {
-        TDCombine temp = new TDCombine(dim, numInputVec, numOutputVec, coef);
-        return temp;
+    public static ArrayList<Vec> getArrayList() {
+        return new ArrayList<Vec>();
     }
 
     public void combine(List<Vec> vectors) {
@@ -197,7 +196,8 @@ public class TDCombine extends Operation {
         }
     }
 
-    public static ArrayList<Vec> getArrayList() {
-        return new ArrayList<Vec>();
+    public TDCombine clone() {
+        TDCombine temp = new TDCombine(dim, numInputVec, numOutputVec, coef);
+        return temp;
     }
 }

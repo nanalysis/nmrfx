@@ -33,6 +33,11 @@ import java.util.*;
  */
 public class AtomProperty {
 
+    static final HashMap map = new HashMap();
+    static int nextAnum = 0;
+    private static final String GENERIC_COLOR = "gray";
+    public static final AtomProperty X = new AtomProperty("X", 0.8f,
+            GENERIC_COLOR, 0.0f);
     public static final AtomProperty H = new AtomProperty("H", 1.2f, "light green",
             0.0f);
     public static final AtomProperty He = new AtomProperty("He", 1.4f, "pink",
@@ -66,46 +71,32 @@ public class AtomProperty {
             0.8f, 0.2f, 0.0f);
     public static final AtomProperty Cl = new AtomProperty("Cl", 1.75f, "green",
             0.0f);
+    public static final AtomProperty Ar = new AtomProperty("Ar", 1.88f,
+            GENERIC_COLOR, 0.0f);
+    public static final AtomProperty K = new AtomProperty("K", 2.75f,
+            GENERIC_COLOR, 0.0f);
     public static final AtomProperty Ca = new AtomProperty("Ca", 1.0f,
             "dark gray", 0.0f);
+    public static final AtomProperty Sc = new AtomProperty("Sc", 1.0f,
+            GENERIC_COLOR, 0.0f);
     public static final AtomProperty Ti = new AtomProperty("Ti", 1.0f,
             "dark gray", 0.0f);
+    public static final AtomProperty V = new AtomProperty("V", 1.0f,
+            GENERIC_COLOR, 0.0f);
     public static final AtomProperty Cr = new AtomProperty("Cr", 1.0f,
             "dark gray", 0.0f);
     public static final AtomProperty Mn = new AtomProperty("Mn", 1.0f,
             "dark gray", 0.0f);
     public static final AtomProperty Fe = new AtomProperty("Fe", 1.0f,
             "orange", 0.0f);
+    public static final AtomProperty Co = new AtomProperty("Co", 1.0f,
+            GENERIC_COLOR, 0.0f);
     public static final AtomProperty Ni = new AtomProperty("Ni", 1.0f, "brown",
             0.0f);
     public static final AtomProperty Cu = new AtomProperty("Cu", 1.0f, "brown",
             0.0f);
     public static final AtomProperty Zn = new AtomProperty("Zn", 1.0f, "brown",
             0.0f);
-    public static final AtomProperty Br = new AtomProperty("Br", 1.0f, "brown",
-            0.0f);
-    public static final AtomProperty Ag = new AtomProperty("Ag", 1.0f,
-            "dark gray", 0.0f);
-    public static final AtomProperty I = new AtomProperty("I", 1.0f, "purple",
-            0.0f);
-    public static final AtomProperty Ba = new AtomProperty("Ba", 1.0f,
-            "orange", 0.0f);
-    public static final AtomProperty Au = new AtomProperty("Au", 1.0f,
-            "goldenrod", 0.0f);
-    static final HashMap map = new HashMap();
-    private static final String GENERIC_COLOR = "gray";
-    public static final AtomProperty X = new AtomProperty("X", 0.8f,
-            GENERIC_COLOR, 0.0f);
-    public static final AtomProperty Ar = new AtomProperty("Ar", 1.88f,
-            GENERIC_COLOR, 0.0f);
-    public static final AtomProperty K = new AtomProperty("K", 2.75f,
-            GENERIC_COLOR, 0.0f);
-    public static final AtomProperty Sc = new AtomProperty("Sc", 1.0f,
-            GENERIC_COLOR, 0.0f);
-    public static final AtomProperty V = new AtomProperty("V", 1.0f,
-            GENERIC_COLOR, 0.0f);
-    public static final AtomProperty Co = new AtomProperty("Co", 1.0f,
-            GENERIC_COLOR, 0.0f);
     public static final AtomProperty Ga = new AtomProperty("Ga", 1.0f,
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty Ge = new AtomProperty("Ge", 1.0f,
@@ -114,6 +105,8 @@ public class AtomProperty {
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty Se = new AtomProperty("Se", 1.0f,
             GENERIC_COLOR, 0.0f);
+    public static final AtomProperty Br = new AtomProperty("Br", 1.0f, "brown",
+            0.0f);
     public static final AtomProperty Kr = new AtomProperty("Kr", 1.0f,
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty Rb = new AtomProperty("Rb", 1.0f,
@@ -136,6 +129,8 @@ public class AtomProperty {
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty Pd = new AtomProperty("Pd", 1.0f,
             GENERIC_COLOR, 0.0f);
+    public static final AtomProperty Ag = new AtomProperty("Ag", 1.0f,
+            "dark gray", 0.0f);
     public static final AtomProperty Cd = new AtomProperty("Cd", 1.0f,
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty In = new AtomProperty("In", 1.0f,
@@ -146,10 +141,14 @@ public class AtomProperty {
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty Te = new AtomProperty("Te", 1.0f,
             GENERIC_COLOR, 0.0f);
+    public static final AtomProperty I = new AtomProperty("I", 1.0f, "purple",
+            0.0f);
     public static final AtomProperty Xe = new AtomProperty("Xe", 1.0f,
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty Cs = new AtomProperty("Cs", 1.0f,
             GENERIC_COLOR, 0.0f);
+    public static final AtomProperty Ba = new AtomProperty("Ba", 1.0f,
+            "orange", 0.0f);
     public static final AtomProperty La = new AtomProperty("La", 1.0f,
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty Ce = new AtomProperty("Ce", 1.0f,
@@ -194,6 +193,8 @@ public class AtomProperty {
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty Pt = new AtomProperty("Pt", 1.0f,
             GENERIC_COLOR, 0.0f);
+    public static final AtomProperty Au = new AtomProperty("Au", 1.0f,
+            "goldenrod", 0.0f);
     public static final AtomProperty Hg = new AtomProperty("Hg", 1.0f,
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty Tl = new AtomProperty("Tl", 1.0f,
@@ -252,7 +253,6 @@ public class AtomProperty {
     };
     public static final List VALUES = Collections.unmodifiableList(Arrays.asList(
             PRIVATE_VALUES));
-    static int nextAnum = 0;
 
     static {
         for (Iterator iter = VALUES.iterator(); iter.hasNext(); ) {
@@ -320,16 +320,16 @@ public class AtomProperty {
         return radius;
     }
 
-    public byte getElementNumber() {
-        return getElementNumber(name);
-    }
-
     public static String getElementName(int eNum) {
         if ((eNum < 1) || (eNum >= VALUES.size())) {
             return null;
         }
 
         return ((AtomProperty) VALUES.get(eNum)).name;
+    }
+
+    public byte getElementNumber() {
+        return getElementNumber(name);
     }
 
     public static byte getElementNumber(String elemName) {

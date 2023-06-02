@@ -117,6 +117,18 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
         return sum;
     }
 
+    public static double getEnergy(int i, double r2, double weight) {
+        double energy = 0.0;
+        if ((r2 > 16.0) && (r2 < 36.0)) {
+            double r = Math.sqrt(r2);
+            double du = (r - 4.0) / 2.0;
+            double g = -0.2 * (2.0 * Math.pow(du, 3.0) - 3.0 * Math.pow(du, 2.0) + 1.0);
+            energy = weight * g;
+        }
+        return energy;
+
+    }
+
     @Override
     public ViolationStats getError(int i, double limitVal, double weight) {
         String modeType = "STK";
@@ -138,17 +150,5 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
         }
 
         return stat;
-    }
-
-    public static double getEnergy(int i, double r2, double weight) {
-        double energy = 0.0;
-        if ((r2 > 16.0) && (r2 < 36.0)) {
-            double r = Math.sqrt(r2);
-            double du = (r - 4.0) / 2.0;
-            double g = -0.2 * (2.0 * Math.pow(du, 3.0) - 3.0 * Math.pow(du, 2.0) + 1.0);
-            energy = weight * g;
-        }
-        return energy;
-
     }
 }

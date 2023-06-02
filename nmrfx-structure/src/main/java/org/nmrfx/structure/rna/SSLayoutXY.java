@@ -34,12 +34,14 @@ import org.slf4j.LoggerFactory;
 public class SSLayoutXY implements MultivariateFunction {
 
     private static final Logger log = LoggerFactory.getLogger(SSLayoutXY.class);
-    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
     private final int[][] interactions;
     private final int[] basePairs;
     private final int[] basePairs2;
     private final double[] baseBondLength;
     private final double[] baseBondLengthTargets;
+    private int nFreeAngles = 0;
+    private int nFreeAnglesTot = 0;
+    private int nFreeDis = 0;
     private final double[] values;
     private final double[] angleTargets;
     private final double[] angleValues;
@@ -48,21 +50,20 @@ public class SSLayoutXY implements MultivariateFunction {
     private final int[] angleRelations;
     private final int[] nAngles;
     private final int[] nDistances;
+    private int nAnglePars = 0;
+    private double[] inputSigma;
+    private double[][] boundaries = null;
     private final double targetSeqDistance = 1.0;
     private final double targetPairDistance = 1.0;
     private final double targetPair2Distance = Math.sqrt(targetSeqDistance * targetSeqDistance + targetPairDistance * targetPairDistance);
     private final double targetNBDistance = 1.2;
     private final int nNuc;
     private final int[] nucChain;
+    private String vienna;
     int limit = 10;
     boolean useSinCos = true;
-    private int nFreeAngles = 0;
-    private int nFreeAnglesTot = 0;
-    private int nFreeDis = 0;
-    private int nAnglePars = 0;
-    private double[] inputSigma;
-    private double[][] boundaries = null;
-    private String vienna;
+
+    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
 
     public SSLayoutXY(int... nValues) {
         int n = 0;

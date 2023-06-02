@@ -326,11 +326,11 @@ public class NMRCmdArgs {
         BOUND_PARAM("bound"),
         GUESS("guess");
 
-        private final String type;
-
         DataType(String typeStr) {
             this.type = typeStr;
         }
+
+        private final String type;
 
         @Override
         public String toString() {

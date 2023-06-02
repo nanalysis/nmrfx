@@ -42,32 +42,37 @@ import static java.util.Objects.requireNonNull;
 public class CompoundFitter implements MultivariateFunction {
 
     private static final Logger log = LoggerFactory.getLogger(CompoundFitter.class);
-    /**
-     *
-     */
-    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
-    private final static int VALUE_AB_ABS = 0;
-    private final static int VALUE_AB_ABS_NEGPEN = 1;
-    private final static int VALUE_ABS = 2;
-    private final static int VALUE_LS = 3;
-    private final static int VALUE_LS_NONNEG = 4;
+
     public static int MAX_SHIFT = 15;
+
     ArrayList<CompoundRegion> cList = new ArrayList<>();
     List<CompoundMatch> cMatches = new ArrayList<>();
-    Vec vec;
-    double ppmDeltaToPoint = 1;
-    double vecRef = 0;
-    double vecHzToPoint = 0;
+
     private RealMatrix A;
     private RealVector B;
     private RealVector X;
     private SingularValueDecomposition svd;
+    Vec vec;
     private double[] vData = new double[0];
     private double[] maskData = new double[0];
     private int[] map = null;
     private int[] rmap = null;
     private int bcNum = 0;
+    double ppmDeltaToPoint = 1;
+    double vecRef = 0;
+    double vecHzToPoint = 0;
+
+    private final static int VALUE_AB_ABS = 0;
+    private final static int VALUE_AB_ABS_NEGPEN = 1;
+    private final static int VALUE_ABS = 2;
+    private final static int VALUE_LS = 3;
+    private final static int VALUE_LS_NONNEG = 4;
     private int valueMode = VALUE_ABS;
+
+    /**
+     *
+     */
+    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
 
     /**
      *
@@ -139,6 +144,23 @@ public class CompoundFitter implements MultivariateFunction {
      */
     public void setBC(final int bcNum) {
         this.bcNum = Math.max(bcNum, 0);
+    }
+
+    static class CompoundRegion {
+
+        private final CompoundMatch cMatch;
+        private final int[] regions;
+        private final double[] shifts;
+        private final int[] minShifts;
+        private final int[] maxShifts;
+
+        CompoundRegion(CompoundMatch cMatch, int[] regions, double[] shifts, int[] minShifts, int[] maxShifts) {
+            this.cMatch = cMatch;
+            this.regions = regions;
+            this.shifts = shifts;
+            this.minShifts = minShifts;
+            this.maxShifts = maxShifts;
+        }
     }
 
     /**
@@ -477,6 +499,29 @@ public class CompoundFitter implements MultivariateFunction {
         }
 
         return norm1 + viol;
+    }
+
+    class UnivariateValue implements UnivariateFunction {
+
+        private final CompoundFitter fitter;
+        private final double[] current;
+
+        public UnivariateValue(CompoundFitter fitter) {
+            this.fitter = fitter;
+            current = fitter.current();
+        }
+
+        @Override
+        public double value(double x) {
+            int j = 0;
+            for (CompoundRegion cR : cList) {
+                for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
+                    cR.shifts[iRegion] = current[j++] + x;
+                }
+            }
+            double rmsd = scoreLeastSqNonNeg();
+            return rmsd;
+        }
     }
 
     /**
@@ -1006,46 +1051,6 @@ public class CompoundFitter implements MultivariateFunction {
         }
 
         return fitter;
-    }
-
-    static class CompoundRegion {
-
-        private final CompoundMatch cMatch;
-        private final int[] regions;
-        private final double[] shifts;
-        private final int[] minShifts;
-        private final int[] maxShifts;
-
-        CompoundRegion(CompoundMatch cMatch, int[] regions, double[] shifts, int[] minShifts, int[] maxShifts) {
-            this.cMatch = cMatch;
-            this.regions = regions;
-            this.shifts = shifts;
-            this.minShifts = minShifts;
-            this.maxShifts = maxShifts;
-        }
-    }
-
-    class UnivariateValue implements UnivariateFunction {
-
-        private final CompoundFitter fitter;
-        private final double[] current;
-
-        public UnivariateValue(CompoundFitter fitter) {
-            this.fitter = fitter;
-            current = fitter.current();
-        }
-
-        @Override
-        public double value(double x) {
-            int j = 0;
-            for (CompoundRegion cR : cList) {
-                for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
-                    cR.shifts[iRegion] = current[j++] + x;
-                }
-            }
-            double rmsd = scoreLeastSqNonNeg();
-            return rmsd;
-        }
     }
     /*
     proc ::dcs::standards::setupCmpdFit {cmpdIDs} {

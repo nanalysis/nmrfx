@@ -45,10 +45,13 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
     private static OperationListCell source;
     private static OperationListCell target;
     private static ArrayList<OperationListCell> cells = new ArrayList<>(20);
-    private static int failedIndex = -1;
-    private static Integer moveIndex = null;
     private ListView scriptView;
+
+    private static int failedIndex = -1;
+
     private OperationListCell temp;
+
+    private static Integer moveIndex = null;
 
     public OperationListCell(ListView scriptView) {
         cells.add(this);
@@ -209,6 +212,15 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
         }
     }
 
+    /**
+     * When ListItems changes, update all the cells
+     */
+    public static void updateCells() {
+        for (OperationListCell cell : cells) {
+            cell.updateCell();
+        }
+    }
+
     private void setOperationFailed() {
         InnerShadow is = new InnerShadow();
 
@@ -218,15 +230,6 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
 
     private void resetEffects() {
         this.setEffect(null);
-    }
-
-    /**
-     * When ListItems changes, update all the cells
-     */
-    public static void updateCells() {
-        for (OperationListCell cell : cells) {
-            cell.updateCell();
-        }
     }
 
     public static void setFailedIndex(int index) {

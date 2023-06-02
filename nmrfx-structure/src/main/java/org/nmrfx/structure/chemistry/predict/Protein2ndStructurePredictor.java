@@ -35,6 +35,13 @@ public class Protein2ndStructurePredictor {
 
     static ComputationGraph graphModel;
 
+    public static void load() throws IOException {
+        if (graphModel == null) {
+            InputStream iStream = Protein2ndStructurePredictor.class.getResourceAsStream("/data/predict/protein/model2ndstr.zip");
+            graphModel = ModelSerializer.restoreComputationGraph(iStream, true);
+        }
+    }
+
     public void predict(Molecule mol) throws IOException {
         if (graphModel == null) {
             load();
@@ -59,13 +66,6 @@ public class Protein2ndStructurePredictor {
                 ProteinResidueAnalysis protAnalysis = new ProteinResidueAnalysis(residue, zIDR, state8);
                 residue.setPropertyObject("Prot2ndStr", protAnalysis);
             }
-        }
-    }
-
-    public static void load() throws IOException {
-        if (graphModel == null) {
-            InputStream iStream = Protein2ndStructurePredictor.class.getResourceAsStream("/data/predict/protein/model2ndstr.zip");
-            graphModel = ModelSerializer.restoreComputationGraph(iStream, true);
         }
     }
 }

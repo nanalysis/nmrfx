@@ -75,6 +75,14 @@ public class FastVector3D extends FastVector {
         return data[0] * data[0] + data[1] * data[1] + data[2] * data[2];
     }
 
+    public static double distance(FastVector3D v1, FastVector3D v2) {
+        return v1.dis(v2);
+    }
+
+    public static double distanceSq(FastVector3D v1, FastVector3D v2) {
+        return v1.disSq(v2);
+    }
+
     public double dis(FastVector3D v2) {
         return Math.sqrt(disSq(v2));
     }
@@ -84,6 +92,24 @@ public class FastVector3D extends FastVector {
         double delY = data[1] - v2.data[1];
         double delZ = data[2] - v2.data[2];
         return delX * delX + delY * delY + delZ * delZ;
+    }
+
+    public static boolean atomLimit(final FastVector3D a, final FastVector3D b, final double cutOff, final double cutOffSq) {
+        double delX = Math.abs(a.data[0] - b.data[0]);
+        boolean result = false;
+        if (delX < cutOff) {
+            double delY = Math.abs(a.data[1] - b.data[1]);
+            if (delY < cutOff) {
+                double delZ = Math.abs(a.data[2] - b.data[2]);
+                if (delZ < cutOff) {
+                    double sqDis = delX * delX + delY * delY + delZ * delZ;
+                    if (sqDis < cutOffSq) {
+                        result = true;
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     public void add(double dx, double dy, double dz, FastVector3D target) {
@@ -112,6 +138,12 @@ public class FastVector3D extends FastVector {
         target.data[2] = data[2] - v2.getZ();
     }
 
+    public static void crossProduct(FastVector3D v1, FastVector3D v2, FastVector3D target) {
+        target.data[0] = MathArrays.linearCombination(v1.data[1], v2.data[2], -v1.data[2], v2.data[1]);
+        target.data[1] = MathArrays.linearCombination(v1.data[2], v2.data[0], -v1.data[0], v2.data[2]);
+        target.data[2] = MathArrays.linearCombination(v1.data[0], v2.data[1], -v1.data[1], v2.data[0]);
+    }
+
     public double norm() {
         return Math.sqrt(
                 data[0] * data[0]
@@ -124,38 +156,6 @@ public class FastVector3D extends FastVector {
                 data[0], v2.data[0],
                 data[1], v2.data[1],
                 data[2], v2.data[2]);
-    }
-
-    public static double distance(FastVector3D v1, FastVector3D v2) {
-        return v1.dis(v2);
-    }
-
-    public static double distanceSq(FastVector3D v1, FastVector3D v2) {
-        return v1.disSq(v2);
-    }
-
-    public static boolean atomLimit(final FastVector3D a, final FastVector3D b, final double cutOff, final double cutOffSq) {
-        double delX = Math.abs(a.data[0] - b.data[0]);
-        boolean result = false;
-        if (delX < cutOff) {
-            double delY = Math.abs(a.data[1] - b.data[1]);
-            if (delY < cutOff) {
-                double delZ = Math.abs(a.data[2] - b.data[2]);
-                if (delZ < cutOff) {
-                    double sqDis = delX * delX + delY * delY + delZ * delZ;
-                    if (sqDis < cutOffSq) {
-                        result = true;
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    public static void crossProduct(FastVector3D v1, FastVector3D v2, FastVector3D target) {
-        target.data[0] = MathArrays.linearCombination(v1.data[1], v2.data[2], -v1.data[2], v2.data[1]);
-        target.data[1] = MathArrays.linearCombination(v1.data[2], v2.data[0], -v1.data[0], v2.data[2]);
-        target.data[2] = MathArrays.linearCombination(v1.data[0], v2.data[1], -v1.data[1], v2.data[0]);
     }
 
     public static double angle(FastVector3D v1, FastVector3D v2) {

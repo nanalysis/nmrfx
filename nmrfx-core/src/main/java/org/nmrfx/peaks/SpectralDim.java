@@ -102,6 +102,29 @@ public class SpectralDim {
         }
     }
 
+    public static String[] parsePattern(String pattern) {
+        int dot = pattern.indexOf('.');
+        String[] resPats;
+        String[] atomPats;
+        if (dot < 0) {
+            resPats = new String[1];
+            atomPats = new String[1];
+            resPats[0] = "";
+            atomPats[0] = "*";
+        } else {
+            resPats = pattern.substring(0, dot).split(",");
+            atomPats = pattern.substring(dot + 1).toLowerCase().split(",");
+        }
+        String[] result = new String[resPats.length * atomPats.length];
+        int i = 0;
+        for (String resPat : resPats) {
+            for (String atomPat : atomPats) {
+                result[i++] = resPat + "." + atomPat;
+            }
+        }
+        return result;
+    }
+
     public AtomResPatterns getAtomResPatterns() {
         if (atomResPatterns.isEmpty()) {
             atomResPatterns = Optional.of(AtomResPattern.parsePattern(pattern, getRelationDim()));
@@ -135,6 +158,10 @@ public class SpectralDim {
         newSpectralDim.foldCount = foldCount;
 
         return newSpectralDim;
+    }
+
+    public static String[] getSTAR3LoopStrings() {
+        return loopStrings;
     }
 
     public PeakList getPeakList() {
@@ -188,6 +215,7 @@ public class SpectralDim {
         result.append(getPrecision());
         return result.toString();
     }
+//     1   ppm   1H    500.13   4.998700337912143    9.898700337912143    circular   true   true
 
     public String toXPK2Dim() {
         StringBuilder result = new StringBuilder();
@@ -260,7 +288,6 @@ public class SpectralDim {
         }
         return isotopes[jMin];
     }
-//     1   ppm   1H    500.13   4.998700337912143    9.898700337912143    circular   true   true
 
     public Integer getAtomIsotope() {
         if (atomIsotope == null) {
@@ -270,13 +297,17 @@ public class SpectralDim {
         return atomIsotope;
     }
 
+    public void setAtomIsotopeValue(int iValue) {
+        atomIsotope = iValue;
+    }
+
     public int getAtomIsotopeValue() {
         int isotope = getAtomIsotope();
         return isotope;
     }
 
-    public void setAtomIsotopeValue(int iValue) {
-        atomIsotope = iValue;
+    public void setAtomType(String atomType) {
+        this.atomType = atomType;
     }
 
     public String getAtomType() {
@@ -284,10 +315,6 @@ public class SpectralDim {
             atomType = getAtomTypeFromIsotope();
         }
         return atomType;
-    }
-
-    public void setAtomType(String atomType) {
-        this.atomType = atomType;
     }
 
     public String getAtomTypeFromIsotope() {
@@ -352,16 +379,6 @@ public class SpectralDim {
         this.foldMode = foldMode;
     }
 
-    public String getAliasing() {
-        String aliasSpecifier;
-        if (foldMode == 'n') {
-            aliasSpecifier = "n";
-        } else {
-            aliasSpecifier = foldMode + "" + foldCount;
-        }
-        return aliasSpecifier;
-    }
-
     public void setAliasing(String aliasSpecifier) {
         foldMode = 'n';
         foldCount = 0;
@@ -375,6 +392,16 @@ public class SpectralDim {
                 }
             }
         }
+    }
+
+    public String getAliasing() {
+        String aliasSpecifier;
+        if (foldMode == 'n') {
+            aliasSpecifier = "n";
+        } else {
+            aliasSpecifier = foldMode + "" + foldCount;
+        }
+        return aliasSpecifier;
     }
 
     public String getNEFAliasing() {
@@ -499,16 +526,6 @@ public class SpectralDim {
         return relation;
     }
 
-    public void setRelation(String relation) {
-        int iDim = getPeakList().getListDim(relation);
-        if (iDim >= 0) {
-            relation = "D" + (iDim + 1);
-        }
-        this.relation = relation;
-        atomResPatterns = Optional.empty();
-        peakList.peakListUpdated(peakList);
-    }
-
     public String getRelationDim() {
         String dimRelation = "";
         if (relation.length() == 2) {
@@ -521,16 +538,18 @@ public class SpectralDim {
         return dimRelation;
     }
 
-    public String getSpatialRelation() {
-        return spatialRelation;
-    }
-
-    public void setSpatialRelation(String relation) {
+    public void setRelation(String relation) {
         int iDim = getPeakList().getListDim(relation);
         if (iDim >= 0) {
             relation = "D" + (iDim + 1);
         }
-        this.spatialRelation = relation;
+        this.relation = relation;
+        atomResPatterns = Optional.empty();
+        peakList.peakListUpdated(peakList);
+    }
+
+    public String getSpatialRelation() {
+        return spatialRelation;
     }
 
     public String getSpatialRelationDim() {
@@ -543,6 +562,14 @@ public class SpectralDim {
             }
         }
         return dimRelation;
+    }
+
+    public void setSpatialRelation(String relation) {
+        int iDim = getPeakList().getListDim(relation);
+        if (iDim >= 0) {
+            relation = "D" + (iDim + 1);
+        }
+        this.spatialRelation = relation;
     }
 
     public int getDataDim() {
@@ -575,32 +602,5 @@ public class SpectralDim {
             meanWidthPPM = Optional.of(stats.getAverage());
         }
         return meanWidthPPM.get();
-    }
-
-    public static String[] parsePattern(String pattern) {
-        int dot = pattern.indexOf('.');
-        String[] resPats;
-        String[] atomPats;
-        if (dot < 0) {
-            resPats = new String[1];
-            atomPats = new String[1];
-            resPats[0] = "";
-            atomPats[0] = "*";
-        } else {
-            resPats = pattern.substring(0, dot).split(",");
-            atomPats = pattern.substring(dot + 1).toLowerCase().split(",");
-        }
-        String[] result = new String[resPats.length * atomPats.length];
-        int i = 0;
-        for (String resPat : resPats) {
-            for (String atomPat : atomPats) {
-                result[i++] = resPat + "." + atomPat;
-            }
-        }
-        return result;
-    }
-
-    public static String[] getSTAR3LoopStrings() {
-        return loopStrings;
     }
 }

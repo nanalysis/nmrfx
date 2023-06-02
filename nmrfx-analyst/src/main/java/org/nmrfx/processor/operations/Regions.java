@@ -34,10 +34,10 @@ public class Regions extends Operation {
     private final double ratio;
     // fixme what about clone
     private final ArrayList<Double> realPoints;
+    private ArrayList<Integer> points;
     private final boolean invert;
     private final String type;
     private final String mode;
-    private ArrayList<Integer> points;
 
     public Regions(ArrayList<Double> realPoints, String type, boolean invert) {
         this.realPoints = realPoints;

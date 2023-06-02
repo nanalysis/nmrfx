@@ -47,13 +47,13 @@ Removal dates in YYYY-MM-DD format.
 * GridPaneCanvas.getFraction(double x, double y)
 * Symbol.hit() + commented drawing code for triangle, cross, square diamond
 * GraphicsContextInterface, GraphicsContextProxy, PDFGraphicsContext, SVGGraphicsContext:
-  * multiple methods, most of which were also unimplemented in at least one implementing class
+    * multiple methods, most of which were also unimplemented in at least one implementing class
 * GraphicsIO, PDFWriter, SVGWriter:
-  * drawText, drawPolyLine, drawRect unused variants
+    * drawText, drawPolyLine, drawRect unused variants
 
 ### 2023-06-01
 
 * DrawSpectrum
-  * getContours(..), genContourPath(..), setColorGradient(..), getMarchingSquares
-  * getRegionAsArray(..), getOffsetsAsArray(..)
-  * drawVector(..), drawRegion(..) variants
+    * getContours(..), genContourPath(..), setColorGradient(..), getMarchingSquares
+    * getRegionAsArray(..), getOffsetsAsArray(..)
+    * drawVector(..), drawRegion(..) variants
