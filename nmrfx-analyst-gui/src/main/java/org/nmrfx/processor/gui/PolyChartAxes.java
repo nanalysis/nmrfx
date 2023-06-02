@@ -1,3 +1,20 @@
+/*
+ * NMRFx Processor : A Program for Processing NMR Data
+ * Copyright (C) 2004-2023 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.nmrfx.processor.gui;
 
 import javafx.collections.ObservableList;
@@ -9,16 +26,20 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
 import java.util.List;
 
+/**
+ * Axis management for PolyChart.
+ */
 public class PolyChartAxes {
     public static final int X_INDEX = 0;
     public static final int Y_INDEX = 1;
 
-    private final Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 200, 50);
-    private final Axis yAxis = new Axis(Orientation.VERTICAL, 0, 100, 50, 200);
     private final ObservableList<DatasetAttributes> datasetAttributesList; // shared with PolyChart
 
-    private Axis[] axes = {xAxis, yAxis}; //TODO replace with list?
-    private DatasetAttributes.AXMODE[] axModes = {DatasetAttributes.AXMODE.PPM, DatasetAttributes.AXMODE.PPM};
+    private final Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 200, 50);
+    private final Axis yAxis = new Axis(Orientation.VERTICAL, 0, 100, 50, 200);
+
+    private Axis[] axes = {xAxis, yAxis};
+    private DatasetAttributes.AXMODE[] modes = {DatasetAttributes.AXMODE.PPM, DatasetAttributes.AXMODE.PPM};
 
     public PolyChartAxes(ObservableList<DatasetAttributes> datasetAttributesList) {
         this.datasetAttributesList = datasetAttributesList;
@@ -36,11 +57,11 @@ public class PolyChartAxes {
     }
 
     public Axis getX() {
-        return axes[X_INDEX];
+        return xAxis;
     }
 
     public Axis getY() {
-        return axes[Y_INDEX];
+        return yAxis;
     }
 
     public Axis get(int iDim) {
@@ -48,21 +69,11 @@ public class PolyChartAxes {
     }
 
     public DatasetAttributes.AXMODE getMode(int iDim) {
-        return iDim < axModes.length ? axModes[iDim] : null;
+        return iDim < modes.length ? modes[iDim] : null;
     }
 
     public void setMode(int iDim, DatasetAttributes.AXMODE mode) {
-        axModes[iDim] = mode;
-    }
-
-    @Deprecated(forRemoval = true)
-    public Axis[] axisArray() {
-        return axes;
-    }
-
-    @Deprecated(forRemoval = true)
-    public DatasetAttributes.AXMODE[] modeArray() {
-        return axModes;
+        modes[iDim] = mode;
     }
 
     public void resetFrom(PolyChart chart, DatasetAttributes datasetAttrs, int nAxes) {
@@ -71,15 +82,15 @@ public class PolyChartAxes {
         axes = new Axis[nAxes];
         axes[X_INDEX] = xAxis;
         axes[Y_INDEX] = yAxis;
-        axModes = new DatasetAttributes.AXMODE[nAxes];
-        axModes[X_INDEX] = DatasetAttributes.AXMODE.PPM;
-        axModes[Y_INDEX] = DatasetAttributes.AXMODE.PPM;
+        modes = new DatasetAttributes.AXMODE[nAxes];
+        modes[X_INDEX] = DatasetAttributes.AXMODE.PPM;
+        modes[Y_INDEX] = DatasetAttributes.AXMODE.PPM;
         for (int i = 2; i < nAxes; i++) {
             if (axes[i] != null) {
                 if (dataset.getFreqDomain(i)) {
-                    axModes[i] = DatasetAttributes.AXMODE.PPM;
+                    modes[i] = DatasetAttributes.AXMODE.PPM;
                 } else {
-                    axModes[i] = DatasetAttributes.AXMODE.PTS;
+                    modes[i] = DatasetAttributes.AXMODE.PTS;
                 }
                 axes[i].lowerBoundProperty().addListener(new AxisChangeListener(chart, i, Axis.Bound.Lower));
                 axes[i].upperBoundProperty().addListener(new AxisChangeListener(chart, i, Axis.Bound.Upper));
@@ -94,27 +105,26 @@ public class PolyChartAxes {
         axes = new Axis[nAxes];
         axes[X_INDEX] = xAxis;
         axes[Y_INDEX] = yAxis;
-        axModes = new DatasetAttributes.AXMODE[nAxes];
-        axModes[X_INDEX] = DatasetAttributes.AXMODE.PPM;
-        axModes[Y_INDEX] = DatasetAttributes.AXMODE.PPM;
+        modes = new DatasetAttributes.AXMODE[nAxes];
+        modes[X_INDEX] = DatasetAttributes.AXMODE.PPM;
+        modes[Y_INDEX] = DatasetAttributes.AXMODE.PPM;
         for (int i = 2; i < nAxes; i++) {
             double[] ppmLimits = datasetAttrs.getMaxLimits(i);
             double centerPPM = (ppmLimits[X_INDEX] + ppmLimits[Y_INDEX]) / 2.0;
             axes[i] = new Axis(Orientation.HORIZONTAL, centerPPM, centerPPM, X_INDEX, Y_INDEX);
             if (dataset.getFreqDomain(dims[i])) {
-                axModes[i] = DatasetAttributes.AXMODE.PPM;
+                modes[i] = DatasetAttributes.AXMODE.PPM;
             } else {
-                axModes[i] = DatasetAttributes.AXMODE.PTS;
+                modes[i] = DatasetAttributes.AXMODE.PTS;
             }
             axes[i].lowerBoundProperty().addListener(new AxisChangeListener(chart, i, Axis.Bound.Lower));
             axes[i].upperBoundProperty().addListener(new AxisChangeListener(chart, i, Axis.Bound.Upper));
-
         }
     }
 
     public void copyTo(PolyChartAxes other) {
         for (int iAxis = 0; iAxis < axes.length; iAxis++) {
-            other.axModes[iAxis] = axModes[iAxis];
+            other.modes[iAxis] = modes[iAxis];
             other.setMinMax(iAxis, axes[iAxis].getLowerBound(), axes[iAxis].getUpperBound());
             other.axes[iAxis].setLabel(axes[iAxis].getLabel());
             axes[iAxis].copyTo(other.axes[iAxis]);
@@ -129,8 +139,8 @@ public class PolyChartAxes {
     }
 
     public void incrementPlane(int axis, DatasetAttributes datasetAttributes, int amount) {
-        int indexL = axModes[axis].getIndex(datasetAttributes, axis, axes[axis].getLowerBound());
-        int indexU = axModes[axis].getIndex(datasetAttributes, axis, axes[axis].getUpperBound());
+        int indexL = modes[axis].getIndex(datasetAttributes, axis, axes[axis].getLowerBound());
+        int indexU = modes[axis].getIndex(datasetAttributes, axis, axes[axis].getUpperBound());
         int[] maxLimits = datasetAttributes.getMaxLimitsPt(axis);
 
         indexL += amount;
@@ -149,12 +159,12 @@ public class PolyChartAxes {
             indexU = maxLimits[Y_INDEX];
         }
 
-        if (axModes[axis] == DatasetAttributes.AXMODE.PTS) {
+        if (modes[axis] == DatasetAttributes.AXMODE.PTS) {
             axes[axis].setLowerBound(indexL);
             axes[axis].setUpperBound(indexU);
         } else {
-            double posL = axModes[axis].indexToValue(datasetAttributes, axis, indexL);
-            double posU = axModes[axis].indexToValue(datasetAttributes, axis, indexU);
+            double posL = modes[axis].indexToValue(datasetAttributes, axis, indexL);
+            double posU = modes[axis].indexToValue(datasetAttributes, axis, indexU);
             axes[axis].setLowerBound(posL);
             axes[axis].setUpperBound(posU);
         }
@@ -168,7 +178,6 @@ public class PolyChartAxes {
             yAxis.setMinMax(limits[0], limits[1]);
         }
     }
-
 
     public double[] getRange(int axis) {
         return getRangeFromDatasetAttributesList(datasetAttributesList, axis);
