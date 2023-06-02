@@ -168,10 +168,7 @@ public class PolyChart extends Region implements PeakListener {
         this.annoCanvas = annoCanvas;
         plotBackground = new Group();
         this.plotContent = plotContent;
-
-        // Warning: axes array is not final!
-        // we must ensure it is replicated properly in drawSpectrum when the array instance is replaced.
-        drawSpectrum = new DrawSpectrum(axes.axisArray(), canvas);
+        drawSpectrum = new DrawSpectrum(axes, canvas);
 
         initChart();
         drawPeaks = new DrawPeaks(this, peakCanvas);
@@ -1648,8 +1645,6 @@ public class PolyChart extends Region implements PeakListener {
         datasetAttributesList.add(datasetAttrs);
         if (axes.count() != nAxes) {
             axes.resetFrom(this, datasetAttrs, nAxes);
-            drawSpectrum.setAxes(axes.axisArray());
-            drawSpectrum.setDisDim(disDimProp.getValue());
         }
     }
 
@@ -1663,8 +1658,6 @@ public class PolyChart extends Region implements PeakListener {
         int[] dims = datasetAttributes.getDims();
         if (alwaysUpdate || (axes.count() != nAxes)) {
             axes.updateAxisType(this, datasetAttributes, nAxes);
-            drawSpectrum.setAxes(axes.axisArray());
-            drawSpectrum.setDisDim(disDimProp.getValue());
         }
         if (dataset.getFreqDomain(dims[0])) {
             axes.setMode(0, AXMODE.PPM);
@@ -2120,13 +2113,13 @@ public class PolyChart extends Region implements PeakListener {
             }
             if (gC instanceof GraphicsContextProxy) {
                 if (useImmediateMode) {
-                    finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList, axes.modeArray());
+                    finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList);
                     useImmediateMode = finished;
                 } else {
-                    drawSpectrum.drawSpectrum(draw2DList, axes.modeArray(), false);
+                    drawSpectrum.drawSpectrum(draw2DList, false);
                 }
             } else {
-                finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList, axes.modeArray());
+                finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList);
             }
         }
         return finished;
@@ -2332,7 +2325,7 @@ public class PolyChart extends Region implements PeakListener {
 
             if ((ppm2 > xMin) && (ppm1 < xMax)) {
                 Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr,
-                        HORIZONTAL, axes.getMode(0), ppm1, ppm2, offsets,
+                        ppm1, ppm2, offsets,
                         integralMax, chartProps.getIntegralLowPos(),
                         chartProps.getIntegralHighPos());
                 if (result.isPresent()) {
@@ -2400,7 +2393,7 @@ public class PolyChart extends Region implements PeakListener {
 
                 if ((ppm2 > xMin) && (ppm1 < xMax)) {
                     Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr,
-                            HORIZONTAL, axes.getMode(0), ppm1, ppm2, offsets,
+                            ppm1, ppm2, offsets,
                             integralMax, chartProps.getIntegralLowPos(),
                             chartProps.getIntegralHighPos());
                     if (result.isPresent()) {
@@ -3597,7 +3590,7 @@ public class PolyChart extends Region implements PeakListener {
     public void drawProjection(GraphicsContextInterface gC, int iAxis, DatasetAttributes projectionDatasetAttributes) {
         DatasetAttributes dataAttr = datasetAttributesList.get(0);
         Bounds bounds = plotBackground.getBoundsInParent();
-        drawSpectrum.drawProjection(projectionDatasetAttributes, dataAttr, iAxis, bounds);
+        drawSpectrum.drawProjection(projectionDatasetAttributes, dataAttr, iAxis);
         double[][] xy = drawSpectrum.getXY();
         int nPoints = drawSpectrum.getNPoints();
         gC.setStroke(dataAttr.getPosColor());
@@ -3697,12 +3690,12 @@ public class PolyChart extends Region implements PeakListener {
                             drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, HORIZONTAL,
                                     crossHairs.getPosition(iCross, Orientation.VERTICAL),
                                     crossHairs.getPosition(iCross, Orientation.HORIZONTAL),
-                                    bounds, getPh0(0), getPh1(0));
+                                    getPh0(0), getPh1(0));
                         } else {
                             drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, VERTICAL,
                                     crossHairs.getPosition(iCross, Orientation.VERTICAL),
                                     crossHairs.getPosition(iCross, Orientation.HORIZONTAL),
-                                    bounds, getPh0(1), getPh1(1));
+                                    getPh0(1), getPh1(1));
                         }
                         double[][] xy = drawSpectrum.getXY();
                         int nPoints = drawSpectrum.getNPoints();
