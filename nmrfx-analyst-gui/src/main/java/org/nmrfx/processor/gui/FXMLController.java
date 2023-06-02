@@ -834,9 +834,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             topBar.getChildren().add(0, menuBar);
         }
         chartDrawingLayers = new ChartDrawingLayers(this, chartPane);
-        activeChart = PolyChartManager.getInstance().create(this,
-                chartDrawingLayers.getPlotContent(), chartDrawingLayers.getCanvas(),
-                chartDrawingLayers.getPeakCanvas(), chartDrawingLayers.getAnnoCanvas());
+        activeChart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
         new CanvasBindings(this, chartDrawingLayers.getCanvas()).setHandlers();
         initToolBar(toolBar);
         charts.add(activeChart);
@@ -1069,7 +1067,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void addChart() {
-        PolyChart chart = PolyChartManager.getInstance().create(this, chartDrawingLayers.getPlotContent(), chartDrawingLayers.getCanvas(), chartDrawingLayers.getPeakCanvas(), chartDrawingLayers.getAnnoCanvas());
+        PolyChart chart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
         charts.add(chart);
         chart.setChartDisabled(true);
         chartDrawingLayers.getChartGroup().addChart(chart);

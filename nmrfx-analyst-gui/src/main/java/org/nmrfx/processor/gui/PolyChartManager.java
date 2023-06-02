@@ -33,8 +33,8 @@ public class PolyChartManager {
         allCharts.addListener((ListChangeListener<PolyChart>) e -> multipleCharts.set(allCharts.size() > 1));
     }
 
-    public PolyChart create(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
-        PolyChart chart = new PolyChart(controller, generateNextName(), plotContent, canvas, peakCanvas, annoCanvas);
+    public PolyChart create(FXMLController controller, ChartDrawingLayers drawingLayers) {
+        PolyChart chart = new PolyChart(controller, generateNextName(), drawingLayers);
         registerNewChart(chart);
         return chart;
     }
