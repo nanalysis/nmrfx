@@ -90,7 +90,7 @@ public class AtomEnergyProp {
         if (fileName.startsWith("reslib_iu")) {
             ClassLoader cl = ClassLoader.getSystemClassLoader();
             InputStream istream = cl.getResourceAsStream(fileName);
-            if (istream == null ) {
+            if (istream == null) {
                 throw new FileNotFoundException("Unable to find property file.");
             }
             reader = new InputStreamReader(istream);
@@ -165,7 +165,7 @@ public class AtomEnergyProp {
         if (fileName.startsWith("reslib_iu")) {
             ClassLoader cl = ClassLoader.getSystemClassLoader();
             InputStream istream = cl.getResourceAsStream(fileName);
-            if (istream == null ) {
+            if (istream == null) {
                 throw new FileNotFoundException();
             }
             reader = new InputStreamReader(istream);
@@ -324,15 +324,15 @@ public class AtomEnergyProp {
      * simply adding both the radius. Hydrogen may be removed and substited by a
      * certain number of Angstrom's indicated by AtomEnergyProp
      *
-     * @param  atom1 the first atom
-     * @param  atom2 the second atom
-     * @param  hardSphere determines the value you want to add to atom radius
-     * @param  usehardSphere determines if you want to calculate rh
-     * @param  shrinkValue reduce the radius of non-hydrogen atoms by this amount
-     * @param  shrinkHValue reduce the radius of hydrogen atoms by this amount
+     * @param atom1         the first atom
+     * @param atom2         the second atom
+     * @param hardSphere    determines the value you want to add to atom radius
+     * @param usehardSphere determines if you want to calculate rh
+     * @param shrinkValue   reduce the radius of non-hydrogen atoms by this amount
+     * @param shrinkHValue  reduce the radius of hydrogen atoms by this amount
      */
     public static EnergyPair getInteraction(final Atom atom1, final Atom atom2, double hardSphere,
-            boolean usehardSphere, double shrinkValue, double shrinkHValue) {
+                                            boolean usehardSphere, double shrinkValue, double shrinkHValue) {
 
         AtomEnergyProp iProp = atom1.getAtomEnergyProp();
         AtomEnergyProp jProp = atom2.getAtomEnergyProp();

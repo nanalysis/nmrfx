@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * Saveframe.java
  *
  * Created on February 6, 2007, 8:58 AM
@@ -33,7 +33,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- *
  * @author brucejohnson
  */
 public class Saveframe {
@@ -65,7 +64,7 @@ public class Saveframe {
             return (String) tagMap.get(tag);
         }
 
-       public  List<String> getTags() {
+        public List<String> getTags() {
             List<String> list = new ArrayList<String>();
             list.addAll(tagMap.keySet());
             return list;

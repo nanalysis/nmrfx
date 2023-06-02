@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@ package org.nmrfx.processor.datasets.peaks;
 import java.util.ArrayList;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
+
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.InitialGuess;
@@ -34,7 +35,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class PeakNeighbors {
@@ -71,6 +71,7 @@ public class PeakNeighbors {
         setCells(0);
         setCells(1);
     }
+
     public PeakNeighbors(PeakList peakListA, PeakList peakListB, int nCells, List<String> dimNameList) {
         this.peakLists[0] = peakListA;
         this.peakLists[1] = peakListB;

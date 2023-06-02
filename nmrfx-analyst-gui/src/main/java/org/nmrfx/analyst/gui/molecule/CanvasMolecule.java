@@ -356,10 +356,11 @@ public class CanvasMolecule implements CanvasAnnotation {
      * Moves the molecule around the canvas. If a handle is selected, the handle can be
      * moved to adjust the size of the molecule but, it cannot be moved past another handle.
      * (i.e. The molecule cannot be sized to a negative width or height)
+     *
      * @param bounds The bounds of the canvas.
-     * @param world The bounds of the canvas in the units of the canvas axis.
-     * @param start The starting position.
-     * @param pos The new position.
+     * @param world  The bounds of the canvas in the units of the canvas axis.
+     * @param start  The starting position.
+     * @param pos    The new position.
      */
     @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {

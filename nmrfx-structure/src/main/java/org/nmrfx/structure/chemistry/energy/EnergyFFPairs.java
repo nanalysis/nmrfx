@@ -9,7 +9,6 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
 /**
- *
  * @author brucejohnson
  */
 public class EnergyFFPairs extends EnergyDistancePairs {
@@ -121,7 +120,7 @@ public class EnergyFFPairs extends EnergyDistancePairs {
                 /*
                  * what is needed is actually the derivitive/r, therefore the r that
                  * would be in following drops out
-                 * double dqdx = 0.5 * r;  
+                 * double dqdx = 0.5 * r;
                  */
                 double deriv = deds * dsdp * 2.0 * weight;
                 derivs[i] = deriv;

@@ -29,17 +29,17 @@ import java.util.regex.*;
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  * Java, the Duke mascot, and all variants of Sun's Java "steaming coffee
  * cup" logo are trademarks of Sun Microsystems. Sun's, and James Gosling's,
- * pioneering role in inventing and promulgating (and standardizing) the Java 
+ * pioneering role in inventing and promulgating (and standardizing) the Java
  * language and environment is gratefully acknowledged.
- * 
+ *
  * The pioneering role of Dennis Ritchie and Bjarne Stroustrup, of AT&T, for
  * inventing predecessor languages C and C++ is also gratefully acknowledged.
  */
 
- /* Simple demo of CSV matching using Regular Expressions.
+/* Simple demo of CSV matching using Regular Expressions.
  * Does NOT use the "CSV" class defined in the Java CookBook.
  * RE Pattern from Chapter 7, Mastering Regular Expressions (p. 205, first edn.)
  */

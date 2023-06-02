@@ -6,7 +6,6 @@
 package org.nmrfx.structure.chemistry.predict;
 
 /**
- *
  * @author brucejohnson
  */
 public class ProteinPredictorResult {
@@ -15,7 +14,7 @@ public class ProteinPredictorResult {
     final double[] attrs;
     final double ppm;
 
-   public ProteinPredictorResult(double[] coefs, double[] attrs, double ppm) {
+    public ProteinPredictorResult(double[] coefs, double[] attrs, double ppm) {
         this.coefs = coefs.clone();
         this.attrs = attrs.clone();
         this.ppm = ppm;

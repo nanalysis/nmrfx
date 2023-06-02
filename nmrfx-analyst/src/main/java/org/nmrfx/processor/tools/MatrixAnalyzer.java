@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
@@ -21,7 +22,6 @@ import org.nmrfx.datasets.RegionData;
 import org.nmrfx.peaks.io.PeakReader;
 
 /**
- *
  * @author brucejohnson
  */
 public class MatrixAnalyzer {

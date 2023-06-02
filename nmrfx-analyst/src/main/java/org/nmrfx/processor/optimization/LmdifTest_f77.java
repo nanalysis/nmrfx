@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,18 +36,18 @@ public class LmdifTest_f77 {
     java.util.Random generator = null;
     Lmdif_fcn lmdifFunc = null;
     Lmdif_fcn[] lmdifFuncs = {
-        new fexpc_f77(),
-        new fexpc1_f77(),
-        new fexpb_f77(),
-        new fexpg_f77(),
-        new flogistic_f77(),
-        new flogisticC1_f77(),
-        new quadratic_f77(),
-        new fexp2_f77(),
-        new funcgf_f77(),
-        new fexpd_f77(),
-        new flineshapeG_f77(),
-        new flineshapeL_f77()
+            new fexpc_f77(),
+            new fexpc1_f77(),
+            new fexpb_f77(),
+            new fexpg_f77(),
+            new flogistic_f77(),
+            new flogisticC1_f77(),
+            new quadratic_f77(),
+            new fexp2_f77(),
+            new funcgf_f77(),
+            new fexpd_f77(),
+            new flineshapeG_f77(),
+            new flineshapeL_f77()
     };
 
     public void setFunc(int funcNum) {
@@ -439,7 +439,7 @@ public class LmdifTest_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             if (iflag[1] == 0) {
                 for (int i = 1; i <= m; i++) {
                     double t = xv[i - 1];

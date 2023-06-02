@@ -6,10 +6,10 @@
 package org.nmrfx.chart;
 
 import java.util.Arrays;
+
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 /**
- *
  * @author brucejohnson
  */
 public class BoxPlotData {

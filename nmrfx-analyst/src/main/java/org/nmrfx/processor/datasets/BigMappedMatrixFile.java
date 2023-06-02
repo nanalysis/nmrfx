@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -58,8 +58,8 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
      * Create a memory-mapped interface to a large Dataset file that will
      * require multiple mappings to span whole file.
      *
-     * @param dataset Dataset object that uses this mapped matrix file
-     * @param raFile The Random access file that actually stores data
+     * @param dataset  Dataset object that uses this mapped matrix file
+     * @param raFile   The Random access file that actually stores data
      * @param writable true if the mapping should be writable
      * @throws java.io.IOException
      */
@@ -167,7 +167,7 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
             blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
             offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
         }
-        return  blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES;
+        return blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES;
     }
 
     @Override
@@ -277,7 +277,7 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
                 sum += getMapping(mapN).getFloat(offN);
             } catch (IOException e) {
                 MappedByteBuffer mapping = getMapping(mapN);
-                log.error("{} Err {} {} {}", mapN, offN , mapping.capacity(), mapping.limit());
+                log.error("{} Err {} {} {}", mapN, offN, mapping.capacity(), mapping.limit());
                 System.exit(0);
             }
         }

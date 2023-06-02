@@ -47,7 +47,7 @@ public class DataSeries {
     private double minY = Double.MAX_VALUE;
     private double maxY = Double.NEGATIVE_INFINITY;
     private double limitXMin = Double.NEGATIVE_INFINITY;
-    private double limitXMax= Double.MAX_VALUE;
+    private double limitXMax = Double.MAX_VALUE;
 
     public DataSeries() {
         updatePredicate();

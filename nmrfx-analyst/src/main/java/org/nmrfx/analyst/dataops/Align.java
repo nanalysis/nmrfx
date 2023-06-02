@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
 import org.apache.commons.math3.linear.RealMatrix;
 import org.nmrfx.math.VecBase.IndexValue;
 import org.nmrfx.processor.datasets.Dataset;
@@ -21,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class Align {

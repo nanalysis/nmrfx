@@ -205,6 +205,7 @@ public class MoleculeMenuActions extends MenuActions {
             resetAtomController();
         }
     }
+
     @FXML
     private void showRNAPeakGenerator(ActionEvent event) {
         if (rnaPeakGenController == null) {

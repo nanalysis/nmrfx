@@ -4,7 +4,6 @@ import javafx.scene.paint.Color;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 /**
- *
  * @author brucejohnson
  */
 class BondLine {

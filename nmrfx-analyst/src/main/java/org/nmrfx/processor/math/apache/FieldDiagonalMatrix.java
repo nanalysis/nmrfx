@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -59,13 +59,13 @@ public class FieldDiagonalMatrix<T extends FieldElement<T>> extends AbstractFiel
     /**
      * Create a new {@code FieldDiagonalMatrix<T>} with the supplied row and column dimensions.
      *
-     * @param field Field to which the elements belong.
-     * @param rowDimension Number of rows in the new matrix.
+     * @param field           Field to which the elements belong.
+     * @param rowDimension    Number of rows in the new matrix.
      * @param columnDimension Number of columns in the new matrix.
      * @throws NotStrictlyPositiveException if row or column dimension is not positive.
      */
     public FieldDiagonalMatrix(final Field<T> field, final int rowDimension,
-            final int columnDimension)
+                               final int columnDimension)
             throws NotStrictlyPositiveException {
         super(field, rowDimension, columnDimension);
         this.field = field;
@@ -89,7 +89,7 @@ public class FieldDiagonalMatrix<T extends FieldElement<T>> extends AbstractFiel
      * Constructs a Zdiagmat and initializes it to a constant.
      *
      * @param order The order of the new Zdiagmat
-     * @param val The value to which the diagonal is to be initialized
+     * @param val   The value to which the diagonal is to be initialized
      * @return A Zdiagmat whose diagonal is val.
      */
     public FieldDiagonalMatrix(final int dimension, T val) {

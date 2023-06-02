@@ -541,40 +541,42 @@ public class ScannerTool implements ControllerTool {
 
     /**
      * Loads the short version of the regions file into the scanner table.
+     *
      * @param file The file to load
      * @throws IOException
      */
     private void loadRegionsShort(File file) throws IOException {
-            try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
-                String s;
-                while ((s = reader.readLine()) != null) {
-                    String[] fields = s.split("\\s+");
-                    if (fields.length > 2) {
-                        String name = fields[0];
-                        StringBuilder sBuilder = new StringBuilder();
-                        for (int i = 1; i < fields.length; i++) {
-                            sBuilder.append(fields[i]);
-                            if (i != fields.length - 1) {
-                                sBuilder.append("_");
-                            }
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+            String s;
+            while ((s = reader.readLine()) != null) {
+                String[] fields = s.split("\\s+");
+                if (fields.length > 2) {
+                    String name = fields[0];
+                    StringBuilder sBuilder = new StringBuilder();
+                    for (int i = 1; i < fields.length; i++) {
+                        sBuilder.append(fields[i]);
+                        if (i != fields.length - 1) {
+                            sBuilder.append("_");
                         }
-                        String columnPrefix;
-                        if (name.startsWith("V.")) {
-                            columnPrefix = scanTable.getNextColumnName("", sBuilder.toString());
-                        } else {
-                            columnPrefix = name;
-                        }
-                        sBuilder.insert(0, ':');
-                        sBuilder.insert(0, columnPrefix);
-                        scanTable.addTableColumn(sBuilder.toString(), "D");
                     }
+                    String columnPrefix;
+                    if (name.startsWith("V.")) {
+                        columnPrefix = scanTable.getNextColumnName("", sBuilder.toString());
+                    } else {
+                        columnPrefix = name;
+                    }
+                    sBuilder.insert(0, ':');
+                    sBuilder.insert(0, columnPrefix);
+                    scanTable.addTableColumn(sBuilder.toString(), "D");
                 }
             }
+        }
     }
 
     /**
      * Loads the long version of the regions file into the Scanner table. The long version regions are assumed to
      * have a Measure Type of volume and an Offset Type of none.
+     *
      * @param file The file to load
      * @throws IOException
      */
@@ -623,7 +625,7 @@ public class ScannerTool implements ControllerTool {
 
     List<Double> toDoubleList(List<String> values) {
         List<Double> doubleValues = new ArrayList<>();
-        for (var s:values) {
+        for (var s : values) {
             try {
                 double dValue = Double.parseDouble(s);
                 doubleValues.add(dValue);
@@ -637,7 +639,7 @@ public class ScannerTool implements ControllerTool {
 
     List<Integer> toIntegerList(List<String> values) {
         List<Integer> intValues = new ArrayList<>();
-        for (var s:values) {
+        for (var s : values) {
             try {
                 int iValue = Integer.parseInt(s);
                 intValues.add(iValue);

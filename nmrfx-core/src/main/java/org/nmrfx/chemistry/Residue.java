@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -48,14 +48,14 @@ public class Residue extends Compound {
 
     static {
         String[] standardResidues = {
-            "ala", "a", "arg", "r", "asn", "n", "asp", "d", "cys", "c", "gln", "q", "glu", "e",
-            "gly", "g", "his", "h", "ile", "i", "leu", "l", "lys", "k", "met", "m", "phe", "f",
-            "pro", "p", "ser", "s", "thr", "t", "trp", "w", "tyr", "y", "val", "v", "mse", "m",
-            "dade", "a", "dcyt", "c", "dgua", "g", "dthy", "t",
-            "da", "a", "dc", "c", "dg", "g", "dt", "t",
-            "rade", "a", "rcyt", "c", "rgua", "g", "rura", "u",
-            "ra", "a", "rc", "c", "rg", "g", "ru", "u",
-            "a", "a", "c", "c", "g", "g", "u", "u"
+                "ala", "a", "arg", "r", "asn", "n", "asp", "d", "cys", "c", "gln", "q", "glu", "e",
+                "gly", "g", "his", "h", "ile", "i", "leu", "l", "lys", "k", "met", "m", "phe", "f",
+                "pro", "p", "ser", "s", "thr", "t", "trp", "w", "tyr", "y", "val", "v", "mse", "m",
+                "dade", "a", "dcyt", "c", "dgua", "g", "dthy", "t",
+                "da", "a", "dc", "c", "dg", "g", "dt", "t",
+                "rade", "a", "rcyt", "c", "rgua", "g", "rura", "u",
+                "ra", "a", "rc", "c", "rg", "g", "ru", "u",
+                "a", "a", "c", "c", "g", "g", "u", "u"
         };
         for (int i = 0; i < standardResidues.length; i += 2) {
             standardResSet.put(standardResidues[i], standardResidues[i + 1]);
@@ -767,7 +767,7 @@ public class Residue extends Compound {
     /**
      * Converts sequence information to a String in NEF format.
      *
-     * @param idx int. The line index.
+     * @param idx  int. The line index.
      * @param link String. Linkage (e.g. start, end, single).
      * @return String in NEF format.
      */
@@ -834,7 +834,7 @@ public class Residue extends Compound {
     /**
      * Convert structure configuration information to a String in mmCIF format.
      *
-     * @param idx int. The line index.
+     * @param idx     int. The line index.
      * @param lastRes Residue. The last residue in the sequence.
      * @return String in mmCIF format.
      */
@@ -892,7 +892,7 @@ public class Residue extends Compound {
     /**
      * Convert sheet information to a String in mmCIF format.
      *
-     * @param idx int. The line index.
+     * @param idx     int. The line index.
      * @param lastRes Residue. The last residue in the sequence.
      * @return
      */
@@ -938,8 +938,8 @@ public class Residue extends Compound {
     /**
      * Convert torsion angle information to a String in mmCIF format.
      *
-     * @param angles double[]. List of the torsion angles: [phi, psi].
-     * @param idx int. The line index.
+     * @param angles      double[]. List of the torsion angles: [phi, psi].
+     * @param idx         int. The line index.
      * @param pdbModelNum int. The PDB model number.
      * @return String in mmCIF format.
      */

@@ -104,7 +104,7 @@ public class BrukerData implements NMRData {
     /**
      * Open Bruker parameter and data files.
      *
-     * @param path full path to the fid directory or file
+     * @param path    full path to the fid directory or file
      * @param nusFile The name of a NUS file to load
      * @throws java.io.IOException
      */
@@ -817,13 +817,13 @@ public class BrukerData implements NMRData {
             if (optLine.isPresent()) {
                 String[] aqSeqParts = optLine.get().split("=");
                 if ((aqSeqParts.length == 2) && (aqSeqParts[1].endsWith("D") && Character.isDigit(aqSeqParts[1].charAt(0)))) {
-                    dimPar = aqSeqParts[1].substring(0,1);
+                    dimPar = aqSeqParts[1].substring(0, 1);
                 }
             }
         }
         int maxDim = dimPar != null ? Integer.parseInt(dimPar) : MAXDIM;
 
-            // process proc files if they exist
+        // process proc files if they exist
         File pdataFile = parDirFile.toPath().resolve("pdata").toFile();
         if (pdataFile.exists()) {
             Path bdir = pdataFile.toPath();

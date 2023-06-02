@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
  */
 public class TRACTFit {
@@ -48,7 +47,7 @@ public class TRACTFit {
             relaxEquations[i] = new RelaxEquations(sf[i], elemI, elemS);
         }
     }
-    
+
     public double[] getParErrors() {
         return parErrs.clone();
     }
@@ -77,7 +76,7 @@ public class TRACTFit {
             double tauC = pars[iRes + 2];
 
             double nab2 = relaxEquations[iSF].TRACTdeltaAlphaBeta(tauC * 1.0e-9, csa * 1.0e-6, theta);
-            double delta = (nab2 - values[2][i])/values[3][i];
+            double delta = (nab2 - values[2][i]) / values[3][i];
             sum += Math.abs(delta);
         }
         return sum / n;

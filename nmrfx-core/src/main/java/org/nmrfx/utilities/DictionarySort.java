@@ -11,6 +11,7 @@ public class DictionarySort<T> implements Comparator<T> {
     }
 
     // FIXME, add mode that is case insensitive?
+
     /**
      * Compares the order of two strings in "dictionary" order. Copied from Qsort.java of tcljava
      *

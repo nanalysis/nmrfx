@@ -2,6 +2,7 @@ package org.nmrfx.chemistry;
 
 import java.util.Arrays;
 import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.chemistry.Atom;

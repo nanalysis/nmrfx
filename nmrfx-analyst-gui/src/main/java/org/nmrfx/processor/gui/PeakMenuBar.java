@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakMenuBar {

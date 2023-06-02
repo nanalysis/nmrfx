@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,12 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import java.util.Arrays;
+
 import org.nmrfx.chemistry.Atom;
+
 import java.util.List;
 import java.util.Random;
+
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.MaxEval;
@@ -35,7 +38,6 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.util.Precision;
 
 /**
- *
  * @author johnsonb
  */
 public class CmaesRefinement extends Refinement implements MultivariateFunction {
@@ -128,8 +130,8 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
     }
 
     public double refineCMAESWithLinkedAtoms(final int nSteps, final double stopFitness,
-            final double sigma, final double lambdaMul, final int diagOnly,
-            final boolean useDegrees, final double dev1, final double dev2) {
+                                             final double sigma, final double lambdaMul, final int diagOnly,
+                                             final boolean useDegrees, final double dev1, final double dev2) {
         reportAt = 10;
         bestEnergy = Double.MAX_VALUE;
         double energy = energy();
@@ -296,7 +298,7 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         List<Atom> angleAtoms = molecule.getAngleAtoms();
 
         int nPseudoAngles = pseudoAngleAtoms.size() / 3;
-        for (int i = 0; i < dihedrals.angleValues.length;) {
+        for (int i = 0; i < dihedrals.angleValues.length; ) {
             Atom atom;
             boolean incrementByTwo = false;
             if (i < (2 * nPseudoAngles)) {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,6 @@ import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.SpatialSet;
 
 /**
- *
  * @author brucejohnson
  */
 public class HydrogenBond {
@@ -46,9 +45,9 @@ public class HydrogenBond {
     /**
      * Test if two atoms have the correct geometry to be in a hydrogen bond
      *
-     * @param hydrogen SpatialSet for the hydrogen
-     * @param acceptor SpatialSet for the hydrogen bond acceptor (typically O or
-     * N)
+     * @param hydrogen     SpatialSet for the hydrogen
+     * @param acceptor     SpatialSet for the hydrogen bond acceptor (typically O or
+     *                     N)
      * @param structureNum
      * @return boolean depending on whether the geometry is correct
      */

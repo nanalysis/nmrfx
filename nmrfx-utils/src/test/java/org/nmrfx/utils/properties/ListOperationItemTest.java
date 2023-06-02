@@ -2,7 +2,9 @@ package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+
 import static org.junit.Assert.*;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,7 +29,7 @@ public class ListOperationItemTest {
         };
 
     }
-    
+
     @Test
     public void testConstructorWithNullDefault() {
         ListOperationItem lstItem = new ListOperationItem(listListener, null, "COADD", "coef", "List of coefficients to scale each vector by.", typeSelector);
@@ -102,7 +104,7 @@ public class ListOperationItemTest {
         lstItem.setValue(newValue);
         assertEquals(List.of(5.0, 6.0, 7.0, 8.0), lstItem.value);
         assertNotEquals(lstItem.value, lstItem.defaultValue);
-        assertEquals("Listener is updated if the values have changed",1, changeListenerCallCount);
+        assertEquals("Listener is updated if the values have changed", 1, changeListenerCallCount);
     }
 
     @Test
@@ -113,7 +115,7 @@ public class ListOperationItemTest {
         lstItem.setValue(newValue);
         assertEquals(List.of(1.0, 2.0, 3.0, 4.0), lstItem.value);
         assertEquals(lstItem.value, lstItem.defaultValue);
-        assertEquals("Listener is not updated if the values have not changed",0, changeListenerCallCount);
+        assertEquals("Listener is not updated if the values have not changed", 0, changeListenerCallCount);
     }
 
     @Test

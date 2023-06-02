@@ -111,7 +111,7 @@ public class Zipper extends SimpleFileVisitor<Path> {
     // is thrown.
     @Override
     public FileVisitResult visitFileFailed(Path file,
-            IOException exc) {
+                                           IOException exc) {
         log.warn(exc.getMessage(), exc);
         return FileVisitResult.CONTINUE;
     }

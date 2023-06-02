@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@ package org.nmrfx.structure.rdc;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.commons.math3.geometry.enclosing.EnclosingBall;
 import org.apache.commons.math3.geometry.enclosing.WelzlEncloser;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
@@ -34,16 +35,15 @@ import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Point3;
 
 /**
- *
  * @author brucejohnson
  */
 public class AlignmentCalc {
 
     static Vector3D BVEC = new Vector3D(0.0, 0.0, 1.0);
     static Vector3D[] VECS = {
-        new Vector3D(1.0, 0.0, 0.0),
-        new Vector3D(0.0, 1.0, 0.0),
-        new Vector3D(0.0, 0.0, 1.0)};
+            new Vector3D(1.0, 0.0, 0.0),
+            new Vector3D(0.0, 1.0, 0.0),
+            new Vector3D(0.0, 0.0, 1.0)};
 
     List<Vector3D> vectors = new ArrayList<>();
     List<Double> masses = new ArrayList<>();

@@ -298,9 +298,10 @@ public class IstMatrix extends MatrixOperation {
         }
         return srcTargetMap;
     }
+
     public static int[] genZFSrcTargetMap(MatrixND matrixND, int[] origSizes, boolean constrainEdges) {
         int nOrig = 1;
-        for (int sz: origSizes) {
+        for (int sz : origSizes) {
             nOrig *= sz;
         }
         int[] srcTargetMap = new int[nOrig];
@@ -318,22 +319,22 @@ public class IstMatrix extends MatrixOperation {
     }
 
     static boolean isInSkipList(List<int[]> skipList, int[] counts) {
-       for (int[] skip:skipList) {
-           boolean inList = true;
-           for (int i=0;i<counts.length;i++) {
-               if (skip[i] < 0)  {
-                   continue;
-               }
-               if (skip[i] != counts[i]) {
-                   inList = false;
-                   break;
-               }
-           }
-           if (inList) {
-               return true;
-           }
-       }
-       return false;
+        for (int[] skip : skipList) {
+            boolean inList = true;
+            for (int i = 0; i < counts.length; i++) {
+                if (skip[i] < 0) {
+                    continue;
+                }
+                if (skip[i] != counts[i]) {
+                    inList = false;
+                    break;
+                }
+            }
+            if (inList) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static int[] genZFList(MatrixND matrixND, int[] origSizes, boolean constrainEdges, List<int[]> skipList) {

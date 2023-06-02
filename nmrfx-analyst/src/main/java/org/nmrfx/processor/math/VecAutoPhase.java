@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,13 +20,12 @@ package org.nmrfx.processor.math;
 import org.apache.commons.math3.complex.Complex;
 
 /**
- *
  * @author brucejohnson
  */
 public class VecAutoPhase {
 
     public static double apsl(Vec vec, int icenter, int start, int width,
-            boolean asym) {
+                              boolean asym) {
         double num;
         double dem;
         double dc;

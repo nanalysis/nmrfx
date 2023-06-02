@@ -6,11 +6,11 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import java.util.List;
+
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakListAlign {

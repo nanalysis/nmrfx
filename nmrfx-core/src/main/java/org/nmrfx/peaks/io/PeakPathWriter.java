@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
 import java.util.List;
+
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakPath;
 import org.nmrfx.peaks.PeakList;
@@ -16,7 +17,6 @@ import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.peaks.PeakDistance;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakPathWriter {

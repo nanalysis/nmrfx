@@ -1289,7 +1289,7 @@ public class RS2DData implements NMRData {
             stateParam.setOrder(order);
         }
         List<Number> stateValues = new ArrayList<>(Collections.nCopies(4, 0));
-        for (int i = 0; i< dataset.getNDim(); i++) {
+        for (int i = 0; i < dataset.getNDim(); i++) {
             int state = dataset.getFreqDomain(i) ? 1 : 0;
             stateValues.set(i, state);
         }
@@ -1303,7 +1303,7 @@ public class RS2DData implements NMRData {
     }
 
     public Path saveDataset(Dataset dataset) throws IOException {
-        File file =dataset.getFile();
+        File file = dataset.getFile();
         try {
             setHeaderMatrixDimensions(dataset);
             setHeaderState(dataset);

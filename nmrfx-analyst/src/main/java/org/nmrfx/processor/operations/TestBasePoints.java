@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- *
  * @author brucejohnson
  */
 public class TestBasePoints implements MultivariateFunction {
@@ -800,7 +799,7 @@ public class TestBasePoints implements MultivariateFunction {
             double r2 = regionSum(regData.base3, regData.base4, p0, p1);
             double m1 = r1 / (regData.base2 - regData.base1 + 1);
             double m2 = r2 / (regData.base4 - regData.base3 + 1);
-            double c = regionSum(regData.sig1, regData.sig2,  p0, p1);
+            double c = regionSum(regData.sig1, regData.sig2, p0, p1);
             double mean = (m1 + m2) / 2;
             double c2 = c - mean * (regData.sig2 - regData.sig1 + 1);
             if (c2 < 0.0) {

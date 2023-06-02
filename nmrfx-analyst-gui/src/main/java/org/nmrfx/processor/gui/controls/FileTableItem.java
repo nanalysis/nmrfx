@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,7 +27,6 @@ import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class FileTableItem {
@@ -166,6 +165,7 @@ public class FileTableItem {
     public DatasetAttributes getDatasetAttributes() {
         return datasetAttr == null ? null : datasetAttr.get();
     }
+
     public void setDatasetAttributes(DatasetAttributes datasetAttributes) {
         this.datasetAttr = new SimpleObjectProperty<>(datasetAttributes);
     }

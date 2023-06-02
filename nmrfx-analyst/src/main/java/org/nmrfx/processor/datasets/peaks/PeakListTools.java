@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -52,7 +52,6 @@ import static org.nmrfx.peaks.Peak.getMeasureFunction;
 import static org.nmrfx.processor.datasets.peaks.PeakListTools.GuessType.*;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakListTools {
@@ -166,7 +165,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param minTol
      * @param maxTol
      * @param phaseRel
@@ -174,7 +172,7 @@ public class PeakListTools {
      * @throws IllegalArgumentException
      */
     public static void couple(PeakList peakList, double[] minTol, double[] maxTol,
-            PhaseRelationship phaseRel, int dimVal) throws IllegalArgumentException {
+                              PhaseRelationship phaseRel, int dimVal) throws IllegalArgumentException {
         int nDim = peakList.getNDim();
         if (minTol.length != nDim) {
             throw new IllegalArgumentException("Number of minimum tolerances not equal to number of peak dimensions");
@@ -331,13 +329,12 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param minTol
      * @param maxTol
      * @return
      */
     public static DistanceMatch[][] getNeighborDistances(PeakList peakList, double[] minTol,
-            double[] maxTol) {
+                                                         double[] maxTol) {
         final ArrayList matches = new ArrayList();
         int nDim = peakList.getNDim();
 
@@ -407,7 +404,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param peakListA
      * @param peakListB
      * @param minTol
@@ -415,7 +411,7 @@ public class PeakListTools {
      * @throws IllegalArgumentException
      */
     public static void mapLinkPeaks(PeakList peakListA,
-            PeakList peakListB, double[] minTol, double[] maxTol)
+                                    PeakList peakListB, double[] minTol, double[] maxTol)
             throws IllegalArgumentException {
         if (minTol.length != peakListA.getNDim()) {
             throw new IllegalArgumentException(
@@ -520,8 +516,8 @@ public class PeakListTools {
         MatchResult result = doBPMatch(peakListA, peakItemsA, iOffsets, peakItemsB, jOffsets, tol);
         return result;
     }
+
     /**
-     *
      * @param peakListA
      * @param peakListB
      * @param dims
@@ -582,7 +578,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param dims
      * @param tol
      * @param aNames
@@ -592,12 +587,12 @@ public class PeakListTools {
         Atom[] atoms = new Atom[aNames.length];
         List<double[]> positions = new ArrayList<>();
         List<String[]> names = new ArrayList<>();
-        for (var cR:mol.getCompoundsAndResidues()) {
+        for (var cR : mol.getCompoundsAndResidues()) {
             if (cR instanceof Residue) {
                 Residue res = (Residue) cR;
                 int i = 0;
                 boolean ok = true;
-                for (var name:aNames) {
+                for (var name : aNames) {
                     Atom atom = res.getAtom(name);
                     if ((atom == null) || (atom.getPPM() == null)) {
                         ok = false;
@@ -610,7 +605,7 @@ public class PeakListTools {
                     double[] shifts = new double[atoms.length];
                     String[] resAtomNames = new String[atoms.length];
                     int j = 0;
-                    for (Atom atom:atoms) {
+                    for (Atom atom : atoms) {
                         shifts[j] = atom.getPPM();
                         resAtomNames[j] = atom.getShortName();
                     }
@@ -793,7 +788,6 @@ public class PeakListTools {
 // fixme removed bpmatchpeaks
 
     /**
-     *
      * @param iPeak
      * @param dimsI
      * @param iOffsets
@@ -815,7 +809,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param iItem
      * @param iOffsets
      * @param jItem
@@ -843,7 +836,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param iDim
      * @param limit
      */
@@ -883,8 +875,8 @@ public class PeakListTools {
 
     // FIXME should check to see that nucleus is same
     // FIXME should check to see that nucleus is same
+
     /**
-     *
      * @param signals
      * @param nExtra
      */
@@ -915,7 +907,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param freqs
      * @param amplitudes
      * @param nExtra
@@ -979,7 +970,6 @@ public class PeakListTools {
 
 
     /**
-     *
      * @param pt
      * @param cpt
      * @param width
@@ -1000,7 +990,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param mode
      */
     public static void quantifyPeaks(PeakList peakList, String mode) {
@@ -1021,7 +1010,7 @@ public class PeakListTools {
         if (nDim == nDataDim) {
             quantifyPeaks(peakList, dataset, f, mode);
         } else if (nDim == (nDataDim - 1)) {
-            int scanDim = nDataDim -1;
+            int scanDim = nDataDim - 1;
             int nPlanes = dataset.getSizeTotal(scanDim);
             quantifyPeaks(peakList, dataset, f, mode, nPlanes);
         } else if (nDim > nDataDim) {
@@ -1058,7 +1047,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param peakList
      * @param dataset
      * @param f
@@ -1076,7 +1064,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param peakList
      * @param dataset
      * @param f
@@ -1097,7 +1084,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param peakList
      * @param datasets
      * @param f
@@ -1135,8 +1121,8 @@ public class PeakListTools {
     }
 
     private static void measurePlanes(int nPlanes, Peak peak, Dataset dataset,
-            java.util.function.Function<RegionData, Double> f,
-            String mode, double[][] values, int iValue) {
+                                      java.util.function.Function<RegionData, Double> f,
+                                      String mode, double[][] values, int iValue) {
         int extraPlanes = Math.max(0, dataset.getNDim() - peak.getNDim());
         int[] planes = new int[extraPlanes];
         int[] pdim = peak.getPeakList().getDimsForDataset(dataset, true);
@@ -1200,7 +1186,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param dataset
      * @param speaks
      * @param planes
@@ -1218,7 +1203,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param dataset
      * @param planes
      */
@@ -1236,7 +1220,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param theFile
      * @param peaks
      * @return
@@ -1247,11 +1230,10 @@ public class PeakListTools {
     public static List<Object> fitPeakGroup(PeakList peakList, Dataset theFile, int[] rows, double[] delays, List<Peak> peaks,
                                             boolean[] fitPeaks, PeakFitParameters fitPars)
             throws IllegalArgumentException, IOException, PeakFitException {
-        return fitPeaks(peakList, theFile, peaks, fitPars, fitPeaks, rows,  delays);
+        return fitPeaks(peakList, theFile, peaks, fitPars, fitPeaks, rows, delays);
     }
 
     /**
-     *
      * @param theFile
      * @throws IllegalArgumentException
      * @throws IOException
@@ -1263,7 +1245,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param theFile
      * @param peaks
      * @throws IllegalArgumentException
@@ -1278,45 +1259,45 @@ public class PeakListTools {
             oPeaks = getPeakColumns(peakList, peaks, fitPars.constrainDim());
         }
         oPeaks.stream().forEach(oPeakSet -> {
-            try {
-                List<Peak> lPeaks = new ArrayList<>();
-                int nFit = 0;
-                for (int i = 0; i < 3; i++) {
-                    lPeaks.addAll(oPeakSet.get(i));
-                    if (i == 1) {
-                        nFit = lPeaks.size();
-                    }
+                    try {
+                        List<Peak> lPeaks = new ArrayList<>();
+                        int nFit = 0;
+                        for (int i = 0; i < 3; i++) {
+                            lPeaks.addAll(oPeakSet.get(i));
+                            if (i == 1) {
+                                nFit = lPeaks.size();
+                            }
 
+                        }
+                        boolean[] fitPeaks = new boolean[lPeaks.size()];
+                        Arrays.fill(fitPeaks, true);
+                        for (int i = nFit; i < fitPeaks.length; i++) {
+                            fitPeaks[i] = false;
+                        }
+                        fitPeakGroup(peakList, theFile, rows, delays, lPeaks, fitPeaks, fitPars);
+                    } catch (IllegalArgumentException | IOException | PeakFitException ex) {
+                        log.error(ex.getMessage(), ex);
+                    }
                 }
-                boolean[] fitPeaks = new boolean[lPeaks.size()];
-                Arrays.fill(fitPeaks, true);
-                for (int i = nFit; i < fitPeaks.length; i++) {
-                    fitPeaks[i] = false;
-                }
-                fitPeakGroup(peakList, theFile, rows, delays, lPeaks, fitPeaks, fitPars);
-            } catch (IllegalArgumentException | IOException | PeakFitException ex) {
-                log.error(ex.getMessage(), ex);
-            }
-        }
         );
     }
 
-     /**
+    /**
      * Fit peaks by adjusting peak position (chemical shift), linewidth and
      * intensity to optimize agreement with data values. Multiple peaks are fit
      * simultaneously. These are normally a group of overlapping peaks.
      *
-     * @param theFile The dataset to fit the peaks to
-     * @param peaks A collection of peaks to fit simultaneously
+     * @param theFile  The dataset to fit the peaks to
+     * @param peaks    A collection of peaks to fit simultaneously
      * @param fitPeaks A boolean array of to specify a subset of the peaks that
-     * will actually be adjusted
-     * @param rows An array of rows (planes etc) of the dataset to be used. This
-     * is used when the number of peak dimensions is less than the number of
-     * dataset dimensions.
-      * @param delays An array of doubles specifying relaxation delays. If not
-      * null then fit peaks to lineshapes and an exponential delay model using
-      * data values from different rows or planes of dataset
-      * @return a List of alternating name/values with the parameters of the fit
+     *                 will actually be adjusted
+     * @param rows     An array of rows (planes etc) of the dataset to be used. This
+     *                 is used when the number of peak dimensions is less than the number of
+     *                 dataset dimensions.
+     * @param delays   An array of doubles specifying relaxation delays. If not
+     *                 null then fit peaks to lineshapes and an exponential delay model using
+     *                 data values from different rows or planes of dataset
+     * @return a List of alternating name/values with the parameters of the fit
      * if updatePeaks is false. Otherwise return empty list
      * @throws IllegalArgumentException
      * @throws IOException
@@ -1384,7 +1365,7 @@ public class PeakListTools {
                 if (!ok) {
                     throw new IllegalArgumentException(
                             "Can't find match for peak dimension \""
-                            + peak.peakList.getSpectralDim(j).getDimName() + "\"");
+                                    + peak.peakList.getSpectralDim(j).getDimName() + "\"");
                 }
             }
             for (int dDim = 0, iRow = 0; dDim < dataDim; dDim++) {
@@ -1683,7 +1664,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @return
      */
     public static Set<List<Peak>> getOverlappingPeaks(PeakList peakList) {
@@ -1708,7 +1688,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param fitPeaks
      * @return
      */
@@ -1733,7 +1712,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param fitPeaks
      * @return
      */
@@ -1760,7 +1738,6 @@ public class PeakListTools {
     }
 
     /**
-     *
      * @param fitPeaks
      * @return
      */
@@ -1841,7 +1818,6 @@ public class PeakListTools {
         }
 
         /**
-         *
          * @return
          */
         public boolean isSigned() {
@@ -1849,7 +1825,6 @@ public class PeakListTools {
         }
 
         /**
-         *
          * @param name
          * @return
          */
@@ -1858,13 +1833,12 @@ public class PeakListTools {
         }
 
         /**
-         *
          * @param intensity1
          * @param intensity2
          * @return
          */
         public static PhaseRelationship getType(double intensity1,
-                double intensity2) {
+                                                double intensity2) {
             if (intensity1 > 0) {
                 if (intensity2 > 0) {
                     return INPHASE;
@@ -1879,7 +1853,6 @@ public class PeakListTools {
         }
 
         /**
-         *
          * @param ctr1
          * @param intensity1
          * @param ctr2
@@ -1887,7 +1860,7 @@ public class PeakListTools {
          * @return
          */
         public static PhaseRelationship getType(double ctr1, double intensity1,
-                double ctr2, double intensity2) {
+                                                double ctr2, double intensity2) {
             double left;
             double right;
 
@@ -1937,7 +1910,6 @@ public class PeakListTools {
         }
 
         /**
-         *
          * @param aNeighbors
          * @param iNeighbor
          * @param bNeighbors
@@ -1945,7 +1917,7 @@ public class PeakListTools {
          * @return
          */
         public double compare(DistanceMatch[][] aNeighbors, int iNeighbor,
-                DistanceMatch[][] bNeighbors, int jNeighbor) {
+                              DistanceMatch[][] bNeighbors, int jNeighbor) {
             double globalSum = 0.0;
 
             for (DistanceMatch aDis : aNeighbors[iNeighbor]) {

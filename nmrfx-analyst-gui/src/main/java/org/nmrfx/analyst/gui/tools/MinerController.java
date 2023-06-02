@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -46,7 +46,6 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- *
  * @author johnsonb
  */
 public class MinerController {
@@ -96,6 +95,7 @@ public class MinerController {
 
     /**
      * Set the disabled state of the sub menu items.
+     *
      * @param state If true, disable sub menu items.
      */
     public void setDisableSubMenus(boolean state) {
@@ -106,6 +106,7 @@ public class MinerController {
 
     /**
      * Set the disabled state of the adjuster menu button.
+     *
      * @param state If true, disable button.
      */
     public void disableController(boolean state) {

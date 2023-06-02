@@ -33,8 +33,8 @@ import java.util.function.Consumer;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 /**
- *
  * @author Bruce Johnson
  */
 public class PeakNavigator implements PeakListener {
@@ -96,6 +96,7 @@ public class PeakNavigator implements PeakListener {
         initPeakNavigator(toolBar, null, null);
         return this;
     }
+
     public PeakNavigator initialize(ToolBar toolBar, MenuButton peakListMenuButton) {
         initPeakNavigator(toolBar, null, peakListMenuButton);
         return this;
@@ -191,7 +192,8 @@ public class PeakNavigator implements PeakListener {
                     case ENTER -> navigator.gotoPeakId(peakIdField);
                     case UP -> navigator.gotoNextMatch(1);
                     case DOWN -> navigator.gotoNextMatch(-1);
-                    default -> {}
+                    default -> {
+                    }
                 }
             }
         });
@@ -369,6 +371,7 @@ public class PeakNavigator implements PeakListener {
             }
         }
     }
+
     void previousPeakFiltered() {
         if (currentPeak != null) {
             int peakIndex = currentPeak.getIndex();
@@ -440,6 +443,7 @@ public class PeakNavigator implements PeakListener {
             nextPeakFiltered(peakIndex);
         }
     }
+
     void nextPeakFiltered(int peakIndex) {
         peakIndex++;
         Peak peak = null;
@@ -458,7 +462,6 @@ public class PeakNavigator implements PeakListener {
             setPeak(null);
         }
     }
-
 
 
     public void lastPeak(ActionEvent event) {
@@ -580,7 +583,7 @@ public class PeakNavigator implements PeakListener {
         updateDeleteStatus();
     }
 
-    private void handlePeakListChangedEvent(){
+    private void handlePeakListChangedEvent() {
         if (currentPeak != null) {
             updateDeleteStatus();
         }

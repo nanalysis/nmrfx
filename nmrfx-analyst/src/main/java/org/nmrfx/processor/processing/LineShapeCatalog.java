@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.peaks.Peak;
@@ -23,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
  */
 public class LineShapeCatalog {
@@ -399,7 +399,7 @@ public class LineShapeCatalog {
     }
 
     private double[] interpolate(int iDim, double lwIndex, int offset,
-            double fP, boolean reverse) {
+                                 double fP, boolean reverse) {
         int lwIndex1 = (int) Math.floor(lwIndex) * nFrac;
         int lwIndex2 = lwIndex1 + nFrac;
         double fL = lwIndex - Math.floor(lwIndex);
@@ -426,7 +426,7 @@ public class LineShapeCatalog {
     }
 
     public boolean addToDatasetInterpolated(Dataset dataset, double[][] values,
-            int[] center, double scale, Double lvl) throws IOException {
+                                            int[] center, double scale, Double lvl) throws IOException {
         int[] regionSizes = new int[values.length];
 
         for (int i = 0; i < values.length; i++) {
@@ -469,7 +469,7 @@ public class LineShapeCatalog {
     }
 
     public void addToDataset(Dataset dataset, int[] indices,
-            int[] center, double scale) throws IOException {
+                             int[] center, double scale) throws IOException {
         int[] regionSizes = new int[indices.length];
 
         for (int i = 0; i < indices.length; i++) {

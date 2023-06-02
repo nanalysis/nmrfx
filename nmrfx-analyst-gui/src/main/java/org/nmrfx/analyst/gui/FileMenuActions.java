@@ -6,7 +6,8 @@ import javafx.stage.Stage;
 import org.nmrfx.processor.gui.PreferencesController;
 
 public class FileMenuActions extends MenuActions {
-    private  DatasetBrowserController browserController = null;
+    private DatasetBrowserController browserController = null;
+
     public FileMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);
     }
@@ -48,9 +49,9 @@ public class FileMenuActions extends MenuActions {
     }
 
     public void addAdvancedMenuItem() {
-            MenuItem startAdvancedItem = new MenuItem("Start Advanced");
-            startAdvancedItem.setOnAction(e -> app.advanced(startAdvancedItem));
-            menu.getItems().add(startAdvancedItem);
+        MenuItem startAdvancedItem = new MenuItem("Start Advanced");
+        startAdvancedItem.setOnAction(e -> app.advanced(startAdvancedItem));
+        menu.getItems().add(startAdvancedItem);
     }
 
     @Override
@@ -60,6 +61,7 @@ public class FileMenuActions extends MenuActions {
         menu.getItems().addAll(addMenuItem);
 
     }
+
     void showDataBrowser() {
         if (browserController == null) {
             browserController = DatasetBrowserController.create();

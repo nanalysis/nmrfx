@@ -1362,6 +1362,7 @@ public class DrawPeaks {
         }
         return coords;
     }
+
     class Peak1DRep {
 
         double x = 0;

@@ -339,9 +339,9 @@ public class JCAMPData implements NMRData {
         // if none is present, then try to guess from first/last timestamps
 
         Optional<Label> label = getSWLabel(dim);
-        if(label.isPresent()) {
+        if (label.isPresent()) {
             return block.get(label.get(), dim).getDouble();
-        } else if(dim == 0 && block.contains(FIRST) && block.contains(LAST)) {
+        } else if (dim == 0 && block.contains(FIRST) && block.contains(LAST)) {
             log.debug("Trying to guess SW from FIRST and LAST records for dimension {}", dim);
             double first = block.get(FIRST).getDoubles()[0];
             double last = block.get(LAST).getDoubles()[0];
@@ -766,11 +766,11 @@ public class JCAMPData implements NMRData {
 
     @Override
     public boolean getNegateImag(int dim) {
-        if(dim == 0) {
+        if (dim == 0) {
             return false;
         }
 
-        if("sep".equals(getSymbolicCoefs(dim))) {
+        if ("sep".equals(getSymbolicCoefs(dim))) {
             return false;
         }
         boolean reverse = block.optional($REVERSE, dim).map(JCampRecord::getString)
@@ -857,16 +857,18 @@ public class JCAMPData implements NMRData {
 
     /**
      * Get the total size of a dimension including both real and imaginary.
+     *
      * @param dim The dimension to use.
      * @return The total size.
      */
     private int getTotalSize(int dim) {
-        int factor = isComplex(dim) ? 2: 1;
+        int factor = isComplex(dim) ? 2 : 1;
         return getSize(dim) * factor;
     }
 
     /**
      * Get a name to use for a dataset based on the provided filename.
+     *
      * @param file The File object to parse the dataset name from.
      * @return A String dataset name.
      */
@@ -882,6 +884,7 @@ public class JCAMPData implements NMRData {
     /**
      * Create a Dataset from the JCAMP data. This method assumes the JCAMP data has already
      * been processed.
+     *
      * @param datasetName The String name to use for the new Dataset.
      * @return The newly created Dataset.
      * @throws IOException
@@ -892,7 +895,7 @@ public class JCAMPData implements NMRData {
         Path fpath = file.toPath();
 
         int[] dimSizes = new int[getNDim()];
-        for(int i = 0; i < getNDim(); i++) {
+        for (int i = 0; i < getNDim(); i++) {
             dimSizes[i] = getTotalSize(i);
         }
 
@@ -905,7 +908,7 @@ public class JCAMPData implements NMRData {
         // Set the processed data into the dataset
         boolean hasImaginaryData = this.imaginary.length != 0;
         Vec complex;
-        for (int index = 0; index < this.real.length; index++){
+        for (int index = 0; index < this.real.length; index++) {
             if (hasImaginaryData) {
                 complex = new Vec(this.real[index], this.imaginary[index]);
             } else {

@@ -7,6 +7,7 @@ package org.nmrfx.structure.rna;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -834,7 +835,7 @@ public class SSLayout implements MultivariateFunction {
                         levels[leftIndex]++;
                     } else if (rightIndex != -1) {
                         levels[rightIndex]--;
-                        int start = levelMap[levels[rightIndex]][rightIndex];                        
+                        int start = levelMap[levels[rightIndex]][rightIndex];
                         int end = i;
                         addPair(start, end);
 
@@ -844,10 +845,10 @@ public class SSLayout implements MultivariateFunction {
                 log.warn(aiE.getMessage(), aiE);
                 return;
             }
-        } 
+        }
     }
-    
-        public List<Residue> interpVienna(String vienna, List<Residue> res) {
+
+    public List<Residue> interpVienna(String vienna, List<Residue> res) {
         String leftBrackets = "({[";
         String rightBrackets = ")}]";
         int[][] levelMap = new int[vienna.length()][leftBrackets.length()];
@@ -864,7 +865,7 @@ public class SSLayout implements MultivariateFunction {
                         levels[leftIndex]++;
                     } else if (rightIndex != -1) {
                         levels[rightIndex]--;
-                        int start = levelMap[levels[rightIndex]][rightIndex];                        
+                        int start = levelMap[levels[rightIndex]][rightIndex];
                         int end = i;
                         addPair(start, end);
                         res.get(start).pairedTo = res.get(end);

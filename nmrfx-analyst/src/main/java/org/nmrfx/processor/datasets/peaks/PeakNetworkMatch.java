@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,9 +20,11 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.InitialGuess;
@@ -35,7 +37,6 @@ import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
 import org.nmrfx.peaks.Peak;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakNetworkMatch {
@@ -154,7 +155,7 @@ public class PeakNetworkMatch {
     }
 
     void bpMatchList(String[] dimNamesI, double[][] tols, double[][] offsets,
-            boolean optimizeMatch, double tolMul, final double[][] boundary) {
+                     boolean optimizeMatch, double tolMul, final double[][] boundary) {
         // should check for "deleted" peaks
 
         boolean matched = true;

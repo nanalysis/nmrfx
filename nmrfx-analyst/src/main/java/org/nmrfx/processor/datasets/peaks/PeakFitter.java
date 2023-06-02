@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
@@ -42,7 +42,6 @@ import java.util.List;
 import static java.util.Comparator.comparing;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakFitter {
@@ -77,7 +76,7 @@ public class PeakFitter {
         int nPeaks = argv.length;
         peaks = new Peak[nPeaks];
         for (int iArg = 0, iPeak = 0; iArg < argv.length;
-                iArg++, iPeak++) {
+             iArg++, iPeak++) {
             peaks[iPeak] = PeakList.getAPeak(argv[iArg]);
 
             if (peaks[iPeak] == null) {
@@ -699,39 +698,39 @@ public class PeakFitter {
 
             guesses[iPeak * 3 + nShapePar] = intensity;
             guesses[iPeak * 3 + 1 + nShapePar] = c - p2[0][0];
-            guesses[iPeak * 3 + 2+ nShapePar] = lineWidthPts;
+            guesses[iPeak * 3 + 2 + nShapePar] = lineWidthPts;
 
             int cPos = (int) Math.round(c - p2[0][0]);
             if (intensity > 0.0) {
                 lower[iPeak * 3 + nShapePar] = 0.0;
-                upper[iPeak * 3+ nShapePar] = yv[cPos + extra] * 1.2;
+                upper[iPeak * 3 + nShapePar] = yv[cPos + extra] * 1.2;
             } else {
-                lower[iPeak * 3+ nShapePar] = yv[cPos + extra] * 1.2;
-                upper[iPeak * 3+ nShapePar] = 0.0;
+                lower[iPeak * 3 + nShapePar] = yv[cPos + extra] * 1.2;
+                upper[iPeak * 3 + nShapePar] = 0.0;
             }
-            lower[iPeak * 3 + 2+ nShapePar] = minWidth;
-            upper[iPeak * 3 + 2+ nShapePar] = useMaxWidth;
+            lower[iPeak * 3 + 2 + nShapePar] = minWidth;
+            upper[iPeak * 3 + 2 + nShapePar] = useMaxWidth;
             if (positionRestraint != null) {
                 double lineWidthRange = lineWidthPts * positionRestraint;
-                lower[iPeak * 3 + 2+ nShapePar] = Math.max(minWidth, lineWidthPts - lineWidthRange);
-                upper[iPeak * 3 + 2+ nShapePar] = Math.min(useMaxWidth, lineWidthPts + lineWidthRange);
+                lower[iPeak * 3 + 2 + nShapePar] = Math.max(minWidth, lineWidthPts - lineWidthRange);
+                upper[iPeak * 3 + 2 + nShapePar] = Math.min(useMaxWidth, lineWidthPts + lineWidthRange);
             }
         }
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
-            double lineWidthPts = guesses[iPeak * 3 + 2+ nShapePar];
+            double lineWidthPts = guesses[iPeak * 3 + 2 + nShapePar];
             if (iPeak == 0) {
-                lower[iPeak * 3 + 1+ nShapePar] = Math.max(extra + 1.0, guesses[iPeak * 3 + 1+ nShapePar] - lineWidthPts);
+                lower[iPeak * 3 + 1 + nShapePar] = Math.max(extra + 1.0, guesses[iPeak * 3 + 1 + nShapePar] - lineWidthPts);
             } else {
-                lower[iPeak * 3 + 1+ nShapePar] = (guesses[iPeak * 3 + 1+ nShapePar] + guesses[(iPeak - 1) * 3 + 1+ nShapePar]) / 2.0;
+                lower[iPeak * 3 + 1 + nShapePar] = (guesses[iPeak * 3 + 1 + nShapePar] + guesses[(iPeak - 1) * 3 + 1 + nShapePar]) / 2.0;
             }
             if (iPeak == nPeaks - 1) {
-                upper[iPeak * 3 + 1+ nShapePar] = Math.min(size - extra - 1.0, guesses[iPeak * 3 + 1+ nShapePar] + lineWidthPts);
+                upper[iPeak * 3 + 1 + nShapePar] = Math.min(size - extra - 1.0, guesses[iPeak * 3 + 1 + nShapePar] + lineWidthPts);
             } else {
-                upper[iPeak * 3 + 1+ nShapePar] = (guesses[iPeak * 3 + 1+ nShapePar] + guesses[(iPeak + 1) * 3 + 1+ nShapePar]) / 2.0;
+                upper[iPeak * 3 + 1 + nShapePar] = (guesses[iPeak * 3 + 1 + nShapePar] + guesses[(iPeak + 1) * 3 + 1 + nShapePar]) / 2.0;
             }
             if (positionRestraint != null) {
-                lower[iPeak * 3 + 1+ nShapePar] = Math.max(lower[iPeak * 3 + 1+ nShapePar], guesses[iPeak * 3 + 1+ nShapePar] - lineWidthPts * positionRestraint);
-                upper[iPeak * 3 + 1+ nShapePar] = Math.min(upper[iPeak * 3 + 1+ nShapePar], guesses[iPeak * 3 + 1+ nShapePar] + lineWidthPts * positionRestraint);
+                lower[iPeak * 3 + 1 + nShapePar] = Math.max(lower[iPeak * 3 + 1 + nShapePar], guesses[iPeak * 3 + 1 + nShapePar] - lineWidthPts * positionRestraint);
+                upper[iPeak * 3 + 1 + nShapePar] = Math.min(upper[iPeak * 3 + 1 + nShapePar], guesses[iPeak * 3 + 1 + nShapePar] + lineWidthPts * positionRestraint);
             }
 
         }
@@ -771,9 +770,9 @@ public class PeakFitter {
             Peak peak = peaks[iPeak];
             PeakDim peakDim = peak.getPeakDim(0);
 
-            double intensity = bestPars[iPeak * 3+ nShapePar];
-            double centerPt = bestPars[iPeak * 3 + 1+ nShapePar] + p2[0][0];
-            double lineWithPts = bestPars[iPeak * 3 + 2+ nShapePar];
+            double intensity = bestPars[iPeak * 3 + nShapePar];
+            double centerPt = bestPars[iPeak * 3 + 1 + nShapePar] + p2[0][0];
+            double lineWithPts = bestPars[iPeak * 3 + 2 + nShapePar];
             double lineWidthPPM = theFile.ptWidthToPPM(0, lineWithPts);
             double centerPPM = theFile.pointToPPM(0, centerPt);
             double volume = intensity * lineWidthPPM * Math.PI / 2 / 1.05;
@@ -829,7 +828,7 @@ public class PeakFitter {
                 if (!ok) {
                     throw new IllegalArgumentException(
                             "Can't find match for peak dimension \""
-                            + peaks[iPeak].peakList.getSpectralDim(j).getDimName() + "\"");
+                                    + peaks[iPeak].peakList.getSpectralDim(j).getDimName() + "\"");
                 }
             }
             absComps.addAll(peak.getPeakDim(0).getMultiplet().getAbsComponentList());

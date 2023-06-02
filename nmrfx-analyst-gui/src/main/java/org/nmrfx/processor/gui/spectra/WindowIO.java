@@ -52,7 +52,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- *
  * @author brucejohnson
  */
 public class WindowIO implements FileWatchListener {
@@ -243,7 +242,7 @@ public class WindowIO implements FileWatchListener {
         Predicate<String> predicate2 = STAGE_PATTERN2.asPredicate();
 
         if (Files.isDirectory(directory)) {
-            try (Stream<Path> files = Files.list(directory)){
+            try (Stream<Path> files = Files.list(directory)) {
                 files.sequential().filter(path
                                 -> predicate.test(path.getFileName().toString()) || predicate2.test(path.getFileName().toString())).
                         forEach(path -> {
@@ -254,7 +253,7 @@ public class WindowIO implements FileWatchListener {
                             }
                         });
             } catch (IOException ex) {
-                log.warn(ex.getMessage(),ex);
+                log.warn(ex.getMessage(), ex);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * AtomProperty.java
  *
  * Created on April 12, 2004, 11:02 PM
@@ -24,11 +24,11 @@
 package org.nmrfx.chemistry;
 
 import java.util.*;
+
 import org.nmrfx.utilities.NMRFxColor;
 import org.nmrfx.utilities.NvUtil;
 
 /**
- *
  * @author brucejohnson
  */
 public class AtomProperty {
@@ -244,22 +244,23 @@ public class AtomProperty {
     public static final AtomProperty Lr = new AtomProperty("Lr", 1.0f,
             GENERIC_COLOR, 0.0f);
     private static final AtomProperty[] PRIVATE_VALUES = {
-        X, H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, K, Ca,
-        Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge, As, Se, Br, Kr, Rb, Sr, Y,
-        Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I, Xe, Cs, Ba, La,
-        Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta, W, Re,
-        Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At, Rn, Fr, Ra, Ac, Th, Pa, U, Np,
-        Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Lr
+            X, H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, K, Ca,
+            Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge, As, Se, Br, Kr, Rb, Sr, Y,
+            Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I, Xe, Cs, Ba, La,
+            Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta, W, Re,
+            Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At, Rn, Fr, Ra, Ac, Th, Pa, U, Np,
+            Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Lr
     };
     public static final List VALUES = Collections.unmodifiableList(Arrays.asList(
             PRIVATE_VALUES));
 
     static {
-        for (Iterator iter = VALUES.iterator(); iter.hasNext();) {
+        for (Iterator iter = VALUES.iterator(); iter.hasNext(); ) {
             AtomProperty atomProp = (AtomProperty) iter.next();
             map.put(atomProp.name, atomProp);
         }
     }
+
     String name = "";
     int aNum = 0;
     float radius = 0.6f;
@@ -272,7 +273,7 @@ public class AtomProperty {
      * Creates a new instance of AtomProperty
      */
     private AtomProperty(String name, float radius, float red, float green,
-            float blue, float mass) {
+                         float blue, float mass) {
         this.name = name;
         this.aNum = nextAnum++;
         this.radius = radius;

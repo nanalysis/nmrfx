@@ -105,10 +105,10 @@ public class RegionsTableController implements Initializable, StageBasedControll
         removeRegionButton.setOnAction(event -> regionsTable.removeSelectedRegion());
         addRegionButton.setOnAction(event -> addRegion());
         autoIntegrateButton.setOnAction(event -> {
-           SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getController().getTool(SimplePeakRegionTool.class);
-           if (peakRegionTool != null) {
-               peakRegionTool.findRegions();
-           }
+            SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getController().getTool(SimplePeakRegionTool.class);
+            if (peakRegionTool != null) {
+                peakRegionTool.findRegions();
+            }
         });
         removeAllButton.setOnAction(event -> {
             SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getController().getTool(SimplePeakRegionTool.class);
@@ -177,9 +177,10 @@ public class RegionsTableController implements Initializable, StageBasedControll
 
     /**
      * Selects the integral in the chart and centres the chart view on the selected region if it is not already in view.
+     *
      * @param observableValue The observable dataset region property from the table selection model.
-     * @param oldRegion The old selected dataset region.
-     * @param newRegion The new selected dataset region
+     * @param oldRegion       The old selected dataset region.
+     * @param newRegion       The new selected dataset region
      */
     private void setSelectedRowRegionsTableListener(ObservableValue<? extends DatasetRegion> observableValue, DatasetRegion oldRegion, DatasetRegion newRegion) {
         chart.selectIntegral(newRegion);
@@ -249,9 +250,10 @@ public class RegionsTableController implements Initializable, StageBasedControll
 
     /**
      * Listener that update the selected row in the chart to the active region.
+     *
      * @param observableValue The Active Region
-     * @param oldRegion The old value of the active region
-     * @param newRegion The new value of the active region
+     * @param oldRegion       The old value of the active region
+     * @param newRegion       The new value of the active region
      */
     private void updateActiveRegion(ObservableValue<? extends DatasetRegion> observableValue, DatasetRegion oldRegion, DatasetRegion newRegion) {
         if (newRegion == null) {
@@ -284,6 +286,7 @@ public class RegionsTableController implements Initializable, StageBasedControll
 
     /**
      * Gets the RegionsTableController. A new controller is created if one has not already been made.
+     *
      * @return The RegionsTableController instance.
      */
     public static RegionsTableController getRegionsTableController() {

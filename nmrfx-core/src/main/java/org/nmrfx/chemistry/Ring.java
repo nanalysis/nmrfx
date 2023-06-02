@@ -1,8 +1,8 @@
 /*
  * MX - Essential Cheminformatics
- * 
+ *
  * Copyright (c) 2007-2009 Metamolecular, LLC
- * 
+ *
  * http://metamolecular.com/mx
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,6 +26,7 @@
 package org.nmrfx.chemistry;
 
 import java.util.List;
+
 import org.nmrfx.chemistry.Atom;
 
 /**
@@ -35,7 +36,7 @@ public class Ring {
 
     private List<Atom> atoms;
     private int ringNumber;
-    
+
     public Ring(List<Atom> atoms) {
         this.atoms = atoms;
     }
@@ -51,12 +52,12 @@ public class Ring {
     public int size() {
         return atoms.size() - 1;
     }
-    
-    public void setRingNumber(int i){
+
+    public void setRingNumber(int i) {
         this.ringNumber = i;
     }
-    
-    public int getRingNumber(){
+
+    public int getRingNumber() {
         return this.ringNumber;
     }
 }

@@ -68,7 +68,6 @@ import java.util.stream.Collectors;
 import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 
 
-
 /**
  * @author Bruce Johnson
  */
@@ -120,7 +119,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     boolean useSpinSystem = false;
     Double[][] widths;
     int[] resOffsets = null;
-    Map<PolyChart,List<String>> winPatterns = new HashMap<>();
+    Map<PolyChart, List<String>> winPatterns = new HashMap<>();
     boolean[] intraResidue = null;
     int minOffset = 0;
 
@@ -186,13 +185,16 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             }
             return active;
         }
+
         public void setActive(boolean value) {
             log.info("set value {}", value);
             activeProperty().set(value);
         }
+
         public boolean getActive() {
             return activeProperty().get();
         }
+
         PeakListSelection(PeakList peakList) {
             this.peakList = peakList;
         }
@@ -211,7 +213,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         public boolean getPattern() {
             boolean hasPattern = true;
-            for (var sDim:peakList.getSpectralDims()) {
+            for (var sDim : peakList.getSpectralDims()) {
                 if (sDim.getPattern().isBlank()) {
                     hasPattern = false;
                 }
@@ -308,12 +310,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         referenceChoice.valueProperty().bindBidirectional(refListObj);
 
         VBox vBox2 = new VBox();
-        VBox.setVgrow(vBox2,Priority.ALWAYS);
+        VBox.setVgrow(vBox2, Priority.ALWAYS);
 
         peakTableView.setMinHeight(100);
         peakTableView.setPrefHeight(100);
         peakTableView.setEditable(true);
-        VBox.setVgrow(peakTableView,Priority.ALWAYS);
+        VBox.setVgrow(peakTableView, Priority.ALWAYS);
         TableColumn<PeakListSelection, String> peakListNameColumn = new TableColumn<>("Name");
         peakListNameColumn.setCellValueFactory(new PropertyValueFactory<>("Name"));
         peakListNameColumn.setEditable(false);
@@ -340,7 +342,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 peakListSizeColumn, peakListSelectedColumn);
         if (runAbout != null) {
             var runaboutLists = runAbout.getPeakLists();
-            for (var selector:peakListSelectors) {
+            for (var selector : peakListSelectors) {
                 if (runaboutLists.contains(selector.peakList)) {
                     selector.setActive(true);
                 }
@@ -354,16 +356,16 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         Project.getActive().addPeakListListener(peakmapChangeListener);
 
         Button configureButton = new Button("Inspector");
-        configureButton.setOnAction(e-> inspectPeakList());
+        configureButton.setOnAction(e -> inspectPeakList());
 
         Button setupButton = new Button("Setup");
-        setupButton.setOnAction(e-> setupRunAbout());
+        setupButton.setOnAction(e -> setupRunAbout());
 
         Button autoTolButton = new Button("AutoTol");
-        autoTolButton.setOnAction(e-> autoSetTolerances());
+        autoTolButton.setOnAction(e -> autoSetTolerances());
 
         Button addListButton = new Button("Add Lists");
-        addListButton.setOnAction(e-> addLists());
+        addListButton.setOnAction(e -> addLists());
 
         buttonBar.getItems().addAll(configureButton, setupButton, autoTolButton, addListButton);
         vBox2.getChildren().addAll(buttonBar, peakTableView);
@@ -380,13 +382,14 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     private void updatePeakTableView() {
         var peakListSelectors = PeakList.peakLists().stream().map(PeakListSelection::new).collect(Collectors.toList());
         peakTableView.getItems().setAll(peakListSelectors);
-        for (var peakListSelector:peakListSelectors) {
+        for (var peakListSelector : peakListSelectors) {
             if (runAbout.getPeakLists().contains(peakListSelector.peakList)) {
                 peakListSelector.setActive(true);
             }
         }
         registerPeakLists();
     }
+
     private void inspectPeakList() {
         var items = peakTableView.getSelectionModel().getSelectedItems();
         if (!items.isEmpty()) {
@@ -508,7 +511,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         clusterModesChoiceBox.setValue(SpinSystems.ClusterModes.ALL);
         toolBar.getItems().add(clusterModesChoiceBox);
 
-        clusterModesChoiceBox.valueProperty().addListener(e-> updateClusterCanvas());
+        clusterModesChoiceBox.valueProperty().addListener(e -> updateClusterCanvas());
 
 
         MenuButton spinSysMenuButton = new MenuButton("SpinSys Actions");
@@ -548,7 +551,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         toolBar.getItems().add(spinSysMenuButton);
 
-        Slider probSlider = new Slider(1,100, 20.0);
+        Slider probSlider = new Slider(1, 100, 20.0);
         toolBar.getItems().add(probSlider);
         Label probField = new Label();
         probField.setPrefWidth(100);
@@ -760,7 +763,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     ResidueLabel resLabel = k == 0 ? leftResidues.get(iScore) : rightResidues.get(iScore);
                     Color color = Color.WHITE;
                     Color color2 = Color.LIGHTGRAY;
-                    color = color2.interpolate(color,aaScore.getNorm());
+                    color = color2.interpolate(color, aaScore.getNorm());
                     if (aaScore.getNorm() < 1.0e-3) {
                         name = name.toLowerCase();
                         color = Color.DARKGRAY;
@@ -769,7 +772,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     resLabel.setColor(color);
                     iScore++;
                 }
-                for (int i=iScore;i < leftResidues.size();i++) {
+                for (int i = iScore; i < leftResidues.size(); i++) {
                     ResidueLabel resLabel = k == 0 ? leftResidues.get(i) : rightResidues.get(i);
                     resLabel.setText("");
                     resLabel.setColor(Color.DARKGRAY);
@@ -816,7 +819,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 resLabel.setInactive();
                 resLabel.setTopLineVisible(false);
                 var optResidue = resLabel.getResidue();
-                optResidue.ifPresent( residue -> {
+                optResidue.ifPresent(residue -> {
                     Atom atom = residue.getAtom("CA");
                     if (atom != null) {
                         Double ppm = atom.getPPM();
@@ -1045,7 +1048,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             StackPane stack = this;
             textItem = new Text(label);
             rect = new Rectangle(width, width, Color.WHITE);
-            line = new Line(0,0,width,0);
+            line = new Line(0, 0, width, 0);
             line.setStrokeWidth(2);
             line.setFill(Color.BLACK);
             rect.setStroke(null);
@@ -1057,7 +1060,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             textItem.setMouseTransparent(true);
             stack.getChildren().addAll(rect, textItem, line);
             stack.setAlignment(Pos.CENTER);
-            StackPane.setAlignment(line,Pos.TOP_CENTER);
+            StackPane.setAlignment(line, Pos.TOP_CENTER);
             line.setVisible(false);
             tooltip = new Tooltip(label);
             Tooltip.install(this, tooltip);
@@ -1249,6 +1252,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             scoreFragment();
         }
     }
+
     void assemble() {
         runAbout.assemble();
         updatePeakListMenu();
@@ -1590,7 +1594,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     gotoSpinSystems();
                 }
             } catch (NumberFormatException nfE) {
-                GUIUtils.warn("SpinSystem","Value not integer");
+                GUIUtils.warn("SpinSystem", "Value not integer");
             }
         } else {
             if (navigationPeakList != null) {
@@ -1697,7 +1701,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     Double[] getDimWidth(PeakList peakList, Dataset dataset, List<String> dimNames, int[] iDims, List<String> widthTypes) {
         Double[] widths = new Double[dataset.getNDim()];
-        for (int i=0;i<dimNames.size();i++) {
+        for (int i = 0; i < dimNames.size(); i++) {
             Double width;
             String widthType = widthTypes.get(i);
             int iDim = iDims[i];
@@ -1753,7 +1757,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         var peakLists = peakTableView.getItems().stream().
                 filter(PeakListSelection::getActive).
                 map(p -> p.peakList).
-                filter( p -> !currentLists.contains(p)).
+                filter(p -> !currentLists.contains(p)).
                 collect(Collectors.toList());
         runAbout.addLists(peakLists);
         clusterStatus.refresh();
@@ -1772,7 +1776,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 PolyChart chart = refController.getActiveChart();
                 chart.updateDatasets(List.of(dataset.getName()));
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                int[] iDims = runAbout.getIDims(dataset, refList, refList.getExperimentType(), List.of("H","N"));
+                int[] iDims = runAbout.getIDims(dataset, refList, refList.getExperimentType(), List.of("H", "N"));
                 var sDims = runAbout.getPeakListDims(refList, dataset, iDims);
                 dataAttr.setDims(iDims);
                 List<String> peakLists = Collections.singletonList(refList.getName());
@@ -2008,6 +2012,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             }
         }
     }
+
     void drawAnno(PolyChart chart, PeakList currentList, SpinSystem spinSystem) {
         DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
         Font font = Font.font(12.0);
@@ -2088,7 +2093,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     void alignCenters() {
         List<String> dimNames = new ArrayList<>();
-        for (var sDim:refListObj.get().getSpectralDims()) {
+        for (var sDim : refListObj.get().getSpectralDims()) {
             if (sDim.getPattern().equalsIgnoreCase("i.h") || sDim.getPattern().equalsIgnoreCase("i.n")) {
                 dimNames.add(sDim.getDimName());
             }
@@ -2103,13 +2108,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     void peakDeleteAction(PeakDeleteEvent event) {
         var modifiedSpinSystems = new HashSet<SpinSystem>();
-        for (Peak peak:event.getPeaks()) {
-            runAbout.getSpinSystems().findSpinSystem(peak).ifPresent( spinSys -> {
+        for (Peak peak : event.getPeaks()) {
+            runAbout.getSpinSystems().findSpinSystem(peak).ifPresent(spinSys -> {
                 spinSys.removePeak(peak);
                 modifiedSpinSystems.add(spinSys);
             });
         }
-        for (var spinSys:modifiedSpinSystems) {
+        for (var spinSys : modifiedSpinSystems) {
             if (spinSys.userFieldsSet()) {
                 spinSys.calcCombinations(false);
                 if (!spinSys.confirmed(false) && !spinSys.confirmed(true)) {
@@ -2163,9 +2168,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     void moveToThisCluster() {
         SpinSystems spinSystems = runAbout.getSpinSystems();
         var spinSys = currentSpinSystem;
-        for (var chart:controller.getCharts()) {
+        for (var chart : controller.getCharts()) {
             var selPeaks = chart.getSelectedPeaks();
-            for (Peak peak:selPeaks) {
+            for (Peak peak : selPeaks) {
                 PeakList.unLinkPeak(peak);
                 var spinSysOpt = spinSystems.findSpinSystem(peak);
                 spinSysOpt.ifPresent(s -> s.removePeak(peak));
@@ -2202,6 +2207,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             spinStatus.updateFragment(currentSpinSystem);
         });
     }
+
     void thawSystem() {
         currentSpinSystem.getFragment().ifPresent(frag -> {
             if (frag.getResSeqScore() != null) {

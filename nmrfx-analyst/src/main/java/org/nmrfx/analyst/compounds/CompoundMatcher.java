@@ -5,10 +5,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.nmrfx.processor.math.Vec;
 
 /**
- *
  * @author brucejohnson
  */
 public class CompoundMatcher {
@@ -19,7 +19,7 @@ public class CompoundMatcher {
         CompoundMatch match = new CompoundMatch(cData);
         matches.put(cData.getName(), match);
     }
-    
+
     public CompoundMatch getMatch(String name) {
         return matches.get(name);
     }

@@ -49,7 +49,7 @@ import java.util.*;
 
 /**
  * @author bfetler
- *
+ * <p>
  * access through NMRDataUtil
  */
 public class VarianData implements NMRData {
@@ -230,10 +230,11 @@ public class VarianData implements NMRData {
     public boolean isSpectrum() {
         return isSpectrum;
     }
-  @Override
+
+    @Override
     public String getFTType(int iDim) {
         // fixme
-        return  "ft";
+        return "ft";
     }
 
     @Override
@@ -661,6 +662,7 @@ public class VarianData implements NMRData {
 
     /**
      * Get the number of increments in the specified dimension
+     *
      * @param iDim the dimension (1 is the first indirect dimension)
      * @return the number of increments
      */
@@ -739,7 +741,7 @@ public class VarianData implements NMRData {
         } else {
             String ext = String.valueOf(iDim);
             String s = getPar("proc" + ext);
-            boolean notRFT =  !"rft".equals(s);
+            boolean notRFT = !"rft".equals(s);
 
             if (iDim == 1) {
                 s = getPar("phase");

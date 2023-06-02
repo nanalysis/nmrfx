@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -26,13 +26,16 @@ package org.nmrfx.utils.properties;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.GridPane;
+
 import static javafx.scene.layout.GridPane.setHgrow;
+
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -43,7 +46,6 @@ import javafx.util.converter.DoubleStringConverter;
 import org.controlsfx.control.textfield.CustomTextField;
 
 /**
- *
  * @author brucejohnson
  */
 public class ZoomSlider extends GridPane {

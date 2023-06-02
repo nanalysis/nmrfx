@@ -429,7 +429,7 @@ public class Processor {
         }
         int nDim = nmrData.getNDim();
         int nArray = 0;
-        groupSizes = new int[nDim+nArray];
+        groupSizes = new int[nDim + nArray];
         for (int i = 1; i < nDim; i++) {
             int arraySize = nmrData.getArraySize(i);
             if (arraySize != 0) {

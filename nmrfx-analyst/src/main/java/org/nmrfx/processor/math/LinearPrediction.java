@@ -538,7 +538,8 @@ public class LinearPrediction {
 
             Ainv = Vs.multiply(Ur);
 
-        } catch (OutOfRangeException | NumberIsTooLargeException | DimensionMismatchException | NumberIsTooSmallException e) {
+        } catch (OutOfRangeException | NumberIsTooLargeException | DimensionMismatchException |
+                 NumberIsTooSmallException e) {
             System.out.println(e.getMessage());
             return null;
         }

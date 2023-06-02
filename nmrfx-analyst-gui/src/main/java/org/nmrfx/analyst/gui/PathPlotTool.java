@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
@@ -56,7 +57,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
  */
 public class PathPlotTool {
@@ -191,13 +191,13 @@ public class PathPlotTool {
         }
 
         tableView.setOnKeyPressed(e
-                -> {
-            if ((e.getCode() == KeyCode.BACK_SPACE) || (e.getCode() == KeyCode.DELETE)) {
-                List<PeakPath> selPaths = getSelected();
-                pathTool.removeActivePaths(selPaths);
+                        -> {
+                    if ((e.getCode() == KeyCode.BACK_SPACE) || (e.getCode() == KeyCode.DELETE)) {
+                        List<PeakPath> selPaths = getSelected();
+                        pathTool.removeActivePaths(selPaths);
 
-            }
-        }
+                    }
+                }
         );
     }
 

@@ -237,9 +237,9 @@ public class StripController implements ControllerTool {
     }
 
     void updateDimMenus(PeakList peakList) {
-        for (var dimMenu: dimChoiceBoxes) {
+        for (var dimMenu : dimChoiceBoxes) {
             dimMenu.getItems().clear();
-            for (var sDim:peakList.getSpectralDims()) {
+            for (var sDim : peakList.getSpectralDims()) {
                 dimMenu.getItems().add(sDim.getDimName());
             }
         }
@@ -779,7 +779,7 @@ public class StripController implements ControllerTool {
                 }
                 if (!datasets.contains(dataset)) {
                     datasets.add(dataset);
-                    StripItem item = new StripItem(dataset,peakList,iCol, iRow);
+                    StripItem item = new StripItem(dataset, peakList, iCol, iRow);
                     items.add(item);
                 } else {
                     break;

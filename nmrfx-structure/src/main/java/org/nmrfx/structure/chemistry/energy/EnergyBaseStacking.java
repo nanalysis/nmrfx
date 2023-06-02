@@ -6,11 +6,12 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.chemistry.Atom;
+
 import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
+
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
 /**
- *
  * @author brucejohnson
  */
 public class EnergyBaseStacking extends EnergyDistancePairs {
@@ -25,8 +26,8 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
     }
 
     public void addPair(int i, int j, int iUnit, int jUnit, double r0,
-            int baseAtom1a, int baseAtom1b,
-            int baseAtom2a, int baseAtom2b) {
+                        int baseAtom1a, int baseAtom1b,
+                        int baseAtom2a, int baseAtom2b) {
         if (i != j) {
             addPair(i, j, iUnit, jUnit, r0);
             int iPair = nPairs - 1;
@@ -47,7 +48,7 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
             baseAtoms2b = resize(baseAtoms2b, newSize);
         }
     }
-    
+
     @Override
     public double calcEnergy(boolean calcDeriv, double weight, double eWeight) {
         FastVector3D[] vecCoords = eCoords.getVecCoords();

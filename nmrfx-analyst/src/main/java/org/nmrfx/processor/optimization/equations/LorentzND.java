@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -44,68 +44,68 @@ public class LorentzND extends OptFunction {
         setParams(VecID.A, VecID.B, VecID.F);
 
         setPartialDerivatives(new Equation[]{
-            // dY/dA
-            new Equation() {
-                public VecID name() {
-                    return VecID.A;
+                // dY/dA
+                new Equation() {
+                    public VecID name() {
+                        return VecID.A;
+                    }
+
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
+
+                    public double value(double[] pts, double[] ival) {
+                        double b = getParamVal(VecID.B, pts);
+                        double f = getParamVal(VecID.F, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
+                        double foffset = x - f;
+
+                        return ((b * b) / (b * b + 4.0 * foffset * foffset));
+                    }
+                },
+                // dY/dB
+                new Equation() {
+                    public VecID name() {
+                        return VecID.B;
+                    }
+
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
+
+                    public double value(double[] pts, double[] ival) {
+                        double a = getParamVal(VecID.A, pts);
+                        double b = getParamVal(VecID.B, pts);
+                        double f = getParamVal(VecID.F, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
+                        double foffset = x - f;
+                        double bsq = b * b;
+                        double denom = bsq + 4 * foffset * foffset;
+
+                        return 2 * a * b * (1.0 / (denom) - bsq / (denom * denom));
+                    }
+                }, // dY/dF
+                new Equation() {
+                    public VecID name() {
+                        return VecID.F;
+                    }
+
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
+
+                    public double value(double[] pts, double[] ival) {
+                        double a = getParamVal(VecID.A, pts);
+                        double b = getParamVal(VecID.B, pts);
+                        double f = getParamVal(VecID.F, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
+                        double foffset = x - f;
+                        double denom = (b * b + 4 * foffset * foffset);
+
+                        return -(a * b * b * (8 * f - 8 * x)) / (denom * denom);
+
+                    }
                 }
-
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
-
-                public double value(double[] pts, double[] ival) {
-                    double b = getParamVal(VecID.B, pts);
-                    double f = getParamVal(VecID.F, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
-                    double foffset = x - f;
-
-                    return ((b * b) / (b * b + 4.0 * foffset * foffset));
-                }
-            },
-            // dY/dB
-            new Equation() {
-                public VecID name() {
-                    return VecID.B;
-                }
-
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
-
-                public double value(double[] pts, double[] ival) {
-                    double a = getParamVal(VecID.A, pts);
-                    double b = getParamVal(VecID.B, pts);
-                    double f = getParamVal(VecID.F, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
-                    double foffset = x - f;
-                    double bsq = b * b;
-                    double denom = bsq + 4 * foffset * foffset;
-
-                    return 2 * a * b * (1.0 / (denom) - bsq / (denom * denom));
-                }
-            }, // dY/dF
-            new Equation() {
-                public VecID name() {
-                    return VecID.F;
-                }
-
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
-
-                public double value(double[] pts, double[] ival) {
-                    double a = getParamVal(VecID.A, pts);
-                    double b = getParamVal(VecID.B, pts);
-                    double f = getParamVal(VecID.F, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
-                    double foffset = x - f;
-                    double denom = (b * b + 4 * foffset * foffset);
-
-                    return -(a * b * b * (8 * f - 8 * x)) / (denom * denom);
-
-                }
-            }
         });
 
         setFunction(new Equation() {

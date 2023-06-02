@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -76,7 +76,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class ScanTable {
@@ -97,6 +96,7 @@ public class ScanTable {
     static final List<String> standardHeaders = List.of(PATH_COLUMN_NAME, SEQUENCE_COLUMN_NAME, ROW_COLUMN_NAME, ETIME_COLUMN_NAME, NDIM_COLUMN_NAME);
     static final Color[] COLORS = new Color[17];
     static final double[] hues = {0.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875, 0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375};
+
     static {
         COLORS[0] = Color.BLACK;
         int i = 1;
@@ -290,7 +290,7 @@ public class ScanTable {
         chart.refresh();
     }
 
-     protected final void selectionChanged() {
+    protected final void selectionChanged() {
         if (processingTable) {
             return;
         }
@@ -648,11 +648,11 @@ public class ScanTable {
                         for (int iField = 0; iField < fields.length; iField++) {
                             fields[iField] = fields[iField].trim();
                             try {
-                                 Integer.parseInt(fields[iField]);
+                                Integer.parseInt(fields[iField]);
                             } catch (NumberFormatException nfE) {
                                 notInteger[iField] = true;
                                 try {
-                                     Double.parseDouble(fields[iField]);
+                                    Double.parseDouble(fields[iField]);
                                 } catch (NumberFormatException nfE2) {
                                     notDouble[iField] = true;
                                 }
@@ -719,7 +719,7 @@ public class ScanTable {
                         if (eTime < firstDate) {
                             firstDate = eTime;
                         }
-                       var item = new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap);
+                        var item = new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap);
                         fileListItems.add(item);
                     }
 
@@ -863,7 +863,7 @@ public class ScanTable {
 
     private List<String> headersMissing(String[] headerNames) {
         List<String> missing = new ArrayList<>();
-        for (var headerName:headerNames) {
+        for (var headerName : headerNames) {
             if (headerAbsent(headerName)) {
                 missing.add(headerName);
             }
@@ -988,7 +988,7 @@ public class ScanTable {
 
     private void addHeaders(String[] headers) {
         var missingHeaders = headersMissing(headers);
-        for (var header:missingHeaders) {
+        for (var header : missingHeaders) {
             addColumn(header);
         }
     }

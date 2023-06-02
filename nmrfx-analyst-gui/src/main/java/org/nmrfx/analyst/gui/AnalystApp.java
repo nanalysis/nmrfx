@@ -627,7 +627,7 @@ public class AnalystApp extends Application {
 
     public ScannerTool getScannerTool() {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        return  (ScannerTool) controller.getTool(ScannerTool.class);
+        return (ScannerTool) controller.getTool(ScannerTool.class);
     }
 
     public StripController getStripsTool() {
@@ -710,7 +710,8 @@ public class AnalystApp extends Application {
     /**
      * Set the default font size of the provided stage with the provided
      * font size string.
-     * @param stage The stage to set the font for
+     *
+     * @param stage       The stage to set the font for
      * @param fontSizeStr A string font size ex. '9pt'
      */
     public static void setStageFontSize(Stage stage, String fontSizeStr) {

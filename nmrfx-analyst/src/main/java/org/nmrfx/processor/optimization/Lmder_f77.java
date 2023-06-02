@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,10 +39,10 @@ public class Lmder_f77 {
     java.util.Random generator = null;
     Lmder_fcn lmderFunc = null;
     Lmder_fcn[] lmderFuncs = {
-        new fexpc_f77(), new fexpc1_f77(), new fexpb_f77(), new fexpg_f77(),
-        new flogistic_f77(), new fexp2_f77(), new funcgf_f77(), new fexpd_f77(),
-        new flineshape_f77(), new flineshapeW_f77(), new flineshapeLorentz_f77(),
-        new flineshapeLorentzIW_f77()
+            new fexpc_f77(), new fexpc1_f77(), new fexpb_f77(), new fexpg_f77(),
+            new flogistic_f77(), new fexp2_f77(), new funcgf_f77(), new fexpd_f77(),
+            new flineshape_f77(), new flineshapeW_f77(), new flineshapeLorentz_f77(),
+            new flineshapeLorentzIW_f77()
     };
 
     public void setFunc(int funcNum) {
@@ -438,7 +438,7 @@ public class Lmder_f77 {
     }
 
     public static void lmder1_f77(Lmder_fcn nlls, int m, int n, double[] x,
-            double[] fvec, double[][] fjac, double tol, int[] info, int[] ipvt) {
+                                  double[] fvec, double[][] fjac, double tol, int[] info, int[] ipvt) {
         /*
 
          Here is a copy of the lmder1 FORTRAN documentation:
@@ -894,7 +894,7 @@ public class Lmder_f77 {
     }
 
     public double gShapeDer(double[] a, int start, double x, int jcal,
-            double[] dc) {
+                            double[] dc) {
         double y = 0.0;
         double b = a[1] / 1.66;
         double freq = a[start + 1];
@@ -974,7 +974,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             if (iflag[1] == 1) {
                 nfev++;
 
@@ -1032,7 +1032,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
@@ -1074,7 +1074,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
@@ -1123,7 +1123,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
@@ -1172,7 +1172,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
@@ -1217,7 +1217,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
@@ -1261,7 +1261,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
@@ -1340,7 +1340,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
@@ -1392,7 +1392,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= m; i++) {
                 double t = xv[i - 1];
                 double yval = calculate(a, t);
@@ -1493,7 +1493,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             if (iflag[1] == 1) {
                 nfev++;
 
@@ -1513,7 +1513,7 @@ public class Lmder_f77 {
         }
 
         public void derivative(double[] a, double x, double[] dc,
-                double[][] fjac, int i) {
+                               double[][] fjac, int i) {
             xs[0] = x;
 
             int kk = 1;
@@ -1644,7 +1644,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             if (iflag[1] == 1) {
                 nfev++;
 
@@ -1664,7 +1664,7 @@ public class Lmder_f77 {
         }
 
         public void derivative(double[] a, double x, double[] dc,
-                double[][] fjac, int i) {
+                               double[][] fjac, int i) {
             xs[0] = x;
 
             int kk = 1;
@@ -1739,7 +1739,7 @@ public class Lmder_f77 {
         }
 
         public double lShapeDer(double[] a, int start, double x, int jcal,
-                double[] dc) {
+                                double[] dc) {
             double y = 0.0;
             double b = a[1] * 0.5;
             double freq = a[start + 1];
@@ -1796,7 +1796,7 @@ public class Lmder_f77 {
         }
 
         public void fcn(int m, int n, double[] a, double[] fvec,
-                double[][] fjac, int[] iflag) {
+                        double[][] fjac, int[] iflag) {
             for (int i = 1; i <= n; i++) {
                 aCalc[map[i]] = a[i];
             }
@@ -1833,7 +1833,7 @@ public class Lmder_f77 {
         }
 
         public void derivative(double[] a, double x, double[] dc,
-                double[] jacCol, int i) {
+                               double[] jacCol, int i) {
             xs[0] = x;
 
             int kk = 1;
@@ -1919,7 +1919,7 @@ public class Lmder_f77 {
         }
 
         public double lShapeDer(double[] a, int start, double x, int jcal,
-                double[] dc) {
+                                double[] dc) {
             double y = 0.0;
             double b = a[1] * 0.5;
             double freq = a[start + 1];

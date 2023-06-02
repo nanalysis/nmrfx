@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,6 @@ import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.utilities.Updater;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakListUpdater implements Updater {
@@ -130,12 +129,14 @@ public class PeakListUpdater implements Updater {
             aListUpdated.set(value);
         }
     }
+
     void setPeakListUpdatedFlag(boolean value) {
         peakList.peakListUpdated.set(value);
         if (value) {
             aListUpdated.set(value);
         }
     }
+
     void setPeakCountUpdatedFlag(boolean value) {
         peakList.peakCountUpdated.set(value);
         if (value) {

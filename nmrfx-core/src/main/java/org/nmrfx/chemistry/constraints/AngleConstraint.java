@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@
 package org.nmrfx.chemistry.constraints;
 
 import java.util.List;
+
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeBase;
@@ -73,7 +74,7 @@ public class AngleConstraint implements Constraint {
     final static double toRad = Math.PI / 180.0;
 
     public AngleConstraint(Atom[] atoms, double lower, double upper, final double scale,
-            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
+                           Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
         if (atoms.length != 4) {
             throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
         }
@@ -107,7 +108,7 @@ public class AngleConstraint implements Constraint {
     }
 
     public AngleConstraint(List<Atom> atoms, double lower, double upper, final double scale,
-            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
+                           Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
         for (Atom atom : atoms) {
             if (atom == null) {
                 throw new InvalidMoleculeException("null atom");

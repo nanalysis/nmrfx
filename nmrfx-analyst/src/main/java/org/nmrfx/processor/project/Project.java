@@ -19,7 +19,6 @@ import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.project.ProjectBase;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class Project extends ProjectBase {

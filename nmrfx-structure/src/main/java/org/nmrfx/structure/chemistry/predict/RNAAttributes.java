@@ -5,12 +5,12 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Residue;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class RNAAttributes {

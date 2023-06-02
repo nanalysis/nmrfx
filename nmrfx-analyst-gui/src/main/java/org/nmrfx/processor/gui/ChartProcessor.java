@@ -417,7 +417,7 @@ public class ChartProcessor {
         return vecIndex;
     }
 
-    record VecIndexScore(VecIndex vecIndex, int maxIndex, double score) implements  Comparable {
+    record VecIndexScore(VecIndex vecIndex, int maxIndex, double score) implements Comparable {
 
         @Override
         public int compareTo(Object o) {
@@ -442,7 +442,7 @@ public class ChartProcessor {
         Vec newVec = new Vec(nPoints, nmrData.isComplex(0));
         var stats = new DescriptiveStatistics();
         List<VecIndexScore> vecIndices = new ArrayList<>();
-        while( true) {
+        while (true) {
             VecIndex vecIndex = multiVecCounter.getNextGroup(iGroup++);
             if (vecIndex == null) {
                 break;
@@ -459,22 +459,22 @@ public class ChartProcessor {
                 }
             }
             var vecIndexScore = new VecIndexScore(vecIndex, maxIndex, groupMax);
-            stats.addValue(groupMax );
+            stats.addValue(groupMax);
             vecIndices.add(vecIndexScore);
         }
 
         double mean = stats.getMean();
         double sdev = stats.getStandardDeviation();
-        double threshold= mean + ratio * sdev;
+        double threshold = mean + ratio * sdev;
         List<VecIndexScore> result = new ArrayList<>();
         Collections.sort(vecIndices, Collections.reverseOrder());
         int n = Math.min(vecIndices.size(), maxN);
-        for (int i=0;i<n;i++) {
+        for (int i = 0; i < n; i++) {
             var vecIndexScore = vecIndices.get(i);
             if (vecIndexScore.score() > threshold) {
                 result.add(vecIndexScore);
             }
-         }
+        }
         return result;
     }
 
@@ -779,7 +779,7 @@ public class ChartProcessor {
         File file = getDefaultScriptFile();
         StringBuilder resultBuilder = new StringBuilder();
         if (file.exists()) {
-            try (Stream<String> lines = Files.lines(file.toPath())){
+            try (Stream<String> lines = Files.lines(file.toPath())) {
                 lines.forEach(line -> {
                     if (line.trim().startsWith("CREATE")) {
                         int firstParen = line.indexOf("(");
@@ -800,6 +800,7 @@ public class ChartProcessor {
 
     /**
      * Loads the default script if present.
+     *
      * @return True if default script is loaded, false if it is not loaded.
      */
     public boolean loadDefaultScriptIfPresent() {
@@ -895,7 +896,7 @@ public class ChartProcessor {
             File nmrFile = new File(filePath);
             File directory = nmrFile.isDirectory() ? nmrFile : nmrFile.getParentFile();
             File file;
-            if (getDatasetType()== DatasetType.SPINit) {
+            if (getDatasetType() == DatasetType.SPINit) {
                 Path datasetDir = directory.toPath();
                 Path newProcPath = RS2DProcUtil.findNextProcPath(datasetDir);
                 file = newProcPath.toFile();
@@ -935,7 +936,7 @@ public class ChartProcessor {
             File parentFile = datasetFileToCheck.getParentFile();
             boolean canWrite = parentFile.canWrite();
             // For SPINit files check if either of the above 2 parent directories are writable (Proc and the fid data directory)
-            if (getDatasetType()== DatasetType.SPINit) {
+            if (getDatasetType() == DatasetType.SPINit) {
                 File procParent = parentFile.getParentFile();
                 File fidParent = procParent.getParentFile();
                 canWrite = (!procParent.exists() && fidParent.canWrite()) || procParent.canWrite();

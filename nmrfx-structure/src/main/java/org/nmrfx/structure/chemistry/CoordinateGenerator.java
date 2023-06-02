@@ -1,6 +1,7 @@
 package org.nmrfx.structure.chemistry;
 
 import java.util.List;
+
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Coordinates;
 import org.nmrfx.chemistry.Point3;

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -60,23 +60,23 @@ public class AllBasePairs {
             this.lowerHeavy = lowerHeavy;
             this.upperHeavy = upperHeavy;
         }
-        
+
         public String[][] getAtomNames() {
             return atomNames;
         }
-        
+
         public double getLower() {
             return lower;
         }
-        
+
         public double getUpper() {
             return upper;
         }
-        
+
         public double getLowerHeavy() {
             return lowerHeavy;
         }
-        
+
         public double getUpperHeavy() {
             return upperHeavy;
         }

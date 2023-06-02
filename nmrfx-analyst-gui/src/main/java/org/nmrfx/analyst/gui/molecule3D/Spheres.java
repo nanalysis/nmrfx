@@ -1,13 +1,16 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
 import java.util.*;
+
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
+
 import javax.vecmath.*;
+
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 public class Spheres extends Group implements MolItem {
@@ -79,7 +82,6 @@ public class Spheres extends Group implements MolItem {
     }
 
     /**
-     *
      * @param radius
      */
     public void setRadius(double radius) {

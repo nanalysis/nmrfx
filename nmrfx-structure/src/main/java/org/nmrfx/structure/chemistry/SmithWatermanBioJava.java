@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@
 package org.nmrfx.structure.chemistry;
 
 import java.util.*;
+
 import org.biojava.nbio.alignment.Alignments;
 import org.biojava.nbio.alignment.Alignments.PairwiseSequenceAlignerType;
 import org.biojava.nbio.alignment.SimpleGapPenalty;
@@ -62,7 +63,7 @@ public class SmithWatermanBioJava {
         SubstitutionMatrix<AminoAcidCompound> matrix = SimpleSubstitutionMatrix.getBlosum62();
         SequencePair<ProteinSequence, AminoAcidCompound> pair
                 = Alignments.getPairwiseAlignment(sequence1, sequence2,
-                        PairwiseSequenceAlignerType.GLOBAL, gapPenalty, matrix);
+                PairwiseSequenceAlignerType.GLOBAL, gapPenalty, matrix);
 
         indexA.clear();
         indexB.clear();

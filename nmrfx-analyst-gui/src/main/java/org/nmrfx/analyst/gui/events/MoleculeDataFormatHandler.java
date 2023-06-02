@@ -29,7 +29,7 @@ public class MoleculeDataFormatHandler implements DataFormatEventHandler {
         if (chart.getDataset() == null) {
             return false;
         }
-        String molContents = parseMdlctBuffer((ByteBuffer)  o);
+        String molContents = parseMdlctBuffer((ByteBuffer) o);
         if (!SDFile.inMolFileFormat(molContents)) {
             return false;
         }
@@ -53,6 +53,7 @@ public class MoleculeDataFormatHandler implements DataFormatEventHandler {
      * Converts MDLCT format into a String with newline line separations.
      * The MDLCT format contains the length of each line on the first byte of the line. Lines will be converted
      * to a new line separated string.
+     *
      * @return A string with the clipboard contents or an empty string.
      */
     private String parseMdlctBuffer(ByteBuffer mdlctContent) {

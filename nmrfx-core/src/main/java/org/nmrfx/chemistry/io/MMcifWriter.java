@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.chemistry.Atom;
@@ -41,7 +42,6 @@ import org.nmrfx.chemistry.protein.Sheet;
 import org.nmrfx.chemistry.SpatialSet;
 
 /**
- *
  * @author brucejohnson, Martha
  */
 public class MMcifWriter {
@@ -302,7 +302,7 @@ public class MMcifWriter {
      * to a mmCif formatted file.
      *
      * @param fileName String. Name of the file to write.
-     * @param name String. The name of the dataset.
+     * @param name     String. The name of the dataset.
      * @throws IOException
      * @throws ParseException
      * @throws InvalidPeakException

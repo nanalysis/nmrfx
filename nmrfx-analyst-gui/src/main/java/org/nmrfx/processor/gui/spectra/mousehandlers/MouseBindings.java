@@ -163,7 +163,7 @@ public class MouseBindings {
         mouseY = mouseEvent.getY();
         Optional<MultipletSelection> hit = PeakMouseHandlerHandler.handlerOverMultiplet(this);
         ChartBorder border = chart.hitBorder(mouseX, mouseY);
-        if (border == ChartBorder.LEFT ) {
+        if (border == ChartBorder.LEFT) {
             setCursor(Cursor.CLOSED_HAND);
             return;
         } else if (border == ChartBorder.BOTTOM) {

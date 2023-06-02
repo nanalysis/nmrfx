@@ -12,13 +12,13 @@ package org.nmrfx.analyst.gui.molecule3D;
 import java.util.ArrayList;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+
 import javafx.geometry.Point3D;
 import javafx.scene.shape.TriangleMesh;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 /**
- *
  * @author brucejohnson
  */
 public class Tessellation {

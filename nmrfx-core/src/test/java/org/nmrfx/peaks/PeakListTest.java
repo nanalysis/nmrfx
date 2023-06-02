@@ -20,19 +20,20 @@ public class PeakListTest {
     PeakList getPeakList(String fileName) throws IOException {
         ProjectBase.getActive().clearAllPeakLists();
         PeakReader peakReader = new PeakReader();
-        Path path = Path.of("src","test","data","peaks", fileName);
+        Path path = Path.of("src", "test", "data", "peaks", fileName);
         PeakList peakList = peakReader.readXPK2Peaks(path.toString());
         return peakList;
     }
+
     @Test
     public void getAssignmentStatus() throws IOException, MoleculeIOException {
         MoleculeBase.removeAll();
         Sequence sequence = new Sequence();
-        var seq = List.of("ALA","ALA","ALA","ALA","ALA", "ALA");
-        var mol = sequence.read("A", seq,null);
+        var seq = List.of("ALA", "ALA", "ALA", "ALA", "ALA", "ALA");
+        var mol = sequence.read("A", seq, null);
         PeakList peakList = getPeakList("testassigncount.xpk2");
         var map = peakList.getAssignmentStatus();
-        for (var entry:map.entrySet()) {
+        for (var entry : map.entrySet()) {
             Assert.assertEquals(entry.getKey().description, 1, entry.getValue().longValue());
         }
     }

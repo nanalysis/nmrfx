@@ -42,7 +42,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class StructureProject extends ProjectBase {
@@ -62,7 +61,7 @@ public class StructureProject extends ProjectBase {
         }
         return activeProject;
     }
-    
+
     public Molecule getMolecule(String name) {
         return (Molecule) molecules.get(name);
     }

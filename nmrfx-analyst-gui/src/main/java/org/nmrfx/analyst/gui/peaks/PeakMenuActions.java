@@ -160,6 +160,7 @@ public class PeakMenuActions extends MenuActions {
             atomBrowser = null;
         }
     }
+
     public void pickedPeakAction(Object peakObject) {
         if (assignOnPick.isSelected()) {
             Peak peak = (Peak) peakObject;
@@ -176,6 +177,7 @@ public class PeakMenuActions extends MenuActions {
             peakAtomPicker.show(sXY.getX(), sXY.getY(), peak);
         }
     }
+
     public void assignPeak() {
         if (peakAtomPicker == null) {
             peakAtomPicker = new PeakAtomPicker();

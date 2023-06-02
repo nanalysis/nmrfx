@@ -399,7 +399,8 @@ public class PeakGeneratorGUI {
             }
             peakListProperty.set(newPeakList);
             switch (peakGeneratorType) {
-                case HNCO, HNCOCA, HNCOCACB, HNCACO, HNCA, HNCACB -> makeProteinPeakList(dataset, newPeakList, peakGeneratorType);
+                case HNCO, HNCOCA, HNCOCACB, HNCACO, HNCA, HNCACB ->
+                        makeProteinPeakList(dataset, newPeakList, peakGeneratorType);
                 case NOESY -> {
                     double range = distanceSlider.getValue();
                     try {

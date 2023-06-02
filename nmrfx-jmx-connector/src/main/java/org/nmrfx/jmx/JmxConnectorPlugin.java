@@ -69,7 +69,7 @@ public class JmxConnectorPlugin implements NMRFxPlugin {
     }
 
     private int findFreePort() throws IOException {
-        try(ServerSocket s = new ServerSocket(0)) {
+        try (ServerSocket s = new ServerSocket(0)) {
             return s.getLocalPort();
         }
     }

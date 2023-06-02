@@ -12,11 +12,11 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.Util;
 
 /**
- *
  * @author brucejohnson
  */
 public class BMRBStats {

@@ -16,7 +16,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.project.ProjectBase;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class PeakLinker {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,10 +18,12 @@
 package org.nmrfx.processor.math;
 
 import org.nmrfx.processor.processing.ProcessingException;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.util.FastMath;
@@ -30,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class GRINS {
@@ -222,12 +223,12 @@ public class GRINS {
     /**
      * Generate damped sinusoidal signal, and add to Vec instance.
      *
-     * @param vec array of double in which to put signal with real and imaginary
-     * in alternate positions
-     * @param freq frequency in degrees per point
+     * @param vec   array of double in which to put signal with real and imaginary
+     *              in alternate positions
+     * @param freq  frequency in degrees per point
      * @param decay exponential decay per point
-     * @param amp amplitude
-     * @param ph phase in degrees
+     * @param amp   amplitude
+     * @param ph    phase in degrees
      */
     public void genSignal(double[] vec, double freq, double decay, double amp, double ph) {
         Complex w = ComplexUtils.polar2Complex(decay, freq * Math.PI);

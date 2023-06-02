@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,6 @@ import org.apache.commons.lang3.SystemUtils;
 import org.nmrfx.processor.gui.PolyChart;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class GestureBindings {
@@ -75,11 +74,10 @@ public class GestureBindings {
         ChartBorder border = chart.hitBorder(x, y);
         double dx = event.getDeltaX();
         double dy = event.getDeltaY();
-        int scrollDirectionFactor = SystemUtils.IS_OS_MAC  ? 1 : -1;
-        if (border == ChartBorder.LEFT && chart.getNDim() < 2){
+        int scrollDirectionFactor = SystemUtils.IS_OS_MAC ? 1 : -1;
+        if (border == ChartBorder.LEFT && chart.getNDim() < 2) {
             chart.scroll(dx, scrollDirectionFactor * dy);
-        }
-        else if (border == ChartBorder.RIGHT || border == ChartBorder.TOP) {
+        } else if (border == ChartBorder.RIGHT || border == ChartBorder.TOP) {
             chart.updateProjectionScale(border, scrollDirectionFactor * dy);
             chart.refresh();
         } else if ((border == ChartBorder.LEFT || border == ChartBorder.BOTTOM) || (event.isAltDown() && border == ChartBorder.NONE)) {

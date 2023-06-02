@@ -81,11 +81,11 @@ public class ContentController {
     public void update() {
         if (isShowing()) {
             Platform.runLater(() -> {
-                        chart = fxmlController.getActiveChart();
-                        chart.setChartDisabled(true);
-                        datasetViewController.updateDatasetView();
-                        updatePeakView();
-                        chart.setChartDisabled(false);
+                chart = fxmlController.getActiveChart();
+                chart.setChartDisabled(true);
+                datasetViewController.updateDatasetView();
+                updatePeakView();
+                chart.setChartDisabled(false);
             });
         }
     }

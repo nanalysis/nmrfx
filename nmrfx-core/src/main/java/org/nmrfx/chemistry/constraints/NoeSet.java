@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,7 +27,6 @@ import java.util.*;
 import java.util.Map.Entry;
 
 /**
- *
  * @author brucejohnson
  */
 public class NoeSet implements ConstraintSet, Iterable {
@@ -44,13 +43,13 @@ public class NoeSet implements ConstraintSet, Iterable {
     private boolean dirty = true;
 
     private NoeSet(MolecularConstraints molecularConstraints,
-            String name) {
+                   String name) {
         this.name = name;
         this.molecularConstraints = molecularConstraints;
     }
 
     public static NoeSet newSet(MolecularConstraints molecularConstraints,
-            String name) {
+                                String name) {
         NoeSet noeSet = new NoeSet(molecularConstraints,
                 name);
         return noeSet;
@@ -146,45 +145,46 @@ public class NoeSet implements ConstraintSet, Iterable {
     public boolean isCalibratable() {
         return calibratable;
     }
+
     public void setCalibratable(final boolean state) {
         calibratable = state;
     }
 
     static String[] noeLoopStrings = {
-        "_Gen_dist_constraint.ID",
-        "_Gen_dist_constraint.Member_ID",
-        "_Gen_dist_constraint.Member_logic_code",
-        "_Gen_dist_constraint.Assembly_atom_ID_1",
-        "_Gen_dist_constraint.Entity_assembly_ID_1",
-        "_Gen_dist_constraint.Entity_ID_1",
-        "_Gen_dist_constraint.Comp_index_ID_1",
-        "_Gen_dist_constraint.Seq_ID_1",
-        "_Gen_dist_constraint.Comp_ID_1",
-        "_Gen_dist_constraint.Atom_ID_1",
-        "_Gen_dist_constraint.Atom_type_1",
-        "_Gen_dist_constraint.Atom_isotope_number_1",
-        "_Gen_dist_constraint.Resonance_ID_1",
-        "_Gen_dist_constraint.Assembly_atom_ID_2",
-        "_Gen_dist_constraint.Entity_assembly_ID_2",
-        "_Gen_dist_constraint.Entity_ID_2",
-        "_Gen_dist_constraint.Comp_index_ID_2",
-        "_Gen_dist_constraint.Seq_ID_2",
-        "_Gen_dist_constraint.Comp_ID_2",
-        "_Gen_dist_constraint.Atom_ID_2",
-        "_Gen_dist_constraint.Atom_type_2",
-        "_Gen_dist_constraint.Atom_isotope_number_2",
-        "_Gen_dist_constraint.Resonance_ID_2",
-        "_Gen_dist_constraint.Intensity_val",
-        "_Gen_dist_constraint.Intensity_lower_val_err",
-        "_Gen_dist_constraint.Intensity_upper_val_err",
-        "_Gen_dist_constraint.Distance_val",
-        "_Gen_dist_constraint.Distance_lower_bound_val",
-        "_Gen_dist_constraint.Distance_upper_bound_val",
-        "_Gen_dist_constraint.Contribution_fractional_val",
-        "_Gen_dist_constraint.Spectral_peak_ID",
-        "_Gen_dist_constraint.Spectral_peak_list_ID",
-        "_Gen_dist_constraint.Entry_ID",
-        "_Gen_dist_constraint.Gen_dist_constraint_list_ID",};
+            "_Gen_dist_constraint.ID",
+            "_Gen_dist_constraint.Member_ID",
+            "_Gen_dist_constraint.Member_logic_code",
+            "_Gen_dist_constraint.Assembly_atom_ID_1",
+            "_Gen_dist_constraint.Entity_assembly_ID_1",
+            "_Gen_dist_constraint.Entity_ID_1",
+            "_Gen_dist_constraint.Comp_index_ID_1",
+            "_Gen_dist_constraint.Seq_ID_1",
+            "_Gen_dist_constraint.Comp_ID_1",
+            "_Gen_dist_constraint.Atom_ID_1",
+            "_Gen_dist_constraint.Atom_type_1",
+            "_Gen_dist_constraint.Atom_isotope_number_1",
+            "_Gen_dist_constraint.Resonance_ID_1",
+            "_Gen_dist_constraint.Assembly_atom_ID_2",
+            "_Gen_dist_constraint.Entity_assembly_ID_2",
+            "_Gen_dist_constraint.Entity_ID_2",
+            "_Gen_dist_constraint.Comp_index_ID_2",
+            "_Gen_dist_constraint.Seq_ID_2",
+            "_Gen_dist_constraint.Comp_ID_2",
+            "_Gen_dist_constraint.Atom_ID_2",
+            "_Gen_dist_constraint.Atom_type_2",
+            "_Gen_dist_constraint.Atom_isotope_number_2",
+            "_Gen_dist_constraint.Resonance_ID_2",
+            "_Gen_dist_constraint.Intensity_val",
+            "_Gen_dist_constraint.Intensity_lower_val_err",
+            "_Gen_dist_constraint.Intensity_upper_val_err",
+            "_Gen_dist_constraint.Distance_val",
+            "_Gen_dist_constraint.Distance_lower_bound_val",
+            "_Gen_dist_constraint.Distance_upper_bound_val",
+            "_Gen_dist_constraint.Contribution_fractional_val",
+            "_Gen_dist_constraint.Spectral_peak_ID",
+            "_Gen_dist_constraint.Spectral_peak_list_ID",
+            "_Gen_dist_constraint.Entry_ID",
+            "_Gen_dist_constraint.Gen_dist_constraint_list_ID",};
 
     @Override
     public String[] getLoopStrings() {
@@ -199,7 +199,7 @@ public class NoeSet implements ConstraintSet, Iterable {
     }
 
     public void writeNMRFxFile(File file) throws IOException {
-        try ( FileWriter fileWriter = new FileWriter(file)) {
+        try (FileWriter fileWriter = new FileWriter(file)) {
             int i = 0;
             for (Noe noe : constraints) {
                 if (noe.isActive()) {

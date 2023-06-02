@@ -8,7 +8,6 @@ package org.nmrfx.processor.optimization;
 import java.util.*;
 
 /**
- *
  * @author tedcolon
  */
 public class HausdorffDistance {

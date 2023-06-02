@@ -1179,16 +1179,16 @@ public class Peak implements Comparable, PeakOrMulti {
      * of the peak along dimension 0 of the dataset, which may be a different
      * dimension than dimension 0 of the peak.
      *
-     * @param theFile The dataset to use for translating ppm to pts
-     * @param pdim An integer mapping of peak dimension to dataset dimension.
-     * For example, pdim[0] contains the dataset dimension that corresponds to
-     * peak dimension 0.
-     * @param p Two-dimensional pre-allocated array of int that will contain the
-     * boundaries of the peak dimension. The boundaries are determined by the
-     * peak foot print (bounds).
-     * @param cpt Array of ints specifying the center of the peak region.
-     * @param width Array of doubles containing the widths of the peak in units
-     * of dataset points. The width is determined by the peak linewidth
+     * @param theFile        The dataset to use for translating ppm to pts
+     * @param pdim           An integer mapping of peak dimension to dataset dimension.
+     *                       For example, pdim[0] contains the dataset dimension that corresponds to
+     *                       peak dimension 0.
+     * @param p              Two-dimensional pre-allocated array of int that will contain the
+     *                       boundaries of the peak dimension. The boundaries are determined by the
+     *                       peak foot print (bounds).
+     * @param cpt            Array of ints specifying the center of the peak region.
+     * @param width          Array of doubles containing the widths of the peak in units
+     *                       of dataset points. The width is determined by the peak linewidth
      * @param meanLineWidths Array of mean widths of peaks in list. If null, the
      *                       line width of individual peak is used.
      */
@@ -1806,14 +1806,14 @@ public class Peak implements Comparable, PeakOrMulti {
         }
 
         public static boolean match(AssignmentLevel level, String mode) {
-            return  switch (mode) {
-                case "all" ->  true;
-                case "ok" ->  level != DELETED;
-                case "deleted" ->  level == DELETED;
-                case "assigned" ->  level == AVU || level == AVM;
-                case "partial" ->  level == SVM || level == SVU;
-                case "unassigned" ->  level == UNASSIGNED;
-                case "ambiguous" ->  level == AVM || level == SVM;
+            return switch (mode) {
+                case "all" -> true;
+                case "ok" -> level != DELETED;
+                case "deleted" -> level == DELETED;
+                case "assigned" -> level == AVU || level == AVM;
+                case "partial" -> level == SVM || level == SVU;
+                case "unassigned" -> level == UNASSIGNED;
+                case "ambiguous" -> level == AVM || level == SVM;
                 case "invalid" -> level == AIM || level == AIU || level == SIM || level == SIU;
                 default -> true;
             };

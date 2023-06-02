@@ -26,7 +26,7 @@ public class PeakFitParameters {
     }
 
     public record ShapeParameters(boolean fitShape, boolean constrainShape,
-                           double directShapeFactor, double indirectShapeFactor) {
+                                  double directShapeFactor, double indirectShapeFactor) {
 
     }
 
@@ -100,6 +100,7 @@ public class PeakFitParameters {
         this.fitMode = fitMode;
         return this;
     }
+
     public FITJ_MODE fitJMode() {
         return fitJMode;
     }

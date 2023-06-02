@@ -4,7 +4,6 @@ import java.util.List;
 import javax.vecmath.Point2d;
 
 /**
- *
  * @author Bruce Johnson
  */
 public interface IAtom {
@@ -30,7 +29,7 @@ public interface IAtom {
     public String getSymbol();
 
     public String getHybridization();
-    
+
     public List<IBond> getBonds();
 
     Atom add(String name, String elementName, Order order);

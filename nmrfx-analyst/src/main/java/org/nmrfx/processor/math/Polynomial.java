@@ -23,13 +23,13 @@ package org.nmrfx.processor.math;
 
 import java.util.Arrays;
 import java.util.Comparator;
+
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
  */
 public class Polynomial {

@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.apache.commons.math3.special.Erf;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
@@ -17,10 +18,8 @@ import org.nmrfx.peaks.PeakList;
 /**
  * Coupling information about a given cluster to facilitate Bipartite Match.
  *
- *
- * @see PeakClusterMatcher
- *
  * @author tedcolon
+ * @see PeakClusterMatcher
  */
 public class PeakCluster {
 

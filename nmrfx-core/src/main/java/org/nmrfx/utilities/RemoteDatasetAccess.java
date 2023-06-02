@@ -5,6 +5,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -14,7 +15,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- *
  * @author brucejohnson
  */
 public class RemoteDatasetAccess {
@@ -59,7 +59,7 @@ public class RemoteDatasetAccess {
         boolean ok = false;
 
         if (knownHostsFile.exists() && identityFile.exists()) {
-            try (Stream<String> lines = Files.lines(identityFile.toPath())){
+            try (Stream<String> lines = Files.lines(identityFile.toPath())) {
                 ok = lines.anyMatch(line -> line.startsWith(remoteHost));
             } catch (IOException ex) {
                 ok = false;

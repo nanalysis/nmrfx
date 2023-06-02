@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -52,12 +52,12 @@ public class Polymer extends Entity {
     ArrayList<AtomSpecifier> deletedAtoms = new ArrayList<AtomSpecifier>();
     ArrayList<BondSpecifier> addedBonds = new ArrayList<BondSpecifier>();
     static String[] cyclicClosers = {
-        "CA", "N", "2.5",
-        "C", "N", "1.32",
-        "C", "H", "2.044",
-        "C", "CA", "2.452",
-        "O", "H", "3.174",
-        "O", "N", "2.271"
+            "CA", "N", "2.5",
+            "C", "N", "1.32",
+            "C", "H", "2.044",
+            "C", "CA", "2.452",
+            "O", "H", "3.174",
+            "O", "N", "2.271"
     };
 
     class PolymerIterator implements Iterator<Residue> {
@@ -372,7 +372,7 @@ public class Polymer extends Entity {
     /**
      * getCyclicConstraints returns a list of constraints necessary to create a
      * cyclic polymer.
-     *
+     * <p>
      * Is called by addCyclicBond in refine.py
      */
     public List<String> getCyclicConstraints() {

@@ -74,9 +74,9 @@ public class DatasetView {
                             setText(null);
                             setGraphic(null);
                         } else {
-                            Rectangle rect = new Rectangle(10,10);
+                            Rectangle rect = new Rectangle(10, 10);
                             rect.setFill(Color.BLACK);
-                            getDatasetAttributes(s).ifPresent( datasetAttributes -> rect.setFill(datasetAttributes.getPosColor()));
+                            getDatasetAttributes(s).ifPresent(datasetAttributes -> rect.setFill(datasetAttributes.getPosColor()));
                             setText(s);
                             setGraphic(rect);
                         }
@@ -88,7 +88,7 @@ public class DatasetView {
 
     Optional<DatasetAttributes> getDatasetAttributes(String name) {
         PolyChart chart = fxmlController.getActiveChart();
-        return chart.getDatasetAttributes().stream().filter( dAttr -> dAttr.getDataset().getName().equals(name)).findFirst();
+        return chart.getDatasetAttributes().stream().filter(dAttr -> dAttr.getDataset().getName().equals(name)).findFirst();
     }
 
     public void chartDatasetAttributesListener(ListChangeListener.Change<? extends DatasetAttributes> change) {

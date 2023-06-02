@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
@@ -49,7 +50,6 @@ import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 
 /**
- *
  * @author brucejohnson, Martha
  */
 public class NMRNEFWriter {
@@ -504,7 +504,7 @@ public class NMRNEFWriter {
      * @throws InvalidMoleculeException
      */
     public static void writeAll(File file) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
-        try ( FileWriter writer = new FileWriter(file)) {
+        try (FileWriter writer = new FileWriter(file)) {
             String name = file.getName();
             if (name.endsWith(".nef")) {
                 name = name.substring(0, name.length() - 4);

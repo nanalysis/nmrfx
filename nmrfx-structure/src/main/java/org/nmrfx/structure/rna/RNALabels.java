@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,10 +24,10 @@ import org.nmrfx.chemistry.Residue;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.nmrfx.structure.chemistry.Molecule;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class RNALabels {

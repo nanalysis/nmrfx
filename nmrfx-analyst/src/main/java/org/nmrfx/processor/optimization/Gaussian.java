@@ -57,7 +57,7 @@ public class Gaussian extends FitEquation {
         double a = pars[0];
         double b = pars[1];
         double c = fitC ? pars[2] : 0.0;
-        double y = (a-c) * Math.exp(-b * x * x) + c;
+        double y = (a - c) * Math.exp(-b * x * x) + c;
         return new double[]{y};
     }
 }

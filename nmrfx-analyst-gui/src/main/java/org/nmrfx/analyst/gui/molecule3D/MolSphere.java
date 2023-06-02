@@ -7,7 +7,9 @@ import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
+
 import javax.vecmath.*;
+
 import org.nmrfx.chemistry.Point3;
 
 public class MolSphere extends Group implements MolItem {
@@ -44,7 +46,6 @@ public class MolSphere extends Group implements MolItem {
     }
 
     /**
-     *
      * @param radius
      */
     public void setRadius(double radius) {

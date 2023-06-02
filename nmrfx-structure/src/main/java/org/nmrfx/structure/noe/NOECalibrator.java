@@ -429,11 +429,12 @@ public class NOECalibrator {
 
     /**
      * Checks if the entity is a residue and returns it as a residue, if not a message is logged and null is returned.
+     *
      * @param entity The entity to check
      * @return The entity cast to a residue
      */
     private Residue checkEntityIsResidue(Entity entity) {
-        if (entity instanceof Residue ) {
+        if (entity instanceof Residue) {
             return (Residue) entity;
         } else {
             log.info("Entity is not a polymer: {}", entity.getName());

@@ -1,11 +1,11 @@
 package org.nmrfx.processor.math;
 
 import java.util.stream.IntStream;
+
 import org.apache.commons.math3.optim.PointValuePair;
 import org.nmrfx.processor.optimization.Fitter;
 
 /**
- *
  * @author brucejohnson
  */
 public class TRACTSimFit {

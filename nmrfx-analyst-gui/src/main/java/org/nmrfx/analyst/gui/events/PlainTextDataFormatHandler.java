@@ -38,6 +38,7 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
 
     /**
      * Attempts to paste a molecule parsed from molString to the canvas.
+     *
      * @param molString A string containing a molecule file contents.
      * @return True if molecule is parsed successfully, false otherwise.
      */
@@ -66,6 +67,7 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
 
     /**
      * Attempts to paste a dataset parsed from a datasetString to the canvas.
+     *
      * @param datasetString A string containing a dataset filename on the first line.
      * @return True if dataset is parsed successfully, false otherwise.
      */
@@ -76,15 +78,15 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
             if (dataset != null) {
                 Platform.runLater(() -> {
                     chart.setActiveChart();
-                    Set<Integer> dimensions = chart.getDatasetAttributes().stream().map(attr ->(Dataset) attr.getDataset()).map(Dataset::getNDim).collect(Collectors.toSet());
+                    Set<Integer> dimensions = chart.getDatasetAttributes().stream().map(attr -> (Dataset) attr.getDataset()).map(Dataset::getNDim).collect(Collectors.toSet());
                     List<Dataset> datasetsToAdd = Arrays.stream(items).map(Dataset::getDataset).toList();
                     datasetsToAdd.forEach(d -> dimensions.add(d.getNDim()));
                     if (dimensions.size() == 1) {
-                        for (Dataset datasetToAdd: datasetsToAdd) {
+                        for (Dataset datasetToAdd : datasetsToAdd) {
                             chart.getController().addDataset(datasetToAdd, true, false);
                         }
                     } else {
-                        List<String> datasetNames = chart.getDatasetAttributes().stream().map(attr ->(Dataset) attr.getDataset()).map(Dataset::getName).collect(Collectors.toList());
+                        List<String> datasetNames = chart.getDatasetAttributes().stream().map(attr -> (Dataset) attr.getDataset()).map(Dataset::getName).collect(Collectors.toList());
                         datasetNames.addAll(Arrays.asList(items));
                         chart.updateDatasets(datasetNames);
                         chart.updateProjections();
@@ -99,7 +101,7 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
                     }
                     chart.refresh();
                 });
-            return true;
+                return true;
             }
         }
         return false;

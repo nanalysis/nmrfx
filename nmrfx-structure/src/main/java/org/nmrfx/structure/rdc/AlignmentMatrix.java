@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@ package org.nmrfx.structure.rdc;
 
 import java.util.HashMap;
 import java.util.List;
+
 import org.apache.commons.math3.geometry.euclidean.threed.NotARotationMatrixException;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
@@ -32,7 +33,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.nmrfx.chemistry.RDC;
 
 /**
- *
  * @author brucejohnson
  */
 public class AlignmentMatrix {
@@ -291,7 +291,7 @@ public class AlignmentMatrix {
     public double calcMagnitude() {
         return 0.5 * maxRDCDict.get("HN") * calcSAxial();
     }
-    
+
     public double[][] calcEulerAngles(double[][] R) {
         double Rxz = R[0][2];
         double Ryz = R[1][2];
@@ -411,14 +411,14 @@ public class AlignmentMatrix {
      * Calculates the maximum RDCConstraint value associated with two atoms in a
      * Molecule object.
      *
-     * @param vector Vector3D object that represents the vector associated with
-     * the two atoms.
-     * @param aType1 String of the type of the first atom of the vector.
-     * @param aType2 String of the type of the second atom of the vector.
+     * @param vector     Vector3D object that represents the vector associated with
+     *                   the two atoms.
+     * @param aType1     String of the type of the first atom of the vector.
+     * @param aType2     String of the type of the second atom of the vector.
      * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint
-     * value based on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDCConstraint value
-     * with the scaling method used in CYANA.
+     *                   value based on the vector distance.
+     * @param scale      Boolean of whether to calculate the max RDCConstraint value
+     *                   with the scaling method used in CYANA.
      * @return double parameter that is the maxRDC value.
      */
     public static double calcMaxRDC(Vector3D vector, String aType1, String aType2, boolean calcMaxRDC, boolean scale) {

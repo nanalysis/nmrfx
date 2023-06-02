@@ -7,7 +7,9 @@ import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
+
 import javax.vecmath.*;
+
 import org.nmrfx.chemistry.Point3;
 
 public class MolText extends Group implements MolItem {
@@ -43,7 +45,6 @@ public class MolText extends Group implements MolItem {
     }
 
     /**
-     *
      * @param text
      */
     public void setRadius(String text) {

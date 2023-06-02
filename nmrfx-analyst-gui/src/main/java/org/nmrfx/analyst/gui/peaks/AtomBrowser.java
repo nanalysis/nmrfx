@@ -38,7 +38,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class AtomBrowser {
@@ -449,7 +448,7 @@ public class AtomBrowser {
     }
 
     public static List<AtomDelta> getMatchingAtomNames(DatasetBase dataset,
-            SpectralDim sDim, double ppm, double tol) {
+                                                       SpectralDim sDim, double ppm, double tol) {
         double[] ppms = {ppm};
         Map<String, AtomDelta> atomDeltaMap = new HashMap<>();
         for (PeakList peakList : PeakList.peakLists()) {

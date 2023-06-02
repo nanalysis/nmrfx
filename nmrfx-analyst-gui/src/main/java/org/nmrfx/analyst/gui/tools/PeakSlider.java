@@ -46,7 +46,6 @@ import java.util.*;
 import java.util.function.Consumer;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class PeakSlider implements ControllerTool {
@@ -196,11 +195,12 @@ public class PeakSlider implements ControllerTool {
 
     /**
      * Add key bindings to newly added charts.
+     *
      * @param change The change to the FXMLController charts list.
      */
     private void updateKeyBindings(ListChangeListener.Change<? extends PolyChart> change) {
         if (change.next()) {
-            for (PolyChart chart: change.getAddedSubList()) {
+            for (PolyChart chart : change.getAddedSubList()) {
                 addKeyBindingsToChart(chart);
             }
         }
@@ -209,6 +209,7 @@ public class PeakSlider implements ControllerTool {
     /**
      * Adds keybindings for df, dt and ds to the provided chart as well as adding the slider
      * to the chart's peak menu.
+     *
      * @param chart The PolyChart to modify.
      */
     private void addKeyBindingsToChart(PolyChart chart) {
@@ -719,7 +720,6 @@ public class PeakSlider implements ControllerTool {
      * and column peak matches for the given peak must be the same, e.g:
      * simulated peak must match the same experimental peak in both row and
      * column peak matches
-     *
      */
     boolean satisfyCriteria1(Peak peak) {
         boolean criteria1Met = false;
@@ -822,10 +822,8 @@ public class PeakSlider implements ControllerTool {
      * Given a peak, calculate scores between clusters and retrieve the cluster
      * with best score.
      *
-     *
      * @param assocPeak (simulated peak)
-     * @param iDim (Dimension [0 (column) or 1 (row)])
-     *
+     * @param iDim      (Dimension [0 (column) or 1 (row)])
      * @return bestPairedPeakClus (Cluster with best score, or null)
      */
     PeakCluster calcClusterScores(Peak assocPeak, Peak clickedPeak, int iDim) {
@@ -966,7 +964,8 @@ public class PeakSlider implements ControllerTool {
         return isNull;
     }
 
-    record MatchListPair(PeakList refList, PeakList movingList) {}
+    record MatchListPair(PeakList refList, PeakList movingList) {
+    }
 
     Optional<MatchListPair> createNDMatcher() {
         PolyChart chart = controller.getActiveChart();

@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.stream.IntStream;
+
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.NotPositiveException;
@@ -320,7 +321,8 @@ public class Fitter {
                         new ObjectiveFunction(this), GoalType.MINIMIZE,
                         new SimpleBounds(normLower, normUpper),
                         new InitialGuess(normGuess));
-            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
+            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException |
+                     TooManyEvaluationsException e) {
                 throw new Exception("failure to fit data " + e.getMessage());
             }
             endTime = System.currentTimeMillis();

@@ -65,6 +65,7 @@ public enum PhaseMod {
 
     /**
      * Get the PhaseMod directly from its name
+     *
      * @param name the phase mod name
      * @return the PhaseMod enum value.
      */
@@ -83,12 +84,18 @@ public enum PhaseMod {
     public static PhaseMod fromAcquisitionMode(String acqMode) {
         String normalized = normalize(acqMode);
         switch (normalized) {
-            case "COMPLEX": return STATES;
-            case "TPPI": return TPPI;
-            case "COMPLEX_TPPI": return STATES_TPPI;
-            case "PHASE_MODULATION": return NONE; //XXX Not sure about this one, does it really exist?
-            case "ECHO_ANTIECHO": return ECHO_ANTIECHO;
-            default: return NONE;
+            case "COMPLEX":
+                return STATES;
+            case "TPPI":
+                return TPPI;
+            case "COMPLEX_TPPI":
+                return STATES_TPPI;
+            case "PHASE_MODULATION":
+                return NONE; //XXX Not sure about this one, does it really exist?
+            case "ECHO_ANTIECHO":
+                return ECHO_ANTIECHO;
+            default:
+                return NONE;
         }
     }
 

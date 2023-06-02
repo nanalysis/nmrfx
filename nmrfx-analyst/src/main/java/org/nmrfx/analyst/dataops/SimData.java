@@ -6,13 +6,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
 import org.nmrfx.analyst.compounds.CompoundData;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.yaml.snakeyaml.Yaml;
 
 /**
- *
  * @author brucejohnson
  */
 public class SimData {
@@ -138,7 +138,7 @@ public class SimData {
 //    public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, double refNProtons) {
 
     public static CompoundData genCompoundData(String cmpdID, String name, SimDataVecPars pars, double lb,
-            double refConc, double cmpdConc) {
+                                               double refConc, double cmpdConc) {
         Vec vec = prepareVec(name, pars);
         List<Region> regions = genVec(name, vec, lb);
         CompoundData cData = genRegions(cmpdID, name, pars, refConc, cmpdConc, vec, regions);

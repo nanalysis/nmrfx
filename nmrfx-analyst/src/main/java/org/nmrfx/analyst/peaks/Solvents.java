@@ -4,10 +4,10 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.yaml.snakeyaml.Yaml;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class Solvents {

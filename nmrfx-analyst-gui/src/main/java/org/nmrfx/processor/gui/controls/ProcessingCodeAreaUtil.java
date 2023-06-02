@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@ package org.nmrfx.processor.gui.controls;
 
 import org.nmrfx.processor.gui.OperationInfo;
 import org.nmrfx.processor.gui.RefManager;
+
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,7 +47,7 @@ public class ProcessingCodeAreaUtil {
     private static final String[] PROPS = RefManager.propNames;
 
     private static final String[] KEYWORDS = new String[]{
-        "DIM", "FID", "CREATE", "run"
+            "DIM", "FID", "CREATE", "run"
     };
 
     private static final String KEYWORD_PATTERN = "\\b(" + String.join("|", KEYWORDS) + ")\\b";
@@ -62,15 +63,15 @@ public class ProcessingCodeAreaUtil {
 
     private static final Pattern PATTERN = Pattern.compile(
             "(?<KEYWORD>" + KEYWORD_PATTERN + ")"
-            + "|(?<OPS>" + OP_PATTERN + ")"
-            + "|(?<PROPS>" + PROP_PATTERN + ")"
-            + "|(?<PAREN>" + PAREN_PATTERN + ")"
-            + "|(?<BRACE>" + BRACE_PATTERN + ")"
-            + "|(?<BRACKET>" + BRACKET_PATTERN + ")"
-            + "|(?<SEMICOLON>" + SEMICOLON_PATTERN + ")"
-            + "|(?<STRING>" + STRING_PATTERN + ")"
-            + "|(?<SNGLSTRING>" + SNGLSTRING_PATTERN + ")"
-            + "|(?<COMMENT>" + COMMENT_PATTERN + ")"
+                    + "|(?<OPS>" + OP_PATTERN + ")"
+                    + "|(?<PROPS>" + PROP_PATTERN + ")"
+                    + "|(?<PAREN>" + PAREN_PATTERN + ")"
+                    + "|(?<BRACE>" + BRACE_PATTERN + ")"
+                    + "|(?<BRACKET>" + BRACKET_PATTERN + ")"
+                    + "|(?<SEMICOLON>" + SEMICOLON_PATTERN + ")"
+                    + "|(?<STRING>" + STRING_PATTERN + ")"
+                    + "|(?<SNGLSTRING>" + SNGLSTRING_PATTERN + ")"
+                    + "|(?<COMMENT>" + COMMENT_PATTERN + ")"
     );
 
     private CodeArea codeArea;
@@ -140,7 +141,8 @@ public class ProcessingCodeAreaUtil {
                     : matcher.group("SNGLSTRING") != null ? "string"
                     : matcher.group("COMMENT") != null ? "comment"
                     : null;
-            /* never happens */ assert styleClass != null;
+            /* never happens */
+            assert styleClass != null;
             spansBuilder.add(Collections.emptyList(), matcher.start() - lastKwEnd);
             spansBuilder.add(Collections.singleton(styleClass), matcher.end() - matcher.start());
             lastKwEnd = matcher.end();

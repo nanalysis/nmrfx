@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Collections;
 import java.util.Map;
+
 import org.apache.commons.collections4.map.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,7 @@ public class MapInfo {
             return true;
         }
     }
+
     public MappedByteBuffer buffer = null;
     final long start;
     final long size;
@@ -173,7 +175,8 @@ public class MapInfo {
                 Object theUnsafe = theUnsafeField.get(null);
                 clean.invoke(theUnsafe, cb);
             }
-        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | NoSuchFieldException | NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | NoSuchFieldException |
+                 NoSuchMethodException | SecurityException | InvocationTargetException ex) {
             log.warn(ex.getMessage(), ex);
         }
     }

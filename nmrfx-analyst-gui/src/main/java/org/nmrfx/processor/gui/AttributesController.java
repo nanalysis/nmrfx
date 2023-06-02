@@ -49,6 +49,7 @@ public class AttributesController implements Initializable {
         CHART,
         WINDOW
     }
+
     @FXML
     VBox applyVBox;
     @FXML
@@ -269,10 +270,10 @@ public class AttributesController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        ticFontSizeComboBox.getItems().addAll(5, 6,7, 8, 9,
+        ticFontSizeComboBox.getItems().addAll(5, 6, 7, 8, 9,
                 10, 11, 12, 14, 16, 18, 20, 22, 24, 26,
                 28, 32, 36);
-        labelFontSizeComboBox.getItems().addAll(5, 6,7, 8, 9,
+        labelFontSizeComboBox.getItems().addAll(5, 6, 7, 8, 9,
                 10, 11, 12, 14, 16, 18, 20, 22, 24, 26,
                 28, 32, 36);
         leftBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
@@ -585,7 +586,7 @@ public class AttributesController implements Initializable {
     private List<PeakListAttributes> getPeakListAttributes() {
         List<PeakListAttributes> result;
         if (itemChoiceState.getValue() == SelectionChoice.ITEM) {
-            if (peakListChoiceBox.getItems().isEmpty() ||(peakListChoiceBox.getValue() == null)) {
+            if (peakListChoiceBox.getItems().isEmpty() || (peakListChoiceBox.getValue() == null)) {
                 result = Collections.emptyList();
             } else {
                 result = List.of(peakListChoiceBox.getValue());
@@ -1230,7 +1231,7 @@ public class AttributesController implements Initializable {
 
     @FXML
     private void updateChartProperties() {
-        for (var aChart: getCharts(allCharts())) {
+        for (var aChart : getCharts(allCharts())) {
             if (bgColorCheckBox.isSelected()) {
                 aChart.getChartProperties().setBgColor(bgColorPicker.getValue());
             } else {
@@ -1286,6 +1287,7 @@ public class AttributesController implements Initializable {
     private void refreshSlices(PolyChart aChart) {
         aChart.getCrossHairs().refresh();
     }
+
     private void updateCharts() {
         PauseTransition wait = new PauseTransition(Duration.millis(5.0));
         wait.setOnFinished(e -> Fx.runOnFxThread(this::updateChartsNow));
@@ -1293,7 +1295,7 @@ public class AttributesController implements Initializable {
     }
 
     private void updateChartsNow() {
-        for (var aChart:getCharts(allCharts())) {
+        for (var aChart : getCharts(allCharts())) {
             if (aChart != chart) {
                 chart.getChartProperties().copyTo(aChart);
             }
@@ -1307,7 +1309,7 @@ public class AttributesController implements Initializable {
     }
 
     private void updateSlicesAndRefreshNow() {
-        for (var aChart:getCharts(allCharts())) {
+        for (var aChart : getCharts(allCharts())) {
             if (aChart != chart) {
                 chart.getSliceAttributes().copyTo(aChart);
             }

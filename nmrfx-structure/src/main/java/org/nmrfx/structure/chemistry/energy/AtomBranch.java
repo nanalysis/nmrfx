@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,12 +23,13 @@ import org.nmrfx.structure.fastlinear.FastDiagonalMatrix;
 import org.nmrfx.structure.fastlinear.FastMatrix;
 import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
+
 import java.util.ArrayList;
+
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 
 /**
- *
  * @author brucejohnson
  */
 public class AtomBranch {
@@ -195,7 +196,6 @@ public class AtomBranch {
     }
 
     /**
-     *
      * @return vector to the origin atom of this group
      */
     public FastVector3D getVectorF() {
@@ -203,7 +203,6 @@ public class AtomBranch {
     }
 
     /**
-     *
      * @return vector between the parent of the origin atom and the origin atom
      */
     public FastVector3D getUnitVecF() {
@@ -215,7 +214,6 @@ public class AtomBranch {
     }
 
     /**
-     *
      * @return vector between the parent of the origin atom and the origin atom
      */
     public FastVector3D getDistVecF() {

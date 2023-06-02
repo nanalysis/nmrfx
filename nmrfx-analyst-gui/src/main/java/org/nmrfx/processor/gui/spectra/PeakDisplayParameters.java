@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
@@ -29,7 +29,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.utilities.NvUtil;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakDisplayParameters {
@@ -369,7 +368,8 @@ public class PeakDisplayParameters {
                 String result = pdPar.colorOff.toString();
                 return result;
             }
-        },;
+        },
+        ;
         private String description;
         private Object defaultValue;
         private boolean isEditable = false;
@@ -432,15 +432,15 @@ public class PeakDisplayParameters {
     }
 
     static final String[] labelTypes = {
-        "Number", "Label", "Residue", "1Residue", "Atom", "Cluster", "User", "Comment",
-        "Summary", "PPM", "None"
+            "Number", "Label", "Residue", "1Residue", "Atom", "Cluster", "User", "Comment",
+            "Summary", "PPM", "None"
     };
     static final String[] displayTypes = {"Peak", "Simulated", "Label", "Ellipse", "FillEllipse", "None"};
     static final String[] colorTypes = {
-        "Plane", "Assigned", "Error", "Status", "Intensity"
+            "Plane", "Assigned", "Error", "Status", "Intensity"
     };
     static final String[] multipletLabelTypes = {
-        "None", "Number", "Atom", "Summary", "PPM"
+            "None", "Number", "Atom", "Summary", "PPM"
     };
     static Font defaultPeakFont = new Font("SansSerif", 10);
     Color colorOn = Color.BLACK;

@@ -6,10 +6,10 @@
 package org.nmrfx.structure.seqassign;
 
 import java.util.Collection;
+
 import org.nmrfx.chemistry.Residue;
 
 /**
- *
  * @author brucejohnson
  */
 public class ResidueSeqScore implements Comparable<ResidueSeqScore> {

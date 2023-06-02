@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2021 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,6 @@ import org.nmrfx.chart.XYCanvasChart.PickPoint;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 
 /**
- *
  * @author brucejohnson
  */
 public class BarMark extends ChartMark {
@@ -38,12 +37,12 @@ public class BarMark extends ChartMark {
     }
 
     void draw(GraphicsContextInterface gC, double x, double y, double w,
-            double h) {
+              double h) {
         draw(gC, x, y, w, h, false, 0.0, 0.0);
     }
 
     void draw(GraphicsContextInterface gC, double x, double y, double thickness,
-            double length, boolean hasError, double low, double high) {
+              double length, boolean hasError, double low, double high) {
         gC.setFill(fill);
         if (orientation == Orientation.VERTICAL) {
             double x1 = x - thickness / 2.0;
@@ -73,7 +72,7 @@ public class BarMark extends ChartMark {
     }
 
     boolean hit(double x, double y, double thickness,
-            double length, PickPoint pt) {
+                double length, PickPoint pt) {
         if (length < 0) {
             y += length;
             length = -length;

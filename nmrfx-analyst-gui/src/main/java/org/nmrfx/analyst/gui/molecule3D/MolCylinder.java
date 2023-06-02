@@ -10,7 +10,9 @@ import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
+
 import javax.vecmath.*;
+
 import org.nmrfx.chemistry.Point3;
 
 public class MolCylinder extends Group implements MolItem {
@@ -51,7 +53,6 @@ public class MolCylinder extends Group implements MolItem {
     }
 
     /**
-     *
      * @param radius
      */
     public void setRadius(double radius) {

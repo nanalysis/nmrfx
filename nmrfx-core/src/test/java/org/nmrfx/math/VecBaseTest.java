@@ -24,10 +24,10 @@ public class VecBaseTest {
         double widthPPM = vec.getSW() / vec.getSF();
         double calDelta = vec.pointToPPM(0) - vec.pointToPPM(vec.getSize());
         double leftValue = refValue + widthPPM / 2.0;
-        double rightValue = refValue - widthPPM * (size /2 -1) / size;
-        Assert.assertEquals(refValue, vec.pointToPPM(midPt),1.0e-6);
-        Assert.assertEquals(leftValue , vec.pointToPPM(0),1.0e-6);
-        Assert.assertEquals(rightValue , vec.pointToPPM(vec.getSize() - 1),1.0e-6);
+        double rightValue = refValue - widthPPM * (size / 2 - 1) / size;
+        Assert.assertEquals(refValue, vec.pointToPPM(midPt), 1.0e-6);
+        Assert.assertEquals(leftValue, vec.pointToPPM(0), 1.0e-6);
+        Assert.assertEquals(rightValue, vec.pointToPPM(vec.getSize() - 1), 1.0e-6);
     }
 
     @Test
@@ -37,7 +37,7 @@ public class VecBaseTest {
         double widthPPM = vec.getSW() / vec.getSF();
         int size = vec.getSize();
         double leftValue = refValue + widthPPM / 2.0;
-        double rightValue = refValue - widthPPM * (size /2 -1) / size;
+        double rightValue = refValue - widthPPM * (size / 2 - 1) / size;
         Assert.assertEquals(size / 2, vec.refToPt(refValue));
         Assert.assertEquals(0, vec.refToPt(leftValue));
         Assert.assertEquals(size - 1, vec.refToPt(rightValue));
@@ -50,7 +50,7 @@ public class VecBaseTest {
         double widthPPM = vec.getSW() / vec.getSF();
         int size = vec.getSize();
         double leftValue = refValue + widthPPM / 2.0;
-        double rightValue = refValue - widthPPM * (size /2 -1) / size;
+        double rightValue = refValue - widthPPM * (size / 2 - 1) / size;
         Assert.assertEquals(size / 2, vec.refToPtD(refValue), 1.0e-6);
         Assert.assertEquals(0, vec.refToPtD(leftValue), 1.0e-6);
         Assert.assertEquals(size - 1, vec.refToPtD(rightValue), 1.0e-6);

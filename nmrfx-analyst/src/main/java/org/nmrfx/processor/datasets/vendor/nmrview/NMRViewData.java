@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@ import java.util.*;
 
 /**
  * @author bfetler
- *
+ * <p>
  * access through NMRDataUtil
  */
 public class NMRViewData implements NMRData {
@@ -115,17 +115,17 @@ public class NMRViewData implements NMRData {
 
     @Override
     public String getPar(String parname) {
-            return null;
+        return null;
     }
 
     @Override
     public Double getParDouble(String parname) {
-            return null;
+        return null;
     }
 
     @Override
     public Integer getParInt(String parname) {
-            return null;
+        return null;
     }
 
     @Override
@@ -338,7 +338,7 @@ public class NMRViewData implements NMRData {
     public String getFTType(int iDim) {
         return "ft";
     }
-    
+
     @Override
     public String getTN(int iDim) {
         return dataset.getNucleus(iDim).getName();

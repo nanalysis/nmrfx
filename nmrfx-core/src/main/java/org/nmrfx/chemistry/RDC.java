@@ -6,10 +6,10 @@
 package org.nmrfx.chemistry;
 
 import java.util.HashMap;
+
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 /**
- *
  * @author brucejohnson
  */
 public class RDC {
@@ -49,14 +49,14 @@ public class RDC {
      * Calculates the maximum RDCConstraint value associated with two atoms in a
      * Molecule object.
      *
-     * @param vector Vector3D object that represents the vector associated with
-     * the two atoms.
-     * @param aType1 String of the type of the first atom of the vector.
-     * @param aType2 String of the type of the second atom of the vector.
+     * @param vector     Vector3D object that represents the vector associated with
+     *                   the two atoms.
+     * @param aType1     String of the type of the first atom of the vector.
+     * @param aType2     String of the type of the second atom of the vector.
      * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint
-     * value based on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDCConstraint value
-     * with the scaling method used in CYANA.
+     *                   value based on the vector distance.
+     * @param scale      Boolean of whether to calculate the max RDCConstraint value
+     *                   with the scaling method used in CYANA.
      * @return double parameter that is the maxRDC value.
      */
     public static double calcMaxRDC(Vector3D vector, String aType1, String aType2, boolean calcMaxRDC, boolean scale) {

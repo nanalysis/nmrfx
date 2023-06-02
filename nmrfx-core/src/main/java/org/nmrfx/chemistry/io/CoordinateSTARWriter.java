@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,11 @@
  */
 
 package org.nmrfx.chemistry.io;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
+
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.CoordSet;
 import org.nmrfx.chemistry.Entity;
@@ -27,7 +29,6 @@ import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.SpatialSet;
 
 /**
- *
  * @author brucejohnson
  */
 public class CoordinateSTARWriter {

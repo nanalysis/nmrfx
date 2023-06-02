@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -422,11 +422,12 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         }
         return hit;
     }
+
     public Optional<MultipletSelection> hitMultiplet(DrawPeaks drawPeaks, double pickX, double pickY) {
         if (peakList.getNDim() > 1) {
             return Optional.empty();
         }
-        Optional<MultipletSelection> hit =  drawPeaks.hitMultipletLabel(pickX, pickY);
+        Optional<MultipletSelection> hit = drawPeaks.hitMultipletLabel(pickX, pickY);
         if (hit.isPresent()) {
             return hit;
         } else {
@@ -616,7 +617,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     }
 
     protected boolean pick1DPeak(Peak peak, double x,
-            double y) {
+                                 double y) {
         double height = yAxis.getHeight();
         y = height - y;
         int[] peakDim = getPeakDim();
@@ -628,7 +629,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     }
 
     private boolean pick2DPeak(Peak peak, double x,
-            double y) {
+                               double y) {
         double[] ctr = {0.0, 0.0};
         double[] bou = {0.0, 0.0};
         int[] peakDim = getPeakDim();

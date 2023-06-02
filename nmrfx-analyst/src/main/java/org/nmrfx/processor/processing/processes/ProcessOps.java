@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -386,8 +386,7 @@ public class ProcessOps implements Callable<Object> {
      * Execute all of the operations in the ProcessOps.
      *
      * @return
-     * @throws
-     * org.nmrfx.processor.processing.processes.IncompleteProcessException
+     * @throws org.nmrfx.processor.processing.processes.IncompleteProcessException
      */
     public Object exec() throws IncompleteProcessException {
         if (vectors.isEmpty()) {
@@ -405,7 +404,6 @@ public class ProcessOps implements Callable<Object> {
     }
 
     /**
-     *
      * @return
      */
     public ArrayList<Operation> getOperations() {

@@ -6,11 +6,12 @@
 package org.nmrfx.structure.rdc;
 
 import org.nmrfx.chemistry.RDC;
+
 import java.util.List;
+
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
- *
  * @author brucejohnson
  */
 public class RDCFitQuality {

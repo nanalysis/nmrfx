@@ -993,7 +993,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void processDataset(boolean idleModeValue) {
-        if (!Processor.getProcessor().isProcessorAvailable() || !chartProcessor.getAreOperationListsValidProperty().get()){
+        if (!Processor.getProcessor().isProcessorAvailable() || !chartProcessor.getAreOperationListsValidProperty().get()) {
             return;
         }
         Processor.getProcessor().setProcessorAvailableStatus(false);
@@ -1056,7 +1056,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                                 processor.setTempFileMode(idleMode.get());
                                 processor.clearDataset();
                                 processInterp.exec("useProcessor(inNMRFx=True)");
-                                processInterp.exec(FormatUtils.formatStringForPythonInterpreter(script));                            }
+                                processInterp.exec(FormatUtils.formatStringForPythonInterpreter(script));
+                            }
                             return 0;
                         }
                     };
@@ -1427,7 +1428,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     protected void setRowLabel(int row, int size) {
-        for (int i = 0;i< vectorDimButtons.size();i++) {
+        for (int i = 0; i < vectorDimButtons.size(); i++) {
             if (vectorDimButtons.get(i).isSelected()) {
                 rowTextBoxes[i].setText(row + " / " + size);
             }

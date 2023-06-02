@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.chemistry.InvalidMoleculeException;
@@ -25,7 +26,6 @@ import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
 
 /**
- *
  * @author Martha
  */
 public class MMCifFileTest {
@@ -101,7 +101,7 @@ public class MMCifFileTest {
         testAll();
     }
 
-//    @Test
+    //    @Test
 //    public void testFile1PQX2() throws IOException {
 //        loadData("1pqx_2");
 //        testAll();

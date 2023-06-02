@@ -23,7 +23,6 @@ import java.util.*;
 import java.util.function.Consumer;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class PeakAssignTool implements ControllerTool {

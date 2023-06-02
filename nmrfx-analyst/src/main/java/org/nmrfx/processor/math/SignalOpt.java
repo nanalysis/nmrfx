@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@
 package org.nmrfx.processor.math;
 
 import java.util.ArrayList;
+
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
@@ -100,7 +101,8 @@ public class SignalOpt implements MultivariateFunction {
                     boundaries[1][i] = parameters[i] + 0.1;
                     if (boundaries[0][i] <= 0.0) {
                         boundaries[0][i] = 1.0e-8;
-                    }   break;
+                    }
+                    break;
                 case 1:
                     boundaries[0][i] = parameters[i] - 0.1;
                     boundaries[1][i] = parameters[i] + 0.1;
@@ -110,7 +112,8 @@ public class SignalOpt implements MultivariateFunction {
                     boundaries[1][i] = parameters[i] + 0.1;
                     if (boundaries[0][i] <= 0.0) {
                         boundaries[0][i] = 1.0e-8;
-                    }   break;
+                    }
+                    break;
                 case 3:
                     boundaries[0][i] = parameters[i] - 0.1;
                     boundaries[1][i] = parameters[i] + 0.1;

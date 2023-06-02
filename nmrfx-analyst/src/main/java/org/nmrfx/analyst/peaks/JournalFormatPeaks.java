@@ -18,7 +18,6 @@ import org.apache.commons.text.TextStringBuilder;
 import org.yaml.snakeyaml.Yaml;
 
 /**
- *
  * @author brucejohnson
  */
 public class JournalFormatPeaks {
@@ -36,7 +35,8 @@ public class JournalFormatPeaks {
         jformat.o = (String) map.get("o");
         jformat.sep = (String) map.get("sep");
         jformat.jPrec = (Integer) map.get("jprec");
-        jformat.ppmPrec = (Integer) map.get("ppmprec");;
+        jformat.ppmPrec = (Integer) map.get("ppmprec");
+        ;
         jformat.broad = (Double) map.get("broad");
         return jformat;
     }

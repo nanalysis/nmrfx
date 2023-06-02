@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -71,9 +71,9 @@ public class FFilter extends Operation {
     /**
      * Create FIR Filter.
      *
-     * @param type filter type
-     * @param mode filter mode
-     * @param fc frequency cutoff in fraction of PI radians
+     * @param type   filter type
+     * @param mode   filter mode
+     * @param fc     frequency cutoff in fraction of PI radians
      * @param ncoefs number of coefficients
      * @param offset frequency offset
      * @throws ProcessingException
@@ -88,8 +88,8 @@ public class FFilter extends Operation {
     /**
      * Create FIR Filter.
      *
-     * @param type filter type
-     * @param mode filter mode
+     * @param type   filter type
+     * @param mode   filter mode
      * @param factor decimation factor
      * @param ncoefs number of coefficients
      * @param offset frequency offset

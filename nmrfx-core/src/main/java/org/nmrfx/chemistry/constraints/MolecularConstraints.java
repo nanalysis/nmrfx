@@ -5,10 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 import org.nmrfx.chemistry.MoleculeBase;
 
 /**
- *
  * @author brucejohnson
  */
 public class MolecularConstraints {

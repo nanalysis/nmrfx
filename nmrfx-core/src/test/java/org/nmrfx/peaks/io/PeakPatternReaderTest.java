@@ -9,7 +9,7 @@ import static org.junit.Assert.*;
 public class PeakPatternReaderTest {
 
     @Test
-    public void loadYamlWithClass() throws IOException{
+    public void loadYamlWithClass() throws IOException {
         PeakPatternReader.loadYaml();
     }
 }

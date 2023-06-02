@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,55 +29,55 @@ public class RDispSin extends OptFunction {
         setParams(VecID.A, VecID.B, VecID.C);
 
         setPartialDerivatives(new Equation[]{
-            // dY/dA
-            new Equation() {
-                public VecID name() {
-                    return VecID.A;
-                }
+                // dY/dA
+                new Equation() {
+                    public VecID name() {
+                        return VecID.A;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    double b = getParamVal(VecID.B, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
+                    public double value(double[] pts, double[] ival) {
+                        double b = getParamVal(VecID.B, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
 
-                    return 1.0 - Math.sin(b / x) / (b / x);
-                }
-            },
-            // dY/dB
-            new Equation() {
-                public VecID name() {
-                    return VecID.B;
-                }
+                        return 1.0 - Math.sin(b / x) / (b / x);
+                    }
+                },
+                // dY/dB
+                new Equation() {
+                    public VecID name() {
+                        return VecID.B;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    double a = getParamVal(VecID.A, pts);
-                    double b = getParamVal(VecID.B, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
+                    public double value(double[] pts, double[] ival) {
+                        double a = getParamVal(VecID.A, pts);
+                        double b = getParamVal(VecID.B, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
 
-                    return (a * Math.sin(b / x)) / (b * b / x) - (a * Math.cos(b / x)) / b;
-                }
-            },
-            // dY/dC
-            new Equation() {
-                public VecID name() {
-                    return VecID.C;
-                }
+                        return (a * Math.sin(b / x)) / (b * b / x) - (a * Math.cos(b / x)) / b;
+                    }
+                },
+                // dY/dC
+                new Equation() {
+                    public VecID name() {
+                        return VecID.C;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    return 1.0;
+                    public double value(double[] pts, double[] ival) {
+                        return 1.0;
+                    }
                 }
-            }
         });
 
         // y = a-a*sin(b*x)/(b*x)+c

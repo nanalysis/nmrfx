@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,10 +18,10 @@
 package org.nmrfx.structure.fastlinear;
 
 import java.util.Arrays;
+
 import org.apache.commons.math3.linear.RealMatrix;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class FastMatrix {

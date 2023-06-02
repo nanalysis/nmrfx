@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class RemoteDataset {
@@ -374,7 +373,7 @@ public class RemoteDataset {
                 datasets.add(dataset);
             }
         } catch (IOException x) {
-           log.warn(x.getMessage(), x);
+            log.warn(x.getMessage(), x);
         }
     }
 

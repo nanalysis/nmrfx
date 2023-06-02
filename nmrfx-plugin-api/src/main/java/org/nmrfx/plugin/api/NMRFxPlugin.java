@@ -34,6 +34,7 @@ public interface NMRFxPlugin {
     /**
      * NMRfx defines several entry points where plugins can be injected.
      * This allows the plugin tell NMRfx where it can be called.
+     *
      * @return a set of supported entry points.
      */
     Set<EntryPoint> getSupportedEntryPoints();
@@ -42,7 +43,7 @@ public interface NMRFxPlugin {
      * Called by NMRfx to let a plugin integrates itself on a supported entry point.
      *
      * @param entryPoint the type of entry point
-     * @param object the actual entry point. Its type will depend, and could be a Menu, a Scene, ...
+     * @param object     the actual entry point. Its type will depend, and could be a Menu, a Scene, ...
      */
     void registerOnEntryPoint(EntryPoint entryPoint, Object object);
 }

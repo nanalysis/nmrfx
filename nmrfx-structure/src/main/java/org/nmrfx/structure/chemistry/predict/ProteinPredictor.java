@@ -307,7 +307,7 @@ public class ProteinPredictor {
                         double[] minMax = minMaxMap.get(type);
                         ProteinPredictorResult predResult
                                 = ProteinPredictorGen.predict(valueMap,
-                                        coefs, minMax, reportAtom != null);
+                                coefs, minMax, reportAtom != null);
                         double value = predResult.ppm;
                         value = Math.round(value * 100) / 100.0;
                         double rms = getRMS(type);
@@ -396,7 +396,7 @@ public class ProteinPredictor {
         return scale;
 
     }
-    
+
     String convert3To1(String name) {
         if (name.equals("MSE")) {
             return "M";
@@ -422,21 +422,21 @@ public class ProteinPredictor {
                         } else {
                             aNames2.add(aName);
                         }
-                        for (var aName2:aNames2) {
-                        Atom atom = residue.getAtom(aName2);
-                        if (atom != null) {
-                            Double ppm = predictRandom(residue, aName, 298.0);
-                            if (ppm != null) {
-                                double errValue = getRandomCoilError(atom);
-                                if (iRef < 0) {
-                                    atom.setRefPPM(-iRef - 1, ppm);
-                                    atom.setRefError(-iRef - 1, errValue);
-                                } else {
-                                    atom.setPPM(iRef, ppm);
-                                    atom.setPPMError(iRef, errValue);
+                        for (var aName2 : aNames2) {
+                            Atom atom = residue.getAtom(aName2);
+                            if (atom != null) {
+                                Double ppm = predictRandom(residue, aName, 298.0);
+                                if (ppm != null) {
+                                    double errValue = getRandomCoilError(atom);
+                                    if (iRef < 0) {
+                                        atom.setRefPPM(-iRef - 1, ppm);
+                                        atom.setRefError(-iRef - 1, errValue);
+                                    } else {
+                                        atom.setPPM(iRef, ppm);
+                                        atom.setPPMError(iRef, errValue);
+                                    }
                                 }
                             }
-                        }
                         }
                     }
                 }
@@ -466,13 +466,13 @@ public class ProteinPredictor {
             } else {
                 aaChars[4] = convert3To1(next2Res.getName());
             }
-            for (String aaChar: aaChars) {
-                 if (aaChar == null) {
-                      System.out.println("No sgnl res " + residue.getName() + " " + aName);
-                      return null;
-                 }
+            for (String aaChar : aaChars) {
+                if (aaChar == null) {
+                    System.out.println("No sgnl res " + residue.getName() + " " + aName);
+                    return null;
+                }
             }
-          result = predictRandom(aaChars, aName, tempK);
+            result = predictRandom(aaChars, aName, tempK);
         }
         return result;
     }

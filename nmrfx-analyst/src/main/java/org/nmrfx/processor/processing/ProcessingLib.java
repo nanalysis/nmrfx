@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * @author brucejohnson
  */
 @PythonAPI("autoscript")
@@ -55,7 +54,7 @@ public class ProcessingLib {
         }
 
         public SequenceScript(String name, List<String> aliases, String vendor, int nDim, String script,
-                Map<String, Object> vars) {
+                              Map<String, Object> vars) {
             this.name = name;
             this.vendor = vendor;
             this.nDim = nDim;

@@ -20,6 +20,7 @@ package org.nmrfx.chemistry.io;
 import org.nmrfx.chemistry.Order;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -38,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
  */
 public class Sequence {
@@ -333,7 +333,8 @@ public class Sequence {
                     }
                 }
             }
-        },;
+        },
+        ;
         private String description;
         private int minFields;
         private int maxFields;
@@ -540,7 +541,7 @@ public class Sequence {
         File file = new File(fileName);
         try (Stream<String> lines = Files.lines(file.toPath())) {
             lines.forEach(inputStrings::add);
-        }  catch (FileNotFoundException ioe) {
+        } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
         } catch (IOException ioE) {
             log.warn(ioE.getMessage(), ioE);
@@ -843,7 +844,7 @@ public class Sequence {
     }
 
     public void createLinker(int numLinks,
-            double linkLen, double valAngle, double dihAngle) {
+                             double linkLen, double valAngle, double dihAngle) {
         /**
          * createLinker is a method to create a link between atoms in two
          * separate entities

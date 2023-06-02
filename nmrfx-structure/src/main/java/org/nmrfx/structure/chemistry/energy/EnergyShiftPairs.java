@@ -7,6 +7,7 @@ package org.nmrfx.structure.chemistry.energy;
 
 import java.util.HashMap;
 import java.util.List;
+
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.Residue;
@@ -15,7 +16,6 @@ import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
 /**
- *
  * @author brucejohnson
  */
 public class EnergyShiftPairs extends EnergyPairs {

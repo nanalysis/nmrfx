@@ -13,7 +13,6 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.peaks.Peak;
 
 /**
- *
  * @author brucejohnson
  */
 @PluginAPI("ring")

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,7 +34,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class KeyBindings {
@@ -44,14 +43,16 @@ public class KeyBindings {
     Map<String, Consumer> keyActionMap = new HashMap<>();
     static Map<String, BiConsumer<String, PolyChart>> globalKeyActionMap = new HashMap<>();
     private final KeyCodeCombination pasteKeyCodeCombination = new KeyCodeCombination(KeyCode.V, KeyCombination.SHORTCUT_DOWN);
+
     public KeyBindings(PolyChart chart) {
         this.chart = chart;
     }
 
     /**
      * Adds the provided DataFormat event handler to the dataFormatHandler map.
+     *
      * @param dataFormat The DataFormat.
-     * @param handler The DataFormat handler.
+     * @param handler    The DataFormat handler.
      */
     public static void registerCanvasDataFormatHandler(DataFormat dataFormat, DataFormatEventHandler handler) {
         dataFormatHandlers.put(dataFormat, handler);

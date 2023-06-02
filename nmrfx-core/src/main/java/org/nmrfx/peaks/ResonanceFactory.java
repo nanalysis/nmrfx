@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,16 +23,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomResonance;
 
 import static org.nmrfx.chemistry.AtomResonance.resonanceLoopStrings;
+
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.peaks.events.FreezeListener;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class ResonanceFactory implements FreezeListener {
@@ -49,7 +50,7 @@ public class ResonanceFactory implements FreezeListener {
     }
 
     public Resonance build() {
-        while (map.get(lastID++) != null);
+        while (map.get(lastID++) != null) ;
         AtomResonance resonance = new AtomResonance(lastID);
         map.put(lastID, resonance);
         return resonance;
