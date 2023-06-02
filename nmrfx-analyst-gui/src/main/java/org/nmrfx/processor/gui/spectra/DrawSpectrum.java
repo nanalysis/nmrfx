@@ -165,7 +165,8 @@ public class DrawSpectrum {
     }
 
     private PolyChartAxes getAxes() {
-        //XXX previous implementation was making a copy of the backing array: is that necessary due to multithreading?
+        // 2023-06-01: Previous implementation was making a (shallow) copy of the backing array.
+        // We may have to reintroduce this copy if we notice concurrent access bugs when drawing contours while changing axes
         return axes;
     }
 
