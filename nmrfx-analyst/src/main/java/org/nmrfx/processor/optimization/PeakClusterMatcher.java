@@ -1,12 +1,11 @@
 package org.nmrfx.processor.optimization;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Performs Bipartite Match on two peak lists, an experimental and predicted
@@ -16,20 +15,22 @@ import java.util.List;
  * the similarity of peaks, in each cluster, and the overall similarity of the
  * compared clusters.
  *
- * @author tedcolon
+ *
  * @see PeakCluster
+ *
+ * @author tedcolon
  */
 public class PeakClusterMatcher {
 
     private final List<PeakList> expPeakLists;
     private final List<PeakList> predPeakLists;
-    private final int iDim;
     // FIXME: Should probably consider having a list of PeakCluster[]
     // to compliment the list of PeakList for the exp and pred clusters.
     private PeakCluster[] expPeakClusters = null;
     private PeakCluster[] predPeakClusters = null;
     private int[] clusterMatch = null;
     private List<PeakCluster[]> matchedClusters = null;
+    private final int iDim;
 
     public PeakClusterMatcher(List<PeakList> expPeakLists, List<PeakList> predPeakLists, int iDim) {
         this.expPeakLists = expPeakLists;

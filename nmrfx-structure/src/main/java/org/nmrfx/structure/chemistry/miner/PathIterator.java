@@ -1,21 +1,27 @@
 package org.nmrfx.structure.chemistry.miner;
 
+import java.util.*;
+
 import org.nmrfx.annotations.PluginAPI;
-import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.AtomContainer;
+import org.nmrfx.chemistry.IAtom;
+import org.nmrfx.chemistry.IBond;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Order;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 @PluginAPI("residuegen")
 public class PathIterator implements Iterator<List<Integer>> {
     private static final Logger log = LoggerFactory.getLogger(PathIterator.class);
-    public static boolean debug = false;
+
     AtomContainer ac;
     List<List<Integer>> pathAtoms = null;
     List<List<Integer>> pathBonds = null;
     Map<String, Integer> bondMap = new HashMap<>();
     List<Integer> path = null;
+    public static boolean debug = false;
     int pathLength = 0;
     int pathPos = 0;
     int lastAtom;
@@ -329,7 +335,7 @@ public class PathIterator implements Iterator<List<Integer>> {
                 for (IBond bond : bonds) {
                     IAtom sAtom = bond.getConnectedAtom(startAtom);
 
-                    log.debug(String.format("test atom %d", getAtomIndex(sAtom)));
+                    log.debug(String.format("test atom %d",getAtomIndex(sAtom)));
 
                     if (sAtom.getAtomicNumber() > 0) {
                         if (!sAtom.getFlag(Atom.VISITED)) {
@@ -372,14 +378,14 @@ public class PathIterator implements Iterator<List<Integer>> {
 // fixme cheap trick to turn off test
             if (pathPos < ((pathLength - 1) - 100)) {
                 pathPos++;
-                log.debug(String.format("pathPos incr %d %d", pathLength, pathPos));
+                log.debug(String.format("pathPos incr %d %d",pathLength, pathPos));
             } else {
                 path.remove(path.size() - 1);
                 pathAtoms.set(pathPos, null);
                 pathBonds.set(pathPos, null);
                 pathLength--;
                 pathPos--;
-                log.debug(String.format("pathPos reduce %d %d", pathLength, pathPos));
+                log.debug(String.format("pathPos reduce %d %d",pathLength, pathPos));
             }
             if (pathLength == 0) {
                 log.debug("pathLength zero return ");
@@ -416,9 +422,20 @@ public class PathIterator implements Iterator<List<Integer>> {
             return dfIterate();
         }
 
-        log.debug(String.format("end return  pathLength %d pathPos %d", pathLength, pathPos));
+        log.debug(String.format("end return  pathLength %d pathPos %d",pathLength, pathPos));
 
         return true;
+    }
+
+    public void remove() {
+    }
+
+    public List<Integer> next() {
+        log.debug("############ next #################");
+        if ((path == null) || (pathLength == 0)) {
+            throw new NoSuchElementException();
+        }
+        return path;
     }
 
     public boolean hasNext() {
@@ -436,17 +453,6 @@ public class PathIterator implements Iterator<List<Integer>> {
         }
 
         return ((path != null) && (pathLength != 0));
-    }
-
-    public List<Integer> next() {
-        log.debug("############ next #################");
-        if ((path == null) || (pathLength == 0)) {
-            throw new NoSuchElementException();
-        }
-        return path;
-    }
-
-    public void remove() {
     }
 
     public void processPatterns() {

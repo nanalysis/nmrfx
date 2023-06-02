@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,15 @@
  */
 package org.nmrfx.structure.rdc;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.math3.geometry.enclosing.EnclosingBall;
 import org.apache.commons.math3.geometry.enclosing.WelzlEncloser;
-import org.apache.commons.math3.geometry.euclidean.threed.*;
+import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
+import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
+import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
+import org.apache.commons.math3.geometry.euclidean.threed.SphereGenerator;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.nmrfx.chemistry.Atom;
@@ -27,19 +33,17 @@ import org.nmrfx.chemistry.AtomEnergyProp;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Point3;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
+ *
  * @author brucejohnson
  */
 public class AlignmentCalc {
 
     static Vector3D BVEC = new Vector3D(0.0, 0.0, 1.0);
     static Vector3D[] VECS = {
-            new Vector3D(1.0, 0.0, 0.0),
-            new Vector3D(0.0, 1.0, 0.0),
-            new Vector3D(0.0, 0.0, 1.0)};
+        new Vector3D(1.0, 0.0, 0.0),
+        new Vector3D(0.0, 1.0, 0.0),
+        new Vector3D(0.0, 0.0, 1.0)};
 
     List<Vector3D> vectors = new ArrayList<>();
     List<Double> masses = new ArrayList<>();
@@ -55,34 +59,64 @@ public class AlignmentCalc {
     int nConstrainedPositions;
     double globalScale;
 
+    public class AngleMinimum {
+
+        Rotation rot;
+        double alpha;
+        double beta;
+        double min;
+        double max;
+        Vector3D[] vecs;
+        int count = 0;
+        double scale;
+
+        public double getAlpha() {
+            return alpha;
+        }
+
+        public double getBeta() {
+            return beta;
+        }
+
+        public double getMin() {
+            return min;
+        }
+
+        public double getMax() {
+            return max;
+        }
+
+        public AngleMinimum(Rotation rot, double scale) {
+            this.rot = rot;
+            this.scale = scale;
+        }
+
+        public AngleMinimum(Rotation rot, double min, double max, Vector3D[] vecs) {
+            this.rot = rot;
+            this.min = min;
+            this.max = max;
+            this.vecs = vecs;
+        }
+
+        public AngleMinimum(double alpha, double beta, double min, double max, Vector3D[] vecs) {
+            this.alpha = alpha;
+            this.beta = beta;
+            this.min = min;
+            this.max = max;
+            this.vecs = vecs;
+        }
+
+        public void incrCount() {
+            count++;
+        }
+
+        public int getCount() {
+            return count;
+        }
+    }
+
     public AlignmentCalc() {
 
-    }
-
-    public AlignmentCalc(List<Vector3D> vectors) {
-        this.vectors = vectors;
-    }
-
-    public AlignmentCalc(MoleculeBase molecule, boolean useH, double atomRadius) {
-        this.atomRadius = atomRadius;
-        for (Atom atom : molecule.getAtomArray()) {
-            if (atom.isCoarse() || atom.isPlanarity()) {
-                continue;
-            }
-            Point3 point3d = atom.getPoint();
-            if (point3d != null) {
-                if (useH || (atom.getAtomicNumber() != 1)) {
-                    vectors.add(point3d);
-                    AtomEnergyProp prop = AtomEnergyProp.get(atom.getType());
-                    if (prop != null) {
-                        atom.mass = prop.getMass();
-                        masses.add(atom.mass);
-                    } else {
-                        masses.add(1.0);
-                    }
-                }
-            }
-        }
     }
 
     public void makeSphere(int n, double r, double scale) {
@@ -128,6 +162,32 @@ public class AlignmentCalc {
                 double y = Math.cos(beta) * f * rY;
                 Vector3D rZVec = new Vector3D(x, y, z - h / 2.0);
                 vectors.add(rZVec);
+            }
+        }
+    }
+
+    public AlignmentCalc(List<Vector3D> vectors) {
+        this.vectors = vectors;
+    }
+
+    public AlignmentCalc(MoleculeBase molecule, boolean useH, double atomRadius) {
+        this.atomRadius = atomRadius;
+        for (Atom atom : molecule.getAtomArray()) {
+            if (atom.isCoarse() || atom.isPlanarity()) {
+                continue;
+            }
+            Point3 point3d = atom.getPoint();
+            if (point3d != null) {
+                if (useH || (atom.getAtomicNumber() != 1)) {
+                    vectors.add(point3d);
+                    AtomEnergyProp prop = AtomEnergyProp.get(atom.getType());
+                    if (prop != null) {
+                        atom.mass = prop.getMass();
+                        masses.add(atom.mass);
+                    } else {
+                        masses.add(1.0);
+                    }
+                }
             }
         }
     }
@@ -455,62 +515,6 @@ public class AlignmentCalc {
             }
         }
         return result;
-    }
-
-    public class AngleMinimum {
-
-        Rotation rot;
-        double alpha;
-        double beta;
-        double min;
-        double max;
-        Vector3D[] vecs;
-        int count = 0;
-        double scale;
-
-        public AngleMinimum(Rotation rot, double scale) {
-            this.rot = rot;
-            this.scale = scale;
-        }
-
-        public AngleMinimum(Rotation rot, double min, double max, Vector3D[] vecs) {
-            this.rot = rot;
-            this.min = min;
-            this.max = max;
-            this.vecs = vecs;
-        }
-
-        public AngleMinimum(double alpha, double beta, double min, double max, Vector3D[] vecs) {
-            this.alpha = alpha;
-            this.beta = beta;
-            this.min = min;
-            this.max = max;
-            this.vecs = vecs;
-        }
-
-        public double getAlpha() {
-            return alpha;
-        }
-
-        public double getBeta() {
-            return beta;
-        }
-
-        public double getMin() {
-            return min;
-        }
-
-        public double getMax() {
-            return max;
-        }
-
-        public void incrCount() {
-            count++;
-        }
-
-        public int getCount() {
-            return count;
-        }
     }
 
 }

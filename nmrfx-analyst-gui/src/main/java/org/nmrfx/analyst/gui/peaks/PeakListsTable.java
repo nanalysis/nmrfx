@@ -14,7 +14,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.project.ProjectBase;
-
 import java.util.Comparator;
 
 
@@ -32,10 +31,21 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
     private static final String NUMBER_UNASSIGNED_COLUMN_NAME = "Unassigned";
     MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakLists();
 
+    private String getPeakListLabels(PeakList peakList) {
+        StringBuilder sBuilder = new StringBuilder();
+        for (var sDim :peakList.getSpectralDims()) {
+            if (sBuilder.length() != 0) {
+                sBuilder.append(" ");
+            }
+            sBuilder.append(sDim.getDimName());
+        }
+        return sBuilder.toString();
+    }
+
     public PeakListsTable() {
         setPlaceholder(new Label("No peakLists to display"));
 
-        TableColumn<PeakList, String> peakListsLabelCol = new TableColumn<>(PEAKLIST_COLUMN_NAME);
+        TableColumn<PeakList, String>  peakListsLabelCol = new TableColumn<>(PEAKLIST_COLUMN_NAME);
         peakListsLabelCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
         getColumns().add(peakListsLabelCol);
 
@@ -75,17 +85,6 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
     }
 
-    private String getPeakListLabels(PeakList peakList) {
-        StringBuilder sBuilder = new StringBuilder();
-        for (var sDim : peakList.getSpectralDims()) {
-            if (sBuilder.length() != 0) {
-                sBuilder.append(" ");
-            }
-            sBuilder.append(sDim.getDimName());
-        }
-        return sBuilder.toString();
-    }
-
     /**
      * Clears the current peakLists and updates the list with the new values.
      */
@@ -93,7 +92,7 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
         ObservableList<PeakList> peakArrayList = FXCollections.observableArrayList();
         ProjectBase.getActive().getPeakLists().stream().sorted(Comparator.comparing(PeakList::getName)).forEach(peakList -> {
             peakList.registerPeakChangeListener(this);
-            peakArrayList.add(peakList);
+           peakArrayList.add(peakList);
         });
         var currentLists = getItems();
         boolean ok = peakArrayList.size() == currentLists.size();

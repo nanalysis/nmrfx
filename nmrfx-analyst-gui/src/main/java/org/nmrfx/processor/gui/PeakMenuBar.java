@@ -27,13 +27,14 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
+ *
  * @author brucejohnson
  */
 public class PeakMenuBar {
 
-    static Map<String, Consumer<PeakList>> extras = new LinkedHashMap<>();
     final PeakMenuTarget menuTarget;
     MenuButton peakListMenu = null;
+    static Map<String, Consumer<PeakList>> extras = new LinkedHashMap<>();
 
     public PeakMenuBar(PeakMenuTarget menuTarget) {
         this.menuTarget = menuTarget;
@@ -174,6 +175,10 @@ public class PeakMenuBar {
 
     void refreshChangedListView() {
         menuTarget.refreshChangedListView();
+    }
+
+    public static void addExtra(String name, Consumer<PeakList> function) {
+        extras.put(name, function);
     }
 
     boolean checkDataset() {
@@ -462,10 +467,6 @@ public class PeakMenuBar {
      */
     private void setPeakList(PeakList peakList) {
         menuTarget.setPeakList(peakList);
-    }
-
-    public static void addExtra(String name, Consumer<PeakList> function) {
-        extras.put(name, function);
     }
 
 }

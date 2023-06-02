@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,11 +17,17 @@
  */
 package org.nmrfx.chemistry.io;
 
+import java.io.BufferedReader;
+
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
-import org.nmrfx.chemistry.constraints.AngleConstraintSet;
-import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.util.*;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.ResonanceFactory;
@@ -29,31 +35,71 @@ import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.star.Saveframe;
+import org.nmrfx.chemistry.MolFilter;
+import org.nmrfx.chemistry.constraints.AngleConstraintSet;
+import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.nio.file.FileSystems;
-import java.util.*;
-
 /**
+ *
  * @author brucejohnson, Martha
  */
 @PluginAPI("ring")
 public class NMRNEFReader {
     private static final Logger log = LoggerFactory.getLogger(NMRNEFReader.class);
-    public static boolean DEBUG = false;
+
     final STAR3 nef;
     final File nefFile;
     final File nefDir;
+
     Map entities = new HashMap();
     boolean hasResonances = false;
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
+    public static boolean DEBUG = false;
 
     public NMRNEFReader(final File nefFile, final STAR3 nef) {
         this.nef = nef;
         this.nefFile = nefFile;
         this.nefDir = nefFile.getAbsoluteFile().getParentFile();
+    }
+
+    /**
+     * Read a NEF formatted file.
+     *
+     * @param nefFileName String. Name of the NEF file to read.
+     * @throws ParseException
+     */
+    public static void read(String nefFileName) throws ParseException, IOException {
+        File file = new File(nefFileName);
+        read(file);
+        log.info("read {}", nefFileName);
+    }
+
+    /**
+     * Read a NEF formatted file.
+     *
+     * @param nefFile File. NEF file to read.
+     * @throws ParseException
+     */
+    public static void read(File nefFile) throws ParseException {
+        FileReader fileReader;
+        try {
+            fileReader = new FileReader(nefFile);
+        } catch (FileNotFoundException ex) {
+            return;
+        }
+        BufferedReader bfR = new BufferedReader(fileReader);
+
+        STAR3 star = new STAR3(bfR, "star3");
+
+        try {
+            star.scanFile();
+        } catch (ParseException parseEx) {
+            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
+        }
+        NMRNEFReader reader = new NMRNEFReader(nefFile, star);
+        reader.processNEF();
     }
 
     void buildNEFChains(final Saveframe saveframe, MoleculeBase molecule, final String nomenclature) throws ParseException {
@@ -584,44 +630,6 @@ public class NMRNEFReader {
             buildNEFChemShifts(fromSet, toSet);
         }
         return molecule;
-    }
-
-    /**
-     * Read a NEF formatted file.
-     *
-     * @param nefFileName String. Name of the NEF file to read.
-     * @throws ParseException
-     */
-    public static void read(String nefFileName) throws ParseException, IOException {
-        File file = new File(nefFileName);
-        read(file);
-        log.info("read {}", nefFileName);
-    }
-
-    /**
-     * Read a NEF formatted file.
-     *
-     * @param nefFile File. NEF file to read.
-     * @throws ParseException
-     */
-    public static void read(File nefFile) throws ParseException {
-        FileReader fileReader;
-        try {
-            fileReader = new FileReader(nefFile);
-        } catch (FileNotFoundException ex) {
-            return;
-        }
-        BufferedReader bfR = new BufferedReader(fileReader);
-
-        STAR3 star = new STAR3(bfR, "star3");
-
-        try {
-            star.scanFile();
-        } catch (ParseException parseEx) {
-            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
-        }
-        NMRNEFReader reader = new NMRNEFReader(nefFile, star);
-        reader.processNEF();
     }
 
 }

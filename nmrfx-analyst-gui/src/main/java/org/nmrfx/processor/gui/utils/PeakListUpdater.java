@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,6 @@
  */
 package org.nmrfx.processor.gui.utils;
 
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.events.PeakEvent;
-import org.nmrfx.peaks.events.PeakListener;
-import org.nmrfx.utilities.Updater;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -31,16 +25,24 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.events.PeakEvent;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.events.PeakListener;
+import org.nmrfx.utilities.Updater;
+
 /**
+ *
  * @author brucejohnson
  */
 public class PeakListUpdater implements Updater {
 
     static List<PeakListener> globalListeners = new ArrayList<>();
-    static AtomicBoolean aListUpdated = new AtomicBoolean(false);
-    static AtomicBoolean needToFireEvent = new AtomicBoolean(false);
+
     protected ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     PeakList peakList;
+    static AtomicBoolean aListUpdated = new AtomicBoolean(false);
+    static AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     ScheduledFuture futureUpdate = null;
 
     public PeakListUpdater(PeakList peakList) {
@@ -66,6 +68,24 @@ public class PeakListUpdater implements Updater {
         startTimer();
     }
 
+    class UpdateTask implements Runnable {
+
+        @Override
+        public void run() {
+            if (aListUpdated.get()) {
+                needToFireEvent.set(true);
+                aListUpdated.set(false);
+                startTimer();
+            } else if (needToFireEvent.get()) {
+                needToFireEvent.set(false);
+                scanListsForUpdates();
+                if (aListUpdated.get()) {
+                    startTimer();
+                }
+            }
+        }
+    }
+
     synchronized void startTimer() {
         if (peakList.valid() && (schedExecutor != null)) {
             if (needToFireEvent.get() || (futureUpdate == null) || futureUpdate.isDone()) {
@@ -74,27 +94,6 @@ public class PeakListUpdater implements Updater {
             }
         }
 
-    }
-
-    void setPeakUpdatedFlag(boolean value) {
-        peakList.peakUpdated.set(value);
-        if (value) {
-            aListUpdated.set(value);
-        }
-    }
-
-    void setPeakListUpdatedFlag(boolean value) {
-        peakList.peakListUpdated.set(value);
-        if (value) {
-            aListUpdated.set(value);
-        }
-    }
-
-    void setPeakCountUpdatedFlag(boolean value) {
-        peakList.peakCountUpdated.set(value);
-        if (value) {
-            aListUpdated.set(value);
-        }
     }
 
     static void scanListsForUpdates() {
@@ -125,6 +124,25 @@ public class PeakListUpdater implements Updater {
         }
     }
 
+    void setPeakUpdatedFlag(boolean value) {
+        peakList.peakUpdated.set(value);
+        if (value) {
+            aListUpdated.set(value);
+        }
+    }
+    void setPeakListUpdatedFlag(boolean value) {
+        peakList.peakListUpdated.set(value);
+        if (value) {
+            aListUpdated.set(value);
+        }
+    }
+    void setPeakCountUpdatedFlag(boolean value) {
+        peakList.peakCountUpdated.set(value);
+        if (value) {
+            aListUpdated.set(value);
+        }
+    }
+
     static void registerGlobalListener(PeakListener newListener) {
         if (!globalListeners.contains(newListener)) {
             globalListeners.add(newListener);
@@ -134,24 +152,6 @@ public class PeakListUpdater implements Updater {
     public static void notifyGlobalListeners() {
         for (PeakListener listener : globalListeners) {
             listener.peakListChanged(new PeakEvent("*"));
-        }
-    }
-
-    class UpdateTask implements Runnable {
-
-        @Override
-        public void run() {
-            if (aListUpdated.get()) {
-                needToFireEvent.set(true);
-                aListUpdated.set(false);
-                startTimer();
-            } else if (needToFireEvent.get()) {
-                needToFireEvent.set(false);
-                scanListsForUpdates();
-                if (aListUpdated.get()) {
-                    startTimer();
-                }
-            }
         }
     }
 

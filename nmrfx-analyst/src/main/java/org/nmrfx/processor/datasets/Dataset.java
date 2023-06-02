@@ -67,58 +67,29 @@ import java.util.stream.IntStream;
 public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     private static final Logger log = LoggerFactory.getLogger(Dataset.class);
-    static boolean useCacheFile = false;
-    static String[] exptListLoopString = {
-            "_Experiment.ID",
-            "_Experiment.Name",
-            "_Experiment.Raw_data_flag",
-            "_Experiment.NMR_spec_expt_ID",
-            "_Experiment.NMR_spec_expt_label",
-            "_Experiment.Sample_ID",
-            "_Experiment.Sample_label",
-            "_Experiment.Sample_state",
-            "_Experiment.Sample_volume",
-            "_Experiment.Sample_volume_units",
-            "_Experiment.Sample_condition_list_ID",
-            "_Experiment.Sample_condition_list_label",
-            "_Experiment.Sample_spinning_rate",
-            "_Experiment.Sample_angle",
-            "_Experiment.NMR_tube_type",
-            "_Experiment.NMR_spectrometer_ID",
-            "_Experiment.NMR_spectrometer_label",
-            "_Experiment.NMR_spectrometer_probe_ID",
-            "_Experiment.NMR_spectrometer_probe_label",
-            "_Experiment.NMR_spectral_processing_ID",
-            "_Experiment.NMR_spectral_processing_label",
-            "_Experiment.Experiment_list_ID",};
-    static String[] exptFileLoopString = {
-            "_Experiment_file.ID",
-            "_Experiment_file.Name",
-            "_Experiment_file.Type",
-            "_Experiment_file.Directory_path",
-            "_Experiment_file.Details",
-            "_Experiment_file.Experiment_list_ID",};
     private static long BIG_MAP_LIMIT = Integer.MAX_VALUE / 2;
+    static boolean useCacheFile = false;
+
+    private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
     LineShapeCatalog simVecs = null;
     Map<String, double[]> buffers = new HashMap<>();
     Dataset[] projections = null;
+    private Object analyzerObject = null;
     boolean memoryMode = false;
     String script = "";
-    private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
-    private Object analyzerObject = null;
 
     /**
      * Create a new Dataset object that refers to an existing random access file
      * in a format that can be described by this class.
      *
-     * @param fullName     The full path to the file
-     * @param name         The short name (and initial title) to be used for the
-     *                     dataset.
-     * @param writable     true if the file should be opened in a writable mode.
+     * @param fullName The full path to the file
+     * @param name The short name (and initial title) to be used for the
+     * dataset.
+     * @param writable true if the file should be opened in a writable mode.
      * @param useCacheFile true if the file will use StorageCache rather than
-     *                     memory mapping file. You should not use StorageCache if the file is to be
-     *                     opened for drawing in NMRFx (as thread interrupts may cause it to be
-     *                     closed)
+     * memory mapping file. You should not use StorageCache if the file is to be
+     * opened for drawing in NMRFx (as thread interrupts may cause it to be
+     * closed)
      * @throws IOException if an I/O error occurs
      */
     public Dataset(String fullName, String name, boolean writable, boolean useCacheFile)
@@ -151,7 +122,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         // Datasets that were not generated in NMRFx don't
         // have freqDomain  attribute set so set freq domain
         // here
-        boolean isFID = (getNFreqDims() == 0) && (!getFreqDomain(0) && (getComplex(0)));
+        boolean isFID =  (getNFreqDims() == 0) && (!getFreqDomain(0) && (getComplex(0)));
         if (!isFID && noFreqDomains) {
             int nFreq = getNFreqDims() == 0 ? nDim : getNFreqDims();
             for (int i = 0; i < nFreq; i++) {
@@ -174,21 +145,21 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Create a new Dataset object that refers to an existing random access file
      * in a format that can be described by this class.
      *
-     * @param fullName      The full path to the file
-     * @param name          The short name (and initial title) to be used for the
-     *                      dataset.
+     * @param fullName The full path to the file
+     * @param name The short name (and initial title) to be used for the
+     * dataset.
      * @param datasetLayout contains information about layout (sizes, blocksizes
-     *                      etc. of dataset to be created)
-     * @param useCacheFile  true if the file will use StorageCache rather than
-     *                      memory mapping file. You should not use StorageCache if the file is to be
-     *                      opened for drawing in NMRFx (as thread interrupts may cause it to be
-     *                      closed)
-     * @param byteOrder     Spcify little or big endian
-     * @param dataType      0 is float, 1 is integer
+     * etc. of dataset to be created)
+     * @param useCacheFile true if the file will use StorageCache rather than
+     * memory mapping file. You should not use StorageCache if the file is to be
+     * opened for drawing in NMRFx (as thread interrupts may cause it to be
+     * closed)
+     * @param byteOrder Spcify little or big endian
+     * @param dataType 0 is float, 1 is integer
      * @throws IOException if an I/O error occurs
      */
     public Dataset(String fullName, String name, DatasetLayout datasetLayout,
-                   boolean useCacheFile, ByteOrder byteOrder, int dataType)
+            boolean useCacheFile, ByteOrder byteOrder, int dataType)
             throws IOException {
         // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
         super(fullName, name, false, useCacheFile);
@@ -269,10 +240,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         addFile(fileName);
     }
 
-    // create in memory file
-
     private Dataset(String fullName, String fileName, String title,
-                    int[] dimSizes, boolean closeDataset, boolean createFile) throws DatasetException {
+            int[] dimSizes, boolean closeDataset, boolean createFile) throws DatasetException {
         try {
             file = new File(fullName);
 
@@ -317,14 +286,23 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
+    public void setFile(File file) throws IOException {
+        ProjectBase.getActive().removeDataset(fileName, this);
+        this.file = file;
+        canonicalName = file.getCanonicalPath();
+        fileName = file.getName().replace(' ', '_');
+        ProjectBase.getActive().addDataset(this, fileName);
+    }
+
+    // create in memory file
     /**
      * Create a dataset in memory for fast access. The dataset is not
      * written to disk so can't be persisted.
      *
-     * @param title    Dataset title
-     * @param file     The file associated with the dataset, if null, the title will be used as the fileName
+     * @param title Dataset title
+     * @param file The file associated with the dataset, if null, the title will be used as the fileName
      * @param dimSizes Sizes of the dataset dimensions
-     * @param addFile  Whether to add the dataset to the active projects
+     * @param addFile Whether to add the dataset to the active projects
      * @throws DatasetException if an I/O error occurs
      */
     public Dataset(String title, File file, int[] dimSizes, boolean addFile) throws DatasetException {
@@ -352,12 +330,26 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
+    public int length() {
+        int length = 1;
+        for (int i = 0; i < nDim; i++) {
+            length *= layout.getSize(i);
+        }
+        return length;
+    }
+
+    @Override
+    public int compareTo(Dataset o) {
+        return getName().compareTo(o.getName());
+    }
+
+    // create in memory file
     /**
      * Create a dataset in memory for fast access. This is an experimental mode,
      * and the dataset is not currently written to disk so can't be persisted.
      *
      * @param fullName Dataset file path
-     * @param nDim     Number of dataset dimensions
+     * @param nDim Number of dataset dimensions
      * @throws DatasetException if an I/O error occurs
      */
     public Dataset(String fullName, int nDim) throws DatasetException {
@@ -373,29 +365,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         newHeader();
         dataFile = null;
         memoryMode = true;
-    }
-
-    // create in memory file
-
-    public void setFile(File file) throws IOException {
-        ProjectBase.getActive().removeDataset(fileName, this);
-        this.file = file;
-        canonicalName = file.getCanonicalPath();
-        fileName = file.getName().replace(' ', '_');
-        ProjectBase.getActive().addDataset(this, fileName);
-    }
-
-    public int length() {
-        int length = 1;
-        for (int i = 0; i < nDim; i++) {
-            length *= layout.getSize(i);
-        }
-        return length;
-    }
-
-    @Override
-    public int compareTo(Dataset o) {
-        return getName().compareTo(o.getName());
     }
 
     public void setLayout(DatasetLayout layout, boolean closeDataset) throws IOException {
@@ -454,8 +423,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 dataFile = new MemoryFile(this, layout, true);
                 dataFile.zero();
             } else {
-                layout = DatasetLayout.createBlockMatrix(getFileHeaderSize(file.getName()), dimSizes);
-                setLayout(layout, false);
+               layout = DatasetLayout.createBlockMatrix(getFileHeaderSize(file.getName()), dimSizes);
+               setLayout(layout, false);
             }
         } catch (IOException ioe) {
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
@@ -481,12 +450,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             throw new DatasetException("Can't resize dataset " + ioe.getMessage());
         }
     }
-
     public void resizeDims(int[] dimSizes) throws DatasetException {
         try {
             dataFile = StorageResizer.resizeDim(this, layout, dataFile, dimSizes);
             layout = dataFile.getLayout();
-            for (int iDim = 0; iDim < dimSizes.length; iDim++) {
+            for (int iDim=0;iDim<dimSizes.length;iDim++) {
                 refPt[iDim] = getSizeReal(iDim) / 2.0;
                 refPt_r[iDim] = getSizeReal(iDim) / 2.0;
             }
@@ -501,9 +469,87 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         dataFile = createDataFile(this, raFile, file, layout, writable);
     }
 
+    public static DatasetStorageInterface createDataFile(Dataset dataset, RandomAccessFile raFile, File file, DatasetLayout newLayout, boolean writable) throws IOException {
+        DatasetStorageInterface newDataFile;
+        if (useCacheFile) {
+            newDataFile = new SubMatrixFile(dataset, file, newLayout, raFile, writable);
+        } else {
+            if (newLayout.getNDataBytes() > BIG_MAP_LIMIT) {
+                newDataFile = new BigMappedMatrixFile(dataset, file, newLayout, raFile, writable);
+            } else {
+                if (newLayout.isSubMatrix()) {
+                    newDataFile = new MappedSubMatrixFile(dataset, file, newLayout, raFile, writable);
+                } else {
+                    newDataFile = new MappedMatrixFile(dataset, file, newLayout, raFile, writable);
+                }
+            }
+        }
+        dataset.layout = newLayout;
+        return newDataFile;
+    }
+
+    public static void setBigMapLimit(long size) {
+        BIG_MAP_LIMIT = size;
+    }
+
     @Override
     public String toString() {
         return fileName;
+    }
+
+    /**
+     * Create a new dataset file in NMRView format.
+     *
+     * @param fullName The full path to the new file
+     * @param title The title to be used for the new dataset
+     * @param dimSizes The sizes of the new dataset.
+     * @param closeDataset If true, close dataset after creating
+     * @return the created Dataset
+     * @throws DatasetException if an I/O error occurred when writing out file
+     */
+    public static Dataset createDataset(String fullName, String fileName, String title, int[] dimSizes, boolean closeDataset, boolean createFile) throws DatasetException {
+        Dataset dataset = new Dataset(fullName, fileName, title, dimSizes, closeDataset, createFile);
+        if (closeDataset) {
+            dataset.close();
+            dataset = null;
+        }
+        return dataset;
+    }
+
+    /**
+     * Create a new dataset file from the provided path by first loading as an NMRData and then converting to a dataset.
+     * @param name The name of the new dataset.
+     * @param fullName The name of the file containing the path to the dataset file.
+     * @return A new dataset or null if no NMRData type was found.
+     * @throws IOException if an IO exception occurs.
+     * @throws DatasetException if there is a problem creating the JCAMP dataset.
+     */
+    public static Dataset newLinkDataset(String name, String fullName) throws IOException, DatasetException {
+        File linkFile = new File(fullName);
+        log.info(fullName);
+        String fileString = Files.readString(linkFile.toPath());
+        log.info(fileString);
+        NMRData nmrData = NMRDataUtil.getNMRData(fileString);
+        log.info("{}", nmrData);
+        if (nmrData instanceof BrukerData brukerData) {
+            return brukerData.toDataset(name);
+        } else if (nmrData instanceof RS2DData rs2DData) {
+            return rs2DData.toDataset(name);
+        } else if (nmrData instanceof JCAMPData jcampData) {
+            return jcampData.toDataset(name);
+        }
+        return null;
+    }
+
+    /**
+     * Set cacheFile mode. If true data will be written to a Random access file
+     * buffered through the Storage Cache. If false, data will be written to a
+     * Random Access File using memory mapping.
+     *
+     * @param value the cacheFile mode
+     */
+    public static void useCacheFile(boolean value) {
+        useCacheFile = value;
     }
 
     public boolean isCacheFile() {
@@ -544,33 +590,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
-    private void addFile(String datasetName) {
-        ProjectBase.getActive().addDataset(this, datasetName);
-    }
-
-    public void rename(String newName) {
-        ProjectBase.getActive().renameDataset(this, newName);
-    }
-
-    /**
-     * Close this dataset.
-     */
-    @Override
-    public void close() {
-        removeFile(fileName);
-        try {
-            if (dataFile != null) {
-                if (dataFile.isWritable()) {
-                    dataFile.force();
-                }
-                dataFile.close();
-            }
-            dataFile = null;
-        } catch (IOException e) {
-            log.warn("Unable to close dataset", e);
-        }
-    }
-
     /**
      * Get the Vec object. Null if the dataset stores data in a data file,
      * rather than Vec object.
@@ -580,11 +599,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     @Override
     public Vec getVec() {
         return (Vec) vecMat;
-    }
-
-    @Override
-    public boolean isMemoryFile() {
-        return memoryMode;
     }
 
     /**
@@ -617,15 +631,120 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         layout.setSize(iDim, size);
     }
 
+    private void addFile(String datasetName) {
+        ProjectBase.getActive().addDataset(this, datasetName);
+    }
+
+    public void rename(String newName) {
+        ProjectBase.getActive().renameDataset(this, newName);
+    }
+
+    /**
+     * Close this dataset.
+     */
+    @Override
+    public void close() {
+        removeFile(fileName);
+        try {
+            if (dataFile != null) {
+                if (dataFile.isWritable()) {
+                    dataFile.force();
+                }
+                dataFile.close();
+            }
+            dataFile = null;
+        } catch (IOException e) {
+            log.warn("Unable to close dataset", e);
+        }
+    }
+
+    /**
+     * Return whether dataset has a data file.
+     *
+     * @return true if this dataset has a data file associated with it.
+     */
+    public boolean hasDataFile() {
+        return dataFile != null;
+    }
+
+    @Override
+    public boolean isMemoryFile() {
+        return memoryMode;
+    }
+
+    double[] optCenter(int[] maxPoint, int[] dim) throws IOException {
+        double[] dmaxPoint = new double[nDim];
+        int[] points = new int[nDim];
+        double[] f = new double[2];
+        double centerValue = readPoint(maxPoint, dim);
+        for (int j = 0; j < nDim; j++) {
+            System.arraycopy(maxPoint, 0, points, 0, nDim);
+            points[j] = maxPoint[j] - 1;
+            if (points[j] < 0) {
+                points[j] = getSizeReal(dim[j]) - 1;
+            }
+            f[0] = readPoint(points, dim);
+            points[j] = maxPoint[j] + 1;
+            if (points[j] >= getSizeReal(dim[j])) {
+                points[j] = 0;
+            }
+            f[1] = readPoint(points, dim);
+            double fPt = maxPoint[j];
+            double delta = ((f[1] - f[0]) / (2.0 * ((2.0 * centerValue) - f[1]
+                    - f[0])));
+            // Polynomial interpolated max should never be more than half a point from grid max
+            if (Math.abs(delta) < 0.5) {
+                fPt += delta;
+            }
+            dmaxPoint[j] = fPt;
+
+        }
+
+        return dmaxPoint;
+    }
+
+    /**
+     * Calculate a noise level for the dataset by analyzing the rms value of
+     * data points in a corner of dataset. The resulting value is stored and can
+     * be retrieved with getNoiseLevel
+     *
+     * @return the noise level
+     */
+    public Double guessNoiseLevel() {
+        if (noiseLevel == null) {
+            int[][] pt = new int[nDim][2];
+            int[] cpt = new int[nDim];
+            int[] dim = new int[nDim];
+            double[] width = new double[nDim];
+            for (int i = 0; i < nDim; i++) {
+                dim[i] = i;
+                pt[i][0] = 4;
+                if (pt[i][0] >= getSizeTotal(i)) {
+                    pt[i][0] = getSizeTotal(i) - 1;
+                }
+                pt[i][1] = getSizeTotal(i) / 8;
+                cpt[i] = (pt[i][0] + pt[i][1]) / 2;
+                width[i] = Math.abs(pt[i][0] - pt[i][1]);
+            }
+            try {
+                RegionData rData = analyzeRegion(pt, cpt, width, dim);
+                noiseLevel = rData.getRMS() * scale;
+            } catch (IOException ioE) {
+                noiseLevel = null;
+            }
+        }
+        return noiseLevel == null ? null : noiseLevel / scale;
+    }
+
     /**
      * Calculate basic descriptive statistics on the specified region of the
      * dataset.
      *
-     * @param pt    The bounds of the region in dataset points
-     * @param cpt   The center point of each region
+     * @param pt The bounds of the region in dataset points
+     * @param cpt The center point of each region
      * @param width the width of each region
-     * @param dim   the dataset dimensions that the pt, cpt, and width parameters
-     *              use
+     * @param dim the dataset dimensions that the pt, cpt, and width parameters
+     * use
      * @return RegionData with statistical information about the specified
      * region
      * @throws java.io.IOException if an I/O error ocurrs
@@ -692,79 +811,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             rData.setRMS(Math.sqrt(rData.getSumSq() / (rData.getNpoints() - 1)));
         }
         return rData;
-    }
-
-    /**
-     * Return whether dataset has a data file.
-     *
-     * @return true if this dataset has a data file associated with it.
-     */
-    public boolean hasDataFile() {
-        return dataFile != null;
-    }
-
-    double[] optCenter(int[] maxPoint, int[] dim) throws IOException {
-        double[] dmaxPoint = new double[nDim];
-        int[] points = new int[nDim];
-        double[] f = new double[2];
-        double centerValue = readPoint(maxPoint, dim);
-        for (int j = 0; j < nDim; j++) {
-            System.arraycopy(maxPoint, 0, points, 0, nDim);
-            points[j] = maxPoint[j] - 1;
-            if (points[j] < 0) {
-                points[j] = getSizeReal(dim[j]) - 1;
-            }
-            f[0] = readPoint(points, dim);
-            points[j] = maxPoint[j] + 1;
-            if (points[j] >= getSizeReal(dim[j])) {
-                points[j] = 0;
-            }
-            f[1] = readPoint(points, dim);
-            double fPt = maxPoint[j];
-            double delta = ((f[1] - f[0]) / (2.0 * ((2.0 * centerValue) - f[1]
-                    - f[0])));
-            // Polynomial interpolated max should never be more than half a point from grid max
-            if (Math.abs(delta) < 0.5) {
-                fPt += delta;
-            }
-            dmaxPoint[j] = fPt;
-
-        }
-
-        return dmaxPoint;
-    }
-
-    /**
-     * Calculate a noise level for the dataset by analyzing the rms value of
-     * data points in a corner of dataset. The resulting value is stored and can
-     * be retrieved with getNoiseLevel
-     *
-     * @return the noise level
-     */
-    public Double guessNoiseLevel() {
-        if (noiseLevel == null) {
-            int[][] pt = new int[nDim][2];
-            int[] cpt = new int[nDim];
-            int[] dim = new int[nDim];
-            double[] width = new double[nDim];
-            for (int i = 0; i < nDim; i++) {
-                dim[i] = i;
-                pt[i][0] = 4;
-                if (pt[i][0] >= getSizeTotal(i)) {
-                    pt[i][0] = getSizeTotal(i) - 1;
-                }
-                pt[i][1] = getSizeTotal(i) / 8;
-                cpt[i] = (pt[i][0] + pt[i][1]) / 2;
-                width[i] = Math.abs(pt[i][0] - pt[i][1]);
-            }
-            try {
-                RegionData rData = analyzeRegion(pt, cpt, width, dim);
-                noiseLevel = rData.getRMS() * scale;
-            } catch (IOException ioE) {
-                noiseLevel = null;
-            }
-        }
-        return noiseLevel == null ? null : noiseLevel / scale;
     }
 
     public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOException {
@@ -926,6 +972,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * calculated by measureSliceRMSD
      *
      * @return true if has stored rmsd values
+     *
      */
     public boolean sliceRMSDValid() {
         boolean valid = true;
@@ -988,8 +1035,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * point.
      *
      * @param level Peak picking level
-     * @param pt    indices of dataset
-     * @param dim   dataset dimensions used by pt indices
+     * @param pt indices of dataset
+     * @param dim dataset dimensions used by pt indices
      * @return ratio of point level to threshold level
      */
     public double checkNoiseLevel(double level, int[] pt, int[] dim) {
@@ -1064,13 +1111,13 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * of points. Used to find points that should be included when doing peak
      * fitting.
      *
-     * @param p2         Bounds of peak regions
-     * @param cpt        Array of centers of peak positions
-     * @param width      Array of widths of peaks
-     * @param pdim       Array of integers indicating mapping of peak dimension to
-     *                   dataset dimension
-     * @param multiplier multiply width of regions to get elliptical region
-     * @param minWidth:  minimum half width (in points) of region.  Ensures that at least a minium number of peaks are used
+     * @param p2 Bounds of peak regions
+     * @param cpt Array of centers of peak positions
+     * @param width Array of widths of peaks
+     * @param pdim Array of integers indicating mapping of peak dimension to
+     * dataset dimension
+     * @param multiplier   multiply width of regions to get elliptical region
+     * @param minWidth: minimum half width (in points) of region.  Ensures that at least a minium number of peaks are used
      * @return List of points near peak centers
      */
     public ArrayList<int[]> getFilteredPositions(final int[][] p2, final int[][] cpt, final double[][] width, int[] pdim, double multiplier, int minWidth) {
@@ -1110,7 +1157,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                         double scaledWidth = multiplier * width[iPeak][iDim] / 2.0;
                         int delta = Math.abs(value - cpt[iPeak][iDim]);
                         if (delta > minWidth) {
-                            delta2 += (delta * delta) / (scaledWidth * scaledWidth);
+                            delta2 += (delta *delta) / (scaledWidth * scaledWidth);
                         }
                     }
                     iDim++;
@@ -1166,20 +1213,20 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * matrix.  The region is specified in complex or real (if dimensionis real)
      * points and translated to raw indices based on whether dimension is complex or not.
      *
-     * @param pt     The region to read
-     * @param dim    The dataset dimensions used by the region points
+     * @param pt The region to read
+     * @param dim The dataset dimensions used by the region points
      * @param matrix A matrix in which to store the read values. Must be at
-     *               least as big as region.
+     * least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
     synchronized public float readMatrix(int[][] pt,
-                                         int[] dim, float[][] matrix) throws IOException {
+            int[] dim, float[][] matrix) throws IOException {
         float maxValue = Float.NEGATIVE_INFINITY;
         float minValue = Float.MAX_VALUE;
         int[] point = new int[nDim];
         int[] mul = new int[2];
-        for (int i = 0; i < 2; i++) {
+        for (int i =0;i<2;i++) {
             mul[i] = getComplex(dim[i]) ? 2 : 1;
         }
 
@@ -1194,12 +1241,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 if (axisReversed[dim[0]]) {
                     point[dim[0]] = getSizeTotal(dim[0]) - 1 - i * mul[0];
                 } else {
-                    point[dim[0]] = i * mul[0];
+                    point[dim[0]] =  i * mul[0];
                 }
                 if (axisReversed[dim[1]]) {
                     point[dim[1]] = getSizeTotal(dim[1]) - 1 - j * mul[1];
                 } else {
-                    point[dim[1]] = j * mul[1];
+                    point[dim[1]] =  j * mul[1];
                 }
                 float value = (float) readPointRaw(point);
                 matrix[jj][ii] = value;
@@ -1218,15 +1265,15 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read an N dimensional matrix of values within the specified region of the
      * matrix
      *
-     * @param pt     The region to read
-     * @param dim    The dataset dimensions used by the region points
+     * @param pt The region to read
+     * @param dim The dataset dimensions used by the region points
      * @param matrix A matrix in which to store the read values. Must be at
-     *               least as big as region.
+     * least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
     synchronized public double readMatrix(int[][] pt,
-                                          int[] dim, double[][] matrix) throws IOException {
+            int[] dim, double[][] matrix) throws IOException {
         double maxValue = Double.NEGATIVE_INFINITY;
         double minValue = Double.MAX_VALUE;
         int[] point = new int[nDim];
@@ -1257,21 +1304,21 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read an N dimensional matrix of values within the specified region of the
      * matrix
      *
-     * @param pt     The region to read
-     * @param dim    The dataset dimensions used by the region points
+     * @param pt The region to read
+     * @param dim The dataset dimensions used by the region points
      * @param matrix A matrix in which to store the read values. Must be at
-     *               least as big as region.
+     * least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error occurs
      */
     synchronized public double readMatrixND(int[][] pt,
-                                            int[] dim, MatrixND matrix) throws IOException {
+            int[] dim, MatrixND matrix) throws IOException {
         double maxValue = Double.NEGATIVE_INFINITY;
         double minValue = Double.MAX_VALUE;
         int[] point = new int[nDim];
         point[dim[nDim - 1]] = pt[nDim - 1][0];
         int[] mPoint = new int[nDim - 1];
-        // fixme should mPoint be pt +1
+        // fixme should mPoint be pt +1 
         for (int i = 0; i < nDim - 1; i++) {
             mPoint[i] = pt[i][1] + 1;
         }
@@ -1296,10 +1343,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return Math.max(Math.abs(maxValue), Math.abs(minValue));
     }
 
+
+
     /**
      * Write a matrix of values to the dataset
      *
-     * @param dim    indices of dimensions to write matrix along
+     * @param dim indices of dimensions to write matrix along
      * @param matrix the values to write
      * @throws IOException if an I/O error occurs
      */
@@ -1325,7 +1374,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Write a matrix of values to the dataset
      *
-     * @param dim    indices of dimensions to write matrix along
+     * @param dim indices of dimensions to write matrix along
      * @param matrix the values to write
      * @throws IOException if an I/O error occurs
      */
@@ -1355,6 +1404,60 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             dataFile.setFloat((float) (matrix.getValue(index) * scale), point);
         }
     }
+
+    /**
+     * Return the Dataset object with the specified name.
+     *
+     * @param fileName name of Dataset to find
+     * @return the Dataset or null if it doesn't exist
+     */
+    synchronized public static Dataset getDataset(String fileName) {
+        if (fileName == null) {
+            return null;
+        } else {
+            return (Dataset) ProjectBase.getActive().getDataset(fileName);
+        }
+    }
+
+    /**
+     * Return a list of the names of open datasets
+     *
+     * @return List of names.
+     */
+    synchronized public static List<String> names() {
+        return ProjectBase.getActive().getDatasetNames();
+    }
+
+    static String[] exptListLoopString = {
+        "_Experiment.ID",
+        "_Experiment.Name",
+        "_Experiment.Raw_data_flag",
+        "_Experiment.NMR_spec_expt_ID",
+        "_Experiment.NMR_spec_expt_label",
+        "_Experiment.Sample_ID",
+        "_Experiment.Sample_label",
+        "_Experiment.Sample_state",
+        "_Experiment.Sample_volume",
+        "_Experiment.Sample_volume_units",
+        "_Experiment.Sample_condition_list_ID",
+        "_Experiment.Sample_condition_list_label",
+        "_Experiment.Sample_spinning_rate",
+        "_Experiment.Sample_angle",
+        "_Experiment.NMR_tube_type",
+        "_Experiment.NMR_spectrometer_ID",
+        "_Experiment.NMR_spectrometer_label",
+        "_Experiment.NMR_spectrometer_probe_ID",
+        "_Experiment.NMR_spectrometer_probe_label",
+        "_Experiment.NMR_spectral_processing_ID",
+        "_Experiment.NMR_spectral_processing_label",
+        "_Experiment.Experiment_list_ID",};
+    static String[] exptFileLoopString = {
+        "_Experiment_file.ID",
+        "_Experiment_file.Name",
+        "_Experiment_file.Type",
+        "_Experiment_file.Directory_path",
+        "_Experiment_file.Details",
+        "_Experiment_file.Experiment_list_ID",};
 
     /**
      * Test of speed of accessing data in file
@@ -1410,11 +1513,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
+    //new version
     /**
      * Read a vector of data values from dataset
      *
-     * @param pt       raw indices specifying range of points to read from
-     * @param dim      dataset dimensions that are used in pt array
+     * @param pt raw indices specifying range of points to read from
+     * @param dim dataset dimensions that are used in pt array
      * @param rwVector the vector to put values in
      * @throws IOException if an I/O error occurs
      */
@@ -1454,7 +1558,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         rwVector.setTDSize(getTDSize(dim[0]));
         rwVector.setPt(pt, dim);
         if (getFreqDomain_r(dim[0])) {
-            rwVector.setRefValue(getRefValue_r(dim[0]), (getRefPt_r(dim[0]) - pt[0][0]));
+            rwVector.setRefValue(getRefValue_r(dim[0]), (getRefPt_r(dim[0])-pt[0][0]));
         } else {
             rwVector.setRefValue(getRefValue_r(dim[0]));
         }
@@ -1464,7 +1568,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         for (int i = 1; i < nDim; i++) {
             if (getAxisReversed(dim[i])) {
                 point[dim[i]] = getSizeReal(dim[i]) - 1 - pt[i][0];
-            } else {
+            } else{
                 point[dim[i]] = pt[i][0];
             }
         }
@@ -1533,10 +1637,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read specified values along specified row. Only appropriate for 2D
      * datasets
      *
-     * @param row     the row to read
+     * @param row the row to read
      * @param indices List of points to read along row
      * @return the data values
-     * @throws IOException              if an I/O error occurs
+     * @throws IOException if an I/O error occurs
      * @throws IllegalArgumentException if indices is null or empty
      */
     public ArrayRealVector getRowVector(int row, ArrayList<Integer> indices) throws IOException, IllegalArgumentException {
@@ -1577,10 +1681,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read specified values along specified column. Only appropriate for 2D
      * datasets
      *
-     * @param column  the column of dataset to read
+     * @param column the column of dataset to read
      * @param indices List of points to read along column
      * @return the values
-     * @throws IOException              if an I/O error occurs
+     * @throws IOException if an I/O error occurs
      * @throws IllegalArgumentException if indices is null or empty
      */
     public ArrayRealVector getColumnVector(int column, ArrayList<Integer> indices) throws IOException, IllegalArgumentException {
@@ -1601,12 +1705,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Return a 2D matrix of data values from specified rows and columns
      *
-     * @param rowIndices    List of rows
+     * @param rowIndices List of rows
      * @param columnIndices List of columns
      * @return the matrix of values
-     * @throws IOException              if an I/O error occurs
+     * @throws IOException if an I/O error occurs
      * @throws IllegalArgumentException if row or column indices is null or
-     *                                  empty
+     * empty
      */
     public Array2DRowRealMatrix getSubMatrix(ArrayList<Integer> rowIndices, ArrayList<Integer> columnIndices) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || rowIndices.isEmpty()) {
@@ -1629,14 +1733,15 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
+     *
      * Return a 2D matrix of data values from specified rows and columns
      *
-     * @param rowIndices    List of rows
+     * @param rowIndices List of rows
      * @param columnIndices List of columns
      * @return the matrix of values
-     * @throws IOException              if an I/O error occurs
+     * @throws IOException if an I/O error occurs
      * @throws IllegalArgumentException if row or column indices is null or
-     *                                  empty
+     * empty
      */
     public Array2DRowRealMatrix getSubMatrix(int[] rowIndices, int[] columnIndices) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || (rowIndices.length == 0)) {
@@ -1660,7 +1765,30 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return matrix;
     }
 
-    //new version
+    /**
+     * Make a Dataset file from a matrix of values
+     *
+     * @param matrix The matrix of values
+     * @param fullName The name of the file to create
+     * @param datasetName The name (title) of the dataset.
+     * @throws DatasetException if an I/O error occurred while creating dataset
+     * @throws IOException if an I/O error occurs
+     */
+    public static void makeDatasetFromMatrix(RealMatrix matrix, String fullName, String datasetName) throws DatasetException, IOException {
+        int nRows = matrix.getRowDimension();
+        int nColumns = matrix.getColumnDimension();
+        int[] dimSizes = {nRows, nColumns};
+        int[] pt = new int[2];
+        Dataset dataset = createDataset(fullName, fullName, datasetName, dimSizes, false, true);
+        for (int i = 0; i < nRows; i++) {
+            for (int j = 0; j < nColumns; j++) {
+                pt[0] = i;
+                pt[1] = j;
+                dataset.writePoint(pt, matrix.getEntry(i, j));
+            }
+        }
+        dataset.close();
+    }
 
     public BucketedMatrix getBucketedSubMatrixFromRegions(int bucketSize) throws IOException {
 
@@ -1686,14 +1814,14 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Create a @see BucketMatrix from this dataset
      *
-     * @param rowIndices    Indices of rows to include in bucketing
+     * @param rowIndices Indices of rows to include in bucketing
      * @param columnIndices Indices of columns to include in bucketing
-     * @param bucketSize    size of the bucket
-     * @param dataTbl       Names for rows and columns
+     * @param bucketSize size of the bucket
+     * @param dataTbl Names for rows and columns
      * @return a BucketMatrix object containing the bucket values from dataset
-     * @throws IOException              if an I/O error occurs
+     * @throws IOException if an I/O error occurs
      * @throws IllegalArgumentException if row or column indices is null or
-     *                                  empty
+     * empty
      */
     public BucketedMatrix getBucketedSubMatrix(int[] rowIndices, List<Integer> columnIndices, int bucketSize, String[][] dataTbl) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || (rowIndices.length == 0)) {
@@ -1772,6 +1900,17 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return new BucketedMatrix(matrix, rowIndices, colIndices, colCenters, ppms, dataTbl);
     }
 
+    public class Location {
+
+        int[] dim;
+        int[][] pt;
+
+        public Location(int[] dim, int[][] pt) {
+            this.dim = dim;
+            this.pt = pt;
+        }
+    }
+
     public Location getLocation(Vec vector, int[] indices, int iDim) {
         int[] dim = new int[nDim];
         int[][] pt = new int[nDim][2];
@@ -1804,7 +1943,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read vector from two dimensional dataset
      *
      * @param index the index of vector to read
-     * @param iDim  read values along this dimension index
+     * @param iDim read values along this dimension index
      * @return Vec the vector read from dataset
      * @throws IOException if an I/O error occurs
      */
@@ -1819,8 +1958,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read vector from a two dimensional dataset
      *
      * @param vector Store dataset values in this vec
-     * @param index  the index of vector to read
-     * @param iDim   read values along this dimension index
+     * @param index the index of vector to read
+     * @param iDim read values along this dimension index
      * @throws IOException if an I/O error occurs
      */
     public void readVector(Vec vector, int index, int iDim) throws IOException {
@@ -1831,9 +1970,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Read vector from dataset
      *
-     * @param vector  Store dataset values in this vec
+     * @param vector Store dataset values in this vec
      * @param indices the indices of vector to read
-     * @param iDim    read values along this dimension index
+     * @param iDim read values along this dimension index
      * @throws IOException if an I/O error occurs
      */
     public void readVector(Vec vector, int[] indices, int iDim) throws IOException {
@@ -1846,9 +1985,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * header
      *
      * @param vector Store data values in this vector object.
-     * @throws IOException              if an I/O error occurs
+     * @throws IOException if an I/O error occurs
      * @throws IllegalArgumentException If the vector doesn't have a location in
-     *                                  header.
+     * header.
      */
     public void readVector(Vec vector) throws IOException, IllegalArgumentException {
         if ((vector.getPt() == null) || (vector.getDim() == null)) {
@@ -1861,8 +2000,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Write vector to a two dimensional dataset
      *
      * @param vector Store dataset values in this vec
-     * @param index  the index of vector to write
-     * @param iDim   write values along this dimension index
+     * @param index the index of vector to write
+     * @param iDim write values along this dimension index
      * @throws IOException if an I/O error occurs
      */
     public void writeVector(Vec vector, int index, int iDim) throws IOException {
@@ -1877,12 +2016,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * vector is written along the specified dimension. The location at which
      * the vector is written is stored in the vector header.
      *
-     * @param vector  the vector to write
+     * @param vector the vector to write
      * @param indices The location at which to write the vector.
-     * @param iDim    Vector is written parallel to this dimension.
-     * @throws IOException              if an I/O exception occurs
+     * @param iDim Vector is written parallel to this dimension.
+     * @throws IOException if an I/O exception occurs
      * @throws IllegalArgumentException if dataset stores data in a Vec object
-     *                                  (not dataset file)
+     * (not dataset file)
      */
     public void writeVector(Vec vector, int[] indices, int iDim) throws IOException, IllegalArgumentException {
         Location location = getLocation(vector, indices, iDim);
@@ -1905,9 +2044,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Write the vector to the dataset at the location stored in the vector.
      *
      * @param vector the vector to write
-     * @throws IOException              if an I/O error occurs
+     * @throws IOException if an I/O error occurs
      * @throws IllegalArgumentException if dataset stores data in a Vec object
-     *                                  (not dataset file)
+     * (not dataset file)
      */
     public void writeVector(Vec vector) throws IOException, IllegalArgumentException {
         if ((vector.getPt() == null) || (vector.getDim() == null)) {
@@ -1921,9 +2060,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * written along the dimension specified in the first entry of the dim
      * array.
      *
-     * @param pt     index in points where vector should be written.
-     * @param dim    Specify the dimension that each entry in the pt array refers
-     *               to
+     * @param pt index in points where vector should be written.
+     * @param dim Specify the dimension that each entry in the pt array refers
+     * to
      * @param vector the vector to write
      * @throws IOException if an I/O error occurs
      */
@@ -2019,7 +2158,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         String path = null;
         if (isMemoryFile()) {
             path = file.getCanonicalPath();
-            copyDataset(path, file.getName() + ".memtmp");
+            copyDataset(path, file.getName()+".memtmp");
         }
         return path;
     }
@@ -2028,8 +2167,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Copy dataset to a new file
      *
      * @param newFileName File name of new dataset.
-     * @param key         Dataset key.
-     * @throws IOException      if an I/O error occurs
+     * @param key Dataset key.
+     * @throws IOException if an I/O error occurs
      * @throws DatasetException if an I/O error occured while creating dataset
      */
     public void copyDataset(String newFileName, String key) throws IOException, DatasetException {
@@ -2094,6 +2233,141 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         } finally {
             if (newDataset != null) {
                 newDataset.close();
+            }
+        }
+    }
+
+    /**
+     * Iterator for looping over vectors in dataset
+     */
+    private class VecIterator implements Iterator<Vec> {
+
+        ScanRegion scanRegion;
+        Vec vec;
+        int[][] pt = new int[nDim][2];
+        int[] dim = new int[nDim];
+        int origSize;
+
+        VecIterator(Dataset dataset, int iDim) {
+            dim[0] = iDim;
+            pt[0][0] = 0;
+            pt[0][1] = 0;
+            int j = 0;
+            for (int i = 1; i < nDim; i++) {
+                if (j == iDim) {
+                    j++;
+                }
+
+                dim[i] = j;
+                pt[i][0] = 0;
+                pt[i][1] = getSizeTotal(dim[i]) - 1;
+                j++;
+            }
+            pt[0][1] = getSizeTotal(iDim) - 1;
+            origSize = pt[0][1];
+            int newSize = pt[0][1] - pt[0][0] + 1;
+            if (getComplex(iDim)) {
+                newSize /= 2;
+            }
+            vec = new Vec(newSize, getComplex(iDim));
+            scanRegion = new ScanRegion(pt, dim, dataset);
+        }
+
+        @Override
+        public boolean hasNext() {
+            nextVector();
+            return vec != null;
+        }
+
+        @Override
+        public Vec next() {
+            return vec;
+        }
+
+        /**
+         *
+         */
+        public synchronized void nextVector() {
+            int[] iE = scanRegion.nextPoint();
+            if (iE.length == 0) {
+                vec = null;
+            } else {
+                pt[0][1] = origSize;
+                for (int jDim = 1; jDim < nDim; jDim++) {
+                    pt[jDim][0] = iE[jDim];
+                    pt[jDim][1] = iE[jDim];
+                }
+                try {
+                    readVectorFromDatasetFile(pt, dim, vec);
+                } catch (IOException ioE) {
+                    vec = null;
+                }
+            }
+        }
+    }
+
+    /**
+     * Iterator for looping over vectors in dataset
+     */
+    private class VecIndexIterator implements Iterator<int[][]> {
+
+        ScanRegion scanRegion;
+        int[][] pt = new int[nDim][2];
+        int[] dim = new int[nDim];
+        int origSize;
+
+        VecIndexIterator(Dataset dataset, int iDim) {
+            dim[0] = iDim;
+            pt[0][0] = 0;
+            pt[0][1] = 0;
+            int j = 0;
+            for (int i = 1; i < nDim; i++) {
+                if (j == iDim) {
+                    j++;
+                }
+
+                dim[i] = j;
+                pt[i][0] = 0;
+                pt[i][1] = getSizeTotal(dim[i]) - 1;
+                j++;
+            }
+            pt[0][1] = getSizeTotal(iDim) - 1;
+            origSize = pt[0][1];
+            scanRegion = new ScanRegion(pt, dim, dataset);
+        }
+
+        public int[] getDim() {
+            return dim;
+        }
+
+        @Override
+        public boolean hasNext() {
+            nextVector();
+            return pt != null;
+        }
+
+        @Override
+        public int[][] next() {
+            int[][] result = new int[pt.length][2];
+            for (int i = 0; i < pt.length; i++) {
+                result[i] = pt[i].clone();
+            }
+            return result;
+        }
+
+        /**
+         *
+         */
+        public synchronized void nextVector() {
+            int[] iE = scanRegion.nextPoint();
+            if (iE.length == 0) {
+                pt = null;
+            } else {
+                pt[0][1] = origSize;
+                for (int jDim = 1; jDim < nDim; jDim++) {
+                    pt[jDim][0] = iE[jDim];
+                    pt[jDim][1] = iE[jDim];
+                }
             }
         }
     }
@@ -2312,7 +2586,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             projections = new Dataset[getNDim()];
         }
         Vec projVec = new Vec(getSizeReal(iDim), getComplex(iDim));
-        projVec.setName(getName() + DatasetBase.DATASET_PROJECTION_TAG + (iDim + 1) + ".nv");
+        projVec.setName(getName() + DatasetBase.DATASET_PROJECTION_TAG + (iDim + 1) +".nv");
         readVector(projVec, 0, iDim);
         projVec.zeros();
         Iterator<Vec> iter = vectors(iDim);
@@ -2341,278 +2615,5 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     public String script() {
         return script;
-    }
-
-    public static DatasetStorageInterface createDataFile(Dataset dataset, RandomAccessFile raFile, File file, DatasetLayout newLayout, boolean writable) throws IOException {
-        DatasetStorageInterface newDataFile;
-        if (useCacheFile) {
-            newDataFile = new SubMatrixFile(dataset, file, newLayout, raFile, writable);
-        } else {
-            if (newLayout.getNDataBytes() > BIG_MAP_LIMIT) {
-                newDataFile = new BigMappedMatrixFile(dataset, file, newLayout, raFile, writable);
-            } else {
-                if (newLayout.isSubMatrix()) {
-                    newDataFile = new MappedSubMatrixFile(dataset, file, newLayout, raFile, writable);
-                } else {
-                    newDataFile = new MappedMatrixFile(dataset, file, newLayout, raFile, writable);
-                }
-            }
-        }
-        dataset.layout = newLayout;
-        return newDataFile;
-    }
-
-    public static void setBigMapLimit(long size) {
-        BIG_MAP_LIMIT = size;
-    }
-
-    /**
-     * Create a new dataset file in NMRView format.
-     *
-     * @param fullName     The full path to the new file
-     * @param title        The title to be used for the new dataset
-     * @param dimSizes     The sizes of the new dataset.
-     * @param closeDataset If true, close dataset after creating
-     * @return the created Dataset
-     * @throws DatasetException if an I/O error occurred when writing out file
-     */
-    public static Dataset createDataset(String fullName, String fileName, String title, int[] dimSizes, boolean closeDataset, boolean createFile) throws DatasetException {
-        Dataset dataset = new Dataset(fullName, fileName, title, dimSizes, closeDataset, createFile);
-        if (closeDataset) {
-            dataset.close();
-            dataset = null;
-        }
-        return dataset;
-    }
-
-    /**
-     * Create a new dataset file from the provided path by first loading as an NMRData and then converting to a dataset.
-     *
-     * @param name     The name of the new dataset.
-     * @param fullName The name of the file containing the path to the dataset file.
-     * @return A new dataset or null if no NMRData type was found.
-     * @throws IOException      if an IO exception occurs.
-     * @throws DatasetException if there is a problem creating the JCAMP dataset.
-     */
-    public static Dataset newLinkDataset(String name, String fullName) throws IOException, DatasetException {
-        File linkFile = new File(fullName);
-        log.info(fullName);
-        String fileString = Files.readString(linkFile.toPath());
-        log.info(fileString);
-        NMRData nmrData = NMRDataUtil.getNMRData(fileString);
-        log.info("{}", nmrData);
-        if (nmrData instanceof BrukerData brukerData) {
-            return brukerData.toDataset(name);
-        } else if (nmrData instanceof RS2DData rs2DData) {
-            return rs2DData.toDataset(name);
-        } else if (nmrData instanceof JCAMPData jcampData) {
-            return jcampData.toDataset(name);
-        }
-        return null;
-    }
-
-    /**
-     * Set cacheFile mode. If true data will be written to a Random access file
-     * buffered through the Storage Cache. If false, data will be written to a
-     * Random Access File using memory mapping.
-     *
-     * @param value the cacheFile mode
-     */
-    public static void useCacheFile(boolean value) {
-        useCacheFile = value;
-    }
-
-    /**
-     * Return the Dataset object with the specified name.
-     *
-     * @param fileName name of Dataset to find
-     * @return the Dataset or null if it doesn't exist
-     */
-    synchronized public static Dataset getDataset(String fileName) {
-        if (fileName == null) {
-            return null;
-        } else {
-            return (Dataset) ProjectBase.getActive().getDataset(fileName);
-        }
-    }
-
-    /**
-     * Return a list of the names of open datasets
-     *
-     * @return List of names.
-     */
-    synchronized public static List<String> names() {
-        return ProjectBase.getActive().getDatasetNames();
-    }
-
-    /**
-     * Make a Dataset file from a matrix of values
-     *
-     * @param matrix      The matrix of values
-     * @param fullName    The name of the file to create
-     * @param datasetName The name (title) of the dataset.
-     * @throws DatasetException if an I/O error occurred while creating dataset
-     * @throws IOException      if an I/O error occurs
-     */
-    public static void makeDatasetFromMatrix(RealMatrix matrix, String fullName, String datasetName) throws DatasetException, IOException {
-        int nRows = matrix.getRowDimension();
-        int nColumns = matrix.getColumnDimension();
-        int[] dimSizes = {nRows, nColumns};
-        int[] pt = new int[2];
-        Dataset dataset = createDataset(fullName, fullName, datasetName, dimSizes, false, true);
-        for (int i = 0; i < nRows; i++) {
-            for (int j = 0; j < nColumns; j++) {
-                pt[0] = i;
-                pt[1] = j;
-                dataset.writePoint(pt, matrix.getEntry(i, j));
-            }
-        }
-        dataset.close();
-    }
-
-    public class Location {
-
-        int[] dim;
-        int[][] pt;
-
-        public Location(int[] dim, int[][] pt) {
-            this.dim = dim;
-            this.pt = pt;
-        }
-    }
-
-    /**
-     * Iterator for looping over vectors in dataset
-     */
-    private class VecIterator implements Iterator<Vec> {
-
-        ScanRegion scanRegion;
-        Vec vec;
-        int[][] pt = new int[nDim][2];
-        int[] dim = new int[nDim];
-        int origSize;
-
-        VecIterator(Dataset dataset, int iDim) {
-            dim[0] = iDim;
-            pt[0][0] = 0;
-            pt[0][1] = 0;
-            int j = 0;
-            for (int i = 1; i < nDim; i++) {
-                if (j == iDim) {
-                    j++;
-                }
-
-                dim[i] = j;
-                pt[i][0] = 0;
-                pt[i][1] = getSizeTotal(dim[i]) - 1;
-                j++;
-            }
-            pt[0][1] = getSizeTotal(iDim) - 1;
-            origSize = pt[0][1];
-            int newSize = pt[0][1] - pt[0][0] + 1;
-            if (getComplex(iDim)) {
-                newSize /= 2;
-            }
-            vec = new Vec(newSize, getComplex(iDim));
-            scanRegion = new ScanRegion(pt, dim, dataset);
-        }
-
-        @Override
-        public boolean hasNext() {
-            nextVector();
-            return vec != null;
-        }
-
-        @Override
-        public Vec next() {
-            return vec;
-        }
-
-        /**
-         *
-         */
-        public synchronized void nextVector() {
-            int[] iE = scanRegion.nextPoint();
-            if (iE.length == 0) {
-                vec = null;
-            } else {
-                pt[0][1] = origSize;
-                for (int jDim = 1; jDim < nDim; jDim++) {
-                    pt[jDim][0] = iE[jDim];
-                    pt[jDim][1] = iE[jDim];
-                }
-                try {
-                    readVectorFromDatasetFile(pt, dim, vec);
-                } catch (IOException ioE) {
-                    vec = null;
-                }
-            }
-        }
-    }
-
-    /**
-     * Iterator for looping over vectors in dataset
-     */
-    private class VecIndexIterator implements Iterator<int[][]> {
-
-        ScanRegion scanRegion;
-        int[][] pt = new int[nDim][2];
-        int[] dim = new int[nDim];
-        int origSize;
-
-        VecIndexIterator(Dataset dataset, int iDim) {
-            dim[0] = iDim;
-            pt[0][0] = 0;
-            pt[0][1] = 0;
-            int j = 0;
-            for (int i = 1; i < nDim; i++) {
-                if (j == iDim) {
-                    j++;
-                }
-
-                dim[i] = j;
-                pt[i][0] = 0;
-                pt[i][1] = getSizeTotal(dim[i]) - 1;
-                j++;
-            }
-            pt[0][1] = getSizeTotal(iDim) - 1;
-            origSize = pt[0][1];
-            scanRegion = new ScanRegion(pt, dim, dataset);
-        }
-
-        public int[] getDim() {
-            return dim;
-        }
-
-        @Override
-        public boolean hasNext() {
-            nextVector();
-            return pt != null;
-        }
-
-        @Override
-        public int[][] next() {
-            int[][] result = new int[pt.length][2];
-            for (int i = 0; i < pt.length; i++) {
-                result[i] = pt[i].clone();
-            }
-            return result;
-        }
-
-        /**
-         *
-         */
-        public synchronized void nextVector() {
-            int[] iE = scanRegion.nextPoint();
-            if (iE.length == 0) {
-                pt = null;
-            } else {
-                pt[0][1] = origSize;
-                for (int jDim = 1; jDim < nDim; jDim++) {
-                    pt[jDim][0] = iE[jDim];
-                    pt[jDim][1] = iE[jDim];
-                }
-            }
-        }
     }
 }

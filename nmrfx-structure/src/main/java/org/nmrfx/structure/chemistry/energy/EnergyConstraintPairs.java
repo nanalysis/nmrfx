@@ -5,19 +5,23 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import org.nmrfx.chemistry.Atom;
+import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.*;
-
-import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
-
 /**
+ *
  * @author brucejohnson
  */
 public class EnergyConstraintPairs extends EnergyDistancePairs {
@@ -43,32 +47,6 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
             rUp2 = resize(rUp2, newSize);
         }
 
-    }
-
-    public ViolationStats getError(int i, double limitVal, double weight) {
-        Atom[] atoms = eCoords.atoms;
-        String modeType = "Dis";
-
-        int iAtom = iAtoms[i];
-        int jAtom = jAtoms[i];
-        double r2 = disSq[i];
-        double r = Math.sqrt(r2);
-        double dif = 0.0;
-        if (r2 <= rDis2[i]) {
-            r = Math.sqrt(r2);
-            dif = rDis[i] - r;
-        } else if (r2 >= rUp2[i]) {
-            r = Math.sqrt(r2);
-            dif = rUp[i] - r;
-        }
-        String result = "";
-        ViolationStats stat = null;
-        if (Math.abs(dif) > limitVal) {
-            double energy = weights[i] * weight * dif * dif;
-            stat = new ViolationStats(0, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], rUp[i], energy, eCoords);
-        }
-
-        return stat;
     }
 
     public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group, double weight) {
@@ -157,7 +135,7 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
     }
 
     public void updateGroups() {
-        for (int i = 0; i < nPairs; ) {
+        for (int i = 0; i < nPairs;) {
             groupSizes[i] = 1;
             int j = i + 1;
             while (iGroups[j] == iGroups[i] && j < nPairs) {
@@ -329,6 +307,32 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
         }
 
         return sum;
+    }
+
+    public ViolationStats getError(int i, double limitVal, double weight) {
+        Atom[] atoms = eCoords.atoms;
+        String modeType = "Dis";
+
+        int iAtom = iAtoms[i];
+        int jAtom = jAtoms[i];
+        double r2 = disSq[i];
+        double r = Math.sqrt(r2);
+        double dif = 0.0;
+        if (r2 <= rDis2[i]) {
+            r = Math.sqrt(r2);
+            dif = rDis[i] - r;
+        } else if (r2 >= rUp2[i]) {
+            r = Math.sqrt(r2);
+            dif = rUp[i] - r;
+        }
+        String result = "";
+        ViolationStats stat = null;
+        if (Math.abs(dif) > limitVal) {
+            double energy = weights[i] * weight * dif * dif;
+            stat = new ViolationStats(0, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], rUp[i], energy, eCoords);
+        }
+
+        return stat;
     }
 
     public void dumpRestraints(String fileName) {

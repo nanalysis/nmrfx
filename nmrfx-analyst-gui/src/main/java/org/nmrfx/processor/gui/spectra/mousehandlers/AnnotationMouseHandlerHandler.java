@@ -14,32 +14,6 @@ public class AnnotationMouseHandlerHandler extends MouseHandler {
         this.canvasAnnotation = canvasAnnotation;
     }
 
-    @Override
-    public void mousePressed(MouseEvent mouseEvent) {
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent mouseEvent) {
-        double x = mouseEvent.getX();
-        double y = mouseEvent.getY();
-        double[] dragStart = mouseBindings.getDragStart();
-        mouseBindings.getChart().finishAnno(dragStart, x, y, canvasAnnotation);
-    }
-
-    @Override
-    public void mouseMoved(MouseEvent mouseEvent) {
-
-    }
-
-    @Override
-    public void mouseDragged(MouseEvent mouseEvent) {
-        double x = mouseEvent.getX();
-        double y = mouseEvent.getY();
-        double[] dragStart = mouseBindings.getDragStart();
-        mouseBindings.getChart().dragAnno(dragStart, x, y, canvasAnnotation);
-
-    }
-
     public static Optional<AnnotationMouseHandlerHandler> handler(MouseBindings mouseBindings) {
         PolyChart chart = mouseBindings.getChart();
         Optional<CanvasAnnotation> anno = chart.hitAnnotation(mouseBindings.getMouseX(), mouseBindings.getMouseY(), true);
@@ -49,5 +23,32 @@ public class AnnotationMouseHandlerHandler extends MouseHandler {
             chart.refresh();
         }
         return Optional.ofNullable(handler);
+    }
+
+
+    @Override
+    public void mousePressed(MouseEvent mouseEvent) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent mouseEvent) {
+            double x = mouseEvent.getX();
+            double y = mouseEvent.getY();
+            double[] dragStart = mouseBindings.getDragStart();
+            mouseBindings.getChart().finishAnno(dragStart, x, y, canvasAnnotation);
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent mouseEvent) {
+
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent mouseEvent) {
+            double x = mouseEvent.getX();
+            double y = mouseEvent.getY();
+            double[] dragStart = mouseBindings.getDragStart();
+            mouseBindings.getChart().dragAnno(dragStart, x, y, canvasAnnotation);
+
     }
 }

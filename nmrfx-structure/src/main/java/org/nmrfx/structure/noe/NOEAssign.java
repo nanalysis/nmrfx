@@ -1,22 +1,33 @@
 package org.nmrfx.structure.noe;
 
-import org.nmrfx.chemistry.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.nmrfx.chemistry.constraints.Constraint;
 import org.nmrfx.chemistry.constraints.Noe;
 import org.nmrfx.chemistry.constraints.NoeSet;
-import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.chemistry.AtomResonance;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.IdPeak;
 import org.nmrfx.structure.chemistry.IdResult;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.MatchCriteria;
+import org.nmrfx.chemistry.SpatialSet;
+import org.nmrfx.chemistry.Util;
+import org.nmrfx.peaks.PeakList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-
 /**
+ *
  * @author brucejohnson
  */
 public class NOEAssign {
@@ -462,6 +473,27 @@ public class NOEAssign {
         noe.setPpmError(Math.exp(-1.0 * sum / 2.0));
     }
 
+    public static class AssignResult {
+
+        final int nPeaks;
+        final int nAssigned;
+        final int nMaxAmbig;
+        final int nTotal;
+
+        AssignResult(int nPeaks, int nAssigned, int nMaxAmbig, int nTotal) {
+            this.nPeaks = nPeaks;
+            this.nAssigned = nAssigned;
+            this.nMaxAmbig = nMaxAmbig;
+            this.nTotal = nTotal;
+        }
+
+        public String toString() {
+            String result = String.format("nPeaks %d nAssignd %d nMaxAmbig %d nTotal %d", nPeaks, nAssigned, nMaxAmbig, nTotal);
+            return result;
+        }
+
+    }
+
     public static void extractNoePeaksSlow(NoeSet noeSet, PeakList peakList, int mode) throws InvalidMoleculeException {
         Peak peak;
         double scale = 1.0;
@@ -543,6 +575,8 @@ public class NOEAssign {
             }
         }
     }
+    // mode == 0  only extract contraints for peaks with one assignment
+    // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
 
     public static double findMax(PeakList peakList, int dim, double mult) throws InvalidMoleculeException, IllegalArgumentException {
         boolean strict = true;
@@ -567,29 +601,6 @@ public class NOEAssign {
         }
         peakList.getSpectralDim(dim).setIdTol(bestTol);
         return bestTol;
-    }
-    // mode == 0  only extract contraints for peaks with one assignment
-    // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
-
-    public static class AssignResult {
-
-        final int nPeaks;
-        final int nAssigned;
-        final int nMaxAmbig;
-        final int nTotal;
-
-        AssignResult(int nPeaks, int nAssigned, int nMaxAmbig, int nTotal) {
-            this.nPeaks = nPeaks;
-            this.nAssigned = nAssigned;
-            this.nMaxAmbig = nMaxAmbig;
-            this.nTotal = nTotal;
-        }
-
-        public String toString() {
-            String result = String.format("nPeaks %d nAssignd %d nMaxAmbig %d nTotal %d", nPeaks, nAssigned, nMaxAmbig, nTotal);
-            return result;
-        }
-
     }
 
 }

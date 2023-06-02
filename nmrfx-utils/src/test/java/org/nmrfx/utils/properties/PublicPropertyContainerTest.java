@@ -11,6 +11,18 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 public class PublicPropertyContainerTest {
+    private static class DummyContainer implements PublicPropertyContainer {
+        private final BooleanProperty bool = new SimpleBooleanProperty(this, "bool", true);
+        private final IntegerProperty integer = new SimpleIntegerProperty(this, "integer", 42);
+        private final StringProperty string = new SimpleStringProperty(this, "string", "initial");
+        private final ColorProperty color = new ColorProperty(this, "color", Color.BLACK);
+
+        @Override
+        public Collection<Property<?>> getPublicProperties() {
+            return Set.of(bool, integer, string, color);
+        }
+    }
+
     @Test
     public void setUnknownProperty() {
         var container = new DummyContainer();
@@ -63,17 +75,5 @@ public class PublicPropertyContainerTest {
         container.setPublicPropertyValue("color", null);
         assertNull("color is set to null", container.color.get());
         assertFalse("null colors are ignored", container.getPublicPropertiesValues().containsKey("color"));
-    }
-
-    private static class DummyContainer implements PublicPropertyContainer {
-        private final BooleanProperty bool = new SimpleBooleanProperty(this, "bool", true);
-        private final IntegerProperty integer = new SimpleIntegerProperty(this, "integer", 42);
-        private final StringProperty string = new SimpleStringProperty(this, "string", "initial");
-        private final ColorProperty color = new ColorProperty(this, "color", Color.BLACK);
-
-        @Override
-        public Collection<Property<?>> getPublicProperties() {
-            return Set.of(bool, integer, string, color);
-        }
     }
 }

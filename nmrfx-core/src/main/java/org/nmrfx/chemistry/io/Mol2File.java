@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
+ *
  * @author brucejohnson
  */
 public class Mol2File {
@@ -191,10 +192,10 @@ public class Mol2File {
                 }
             }
             /*
-             * String stereoString = string.substring(39, 42).trim(); int
-             * stereoValue = 0; try { stereoValue =
-             * Integer.parseInt(stereoString); } catch
-             * (NumberFormatException nfE) { } atom.setStereo(stereoValue);
+                 * String stereoString = string.substring(39, 42).trim(); int
+                 * stereoValue = 0; try { stereoValue =
+                 * Integer.parseInt(stereoString); } catch
+                 * (NumberFormatException nfE) { } atom.setStereo(stereoValue);
              */
 
             atom.entity = compound;
@@ -321,8 +322,7 @@ public class Mol2File {
         if (molecule != null) {
             sdFile.getMolName(fileName);
             String compoundName = sdFile.molName;
-            compound = residue != null ? residue : new Compound("1", compoundName);
-            ;
+            compound = residue != null ? residue : new Compound("1", compoundName);;
             compound.molecule = molecule;
             compound.assemblyID = molecule.entityLabels.size() + 1;
             if (residue == null) {

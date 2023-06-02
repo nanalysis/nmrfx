@@ -15,38 +15,6 @@ public class PeakMouseHandlerHandler extends MouseHandler {
         super(mouseBindings);
     }
 
-    @Override
-    public void mousePressed(MouseEvent mouseEvent) {
-        widthMode = mouseEvent.isAltDown() || mouseEvent.isControlDown();
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent mouseEvent) {
-        double x = mouseEvent.getX();
-        double y = mouseEvent.getY();
-        double[] dragStart = mouseBindings.getDragStart();
-        dragStart[0] = x;
-        dragStart[1] = y;
-        if (mouseBindings.getMoved()) {
-            mouseBindings.getChart().dragPeak(dragStart, x, y, widthMode);
-        }
-    }
-
-    @Override
-    public void mouseMoved(MouseEvent mouseEvent) {
-
-    }
-
-    @Override
-    public void mouseDragged(MouseEvent mouseEvent) {
-        if (mouseBindings.getMoved()) {
-            double x = mouseEvent.getX();
-            double y = mouseEvent.getY();
-            double[] dragStart = mouseBindings.getDragStart();
-            mouseBindings.getChart().dragPeak(dragStart, x, y, widthMode);
-        }
-    }
-
     public static Optional<PeakMouseHandlerHandler> handler(MouseBindings mouseBindings) {
         PolyChart chart = mouseBindings.getChart();
 
@@ -88,5 +56,37 @@ public class PeakMouseHandlerHandler extends MouseHandler {
             handler.widthMode = false;
         }
         return Optional.ofNullable(handler);
+    }
+
+    @Override
+    public void mousePressed(MouseEvent mouseEvent) {
+        widthMode = mouseEvent.isAltDown() || mouseEvent.isControlDown();
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent mouseEvent) {
+        double x = mouseEvent.getX();
+        double y = mouseEvent.getY();
+        double[] dragStart = mouseBindings.getDragStart();
+        dragStart[0] = x;
+        dragStart[1] = y;
+        if (mouseBindings.getMoved()) {
+            mouseBindings.getChart().dragPeak(dragStart, x, y, widthMode);
+        }
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent mouseEvent) {
+
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent mouseEvent) {
+        if (mouseBindings.getMoved()) {
+            double x = mouseEvent.getX();
+            double y = mouseEvent.getY();
+            double[] dragStart = mouseBindings.getDragStart();
+            mouseBindings.getChart().dragPeak(dragStart, x, y, widthMode);
+        }
     }
 }

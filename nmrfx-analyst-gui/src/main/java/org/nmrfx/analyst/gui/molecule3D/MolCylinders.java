@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
+import java.util.*;
 import javafx.collections.ObservableList;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
@@ -11,20 +12,14 @@ import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
+import javax.vecmath.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.Bond;
-
-import javax.vecmath.Vector3d;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class MolCylinders extends Group implements MolItem {
 
     static final private double minSelRadius = 0.1;
-    private final static double DEGTORAD = 180.0 / Math.PI;
-    static Map parameterMap = new TreeMap();
+
     String molName = null;
     int iStructure = 0;
     int xDivisions = 15;
@@ -33,6 +28,8 @@ public class MolCylinders extends Group implements MolItem {
     List<BondLine> bondLines = null;
     Vector3d a = new Vector3d(0.0, 0.0, 0.0);
     Vector3d b = new Vector3d(0.0, 0.0, 0.0);
+    static Map parameterMap = new TreeMap();
+    private final static double DEGTORAD = 180.0 / Math.PI;
 
     public MolCylinders(String molName, List<Bond> bonds, List<BondLine> bondLines, double radius, String tag) {
         this.molName = molName;
@@ -98,6 +95,12 @@ public class MolCylinders extends Group implements MolItem {
             }
         }
         return result;
+
+    }
+
+    enum CylPos {
+
+        TOP, BOTTOM, CENTER, MISS
 
     }
 
@@ -189,6 +192,7 @@ public class MolCylinders extends Group implements MolItem {
     }
 
     /**
+     *
      * @param radius
      */
     public void setRadius(double radius) {
@@ -423,12 +427,6 @@ public class MolCylinders extends Group implements MolItem {
         // rotate the cylinder into correct orientation
         Transform transform = rotateMatrix.createConcatenation(rotateFix);
         return transform;
-    }
-
-    enum CylPos {
-
-        TOP, BOTTOM, CENTER, MISS
-
     }
 
 }

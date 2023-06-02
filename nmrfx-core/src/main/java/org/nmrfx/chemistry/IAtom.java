@@ -1,9 +1,10 @@
 package org.nmrfx.chemistry;
 
-import javax.vecmath.Point2d;
 import java.util.List;
+import javax.vecmath.Point2d;
 
 /**
+ *
  * @author Bruce Johnson
  */
 public interface IAtom {
@@ -18,9 +19,9 @@ public interface IAtom {
 
     public void setPoint2d(Point2d pt);
 
-    public int getID();
-
     public void setID(int value);
+
+    public int getID();
 
     public void setProperty(String name, Object value);
 
@@ -29,7 +30,7 @@ public interface IAtom {
     public String getSymbol();
 
     public String getHybridization();
-
+    
     public List<IBond> getBonds();
 
     Atom add(String name, String elementName, Order order);

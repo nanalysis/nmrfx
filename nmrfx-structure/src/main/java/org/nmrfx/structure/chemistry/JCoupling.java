@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,13 +25,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
+ *
  * @author brucejohnson
  */
 public class JCoupling {
 
     final ArrayList<SpatialSet> spatialSets;
-    final int shell;
     Double dihedral = null;
+    final int shell;
 
     public JCoupling(final SpatialSet[] spatialSets, final int shell) {
         this.spatialSets = new ArrayList<SpatialSet>(Arrays.asList(spatialSets));
@@ -41,51 +42,6 @@ public class JCoupling {
     public JCoupling(final ArrayList<SpatialSet> spatialSets, final int shell) {
         this.spatialSets = spatialSets;
         this.shell = shell;
-    }
-
-    public void updateDihedral(final int structureNum) {
-        dihedral = null;
-        if (spatialSets.size() == 4) {
-            Point3[] pts = new Point3[4];
-            int i = 0;
-            for (SpatialSet spSet : spatialSets) {
-                pts[i++] = spSet.getPoint(structureNum);
-                if (pts[i] == null) {
-                    break;
-                }
-            }
-            dihedral = (Atom.calcDihedral(pts[0], pts[1], pts[2], pts[3]));
-
-        }
-    }
-
-    public Double getDihedral() {
-        if (dihedral == null) {
-            updateDihedral(0);
-        }
-        return dihedral;
-    }
-
-    public Atom getAtom(int index) {
-        return spatialSets.get(index).atom;
-    }
-
-    public int getNAtoms() {
-        return spatialSets.size();
-    }
-
-    public int getShell() {
-        return shell;
-    }
-
-    public String toString() {
-        StringBuilder sBuilder = new StringBuilder();
-        for (SpatialSet sSet : spatialSets) {
-            sBuilder.append(sSet.atom.getFullName());
-            sBuilder.append(' ');
-        }
-        sBuilder.append(shell);
-        return sBuilder.toString();
     }
 
     public static JCoupling couplingFromAtoms(final ArrayList<Atom> atoms, final int shell) {
@@ -117,5 +73,50 @@ public class JCoupling {
             i++;
         }
         return new JCoupling(localSets, shell);
+    }
+
+    public void updateDihedral(final int structureNum) {
+        dihedral = null;
+        if (spatialSets.size() == 4) {
+            Point3[] pts = new Point3[4];
+            int i = 0;
+            for (SpatialSet spSet : spatialSets) {
+                pts[i++] = spSet.getPoint(structureNum);
+                if (pts[i] == null) {
+                    break;
+                }
+            }
+            dihedral = (Atom.calcDihedral(pts[0], pts[1], pts[2], pts[3]));
+
+        }
+    }
+
+    public Double getDihedral() {
+        if (dihedral == null) {
+            updateDihedral(0);
+        }
+        return dihedral;
+    }
+
+    public Atom getAtom(int index) {
+        return spatialSets.get(index).atom;
+    }
+    
+    public int getNAtoms() {
+        return spatialSets.size();
+    }
+    
+    public int getShell() {
+        return shell;
+    }
+
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        for (SpatialSet sSet : spatialSets) {
+            sBuilder.append(sSet.atom.getFullName());
+            sBuilder.append(' ');
+        }
+        sBuilder.append(shell);
+        return sBuilder.toString();
     }
 }

@@ -1,29 +1,195 @@
 package org.nmrfx.structure.chemistry.predict;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.TreeSet;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.stream.Stream;
+
 import org.apache.commons.collections4.bag.HashBag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.*;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.util.*;
-import java.util.stream.Stream;
 
 public class HosePrediction {
 
     private static final Logger log = LoggerFactory.getLogger(HosePrediction.class);
     static Charset charset = Charset.forName("US-ASCII");
-    static HosePrediction defaultPredictor = null;
-    static HosePrediction defaultPredictorN = null;
-    static int maxShells = 5;
     int nShellGroups = 3;
     byte[] buffer = null;
     int index = 0;
     ArrayList<Integer> hoseList = new ArrayList<>();
     List<Integer>[] shellIndices = new ArrayList[nShellGroups];
     List<Integer> codeStarts = new ArrayList<>();
+    static HosePrediction defaultPredictor = null;
+    static HosePrediction defaultPredictorN = null;
     boolean stereoMode = false;
+    static int maxShells = 5;
+
+    public class HOSEComparator implements Comparator {
+
+        @Override
+        public int compare(Object o1, Object o2) {
+            String code1;
+            String code2;
+            if (o1 instanceof HOSEPPM) {
+                HOSEPPM hosePPM1 = (HOSEPPM) o1;
+                code1 = hosePPM1.code;
+            } else if (o1 instanceof Integer) {
+                Integer i1 = (Integer) o1;
+                HOSEPPM hosePPM1 = getHose(i1);
+                if (hosePPM1 == null) {
+                    return -1;
+                }
+                code1 = hosePPM1.code;
+            } else {
+                code1 = (String) o1;
+            }
+
+            if (o2 instanceof HOSEPPM) {
+                HOSEPPM hosePPM2 = (HOSEPPM) o2;
+                code2 = hosePPM2.code;
+            } else if (o2 instanceof Integer) {
+                Integer i2 = (Integer) o2;
+                HOSEPPM hosePPM2 = getHose(i2);
+                if (hosePPM2 == null) {
+                    return 1;
+                }
+                code2 = hosePPM2.code;
+            } else {
+                code2 = (String) o2;
+            }
+            return code1.compareTo(code2);
+        }
+    }
+
+    public static class HOSEPPM {
+
+        final String[] shells;
+        final String code;
+        final Double ppmH;
+        final Double ppmC;
+        ArrayList<Integer> upDownList = null;
+
+        HOSEPPM(String code) {
+            this.code = code;
+            this.shells = stringToShells(code);
+            this.ppmH = null;
+            this.ppmC = null;
+            upDownList = new ArrayList<>();
+        }
+
+        HOSEPPM(String code, ArrayList<Integer> upDownList) {
+            this.code = code;
+            this.shells = stringToShells(code);
+            this.ppmH = null;
+            this.ppmC = null;
+            this.upDownList = upDownList;
+        }
+
+        HOSEPPM(String code, String[] shells, Double ppmC, Double ppmH, ArrayList<Integer> upDownList) {
+            this.code = code;
+            this.shells = shells;
+            this.ppmC = ppmC;
+            this.ppmH = ppmH;
+            this.upDownList = upDownList;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        final static public String[] stringToShells(String s) {
+            String[] sShells = s.split("/");
+            if (sShells.length != maxShells) {
+                String[] nShells = new String[maxShells];
+                int i = 0;
+                for (String shell : sShells) {
+                    nShells[i++] = shell;
+                }
+                for (i = sShells.length; i < maxShells; i++) {
+                    nShells[i] = "";
+                }
+                sShells = nShells;
+            }
+            return sShells;
+        }
+
+        public boolean stereoEquals(HOSEPPM hosePPM) {
+            boolean equals = true;
+            int thisSize = upDownList.size();
+            int thatSize = hosePPM.upDownList.size();
+            if ((thisSize != 0) && (thatSize != 0)) {
+                if (thisSize != thatSize) {
+                    equals = false;
+                } else {
+                    boolean sameEquals = true;
+                    boolean revEquals = true;
+                    for (int i = 0; i < thisSize; i++) {
+                        if (!Objects.equals(upDownList.get(i), hosePPM.upDownList.get(i))) {
+                            sameEquals = false;
+                        }
+                        if (upDownList.get(i) != -hosePPM.upDownList.get(i)) {
+                            revEquals = false;
+                        }
+                        if (!sameEquals && !revEquals) {
+                            equals = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            return equals;
+        }
+
+        public HashBag getShellBag(final int iShell) {
+            HashBag bag = new HashBag();
+            if (iShell >= shells.length) {
+                return bag;
+            }
+            String shell = shells[iShell];
+            int shellLength = shell.length();
+
+            for (int i = 0; i < shellLength; i++) {
+                char shellChar = shell.charAt(i);
+                if ((shellChar >= 'A') && (shellChar <= 'Z')) {
+                    String element = "" + shellChar;
+                    if (i < (shellLength - 1)) {
+                        char shellChar2 = shell.charAt(i + 1);
+                        if ((shellChar2 >= 'a') && (shellChar2 <= 'z')) {
+                            element = element + shellChar2;
+                        }
+                    }
+                    if (i > 0) {
+                        int bondIndex = "=%*".indexOf(shell.charAt(i - 1)) + 2;
+                        element = element + bondIndex;
+                    }
+                    bag.add(element);
+                }
+            }
+            return bag;
+        }
+
+        public int shellEquals(HOSEPPM hosePPM) {
+            int nEqual = 0;
+            for (int i = 0; i < shells.length; i++) {
+                if (!shells[i].equals(hosePPM.shells[i])) {
+                    break;
+                }
+                nEqual++;
+            }
+            return nEqual;
+        }
+
+        @Override
+        public String toString() {
+            return code + "  " + ppmC + " " + ppmH;
+        }
+    }
 
     public double compareBags(HashBag bag1, HashBag bag2) {
         if ((bag1.isEmpty()) && (bag2.isEmpty())) {
@@ -46,6 +212,30 @@ public class HosePrediction {
             distance = numer / denom;
         }
         return distance;
+    }
+
+    static ArrayList<Integer> compressStereo(String hoseStereo) {
+        int shell4Limit = hoseStereo.indexOf(")");
+        ArrayList<Integer> stereoList = new ArrayList<>();
+        int j = 0;
+        for (int i = 0; i < shell4Limit; i++) {
+            switch (hoseStereo.charAt(i)) {
+                case '1':
+                    stereoList.add(j);
+                    j++;
+                    break;
+                case '2':
+                    stereoList.add(-j);
+                    j++;
+                    break;
+                case '0':
+                    j++;
+                    break;
+                default:
+                    break;
+            }
+        }
+        return stereoList;
     }
 
     public boolean getStereoMode() {
@@ -333,8 +523,8 @@ public class HosePrediction {
         int[] nValues = new int[2];
         int[] nNulls = new int[2];
         int[] nViols = new int[2];
-        try (Stream<String> lines = Files.lines(new File(validate).toPath())) {
-            lines.forEach(line -> {
+        try (Stream<String> lines = Files.lines(new File(validate).toPath())){
+             lines.forEach(line -> {
                 cPPMs.clear();
                 hPPMs.clear();
                 String[] values = line.split("\t");
@@ -425,7 +615,7 @@ public class HosePrediction {
         return getHoseAtPosition(index);
     }
 
-    HOSEPPM getHoseAtPosition(int position) {
+     HOSEPPM getHoseAtPosition(int position) {
         StringBuilder hoseCode = new StringBuilder();
         if (position >= buffer.length) {
             return null;
@@ -483,13 +673,13 @@ public class HosePrediction {
     }
 
     public void openData(String fileName, boolean resourceMode) {
-        try (InputStream iStream = resourceMode ? ClassLoader.getSystemResourceAsStream(fileName) : new FileInputStream(fileName)) {
+        try (InputStream iStream = resourceMode ? ClassLoader.getSystemResourceAsStream(fileName) : new FileInputStream(fileName)){
             if (resourceMode) {
                 ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
                 int nRead;
                 byte[] data = new byte[16384];
                 while ((nRead = iStream.read(data, 0, data.length)) != -1) {
-                    for (int i = 0; i < nRead; i++) {
+                    for (int i=0;i<nRead;i++) {
                         if (data[i] != '\r') {
                             byteBuffer.write(data[i]);
                         }
@@ -506,41 +696,6 @@ public class HosePrediction {
             log.warn(ioE.getMessage(), ioE);
         }
     }
-
-    public void dump() {
-        int i = 0;
-        for (Integer j : hoseList) {
-            StringBuilder hoseStr = new StringBuilder();
-            hoseStr.append(i).append(" ").append(j).append(" ").append(codeStarts.get(j)).append(" ").append(getHose(j));
-            System.out.println(hoseStr);
-            i++;
-        }
-    }
-
-    static ArrayList<Integer> compressStereo(String hoseStereo) {
-        int shell4Limit = hoseStereo.indexOf(")");
-        ArrayList<Integer> stereoList = new ArrayList<>();
-        int j = 0;
-        for (int i = 0; i < shell4Limit; i++) {
-            switch (hoseStereo.charAt(i)) {
-                case '1':
-                    stereoList.add(j);
-                    j++;
-                    break;
-                case '2':
-                    stereoList.add(-j);
-                    j++;
-                    break;
-                case '0':
-                    j++;
-                    break;
-                default:
-                    break;
-            }
-        }
-        return stereoList;
-    }
-
     // used from Python to sort hose code file
     public static void sortData(String fileName) throws IOException {
         List<String[]> lines = new ArrayList<>();
@@ -562,6 +717,7 @@ public class HosePrediction {
             });
         }
     }
+
 
     public static HosePrediction getPredictor() {
         HosePrediction hosePredictor = new HosePrediction();
@@ -589,6 +745,16 @@ public class HosePrediction {
             defaultPredictorN = getPredictorN();
         }
         return defaultPredictorN;
+    }
+
+    public void dump() {
+        int i = 0;
+        for (Integer j : hoseList) {
+            StringBuilder hoseStr = new StringBuilder();
+            hoseStr.append(i).append(" ").append(j).append(" ").append(codeStarts.get(j)).append(" ").append(getHose(j));
+            System.out.println(hoseStr);
+            i++;
+        }
     }
 
     public static void test(String hoseString) {
@@ -619,167 +785,6 @@ public class HosePrediction {
         System.out.println("predict");
         PredictResult pResult = hosePredictor.predict(hosePPM, "13C");
         System.out.println(pResult.cStat.nValues + " " + pResult.cStat.range + " " + pResult.cStat.dStat.getPercentile(50.0));
-    }
-
-    public static class HOSEPPM {
-
-        final String[] shells;
-        final String code;
-        final Double ppmH;
-        final Double ppmC;
-        ArrayList<Integer> upDownList = null;
-
-        HOSEPPM(String code) {
-            this.code = code;
-            this.shells = stringToShells(code);
-            this.ppmH = null;
-            this.ppmC = null;
-            upDownList = new ArrayList<>();
-        }
-
-        HOSEPPM(String code, ArrayList<Integer> upDownList) {
-            this.code = code;
-            this.shells = stringToShells(code);
-            this.ppmH = null;
-            this.ppmC = null;
-            this.upDownList = upDownList;
-        }
-
-        HOSEPPM(String code, String[] shells, Double ppmC, Double ppmH, ArrayList<Integer> upDownList) {
-            this.code = code;
-            this.shells = shells;
-            this.ppmC = ppmC;
-            this.ppmH = ppmH;
-            this.upDownList = upDownList;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public boolean stereoEquals(HOSEPPM hosePPM) {
-            boolean equals = true;
-            int thisSize = upDownList.size();
-            int thatSize = hosePPM.upDownList.size();
-            if ((thisSize != 0) && (thatSize != 0)) {
-                if (thisSize != thatSize) {
-                    equals = false;
-                } else {
-                    boolean sameEquals = true;
-                    boolean revEquals = true;
-                    for (int i = 0; i < thisSize; i++) {
-                        if (!Objects.equals(upDownList.get(i), hosePPM.upDownList.get(i))) {
-                            sameEquals = false;
-                        }
-                        if (upDownList.get(i) != -hosePPM.upDownList.get(i)) {
-                            revEquals = false;
-                        }
-                        if (!sameEquals && !revEquals) {
-                            equals = false;
-                            break;
-                        }
-                    }
-                }
-            }
-            return equals;
-        }
-
-        public HashBag getShellBag(final int iShell) {
-            HashBag bag = new HashBag();
-            if (iShell >= shells.length) {
-                return bag;
-            }
-            String shell = shells[iShell];
-            int shellLength = shell.length();
-
-            for (int i = 0; i < shellLength; i++) {
-                char shellChar = shell.charAt(i);
-                if ((shellChar >= 'A') && (shellChar <= 'Z')) {
-                    String element = "" + shellChar;
-                    if (i < (shellLength - 1)) {
-                        char shellChar2 = shell.charAt(i + 1);
-                        if ((shellChar2 >= 'a') && (shellChar2 <= 'z')) {
-                            element = element + shellChar2;
-                        }
-                    }
-                    if (i > 0) {
-                        int bondIndex = "=%*".indexOf(shell.charAt(i - 1)) + 2;
-                        element = element + bondIndex;
-                    }
-                    bag.add(element);
-                }
-            }
-            return bag;
-        }
-
-        public int shellEquals(HOSEPPM hosePPM) {
-            int nEqual = 0;
-            for (int i = 0; i < shells.length; i++) {
-                if (!shells[i].equals(hosePPM.shells[i])) {
-                    break;
-                }
-                nEqual++;
-            }
-            return nEqual;
-        }
-
-        @Override
-        public String toString() {
-            return code + "  " + ppmC + " " + ppmH;
-        }
-
-        final static public String[] stringToShells(String s) {
-            String[] sShells = s.split("/");
-            if (sShells.length != maxShells) {
-                String[] nShells = new String[maxShells];
-                int i = 0;
-                for (String shell : sShells) {
-                    nShells[i++] = shell;
-                }
-                for (i = sShells.length; i < maxShells; i++) {
-                    nShells[i] = "";
-                }
-                sShells = nShells;
-            }
-            return sShells;
-        }
-    }
-
-    public class HOSEComparator implements Comparator {
-
-        @Override
-        public int compare(Object o1, Object o2) {
-            String code1;
-            String code2;
-            if (o1 instanceof HOSEPPM) {
-                HOSEPPM hosePPM1 = (HOSEPPM) o1;
-                code1 = hosePPM1.code;
-            } else if (o1 instanceof Integer) {
-                Integer i1 = (Integer) o1;
-                HOSEPPM hosePPM1 = getHose(i1);
-                if (hosePPM1 == null) {
-                    return -1;
-                }
-                code1 = hosePPM1.code;
-            } else {
-                code1 = (String) o1;
-            }
-
-            if (o2 instanceof HOSEPPM) {
-                HOSEPPM hosePPM2 = (HOSEPPM) o2;
-                code2 = hosePPM2.code;
-            } else if (o2 instanceof Integer) {
-                Integer i2 = (Integer) o2;
-                HOSEPPM hosePPM2 = getHose(i2);
-                if (hosePPM2 == null) {
-                    return 1;
-                }
-                code2 = hosePPM2.code;
-            } else {
-                code2 = (String) o2;
-            }
-            return code1.compareTo(code2);
-        }
     }
 
     public static void main(String[] args) {

@@ -8,6 +8,29 @@ import java.util.Objects;
 public class PeakPath implements Comparable<PeakPath> {
 
     private final PeakPaths peakPaths;
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 97 * hash + Objects.hashCode(this.firstPeak);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final PeakPath other = (PeakPath) obj;
+        return Objects.equals(this.firstPeak, other.firstPeak);
+    }
+
     Peak firstPeak;
     List<PeakDistance> peakDists = new ArrayList<>();
     double radius;
@@ -15,6 +38,7 @@ public class PeakPath implements Comparable<PeakPath> {
     boolean active = false;
     double[] pars = null;
     double[] parErrs = null;
+
     public PeakPath(PeakPaths peakPaths, List<PeakDistance> path, double dis) {
         this.peakPaths = peakPaths;
         peakDists.addAll(path);
@@ -22,7 +46,7 @@ public class PeakPath implements Comparable<PeakPath> {
         radius = dis;
     }
 
-    public PeakPath(PeakPaths peakPaths, Peak peak) {
+   public PeakPath(PeakPaths peakPaths, Peak peak) {
         this.peakPaths = peakPaths;
         firstPeak = peak;
         double[] deltas = new double[peakPaths.tols.length];
@@ -48,51 +72,9 @@ public class PeakPath implements Comparable<PeakPath> {
         radius = maxDis;
     }
 
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 97 * hash + Objects.hashCode(this.firstPeak);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final PeakPath other = (PeakPath) obj;
-        return Objects.equals(this.firstPeak, other.firstPeak);
-    }
-
-    public String toString() {
-        StringBuilder sBuilder = new StringBuilder();
-        for (PeakDistance peakDis : peakDists) {
-            if (sBuilder.length() != 0) {
-                sBuilder.append(" ");
-            }
-            if (peakDis == null) {
-                sBuilder.append("empty");
-            } else {
-                sBuilder.append(peakDis.peak.getName());
-                sBuilder.append(" ");
-                sBuilder.append(String.format("%.3f", peakDis.distance));
-            }
-        }
-        sBuilder.append(" ");
-        sBuilder.append(String.format("%.3f %b %b %b", radius, confirmed(), isActive(), hasPars()));
-        return sBuilder.toString();
-    }
-
     public PeakPaths getPeakPaths() {
         return peakPaths;
     }
-
     public void refresh() {
         for (int i = 0; i < peakDists.size(); i++) {
             PeakDistance peakDis = peakDists.get(i);
@@ -118,12 +100,12 @@ public class PeakPath implements Comparable<PeakPath> {
         return confirmed;
     }
 
-    public boolean isActive() {
-        return active;
-    }
-
     public void setActive(boolean state) {
         active = state;
+    }
+
+    public boolean isActive() {
+        return active;
     }
 
     @Override
@@ -175,6 +157,14 @@ public class PeakPath implements Comparable<PeakPath> {
         return firstPeak;
     }
 
+    public void setFitPars(double[] pars) {
+        this.pars = pars != null ? pars.clone() : null;
+    }
+
+    public void setFitErrs(double[] parErrs) {
+        this.parErrs = parErrs != null ? parErrs.clone() : null;
+    }
+
     public int getPeak() {
         return firstPeak.getIdNum();
     }
@@ -195,16 +185,8 @@ public class PeakPath implements Comparable<PeakPath> {
         return pars;
     }
 
-    public void setFitPars(double[] pars) {
-        this.pars = pars != null ? pars.clone() : null;
-    }
-
     public double[] getFitErrs() {
         return parErrs;
-    }
-
-    public void setFitErrs(double[] parErrs) {
-        this.parErrs = parErrs != null ? parErrs.clone() : null;
     }
 
     public double getRadius() {
@@ -312,6 +294,25 @@ public class PeakPath implements Comparable<PeakPath> {
                 sBuilder.append(peakDis.peak.getIdNum());
             }
         }
+        return sBuilder.toString();
+    }
+
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        for (PeakDistance peakDis : peakDists) {
+            if (sBuilder.length() != 0) {
+                sBuilder.append(" ");
+            }
+            if (peakDis == null) {
+                sBuilder.append("empty");
+            } else {
+                sBuilder.append(peakDis.peak.getName());
+                sBuilder.append(" ");
+                sBuilder.append(String.format("%.3f", peakDis.distance));
+            }
+        }
+        sBuilder.append(" ");
+        sBuilder.append(String.format("%.3f %b %b %b", radius, confirmed(), isActive(), hasPars()));
         return sBuilder.toString();
     }
 }

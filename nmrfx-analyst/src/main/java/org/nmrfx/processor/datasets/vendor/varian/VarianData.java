@@ -49,11 +49,42 @@ import java.util.*;
 
 /**
  * @author bfetler
- * <p>
+ *
  * access through NMRDataUtil
  */
 public class VarianData implements NMRData {
     private static final Logger log = LoggerFactory.getLogger(VarianData.class);
+
+    DateTimeFormatter vTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");//20050804T233538
+    DateTimeFormatter vDateFormatter = DateTimeFormatter.ofPattern("MMM ppd yyyy");// Feb  4 2000
+    private final static int MAXDIM = 10;
+
+    private final String fpath;
+    private int nblocks = 0;
+    private int np;
+    private boolean isSpectrum = false;
+    private int ebytes = 0, tbytes = 0, nbheaders = 0, ntraces = 0;
+    private short status = 0;
+    private boolean isFloat = false;
+    private boolean isShort = false;
+    private FileChannel fc = null;
+    private HashMap<String, String> parMap = null;
+    private String[] acqOrder;
+    // fixme dynamically determine size
+    private final int arraysize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
+    private final Double[] Ref = new Double[MAXDIM];
+    private final Double[] Sw = new Double[MAXDIM];
+    private final Double[] Sf = new Double[MAXDIM];
+    private String text = null;
+    private SampleSchedule sampleSchedule = null;
+    Integer nDimVal = null;
+    int[] sizes = null;
+    int[] maxSizes = null;
+    double scale = 1.0e6;
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
+    List<Double> arrayValues = new ArrayList<>();
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
+
     static final String PAR_LIST = "acqdim apptype array arraydim axis axisf procdim "
             + "solvent seqfil pslabel sfrq dfrq dfrq2 dfrq3 sw sw1 sw2 sw3 "
             + "tn dn dn2 dn3 np ni ni2 ni3 f1coef f2coef f2coef "
@@ -65,34 +96,6 @@ public class VarianData implements NMRData {
             + "proc1 lpalg1 lpopt1 lpfilt1 lpnupts1 lpext1 strtlp1 strtext1 "
             + "proc2 lpalg2 lpopt2 lpfilt2 lpnupts2 lpext2 strtlp2 strtext2 "
             + "proc3 lpalg3 lpopt3 lpfilt3 lpnupts3 lpext3 strtlp3 strtext3 temp";
-    private final static int MAXDIM = 10;
-    private final String fpath;
-    // fixme dynamically determine size
-    private final int arraysize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
-    private final Double[] Ref = new Double[MAXDIM];
-    private final Double[] Sw = new Double[MAXDIM];
-    private final Double[] Sf = new Double[MAXDIM];
-    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
-    DateTimeFormatter vTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");//20050804T233538
-    DateTimeFormatter vDateFormatter = DateTimeFormatter.ofPattern("MMM ppd yyyy");// Feb  4 2000
-    Integer nDimVal = null;
-    int[] sizes = null;
-    int[] maxSizes = null;
-    double scale = 1.0e6;
-    List<Double> arrayValues = new ArrayList<>();
-    private int nblocks = 0;
-    private int np;
-    private boolean isSpectrum = false;
-    private int ebytes = 0, tbytes = 0, nbheaders = 0, ntraces = 0;
-    private short status = 0;
-    private boolean isFloat = false;
-    private boolean isShort = false;
-    private FileChannel fc = null;
-    private HashMap<String, String> parMap = null;
-    private String[] acqOrder;
-    private String text = null;
-    private SampleSchedule sampleSchedule = null;
-    private DatasetType preferredDatasetType = DatasetType.NMRFX;
 
     /**
      * open Varian parameter and data files
@@ -121,9 +124,70 @@ public class VarianData implements NMRData {
         }
     }
 
+    public static boolean findFID(StringBuilder bpath) {
+        boolean found = false;
+        if (findFIDFiles(bpath.toString())) {
+            // case: select .fid directory
+            found = true;
+        } else {
+            // case: select 'fid' or 'procpar' file
+            File f = new File(bpath.toString());
+            String s = f.getParent();
+            if (findFIDFiles(s)) {
+                int len = bpath.toString().length();
+                bpath = bpath.delete(s.length(), len);
+                bpath.trimToSize();
+                found = true;
+            }
+        }
+        return found;
+    } // findFID
+
+    private static boolean findFIDFiles(String dpath) {
+        boolean found = false;
+        if (dpath.endsWith(".fid" + File.separator)
+                || dpath.endsWith(".fid")) {
+            if ((new File(dpath + File.separator + "fid")).exists()) {
+                if ((new File(dpath + File.separator + "procpar")).exists()) {
+                    found = true;
+                }
+            }
+        }
+        return found;
+    } // findFIDFiles
+
+    @Override
+    public String toString() {
+        return fpath;
+    }
+
+    @Override
+    public String getVendor() {
+        return "varian";
+    }
+
     @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        for (Map.Entry<String, String> par : parMap.entrySet()) {
+            vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
+        }
+        return vendorPars;
     }
 
     @Override
@@ -154,15 +218,6 @@ public class VarianData implements NMRData {
     }
 
     @Override
-    public List<VendorPar> getPars() {
-        List<VendorPar> vendorPars = new ArrayList<>();
-        for (Map.Entry<String, String> par : parMap.entrySet()) {
-            vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
-        }
-        return vendorPars;
-    }
-
-    @Override
     public int getNVectors() {  // number of vectors
         return nblocks;
     }
@@ -170,6 +225,15 @@ public class VarianData implements NMRData {
     @Override
     public int getNPoints() {  // points per vector
         return np / 2;
+    }
+
+    public boolean isSpectrum() {
+        return isSpectrum;
+    }
+  @Override
+    public String getFTType(int iDim) {
+        // fixme
+        return  "ft";
     }
 
     @Override
@@ -209,84 +273,117 @@ public class VarianData implements NMRData {
     }
 
     @Override
-    public final int getSize(int iDim) {
-        if (sizes == null) {
-            sizes = new int[getNDim()];
-            maxSizes = new int[getNDim()];
-            for (int i = 0; i < sizes.length; i++) {
-                if (i == 0) {
-                    sizes[i] = np / 2;
-                } else {
-                    // see vnmr.tcl lines 773-779, use here or new method getNarray?
-                    int td = getNI(i);
-                    sizes[i] = td;
+    public String getSymbolicCoefs(int iDim) {
+        String name = "f" + iDim + "coef";
+        String coefs = "hyper";
+        String s;
+        if ((s = getPar(name)) == null) {
+            s = "";
+        }
+        if (!s.equals("")) {
+            switch (s) {
+                case "1 0 0 0 0 0 -1 0":
+                    coefs = "hyper";
+                    break;
+                case "1 0 0 0 0 0 1 0":
+                    coefs = "hyper-r";
+                    break;
+                case "1 0 -1 0 0 1 0 1":
+                    coefs = "echo-antiecho";
+                    break;
+                case "1 0 1 0 0 1 0 -1":
+                    coefs = "echo-antiecho-r";
+                    break;
+                case "1 0 1 0 1 0 1 0":
+                    coefs = "ge";
+                    break;
+                case "1 0 0 1":
+                    coefs = "sep";
+                    break;
+                default:
+                    coefs = s;
+            }
+        }
+        return coefs;
+    }
+
+    @Override
+    public double[] getCoefs(int iDim) {
+        String name = "f" + iDim + "coef";
+        double dcoefs[] = {1, 0, 0, 0}; // reasonable for noesy, tocsy
+        String s;
+        if ((s = getPar(name)) == null) {
+            s = "";
+        }
+        if (!s.equals("")) {
+            String[] coefs = s.split(" ");
+            dcoefs = new double[coefs.length];
+            for (int i = 0; i < coefs.length; i++) {
+                dcoefs[i] = Double.valueOf(coefs[i]);
+            }
+        }
+        return dcoefs;
+    }
+// e.g. hnco3d.fid f1coef="1 0 0 0 0 0 -1 0" f2coef="1 0 1 0 0 1 0 -1"
+
+    private char getAxisChar(int iDim) {
+        char achar = 'h';
+        String axis = getPar("axis");
+        if (axis != null) {
+            if (iDim < axis.length()) {
+                achar = axis.charAt(iDim);
+            } else {
+                switch (iDim) {
+                    case 1:
+                        achar = 'd';
+                        break;
+                    case 2:
+                        achar = '2';
+                        break;
+                    case 3:
+                        achar = '3';
+                        break;
+                    default:
+                        achar = 'h';
+                        break;
                 }
-                maxSizes[i] = sizes[i];
             }
         }
-        return sizes[iDim];
+        return achar;
     }
 
-    @Override
-    public int getMaxSize(int iDim) {
-        return maxSizes[iDim];
-    }
-
-    @Override
-    public void setSize(int iDim, int size) {
-        if (sizes == null) {
-            // calling getSize will populate sizes with default
-            getSize(iDim);
+    private String getAxisFreqName(int iDim) {
+        String freqName;
+        char achar = getAxisChar(iDim);
+        switch (achar) {
+            case 'h':
+                freqName = "hz";
+                break;
+            case 'p':
+                freqName = "sfrq";
+                break;
+            case 'd':
+                freqName = "dfrq";
+                break;
+            case '1':
+                freqName = "dfrq";
+                break;
+            case '2':
+                freqName = "dfrq2";
+                break;
+            case '3':
+                freqName = "dfrq3";
+                break;
+            default:
+                freqName = "hz";
+                break;
         }
-        if (size > maxSizes[iDim]) {
-            size = maxSizes[iDim];
-        }
-        sizes[iDim] = size;
+        return freqName;
     }
 
-    @Override
-    public int getArraySize(int iDim) {
-        return arraysize[iDim];
-    }
-
-    @Override
-    public void setArraySize(int iDim, int size) {
-        arraysize[iDim] = size;
-    }
-
-    @Override
-    public String getSolvent() {
-        String s;
-        if ((s = getPar("solvent")) == null) {
-            s = "";
-        }
-        return s;
-    }
-
-    @Override
-    public double getTempK() {
-        Double d;
-// fixme what if temp is an array?
-        if ((d = getParDouble("temp")) == null) {
-// fixme what should we return if not present, is it ever not present
-            d = 25.0;
-        }
-        d += 273.15;
-        return d;
-    }
-
-    @Override
-    public String getSequence() {
-        String s;
-        if ((s = getPar("seqfil")) != null) {
-            if (s.equals("s2pul")) {
-                s = getPar("pslabel");
-            }
-        }
-        if (s == null) {
-            s = "";
-        }
-        return s;
+    public String getApptype() {
+        // homo2d hetero2d etc. if exists
+        return getPar("apptype");
     }
 
     @Override
@@ -308,11 +405,32 @@ public class VarianData implements NMRData {
     public void setSF(int iDim, double sf) {
         Sf[iDim] = sf;
     }
-// e.g. hnco3d.fid f1coef="1 0 0 0 0 0 -1 0" f2coef="1 0 1 0 0 1 0 -1"
 
     @Override
     public void resetSF(int iDim) {
         Sf[iDim] = null;
+    }
+
+    public String getSFName(int iDim) {
+        String name = "sfrq";
+        if (iDim > 0) {
+            String app = getApptype();
+            if ((iDim == 1) && (app != null) && (app.equals("homo2d"))) {
+                name = "sfrq";
+            } else if ((iDim == 1) && (app != null) && (app.equals("hetero2d"))) {
+                name = "dfrq";
+            } else {
+                name = getAxisFreqName(iDim);
+                if (name.equals("hz")) {
+                    if (iDim == 1) {
+                        name = "dfrq";
+                    } else {
+                        name = "dfrq" + iDim;
+                    }
+                }
+            }
+        }
+        return name;
     }
 
     @Override
@@ -349,47 +467,78 @@ public class VarianData implements NMRData {
     }
 
     @Override
-    public double getRef(int iDim) {
-        double ref = 0.0;
-        if (Ref[iDim] != null) {
-            ref = Ref[iDim];
-        } else {
-            Double rfp;
-            String ext = "";
-            if (iDim > 0) {
-                ext += iDim;
-            }
-            if ((rfp = getParDouble("rfl" + ext)) != null) {
-                double rfl = rfp;
-                if ((rfp = getParDouble("rfp" + ext)) != null) {
-                    double sf = getSF(iDim);
-                    double sw = getSW(iDim);
-                    double dppm = sw / sf;
-                    double reffrac = (sw - rfl) / sw;
-                    ref = rfp / sf + dppm * reffrac - dppm / 2.0;
-                    //ref = (sw - rfl + rfp) / sf;
-                    // see vnmr.tcl line 805; use reffrq, reffrq1 instead of sfrq, dfrq?
+    public String[] getSFNames() {
+        int nDim = getNDim();
+        String[] names = new String[nDim];
+        for (int i = 0; i < nDim; i++) {
+            names[i] = getSFName(i);
+        }
+        return names;
+    }
+
+    @Override
+    public String[] getSWNames() {
+        int nDim = getNDim();
+        String[] names = new String[nDim];
+
+        for (int i = 0; i < nDim; i++) {
+            int dim = i;
+            String name = "sw";
+            if (dim > 0) {
+                String app = getApptype();
+                if (dim == 1 && app != null && app.equals("homo2d")) {
+                    name = "sw";
+                } else {
+                    name = "sw" + dim;
                 }
             }
-            setRef(iDim, ref);
+            names[i] = name;
         }
-        return ref;
+        return names;
     }
 
     @Override
-    public void setRef(int iDim, double ref) {
-        Ref[iDim] = ref;
+    public String[] getLabelNames() {
+        int nDim = getNDim();
+        ArrayList<String> names = new ArrayList<>();
+        for (int i = 0; i < nDim; i++) {
+            String name = getTN(i);
+            if (names.contains(name)) {
+                name = name + "_" + (i + 1);
+            }
+            names.add(name);
+        }
+
+        return names.toArray(new String[names.size()]);
     }
 
-    @Override
-    public void resetRef(int iDim) {
-        Ref[iDim] = null;
-    }
-
-    @Override
-    public double getRefPoint(int iDim) {
-        double refpt = getSize(iDim) / 2;
-        return refpt;
+    private String getAxisTNname(int iDim) {
+        String name;
+        char achar = getAxisChar(iDim);
+        switch (achar) {
+            case 'h':
+                name = "n";
+                break;
+            case 'p':
+                name = "tn";
+                break;
+            case 'd':
+                name = "dn";
+                break;
+            case '1':
+                name = "dn";
+                break;
+            case '2':
+                name = "dn2";
+                break;
+            case '3':
+                name = "dn3";
+                break;
+            default:
+                name = "n";
+                break;
+        }
+        return name;
     }
 
     @Override
@@ -448,6 +597,141 @@ public class VarianData implements NMRData {
     }
 
     @Override
+    public void setRef(int iDim, double ref) {
+        Ref[iDim] = ref;
+    }
+
+    @Override
+    public void resetRef(int iDim) {
+        Ref[iDim] = null;
+    }
+
+    @Override
+    public double getRef(int iDim) {
+        double ref = 0.0;
+        if (Ref[iDim] != null) {
+            ref = Ref[iDim];
+        } else {
+            Double rfp;
+            String ext = "";
+            if (iDim > 0) {
+                ext += iDim;
+            }
+            if ((rfp = getParDouble("rfl" + ext)) != null) {
+                double rfl = rfp;
+                if ((rfp = getParDouble("rfp" + ext)) != null) {
+                    double sf = getSF(iDim);
+                    double sw = getSW(iDim);
+                    double dppm = sw / sf;
+                    double reffrac = (sw - rfl) / sw;
+                    ref = rfp / sf + dppm * reffrac - dppm / 2.0;
+                    //ref = (sw - rfl + rfp) / sf;
+                    // see vnmr.tcl line 805; use reffrq, reffrq1 instead of sfrq, dfrq?
+                }
+            }
+            setRef(iDim, ref);
+        }
+        return ref;
+    }
+
+    @Override
+    public double getRefPoint(int iDim) {
+        double refpt = getSize(iDim) / 2;
+        return refpt;
+    }
+
+    @Override
+    public final int getSize(int iDim) {
+        if (sizes == null) {
+            sizes = new int[getNDim()];
+            maxSizes = new int[getNDim()];
+            for (int i = 0; i < sizes.length; i++) {
+                if (i == 0) {
+                    sizes[i] = np / 2;
+                } else {
+                    // see vnmr.tcl lines 773-779, use here or new method getNarray?
+                    int td = getNI(i);
+                    sizes[i] = td;
+                }
+                maxSizes[i] = sizes[i];
+            }
+        }
+        return sizes[iDim];
+    }
+
+    /**
+     * Get the number of increments in the specified dimension
+     * @param iDim the dimension (1 is the first indirect dimension)
+     * @return the number of increments
+     */
+    private int getNI(int iDim) {
+        Integer ipar;
+        int td = 0;
+        String name = "ni";
+        if (iDim > 1) {
+            name = "ni" + iDim;
+        }
+        if ((ipar = getParInt(name)) != null) {
+            td = ipar;
+        }
+        return td;
+    }
+
+    @Override
+    public int getMaxSize(int iDim) {
+        return maxSizes[iDim];
+    }
+
+    @Override
+    public void setSize(int iDim, int size) {
+        if (sizes == null) {
+            // calling getSize will populate sizes with default
+            getSize(iDim);
+        }
+        if (size > maxSizes[iDim]) {
+            size = maxSizes[iDim];
+        }
+        sizes[iDim] = size;
+    }
+
+    @Override
+    public int getArraySize(int iDim) {
+        return arraysize[iDim];
+    }
+
+    @Override
+    public void setArraySize(int iDim, int size) {
+        arraysize[iDim] = size;
+    }
+
+    @Override
+    public List<Double> getValues(int dim) {
+        List<Double> result;
+        if (dim >= getNDim()) {
+            result = arrayValues;
+        } else {
+            if ((dim != 0) && (dim == getMinDim())) {
+                result = arrayValues;
+            } else {
+                result = new ArrayList<>();
+            }
+        }
+        return result;
+    }
+
+    int getMinDim() {
+        int minSize = getSize(0);
+        int minDim = 0;
+        for (int i = 1; i < getNDim(); i++) {
+            if (getSize(i) < minSize) {
+                minSize = getSize(i);
+                minDim = i;
+            }
+        }
+        return minDim;
+    }
+
+    @Override
     public boolean isComplex(int iDim) {
         if (iDim == 0) {
             String s = getPar("proc");
@@ -455,7 +739,7 @@ public class VarianData implements NMRData {
         } else {
             String ext = String.valueOf(iDim);
             String s = getPar("proc" + ext);
-            boolean notRFT = !"rft".equals(s);
+            boolean notRFT =  !"rft".equals(s);
 
             if (iDim == 1) {
                 s = getPar("phase");
@@ -510,67 +794,38 @@ public class VarianData implements NMRData {
     }
 
     @Override
-    public String getFTType(int iDim) {
-        // fixme
-        return "ft";
-    }
-
-    @Override
-    public double[] getCoefs(int iDim) {
-        String name = "f" + iDim + "coef";
-        double dcoefs[] = {1, 0, 0, 0}; // reasonable for noesy, tocsy
+    public String getSolvent() {
         String s;
-        if ((s = getPar(name)) == null) {
+        if ((s = getPar("solvent")) == null) {
             s = "";
         }
-        if (!s.equals("")) {
-            String[] coefs = s.split(" ");
-            dcoefs = new double[coefs.length];
-            for (int i = 0; i < coefs.length; i++) {
-                dcoefs[i] = Double.valueOf(coefs[i]);
-            }
-        }
-        return dcoefs;
+        return s;
     }
 
     @Override
-    public String getSymbolicCoefs(int iDim) {
-        String name = "f" + iDim + "coef";
-        String coefs = "hyper";
+    public double getTempK() {
+        Double d;
+// fixme what if temp is an array?
+        if ((d = getParDouble("temp")) == null) {
+// fixme what should we return if not present, is it ever not present
+            d = 25.0;
+        }
+        d += 273.15;
+        return d;
+    }
+
+    @Override
+    public String getSequence() {
         String s;
-        if ((s = getPar(name)) == null) {
+        if ((s = getPar("seqfil")) != null) {
+            if (s.equals("s2pul")) {
+                s = getPar("pslabel");
+            }
+        }
+        if (s == null) {
             s = "";
         }
-        if (!s.equals("")) {
-            switch (s) {
-                case "1 0 0 0 0 0 -1 0":
-                    coefs = "hyper";
-                    break;
-                case "1 0 0 0 0 0 1 0":
-                    coefs = "hyper-r";
-                    break;
-                case "1 0 -1 0 0 1 0 1":
-                    coefs = "echo-antiecho";
-                    break;
-                case "1 0 1 0 0 1 0 -1":
-                    coefs = "echo-antiecho-r";
-                    break;
-                case "1 0 1 0 1 0 1 0":
-                    coefs = "ge";
-                    break;
-                case "1 0 0 1":
-                    coefs = "sep";
-                    break;
-                default:
-                    coefs = s;
-            }
-        }
-        return coefs;
-    }
-
-    @Override
-    public String getVendor() {
-        return "varian";
+        return s;
     }
 
     @Override
@@ -666,49 +921,142 @@ public class VarianData implements NMRData {
     }
 
     @Override
-    public String[] getSFNames() {
-        int nDim = getNDim();
-        String[] names = new String[nDim];
-        for (int i = 0; i < nDim; i++) {
-            names[i] = getSFName(i);
+    public void readVector(int iVec, Vec dvec) {
+        if (dvec.isComplex()) {
+            if (dvec.useApache()) {
+                readVector(iVec, dvec.getCvec());
+            } else {
+                readVector(iVec, dvec.rvec, dvec.ivec);
+            }
+        } else {
+            readVector(iVec, dvec.rvec);
         }
-        return names;
+        dvec.dwellTime = 1.0 / getSW(0);
+        dvec.centerFreq = getSF(0);
+        dvec.setRefValue(getRef(0));
     }
 
     @Override
-    public String[] getSWNames() {
-        int nDim = getNDim();
-        String[] names = new String[nDim];
+    public void readVector(int iDim, int iVec, Vec dvec) {
+        if (dvec.isComplex()) {
+            if (dvec.useApache()) {
+                readVector(iDim, iVec, dvec.getCvec());
+            } else {
+                readVector(iVec, dvec.rvec, dvec.ivec);
+            }
+        } else {
+            readVector(iVec, dvec.rvec);
+        }
+        dvec.dwellTime = 1.0 / getSW(iDim);
+        dvec.centerFreq = getSF(iDim);
+        dvec.setRefValue(getRef(iDim));
+        dvec.setPh0(getPH0(iDim));
+        dvec.setPh1(getPH1(iDim));
+    }
 
-        for (int i = 0; i < nDim; i++) {
-            int dim = i;
-            String name = "sw";
-            if (dim > 0) {
-                String app = getApptype();
-                if (dim == 1 && app != null && app.equals("homo2d")) {
-                    name = "sw";
-                } else {
-                    name = "sw" + dim;
+    @Override
+    public void readVector(int iVec, Complex[] cdata) {
+        byte[] dataBuf = new byte[tbytes];
+        readVecBlock(iVec, dataBuf);
+        copyVecData(dataBuf, cdata);
+    }
+
+    public void readVector(int iDim, int iVec, Complex[] cdata) {
+        int size = getSize(iDim);
+        int nPer = getGroupSize(iDim);
+        int nPoints = size * nPer;
+        byte[] dataBuf = new byte[nPoints * ebytes * 2];
+        if (isFloat) {
+            FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
+            for (int j = 0; j < (nPoints * 2); j++) {
+                fbuf.put(j, 0.0f);
+            }
+        } else if (isShort) {
+            ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
+            for (int j = 0; j < (nPoints * 2); j++) {
+                sbuf.put(j, (short) 0);
+            }
+        } else {
+            IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
+            for (int j = 0; j < (nPoints * 2); j++) {
+                ibuf.put(j, 0);
+            }
+        }
+
+        for (int i = 0; i < (nPoints); i++) {
+            if (sampleSchedule != null) {
+                int[] point = {i / 2};
+                int index = sampleSchedule.getIndex(point);
+                if (index != -1) {
+                    index = index * 2 + (i % 2);
+                    readValue(iDim, index, i, iVec, dataBuf);
                 }
+            } else {
+                readValue(iDim, i, i, iVec, dataBuf);
             }
-            names[i] = name;
         }
-        return names;
+        if (isFloat) {
+            FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
+            for (int j = 0; j < (nPoints * 2); j += 2) {
+                cdata[j / 2] = new Complex((double) fbuf.get(j) / scale, (double) fbuf.get(j + 1) / scale);
+            }
+        } else if (isShort) {
+            ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
+            for (int j = 0; j < (nPoints * 2); j += 2) {
+                cdata[j / 2] = new Complex((double) sbuf.get(j) / scale, (double) sbuf.get(j + 1) / scale);
+            }
+        } else {
+            IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
+            for (int j = 0; j < (nPoints * 2); j += 2) {
+                cdata[j / 2] = new Complex((double) ibuf.get(j) / scale, (double) ibuf.get(j + 1) / scale);
+            }
+        }
+
     }
 
     @Override
-    public String[] getLabelNames() {
-        int nDim = getNDim();
-        ArrayList<String> names = new ArrayList<>();
-        for (int i = 0; i < nDim; i++) {
-            String name = getTN(i);
-            if (names.contains(name)) {
-                name = name + "_" + (i + 1);
-            }
-            names.add(name);
-        }
+    public void readVector(int iVec, double[] data) {
+        byte[] dataBuf = new byte[tbytes];
+        readVecBlock(iVec, dataBuf);
+        copyVecData(dataBuf, data);
+    }
 
-        return names.toArray(new String[names.size()]);
+    @Override
+    public void readVector(int iVec, double[] rdata, double[] idata) {
+        byte[] dataBuf = new byte[tbytes];
+        readVecBlock(iVec, dataBuf);
+        copyVecData(dataBuf, rdata, idata);
+    }
+
+    // check for and open sample schedule
+    final boolean checkAndOpenSampleSchedule(String parPath) {
+        boolean gotSchedule = false;
+        String schedulePath = "sampling.sch";
+        if (parPath.endsWith(".fid")) {
+            schedulePath = parPath + File.separator + "sampling.sch";
+        } else if (parPath.endsWith("fid")) {
+            schedulePath = parPath.substring(0, parPath.length() - 3) + "sampling.sch";
+        }
+        File scheduleFile = new File(schedulePath);
+        if (scheduleFile.exists()) {
+            log.info("exists");
+            try {
+                readSampleSchedule(scheduleFile.getPath(), false);
+                gotSchedule = true;
+            } catch (IOException ioE) {
+                gotSchedule = false;
+            }
+        }
+        if (gotSchedule) {
+            log.info("success");
+            int[] dims = sampleSchedule.getDims();
+            for (int i = 0; i < dims.length; i++) {
+                sizes[i + 1] = dims[i];
+                maxSizes[i + 1] = dims[i];
+                log.info("sched size {} {}", i, sizes[i + 1]);
+            }
+        }
+        return gotSchedule;
     }
 
     // open and read Varian text file
@@ -780,483 +1128,6 @@ public class VarianData implements NMRData {
         } else {
             return 0;
         }
-    }
-
-    @Override
-    public List<Double> getValues(int dim) {
-        List<Double> result;
-        if (dim >= getNDim()) {
-            result = arrayValues;
-        } else {
-            if ((dim != 0) && (dim == getMinDim())) {
-                result = arrayValues;
-            } else {
-                result = new ArrayList<>();
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public void readVector(int iVec, Vec dvec) {
-        if (dvec.isComplex()) {
-            if (dvec.useApache()) {
-                readVector(iVec, dvec.getCvec());
-            } else {
-                readVector(iVec, dvec.rvec, dvec.ivec);
-            }
-        } else {
-            readVector(iVec, dvec.rvec);
-        }
-        dvec.dwellTime = 1.0 / getSW(0);
-        dvec.centerFreq = getSF(0);
-        dvec.setRefValue(getRef(0));
-    }
-
-    @Override
-    public void readVector(int iVec, Complex[] cdata) {
-        byte[] dataBuf = new byte[tbytes];
-        readVecBlock(iVec, dataBuf);
-        copyVecData(dataBuf, cdata);
-    }
-
-    @Override
-    public void readVector(int iVec, double[] rdata, double[] idata) {
-        byte[] dataBuf = new byte[tbytes];
-        readVecBlock(iVec, dataBuf);
-        copyVecData(dataBuf, rdata, idata);
-    }
-
-    @Override
-    public void readVector(int iVec, double[] data) {
-        byte[] dataBuf = new byte[tbytes];
-        readVecBlock(iVec, dataBuf);
-        copyVecData(dataBuf, data);
-    }
-
-    @Override
-    public void readVector(int iDim, int iVec, Vec dvec) {
-        if (dvec.isComplex()) {
-            if (dvec.useApache()) {
-                readVector(iDim, iVec, dvec.getCvec());
-            } else {
-                readVector(iVec, dvec.rvec, dvec.ivec);
-            }
-        } else {
-            readVector(iVec, dvec.rvec);
-        }
-        dvec.dwellTime = 1.0 / getSW(iDim);
-        dvec.centerFreq = getSF(iDim);
-        dvec.setRefValue(getRef(iDim));
-        dvec.setPh0(getPH0(iDim));
-        dvec.setPh1(getPH1(iDim));
-    }
-
-    @Override
-    public void resetAcqOrder() {
-        acqOrder = null;
-    }
-
-    @Override
-    public String[] getAcqOrder() {
-        if (acqOrder == null) {
-            int nDim = getNDim() - 1;
-            // p1,p2,d1,d2 or p2,p1,d1,d2
-            boolean hasPhase = false;
-            String arrayPar = getPar("array");
-            String[] arrayElems = new String[0];
-            if (!arrayPar.trim().equals("")) {
-                arrayElems = arrayPar.split(",");
-            }
-            for (int j = arrayElems.length - 1; j >= 0; j--) {
-                if (arrayElems[j].startsWith("phase")) {
-                    hasPhase = true;
-                    break;
-                }
-            }
-
-            if (hasPhase) {
-                int i = 0;
-                acqOrder = new String[nDim + arrayElems.length];
-                for (int j = arrayElems.length - 1; j >= 0; j--) {
-                    if (arrayElems[j].startsWith("phase")) {
-                        char dimChar = '1';
-                        if (arrayElems[j].length() == 6) {
-                            dimChar = arrayElems[j].charAt(5);
-                        }
-                        acqOrder[i++] = "p" + dimChar;
-                    } else {
-                        acqOrder[i++] = "a" + (nDim + 1);
-                        String arrayValue = getPar(arrayElems[j]);
-                        String[] arrayValueElems = arrayValue.split("\n");
-                        arraysize[i - 1] = arrayValueElems.length;
-                        arrayValues.clear();
-                        for (String val : arrayValueElems) {
-                            try {
-                                double dVal = Double.parseDouble(val);
-                                arrayValues.add(dVal);
-                            } catch (NumberFormatException nfE) {
-                                arrayValues.clear();
-                                break;
-                            }
-                        }
-
-                    }
-                }
-                for (int j = 0; j < nDim; j++) {
-                    acqOrder[i++] = "d" + (j + 1);
-                }
-            } else {
-                Integer arraydim = getParInt("arraydim");
-                int i = 0;
-                for (int j = 0; j < arraysize.length; j++) {
-                    arraysize[j] = 0;
-                }
-                boolean hasArray = false;
-                if ((arraydim != null) && (arraydim > 1)) {
-                    for (int j = arrayElems.length - 1; j >= 0; j--) {
-                        String arrayValue = getPar(arrayElems[j]);
-                        String[] arrayValueElems = arrayValue.split("\n");
-                        int aSize = arrayValueElems.length;
-                        if (aSize > 0) {
-                            hasArray = true;
-                        }
-                        if (arraysize[nDim] == 0) {
-                            arraysize[nDim] = aSize;
-                        } else {
-                            arraysize[nDim] *= aSize;
-                        }
-                        arrayValues.clear();
-                        for (String val : arrayValueElems) {
-                            try {
-                                double dVal = Double.parseDouble(val);
-                                arrayValues.add(dVal);
-                            } catch (NumberFormatException nfE) {
-                                arrayValues.clear();
-                                break;
-                            }
-                        }
-                    }
-                }
-                int acqOrderSize = nDim * 2;
-                if (hasArray) {
-                    acqOrderSize++;
-                }
-                acqOrder = new String[acqOrderSize];
-                i = 0;
-                if (hasArray) {
-                    acqOrder[i++] = "a" + (nDim + 1);
-                }
-                for (int k = 0; k < nDim; k++) {
-                    acqOrder[k + i] = "p" + (k + 1);
-                    acqOrder[nDim + k + i] = "d" + (k + 1);
-                }
-            }
-        }
-        return acqOrder;
-    }
-
-    @Override
-    public void setAcqOrder(String[] newOrder) {
-        if (newOrder.length == 1) {
-            String s = newOrder[0];
-            final int len = s.length();
-            int nDim = getNDim();
-            int nIDim = nDim - 1;
-            if ((len == nDim) || (len == nIDim)) {
-                acqOrder = new String[nIDim * 2];
-                int j = 0;
-                for (int i = (len - 1); i >= 0; i--) {
-                    String dimStr = s.substring(i, i + 1);
-                    if (!dimStr.equals(nDim + "")) {
-                        acqOrder[j] = "p" + dimStr;
-                        j++;
-                    }
-                }
-                for (int i = 0; i < nIDim; i++) {
-                    acqOrder[i + nIDim] = "d" + (i + 1);
-                }
-            }
-        } else {
-            this.acqOrder = new String[newOrder.length];
-            System.arraycopy(newOrder, 0, this.acqOrder, 0, newOrder.length);
-        }
-    }
-
-    @Override
-    public String getAcqOrderShort() {
-        String[] acqOrderArray = getAcqOrder();
-        StringBuilder builder = new StringBuilder();
-        int nDim = getNDim();
-        for (int i = acqOrderArray.length - 1; i >= 0; i--) {
-            String elem = acqOrderArray[i];
-            if (elem.substring(0, 1).equals("p")) {
-                builder.append(elem.substring(1, 2));
-            } else if (elem.substring(0, 1).equals("a")) {
-                return "";
-            }
-        }
-        return builder.toString();
-    }
-
-    @Override
-    public SampleSchedule getSampleSchedule() {
-        return sampleSchedule;
-    }
-
-    @Override
-    public void setSampleSchedule(SampleSchedule sampleSchedule) {
-        this.sampleSchedule = sampleSchedule;
-    }
-
-    @Override
-    public DatasetType getPreferredDatasetType() {
-        return preferredDatasetType;
-    }
-
-    @Override
-    public void setPreferredDatasetType(DatasetType datasetType) {
-        this.preferredDatasetType = datasetType;
-    }
-
-    @Override
-    public List<DatasetGroupIndex> getSkipGroups() {
-        return datasetGroupIndices;
-    }
-
-    @Override
-    public String toString() {
-        return fpath;
-    }
-
-    public boolean isSpectrum() {
-        return isSpectrum;
-    }
-
-    private char getAxisChar(int iDim) {
-        char achar = 'h';
-        String axis = getPar("axis");
-        if (axis != null) {
-            if (iDim < axis.length()) {
-                achar = axis.charAt(iDim);
-            } else {
-                switch (iDim) {
-                    case 1:
-                        achar = 'd';
-                        break;
-                    case 2:
-                        achar = '2';
-                        break;
-                    case 3:
-                        achar = '3';
-                        break;
-                    default:
-                        achar = 'h';
-                        break;
-                }
-            }
-        }
-        return achar;
-    }
-
-    private String getAxisFreqName(int iDim) {
-        String freqName;
-        char achar = getAxisChar(iDim);
-        switch (achar) {
-            case 'h':
-                freqName = "hz";
-                break;
-            case 'p':
-                freqName = "sfrq";
-                break;
-            case 'd':
-                freqName = "dfrq";
-                break;
-            case '1':
-                freqName = "dfrq";
-                break;
-            case '2':
-                freqName = "dfrq2";
-                break;
-            case '3':
-                freqName = "dfrq3";
-                break;
-            default:
-                freqName = "hz";
-                break;
-        }
-        return freqName;
-    }
-
-    public String getApptype() {
-        // homo2d hetero2d etc. if exists
-        return getPar("apptype");
-    }
-
-    public String getSFName(int iDim) {
-        String name = "sfrq";
-        if (iDim > 0) {
-            String app = getApptype();
-            if ((iDim == 1) && (app != null) && (app.equals("homo2d"))) {
-                name = "sfrq";
-            } else if ((iDim == 1) && (app != null) && (app.equals("hetero2d"))) {
-                name = "dfrq";
-            } else {
-                name = getAxisFreqName(iDim);
-                if (name.equals("hz")) {
-                    if (iDim == 1) {
-                        name = "dfrq";
-                    } else {
-                        name = "dfrq" + iDim;
-                    }
-                }
-            }
-        }
-        return name;
-    }
-
-    private String getAxisTNname(int iDim) {
-        String name;
-        char achar = getAxisChar(iDim);
-        switch (achar) {
-            case 'h':
-                name = "n";
-                break;
-            case 'p':
-                name = "tn";
-                break;
-            case 'd':
-                name = "dn";
-                break;
-            case '1':
-                name = "dn";
-                break;
-            case '2':
-                name = "dn2";
-                break;
-            case '3':
-                name = "dn3";
-                break;
-            default:
-                name = "n";
-                break;
-        }
-        return name;
-    }
-
-    /**
-     * Get the number of increments in the specified dimension
-     *
-     * @param iDim the dimension (1 is the first indirect dimension)
-     * @return the number of increments
-     */
-    private int getNI(int iDim) {
-        Integer ipar;
-        int td = 0;
-        String name = "ni";
-        if (iDim > 1) {
-            name = "ni" + iDim;
-        }
-        if ((ipar = getParInt(name)) != null) {
-            td = ipar;
-        }
-        return td;
-    }
-
-    int getMinDim() {
-        int minSize = getSize(0);
-        int minDim = 0;
-        for (int i = 1; i < getNDim(); i++) {
-            if (getSize(i) < minSize) {
-                minSize = getSize(i);
-                minDim = i;
-            }
-        }
-        return minDim;
-    }
-
-    public void readVector(int iDim, int iVec, Complex[] cdata) {
-        int size = getSize(iDim);
-        int nPer = getGroupSize(iDim);
-        int nPoints = size * nPer;
-        byte[] dataBuf = new byte[nPoints * ebytes * 2];
-        if (isFloat) {
-            FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
-            for (int j = 0; j < (nPoints * 2); j++) {
-                fbuf.put(j, 0.0f);
-            }
-        } else if (isShort) {
-            ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
-            for (int j = 0; j < (nPoints * 2); j++) {
-                sbuf.put(j, (short) 0);
-            }
-        } else {
-            IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
-            for (int j = 0; j < (nPoints * 2); j++) {
-                ibuf.put(j, 0);
-            }
-        }
-
-        for (int i = 0; i < (nPoints); i++) {
-            if (sampleSchedule != null) {
-                int[] point = {i / 2};
-                int index = sampleSchedule.getIndex(point);
-                if (index != -1) {
-                    index = index * 2 + (i % 2);
-                    readValue(iDim, index, i, iVec, dataBuf);
-                }
-            } else {
-                readValue(iDim, i, i, iVec, dataBuf);
-            }
-        }
-        if (isFloat) {
-            FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
-            for (int j = 0; j < (nPoints * 2); j += 2) {
-                cdata[j / 2] = new Complex((double) fbuf.get(j) / scale, (double) fbuf.get(j + 1) / scale);
-            }
-        } else if (isShort) {
-            ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
-            for (int j = 0; j < (nPoints * 2); j += 2) {
-                cdata[j / 2] = new Complex((double) sbuf.get(j) / scale, (double) sbuf.get(j + 1) / scale);
-            }
-        } else {
-            IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
-            for (int j = 0; j < (nPoints * 2); j += 2) {
-                cdata[j / 2] = new Complex((double) ibuf.get(j) / scale, (double) ibuf.get(j + 1) / scale);
-            }
-        }
-
-    }
-
-    // check for and open sample schedule
-    final boolean checkAndOpenSampleSchedule(String parPath) {
-        boolean gotSchedule = false;
-        String schedulePath = "sampling.sch";
-        if (parPath.endsWith(".fid")) {
-            schedulePath = parPath + File.separator + "sampling.sch";
-        } else if (parPath.endsWith("fid")) {
-            schedulePath = parPath.substring(0, parPath.length() - 3) + "sampling.sch";
-        }
-        File scheduleFile = new File(schedulePath);
-        if (scheduleFile.exists()) {
-            log.info("exists");
-            try {
-                readSampleSchedule(scheduleFile.getPath(), false);
-                gotSchedule = true;
-            } catch (IOException ioE) {
-                gotSchedule = false;
-            }
-        }
-        if (gotSchedule) {
-            log.info("success");
-            int[] dims = sampleSchedule.getDims();
-            for (int i = 0; i < dims.length; i++) {
-                sizes[i + 1] = dims[i];
-                maxSizes[i + 1] = dims[i];
-                log.info("sched size {} {}", i, sizes[i + 1]);
-            }
-        }
-        return gotSchedule;
     }
 
     // open and read Varian parameter file
@@ -1567,6 +1438,168 @@ public class VarianData implements NMRData {
         }
     }  // end readBlockHeader
 
+    @Override
+    public void resetAcqOrder() {
+        acqOrder = null;
+    }
+
+    @Override
+    public String[] getAcqOrder() {
+        if (acqOrder == null) {
+            int nDim = getNDim() - 1;
+            // p1,p2,d1,d2 or p2,p1,d1,d2
+            boolean hasPhase = false;
+            String arrayPar = getPar("array");
+            String[] arrayElems = new String[0];
+            if (!arrayPar.trim().equals("")) {
+                arrayElems = arrayPar.split(",");
+            }
+            for (int j = arrayElems.length - 1; j >= 0; j--) {
+                if (arrayElems[j].startsWith("phase")) {
+                    hasPhase = true;
+                    break;
+                }
+            }
+
+            if (hasPhase) {
+                int i = 0;
+                acqOrder = new String[nDim + arrayElems.length];
+                for (int j = arrayElems.length - 1; j >= 0; j--) {
+                    if (arrayElems[j].startsWith("phase")) {
+                        char dimChar = '1';
+                        if (arrayElems[j].length() == 6) {
+                            dimChar = arrayElems[j].charAt(5);
+                        }
+                        acqOrder[i++] = "p" + dimChar;
+                    } else {
+                        acqOrder[i++] = "a" + (nDim + 1);
+                        String arrayValue = getPar(arrayElems[j]);
+                        String[] arrayValueElems = arrayValue.split("\n");
+                        arraysize[i - 1] = arrayValueElems.length;
+                        arrayValues.clear();
+                        for (String val : arrayValueElems) {
+                            try {
+                                double dVal = Double.parseDouble(val);
+                                arrayValues.add(dVal);
+                            } catch (NumberFormatException nfE) {
+                                arrayValues.clear();
+                                break;
+                            }
+                        }
+
+                    }
+                }
+                for (int j = 0; j < nDim; j++) {
+                    acqOrder[i++] = "d" + (j + 1);
+                }
+            } else {
+                Integer arraydim = getParInt("arraydim");
+                int i = 0;
+                for (int j = 0; j < arraysize.length; j++) {
+                    arraysize[j] = 0;
+                }
+                boolean hasArray = false;
+                if ((arraydim != null) && (arraydim > 1)) {
+                    for (int j = arrayElems.length - 1; j >= 0; j--) {
+                        String arrayValue = getPar(arrayElems[j]);
+                        String[] arrayValueElems = arrayValue.split("\n");
+                        int aSize = arrayValueElems.length;
+                        if (aSize > 0) {
+                            hasArray = true;
+                        }
+                        if (arraysize[nDim] == 0) {
+                            arraysize[nDim] = aSize;
+                        } else {
+                            arraysize[nDim] *= aSize;
+                        }
+                        arrayValues.clear();
+                        for (String val : arrayValueElems) {
+                            try {
+                                double dVal = Double.parseDouble(val);
+                                arrayValues.add(dVal);
+                            } catch (NumberFormatException nfE) {
+                                arrayValues.clear();
+                                break;
+                            }
+                        }
+                    }
+                }
+                int acqOrderSize = nDim * 2;
+                if (hasArray) {
+                    acqOrderSize++;
+                }
+                acqOrder = new String[acqOrderSize];
+                i = 0;
+                if (hasArray) {
+                    acqOrder[i++] = "a" + (nDim + 1);
+                }
+                for (int k = 0; k < nDim; k++) {
+                    acqOrder[k + i] = "p" + (k + 1);
+                    acqOrder[nDim + k + i] = "d" + (k + 1);
+                }
+            }
+        }
+        return acqOrder;
+    }
+
+    @Override
+    public void setAcqOrder(String[] newOrder) {
+        if (newOrder.length == 1) {
+            String s = newOrder[0];
+            final int len = s.length();
+            int nDim = getNDim();
+            int nIDim = nDim - 1;
+            if ((len == nDim) || (len == nIDim)) {
+                acqOrder = new String[nIDim * 2];
+                int j = 0;
+                for (int i = (len - 1); i >= 0; i--) {
+                    String dimStr = s.substring(i, i + 1);
+                    if (!dimStr.equals(nDim + "")) {
+                        acqOrder[j] = "p" + dimStr;
+                        j++;
+                    }
+                }
+                for (int i = 0; i < nIDim; i++) {
+                    acqOrder[i + nIDim] = "d" + (i + 1);
+                }
+            }
+        } else {
+            this.acqOrder = new String[newOrder.length];
+            System.arraycopy(newOrder, 0, this.acqOrder, 0, newOrder.length);
+        }
+    }
+
+    @Override
+    public String getAcqOrderShort() {
+        String[] acqOrderArray = getAcqOrder();
+        StringBuilder builder = new StringBuilder();
+        int nDim = getNDim();
+        for (int i = acqOrderArray.length - 1; i >= 0; i--) {
+            String elem = acqOrderArray[i];
+            if (elem.substring(0, 1).equals("p")) {
+                builder.append(elem.substring(1, 2));
+            } else if (elem.substring(0, 1).equals("a")) {
+                return "";
+            }
+        }
+        return builder.toString();
+    }
+
+    @Override
+    public SampleSchedule getSampleSchedule() {
+        return sampleSchedule;
+    }
+
+    @Override
+    public void setSampleSchedule(SampleSchedule sampleSchedule) {
+        this.sampleSchedule = sampleSchedule;
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
+    }
+
     // write binary data into text file, using header info
     public void fileoutraw() {
         try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/bwraw.txt"), Charset.forName("US-ASCII"),
@@ -1607,38 +1640,6 @@ public class VarianData implements NMRData {
             log.warn(e.getMessage(), e);
         }
     }
-
-    public static boolean findFID(StringBuilder bpath) {
-        boolean found = false;
-        if (findFIDFiles(bpath.toString())) {
-            // case: select .fid directory
-            found = true;
-        } else {
-            // case: select 'fid' or 'procpar' file
-            File f = new File(bpath.toString());
-            String s = f.getParent();
-            if (findFIDFiles(s)) {
-                int len = bpath.toString().length();
-                bpath = bpath.delete(s.length(), len);
-                bpath.trimToSize();
-                found = true;
-            }
-        }
-        return found;
-    } // findFID
-
-    private static boolean findFIDFiles(String dpath) {
-        boolean found = false;
-        if (dpath.endsWith(".fid" + File.separator)
-                || dpath.endsWith(".fid")) {
-            if ((new File(dpath + File.separator + "fid")).exists()) {
-                if ((new File(dpath + File.separator + "procpar")).exists()) {
-                    found = true;
-                }
-            }
-        }
-        return found;
-    } // findFIDFiles
 
     class VarianSinebellWt extends SinebellWt {
 

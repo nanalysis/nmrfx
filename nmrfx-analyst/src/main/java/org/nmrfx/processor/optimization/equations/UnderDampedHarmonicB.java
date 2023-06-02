@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,7 @@
  */
 package org.nmrfx.processor.optimization.equations;
 
-import org.nmrfx.processor.optimization.Equation;
-import org.nmrfx.processor.optimization.EstParam;
-import org.nmrfx.processor.optimization.VecID;
+import org.nmrfx.processor.optimization.*;
 
 /**
  * Author: graham Class: UnderDampedHarmonicB Desc: -
@@ -31,86 +29,86 @@ public class UnderDampedHarmonicB extends OptFunction {
         setParams(VecID.B, VecID.C, VecID.D, VecID.W);
 
         setPartialDerivatives(new Equation[]{
-                // dY/dB
-                new Equation() {
-                    public VecID name() {
-                        return VecID.B;
-                    }
-
-                    public int getID() {
-                        return getUnboundParamIndex(name());
-                    }
-
-                    public double value(double[] pts, double[] ival) {
-                        double b = getParamVal(VecID.B, pts);
-                        double c = getParamVal(VecID.C, pts);
-                        double d = getParamVal(VecID.D, pts);
-                        double w = getParamVal(VecID.W, pts);
-                        double x = ival[getVarIndex(VecID.X) - 1];
-
-                        double ang = w * x;
-
-                        return -x * Math.exp(-b * x) * (c * Math.cos(ang) + d * Math.sin(ang));
-                    }
-                },
-                // dY/dC
-                new Equation() {
-                    public VecID name() {
-                        return VecID.C;
-                    }
-
-                    public int getID() {
-                        return getUnboundParamIndex(name());
-                    }
-
-                    public double value(double[] pts, double[] ival) {
-                        double b = getParamVal(VecID.B, pts);
-                        double w = getParamVal(VecID.W, pts);
-                        double x = ival[getVarIndex(VecID.X) - 1];
-
-                        return Math.exp(-b * x) * Math.cos(w * x);
-                    }
-                },
-                // dY/dD
-                new Equation() {
-                    public VecID name() {
-                        return VecID.D;
-                    }
-
-                    public int getID() {
-                        return getUnboundParamIndex(name());
-                    }
-
-                    public double value(double[] pts, double[] ival) {
-                        double b = getParamVal(VecID.B, pts);
-                        double w = getParamVal(VecID.W, pts);
-                        double x = ival[getVarIndex(VecID.X) - 1];
-
-                        return Math.exp(-b * x) * Math.sin(w * x);
-                    }
-                },
-                // dY/dW
-                new Equation() {
-                    public VecID name() {
-                        return VecID.W;
-                    }
-
-                    public int getID() {
-                        return getUnboundParamIndex(name());
-                    }
-
-                    public double value(double[] pts, double[] ival) {
-                        double b = getParamVal(VecID.B, pts);
-                        double c = getParamVal(VecID.C, pts);
-                        double d = getParamVal(VecID.D, pts);
-                        double w = getParamVal(VecID.W, pts);
-                        double x = ival[getVarIndex(VecID.X) - 1];
-
-                        double ang = w * x;
-
-                        return x * Math.exp(-b * x) * (d * Math.cos(ang) + c * Math.sin(ang));
-                    }
+            // dY/dB
+            new Equation() {
+                public VecID name() {
+                    return VecID.B;
                 }
+
+                public int getID() {
+                    return getUnboundParamIndex(name());
+                }
+
+                public double value(double[] pts, double[] ival) {
+                    double b = getParamVal(VecID.B, pts);
+                    double c = getParamVal(VecID.C, pts);
+                    double d = getParamVal(VecID.D, pts);
+                    double w = getParamVal(VecID.W, pts);
+                    double x = ival[getVarIndex(VecID.X) - 1];
+
+                    double ang = w * x;
+
+                    return -x * Math.exp(-b * x) * (c * Math.cos(ang) + d * Math.sin(ang));
+                }
+            },
+            // dY/dC
+            new Equation() {
+                public VecID name() {
+                    return VecID.C;
+                }
+
+                public int getID() {
+                    return getUnboundParamIndex(name());
+                }
+
+                public double value(double[] pts, double[] ival) {
+                    double b = getParamVal(VecID.B, pts);
+                    double w = getParamVal(VecID.W, pts);
+                    double x = ival[getVarIndex(VecID.X) - 1];
+
+                    return Math.exp(-b * x) * Math.cos(w * x);
+                }
+            },
+            // dY/dD
+            new Equation() {
+                public VecID name() {
+                    return VecID.D;
+                }
+
+                public int getID() {
+                    return getUnboundParamIndex(name());
+                }
+
+                public double value(double[] pts, double[] ival) {
+                    double b = getParamVal(VecID.B, pts);
+                    double w = getParamVal(VecID.W, pts);
+                    double x = ival[getVarIndex(VecID.X) - 1];
+
+                    return Math.exp(-b * x) * Math.sin(w * x);
+                }
+            },
+            // dY/dW
+            new Equation() {
+                public VecID name() {
+                    return VecID.W;
+                }
+
+                public int getID() {
+                    return getUnboundParamIndex(name());
+                }
+
+                public double value(double[] pts, double[] ival) {
+                    double b = getParamVal(VecID.B, pts);
+                    double c = getParamVal(VecID.C, pts);
+                    double d = getParamVal(VecID.D, pts);
+                    double w = getParamVal(VecID.W, pts);
+                    double x = ival[getVarIndex(VecID.X) - 1];
+
+                    double ang = w * x;
+
+                    return x * Math.exp(-b * x) * (d * Math.cos(ang) + c * Math.sin(ang));
+                }
+            }
         });
 
         // f = exp(-b * t) * [c * cos(w * t) + d * sin(w * t)]
@@ -137,10 +135,6 @@ public class UnderDampedHarmonicB extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = exp(-B * x) * (Ccos(Wx) + Dsin(Wx)";
-    }
-
     @Override
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
@@ -163,5 +157,9 @@ public class UnderDampedHarmonicB extends OptFunction {
                 }
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = exp(-B * x) * (Ccos(Wx) + Dsin(Wx)";
     }
 }

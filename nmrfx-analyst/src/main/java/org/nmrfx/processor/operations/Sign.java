@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,41 +27,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
 @PluginAPI("parametric")
 public class Sign extends Operation implements Invertible {
-
-    private static final Map<String, ModeType> lookup
-            = new HashMap<String, ModeType>();
-
-    static {
-        for (ModeType s : EnumSet.allOf(ModeType.class)) {
-            lookup.put(s.getName(), s);
-        }
-
-    }
-
-    ModeType modeType;
-
-    /**
-     * Sign change operation.
-     *
-     * @param mode
-     * @throws ProcessingException
-     * @see Vec
-     */
-    public Sign(String mode) throws ProcessingException {
-        modeType = lookup.get(mode);
-
-    }
-
-    @Override
-    public Sign eval(Vec vector) throws ProcessingException {
-        modeType.execute(vector);
-        return this;
-    }
 
     enum ModeType {
 
@@ -92,8 +63,7 @@ public class Sign extends Operation implements Invertible {
                 vec.negatePairs();
             }
 
-        },
-        ;
+        },;
 
         String name;
 
@@ -107,6 +77,35 @@ public class Sign extends Operation implements Invertible {
 
         public abstract void execute(Vec vec);
 
+    }
+    private static final Map<String, ModeType> lookup
+            = new HashMap<String, ModeType>();
+
+    static {
+        for (ModeType s : EnumSet.allOf(ModeType.class)) {
+            lookup.put(s.getName(), s);
+        }
+
+    }
+
+    ModeType modeType;
+
+    /**
+     * Sign change operation.
+     *
+     * @param mode
+     * @throws ProcessingException
+     * @see Vec
+     */
+    public Sign(String mode) throws ProcessingException {
+        modeType = lookup.get(mode);
+
+    }
+
+    @Override
+    public Sign eval(Vec vector) throws ProcessingException {
+        modeType.execute(vector);
+        return this;
     }
 
 }

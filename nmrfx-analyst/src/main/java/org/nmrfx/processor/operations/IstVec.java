@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -44,9 +44,9 @@ import org.nmrfx.processor.processing.SampleSchedule;
  * <p>
  * IST : in python script <i>pyproc</i> - read a sample schedule from a file, and perform IST processing.
  *
- * @author bfetler
  * @see SampleSchedule
  * @since NMRViewJ 9.0
+ * @author bfetler
  */
 @PythonAPI("pyproc")
 public class IstVec extends Operation {
@@ -73,20 +73,26 @@ public class IstVec extends Operation {
      */
     private IstMath istMath;
 
+    @Override
+    public IstVec eval(Vec vector) throws ProcessingException {
+        ist(vector);
+        return this;
+    }
+
     /**
      * Create Vec operation for Iterative Soft Threshold.
      *
-     * @param threshold  cutoff threshold as a fraction of maximum height
-     * @param loops      number of loops to iterate over
-     * @param schedule   sample schedule
-     * @param alg        alternate cutoff algorithm
+     * @param threshold cutoff threshold as a fraction of maximum height
+     * @param loops number of loops to iterate over
+     * @param schedule sample schedule
+     * @param alg alternate cutoff algorithm
      * @param timeDomain result is in timeDomain
-     * @param zeroFill   vector size is doubled during timeDomain calculation
-     * @param allValues  replace all values (including actually sampled)
+     * @param zeroFill vector size is doubled during timeDomain calculation
+     * @param allValues replace all values (including actually sampled)
      * @throws ProcessingException
      */
     public IstVec(double threshold, int loops, SampleSchedule schedule, String alg,
-                  boolean timeDomain, boolean zeroFill, boolean allValues, boolean adjustThreshold)
+            boolean timeDomain, boolean zeroFill, boolean allValues, boolean adjustThreshold)
             throws ProcessingException {
         this.alg = alg;
         this.zeroFill = zeroFill;
@@ -96,29 +102,23 @@ public class IstVec extends Operation {
     /**
      * Create operation for Iterative Soft Threshold.
      *
-     * @param threshold       cutoff threshold as a fraction of maximum height
-     * @param loops           number of loops to iterate over
-     * @param schedule        sample schedule
-     * @param alg             alternate cutoff algorithm
-     * @param timeDomain      result is in timeDomain
-     * @param zeroFill        vector size is doubled during timeDomain calculation
+     * @param threshold cutoff threshold as a fraction of maximum height
+     * @param loops number of loops to iterate over
+     * @param schedule sample schedule
+     * @param alg alternate cutoff algorithm
+     * @param timeDomain result is in timeDomain
+     * @param zeroFill vector size is doubled during timeDomain calculation
      * @param adjustThreshold threshold is adjusted during ealculation
-     * @param ph0             zeroth-order phase
-     * @param ph1             first-order phase
+     * @param ph0 zeroth-order phase
+     * @param ph1 first-order phase
      * @throws ProcessingException
      */
     public IstVec(double threshold, int loops, SampleSchedule schedule, String alg,
-                  boolean timeDomain, boolean zeroFill, boolean allValues, boolean adjustThreshold, double ph0, double ph1)
+            boolean timeDomain, boolean zeroFill, boolean allValues, boolean adjustThreshold, double ph0, double ph1)
             throws ProcessingException {
         this(threshold, loops, schedule, alg, timeDomain, zeroFill, allValues, adjustThreshold);
         this.ph0 = ph0;
         this.ph1 = ph1;
-    }
-
-    @Override
-    public IstVec eval(Vec vector) throws ProcessingException {
-        ist(vector);
-        return this;
     }
 
     /**
@@ -127,6 +127,7 @@ public class IstVec extends Operation {
      *
      * @param vector
      * @throws ProcessingException
+     *
      * @see Vec
      */
     private void ist(Vec vector) throws ProcessingException {
@@ -172,7 +173,7 @@ public class IstVec extends Operation {
      * Print vector contents, with optional label.
      *
      * @param label Label
-     * @param vec   Vector
+     * @param vec Vector
      * @see Vec
      */
     static void printVec(String label, Vec vec) {

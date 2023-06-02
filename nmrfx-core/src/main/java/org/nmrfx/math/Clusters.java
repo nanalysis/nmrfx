@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * Clusters.java
  *
  * Created on December 15, 1999, 2:52 PM
@@ -31,9 +31,71 @@ import java.util.Set;
 import static java.util.Comparator.comparing;
 
 /**
+ *
  * @author JOHNBRUC
+ * @version
  */
 public class Clusters extends Object {
+
+    public static class ClusterItem {
+
+        double[] v;
+        int group;
+        List<Object> objects = new ArrayList<>();
+        boolean active = true;
+
+        public double getV0() {
+            return v[0];
+        }
+
+        public List<Object> getObjects() {
+            return objects;
+        }
+
+        public int getN() {
+            return objects.size();
+        }
+
+        public boolean isActive() {
+            return active;
+        }
+
+        public ClusterItem(Object obj, double[] v, int group) {
+            this.objects.add(obj);
+            this.v = v.clone();
+            this.group = group;
+        }
+
+        public ClusterItem(List<Object> objs, double[] v, int group) {
+            this.objects.addAll(objs);
+            this.v = v.clone();
+            this.group = group;
+        }
+
+        public void merge(ClusterItem item2) {
+            int iPfdim = v.length;
+            for (int ii = 0; ii < iPfdim; ii++) {
+                v[ii] = ((v[ii] * getN()) + (item2.v[ii] * item2.getN()))
+                        / (getN() + item2.getN());
+            }
+            objects.addAll(item2.objects);
+            item2.objects.clear();
+            item2.active = false;
+        }
+
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            for (int i = 0; i < objects.size(); i++) {
+                sBuilder.append(objects.get(i).toString());
+                sBuilder.append(" ");
+            }
+            for (int i = 0; i < v.length; i++) {
+                sBuilder.append(v[i]).append(" ");
+            }
+            sBuilder.append(group);
+            return sBuilder.toString();
+        }
+    }
 
     public List<ClusterItem> data = new ArrayList<>();
 
@@ -196,65 +258,5 @@ public class Clusters extends Object {
                 }
             }
         } while (ok);
-    }
-
-    public static class ClusterItem {
-
-        double[] v;
-        int group;
-        List<Object> objects = new ArrayList<>();
-        boolean active = true;
-
-        public ClusterItem(Object obj, double[] v, int group) {
-            this.objects.add(obj);
-            this.v = v.clone();
-            this.group = group;
-        }
-
-        public ClusterItem(List<Object> objs, double[] v, int group) {
-            this.objects.addAll(objs);
-            this.v = v.clone();
-            this.group = group;
-        }
-
-        public double getV0() {
-            return v[0];
-        }
-
-        public List<Object> getObjects() {
-            return objects;
-        }
-
-        public int getN() {
-            return objects.size();
-        }
-
-        public boolean isActive() {
-            return active;
-        }
-
-        public void merge(ClusterItem item2) {
-            int iPfdim = v.length;
-            for (int ii = 0; ii < iPfdim; ii++) {
-                v[ii] = ((v[ii] * getN()) + (item2.v[ii] * item2.getN()))
-                        / (getN() + item2.getN());
-            }
-            objects.addAll(item2.objects);
-            item2.objects.clear();
-            item2.active = false;
-        }
-
-        public String toString() {
-            StringBuilder sBuilder = new StringBuilder();
-            for (int i = 0; i < objects.size(); i++) {
-                sBuilder.append(objects.get(i).toString());
-                sBuilder.append(" ");
-            }
-            for (int i = 0; i < v.length; i++) {
-                sBuilder.append(v[i]).append(" ");
-            }
-            sBuilder.append(group);
-            return sBuilder.toString();
-        }
     }
 }

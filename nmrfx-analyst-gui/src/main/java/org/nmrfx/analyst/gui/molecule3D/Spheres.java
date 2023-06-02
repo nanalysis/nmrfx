@@ -1,23 +1,18 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
+import java.util.*;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
+import javax.vecmath.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-
-import javax.vecmath.Vector3d;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class Spheres extends Group implements MolItem {
 
     static final private double minSelRadius = 0.15;
-    static Map parameterMap = new TreeMap();
     String molName = null;
     int iStructure = 0;
     int xDivisions = 15;
@@ -29,6 +24,7 @@ public class Spheres extends Group implements MolItem {
     Vector3d a = new Vector3d(0.0, 0.0, 0.0);
     Vector3d b = new Vector3d(0.0, 0.0, 0.0);
     Color color;
+    static Map parameterMap = new TreeMap();
 
     public Spheres(String molName, List<Vector3D> vecs, Color color, double radius, Vector3D center, double scale, String tag) {
         this.molName = molName;
@@ -83,6 +79,7 @@ public class Spheres extends Group implements MolItem {
     }
 
     /**
+     *
      * @param radius
      */
     public void setRadius(double radius) {

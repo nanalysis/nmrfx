@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ *
  * @author brucejohnson
  */
 public class TRACTFit {
@@ -47,9 +48,22 @@ public class TRACTFit {
             relaxEquations[i] = new RelaxEquations(sf[i], elemI, elemS);
         }
     }
-
+    
     public double[] getParErrors() {
         return parErrs.clone();
+    }
+
+    class MatchFunction implements UnivariateFunction {
+
+        MatchFunction() {
+        }
+
+        @Override
+        public double value(double tauC) {
+            double nab2 = relaxEquations[0].TRACTdeltaAlphaBeta(tauC);
+            double value = Math.abs((rB - rA) - nab2);
+            return value;
+        }
     }
 
     public double multiValue(double[] pars, double[][] values) {
@@ -63,7 +77,7 @@ public class TRACTFit {
             double tauC = pars[iRes + 2];
 
             double nab2 = relaxEquations[iSF].TRACTdeltaAlphaBeta(tauC * 1.0e-9, csa * 1.0e-6, theta);
-            double delta = (nab2 - values[2][i]) / values[3][i];
+            double delta = (nab2 - values[2][i])/values[3][i];
             sum += Math.abs(delta);
         }
         return sum / n;
@@ -122,18 +136,5 @@ public class TRACTFit {
 
         best = optValue.getPoint();
         return best;
-    }
-
-    class MatchFunction implements UnivariateFunction {
-
-        MatchFunction() {
-        }
-
-        @Override
-        public double value(double tauC) {
-            double nab2 = relaxEquations[0].TRACTdeltaAlphaBeta(tauC);
-            double value = Math.abs((rB - rA) - nab2);
-            return value;
-        }
     }
 }

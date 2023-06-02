@@ -1,7 +1,10 @@
 package org.nmrfx.utilities;
 
-import com.jcraft.jsch.*;
-
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -11,15 +14,16 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
+ *
  * @author brucejohnson
  */
 public class RemoteDatasetAccess {
 
+    public String userName = "";
+    public String remoteHost = "";
     public static int REMOTE_PORT = 22;
     public static int SESSION_TIMEOUT = 10000;
     public static int CHANNEL_TIMEOUT = 5000;
-    public String userName = "";
-    public String remoteHost = "";
     JSch jsch = new JSch();
     String userdir = System.getProperty("user.home");
     FileSystem fileSystem = FileSystems.getDefault();
@@ -55,7 +59,7 @@ public class RemoteDatasetAccess {
         boolean ok = false;
 
         if (knownHostsFile.exists() && identityFile.exists()) {
-            try (Stream<String> lines = Files.lines(identityFile.toPath())) {
+            try (Stream<String> lines = Files.lines(identityFile.toPath())){
                 ok = lines.anyMatch(line -> line.startsWith(remoteHost));
             } catch (IOException ex) {
                 ok = false;

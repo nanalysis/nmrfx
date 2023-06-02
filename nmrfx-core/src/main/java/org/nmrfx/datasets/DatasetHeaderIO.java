@@ -18,6 +18,7 @@ import java.nio.ByteOrder;
 import static org.nmrfx.datasets.DatasetBase.*;
 
 /**
+ *
  * @author brucejohnson
  */
 public class DatasetHeaderIO {
@@ -414,7 +415,7 @@ public class DatasetHeaderIO {
         }
     }
 
-    //    The 180 byte header contains:
+//    The 180 byte header contains:
 //
 //position	bytes	contents	required value
 //0	10	file type	= UCSF NMR (8 character null terminated string)

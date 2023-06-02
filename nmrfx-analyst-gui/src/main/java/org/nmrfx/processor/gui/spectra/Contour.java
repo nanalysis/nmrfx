@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * Contour.java
  *
  * Created on December 15, 2002, 6:13 PM
@@ -29,15 +29,20 @@ import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsIOException;
 
 /**
+ *
  * @author johnbruc
  */
 public class Contour extends java.lang.Object {
 
-    private static final float scaleFac = 256.0f;
+    GraphicsContextInterface g2;
     final double[][] pix;
     final double[][] pts;
     final double scaleX;
     final double scaleY;
+    double lineWidth = 0.5;
+    Color color = Color.BLACK;
+
+    private static final float scaleFac = 256.0f;
     /**
      * Creates a new instance of Contour
      */
@@ -45,14 +50,11 @@ public class Contour extends java.lang.Object {
     public short[][] coords = null;
     public double xOffset = 0;
     public double yOffset = 0;
-    GraphicsContextInterface g2;
-    double lineWidth = 0.5;
-    Color color = Color.BLACK;
     float[][] z = null;
     float rampEnd = 4;
     float plateauEnd = 8;
     int[] offsets = {
-            0, 1, 6, 2, 11, 5, 7, 3, 12, 13, 10, 14, 8, 9, 4, 15
+        0, 1, 6, 2, 11, 5, 7, 3, 12, 13, 10, 14, 8, 9, 4, 15
     };
     int[][] cells;
 
@@ -71,6 +73,10 @@ public class Contour extends java.lang.Object {
     public void setAttributes(double lineWidth, Color color) {
         this.lineWidth = lineWidth;
         this.color = color;
+    }
+
+    public static float getScaleFac() {
+        return scaleFac;
     }
 
     public synchronized boolean contour(float[] levels, float[][] z) {
@@ -193,14 +199,14 @@ public class Contour extends java.lang.Object {
         return this.linesCount[0];
     }
 
+    public int getLineCount(final int coordLevel) {
+        return this.linesCount[coordLevel];
+    }
+
     public void setLineCount(final int lineCount) {
         for (int i = 0; i < linesCount.length; i++) {
             linesCount[i] = lineCount;
         }
-    }
-
-    public int getLineCount(final int coordLevel) {
-        return this.linesCount[coordLevel];
     }
 
     public synchronized boolean marchSquares(float level, float[][] data, int[][] cells) {
@@ -295,7 +301,7 @@ public class Contour extends java.lang.Object {
     0,1,6,2,11,5,7,3,12,13,10,14,8,9,4,15
 
     0:3 1:4 2:9 3:14
-
+    
      */
     public void drawSquares(GraphicsContextInterface g2) throws GraphicsIOException {
         g2.setGlobalAlpha(1.0);
@@ -483,10 +489,6 @@ public class Contour extends java.lang.Object {
         }
         return nextSide;
 
-    }
-
-    public static float getScaleFac() {
-        return scaleFac;
     }
 
 }

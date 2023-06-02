@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -161,8 +161,7 @@ public final class NMRDataUtil {
     /**
      * Load an NMRData object from the fpath. The NMRData will be loaded as either a dataset or an FID, depending on
      * the fpath.
-     *
-     * @param fpath   absolute file path
+     * @param fpath absolute file path
      * @param nusFile
      * @return An NMRData object
      * @throws IOException
@@ -174,7 +173,7 @@ public final class NMRDataUtil {
                 return new NMRViewData(bpath.toString());
             } else if (RS2DData.findFID(bpath)) {
                 return new RS2DData(bpath.toString(), nusFile);
-                // Most processed Bruker files would also have the fid present and pass the findFID check,
+            // Most processed Bruker files would also have the fid present and pass the findFID check,
                 // so must check if it's a dataset before checking for FID
             } else if (BrukerData.findData(bpath)) {
                 return new BrukerData(bpath.toString());
@@ -248,7 +247,7 @@ public final class NMRDataUtil {
      */
     public static ArrayList guessNucleusFromFreq(final double freq) {
         final double[] Hfreqs = {1000.0, 950.0, 900.0, 800.0, 750.0,
-                700.0, 600.0, 500.0, 400.0, 300.0, 100.0, 60.0};
+            700.0, 600.0, 500.0, 400.0, 300.0, 100.0, 60.0};
         HashMap<String, Double> ratio = new LinkedHashMap<>(4);
         ratio.put("1H", 1.0);
         ratio.put("13C", 0.25145004);
@@ -283,6 +282,40 @@ public final class NMRDataUtil {
     } // end guessNucleusFromFreq
 
     /**
+     *
+     */
+    public static class PeekFiles extends SimpleFileVisitor<Path> {
+
+        ArrayList<String> fileList = new ArrayList<>();
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
+            if (attr.isRegularFile() && (file.endsWith("fid") || (file.endsWith("ser")) || file.toString().endsWith(".jdx") || file.toString().endsWith(".dx") || file.toString().endsWith(RS2DData.DATA_FILE_NAME))) {
+                String fidPath = NMRDataUtil.isFIDDir(file.toString());
+                if (fidPath != null) {
+                    fileList.add(fidPath);
+                }
+            }
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFileFailed(Path file, IOException e) {
+            log.warn(e.getMessage(), e);
+            return FileVisitResult.CONTINUE;
+        }
+
+        /**
+         * Get the files that were found while scanning
+         *
+         * @return a list of file names
+         */
+        public ArrayList<String> getFiles() {
+            return fileList;
+        }
+    } // end class PeekFiles
+
+    /**
      * Scan the specified directory to find sub-directories that are NMR data
      * sets.
      *
@@ -307,11 +340,11 @@ public final class NMRDataUtil {
     public static List<Path> findProcessedFiles(Path path) throws IOException {
         List<Path> result;
         try (Stream<Path> pathStream = Files.find(path, 1, (p, basicFileAttributes)
-                        -> {
-                    String name = p.getFileName().toString();
-                    return name.endsWith(".nv") || name.endsWith(".ucsf")
-                            || BrukerData.isProcessedFile(name);
-                }
+                -> {
+            String name = p.getFileName().toString();
+            return name.endsWith(".nv") || name.endsWith(".ucsf")
+                    || BrukerData.isProcessedFile(name);
+        }
         )) {
             result = pathStream.collect(Collectors.toList());
         }
@@ -343,14 +376,14 @@ public final class NMRDataUtil {
             List<Path> processed = findProcessedFiles(localFile.toPath());
             if (!processed.isEmpty()) {
                 processed.sort((o1, o2) -> {
-                            try {
-                                FileTime time1 = Files.getLastModifiedTime(o1);
-                                FileTime time2 = Files.getLastModifiedTime(o2);
-                                return time1.compareTo(time2);
-                            } catch (IOException ex) {
-                                return 0;
-                            }
-                        }
+                    try {
+                        FileTime time1 = Files.getLastModifiedTime(o1);
+                        FileTime time2 = Files.getLastModifiedTime(o2);
+                        return time1.compareTo(time2);
+                    } catch (IOException ex) {
+                        return 0;
+                    }
+                }
                 );
                 datasetName = processed.get(0).getFileName().toString();
             }
@@ -410,38 +443,4 @@ public final class NMRDataUtil {
         double[] phases = vec.autoPhase(true, winSize, 25.0, 2, 360.0, 50.0);
         return phases;
     }
-
-    /**
-     *
-     */
-    public static class PeekFiles extends SimpleFileVisitor<Path> {
-
-        ArrayList<String> fileList = new ArrayList<>();
-
-        @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
-            if (attr.isRegularFile() && (file.endsWith("fid") || (file.endsWith("ser")) || file.toString().endsWith(".jdx") || file.toString().endsWith(".dx") || file.toString().endsWith(RS2DData.DATA_FILE_NAME))) {
-                String fidPath = NMRDataUtil.isFIDDir(file.toString());
-                if (fidPath != null) {
-                    fileList.add(fidPath);
-                }
-            }
-            return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFileFailed(Path file, IOException e) {
-            log.warn(e.getMessage(), e);
-            return FileVisitResult.CONTINUE;
-        }
-
-        /**
-         * Get the files that were found while scanning
-         *
-         * @return a list of file names
-         */
-        public ArrayList<String> getFiles() {
-            return fileList;
-        }
-    } // end class PeekFiles
 }

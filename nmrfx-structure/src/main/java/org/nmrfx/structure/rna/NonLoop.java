@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,11 +18,12 @@
 package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.SecondaryStructure;
 
 import java.util.List;
+import org.nmrfx.chemistry.SecondaryStructure;
 
 /**
+ *
  * @author bajlabuser
  */
 public class NonLoop extends SecondaryStructure {
@@ -36,9 +37,9 @@ public class NonLoop extends SecondaryStructure {
         secResidues = residues;
 
     }
-
+    
     @Override
-    public String getName() {
+    public String getName(){
         return name;
     }
 }

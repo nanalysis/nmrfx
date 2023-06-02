@@ -57,23 +57,60 @@ public class ChartProcessor {
     private static final Logger log = LoggerFactory.getLogger(ChartProcessor.class);
 
     public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
-    static double[] echoAntiEchoCoefs = {1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0};
-    static double[] echoAntiEchoRCoefs = {1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, -1.0};
-    static double[] hyperCoefs = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0};
-    static double[] hyperRCoefs = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
-    final ProcessorController processorController;
+    private boolean lastWasFreqDomain = false;
+
+    private SimpleObjectProperty<NMRData> nmrDataObj;
     private final SimpleBooleanProperty areOperationListsValid = new SimpleBooleanProperty(false);
+
+
+    public SimpleObjectProperty<NMRData> nmrDataProperty() {
+        if (nmrDataObj == null) {
+            nmrDataObj = new SimpleObjectProperty<>(null);
+        }
+        return nmrDataObj;
+    }
+
+    public SimpleBooleanProperty getAreOperationListsValidProperty() {
+        return areOperationListsValid;
+    }
+
+    public void setNMRData(NMRData value) {
+        nmrDataProperty().set(value);
+    }
+
+    public NMRData getNMRData() {
+        return nmrDataProperty().get();
+    }
+
     File datasetFile;
     File datasetFileTemp;
+    /**
+     * The dimension of datasetFile that is in use for interactive processing.
+     */
+    private int vecDim = 0;
+    /**
+     * The name of the dimension of datasetFile that is in use for interactive
+     * processing. Is a string because it could refer to multiple dimensions
+     * (for IST matrix processing, for example).
+     */
+    private String vecDimName = "D1";
+    /**
+     * The name of the datasetFile that will be created when whole data file is
+     * processed.
+     */
+    private DatasetType datasetType = DEFAULT_DATASET_TYPE;
+
     /**
      * List of commands to be executed at beginning of script.
      */
     List<String> headerList = new ArrayList<>();
+
     /**
      * Map of lists of operations with key being the dimension the operations
      * apply to
      */
     Map<String, List<String>> mapOpLists = new TreeMap<>(new DimComparator());
+
     /**
      * List of Vec objects that contain data used in interactive processing. The
      * number of Vec objects correspond to the number of vectors in the raw data
@@ -105,6 +142,10 @@ public class ChartProcessor {
      */
     boolean fixDSP = true;
     /**
+     * Used to determine mapping of position of FIDs in raw data file..
+     */
+    private MultiVecCounter multiVecCounter;
+    /**
      * How many vectors are present in data file for each unique combination of
      * indirect acquisition times. Typically 2 for 2D, 4 for 3D etc.
      */
@@ -113,62 +154,70 @@ public class ChartProcessor {
      * Display chart used for rendering vectors.
      */
     PolyChart chart;
+
     List<?> pyDocs;
     boolean scriptValid = false;
     int[] mapToDataset = null;
+
+    final ProcessorController processorController;
     FXMLController fxmlController;
-    private boolean lastWasFreqDomain = false;
-    private SimpleObjectProperty<NMRData> nmrDataObj;
-    /**
-     * The dimension of datasetFile that is in use for interactive processing.
-     */
-    private int vecDim = 0;
-    /**
-     * The name of the dimension of datasetFile that is in use for interactive
-     * processing. Is a string because it could refer to multiple dimensions
-     * (for IST matrix processing, for example).
-     */
-    private String vecDimName = "D1";
-    /**
-     * The name of the datasetFile that will be created when whole data file is
-     * processed.
-     */
-    private DatasetType datasetType = DEFAULT_DATASET_TYPE;
-    /**
-     * Used to determine mapping of position of FIDs in raw data file..
-     */
-    private MultiVecCounter multiVecCounter;
+
+    static double[] echoAntiEchoCoefs = {1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0};
+    static double[] echoAntiEchoRCoefs = {1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, -1.0};
+    static double[] hyperCoefs = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0};
+    static double[] hyperRCoefs = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
     public ChartProcessor(ProcessorController processorController) {
         this.processorController = processorController;
         this.pyDocs = AnalystPythonInterpreter.eval("getDocs()", ArrayList.class);
     }
 
-    public SimpleObjectProperty<NMRData> nmrDataProperty() {
-        if (nmrDataObj == null) {
-            nmrDataObj = new SimpleObjectProperty<>(null);
+    class DimComparator implements Comparator {
+
+        @Override
+        public int compare(Object o1, Object o2) {
+            int result = 0;
+            if ((o1 == null) && (o2 == null)) {
+                result = 0;
+            } else if (o1 == null) {
+                result = 1;
+            } else if (o2 == null) {
+                result = -1;
+            } else {
+                String s1 = (String) o1;
+                String s2 = (String) o2;
+                if (!s1.equals("s2")) {
+                    int comma1 = s1.indexOf(',');
+                    int comma2 = s2.indexOf(',');
+                    String s1c = s1;
+                    if (comma1 != -1) {
+                        s1c = s1.substring(0, comma1);
+                    }
+                    String s2c = s2;
+                    if (comma2 != -1) {
+                        s2c = s2.substring(0, comma2);
+                    }
+                    if ((comma1 == -1) && (comma2 == -1)) {
+                        result = s1.compareTo(s2);
+                    } else if ((comma1 != -1) && (comma2 != -1)) {
+                        result = s1.compareTo(s2);
+                    } else if (s1c.equals(s2c)) {
+                        if (comma1 != -1) {
+                            result = -1;
+                        } else {
+                            result = 1;
+                        }
+                    } else {
+                        result = s1c.compareTo(s2c);
+                    }
+                }
+            }
+            return result;
         }
-        return nmrDataObj;
-    }
-
-    public SimpleBooleanProperty getAreOperationListsValidProperty() {
-        return areOperationListsValid;
-    }
-
-    public NMRData getNMRData() {
-        return nmrDataProperty().get();
-    }
-
-    public void setNMRData(NMRData value) {
-        nmrDataProperty().set(value);
     }
 
     ProcessOps getProcess() {
         return AnalystPythonInterpreter.eval("getCurrentProcess()", ProcessOps.class);
-    }
-
-    public PolyChart getChart() {
-        return chart;
     }
 
     public void setChart(PolyChart chart) {
@@ -178,11 +227,48 @@ public class ChartProcessor {
         execScript("", false, false);
     }
 
+    public PolyChart getChart() {
+        return chart;
+    }
+
     public void setEchoAntiEcho(boolean value) {
     }
 
     public String getAcqOrder() {
         return getAcqOrder(false);
+    }
+
+    public String getAcqOrder(boolean useQuotes) {
+        String acqOrder = "";
+        NMRData nmrData = getNMRData();
+
+        if (nmrData != null) {
+            acqOrder = nmrData.getAcqOrderShort();
+            if (!acqOrder.equals("")) {
+                if (useQuotes) {
+                    acqOrder = "'" + acqOrder + "'";
+                }
+            } else {
+                String[] acqOrderArray = nmrData.getAcqOrder();
+                if (acqOrderArray != null) {
+                    StringBuilder sBuilder = new StringBuilder();
+                    for (int i = 0; i < acqOrderArray.length; i++) {
+                        if (i != 0) {
+                            sBuilder.append(',');
+                        }
+                        if (useQuotes) {
+                            sBuilder.append("'");
+                        }
+                        sBuilder.append(acqOrderArray[i]);
+                        if (useQuotes) {
+                            sBuilder.append("'");
+                        }
+                    }
+                    acqOrder = sBuilder.toString();
+                }
+            }
+        }
+        return acqOrder;
     }
 
     public void setAcqOrder(String acqOrder) {
@@ -242,39 +328,6 @@ public class ChartProcessor {
         }
     }
 
-    public String getAcqOrder(boolean useQuotes) {
-        String acqOrder = "";
-        NMRData nmrData = getNMRData();
-
-        if (nmrData != null) {
-            acqOrder = nmrData.getAcqOrderShort();
-            if (!acqOrder.equals("")) {
-                if (useQuotes) {
-                    acqOrder = "'" + acqOrder + "'";
-                }
-            } else {
-                String[] acqOrderArray = nmrData.getAcqOrder();
-                if (acqOrderArray != null) {
-                    StringBuilder sBuilder = new StringBuilder();
-                    for (int i = 0; i < acqOrderArray.length; i++) {
-                        if (i != 0) {
-                            sBuilder.append(',');
-                        }
-                        if (useQuotes) {
-                            sBuilder.append("'");
-                        }
-                        sBuilder.append(acqOrderArray[i]);
-                        if (useQuotes) {
-                            sBuilder.append("'");
-                        }
-                    }
-                    acqOrder = sBuilder.toString();
-                }
-            }
-        }
-        return acqOrder;
-    }
-
     public String getArraySizes() {
         String arraySizes = "";
         NMRData nmrData = getNMRData();
@@ -323,12 +376,12 @@ public class ChartProcessor {
         }
     }
 
-    public boolean getFixDSP() {
-        return fixDSP;
-    }
-
     public void setFixDSP(boolean value) {
         fixDSP = value;
+    }
+
+    public boolean getFixDSP() {
+        return fixDSP;
     }
 
     public int[] loadVectors(int i) {
@@ -364,6 +417,24 @@ public class ChartProcessor {
         return vecIndex;
     }
 
+    record VecIndexScore(VecIndex vecIndex, int maxIndex, double score) implements  Comparable {
+
+        @Override
+        public int compareTo(Object o) {
+            if (o == null) {
+                return 1;
+            } else if (!(o instanceof VecIndexScore)) {
+                return 1;
+            } else {
+                int compare = Double.compare(score, ((VecIndexScore) o).score());
+                if (compare == 0) {
+                    compare = Integer.compare(maxIndex, ((VecIndexScore) o).maxIndex());
+                }
+                return compare;
+            }
+        }
+    }
+
     public List<VecIndexScore> scanForCorruption(double ratio, int maxN) {
         int iGroup = 0;
         NMRData nmrData = getNMRData();
@@ -371,7 +442,7 @@ public class ChartProcessor {
         Vec newVec = new Vec(nPoints, nmrData.isComplex(0));
         var stats = new DescriptiveStatistics();
         List<VecIndexScore> vecIndices = new ArrayList<>();
-        while (true) {
+        while( true) {
             VecIndex vecIndex = multiVecCounter.getNextGroup(iGroup++);
             if (vecIndex == null) {
                 break;
@@ -388,22 +459,22 @@ public class ChartProcessor {
                 }
             }
             var vecIndexScore = new VecIndexScore(vecIndex, maxIndex, groupMax);
-            stats.addValue(groupMax);
+            stats.addValue(groupMax );
             vecIndices.add(vecIndexScore);
         }
 
         double mean = stats.getMean();
         double sdev = stats.getStandardDeviation();
-        double threshold = mean + ratio * sdev;
+        double threshold= mean + ratio * sdev;
         List<VecIndexScore> result = new ArrayList<>();
         Collections.sort(vecIndices, Collections.reverseOrder());
         int n = Math.min(vecIndices.size(), maxN);
-        for (int i = 0; i < n; i++) {
+        for (int i=0;i<n;i++) {
             var vecIndexScore = vecIndices.get(i);
             if (vecIndexScore.score() > threshold) {
                 result.add(vecIndexScore);
             }
-        }
+         }
         return result;
     }
 
@@ -594,14 +665,6 @@ public class ChartProcessor {
 
     }
 
-    public String getVecDimName() {
-        return vecDimName;
-    }
-
-    public int getVecDim() {
-        return vecDim;
-    }
-
     public void setVecDim(String dimName) {
         int value;
         boolean isDim;
@@ -636,12 +699,20 @@ public class ChartProcessor {
         }
     }
 
-    public DatasetType getDatasetType() {
-        return datasetType;
+    public String getVecDimName() {
+        return vecDimName;
+    }
+
+    public int getVecDim() {
+        return vecDim;
     }
 
     public void setDatasetType(DatasetType value) {
         datasetType = value;
+    }
+
+    public DatasetType getDatasetType() {
+        return datasetType;
     }
 
     public String getScriptFileName() {
@@ -708,7 +779,7 @@ public class ChartProcessor {
         File file = getDefaultScriptFile();
         StringBuilder resultBuilder = new StringBuilder();
         if (file.exists()) {
-            try (Stream<String> lines = Files.lines(file.toPath())) {
+            try (Stream<String> lines = Files.lines(file.toPath())){
                 lines.forEach(line -> {
                     if (line.trim().startsWith("CREATE")) {
                         int firstParen = line.indexOf("(");
@@ -729,7 +800,6 @@ public class ChartProcessor {
 
     /**
      * Loads the default script if present.
-     *
      * @return True if default script is loaded, false if it is not loaded.
      */
     public boolean loadDefaultScriptIfPresent() {
@@ -776,6 +846,25 @@ public class ChartProcessor {
         return scriptBuilder.toString();
     }
 
+    public static String buildInitScript() {
+        StringBuilder scriptBuilder = new StringBuilder();
+        String lineSep = System.lineSeparator();
+        scriptBuilder.append("import os").append(lineSep);
+        scriptBuilder.append("from pyproc import *").append(lineSep);
+        scriptBuilder.append("useProcessor()").append(lineSep);
+        scriptBuilder.append("procOpts(nprocess=").append(PreferencesController.getNProcesses()).append(")").append(lineSep);
+        return scriptBuilder.toString();
+    }
+
+    public static String buildFileScriptPart(String fidFilePath, String datasetFilePath) {
+        StringBuilder scriptBuilder = new StringBuilder();
+        String lineSep = System.lineSeparator();
+        scriptBuilder.append("useProcessor()").append(lineSep);
+        scriptBuilder.append("FID('").append(fidFilePath.replace("\\", "/")).append("')").append(lineSep);
+        scriptBuilder.append("CREATE('").append(datasetFilePath.replace("\\", "/")).append("')").append(lineSep);
+        return scriptBuilder.toString();
+    }
+
     public String buildScript(int nDim) {
         if (mapOpLists == null) {
             return "";
@@ -806,7 +895,7 @@ public class ChartProcessor {
             File nmrFile = new File(filePath);
             File directory = nmrFile.isDirectory() ? nmrFile : nmrFile.getParentFile();
             File file;
-            if (getDatasetType() == DatasetType.SPINit) {
+            if (getDatasetType()== DatasetType.SPINit) {
                 Path datasetDir = directory.toPath();
                 Path newProcPath = RS2DProcUtil.findNextProcPath(datasetDir);
                 file = newProcPath.toFile();
@@ -846,7 +935,7 @@ public class ChartProcessor {
             File parentFile = datasetFileToCheck.getParentFile();
             boolean canWrite = parentFile.canWrite();
             // For SPINit files check if either of the above 2 parent directories are writable (Proc and the fid data directory)
-            if (getDatasetType() == DatasetType.SPINit) {
+            if (getDatasetType()== DatasetType.SPINit) {
                 File procParent = parentFile.getParentFile();
                 File fidParent = procParent.getParentFile();
                 canWrite = (!procParent.exists() && fidParent.canWrite()) || procParent.canWrite();
@@ -1258,86 +1347,5 @@ public class ChartProcessor {
 
     public ProcessorController getProcessorController() {
         return processorController;
-    }
-
-    public static String buildInitScript() {
-        StringBuilder scriptBuilder = new StringBuilder();
-        String lineSep = System.lineSeparator();
-        scriptBuilder.append("import os").append(lineSep);
-        scriptBuilder.append("from pyproc import *").append(lineSep);
-        scriptBuilder.append("useProcessor()").append(lineSep);
-        scriptBuilder.append("procOpts(nprocess=").append(PreferencesController.getNProcesses()).append(")").append(lineSep);
-        return scriptBuilder.toString();
-    }
-
-    public static String buildFileScriptPart(String fidFilePath, String datasetFilePath) {
-        StringBuilder scriptBuilder = new StringBuilder();
-        String lineSep = System.lineSeparator();
-        scriptBuilder.append("useProcessor()").append(lineSep);
-        scriptBuilder.append("FID('").append(fidFilePath.replace("\\", "/")).append("')").append(lineSep);
-        scriptBuilder.append("CREATE('").append(datasetFilePath.replace("\\", "/")).append("')").append(lineSep);
-        return scriptBuilder.toString();
-    }
-
-    record VecIndexScore(VecIndex vecIndex, int maxIndex, double score) implements Comparable {
-
-        @Override
-        public int compareTo(Object o) {
-            if (o == null) {
-                return 1;
-            } else if (!(o instanceof VecIndexScore)) {
-                return 1;
-            } else {
-                int compare = Double.compare(score, ((VecIndexScore) o).score());
-                if (compare == 0) {
-                    compare = Integer.compare(maxIndex, ((VecIndexScore) o).maxIndex());
-                }
-                return compare;
-            }
-        }
-    }
-
-    class DimComparator implements Comparator {
-
-        @Override
-        public int compare(Object o1, Object o2) {
-            int result = 0;
-            if ((o1 == null) && (o2 == null)) {
-                result = 0;
-            } else if (o1 == null) {
-                result = 1;
-            } else if (o2 == null) {
-                result = -1;
-            } else {
-                String s1 = (String) o1;
-                String s2 = (String) o2;
-                if (!s1.equals("s2")) {
-                    int comma1 = s1.indexOf(',');
-                    int comma2 = s2.indexOf(',');
-                    String s1c = s1;
-                    if (comma1 != -1) {
-                        s1c = s1.substring(0, comma1);
-                    }
-                    String s2c = s2;
-                    if (comma2 != -1) {
-                        s2c = s2.substring(0, comma2);
-                    }
-                    if ((comma1 == -1) && (comma2 == -1)) {
-                        result = s1.compareTo(s2);
-                    } else if ((comma1 != -1) && (comma2 != -1)) {
-                        result = s1.compareTo(s2);
-                    } else if (s1c.equals(s2c)) {
-                        if (comma1 != -1) {
-                            result = -1;
-                        } else {
-                            result = 1;
-                        }
-                    } else {
-                        result = s1c.compareTo(s2c);
-                    }
-                }
-            }
-            return result;
-        }
     }
 }

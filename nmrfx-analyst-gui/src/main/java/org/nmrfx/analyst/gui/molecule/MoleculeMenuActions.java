@@ -6,8 +6,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.analyst.gui.MenuActions;
+import org.nmrfx.analyst.gui.*;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
@@ -15,6 +14,8 @@ import org.nmrfx.chemistry.io.*;
 import org.nmrfx.structure.chemistry.Molecule;
 
 import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MoleculeMenuActions extends MenuActions {
     private MolSceneController molController;
@@ -204,7 +205,6 @@ public class MoleculeMenuActions extends MenuActions {
             resetAtomController();
         }
     }
-
     @FXML
     private void showRNAPeakGenerator(ActionEvent event) {
         if (rnaPeakGenController == null) {

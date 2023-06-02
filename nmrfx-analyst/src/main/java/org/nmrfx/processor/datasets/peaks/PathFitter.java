@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 /**
+ *
  * @author brucejohnson
  */
 public class PathFitter {
@@ -38,6 +39,73 @@ public class PathFitter {
     int nPaths;
     int nDims = 2;
     double pScale = 0.001;
+
+    class PathFunction implements BiFunction<double[], double[][], Double> {
+
+        double yCalc(double a, double b, double c, double x, double p) {
+            double dP = c - a;
+            double kD = fitLog ? Math.pow(10.0, b) : b;
+            double n1 = p + x + kD;
+            double s1 = Math.sqrt(n1 * n1 - 4.0 * x * p);
+            double yCalc = a + dP * (n1 - s1) / (2.0 * p);
+            return yCalc;
+
+        }
+
+        @Override
+        public Double apply(double[] pars, double[][] values) {
+            double a = fit0 ? pars[0] : 0.0;
+            double b = fit0 ? pars[1] : pars[0];
+            double sum = 0.0;
+            int n = values[0].length;
+            for (int i = 0; i < n; i++) {
+                int iOff = (int) Math.round(values[2][i]);
+                double c = fit0 ? pars[2 + iOff] : pars[1 + iOff];
+                double x = values[0][i];
+                double p = values[1][i];
+                double y = values[3][i];
+                double yCalc = yCalc(a, b, c, x, p);
+
+                double delta = yCalc - y;
+                sum += delta * delta;
+
+            }
+            double value = Math.sqrt(sum / n);
+            return value;
+        }
+
+        public double[] getGuess(double[] x, double[] y, int[] indices) {
+            int nPars = 1 + nPaths;
+
+            double[] result = new double[nPars];
+            for (int iPath = 0; iPath < nPaths; iPath++) {
+                double yMax = FitUtils.getMaxValue(y, indices, iPath);
+                double yAtMinX = FitUtils.getYAtMinX(x, y, indices, iPath);
+                double xMid = FitUtils.getMidY0(x, y, indices, iPath);
+                result[1 + iPath] = yMax;
+                result[0] += fitLog ? Math.log10(xMid) : xMid;
+            }
+            result[0] /= nPaths;
+            return result;
+        }
+
+        public double[][] getSimValues(double[] pars, double first, double last, int n, double p) {
+            double a = fit0 ? pars[0] : 0.0;
+            double b = fit0 ? pars[1] : pars[0];
+            double c = fit0 ? pars[2] : pars[1];
+
+            double[][] result = new double[2][n];
+            double delta = (last - first) / (n - 1);
+            for (int i = 0; i < n; i++) {
+                double x = first + delta * i;
+                double y = yCalc(a, b, c, x, p);
+                result[0][i] = x;
+                result[1][i] = y;
+            }
+            return result;
+        }
+
+    }
 
     void fitPressure() {
         int nSim = 100;
@@ -270,72 +338,5 @@ public class PathFitter {
             path.setFitPars(pars);
             path.setFitErrs(errs);
         }
-    }
-
-    class PathFunction implements BiFunction<double[], double[][], Double> {
-
-        double yCalc(double a, double b, double c, double x, double p) {
-            double dP = c - a;
-            double kD = fitLog ? Math.pow(10.0, b) : b;
-            double n1 = p + x + kD;
-            double s1 = Math.sqrt(n1 * n1 - 4.0 * x * p);
-            double yCalc = a + dP * (n1 - s1) / (2.0 * p);
-            return yCalc;
-
-        }
-
-        @Override
-        public Double apply(double[] pars, double[][] values) {
-            double a = fit0 ? pars[0] : 0.0;
-            double b = fit0 ? pars[1] : pars[0];
-            double sum = 0.0;
-            int n = values[0].length;
-            for (int i = 0; i < n; i++) {
-                int iOff = (int) Math.round(values[2][i]);
-                double c = fit0 ? pars[2 + iOff] : pars[1 + iOff];
-                double x = values[0][i];
-                double p = values[1][i];
-                double y = values[3][i];
-                double yCalc = yCalc(a, b, c, x, p);
-
-                double delta = yCalc - y;
-                sum += delta * delta;
-
-            }
-            double value = Math.sqrt(sum / n);
-            return value;
-        }
-
-        public double[] getGuess(double[] x, double[] y, int[] indices) {
-            int nPars = 1 + nPaths;
-
-            double[] result = new double[nPars];
-            for (int iPath = 0; iPath < nPaths; iPath++) {
-                double yMax = FitUtils.getMaxValue(y, indices, iPath);
-                double yAtMinX = FitUtils.getYAtMinX(x, y, indices, iPath);
-                double xMid = FitUtils.getMidY0(x, y, indices, iPath);
-                result[1 + iPath] = yMax;
-                result[0] += fitLog ? Math.log10(xMid) : xMid;
-            }
-            result[0] /= nPaths;
-            return result;
-        }
-
-        public double[][] getSimValues(double[] pars, double first, double last, int n, double p) {
-            double a = fit0 ? pars[0] : 0.0;
-            double b = fit0 ? pars[1] : pars[0];
-            double c = fit0 ? pars[2] : pars[1];
-
-            double[][] result = new double[2][n];
-            double delta = (last - first) / (n - 1);
-            for (int i = 0; i < n; i++) {
-                double x = first + delta * i;
-                double y = yCalc(a, b, c, x, p);
-                result[0][i] = x;
-                result[1][i] = y;
-            }
-            return result;
-        }
-
     }
 }

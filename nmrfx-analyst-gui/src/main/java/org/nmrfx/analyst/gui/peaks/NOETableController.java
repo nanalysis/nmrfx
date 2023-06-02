@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -74,8 +74,15 @@ import java.util.ResourceBundle;
 public class NOETableController implements Initializable, StageBasedController {
 
     private static final Logger log = LoggerFactory.getLogger(NOETableController.class);
+    private Stage stage;
+    @FXML
+    private ToolBar toolBar;
     @FXML
     MasterDetailPane masterDetailPane;
+    @FXML
+    private TableView<Noe> tableView;
+    private NoeSet noeSet;
+
     MenuButton noeSetMenuItem;
     MenuButton peakListMenuButton;
     ObservableMap<String, NoeSet> noeSetMap;
@@ -89,12 +96,6 @@ public class NOETableController implements Initializable, StageBasedController {
     DoubleRangeOperationItem maxDisItem;
     DoubleRangeOperationItem fErrorItem;
     ChoiceOperationItem modeItem;
-    private Stage stage;
-    @FXML
-    private ToolBar toolBar;
-    @FXML
-    private TableView<Noe> tableView;
-    private NoeSet noeSet;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -129,7 +130,7 @@ public class NOETableController implements Initializable, StageBasedController {
         updatePeakListMenu();
         masterDetailPane.showDetailNodeProperty().bindBidirectional(detailsCheckBox.selectedProperty());
         List<String> intVolChoice = List.of("Intensity", "Volume");
-        modeItem = new ChoiceOperationItem((a, b, c) -> refresh(), "intensity", intVolChoice, "Exp Calibrate", "Mode", "Reference Distance");
+        modeItem = new ChoiceOperationItem((a, b, c) -> refresh(), "intensity", intVolChoice,"Exp Calibrate", "Mode", "Reference Distance");
         refDistanceItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
                 3.0, 1.0, 6.0, false, "Exp Calibrate", "Ref Distance", "Reference Distance");
         expItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
@@ -143,17 +144,30 @@ public class NOETableController implements Initializable, StageBasedController {
         propertySheet.getItems().addAll(modeItem, refDistanceItem, expItem, minDisItem, maxDisItem, fErrorItem);
     }
 
-    public Stage getStage() {
-        return stage;
-    }
-
     @Override
     public void setStage(Stage stage) {
         this.stage = stage;
     }
 
+    public Stage getStage() {
+        return stage;
+    }
+
     private void refresh() {
         tableView.refresh();
+    }
+
+    public static NOETableController create() {
+        if (MoleculeFactory.getActive() == null) {
+            GUIUtils.warn("NOE Table", "No active molecule");
+            return null;
+        }
+
+        NOETableController controller = Fxml.load(NOETableController.class, "NoeTableScene.fxml")
+                .withNewStage("Peaks")
+                .getController();
+        controller.stage.show();
+        return controller;
     }
 
     void initToolBar() {
@@ -166,7 +180,7 @@ public class NOETableController implements Initializable, StageBasedController {
         noeSetMenuItem = new MenuButton("NoeSets");
         peakListMenuButton = new MenuButton("PeakLists");
         detailsCheckBox = new CheckBox("Details");
-        toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton, calibrateButton, detailsCheckBox);
+        toolBar.getItems().addAll(exportButton, clearButton,  noeSetMenuItem, peakListMenuButton, calibrateButton, detailsCheckBox);
         updateNoeSetMenu();
     }
 
@@ -203,6 +217,24 @@ public class NOETableController implements Initializable, StageBasedController {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(ioE);
                 exceptionDialog.show();
             }
+        }
+    }
+
+    private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
+
+        @Override
+        public TableCell<S, T> call(TableColumn<S, T> arg0) {
+            return new TableCell<S, T>() {
+                @Override
+                protected void updateItem(T item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(new Label(format.format(item)));
+                    }
+                }
+            };
         }
     }
 
@@ -328,7 +360,7 @@ public class NOETableController implements Initializable, StageBasedController {
             }
         }
         if (noeSet != null) {
-            log.info("Calibrate {} {}", noeSet.getName(), noeSet);
+            log.info("Calibrate {} {}", noeSet.getName() , noeSet);
             String intVolChoice = modeItem.getValue().toLowerCase();
             double referenceDistance = refDistanceItem.doubleValue();
             double expValue = expItem.doubleValue();
@@ -388,37 +420,6 @@ public class NOETableController implements Initializable, StageBasedController {
             FXMLController.showPeakAttr();
             FXMLController.getPeakAttrController().gotoPeak(peak);
             FXMLController.getPeakAttrController().getStage().toFront();
-        }
-    }
-
-    public static NOETableController create() {
-        if (MoleculeFactory.getActive() == null) {
-            GUIUtils.warn("NOE Table", "No active molecule");
-            return null;
-        }
-
-        NOETableController controller = Fxml.load(NOETableController.class, "NoeTableScene.fxml")
-                .withNewStage("Peaks")
-                .getController();
-        controller.stage.show();
-        return controller;
-    }
-
-    private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
-
-        @Override
-        public TableCell<S, T> call(TableColumn<S, T> arg0) {
-            return new TableCell<S, T>() {
-                @Override
-                protected void updateItem(T item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (item == null || empty) {
-                        setGraphic(null);
-                    } else {
-                        setGraphic(new Label(format.format(item)));
-                    }
-                }
-            };
         }
     }
 }

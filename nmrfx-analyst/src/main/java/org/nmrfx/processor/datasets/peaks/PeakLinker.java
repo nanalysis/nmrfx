@@ -5,13 +5,18 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.project.ProjectBase;
 
-import java.util.*;
-
 /**
+ *
  * @author Bruce Johnson
  */
 public class PeakLinker {

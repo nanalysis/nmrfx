@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,12 +23,15 @@ import java.text.NumberFormat;
 import java.util.Locale;
 
 /**
+ *
  * @author brucejohnson
  */
 public class Format {
 
-    private static final DecimalFormat[] FORMATTERS = new DecimalFormat[11];
+    private Format() {
+    }
     private static Locale stdLocale = new Locale("en", "US");
+    private static final DecimalFormat[] FORMATTERS = new DecimalFormat[11];
 
     static {
         for (int i = 1; i < FORMATTERS.length; i++) {
@@ -40,9 +43,6 @@ public class Format {
             format.setGroupingUsed(false);
             FORMATTERS[i] = format;
         }
-    }
-
-    private Format() {
     }
 
     public static String format30(final double value) {

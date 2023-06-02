@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,7 @@ import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
+ *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -32,6 +33,12 @@ public class SinebellApod extends Apodization implements Invertible {
     final double power;
     final double c;
     final int apodSize;
+
+    @Override
+    public SinebellApod eval(Vec vector) throws ProcessingException {
+        sb(vector);
+        return this;
+    }
 
     public SinebellApod(double offset, double end, double power, double c, int apodSize) {
         this(offset, end, power, c, apodSize, false);
@@ -44,12 +51,6 @@ public class SinebellApod extends Apodization implements Invertible {
         this.c = c;
         this.apodSize = apodSize;
         this.invertOp = inverse;
-    }
-
-    @Override
-    public SinebellApod eval(Vec vector) throws ProcessingException {
-        sb(vector);
-        return this;
     }
 
     public void sb(Vec vector) {

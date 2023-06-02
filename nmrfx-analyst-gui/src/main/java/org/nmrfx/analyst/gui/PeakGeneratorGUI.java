@@ -30,27 +30,29 @@ import static org.nmrfx.analyst.peaks.PeakGenerator.PeakGeneratorTypes.*;
 
 public class PeakGeneratorGUI {
     private static final Logger log = LoggerFactory.getLogger(PeakGeneratorGUI.class);
-    private final Slider distanceSlider = new Slider(2, 7.0, 5.0);
-    private final ChoiceBox<Integer> transferLimitChoice = new ChoiceBox<>();
-    private final CheckBox useNCheckBox = new CheckBox("UseN");
     Stage stage;
+    private TextField simPeakListNameField;
+    private ComboBox<String> simDatasetNameField;
     ChoiceBox<Integer> ppmSetChoice;
     ChoiceBox<Integer> refSetChoice;
+
+    private Label typeLabel;
+    private Label subTypeLabel;
+    private GridPane peakListParsPane;
     TextField[][] peakListParFields;
+    private HBox optionBox;
     Button generateButton;
     Button inspectButton;
     Button tableButton;
     Label statusLabel;
     SimpleObjectProperty<PeakList> peakListProperty = new SimpleObjectProperty<>(null);
+
+    private final Slider distanceSlider = new Slider(2, 7.0, 5.0);
+    private final ChoiceBox<Integer> transferLimitChoice = new ChoiceBox<>();
+    private final CheckBox useNCheckBox = new CheckBox("UseN");
     String experimentClass = "";
     PeakGeneratorTypes peakGeneratorType = null;
     double sfH = 700.0;
-    private TextField simPeakListNameField;
-    private ComboBox<String> simDatasetNameField;
-    private Label typeLabel;
-    private Label subTypeLabel;
-    private GridPane peakListParsPane;
-    private HBox optionBox;
 
     public void create() {
         stage = new Stage(StageStyle.DECORATED);
@@ -397,8 +399,7 @@ public class PeakGeneratorGUI {
             }
             peakListProperty.set(newPeakList);
             switch (peakGeneratorType) {
-                case HNCO, HNCOCA, HNCOCACB, HNCACO, HNCA, HNCACB ->
-                        makeProteinPeakList(dataset, newPeakList, peakGeneratorType);
+                case HNCO, HNCOCA, HNCOCACB, HNCACO, HNCA, HNCACB -> makeProteinPeakList(dataset, newPeakList, peakGeneratorType);
                 case NOESY -> {
                     double range = distanceSlider.getValue();
                     try {

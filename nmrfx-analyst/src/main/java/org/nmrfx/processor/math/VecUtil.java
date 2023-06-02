@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -51,7 +51,6 @@ import static org.nmrfx.processor.math.Vec.pascalrow;
 public class VecUtil {
 
     private static final Logger log = LoggerFactory.getLogger(VecUtil.class);
-
     /**
      * Do a non-negative least squares fit of AX=B to find X given A and B.
      * Results are returned in an AmplitudeFitResult object which provides
@@ -125,6 +124,40 @@ public class VecUtil {
         return result;
     }
 
+    static class AbsDevBFunc implements UnivariateFunction {
+
+        double[] x = null;
+        double[] y = null;
+        int n = 0;
+        double a = 0.0;
+        double sumAbsDev = 0.0;
+
+        AbsDevBFunc(double[] x, double[] y, int numPoints) {
+            this.n = numPoints;
+            this.x = x;
+            this.y = y;
+        }
+
+        public double value(double b) {
+            double sum = 0;
+            for (int i = 0; i < n; i++) {
+                double delta = y[i] - (x[i] * b);
+                sumAbsDev += Math.abs(delta);
+                sum += x[i] * Math.signum(delta);
+            }
+            return sum;
+
+        }
+
+        public double getA() {
+            return a;
+        }
+
+        public double getMeanDev() {
+            return sumAbsDev / n;
+        }
+    }
+
     public static double[] fitAbsDev(double[] x, double[] y, double[] sigmaY) {
         double[] parameters = fitLinear(x, y, sigmaY);
 
@@ -158,15 +191,15 @@ public class VecUtil {
      * Analyze a vector of complex values to determine the frequencies and decay
      * rates
      *
-     * @param x1        the complex values
-     * @param winSize   The size of window that the values came from
-     * @param nCoef     The number of coefficients to find
+     * @param x1 the complex values
+     * @param winSize The size of window that the values came from
+     * @param nCoef The number of coefficients to find
      * @param threshold the threshold for singular values
      * @return the frequency and decay rates as a vector of complex values
      * @throws VecException if an error occurs
      */
     public static Complex[] tlsFreq(final Complex[] x1, final int winSize,
-                                    final int nCoef, final double threshold) throws VecException {
+            final int nCoef, final double threshold) throws VecException {
 
         int tlsStart = 1;
         if (tlsStart < 1) {
@@ -228,13 +261,13 @@ public class VecUtil {
      * values to a time domain signal with complex values
      *
      * @param x The real spectrum as the first row of a 2D array. The time
-     *          domain signal will replace the original values with real values in the
-     *          first row and imaginary values in second.
+     * domain signal will replace the original values with real values in the
+     * first row and imaginary values in second.
      * @param n The number of valid points in spectrum
      */
     public static void hift(final double[][] x, final int n, double fpMul) {
         int factor = 0;
-        // fixme we don't resize here, assumes x already correct size. Either remove some of
+        // fixme we don't resize here, assumes x already correct size. Either remove some of 
         //       the following code, or actually do a resize
         int newSize = (int) Math.round(Math.pow(2, Math.ceil((Math.log(n) / Math.log(2)) + factor)));
         for (int i = 0; i < n; i++) {
@@ -289,8 +322,8 @@ public class VecUtil {
      * Perform a Hilbert transform of data.
      *
      * @param x The real spectrum as the first row of a 2D array. The time
-     *          domain signal will replace the original values with real values in the
-     *          first row and imaginary values in second.
+     * domain signal will replace the original values with real values in the
+     * first row and imaginary values in second.
      * @param n The number of valid points in spectrum
      */
     public static void hft(final double[][] x, final int n) {
@@ -321,13 +354,13 @@ public class VecUtil {
     /**
      * Add two complex arrays and put result in third complex array.
      *
-     * @param a    First array
+     * @param a First array
      * @param size Valid size
-     * @param b    Second array
-     * @param c    Array for result of @code(a + b)
+     * @param b Second array
+     * @param c Array for result of @code(a + b)
      */
     public static void addVector(Complex[] a, int size, Complex[] b,
-                                 Complex[] c) {
+            Complex[] c) {
         for (int i = 0; i < size; ++i) {
             c[i] = a[i].add(b[i]);
         }
@@ -356,9 +389,9 @@ public class VecUtil {
     /**
      * Calculate standard deviation of real array of values
      *
-     * @param rvec     real array of values
-     * @param m        Valid size
-     * @param winSize  Size of window
+     * @param rvec real array of values
+     * @param m Valid size
+     * @param winSize Size of window
      * @param nWindows Number of windows to use
      * @return standard deviation
      */
@@ -450,7 +483,7 @@ public class VecUtil {
     /**
      * Reflect roots inside or outside the unit circle
      *
-     * @param roots     an array of Complex roots
+     * @param roots an array of Complex roots
      * @param toOutside true if roots should be reflected outside circle
      */
     public static void reflectRoots(Complex[] roots, boolean toOutside) {
@@ -476,40 +509,6 @@ public class VecUtil {
             Complex hold = c[i];
             c[i] = c[n - i - 1];
             c[n - i - 1] = hold;
-        }
-    }
-
-    static class AbsDevBFunc implements UnivariateFunction {
-
-        double[] x = null;
-        double[] y = null;
-        int n = 0;
-        double a = 0.0;
-        double sumAbsDev = 0.0;
-
-        AbsDevBFunc(double[] x, double[] y, int numPoints) {
-            this.n = numPoints;
-            this.x = x;
-            this.y = y;
-        }
-
-        public double value(double b) {
-            double sum = 0;
-            for (int i = 0; i < n; i++) {
-                double delta = y[i] - (x[i] * b);
-                sumAbsDev += Math.abs(delta);
-                sum += x[i] * Math.signum(delta);
-            }
-            return sum;
-
-        }
-
-        public double getA() {
-            return a;
-        }
-
-        public double getMeanDev() {
-            return sumAbsDev / n;
         }
     }
 

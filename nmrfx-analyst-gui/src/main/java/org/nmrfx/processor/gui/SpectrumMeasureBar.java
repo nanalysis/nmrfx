@@ -50,6 +50,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
+ *
  * @author Bruce Johnson
  */
 public class SpectrumMeasureBar {
@@ -60,7 +61,6 @@ public class SpectrumMeasureBar {
     static {
         formatter.setMaximumFractionDigits(2);
     }
-
     TextField[][][] crossText = new TextField[3][2][2];
     TextField[] intensityField = new TextField[2];
     TextField sdevField = new TextField();

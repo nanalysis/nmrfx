@@ -146,6 +146,14 @@ public class AnalystApp extends Application {
         waitForCommit();
     }
 
+    public static boolean isMac() {
+        return SystemUtils.IS_OS_MAC;
+    }
+
+    public static String getVersion() {
+        return NvUtil.getVersion();
+    }
+
     public MenuBar makeMenuBar(String appName) {
         MenuToolkit tk = null;
         if (isMac()) {
@@ -619,7 +627,7 @@ public class AnalystApp extends Application {
 
     public ScannerTool getScannerTool() {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        return (ScannerTool) controller.getTool(ScannerTool.class);
+        return  (ScannerTool) controller.getTool(ScannerTool.class);
     }
 
     public StripController getStripsTool() {
@@ -643,14 +651,6 @@ public class AnalystApp extends Application {
         datasetController.refresh();
         datasetController.getStage().show();
         datasetController.getStage().toFront();
-    }
-
-    public static boolean isMac() {
-        return SystemUtils.IS_OS_MAC;
-    }
-
-    public static String getVersion() {
-        return NvUtil.getVersion();
     }
 
     /**
@@ -710,8 +710,7 @@ public class AnalystApp extends Application {
     /**
      * Set the default font size of the provided stage with the provided
      * font size string.
-     *
-     * @param stage       The stage to set the font for
+     * @param stage The stage to set the font for
      * @param fontSizeStr A string font size ex. '9pt'
      */
     public static void setStageFontSize(Stage stage, String fontSizeStr) {

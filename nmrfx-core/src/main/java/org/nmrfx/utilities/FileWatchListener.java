@@ -1,8 +1,10 @@
+
 package org.nmrfx.utilities;
 
 import java.io.File;
 
 /**
+ *
  * @author brucejohnson
  */
 public interface FileWatchListener {

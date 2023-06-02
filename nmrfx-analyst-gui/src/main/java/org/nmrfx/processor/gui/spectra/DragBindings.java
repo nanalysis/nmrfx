@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,11 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
@@ -31,13 +36,8 @@ import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 /**
+ *
  * @author Bruce Johnson
  */
 public class DragBindings {
@@ -50,6 +50,15 @@ public class DragBindings {
     public DragBindings(FXMLController controller, Canvas canvas) {
         this.canvas = canvas;
         this.controller = controller;
+    }
+
+    /**
+     * Adds the provided DataFormat event handler to the dataFormatHandler map.
+     * @param dataFormat The DataFormat.
+     * @param handler The DataFormat handler.
+     */
+    public static void registerCanvasDataFormatHandler(DataFormat dataFormat, DataFormatEventHandler handler) {
+        dataFormatHandlers.put(dataFormat, handler);
     }
 
     public void mouseDragDropped(final DragEvent e) {
@@ -88,7 +97,7 @@ public class DragBindings {
         if (db.hasFiles()) {
             if (!files.isEmpty()) {
                 isAccepted = NMRDataUtil.isFIDDir(files.get(0).getAbsolutePath()) != null
-                        || NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) != null
+                        ||  NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) != null
                         || SDFile.isSDFFile(files.get(0).getName());
             }
         } else if (db.hasString()) {
@@ -100,15 +109,5 @@ public class DragBindings {
         if (isAccepted) {
             e.acceptTransferModes(TransferMode.COPY);
         }
-    }
-
-    /**
-     * Adds the provided DataFormat event handler to the dataFormatHandler map.
-     *
-     * @param dataFormat The DataFormat.
-     * @param handler    The DataFormat handler.
-     */
-    public static void registerCanvasDataFormatHandler(DataFormat dataFormat, DataFormatEventHandler handler) {
-        dataFormatHandlers.put(dataFormat, handler);
     }
 }

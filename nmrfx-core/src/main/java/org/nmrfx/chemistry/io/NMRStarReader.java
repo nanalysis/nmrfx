@@ -18,29 +18,44 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.annotations.PluginAPI;
-import org.nmrfx.chemistry.*;
-import org.nmrfx.chemistry.Residue.RES_POSITION;
-import org.nmrfx.chemistry.constraints.*;
-import org.nmrfx.chemistry.relax.OrderPar;
-import org.nmrfx.chemistry.relax.RelaxationData;
-import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
-import org.nmrfx.chemistry.relax.RelaxationRex;
-import org.nmrfx.chemistry.relax.ResonanceSource;
+import org.nmrfx.chemistry.relax.*;
+import org.nmrfx.chemistry.Order;
+
+import java.io.BufferedReader;
+
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.peaks.*;
-import org.nmrfx.peaks.io.PeakPathReader;
+import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.constraints.*;
+import org.nmrfx.chemistry.Residue.RES_POSITION;
+import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.star.Saveframe;
-import org.nmrfx.utilities.NvUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.*;
+
+import org.nmrfx.peaks.AbsMultipletComponent;
+import org.nmrfx.peaks.ComplexCoupling;
+import org.nmrfx.peaks.CouplingPattern;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.Resonance;
+import org.nmrfx.peaks.ResonanceFactory;
+import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.utilities.NvUtil;
+import org.nmrfx.peaks.io.PeakPathReader;
+import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author brucejohnson
@@ -60,6 +75,132 @@ public class NMRStarReader {
     public NMRStarReader(final File starFile, final STAR3 star3) {
         this.star3 = star3;
         this.starFile = starFile;
+    }
+
+    public static STAR3 read(String starFileName) throws ParseException {
+        File file = new File(starFileName);
+        return read(file);
+    }
+
+    public static STAR3 read(File starFile) throws ParseException {
+        FileReader fileReader;
+        try {
+            fileReader = new FileReader(starFile);
+        } catch (FileNotFoundException ex) {
+            throw new ParseException("Could not find file " + starFile);
+        }
+        BufferedReader bfR = new BufferedReader(fileReader);
+
+        STAR3 star = new STAR3(bfR, "star3");
+
+        try {
+            star.scanFile();
+        } catch (ParseException parseEx) {
+            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
+        }
+        NMRStarReader reader = new NMRStarReader(starFile, star);
+        reader.process();
+        return star;
+    }
+
+    public static void readChemicalShifts(File starFile, int ppmSet) throws ParseException {
+        FileReader fileReader;
+        try {
+            fileReader = new FileReader(starFile);
+        } catch (FileNotFoundException ex) {
+            return;
+        }
+        BufferedReader bfR = new BufferedReader(fileReader);
+
+        STAR3 star = new STAR3(bfR, "star3");
+
+        try {
+            star.scanFile();
+        } catch (ParseException parseEx) {
+            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
+        }
+        NMRStarReader reader = new NMRStarReader(starFile, star);
+        reader.buildChemShifts(0, ppmSet);
+    }
+
+    static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
+        Loop loop = saveframe.getLoop("_Chem_comp_atom");
+        if (loop == null) {
+            throw new ParseException("No \"_Chem_comp_atom\" loop in \"" + saveframe.getName() + "\"");
+        }
+        List<String> idColumn = loop.getColumnAsList("Atom_ID");
+        List<String> typeColumn = loop.getColumnAsList("Type_symbol");
+        for (int i = 0; i < idColumn.size(); i++) {
+            String aName = idColumn.get(i);
+            String aType = typeColumn.get(i);
+            Atom atom = Atom.genAtomWithElement(aName, aType);
+            compound.addAtom(atom);
+        }
+        compound.updateNames();
+        loop = saveframe.getLoop("_Chem_comp_bond");
+        if (loop != null) {
+            List<String> id1Column = loop.getColumnAsList("Atom_ID_1");
+            List<String> id2Column = loop.getColumnAsList("Atom_ID_2");
+            List<String> orderColumn = loop.getColumnAsList("Value_order");
+            for (int i = 0; i < id1Column.size(); i++) {
+                String aName1 = id1Column.get(i);
+                String aName2 = id2Column.get(i);
+                String orderString = orderColumn.get(i);
+                Atom atom1 = compound.getAtom(aName1);
+                Atom atom2 = compound.getAtom(aName2);
+                Order order;
+                if (orderString.toUpperCase().startsWith("SING")) {
+                    order = Order.SINGLE;
+                } else if (orderString.toUpperCase().startsWith("DOUB")) {
+                    order = Order.DOUBLE;
+                } else if (orderString.toUpperCase().startsWith("TRIP")) {
+                    order = Order.TRIPLE;
+                } else {
+                    order = Order.SINGLE;
+                }
+                int stereo = 0;
+                Atom.addBond(atom1, atom2, order, stereo, false);
+            }
+            compound.getAtoms().stream().filter((atom) -> (atom.bonds == null)).forEachOrdered((_item) -> log.info("no bonds"));
+        }
+    }
+
+    static void addComponents(Saveframe saveframe, List<String> idColumn, List<String> authSeqIDColumn, List<String> compIDColumn, List<String> entityIDColumn, Compound compound) throws ParseException {
+        for (int i = 0; i < compIDColumn.size(); i++) {
+            String resName = compIDColumn.get(i);
+            String seqNumber = authSeqIDColumn.get(i);
+            if ((seqNumber == null) || seqNumber.isBlank()) {
+                seqNumber = resName;
+            }
+            String ccSaveFrameName = "save_chem_comp_" + resName;
+            Saveframe ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
+            if (ccSaveframe == null) {
+                ccSaveFrameName = "save_" + resName;
+                ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
+            }
+            if (ccSaveframe != null) {
+                compound.setNumber(seqNumber);
+                updateFromSTAR3ChemComp(ccSaveframe, compound);
+            } else {
+                log.warn("No save frame: {}", ccSaveFrameName);
+            }
+        }
+
+    }
+
+    static void finishSaveFrameProcessing(final NMRStarReader nmrStar, Saveframe saveframe, Compound compound, String mapID) throws ParseException {
+        Loop loop = saveframe.getLoop("_Entity_comp_index");
+        if (loop != null) {
+            List<String> idColumn = loop.getColumnAsList("ID");
+            List<String> authSeqIDColumn = loop.getColumnAsList("Auth_seq_ID", "");
+            List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
+            List<String> compIDColumn = loop.getColumnAsList("Comp_ID");
+            nmrStar.addCompound(mapID, compound);
+            addComponents(saveframe, idColumn, authSeqIDColumn, compIDColumn, entityIDColumn, compound);
+        } else {
+            log.info("No \"_Entity_comp_index\" loop");
+        }
+
     }
 
     public void finishSaveFrameProcessing(final Polymer polymer, final Saveframe saveframe, final String nomenclature, final boolean capped) throws ParseException {
@@ -1604,131 +1745,5 @@ public class NMRStarReader {
             int toSet = Integer.parseInt(argv[2]);
             buildChemShifts(fromSet, toSet);
         }
-    }
-
-    public static STAR3 read(String starFileName) throws ParseException {
-        File file = new File(starFileName);
-        return read(file);
-    }
-
-    public static STAR3 read(File starFile) throws ParseException {
-        FileReader fileReader;
-        try {
-            fileReader = new FileReader(starFile);
-        } catch (FileNotFoundException ex) {
-            throw new ParseException("Could not find file " + starFile);
-        }
-        BufferedReader bfR = new BufferedReader(fileReader);
-
-        STAR3 star = new STAR3(bfR, "star3");
-
-        try {
-            star.scanFile();
-        } catch (ParseException parseEx) {
-            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
-        }
-        NMRStarReader reader = new NMRStarReader(starFile, star);
-        reader.process();
-        return star;
-    }
-
-    public static void readChemicalShifts(File starFile, int ppmSet) throws ParseException {
-        FileReader fileReader;
-        try {
-            fileReader = new FileReader(starFile);
-        } catch (FileNotFoundException ex) {
-            return;
-        }
-        BufferedReader bfR = new BufferedReader(fileReader);
-
-        STAR3 star = new STAR3(bfR, "star3");
-
-        try {
-            star.scanFile();
-        } catch (ParseException parseEx) {
-            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
-        }
-        NMRStarReader reader = new NMRStarReader(starFile, star);
-        reader.buildChemShifts(0, ppmSet);
-    }
-
-    static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
-        Loop loop = saveframe.getLoop("_Chem_comp_atom");
-        if (loop == null) {
-            throw new ParseException("No \"_Chem_comp_atom\" loop in \"" + saveframe.getName() + "\"");
-        }
-        List<String> idColumn = loop.getColumnAsList("Atom_ID");
-        List<String> typeColumn = loop.getColumnAsList("Type_symbol");
-        for (int i = 0; i < idColumn.size(); i++) {
-            String aName = idColumn.get(i);
-            String aType = typeColumn.get(i);
-            Atom atom = Atom.genAtomWithElement(aName, aType);
-            compound.addAtom(atom);
-        }
-        compound.updateNames();
-        loop = saveframe.getLoop("_Chem_comp_bond");
-        if (loop != null) {
-            List<String> id1Column = loop.getColumnAsList("Atom_ID_1");
-            List<String> id2Column = loop.getColumnAsList("Atom_ID_2");
-            List<String> orderColumn = loop.getColumnAsList("Value_order");
-            for (int i = 0; i < id1Column.size(); i++) {
-                String aName1 = id1Column.get(i);
-                String aName2 = id2Column.get(i);
-                String orderString = orderColumn.get(i);
-                Atom atom1 = compound.getAtom(aName1);
-                Atom atom2 = compound.getAtom(aName2);
-                Order order;
-                if (orderString.toUpperCase().startsWith("SING")) {
-                    order = Order.SINGLE;
-                } else if (orderString.toUpperCase().startsWith("DOUB")) {
-                    order = Order.DOUBLE;
-                } else if (orderString.toUpperCase().startsWith("TRIP")) {
-                    order = Order.TRIPLE;
-                } else {
-                    order = Order.SINGLE;
-                }
-                int stereo = 0;
-                Atom.addBond(atom1, atom2, order, stereo, false);
-            }
-            compound.getAtoms().stream().filter((atom) -> (atom.bonds == null)).forEachOrdered((_item) -> log.info("no bonds"));
-        }
-    }
-
-    static void addComponents(Saveframe saveframe, List<String> idColumn, List<String> authSeqIDColumn, List<String> compIDColumn, List<String> entityIDColumn, Compound compound) throws ParseException {
-        for (int i = 0; i < compIDColumn.size(); i++) {
-            String resName = compIDColumn.get(i);
-            String seqNumber = authSeqIDColumn.get(i);
-            if ((seqNumber == null) || seqNumber.isBlank()) {
-                seqNumber = resName;
-            }
-            String ccSaveFrameName = "save_chem_comp_" + resName;
-            Saveframe ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
-            if (ccSaveframe == null) {
-                ccSaveFrameName = "save_" + resName;
-                ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
-            }
-            if (ccSaveframe != null) {
-                compound.setNumber(seqNumber);
-                updateFromSTAR3ChemComp(ccSaveframe, compound);
-            } else {
-                log.warn("No save frame: {}", ccSaveFrameName);
-            }
-        }
-
-    }
-
-    static void finishSaveFrameProcessing(final NMRStarReader nmrStar, Saveframe saveframe, Compound compound, String mapID) throws ParseException {
-        Loop loop = saveframe.getLoop("_Entity_comp_index");
-        if (loop != null) {
-            List<String> idColumn = loop.getColumnAsList("ID");
-            List<String> authSeqIDColumn = loop.getColumnAsList("Auth_seq_ID", "");
-            List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
-            List<String> compIDColumn = loop.getColumnAsList("Comp_ID");
-            nmrStar.addCompound(mapID, compound);
-            addComponents(saveframe, idColumn, authSeqIDColumn, compIDColumn, entityIDColumn, compound);
-        } else {
-            log.info("No \"_Entity_comp_index\" loop");
-        }
-
     }
 }

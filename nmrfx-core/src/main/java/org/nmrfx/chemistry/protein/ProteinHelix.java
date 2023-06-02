@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,11 @@
 package org.nmrfx.chemistry.protein;
 
 import org.nmrfx.chemistry.Residue;
+
 import org.nmrfx.chemistry.SecondaryStructure;
 
 /**
+ *
  * @author bajlabuser, mbeckwith
  */
 public class ProteinHelix extends SecondaryStructure {
@@ -42,20 +44,20 @@ public class ProteinHelix extends SecondaryStructure {
     }
 
     @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
     public void getInvolvedRes() {
         int i = 0;
         while (i < secResidues.size()) {
             Residue res1 = secResidues.get(i);
             Residue res2 = secResidues.get(i + 1);
             System.out.print(res1.getPolymer().getName() + ":" + res1.getName()
-                    + res1.getResNum() + ":" + res2.getPolymer().getName()
-                    + ":" + res2.getName() + res2.getResNum() + " ");
+                    + res1.getResNum()+ ":" + res2.getPolymer().getName()
+                    + ":" + res2.getName() + res2.getResNum()+ " ");
             i += 2;
         }
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

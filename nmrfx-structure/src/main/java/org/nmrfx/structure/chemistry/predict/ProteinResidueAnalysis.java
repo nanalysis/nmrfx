@@ -5,12 +5,12 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
-import org.nmrfx.chemistry.Residue;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.nmrfx.chemistry.Residue;
 
 /**
+ *
  * @author brucejohnson
  */
 public class ProteinResidueAnalysis {
@@ -69,6 +69,18 @@ public class ProteinResidueAnalysis {
         return stateList;
     }
 
+    public static String[] getClasses3() {
+        return CLASSES3;
+    }
+
+    public static String[] getClasses4() {
+        return CLASSES4;
+    }
+
+    public static String[] getClasses8() {
+        return CLASSES8;
+    }
+
     public double[] getState8() {
         return state8;
     }
@@ -101,18 +113,6 @@ public class ProteinResidueAnalysis {
             sBuilder.append(" ").append(String.format("%.3f", v));
         }
         return sBuilder.toString();
-    }
-
-    public static String[] getClasses3() {
-        return CLASSES3;
-    }
-
-    public static String[] getClasses4() {
-        return CLASSES4;
-    }
-
-    public static String[] getClasses8() {
-        return CLASSES8;
     }
 
 }

@@ -23,6 +23,10 @@
  */
 package org.nmrfx.processor.math;
 
+import org.nmrfx.math.VecException;
+import org.nmrfx.processor.math.apache.ComplexHouseholderQRDecomposition;
+import org.nmrfx.processor.math.apache.ComplexSingularValueDecomposition;
+import org.nmrfx.processor.math.apache.FieldDiagonalMatrix;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexField;
 import org.apache.commons.math3.exception.DimensionMismatchException;
@@ -32,10 +36,6 @@ import org.apache.commons.math3.exception.OutOfRangeException;
 import org.apache.commons.math3.linear.Array2DRowFieldMatrix;
 import org.apache.commons.math3.linear.FieldMatrix;
 import org.apache.commons.math3.linear.FieldMatrixChangingVisitor;
-import org.nmrfx.math.VecException;
-import org.nmrfx.processor.math.apache.ComplexHouseholderQRDecomposition;
-import org.nmrfx.processor.math.apache.ComplexSingularValueDecomposition;
-import org.nmrfx.processor.math.apache.FieldDiagonalMatrix;
 
 /**
  * Provides methods for doing linear prediction.
@@ -402,6 +402,49 @@ public class LinearPrediction {
     }
 
     /**
+     *
+     */
+    public static class Complexqrdthin {
+
+        /**
+         *
+         */
+        public FieldMatrix<Complex> Q;
+
+        /**
+         *
+         */
+        public Array2DRowFieldMatrix<Complex> R;
+
+        /**
+         *
+         */
+        public ComplexHouseholderQRDecomposition hqr;
+
+        /**
+         * Perform QR Decomposition of matrix A
+         *
+         * @param A the matrix
+         * @throws Exception if an error occurs while calculating
+         */
+        public Complexqrdthin(FieldMatrix<Complex> A) throws Exception {
+            hqr = new ComplexHouseholderQRDecomposition(A); //householder QR decomposition
+            R = hqr.R; //upper triangular
+        }
+
+        /**
+         * Computes the product QB
+         *
+         * @param B A complex matrix
+         * @return QB
+         * @throws Exception if error occurs while calculating
+         */
+        public FieldMatrix<Complex> qb(FieldMatrix<Complex> B) throws Exception {
+            return hqr.qb(B); //premultiply B with
+        }
+    }
+
+    /**
      * Generate linear prediction coefficients by total least squares of matrix.
      *
      * @param A the matrix
@@ -495,8 +538,7 @@ public class LinearPrediction {
 
             Ainv = Vs.multiply(Ur);
 
-        } catch (OutOfRangeException | NumberIsTooLargeException | DimensionMismatchException |
-                 NumberIsTooSmallException e) {
+        } catch (OutOfRangeException | NumberIsTooLargeException | DimensionMismatchException | NumberIsTooSmallException e) {
             System.out.println(e.getMessage());
             return null;
         }
@@ -545,49 +587,6 @@ public class LinearPrediction {
                 temp[j] = temp[j].multiply(w);
                 v[i] = v[i].add(temp[j]);
             }
-        }
-    }
-
-    /**
-     *
-     */
-    public static class Complexqrdthin {
-
-        /**
-         *
-         */
-        public FieldMatrix<Complex> Q;
-
-        /**
-         *
-         */
-        public Array2DRowFieldMatrix<Complex> R;
-
-        /**
-         *
-         */
-        public ComplexHouseholderQRDecomposition hqr;
-
-        /**
-         * Perform QR Decomposition of matrix A
-         *
-         * @param A the matrix
-         * @throws Exception if an error occurs while calculating
-         */
-        public Complexqrdthin(FieldMatrix<Complex> A) throws Exception {
-            hqr = new ComplexHouseholderQRDecomposition(A); //householder QR decomposition
-            R = hqr.R; //upper triangular
-        }
-
-        /**
-         * Computes the product QB
-         *
-         * @param B A complex matrix
-         * @return QB
-         * @throws Exception if error occurs while calculating
-         */
-        public FieldMatrix<Complex> qb(FieldMatrix<Complex> B) throws Exception {
-            return hqr.qb(B); //premultiply B with
         }
     }
 

@@ -5,23 +5,31 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.ClosedWatchServiceException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.nio.file.StandardWatchEventKinds.*;
-
 /**
+ *
  * @author brucejohnson
  */
 public class NMRFxFileWatcher implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(NMRFxFileWatcher.class);
+    File watchDir;
     protected static final Map<String, WatchService> watchServices = new HashMap<>();
     protected List<FileWatchListener> listeners = new ArrayList<>();
-    File watchDir;
 
     public NMRFxFileWatcher(File dir) {
         this.watchDir = dir;
@@ -38,10 +46,26 @@ public class NMRFxFileWatcher implements Runnable {
         }
     }
 
+    public static WatchService getWatcher(String pathString) {
+        return watchServices.get(pathString);
+    }
+
     public NMRFxFileWatcher addListener(FileWatchListener listener) {
         listeners.add(listener);
         return this;
 
+    }
+
+    public static boolean remove(String pathString) {
+        WatchService service = watchServices.remove(pathString);
+        if (service != null) {
+            try {
+                service.close();
+            } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
+            }
+        }
+        return service != null;
     }
 
     @Override
@@ -87,21 +111,5 @@ public class NMRFxFileWatcher implements Runnable {
                 listener.onModified(file);
             }
         }
-    }
-
-    public static WatchService getWatcher(String pathString) {
-        return watchServices.get(pathString);
-    }
-
-    public static boolean remove(String pathString) {
-        WatchService service = watchServices.remove(pathString);
-        if (service != null) {
-            try {
-                service.close();
-            } catch (IOException ex) {
-                log.warn(ex.getMessage(), ex);
-            }
-        }
-        return service != null;
     }
 }

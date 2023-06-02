@@ -17,11 +17,6 @@
  */
 package org.nmrfx.processor.processing;
 
-import org.apache.commons.math3.random.Well19937c;
-import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -33,6 +28,10 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
+import org.apache.commons.math3.random.Well19937c;
+import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A SampleSchedule specifies the sequence of increments or array elements used
@@ -51,10 +50,10 @@ import java.util.regex.Pattern;
  * IST : in python script <i>pyproc</i> - read a schedule from a file, and
  * perform IST processing.
  *
- * @author bfetler
  * @see #v_samples
  * @see Ist
  * @since NMRViewJ 9.0
+ * @author bfetler
  */
 public class SampleSchedule {
 
@@ -71,52 +70,48 @@ public class SampleSchedule {
      * @see #createArray()
      */
     private final static int MAX_TRY = 500;
-    /**
-     * Array of sample schedule elements.
-     */
-    int[] sampleIndices = null;
-    /**
-     * Full path file name.
-     */
-    String fpath = "/tmp/sample_schedule.txt";
-    /**
-     * Multiply index by this to get position in file;
-     * if 0 set to groupSize.  Can be used for special cases like tppi
-     */
-    int offsetMul = 0;
+
     /**
      * Number of sampled points (must be less than z_total).
      *
      * @see #nPoints
      */
     private int nSamples;
+
     /**
      * Total number of transformed points.
      *
      * @see #nSamples
      */
     private int nPoints;
+
     private int[] dimSizes;
+
     /**
      * Number of dimensions.
      */
     private int nDim;  // same as v_samples[0].length + 1
+
     /**
      * MultiVecCounter for NUS output data.
      */
     private MultiVecCounter outMult;
+
     /**
      * Optional flag used with fully acquired data set to simulate NUS.
      */
     private boolean demo = false;
+
     /**
      * Flag used to set schedule to be just zeros at end.
      */
     private boolean endOnly = false;
+
     /**
      * Seed for random number generator (optional).
      */
     private long seed = 0;  // pass seed in constructor?
+
     /**
      * Random number generator.
      *
@@ -125,16 +120,34 @@ public class SampleSchedule {
      * in Apache Commons Math</a>
      */
     private Well19937c randomWell = null;
+
     /**
      * Array containing sample schedule elements.
      *
      * @see #createArray()
      */
     private int[][] v_samples;
+
     /**
      * HashMap of sample schedule elements.
      */
     private HashMap<Integer, Integer> sampleHash;
+
+    /**
+     * Array of sample schedule elements.
+     */
+    int[] sampleIndices = null;
+
+    /**
+     * Full path file name.
+     */
+    String fpath = "/tmp/sample_schedule.txt";
+
+    /**
+     * Multiply index by this to get position in file;
+     * if 0 set to groupSize.  Can be used for special cases like tppi
+     */
+    int offsetMul = 0;
 
     /**
      * Create a SampleSchedule from parameters, and write it to a file.
@@ -142,9 +155,10 @@ public class SampleSchedule {
      * Used by SAMPLE_SCHEDULE(mode='create') in python script <i>pyproc</i>.
      *
      * @param nSamples number of sampled points (must be less than total)
-     * @param nPoints  total number of points
-     * @param path     full path file name
-     * @param demo     set true if nmr dataset not NUS acquisition
+     * @param nPoints total number of points
+     * @param path full path file name
+     * @param demo set true if nmr dataset not NUS acquisition
+     *
      * @see Ist
      * @see #nSamples
      * @see #nPoints
@@ -173,6 +187,7 @@ public class SampleSchedule {
      *
      * @param path full path file name
      * @param demo set true if nmr dataset not NUS acquisition
+     *
      * @see Ist
      * @see #fpath
      */
@@ -187,7 +202,6 @@ public class SampleSchedule {
     }
 
     /**
-     *
      */
     public SampleSchedule(int p, int z) {
         this.nSamples = p;
@@ -198,7 +212,6 @@ public class SampleSchedule {
     }
 
     /**
-     *
      */
     public SampleSchedule(int p, int z, boolean endOnly) {
         this.nSamples = p;
@@ -220,6 +233,41 @@ public class SampleSchedule {
         this(p, z);
         this.seed = seed;
     }
+
+    public static SampleSchedule createUniformSchedule(int[] dims) {
+        return createSchedule(dims, null, null);
+    }
+
+    public static SampleSchedule createZFSchedule(int[] dims, int[] newDims) {
+        return createSchedule(dims, newDims, null);
+    }
+
+    public static SampleSchedule createSchedule(int[] dims, int[] newDims, int[][] zeroEntries) {
+        SampleSchedule sampleSchedule = new SampleSchedule();
+        int n = 1;
+        for (int i = 0; i < dims.length; i++) {
+            n *= dims[i];
+        }
+        sampleSchedule.demo = true;
+        sampleSchedule.nSamples = n;
+        sampleSchedule.v_samples = new int[n][dims.length - 1];
+        MultidimensionalCounter mCounter = new MultidimensionalCounter(dims);
+        MultidimensionalCounter.Iterator iter = mCounter.iterator();
+        int i = 0;
+        while (iter.hasNext()) {
+            iter.next();
+            int[] pt = iter.getCounts();
+            sampleSchedule.v_samples[i++] = pt;
+        }
+        sampleSchedule.calcDims();
+        if (newDims != null) {
+            sampleSchedule.setDims(newDims);
+        }
+        sampleSchedule.calcSampleHash();
+        sampleSchedule.calcSampleIndices();
+        return sampleSchedule;
+    }
+
 
     public void dumpSchedule() {
         if (log.isDebugEnabled()) {
@@ -255,13 +303,6 @@ public class SampleSchedule {
     }
 
     /**
-     * Get output dimensions for NUS processing.
-     */
-    public int[] getDims() {
-        return dimSizes;
-    }
-
-    /**
      * Set output dimensions for NUS processing.
      *
      * @param dims
@@ -279,12 +320,19 @@ public class SampleSchedule {
         }
     }
 
-    public boolean isDemo() {
-        return demo;
+    /**
+     * Get output dimensions for NUS processing.
+     */
+    public int[] getDims() {
+        return dimSizes;
     }
 
     public void setDemo(boolean demo) {
         this.demo = demo;
+    }
+
+    public boolean isDemo() {
+        return demo;
     }
 
     /**
@@ -438,7 +486,8 @@ public class SampleSchedule {
      *
      * @param lambda average gap length, calculated from p_sampled and z_total
      * @return gap size increment, zero or random positive integer
-     * @see <a href='http://www.itl.nist.gov/div898/handbook/eda/section3/eda366j.htm'>Poisson
+     * @see
+     * <a href='http://www.itl.nist.gov/div898/handbook/eda/section3/eda366j.htm'>Poisson
      * Distribution from NIST</a>
      */
     private int poisson(double lambda) {
@@ -648,40 +697,6 @@ public class SampleSchedule {
     @Override
     public String toString() {
         return fpath;
-    }
-
-    public static SampleSchedule createUniformSchedule(int[] dims) {
-        return createSchedule(dims, null, null);
-    }
-
-    public static SampleSchedule createZFSchedule(int[] dims, int[] newDims) {
-        return createSchedule(dims, newDims, null);
-    }
-
-    public static SampleSchedule createSchedule(int[] dims, int[] newDims, int[][] zeroEntries) {
-        SampleSchedule sampleSchedule = new SampleSchedule();
-        int n = 1;
-        for (int i = 0; i < dims.length; i++) {
-            n *= dims[i];
-        }
-        sampleSchedule.demo = true;
-        sampleSchedule.nSamples = n;
-        sampleSchedule.v_samples = new int[n][dims.length - 1];
-        MultidimensionalCounter mCounter = new MultidimensionalCounter(dims);
-        MultidimensionalCounter.Iterator iter = mCounter.iterator();
-        int i = 0;
-        while (iter.hasNext()) {
-            iter.next();
-            int[] pt = iter.getCounts();
-            sampleSchedule.v_samples[i++] = pt;
-        }
-        sampleSchedule.calcDims();
-        if (newDims != null) {
-            sampleSchedule.setDims(newDims);
-        }
-        sampleSchedule.calcSampleHash();
-        sampleSchedule.calcSampleIndices();
-        return sampleSchedule;
     }
 
     /**

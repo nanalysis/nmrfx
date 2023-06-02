@@ -10,6 +10,7 @@ import org.nmrfx.peaks.PeakList;
 
 
 /**
+ *
  * @author Bruce Johnson
  */
 public interface PeakNavigable {

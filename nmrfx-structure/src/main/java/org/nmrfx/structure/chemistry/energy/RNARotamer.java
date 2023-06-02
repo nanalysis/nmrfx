@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,25 +17,45 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.constraints.AngleConstraint;
+import org.nmrfx.chemistry.*;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 public class RNARotamer {
 
     private static final Logger log = LoggerFactory.getLogger(RNARotamer.class);
+
+    public static String SUITE_FORMAT = " %6.1f %5.1f";
+    private static Atom[][] Atom;
+
+    final double[] angles;
+    final double[] sdev;
+    final String name;
+    final String suiteName;
+    final String deltaDeltaGamma;
+    final int nSamples;
+    double fraction = 0.0;
+    static double toRAD = Math.PI / 180.0;
+    static double toDEG = 180.0 / Math.PI;
     static final double WIDTH = Math.PI / 10;
+    public static double HPOWER = 3.0;
     static final int[] subsetIndices = {1, 2, 3, 4};
     static final int[] indices = {0, 1, 2, 3, 4, 5, 6};
+    static Atom[] atoms = {null, null, null, null, null, null, null};
     static final int NPREVIOUS = 1;
+
     static final String[] DELTAP_ATOMS = {"-1:C5'", "-1:C4'", "-1:C3'", "-1:O3'"};
     static final String[] EPSILON_ATOMS = {"-1:C4'", "-1:C3'", "-1:O3'", "P"};
     static final String[] ZETA_ATOMS = {"-1:C3'", "-1:O3'", "P", "O5'"};
@@ -46,15 +66,10 @@ public class RNARotamer {
     static final String[][] suiteAtoms = {DELTAP_ATOMS, EPSILON_ATOMS, ZETA_ATOMS, ALPHA_ATOMS, BETA_ATOMS, GAMMA_ATOMS, DELTA_ATOMS};
     static final double[] sdevs = new double[suiteAtoms.length];
     static final double[] halfWidths = new double[suiteAtoms.length];
+
     static final LinkedHashMap<String, RNARotamer> ROTAMERS = new LinkedHashMap<>();
+
     static final String[] PRESET_ATOMS = {"P", "O5'", "C5'", "C4'", "C3'", "O3'"};
-    public static String SUITE_FORMAT = " %6.1f %5.1f";
-    public static double HPOWER = 3.0;
-    static double toRAD = Math.PI / 180.0;
-    static double toDEG = 180.0 / Math.PI;
-    static Atom[] atoms = {null, null, null, null, null, null, null};
-    static RNARotamer OUTLIER = new RNARotamer("--");
-    private static Atom[][] Atom;
 
     // d-1, e-1,z-1,a,b,g,d
     static {
@@ -106,14 +121,90 @@ public class RNARotamer {
         ROTAMERS.put("2o", new RNARotamer("2o", 12, 147, 6, -104, 15, -64, 16, -73, 4, -165, 26, -66, 7, 150, 3));
         countSamples();
     }
+    static RNARotamer OUTLIER = new RNARotamer("--");
 
-    final double[] angles;
-    final double[] sdev;
-    final String name;
-    final String suiteName;
-    final String deltaDeltaGamma;
-    final int nSamples;
-    double fraction = 0.0;
+    public static class RotamerScore {
+
+        RNARotamer rotamer;
+        double score;
+        double prob;
+        double[] angles;
+        String message;
+        double[] normDeltas;
+        double[] deltas;
+
+        public RotamerScore(RNARotamer rotamer, double score, double prob, double[] angles) {
+            this(rotamer, score, prob, angles, "");
+        }
+
+        public RotamerScore(RNARotamer rotamer, double score, double prob, double[] angles, String message) {
+            this.rotamer = rotamer;
+            this.score = score;
+            this.angles = angles;
+            this.message = message;
+            this.prob = prob;
+            if (rotamer.angles != null) {
+                normDeltas = new double[7];
+                deltas = new double[7];
+                calcNormDeltas();
+            }
+        }
+
+        private void calcNormDeltas() {
+            if (angles != null) {
+                for (int i = 0; i < 7; i++) {
+                    double delta = angles[i] - rotamer.angles[i];
+
+                    if (delta > Math.PI) {
+                        delta = -(2.0 * Math.PI - delta);
+                    }
+                    if (delta < -Math.PI) {
+                        delta = 2.0 * Math.PI + delta;
+                    }
+                    normDeltas[i] = delta / rotamer.sdev[i];
+                    deltas[i] = delta;
+                }
+            }
+        }
+
+        public String getName() {
+            return rotamer.name;
+        }
+
+        public double getScore() {
+            return score;
+        }
+
+        public double getProb() {
+            return prob;
+        }
+
+        public double getSuiteness() {
+            double suiteness = (Math.cos(Math.PI * Math.min(score, 1.0)) + 1.0) / 2.0;
+            if (suiteness < 0.01) {
+                if (rotamer == OUTLIER) {
+                    suiteness = 0.0;
+                } else {
+                    suiteness = 0.01;
+                }
+            }
+            return suiteness;
+        }
+
+        @Override
+        public String toString() {
+            String result = String.format("%2s %20s %8.6f %.3f %.2f %50s %6s", rotamer.name, rotamer.suiteName, prob, score, getSuiteness(), RNARotamer.formatAngles(angles), message);
+            return result;
+        }
+
+        public String report() {
+            String pucker2 = getPucker(Math.toDegrees(angles[6]));
+
+            String result = String.format("%2s %4.2f %2s %92s", rotamer.name, getSuiteness(), pucker2, formatAngles(angles, deltas));
+            return result;
+        }
+
+    }
 
     public RNARotamer(String name) {
         this.name = name;
@@ -139,86 +230,6 @@ public class RNARotamer {
         this.suiteName = makeSuiteName(this.angles);
         this.deltaDeltaGamma = getDeltaDeltaGamma(this.angles);
         this.nSamples = nSamples;
-    }
-
-    public final String makeSuiteName(double[] angles) {
-        StringBuilder builder = new StringBuilder();
-        // m, p, t convention of Lovell et al. (20) for values near 􏰋60°, 􏰏60°, or 180°;
-        for (int i = 0; i < 7; i++) {
-            double testAngle = angles[i] * toDEG;
-            if ((i == 0) || (i == 6)) {
-                builder.append(getPucker(testAngle));
-            } else if (i == 1) {
-                if (Math.abs(testAngle + 130.0) < 41.0) {
-                    builder.append("e");
-                } else {
-                    builder.append("?");
-                }
-            } else {
-
-                double angle = -60;
-                String[] types = {"m", "p", "t"};
-                String type = "";
-                for (int j = 0; j < 3; j++) {
-                    double delta = Math.abs(testAngle - angle);
-                    if (delta > 180.0) {
-                        delta = 360.0 - delta;
-                    }
-                    if (delta < 40.0) {
-                        type = types[j];
-                    }
-                    angle += 120.0;
-                }
-                if (type.equals("")) {
-                    type = String.format("%.0f", testAngle);
-                }
-                builder.append(type);
-            }
-            builder.append(" ");
-
-        }
-
-        return builder.toString().trim();
-    }
-
-    public double score(double[] testAngles, int[] indices, double[] halfWidths) {
-        if (testAngles.length != angles.length) {
-            throw new IllegalArgumentException("Must specify " + angles.length + " angles");
-        }
-        double sum = 0.0;
-        for (int index : indices) {
-            double delta = Math.abs(testAngles[index] - angles[index]);
-            if (delta > Math.PI) {
-                delta = 2.0 * Math.PI - delta;
-            }
-            delta /= halfWidths[index];
-            sum += Math.pow(delta, HPOWER);
-        }
-        double result = Math.pow(sum, 1.0 / HPOWER);
-        return result;
-    }
-
-    public double probability(double[] testAngles, int[] indices, double prior) {
-        if (testAngles.length != angles.length) {
-            throw new IllegalArgumentException("Must specify " + angles.length + " angles");
-        }
-        double totalProb = prior;
-        for (int index : indices) {
-            double delta = Math.abs(testAngles[index] - angles[index]);
-            if (delta > Math.PI) {
-                delta = 2.0 * Math.PI - delta;
-            }
-            double sdevValue = sdevs[index];
-            double p = (1.0 / (sdevValue * Math.sqrt(2.0 * Math.PI))) * Math.exp(-(delta * delta) / (2.0 * sdevValue * sdevValue)) + 1.0e-3;
-            totalProb *= p;
-        }
-        if (totalProb < 1.0e-15) {
-            totalProb = 1.0e-15;
-        }
-        if (totalProb > 1000.0) {
-            totalProb = 1000.0;
-        }
-        return totalProb;
     }
 
     static void countSamples() {
@@ -272,6 +283,46 @@ public class RNARotamer {
         return pucker;
     }
 
+    public final String makeSuiteName(double[] angles) {
+        StringBuilder builder = new StringBuilder();
+        // m, p, t convention of Lovell et al. (20) for values near 􏰋60°, 􏰏60°, or 180°;
+        for (int i = 0; i < 7; i++) {
+            double testAngle = angles[i] * toDEG;
+            if ((i == 0) || (i == 6)) {
+                builder.append(getPucker(testAngle));
+            } else if (i == 1) {
+                if (Math.abs(testAngle + 130.0) < 41.0) {
+                    builder.append("e");
+                } else {
+                    builder.append("?");
+                }
+            } else {
+
+                double angle = -60;
+                String[] types = {"m", "p", "t"};
+                String type = "";
+                for (int j = 0; j < 3; j++) {
+                    double delta = Math.abs(testAngle - angle);
+                    if (delta > 180.0) {
+                        delta = 360.0 - delta;
+                    }
+                    if (delta < 40.0) {
+                        type = types[j];
+                    }
+                    angle += 120.0;
+                }
+                if (type.equals("")) {
+                    type = String.format("%.0f", testAngle);
+                }
+                builder.append(type);
+            }
+            builder.append(" ");
+
+        }
+
+        return builder.toString().trim();
+    }
+
     static String getMPT(double angle) {
         double testAngle = angle * toDEG;
         String name = "";
@@ -322,10 +373,10 @@ public class RNARotamer {
         int result = -1;
         // epsilon
         double[][] ranges = {
-                {-50.0, 155.0}, // epsilon
-                {-25.0, 25.0}, // zeta
-                {-25.0, 25.0}, //alpha
-                {-70.0, 50.0} // beta
+            {-50.0, 155.0}, // epsilon
+            {-25.0, 25.0}, // zeta
+            {-25.0, 25.0}, //alpha
+            {-70.0, 50.0} // beta
         };
         for (int i = 1; i < 5; i++) {
             double testAngle = angles[i] * toDEG;
@@ -366,7 +417,7 @@ public class RNARotamer {
     public static void add(String name, int n, double... angles) {
         ROTAMERS.put(name, new RNARotamer(name, n, angles));
     }
-
+    
     public static RotamerScore[] getNBest(Polymer polymer, int residueNum, int n) {
         return getNBest(polymer, residueNum, n, null);
     }
@@ -377,8 +428,8 @@ public class RNARotamer {
     }
 
     public static RotamerScore[] getNBest(Residue residue, int n, EnergyCoords ec) {
-        /* getNBest finds n of the best rotamer confirmations and returns a
-           list of rotamer scores containing the type of rotamer and the
+        /* getNBest finds n of the best rotamer confirmations and returns a 
+           list of rotamer scores containing the type of rotamer and the 
            probability. The function takes the polymer and a residue number.
          */
 
@@ -394,7 +445,7 @@ public class RNARotamer {
         }
         rotamerScores = rotamerScores.stream().filter(rScore -> (rScore.getProb() > 1.0e-16)).sorted(Comparator.comparingDouble(RotamerScore::getProb).reversed()).limit(n).collect(Collectors.toList());
 
-        // The commented out code may be a bit faster but less legible.
+        // The commented out code may be a bit faster but less legible. 
 //        for (RNARotamer rotamer : ROTAMERS.values()) {
 //            double probability = rotamer.probability(testAngles, new int[]{1, 2, 3, 4, 5, 6}, rotamer.fraction);
 //            // If the last element in the list is null or if the last elements probability is less than the calculated probability
@@ -429,8 +480,8 @@ public class RNARotamer {
     }
 
     public static RotamerScore getBest(Residue residue, EnergyCoords ec) {
-        /* getNBest finds n of the best rotamer confirmations and returns a
-           list of rotamer scores containing the type of rotamer and the
+        /* getNBest finds n of the best rotamer confirmations and returns a 
+           list of rotamer scores containing the type of rotamer and the 
            probability. The function takes the polymer and a residue number.
          */
 
@@ -466,8 +517,8 @@ public class RNARotamer {
 
     public static double calcEnergy(RotamerScore[] scores) {
         /* calcRotamerEnergy takes a list of RotamerScore objects and computes
-           an energy based on the probabilities stored in each RotamerScore
-           object.
+           an energy based on the probabilities stored in each RotamerScore 
+           object. 
          */
         double totalProb = 0;
         for (RotamerScore score : scores) {
@@ -505,6 +556,46 @@ public class RNARotamer {
         }
 
         return derivMap;
+    }
+
+    public double score(double[] testAngles, int[] indices, double[] halfWidths) {
+        if (testAngles.length != angles.length) {
+            throw new IllegalArgumentException("Must specify " + angles.length + " angles");
+        }
+        double sum = 0.0;
+        for (int index : indices) {
+            double delta = Math.abs(testAngles[index] - angles[index]);
+            if (delta > Math.PI) {
+                delta = 2.0 * Math.PI - delta;
+            }
+            delta /= halfWidths[index];
+            sum += Math.pow(delta, HPOWER);
+        }
+        double result = Math.pow(sum, 1.0 / HPOWER);
+        return result;
+    }
+
+    public double probability(double[] testAngles, int[] indices, double prior) {
+        if (testAngles.length != angles.length) {
+            throw new IllegalArgumentException("Must specify " + angles.length + " angles");
+        }
+        double totalProb = prior;
+        for (int index : indices) {
+            double delta = Math.abs(testAngles[index] - angles[index]);
+            if (delta > Math.PI) {
+                delta = 2.0 * Math.PI - delta;
+            }
+            double sdevValue = sdevs[index];
+            double p = (1.0 / (sdevValue * Math.sqrt(2.0 * Math.PI))) * Math.exp(-(delta * delta) / (2.0 * sdevValue * sdevValue)) + 1.0e-3;
+            totalProb *= p;
+        }
+        if (totalProb < 1.0e-15) {
+            totalProb = 1.0e-15;
+        }
+        if (totalProb > 1000.0) {
+            totalProb = 1000.0;
+        }
+        return totalProb;
     }
 
     public static RotamerScore getBest(double[] angles) {
@@ -605,7 +696,7 @@ public class RNARotamer {
                     }
                     Atom atom = delta == -1 ? residue.previous.getAtom(aName)
                             : residue.getAtom(aName);
-                    if (atom == null) {
+                    if (atom == null) { 
                         return null;
                     }
                     angleAtoms[j] = atom;
@@ -646,7 +737,7 @@ public class RNARotamer {
      * Set the dihedral angles for the specified residue based on angles for the
      * specified suite.
      *
-     * @param residue   Set angles in this residue
+     * @param residue Set angles in this residue
      * @param suiteName Get the angles from the suite with this name
      */
     public static void setDihedrals(Residue residue, String suiteName) {
@@ -657,12 +748,12 @@ public class RNARotamer {
      * Set the dihedral angles for the specified residue based on angles for the
      * specified suite.
      *
-     * @param residue   Set angles in this residue
+     * @param residue Set angles in this residue
      * @param suiteName Get the angles from the suite with this name
-     * @param sdev      Vary the angle from the suite value by a random number chosen
-     *                  from a Gaussian distribution with a standard deviation of sdev
-     * @param doFreeze  If true, freeze the angle so it is not adjusted during
-     *                  refinement
+     * @param sdev Vary the angle from the suite value by a random number chosen
+     * from a Gaussian distribution with a standard deviation of sdev
+     * @param doFreeze If true, freeze the angle so it is not adjusted during
+     * refinement
      */
     public static void setDihedrals(Residue residue, String suiteName, double sdev, boolean doFreeze) {
         if (residue == null) {
@@ -705,35 +796,37 @@ public class RNARotamer {
     }
 
     /**
+     *
      * Set the dihedral angles for the specified residue based on angles for the
      * specified suite.
      *
-     * @param residue  Set angles in this residue
-     * @param angles   Am array of angle values to set. The angles are set on the
-     *                 atoms named in the PRESET_ATOMS array.
-     * @param sdev     Vary the angle from the suite value by a random number chosen
-     *                 from a Gaussian distribution with a standard deviation of sdev
+     * @param residue Set angles in this residue
+     * @param angles Am array of angle values to set. The angles are set on the
+     * atoms named in the PRESET_ATOMS array.
+     * @param sdev Vary the angle from the suite value by a random number chosen
+     * from a Gaussian distribution with a standard deviation of sdev
      * @param doFreeze If true, freeze the angle so it is not adjusted during
-     *                 refinement
+     * refinement
      */
     public static void setDihedrals(Residue residue, double[] angles, double sdev, boolean doFreeze) {
         setDihedrals(residue, PRESET_ATOMS, angles, sdev, doFreeze);
     }
 
     /**
+     *
      * Set the dihedral angles for the specified residue based on angles for the
      * specified suite.
      *
-     * @param residue   Set angles in this residue
+     * @param residue Set angles in this residue
      * @param atomNames The atoms whose angles are set. This specifies the name
-     *                  of the daughter atom of the rotatable bond. That is, the atom name here
-     *                  is atom D, for the torsion A-B-C-D (rotation around bond B-C)
-     * @param angles    Am array of angle values to set. The angles are set on the
-     *                  atoms named in atomNames.
-     * @param sdev      Vary the angle from the suite value by a random number chosen
-     *                  from a Gaussian distribution with a standard deviation of sdev
-     * @param doFreeze  If true, freeze the angle so it is not adjusted during
-     *                  refinement
+     * of the daughter atom of the rotatable bond. That is, the atom name here
+     * is atom D, for the torsion A-B-C-D (rotation around bond B-C)
+     * @param angles Am array of angle values to set. The angles are set on the
+     * atoms named in atomNames.
+     * @param sdev Vary the angle from the suite value by a random number chosen
+     * from a Gaussian distribution with a standard deviation of sdev
+     * @param doFreeze If true, freeze the angle so it is not adjusted during
+     * refinement
      */
     public static void setDihedrals(Residue residue, String[] atomNames, double[] angles, double sdev, boolean doFreeze) {
         int j = 0;
@@ -766,17 +859,18 @@ public class RNARotamer {
     }
 
     /**
+     *
      * Set the dihedral angles for the specified residue based on angles for the
      * specified suite.
      *
-     * @param residue  Set angles in this residue
+     * @param residue Set angles in this residue
      * @param angleMap A map with atomNames as key and angles (in degrees) as
-     *                 values. The atomNames (unlike the other setDihedrals methods) specify
-     *                 atom C, for the torsion A-B-C-D (rotation around bond B-C).
-     * @param sdev     Vary the angle from the suite value by a random number chosen
-     *                 from a Gaussian distribution with a standard deviation of sdev
+     * values. The atomNames (unlike the other setDihedrals methods) specify
+     * atom C, for the torsion A-B-C-D (rotation around bond B-C).
+     * @param sdev Vary the angle from the suite value by a random number chosen
+     * from a Gaussian distribution with a standard deviation of sdev
      * @param doFreeze If true, freeze the angle so it is not adjusted during
-     *                 refinement
+     * refinement
      */
     public static void setDihedrals(Residue residue, Map<String, Double> angleMap, double sdev, boolean doFreeze) {
         int j = 0;
@@ -820,7 +914,7 @@ public class RNARotamer {
         residue.molecule.genCoords(false);
     }
 
-    //O3'     P       O5'     C5'     C4'     C3'     O3'
+//O3'     P       O5'     C5'     C4'     C3'     O3'
 // d-1     e-1     z-1     a       b       g       d
     public static RotamerScore scoreResidue(Polymer polymer, int residueNum) {
         Residue residue = polymer.getResidue(residueNum);
@@ -1012,88 +1106,5 @@ public class RNARotamer {
             System.out.println("");
         }
         return updateAtoms;
-    }
-
-    public static class RotamerScore {
-
-        RNARotamer rotamer;
-        double score;
-        double prob;
-        double[] angles;
-        String message;
-        double[] normDeltas;
-        double[] deltas;
-
-        public RotamerScore(RNARotamer rotamer, double score, double prob, double[] angles) {
-            this(rotamer, score, prob, angles, "");
-        }
-
-        public RotamerScore(RNARotamer rotamer, double score, double prob, double[] angles, String message) {
-            this.rotamer = rotamer;
-            this.score = score;
-            this.angles = angles;
-            this.message = message;
-            this.prob = prob;
-            if (rotamer.angles != null) {
-                normDeltas = new double[7];
-                deltas = new double[7];
-                calcNormDeltas();
-            }
-        }
-
-        private void calcNormDeltas() {
-            if (angles != null) {
-                for (int i = 0; i < 7; i++) {
-                    double delta = angles[i] - rotamer.angles[i];
-
-                    if (delta > Math.PI) {
-                        delta = -(2.0 * Math.PI - delta);
-                    }
-                    if (delta < -Math.PI) {
-                        delta = 2.0 * Math.PI + delta;
-                    }
-                    normDeltas[i] = delta / rotamer.sdev[i];
-                    deltas[i] = delta;
-                }
-            }
-        }
-
-        public String getName() {
-            return rotamer.name;
-        }
-
-        public double getScore() {
-            return score;
-        }
-
-        public double getProb() {
-            return prob;
-        }
-
-        public double getSuiteness() {
-            double suiteness = (Math.cos(Math.PI * Math.min(score, 1.0)) + 1.0) / 2.0;
-            if (suiteness < 0.01) {
-                if (rotamer == OUTLIER) {
-                    suiteness = 0.0;
-                } else {
-                    suiteness = 0.01;
-                }
-            }
-            return suiteness;
-        }
-
-        @Override
-        public String toString() {
-            String result = String.format("%2s %20s %8.6f %.3f %.2f %50s %6s", rotamer.name, rotamer.suiteName, prob, score, getSuiteness(), RNARotamer.formatAngles(angles), message);
-            return result;
-        }
-
-        public String report() {
-            String pucker2 = getPucker(Math.toDegrees(angles[6]));
-
-            String result = String.format("%2s %4.2f %2s %92s", rotamer.name, getSuiteness(), pucker2, formatAngles(angles, deltas));
-            return result;
-        }
-
     }
 }

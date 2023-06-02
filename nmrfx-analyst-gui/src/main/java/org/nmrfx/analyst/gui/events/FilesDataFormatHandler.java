@@ -31,8 +31,7 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
      * loaded)
      * If the file(s) are a dataset, then all the files will be copied to the chart in append mode.
      * If the file(s) are a FID, then only the first file will be copied to the chart.
-     *
-     * @param o     List of Files to add.
+     * @param o List of Files to add.
      * @param chart The chart to add the files to.
      */
     @Override
@@ -65,7 +64,6 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
     /**
      * Checks if first file in list is dataset is FID or processed. If it is an FID, the first file is opened, if
      * it is processed, all the files are opened in dataset append mode.
-     *
      * @param files The files to open.
      * @param chart The chart to display the files in.
      */
@@ -86,8 +84,8 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
         if (isFID) {
             controller.openFile(files.get(0).getAbsolutePath(), true, false);
         } else {
-            List<String> datasetNames = chart.getDatasetAttributes().stream().map(attr -> (Dataset) attr.getDataset()).map(Dataset::getName).collect(Collectors.toList());
-            Set<Integer> dimensions = chart.getDatasetAttributes().stream().map(attr -> (Dataset) attr.getDataset()).map(Dataset::getNDim).collect(Collectors.toSet());
+            List<String> datasetNames = chart.getDatasetAttributes().stream().map(attr ->(Dataset) attr.getDataset()).map(Dataset::getName).collect(Collectors.toList());
+            Set<Integer> dimensions = chart.getDatasetAttributes().stream().map(attr ->(Dataset) attr.getDataset()).map(Dataset::getNDim).collect(Collectors.toSet());
             Dataset dataset;
             List<Dataset> unaddedDatasets = new ArrayList<>();
             for (File file : files) {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -54,8 +54,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     public static final String DRAW_PEAKS = "drawPeaks";
     public static final String ON_COLOR = "onColor";
     public static final String OFF_COLOR = "offColor";
-    final DatasetAttributes dataAttr;
-    final PolyChart chart;
+
     private final IntegerProperty nplanes = new SimpleIntegerProperty(this, NPLANES, 0);
     private final ColorProperty onColor = new ColorProperty(this, ON_COLOR, Color.BLACK);
     private final ColorProperty offColor = new ColorProperty(this, OFF_COLOR, Color.RED);
@@ -66,7 +65,10 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     private final ObjectProperty<PeakDisplayParameters.DisplayTypes> displayType = new SimpleObjectProperty<>(this, DISPLAY_TYPE, DisplayTypes.Peak);
     private final ObjectProperty<PeakDisplayParameters.ColorTypes> colorType = new SimpleObjectProperty<>(this, "colorType", ColorTypes.Plane);
     private final StringProperty peakListName = new SimpleStringProperty(this, "peakListName", "");
+
     PeakList peakList;
+    final DatasetAttributes dataAttr;
+    final PolyChart chart;
     Optional<List<Peak>> peaksInRegion = Optional.empty();
     Optional<List<Multiplet>> multipletsInRegion = Optional.empty();
     Set<Peak> selectedPeaks = new HashSet<>();
@@ -75,84 +77,79 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     Axis yAxis = null;
     double[][] foldLimits = null;
 
-    public PeakListAttributes(PolyChart chart, DatasetAttributes dataAttr, PeakList peakList) {
-        this.chart = chart;
-        this.dataAttr = dataAttr;
-        this.peakList = peakList;
-        setPeakListName(peakList.getName());
-    }
-
     public IntegerProperty nplanesProperty() {
         return nplanes;
-    }
-
-    public Integer getNplanes() {
-        return nplanesProperty().get();
     }
 
     public void setNplanes(Integer value) {
         nplanesProperty().set(value);
     }
 
-    public ColorProperty onColorProperty() {
-        return onColor;
+    public Integer getNplanes() {
+        return nplanesProperty().get();
     }
 
-    public Color getOnColor() {
-        return onColorProperty().get();
+
+    public ColorProperty onColorProperty() {
+        return onColor;
     }
 
     public void setOnColor(Color value) {
         onColorProperty().set(value);
     }
 
-    public ColorProperty offColorProperty() {
-        return offColor;
+    public Color getOnColor() {
+        return onColorProperty().get();
     }
 
-    public Color getOffColor() {
-        return offColorProperty().get();
+    public ColorProperty offColorProperty() {
+        return offColor;
     }
 
     public void setOffColor(Color value) {
         offColorProperty().set(value);
     }
 
-    public BooleanProperty drawPeaksProperty() {
-        return drawPeaks;
+    public Color getOffColor() {
+        return offColorProperty().get();
     }
 
-    public boolean getDrawPeaks() {
-        return drawPeaksProperty().get();
+    public BooleanProperty drawPeaksProperty() {
+        return drawPeaks;
     }
 
     public void setDrawPeaks(boolean value) {
         drawPeaksProperty().set(value);
     }
 
-    public BooleanProperty simPeaksProperty() {
-        return simPeaks;
+    public boolean getDrawPeaks() {
+        return drawPeaksProperty().get();
     }
 
-    public boolean getSimPeaks() {
-        return simPeaksProperty().get();
+    public BooleanProperty simPeaksProperty() {
+        return simPeaks;
     }
 
     public void setSimPeaks(boolean value) {
         simPeaksProperty().set(value);
     }
 
+    public boolean getSimPeaks() {
+        return simPeaksProperty().get();
+    }
+
     public BooleanProperty drawLinksProperty() {
         return drawLinks;
+    }
+
+    public void setDrawLinks(boolean value) {
+        drawLinksProperty().set(value);
     }
 
     public boolean getDrawLinks() {
         return drawLinksProperty().get();
     }
 
-    public void setDrawLinks(boolean value) {
-        drawLinksProperty().set(value);
-    }
 
     public final ObjectProperty<PeakDisplayParameters.LabelTypes> labelTypeProperty() {
         return this.peakLabelType;
@@ -169,6 +166,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     public final void setLabelType(final String type) {
         this.labelTypeProperty().set(PeakDisplayParameters.LabelTypes.valueOf(type));
     }
+
 
     public final ObjectProperty<PeakDisplayParameters.DisplayTypes> displayTypeProperty() {
         return this.displayType;
@@ -202,6 +200,13 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         this.colorTypeProperty().set(PeakDisplayParameters.ColorTypes.valueOf(type));
     }
 
+    public PeakListAttributes(PolyChart chart, DatasetAttributes dataAttr, PeakList peakList) {
+        this.chart = chart;
+        this.dataAttr = dataAttr;
+        this.peakList = peakList;
+        setPeakListName(peakList.getName());
+    }
+
     public DatasetAttributes getDatasetAttributes() {
         return dataAttr;
     }
@@ -210,22 +215,22 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         return peakList;
     }
 
+    public StringProperty peakListNameProperty() {
+        return peakListName;
+    }
+
     public void setPeakList(PeakList peakList) {
         this.peakList = peakList;
         setPeakListName(peakList.getName());
 
     }
 
-    public StringProperty peakListNameProperty() {
-        return peakListName;
+    public void setPeakListName(String value) {
+        peakListNameProperty().set(value);
     }
 
     public String getPeakListName() {
         return peakListNameProperty().get();
-    }
-
-    public void setPeakListName(String value) {
-        peakListNameProperty().set(value);
     }
 
     @Override
@@ -417,12 +422,11 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         }
         return hit;
     }
-
     public Optional<MultipletSelection> hitMultiplet(DrawPeaks drawPeaks, double pickX, double pickY) {
         if (peakList.getNDim() > 1) {
             return Optional.empty();
         }
-        Optional<MultipletSelection> hit = drawPeaks.hitMultipletLabel(pickX, pickY);
+        Optional<MultipletSelection> hit =  drawPeaks.hitMultipletLabel(pickX, pickY);
         if (hit.isPresent()) {
             return hit;
         } else {
@@ -612,7 +616,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     }
 
     protected boolean pick1DPeak(Peak peak, double x,
-                                 double y) {
+            double y) {
         double height = yAxis.getHeight();
         y = height - y;
         int[] peakDim = getPeakDim();
@@ -624,7 +628,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     }
 
     private boolean pick2DPeak(Peak peak, double x,
-                               double y) {
+            double y) {
         double[] ctr = {0.0, 0.0};
         double[] bou = {0.0, 0.0};
         int[] peakDim = getPeakDim();

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,22 +17,19 @@
  */
 package org.nmrfx.processor.optimization.equations;
 
-import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.nmrfx.processor.optimization.NNLSMat;
-import org.nmrfx.processor.optimization.SineSignal;
-
+import org.nmrfx.processor.optimization.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.linear.*;
 
 public class LorentzIWJ implements MultivariateFunction {
 
+    int nfev = 0;
     public double[] xv = null;
     public double[] yv = null;
-    public int[] map = null;
-    int nfev = 0;
     double[] a = null;
+    public int[] map = null;
     int nFit = 0;
     int ampStart = 0;
     int nPar = 0;
@@ -103,6 +100,49 @@ public class LorentzIWJ implements MultivariateFunction {
         for (int i = 0; i < sigStarts.length; i++) {
             System.out.println("sigStarts " + sigStarts[i]);
         }
+    }
+
+    public void setSignals(int[][] splitCount) {
+        xy_nsig = splitCount.length;
+        lw = new double[xy_nsig];
+        couplings = new double[xy_nsig][];
+        amplitudes = new double[xy_nsig][];
+        freqs = new double[xy_nsig][];
+        cfreqs = new double[xy_nsig];
+        this.splitCount = splitCount;
+        sigStarts = new int[xy_nsig];
+
+        int start = 0;
+        int nAmps = 0;
+        nFit = 0;
+
+        for (int i = 0; i < xy_nsig; i++) {
+            sigStarts[i] = start;
+            start++; // allow for linewidth par
+            nFit++;
+
+            int nFreqs = 1;
+            if ((splitCount[i].length == 1) && (splitCount[i][0] < 0)) { // generic multiplet
+                nFreqs = -splitCount[i][0];
+                couplings[i] = new double[0];
+                start += nFreqs;
+                nFit += nFreqs;
+            } else {
+                for (int j = 0; j < splitCount[i].length; j++) {
+                    nFreqs = nFreqs * splitCount[i][j];
+                }
+
+                couplings[i] = new double[splitCount[i].length];
+                start += (couplings[i].length + 1);
+                nFit += (couplings[i].length + 1);
+            }
+
+            amplitudes[i] = new double[nFreqs];
+            freqs[i] = new double[nFreqs];
+            nAmps += nFreqs;
+        }
+        ampStart = nFit;
+        nPar = nFit + nAmps;
     }
 
     public final void initpt(double[] a) {
@@ -271,8 +311,7 @@ public class LorentzIWJ implements MultivariateFunction {
 
     public double value(double[] a) {
         int m = xv.length;
-        int n = a.length;
-        ;
+        int n = a.length;;
         double[] fvec = new double[m];
         fcn(m, n, a, fvec);
         double sumsq = 0.0;
@@ -390,47 +429,142 @@ public class LorentzIWJ implements MultivariateFunction {
         return signalGroups;
     }
 
-    public void setSignals(int[][] splitCount) {
-        xy_nsig = splitCount.length;
-        lw = new double[xy_nsig];
-        couplings = new double[xy_nsig][];
-        amplitudes = new double[xy_nsig][];
-        freqs = new double[xy_nsig][];
-        cfreqs = new double[xy_nsig];
-        this.splitCount = splitCount;
-        sigStarts = new int[xy_nsig];
+    private class LwFr implements Comparable<LwFr> {
 
-        int start = 0;
-        int nAmps = 0;
-        nFit = 0;
+        double freq1;
+        double freq2 = Double.MAX_VALUE;
+        double lw;
+        int iCol;
+        int partnerCol = -1;
+        int iSig;
+        int iLine;
+        boolean inActive = false;
 
-        for (int i = 0; i < xy_nsig; i++) {
-            sigStarts[i] = start;
-            start++; // allow for linewidth par
-            nFit++;
+        LwFr(int iCol, int iSig, int iLine, double freq1, double lw) {
+            this.iCol = iCol;
+            this.iSig = iSig;
+            this.iLine = iLine;
+            this.freq1 = freq1;
+            this.lw = lw;
+        }
 
-            int nFreqs = 1;
-            if ((splitCount[i].length == 1) && (splitCount[i][0] < 0)) { // generic multiplet
-                nFreqs = -splitCount[i][0];
-                couplings[i] = new double[0];
-                start += nFreqs;
-                nFit += nFreqs;
+        @Override
+        public int compareTo(LwFr lwfrB) {
+            double ppmA = this.freq1;
+            double ppmB = lwfrB.freq1;
+            double lwA = this.lw;
+            double lwB = lwfrB.lw;
+            int result = (ppmA == ppmB) ? 0 : ((ppmA < ppmB) ? (-1) : 1);
+            if (result == 0) {
+                result = (lwA == lwB) ? 0 : ((lwA < lwB) ? (-1) : 1);
+            }
+            return result;
+        }
+    }
+
+    private class LwFrSorter {
+
+        ArrayList<LwFr> lwfrs = new ArrayList<>();
+
+        int i = 0;
+
+        LwFrSorter(int nFr) {
+            lwfrs.ensureCapacity(nFr);
+        }
+
+        void add(LwFr lwfr) {
+            lwfrs.add(lwfr);
+        }
+
+        void sort() {
+            Collections.sort(lwfrs);
+        }
+
+        public boolean fuzzyOverlap(int a, int b) {
+            double frac = 0.05;
+            double fracLW = 0.3;
+            LwFr lwfrA = lwfrs.get(a);
+            LwFr lwfrB = lwfrs.get(b);
+            double ppmA = lwfrA.freq1;
+            double ppmB = lwfrB.freq1;
+            double lwA = lwfrA.lw;
+            double lwB = lwfrB.lw;
+            double delta = Math.abs(ppmA - ppmB);
+            double tol = 0.0;
+            double tolLW = 0.0;
+            if (lwA < lwB) {
+                tol = lwA * frac;
+                tolLW = lwA * fracLW;
             } else {
-                for (int j = 0; j < splitCount[i].length; j++) {
-                    nFreqs = nFreqs * splitCount[i][j];
-                }
-
-                couplings[i] = new double[splitCount[i].length];
-                start += (couplings[i].length + 1);
-                nFit += (couplings[i].length + 1);
+                tol = lwB * frac;
+                tolLW = lwB * fracLW;
+            }
+            boolean result = false;
+            double delta2 = 0.0;
+            if ((lwfrA.freq2 == Double.MAX_VALUE) && (lwfrB.freq2 != Double.MAX_VALUE)) {
+                delta2 = Double.MAX_VALUE;
+            } else if ((lwfrA.freq2 != Double.MAX_VALUE) && (lwfrB.freq2 == Double.MAX_VALUE)) {
+                delta2 = Double.MAX_VALUE;
+            } else if ((lwfrA.freq2 != Double.MAX_VALUE) && (lwfrB.freq2 != Double.MAX_VALUE)) {
+                delta2 = Math.abs(lwfrA.freq2 - lwfrB.freq2);
             }
 
-            amplitudes[i] = new double[nFreqs];
-            freqs[i] = new double[nFreqs];
-            nAmps += nFreqs;
+            if ((delta2 < tol) && (delta < tol)) {
+                double deltaLW = Math.abs(lwA - lwB);
+                if (deltaLW < tolLW) {
+                    result = true;
+                }
+            }
+            return result;
         }
-        ampStart = nFit;
-        nPar = nFit + nAmps;
+
+        double[][] check(double[][] A) {
+            sort();
+            ampMap = new int[lwfrs.size()];
+            int nRows = A.length;
+            int nCols = A[0].length;
+            int newCols = 0;
+            int i = 0;
+            int iCol = 0;
+            while (i < lwfrs.size()) {
+                if (lwfrs.get(i).inActive) {
+                    i++;
+                    continue;
+                }
+                LwFr iLwFr = lwfrs.get(i);
+                ampMap[iLwFr.iCol] = iCol;
+                if (iLwFr.partnerCol != -1) {
+                    ampMap[iLwFr.partnerCol] = iCol;
+                }
+
+                int j = i + 1;
+                while (j < lwfrs.size()) {
+                    LwFr jLwFr = lwfrs.get(j);
+
+                    if (!jLwFr.inActive) {
+                        if (fuzzyOverlap(i, j)) {
+                            ampMap[jLwFr.iCol] = iCol;
+                        } else {
+                            break;
+                        }
+                    }
+                    j++;
+                }
+                i = j;
+
+                iCol++;
+            }
+            newCols = iCol;
+
+            double[][] newA = new double[nRows][newCols];
+            for (int j = 0; j < nCols; j++) {
+                for (int iRow = 0; iRow < nRows; iRow++) {
+                    newA[iRow][ampMap[j]] += A[iRow][j];
+                }
+            }
+
+            return newA;
+        }
     }
 
     double[][] fillMatrix(double[] a) {
@@ -589,144 +723,6 @@ public class LorentzIWJ implements MultivariateFunction {
             X[iSig] = amp;
         }
         return X;
-    }
-
-    private class LwFr implements Comparable<LwFr> {
-
-        double freq1;
-        double freq2 = Double.MAX_VALUE;
-        double lw;
-        int iCol;
-        int partnerCol = -1;
-        int iSig;
-        int iLine;
-        boolean inActive = false;
-
-        LwFr(int iCol, int iSig, int iLine, double freq1, double lw) {
-            this.iCol = iCol;
-            this.iSig = iSig;
-            this.iLine = iLine;
-            this.freq1 = freq1;
-            this.lw = lw;
-        }
-
-        @Override
-        public int compareTo(LwFr lwfrB) {
-            double ppmA = this.freq1;
-            double ppmB = lwfrB.freq1;
-            double lwA = this.lw;
-            double lwB = lwfrB.lw;
-            int result = (ppmA == ppmB) ? 0 : ((ppmA < ppmB) ? (-1) : 1);
-            if (result == 0) {
-                result = (lwA == lwB) ? 0 : ((lwA < lwB) ? (-1) : 1);
-            }
-            return result;
-        }
-    }
-
-    private class LwFrSorter {
-
-        ArrayList<LwFr> lwfrs = new ArrayList<>();
-
-        int i = 0;
-
-        LwFrSorter(int nFr) {
-            lwfrs.ensureCapacity(nFr);
-        }
-
-        void add(LwFr lwfr) {
-            lwfrs.add(lwfr);
-        }
-
-        void sort() {
-            Collections.sort(lwfrs);
-        }
-
-        public boolean fuzzyOverlap(int a, int b) {
-            double frac = 0.05;
-            double fracLW = 0.3;
-            LwFr lwfrA = lwfrs.get(a);
-            LwFr lwfrB = lwfrs.get(b);
-            double ppmA = lwfrA.freq1;
-            double ppmB = lwfrB.freq1;
-            double lwA = lwfrA.lw;
-            double lwB = lwfrB.lw;
-            double delta = Math.abs(ppmA - ppmB);
-            double tol = 0.0;
-            double tolLW = 0.0;
-            if (lwA < lwB) {
-                tol = lwA * frac;
-                tolLW = lwA * fracLW;
-            } else {
-                tol = lwB * frac;
-                tolLW = lwB * fracLW;
-            }
-            boolean result = false;
-            double delta2 = 0.0;
-            if ((lwfrA.freq2 == Double.MAX_VALUE) && (lwfrB.freq2 != Double.MAX_VALUE)) {
-                delta2 = Double.MAX_VALUE;
-            } else if ((lwfrA.freq2 != Double.MAX_VALUE) && (lwfrB.freq2 == Double.MAX_VALUE)) {
-                delta2 = Double.MAX_VALUE;
-            } else if ((lwfrA.freq2 != Double.MAX_VALUE) && (lwfrB.freq2 != Double.MAX_VALUE)) {
-                delta2 = Math.abs(lwfrA.freq2 - lwfrB.freq2);
-            }
-
-            if ((delta2 < tol) && (delta < tol)) {
-                double deltaLW = Math.abs(lwA - lwB);
-                if (deltaLW < tolLW) {
-                    result = true;
-                }
-            }
-            return result;
-        }
-
-        double[][] check(double[][] A) {
-            sort();
-            ampMap = new int[lwfrs.size()];
-            int nRows = A.length;
-            int nCols = A[0].length;
-            int newCols = 0;
-            int i = 0;
-            int iCol = 0;
-            while (i < lwfrs.size()) {
-                if (lwfrs.get(i).inActive) {
-                    i++;
-                    continue;
-                }
-                LwFr iLwFr = lwfrs.get(i);
-                ampMap[iLwFr.iCol] = iCol;
-                if (iLwFr.partnerCol != -1) {
-                    ampMap[iLwFr.partnerCol] = iCol;
-                }
-
-                int j = i + 1;
-                while (j < lwfrs.size()) {
-                    LwFr jLwFr = lwfrs.get(j);
-
-                    if (!jLwFr.inActive) {
-                        if (fuzzyOverlap(i, j)) {
-                            ampMap[jLwFr.iCol] = iCol;
-                        } else {
-                            break;
-                        }
-                    }
-                    j++;
-                }
-                i = j;
-
-                iCol++;
-            }
-            newCols = iCol;
-
-            double[][] newA = new double[nRows][newCols];
-            for (int j = 0; j < nCols; j++) {
-                for (int iRow = 0; iRow < nRows; iRow++) {
-                    newA[iRow][ampMap[j]] += A[iRow][j];
-                }
-            }
-
-            return newA;
-        }
     }
 
     public static void main(String[] args) {

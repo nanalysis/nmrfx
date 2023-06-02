@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,19 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.utils.properties;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.GridPane;
+import static javafx.scene.layout.GridPane.setHgrow;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -38,11 +42,8 @@ import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import org.controlsfx.control.textfield.CustomTextField;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-
 /**
+ *
  * @author brucejohnson
  */
 public class ZoomSlider extends GridPane {
@@ -58,32 +59,13 @@ public class ZoomSlider extends GridPane {
     Label iconLabel = null;
     String format = "%.3f";
 
-    public ZoomSlider(Slider slider, double amin, double amax) {
-        this(slider, amin, amax, true);
+    class DConverter extends DoubleStringConverter {
 
-    }
+        @Override
+        public String toString(Double value) {
+            return String.format(format, value);
 
-    public ZoomSlider(Slider slider, double amin, double amax, boolean zoomable) {
-        super();
-        this.slider = slider;
-        this.amin = amin;
-        this.amax = amax;
-        if (zoomable) {
-            downButton = new Button("-");
-            upButton = new Button("+");
-            upButton.getStyleClass().add("toolButton");
-            downButton.getStyleClass().add("toolButton");
         }
-
-        textField.setFont(new Font(11));
-        textField.setPrefWidth(60);
-        addControls(zoomable);
-        if (zoomable) {
-            downButton.addEventHandler(ActionEvent.ACTION, event -> downAction(event));
-            upButton.addEventHandler(ActionEvent.ACTION, event -> upAction(event));
-        }
-        Bindings.bindBidirectional(textField.textProperty(), slider.valueProperty(), (StringConverter) new DConverter());
-        updateFormat();
     }
 
     public boolean hasIcon() {
@@ -106,20 +88,20 @@ public class ZoomSlider extends GridPane {
 
     }
 
-    public String getIconLabel() {
-        String result = "";
-        if (iconLabel != null) {
-            result = iconLabel.getText();
-        }
-        return result;
-    }
-
     public void setIconLabel(String s) {
         if (iconLabel != null) {
             if ((s.length() > 0) && Character.isLetter(s.charAt(0))) {
                 iconLabel.setText(s);
             }
         }
+    }
+
+    public String getIconLabel() {
+        String result = "";
+        if (iconLabel != null) {
+            result = iconLabel.getText();
+        }
+        return result;
     }
 
     void updateLabel() {
@@ -219,6 +201,34 @@ public class ZoomSlider extends GridPane {
         slider.setMajorTickUnit((max - min) / 2);
     }
 
+    public ZoomSlider(Slider slider, double amin, double amax) {
+        this(slider, amin, amax, true);
+
+    }
+
+    public ZoomSlider(Slider slider, double amin, double amax, boolean zoomable) {
+        super();
+        this.slider = slider;
+        this.amin = amin;
+        this.amax = amax;
+        if (zoomable) {
+            downButton = new Button("-");
+            upButton = new Button("+");
+            upButton.getStyleClass().add("toolButton");
+            downButton.getStyleClass().add("toolButton");
+        }
+
+        textField.setFont(new Font(11));
+        textField.setPrefWidth(60);
+        addControls(zoomable);
+        if (zoomable) {
+            downButton.addEventHandler(ActionEvent.ACTION, event -> downAction(event));
+            upButton.addEventHandler(ActionEvent.ACTION, event -> upAction(event));
+        }
+        Bindings.bindBidirectional(textField.textProperty(), slider.valueProperty(), (StringConverter) new DConverter());
+        updateFormat();
+    }
+
     private void addControls(boolean zoomable) {
         add(textField, 0, 0);
         add(slider, 1, 0);
@@ -231,14 +241,5 @@ public class ZoomSlider extends GridPane {
 
     public Slider getSlider() {
         return slider;
-    }
-
-    class DConverter extends DoubleStringConverter {
-
-        @Override
-        public String toString(Double value) {
-            return String.format(format, value);
-
-        }
     }
 }

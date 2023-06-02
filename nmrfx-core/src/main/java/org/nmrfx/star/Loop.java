@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2021 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * Loop.java
  */
 package org.nmrfx.star;
@@ -24,17 +24,18 @@ package org.nmrfx.star;
 import java.util.*;
 
 /**
+ *
  * @author brucejohnson
  */
 public class Loop {
 
-    final HashMap<String, ArrayList<String>> loopTags = new HashMap<>();
-    final Saveframe saveFrame;
     String name = "";
     ArrayList<String>[] columns = null;
+    final HashMap<String, ArrayList<String>> loopTags = new HashMap<>();
     ArrayList<String> tags = new ArrayList();
     private int nTags;
     private int nRows = 0;
+    final Saveframe saveFrame;
 
     /**
      * Creates a new instance of Loop

@@ -16,13 +16,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ *
  * @author brucejohnson
  */
 public class SpinSystems {
+   public enum ClusterModes {
+        ALL,
+        CORRECT,
+        LONELY,
+        MISSING,
+        MISSING_PPM,
+        EXTRA
+    }
     int spinSystemID = 1;
     RunAbout runAbout;
-    Map<PeakList, double[]> sums;
     private List<SpinSystem> systems = new ArrayList<>();
+    Map<PeakList, double[]> sums;
+
     public SpinSystems(RunAbout runAbout) {
         this.runAbout = runAbout;
     }
@@ -42,7 +52,6 @@ public class SpinSystems {
     public Optional<SpinSystem> find(int idNum) {
         return systems.stream().filter(s -> s.getId() == idNum).findFirst();
     }
-
     public SpinSystem get(int i) {
         return systems.get(i);
     }
@@ -107,6 +116,53 @@ public class SpinSystems {
 
     }
 
+    public static int[] matchDims(PeakList peakListA, PeakList peakListB) {
+        int nDimA = peakListA.getNDim();
+        int nDimB = peakListB.getNDim();
+        int[] aMatch = new int[nDimA];
+        for (int i = 0; i < nDimA; i++) {
+            aMatch[i] = -1;
+            SpectralDim sDimA = peakListA.getSpectralDim(i);
+            for (int j = 0; j < nDimB; j++) {
+                SpectralDim sDimB = peakListB.getSpectralDim(j);
+                if (sDimA.getPattern().equals(sDimB.getPattern())) {
+                    aMatch[i] = j;
+                }
+            }
+        }
+        return aMatch;
+    }
+
+    public static double comparePeaks(Peak peakA, Peak peakB, int[] aMatch) {
+        boolean ok = true;
+        double sum = 0.0;
+        for (int i = 0; i < aMatch.length; i++) {
+            if (aMatch[i] != -1) {
+                double tolA = peakA.getPeakList().getSpectralDim(i).getIdTol();
+                Float valueA = peakA.peakDims[i].getChemShift();
+                Float valueB = peakB.peakDims[aMatch[i]].getChemShift();
+                if ((valueA != null) && (valueB != null)) {
+                    double delta = Math.abs(valueA - valueB);
+                    if (delta > 2.0 * tolA) {
+                        ok = false;
+                        break;
+                    } else {
+                        delta /= tolA;
+                        sum += delta * delta;
+                    }
+                } else {
+                    ok = false;
+                }
+            }
+        }
+        double result = 0.0;
+        if (ok) {
+            double dis = Math.sqrt(sum);
+            result = Math.exp(-dis);
+        }
+        return result;
+    }
+
     Map<PeakList, double[]> calcNormalization(List<PeakList> peakLists) {
         PeakList refList = peakLists.get(0);
         Map<PeakList, double[]> sumMap = new HashMap<>();
@@ -155,6 +211,23 @@ public class SpinSystems {
                 }
             }
         }
+    }
+
+    public static boolean[] getUseDims(PeakList refList, List<PeakList> peakLists) {
+        boolean[] useDim = new boolean[refList.getNDim()];
+        Arrays.fill(useDim, true);
+        int nPeakTypes = 0;
+        for (PeakList peakList : peakLists) {
+            if (peakList != refList) {
+                int[] aMatch = matchDims(refList, peakList);
+                for (int i = 0; i < aMatch.length; i++) {
+                    if (aMatch[i] == -1) {
+                        useDim[i] = false;
+                    }
+                }
+            }
+        }
+        return useDim;
     }
 
     public void addLists(PeakList refList, List<PeakList> newPeakLists) {
@@ -349,7 +422,7 @@ public class SpinSystems {
         ).collect(Collectors.toList());
     }
 
-    public List<SeqFragment> getSortedFragments() {
+    public List<SeqFragment>  getSortedFragments() {
         Set<SeqFragment> fragments = new HashSet<>();
         for (SpinSystem spinSys : systems) {
             if (spinSys.fragment.isPresent()) {
@@ -402,9 +475,9 @@ public class SpinSystems {
         return uniqueSystems;
     }
 
-    public Optional<SpinSystem> findSpinSystem(Peak peak) {
-        for (var spinSys : systems) {
-            for (var peakMatch : spinSys.peakMatches) {
+   public Optional<SpinSystem> findSpinSystem(Peak peak) {
+        for (var spinSys:systems) {
+            for (var peakMatch:spinSys.peakMatches) {
                 if (peak == peakMatch.peak) {
                     return Optional.of(spinSys);
                 }
@@ -564,88 +637,14 @@ public class SpinSystems {
         }
         NMRStarWriter.endLoop(sBuilder);
     }
-
     void writeSpinSystemFragments(StringBuilder sBuilder) {
         NMRStarWriter.openLoop(sBuilder, "_Fragments", SpinSystem.fragmentLoopTags);
         int i = 0;
-        for (SeqFragment fragment : getSortedFragments()) {
+        for (SeqFragment fragment:getSortedFragments()) {
             fragment.setId(i);
             sBuilder.append(fragment.getFragmentSTARString());
             i++;
         }
         NMRStarWriter.endLoop(sBuilder);
-    }
-
-    public static int[] matchDims(PeakList peakListA, PeakList peakListB) {
-        int nDimA = peakListA.getNDim();
-        int nDimB = peakListB.getNDim();
-        int[] aMatch = new int[nDimA];
-        for (int i = 0; i < nDimA; i++) {
-            aMatch[i] = -1;
-            SpectralDim sDimA = peakListA.getSpectralDim(i);
-            for (int j = 0; j < nDimB; j++) {
-                SpectralDim sDimB = peakListB.getSpectralDim(j);
-                if (sDimA.getPattern().equals(sDimB.getPattern())) {
-                    aMatch[i] = j;
-                }
-            }
-        }
-        return aMatch;
-    }
-
-    public static double comparePeaks(Peak peakA, Peak peakB, int[] aMatch) {
-        boolean ok = true;
-        double sum = 0.0;
-        for (int i = 0; i < aMatch.length; i++) {
-            if (aMatch[i] != -1) {
-                double tolA = peakA.getPeakList().getSpectralDim(i).getIdTol();
-                Float valueA = peakA.peakDims[i].getChemShift();
-                Float valueB = peakB.peakDims[aMatch[i]].getChemShift();
-                if ((valueA != null) && (valueB != null)) {
-                    double delta = Math.abs(valueA - valueB);
-                    if (delta > 2.0 * tolA) {
-                        ok = false;
-                        break;
-                    } else {
-                        delta /= tolA;
-                        sum += delta * delta;
-                    }
-                } else {
-                    ok = false;
-                }
-            }
-        }
-        double result = 0.0;
-        if (ok) {
-            double dis = Math.sqrt(sum);
-            result = Math.exp(-dis);
-        }
-        return result;
-    }
-
-    public static boolean[] getUseDims(PeakList refList, List<PeakList> peakLists) {
-        boolean[] useDim = new boolean[refList.getNDim()];
-        Arrays.fill(useDim, true);
-        int nPeakTypes = 0;
-        for (PeakList peakList : peakLists) {
-            if (peakList != refList) {
-                int[] aMatch = matchDims(refList, peakList);
-                for (int i = 0; i < aMatch.length; i++) {
-                    if (aMatch[i] == -1) {
-                        useDim[i] = false;
-                    }
-                }
-            }
-        }
-        return useDim;
-    }
-
-    public enum ClusterModes {
-        ALL,
-        CORRECT,
-        LONELY,
-        MISSING,
-        MISSING_PPM,
-        EXTRA
     }
 }

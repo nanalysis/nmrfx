@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ *
  * @author Bruce Johnson
  */
 @PythonAPI("pyproc")
@@ -66,11 +67,12 @@ public class NESTANMREx extends MatrixOperation {
      * 2D phase array: [f1ph0, f1ph1, f2ph0, f2ph1].
      */
     /**
-     * @param iterations   The number of NESTA iterations to execute
+     *
+     * @param iterations The number of NESTA iterations to execute
      * @param rwIterations The number of NESTA re-weighted iterations to execute
-     * @param nestDirName  The name of the file in which to execute the code
-     * @param schedFile    The schedule file
-     * @param phaseList    List of phases to apply before processing
+     * @param nestDirName The name of the file in which to execute the code
+     * @param schedFile The schedule file
+     * @param phaseList List of phases to apply before processing
      */
     public NESTANMREx(int iterations, int rwIterations, String nestDirName, String schedFile, ArrayList phaseList) {
         this.iterations = iterations;
@@ -109,10 +111,11 @@ public class NESTANMREx extends MatrixOperation {
     }
 
     /**
-     * @param iterations   The number of NESTA iterations to execute
+     *
+     * @param iterations The number of NESTA iterations to execute
      * @param rwIterations The number of NESTA re-weighted iterations to execute
-     * @param nestDirName  The name of the file in which to execute the code
-     * @param schedule     The sampling schedule object which contains a reference to the schedule file
+     * @param nestDirName The name of the file in which to execute the code
+     * @param schedule The sampling schedule object which contains a reference to the schedule file
      */
     public NESTANMREx(int iterations, double scaling, double cutoff, String nestDirName, String schedFile, ArrayList phaseList) {
         this.iterations = iterations;
@@ -210,15 +213,15 @@ public class NESTANMREx extends MatrixOperation {
         }
     }
 
-    public static File getExecutable() {
-        return nestaExecutable;
-    }
-
     public static void setExecutable(String path) {
         nestaExecutable = new File(path);
     }
 
     public static void setExecutable(File file) {
         nestaExecutable = new File(file.getPath());
+    }
+
+    public static File getExecutable() {
+        return nestaExecutable;
     }
 }

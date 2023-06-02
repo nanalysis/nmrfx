@@ -48,6 +48,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      *
      */
     public double centerFreq = 1.0;
+    private double refValue = 0.0;
     // number of valid data values in arrays.
     protected int size;
     // original size of time domain data (need to keep track of this for undoing zero filling)
@@ -79,13 +80,12 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     protected double groupDelay = 0.0;
     protected boolean[] inSignalRegion = null;
     String name = "";
-    private double refValue = 0.0;
 
     /**
      * Create a new named Vec object with the specified size and complex mode.
      *
-     * @param name    Name of the vector. Used for retrieving vectors by name.
-     * @param size    Size of vector.
+     * @param name Name of the vector. Used for retrieving vectors by name.
+     * @param size Size of vector.
      * @param complex true if the data stored in vector is Complex
      */
     public VecBase(int size, String name, boolean complex) {
@@ -96,8 +96,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Create a new named Vec object with the specified size and complex mode.
      *
-     * @param name    Name of the vector. Used for retrieving vectors by name.
-     * @param size    Size of vector.
+     * @param name Name of the vector. Used for retrieving vectors by name.
+     * @param size Size of vector.
      * @param complex true if the data stored in vector is Complex
      */
     public VecBase(int size, String name, boolean complex, PyType type) {
@@ -108,7 +108,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Create a new Vec object with the specified size and complex mode.
      *
-     * @param size    Size of vector.
+     * @param size Size of vector.
      * @param complex true if the data stored in vector is Complex
      */
     public VecBase(int size, boolean complex) {
@@ -125,7 +125,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Create a new Vec object with the specified size and complex mode.
      *
-     * @param size    Size of vector.
+     * @param size Size of vector.
      * @param complex true if the data stored in vector is Complex
      */
     public VecBase(int size, boolean complex, PyType type) {
@@ -180,7 +180,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * specified dataset location.
      *
      * @param size Size of vector.
-     * @param pt   dataset location
+     * @param pt dataset location
      */
     public VecBase(int size, int[][] pt, int[] dim) {
         this(size);
@@ -202,8 +202,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Create a new Vec object with the specified size, complex mode and dataset
      * location
      *
-     * @param size    Size of vector.
-     * @param pt      dataset location
+     * @param size Size of vector.
+     * @param pt dataset location
      * @param complex true if vector stores complex data
      */
     public VecBase(int size, int[][] pt, int[] dim, boolean complex) {
@@ -221,8 +221,191 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
     }
 
+    /**
+     * Return a vector from the map of named and stored vectors
+     *
+     * @param name lookup vector with this name
+     * @return vector with the specified name (or null if it doesn't exist)
+     */
+    public static VecBase get(String name) {
+        return vecMap.get(name);
+    }
+
+    /**
+     * Return a vector from the map of named and stored vectors
+     *
+     * @param name lookup vector with this name
+     */
+    public static void put(String name, VecBase vec) {
+        vecMap.put(name, vec);
+    }
+
+    /**
+     * Remove a vector (if present) from the map of named and stored vectors
+     *
+     * @param name lookup vector with this name
+     * @return true if a vector with that name existed
+     */
+    public static boolean remove(String name) {
+        return vecMap.remove(name) != null;
+    }
+
+    /**
+     * Return a list of names of stored vectors.
+     *
+     * @return the list of names
+     */
+    public static ArrayList<String> getVectorNames() {
+        return new ArrayList<>(vecMap.keySet());
+    }
+
     public DatasetLayout getLayout() {
         return null;
+    }
+
+    /**
+     * Copy the dataset location of one vector to that of another vector
+     *
+     * @param inVec source vector
+     * @param outVec target vector
+     */
+    public static void copyLocation(VecBase inVec, VecBase outVec) {
+        if (inVec.pt != null) {
+            outVec.pt = new int[inVec.pt.length][2];
+            for (int i = 0; i < inVec.pt.length; i++) {
+                outVec.pt[i][0] = inVec.pt[i][0];
+                outVec.pt[i][1] = inVec.pt[i][1];
+            }
+        }
+        if (inVec.dim != null) {
+            outVec.dim = new int[inVec.dim.length];
+            System.arraycopy(inVec.dim, 0, outVec.dim, 0, inVec.dim.length);
+        }
+    }
+
+    /**
+     * Copy one complex array to another. Number of values copies is the smaller
+     * of the two vector sizes. The target vector is not resized.
+     *
+     * @param source the source array
+     * @param target the target array
+     */
+    public static void complexCopy(Complex[] source, Complex[] target) {
+        int csize = source.length;
+        if (target.length < csize) {
+            csize = target.length;
+        }
+        System.arraycopy(source, 0, target, 0, csize);
+    }
+
+    /**
+     *
+     * @param orig array to check
+     * @return original array
+     */
+    public static Complex[] arrayCheckPowerOfTwo(Complex[] orig) {
+        int asize = orig.length;
+        if (!ArithmeticUtils.isPowerOfTwo(asize)) {
+            int n = 1;
+            while (asize > n) {
+                n *= 2;
+            }
+            Complex[] copy = new Complex[n];
+            System.arraycopy(orig, 0, copy, 0, asize);
+            System.arraycopy(copy, 0, orig, 0, asize);  // seems a little silly
+        }
+        return orig;
+    }
+
+    /**
+     * Copy the reference information from one vector to another vector.
+     *
+     * @param source the source vector
+     * @param target the target vector
+     */
+    static public void copyRef(VecBase source, VecBase target) {
+        target.dwellTime = source.dwellTime;
+        target.centerFreq = source.centerFreq;
+        target.refValue = source.refValue;
+        target.freqDomain = source.getFreqDomain();
+        target.ph0 = source.ph0;
+        target.ph1 = source.ph1;
+        target.groupDelay = source.groupDelay;
+        target.zfSize = source.zfSize;
+        target.tdSize = source.tdSize;
+        target.extFirst = source.extFirst;
+        target.extLast = source.extLast;
+        if (source.inSignalRegion != null) {
+            target.inSignalRegion = source.inSignalRegion.clone();
+        } else {
+            target.inSignalRegion = null;
+        }
+        VecBase.copyLocation(source, target);
+    }
+
+    /**
+     * Add a one array to a multiple of a second array and store in a third
+     * array
+     *
+     * @param avec first array
+     * @param size number of values to add
+     * @param bvec multiply these values by scale before adding to avec
+     * @param scale factor to multiply by
+     * @param cvec store result
+     */
+    public static void addMulVector(double[] avec, int size, double[] bvec, double scale, double[] cvec) {
+        int i;
+
+        for (i = 0; i < size; i++) {
+            cvec[i] = avec[i] + bvec[i] * scale;
+        }
+    }
+
+    /**
+     * Add a one vector to a multiple of a second vector and store in a third
+     * vector
+     *
+     * @param avec first vector
+     * @param size number of values to add
+     * @param bvec multiply these values by scale before adding to avec
+     * @param scale factor to multiply by
+     * @param cvec store result
+     */
+    public static void addMulVector(VecBase avec, int size, VecBase bvec, double scale,
+            VecBase cvec) {
+        int i;
+
+        for (i = 0; i < size; i++) {
+            double dReal = avec.getReal(i) + bvec.getReal(i) * scale;
+            double dImaginary = avec.getImag(i) + bvec.getImag(i) * scale;
+            cvec.set(i, new Complex(dReal, dImaginary));
+        }
+    }
+
+    private static double sumVector(double[] vec, int size) {
+        int i;
+        double sum = 0.0;
+        for (i = 0; i < size; i++) {
+            sum += vec[i];
+        }
+        return sum;
+    }
+
+    /**
+     * Return the first power of 2 equal to or greater than specified size
+     *
+     * @param mySize test size
+     * @return power of 2 size
+     */
+    public static int checkPowerOf2(int mySize) {
+        int n = mySize;
+        if (!ArithmeticUtils.isPowerOfTwo(mySize)) {
+            n = 1;
+            while (mySize > n) {
+                n *= 2;
+            }
+        }
+        return n;
     }
 
     @Override
@@ -284,15 +467,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
-     * Return the name of this vector
-     *
-     * @return the name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
      * Set the name of this vector.
      *
      * @param name the name to set
@@ -302,35 +476,21 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
+     * Return the name of this vector
+     *
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
      * Return true if values in vector are Complex.
      *
      * @return true if complex
      */
     public boolean isComplex() {
         return isComplex;
-    }
-
-    /**
-     * Set the values of this vector to be those in the provided Complex array.
-     * Size of this vector will not be changed. The number of values used will
-     * be the minimum of the size of vector and array
-     *
-     * @param newVec the complex values to set
-     * @return this vector
-     */
-    public VecBase setComplex(Complex[] newVec) {
-        if (!isComplex) {
-            isComplex = true;
-        }
-        if (!useApache) {
-            makeApache();
-        }
-        if ((cvec == null) || (cvec.length < size)) {
-            cvec = new Complex[size];
-        }
-        int n = Math.min(newVec.length, size);
-        System.arraycopy(newVec, 0, cvec, 0, n);
-        return (this);
     }
 
     /**
@@ -428,7 +588,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Set values in a range to 0.0
      *
      * @param first first point of range
-     * @param last  last point of range
+     * @param last last point of range
      */
     public void zeros(int first, int last) {
         if (isComplex) {
@@ -506,15 +666,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
-     * Return the sweep width for this vector
-     *
-     * @return the sweep width
-     */
-    public double getSW() {
-        return 1.0 / dwellTime;
-    }
-
-    /**
      * Set the sweep width for this vector (1.0 / dwellTime)
      *
      * @param value the sweep width
@@ -524,12 +675,12 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
-     * Return the spectrometer frequency
+     * Return the sweep width for this vector
      *
-     * @return the spectrometer frequency
+     * @return the sweep width
      */
-    public double getSF() {
-        return centerFreq;
+    public double getSW() {
+        return 1.0 / dwellTime;
     }
 
     /**
@@ -539,6 +690,15 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      */
     public void setSF(double value) {
         centerFreq = value;
+    }
+
+    /**
+     * Return the spectrometer frequency
+     *
+     * @return the spectrometer frequency
+     */
+    public double getSF() {
+        return centerFreq;
     }
 
     /**
@@ -560,7 +720,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * are copied so changes in the returned array do not effect this vector.
      *
      * @param values a double array in which to put the real values
-     * @param start  the starting position of the Vec at which to read values
+     * @param start the starting position of the Vec at which to read values
      */
     public void getReal(double[] values, int start) throws IllegalArgumentException {
         if (values.length + start >= size) {
@@ -578,7 +738,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * true/false with this method.
      *
      * @param index position of value
-     * @param imag  true to get imaginary, false to get real
+     * @param imag true to get imaginary, false to get real
      * @return value the value at the index
      */
     public double getRealOrImag(int index, boolean imag) {
@@ -710,7 +870,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Set complex value at specified index. If vector is real, only use the
      * real part of value.
      *
-     * @param index   position to set
+     * @param index position to set
      * @param complex value to set
      */
     public void setComplex(int index, Complex complex) {
@@ -737,8 +897,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * real part of value.
      *
      * @param index position to set
-     * @param real  the real part to set
-     * @param imag  the imaginary part to set
+     * @param real the real part to set
+     * @param imag the imaginary part to set
      */
     public void setComplex(int index, double real, double imag) {
         if (index < size && index >= 0) {
@@ -778,15 +938,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
-     * Set time-domain size of vector
-     *
-     * @param newSize new time-domain size
-     */
-    public void setTDSize(int newSize) {
-        tdSize = newSize;
-    }
-
-    /**
      * Return zero-filling size of the vector
      *
      * @return size
@@ -814,12 +965,12 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
-     * Return whether data is in Frequency Domain
+     * Set time-domain size of vector
      *
-     * @return true if in Frequency Domain
+     * @param newSize new time-domain size
      */
-    public boolean getFreqDomain() {
-        return freqDomain;
+    public void setTDSize(int newSize) {
+        tdSize = newSize;
     }
 
     /**
@@ -829,6 +980,15 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      */
     public void setFreqDomain(boolean state) {
         freqDomain = state;
+    }
+
+    /**
+     * Return whether data is in Frequency Domain
+     *
+     * @return true if in Frequency Domain
+     */
+    public boolean getFreqDomain() {
+        return freqDomain;
     }
 
     /**
@@ -892,8 +1052,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Set a real element of vector to a specified value.
      *
-     * @param i   The element of the vector to set, which can be any number from 0
-     *            to 'size - 1' of the Vec.
+     * @param i The element of the vector to set, which can be any number from 0
+     * to 'size - 1' of the Vec.
      * @param val value to set at specified index
      */
     public void set(int i, double val) {
@@ -909,8 +1069,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Set the i'th element of the real and complex parts of the vector.
      *
-     * @param i    The element of the vector to set, which can be any number from 0
-     *             to 'size - 1' of the Vec.
+     * @param i The element of the vector to set, which can be any number from 0
+     * to 'size - 1' of the Vec.
      * @param real The real value to set.
      * @param imag The imaginary value to set.
      */
@@ -966,7 +1126,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Set the dataset location pt for this vector
      *
-     * @param pt  the new location
+     * @param pt the new location
      * @param dim dataset dimensions for point location
      */
     public void setPt(int[][] pt, int[] dim) {
@@ -1012,6 +1172,72 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         return result;
     }
 
+    @Override
+    public void setWritable(boolean state) {
+    }
+
+    @Override
+    public boolean isWritable() {
+        return true;
+    }
+
+    @Override
+    public long bytePosition(int... offsets) {
+        return offsets[0] * Double.BYTES;
+    }
+
+    @Override
+    public long pointPosition(int... offsets) {
+        return offsets[0];
+    }
+
+    @Override
+    public int getSize(int dim) {
+        return size;
+    }
+
+    @Override
+    public long getTotalSize() {
+        return size;
+    }
+
+    @Override
+    public float getFloat(int... offsets) throws IOException {
+        return (float) getReal(offsets[0]);
+    }
+
+    @Override
+    public void setFloat(float value, int... offsets) throws IOException {
+        setReal(offsets[0], value);
+    }
+
+    @Override
+    public void close() throws IOException {
+    }
+
+    @Override
+    public double sumValues() throws IOException {
+        return sumFast();
+    }
+
+    @Override
+    public double sumFast() throws IOException {
+        double sum = 0.0;
+        for (int i = 0; i < size; i++) {
+            sum += getReal(i);
+        }
+        return sum;
+    }
+
+    @Override
+    public void zero() throws IOException {
+        zeros();
+    }
+
+    @Override
+    public void force() {
+    }
+
     /**
      * Print the location value (for reading/writing to datasets) for this
      * vector if it is set
@@ -1023,6 +1249,14 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
             }
             System.out.println();
         }
+    }
+
+    public int getIndex() {
+        int index = 0;
+        if ((pt != null) && (pt.length > 1) && (pt[1] != null)) {
+            index = pt[1][0];
+        }
+        return index;
     }
 
     /**
@@ -1067,7 +1301,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Copy a portion of one vector to another vector.
      *
      * @param target the target vector
-     * @param start  copy starting at this index
+     * @param start copy starting at this index
      * @param length copy this number of values
      */
     public void copy(VecBase target, int start, int length) {
@@ -1078,10 +1312,10 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Copy portion of one vector to another
      *
-     * @param target  the target vector
-     * @param start   copy starting at this index
+     * @param target the target vector
+     * @param start copy starting at this index
      * @param destPos starting position in target vector
-     * @param length  copy this number of values
+     * @param length copy this number of values
      */
     public void copy(VecBase target, int start, int destPos, int length) {
         int reqSize = destPos + length;
@@ -1122,13 +1356,13 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Adjust the reference value because the vector was resized and/or points
      * at beginning removed
      *
-     * @param shift   the starting position of new range.
+     * @param shift the starting position of new range.
      * @param newSize the new size of the vector
      */
     public void adjustRef(double shift, int newSize) {
         double newCenter = shift + newSize / 2.0;
         double deltaPt = size / 2.0 - newCenter;
-        double delRef = ((deltaPt / (dwellTime * centerFreq)) / (size));
+        double delRef =  ((deltaPt / (dwellTime * centerFreq)) / (size));
         refValue += delRef;
         dwellTime = (dwellTime * size) / (newSize);
     }
@@ -1138,10 +1372,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      */
     public double getRefValue() {
         return refValue;
-    }
-
-    public void setRefValue(double refValue) {
-        this.refValue = refValue;
     }
 
     /**
@@ -1155,32 +1385,23 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         return refValue + getDeltaRef(0.0);
     }
 
-    public void setZeroRefValue(double refValue) {
-        this.refValue = refValue - getDeltaRef(0.0);
-    }
-
-    @Override
-    public boolean isWritable() {
-        return true;
+    public void setRefValue(double refValue) {
+        this.refValue = refValue;
     }
 
     public void setRefValue(double refValue, double refPt) {
         this.refValue = refValue - getDeltaRef(refPt);
     }
 
-    @Override
-    public void setWritable(boolean state) {
+    public void setZeroRefValue(double refValue) {
+        this.refValue = refValue -  getDeltaRef(0.0);
     }
 
-    @Override
-    public long bytePosition(int... offsets) {
-        return offsets[0] * Double.BYTES;
+    public double getDeltaRef(double refPt) {
+        double deltaFrac = 0.5 - refPt /size;
+        return (deltaFrac / dwellTime) / centerFreq;
     }
 
-    @Override
-    public long pointPosition(int... offsets) {
-        return offsets[0];
-    }
 
     /**
      * Add a real value v to the i'th value in the Vector and modify the value.
@@ -1198,11 +1419,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         } else {
             rvec[i] += v;
         }
-    }
-
-    @Override
-    public int getSize(int dim) {
-        return size;
     }
 
     /**
@@ -1227,11 +1443,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         return (this);
     }
 
-    @Override
-    public long getTotalSize() {
-        return size;
-    }
-
     /**
      * Add a Complex value to this vector. The vector will be made complex if it
      * is not already.
@@ -1252,11 +1463,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
 
         return (this);
-    }
-
-    @Override
-    public float getFloat(int... offsets) throws IOException {
-        return (float) getReal(offsets[0]);
     }
 
     /**
@@ -1293,32 +1499,62 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
     }
 
-    @Override
-    public void setFloat(float value, int... offsets) throws IOException {
-        setReal(offsets[0], value);
-    }
-
-    @Override
-    public void close() throws IOException {
-    }
-
-    @Override
-    public double sumValues() throws IOException {
-        return sumFast();
-    }
-
-    @Override
-    public double sumFast() throws IOException {
-        double sum = 0.0;
-        for (int i = 0; i < size; i++) {
-            sum += getReal(i);
+    /**
+     * Add an array of values to this vector. Values must implement Java Number
+     * interface. The number of values does not have to equal the number of
+     * values between the start and end points in this vector. Interpolation of
+     * the values to be added will be done to find the value to add at each
+     * point. The values can be multiplied by a scale value before addition.
+     *
+     * @param addValue The values to add
+     * @param start the starting point in this vector
+     * @param end the ending point in this vector
+     * @param scale multiply values to be added by this scale factor.
+     * @param lb unused at present
+     * @return this vector
+     */
+    public VecBase add(Object[] addValue, final double start, final double end, final double scale, final double lb) {
+        if ((addValue.length + Math.round(start)) > size) {
+            throw new IllegalArgumentException("add array: too many values");
         }
-        return sum;
+        double[] values = new double[addValue.length];
+        for (int i = 0; i < addValue.length; i++) {
+            values[i] = ((Number) addValue[i]).doubleValue();
+        }
+
+        values = Interpolator.getInterpolated(values, start, end);
+        int iStart = (int) Math.ceil(start);
+        if (isComplex) {
+            for (int i = 0; i < values.length; i++) {
+                int j = i + iStart;
+                set(j, new Complex(getReal(j) + values[i] * scale, getImag(j)));
+            }
+        } else {
+            for (int i = 0; i < values.length; i++) {
+                int j = i + iStart;
+                set(j, values[i] * scale);
+            }
+        }
+
+        return (this);
     }
 
-    @Override
-    public void zero() throws IOException {
-        zeros();
+    /**
+     * Add a multiple of a vector to this vector
+     *
+     * @param avec the vector to add
+     * @param scale multiply values to add by this amount
+     * @return this vector
+     */
+    public VecBase addmul(VecBase avec, double scale) {
+
+        if (isComplex) {
+            VecBase.addMulVector(this, size, avec, scale, this);
+        } else {
+            VecBase.addMulVector(this.rvec, size, avec.rvec, scale, this.rvec);
+        }
+
+        return (this);
     }
 
     /**
@@ -1343,10 +1579,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         return (this);
     }
 
-    @Override
-    public void force() {
-    }
-
     /**
      * Subtract Complex value from this vector. Vector will be converted to
      * Complex if it is not already.
@@ -1367,11 +1599,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
 
         return (this);
-    }
-
-    public double getDeltaRef(double refPt) {
-        double deltaFrac = 0.5 - refPt / size;
-        return (deltaFrac / dwellTime) / centerFreq;
     }
 
     /**
@@ -1407,46 +1634,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
-     * Add an array of values to this vector. Values must implement Java Number
-     * interface. The number of values does not have to equal the number of
-     * values between the start and end points in this vector. Interpolation of
-     * the values to be added will be done to find the value to add at each
-     * point. The values can be multiplied by a scale value before addition.
-     *
-     * @param addValue The values to add
-     * @param start    the starting point in this vector
-     * @param end      the ending point in this vector
-     * @param scale    multiply values to be added by this scale factor.
-     * @param lb       unused at present
-     * @return this vector
-     */
-    public VecBase add(Object[] addValue, final double start, final double end, final double scale, final double lb) {
-        if ((addValue.length + Math.round(start)) > size) {
-            throw new IllegalArgumentException("add array: too many values");
-        }
-        double[] values = new double[addValue.length];
-        for (int i = 0; i < addValue.length; i++) {
-            values[i] = ((Number) addValue[i]).doubleValue();
-        }
-
-        values = Interpolator.getInterpolated(values, start, end);
-        int iStart = (int) Math.ceil(start);
-        if (isComplex) {
-            for (int i = 0; i < values.length; i++) {
-                int j = i + iStart;
-                set(j, new Complex(getReal(j) + values[i] * scale, getImag(j)));
-            }
-        } else {
-            for (int i = 0; i < values.length; i++) {
-                int j = i + iStart;
-                set(j, values[i] * scale);
-            }
-        }
-
-        return (this);
-    }
-
-    /**
      * Divide this vector by a Complex value. If vector is not already Complex,
      * it will be converted to Complex.
      *
@@ -1459,24 +1646,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
         for (int i = 0; i < size; i++) {
             set(i, getComplex(i).divide(divisor));
-        }
-
-        return (this);
-    }
-
-    /**
-     * Add a multiple of a vector to this vector
-     *
-     * @param avec  the vector to add
-     * @param scale multiply values to add by this amount
-     * @return this vector
-     */
-    public VecBase addmul(VecBase avec, double scale) {
-
-        if (isComplex) {
-            VecBase.addMulVector(this, size, avec, scale, this);
-        } else {
-            VecBase.addMulVector(this.rvec, size, avec.rvec, scale, this.rvec);
         }
 
         return (this);
@@ -1762,6 +1931,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
+     *
      * If vector is complex and stores complex values in an array of Complex,
      * change to store in separate arrays of real and imaginary values.
      */
@@ -1869,6 +2039,21 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     @Override
+    public VecBase __radd__(PyObject pyO) {
+        return __add__(pyO);
+    }
+
+    /**
+     * Convert PyComplex value to Apache Commons Math Complex value
+     *
+     * @param pyC the value as PyComplex object
+     * @return the value as Commons Math Complex value
+     */
+    public Complex toComplex(PyComplex pyC) {
+        return new Complex(pyC.real, pyC.imag);
+    }
+
+    @Override
     public VecBase __add__(PyObject pyO) {
         VecBase vecNew = new VecBase(this.getSize(), this.isComplex);
         this.copy(vecNew);
@@ -1886,11 +2071,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     @Override
-    public VecBase __radd__(PyObject pyO) {
-        return __add__(pyO);
-    }
-
-    @Override
     public VecBase __iadd__(PyObject pyO) {
         if (pyO instanceof VecBase vec) {
             //  fixme check sizes
@@ -1903,24 +2083,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
             throw Py.TypeError("can't apply '+=' to object: " + pyO.getType().asString());
         }
         return this;
-    }
-
-    @Override
-    public VecBase __sub__(PyObject pyO) {
-        VecBase vecNew = new VecBase(this.getSize(), this.isComplex);
-        this.copy(vecNew);
-        if (pyO instanceof VecBase vec) {
-            //  fixme check sizes
-            vecNew.sub(vec);
-        } else if (pyO instanceof PyComplex pyC) {
-            Complex addValue = new Complex(pyC.real, pyC.imag);
-            vecNew.sub(addValue);
-        } else if (pyO.isNumberType()) {
-            vecNew.sub(pyO.asDouble());
-        } else {
-            throw Py.TypeError("can't apply '-' to object: " + pyO.getType().asString());
-        }
-        return vecNew;
     }
 
     @Override
@@ -1944,6 +2106,24 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     @Override
+    public VecBase __sub__(PyObject pyO) {
+        VecBase vecNew = new VecBase(this.getSize(), this.isComplex);
+        this.copy(vecNew);
+        if (pyO instanceof VecBase vec) {
+            //  fixme check sizes
+            vecNew.sub(vec);
+        } else if (pyO instanceof PyComplex pyC) {
+            Complex addValue = new Complex(pyC.real, pyC.imag);
+            vecNew.sub(addValue);
+        } else if (pyO.isNumberType()) {
+            vecNew.sub(pyO.asDouble());
+        } else {
+            throw Py.TypeError("can't apply '-' to object: " + pyO.getType().asString());
+        }
+        return vecNew;
+    }
+
+    @Override
     public VecBase __isub__(PyObject pyO) {
         if (pyO instanceof VecBase vec) {
             //  fixme check sizes
@@ -1957,6 +2137,11 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
             throw Py.TypeError("can't apply '-=' to object: " + pyO.getType().asString());
         }
         return this;
+    }
+
+    @Override
+    public VecBase __rmul__(PyObject pyO) {
+        return __mul__(pyO);
     }
 
     @Override
@@ -1981,11 +2166,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     @Override
-    public VecBase __rmul__(PyObject pyO) {
-        return __mul__(pyO);
-    }
-
-    @Override
     public VecBase __imul__(PyObject pyO) {
 
         if (pyO instanceof VecBase vec) {
@@ -2002,24 +2182,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
             throw Py.TypeError("can't apply '*' to object: " + pyO.getType().asString());
         }
         return this;
-    }
-
-    @Override
-    public VecBase __div__(PyObject pyO) {
-        VecBase vecNew = new VecBase(this.getSize(), this.isComplex);
-        this.copy(vecNew);
-        if (pyO instanceof VecBase vec) {
-            //  fixme check sizes
-            vecNew.divide(vec);
-        } else if (pyO instanceof PyComplex pyC) {
-            Complex addValue = new Complex(pyC.real, pyC.imag);
-            vecNew.divide(addValue);
-        } else if (pyO.isNumberType()) {
-            vecNew.divide(pyO.asDouble());
-        } else {
-            throw Py.TypeError("can't apply '/' to object: " + pyO.getType().asString());
-        }
-        return vecNew;
     }
 
     @Override
@@ -2041,6 +2203,24 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     @Override
+    public VecBase __div__(PyObject pyO) {
+        VecBase vecNew = new VecBase(this.getSize(), this.isComplex);
+        this.copy(vecNew);
+        if (pyO instanceof VecBase vec) {
+            //  fixme check sizes
+            vecNew.divide(vec);
+        } else if (pyO instanceof PyComplex pyC) {
+            Complex addValue = new Complex(pyC.real, pyC.imag);
+            vecNew.divide(addValue);
+        } else if (pyO.isNumberType()) {
+            vecNew.divide(pyO.asDouble());
+        } else {
+            throw Py.TypeError("can't apply '/' to object: " + pyO.getType().asString());
+        }
+        return vecNew;
+    }
+
+    @Override
     public VecBase __idiv__(PyObject pyO) {
         if (pyO instanceof VecBase vec) {
             //  fixme check sizes
@@ -2057,13 +2237,26 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
-     * Convert PyComplex value to Apache Commons Math Complex value
+     * Set the values of this vector to be those in the provided Complex array.
+     * Size of this vector will not be changed. The number of values used will
+     * be the minimum of the size of vector and array
      *
-     * @param pyC the value as PyComplex object
-     * @return the value as Commons Math Complex value
+     * @param newVec the complex values to set
+     * @return this vector
      */
-    public Complex toComplex(PyComplex pyC) {
-        return new Complex(pyC.real, pyC.imag);
+    public VecBase setComplex(Complex[] newVec) {
+        if (!isComplex) {
+            isComplex = true;
+        }
+        if (!useApache) {
+            makeApache();
+        }
+        if ((cvec == null) || (cvec.length < size)) {
+            cvec = new Complex[size];
+        }
+        int n = Math.min(newVec.length, size);
+        System.arraycopy(newVec, 0, cvec, 0, n);
+        return (this);
     }
 
     /**
@@ -2072,7 +2265,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      *
      * @return the Complex value array
      * @throws IllegalStateException if the vector is not Complex or doesn't use
-     *                               a Complex array
+     * a Complex array
      */
     public Complex[] getCvec() {
         if (isComplex && useApache) {
@@ -2088,7 +2281,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      *
      * @return the array of doubles that stores real values
      * @throws IllegalStateException if the vector is Complex and doesn't use
-     *                               Complex array
+     * Complex array
      */
     public double[] getRvec() {
         if (!(isComplex && useApache)) {
@@ -2104,7 +2297,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      *
      * @return the array of doubles that stores imaginary values
      * @throws IllegalStateException if the vector is not Complex or uses
-     *                               Complex array
+     * Complex array
      */
     public double[] getIvec() {
         if (isComplex && !useApache) {
@@ -2250,6 +2443,16 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
     }
 
+    public static double phaseMin(double ph) {
+        while (ph > 180) {
+            ph -= 360.0;
+        }
+        while (ph < -180) {
+            ph += 360.0;
+        }
+        return ph;
+    }
+
     /**
      * Apply the specified phase values to this vector.
      *
@@ -2267,127 +2470,16 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         phase(ph0, ph1, false, false);
     }
 
-    public void dump(String outName) throws IOException {
-
-        FileWriter fileWriter = null;
-        if (outName != null) {
-            fileWriter = new FileWriter(outName);
-        }
-        try (FileWriter fw = fileWriter) {
-            for (int i = 0; i < size; i++) {
-                String dump = isComplex ? String.format("%3d %.5f %.5f%n", i, getReal(i), getImag(i)) : String.format("%3d %.5f%n", i, getReal(i));
-                if (fw != null) {
-                    fw.write(dump);
-                } else {
-                    System.out.println(dump);
-                }
-            }
-        }
-    }
-
-    public int getIndex() {
-        int index = 0;
-        if ((pt != null) && (pt.length > 1) && (pt[1] != null)) {
-            index = pt[1][0];
-        }
-        return index;
-    }
-
-    @Override
-    public String exportData(String rootName, String suffix) throws IOException {
-        return exportData(rootName, suffix, false);
-    }
-
-    public String exportData(String rootName, String suffix, boolean littleEndian) throws IOException {
-        int index = 0;
-        if ((pt != null) && (pt.length > 1)) {
-            index = pt[1][0];
-        }
-        String outFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
-
-        try (FileOutputStream oStream = new FileOutputStream(outFileName)) {
-            int nElem = isComplex ? 2 : 1;
-            ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8 * nElem);
-            if (littleEndian) {
-                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            }
-            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
-            if (isComplex) {
-                for (int i = 0; i < size; i++) {
-                    doubleBuffer.put(getReal(i));
-                    doubleBuffer.put(getImag(i));
-                }
-            } else {
-                doubleBuffer.put(rvec, 0, size);
-            }
-            FileChannel channel = oStream.getChannel();
-            channel.write(byteBuffer);
-        } catch (IOException ioE) {
-            throw ioE;
-        }
-        String parFileName = String.format("%s%04d.%s.par", rootName, index + 1, suffix);
-        try (FileOutputStream oStream = new FileOutputStream(parFileName)) {
-            ByteBuffer byteBuffer = ByteBuffer.allocate(2 * Integer.SIZE / 8);
-            if (littleEndian) {
-                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            }
-            IntBuffer intBuffer = byteBuffer.asIntBuffer();
-            intBuffer.put(0, 1);
-            intBuffer.put(1, size);
-            FileChannel channel = oStream.getChannel();
-            channel.write(byteBuffer);
-        } catch (IOException ioE) {
-            throw ioE;
-        }
-        return outFileName;
-    }
-
-    public String importData(String rootName, String suffix) throws IOException {
-        return importData(rootName, suffix, false);
-    }
-
-    public String importData(String rootName, String suffix, boolean littleEndian) throws IOException {
-        int index = 0;
-        if ((pt != null) && (pt.length > 1)) {
-            index = pt[1][0];
-        }
-        String inFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
-
-        try (FileInputStream oStream = new FileInputStream(inFileName)) {
-            int nElem = isComplex ? 2 : 1;
-            ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8 * nElem);
-            if (littleEndian) {
-                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            }
-            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
-            FileChannel channel = oStream.getChannel();
-            channel.read(byteBuffer);
-            if (isComplex) {
-                for (int i = 0; i < size; i++) {
-                    double rValue = doubleBuffer.get(i * 2);
-                    double iValue = doubleBuffer.get(i * 2 + 1);
-                    setComplex(i, rValue, iValue);
-                }
-
-            } else {
-                doubleBuffer.get(rvec);
-            }
-        } catch (IOException ioE) {
-            throw ioE;
-        }
-        return inFileName;
-    }
-
     /**
      * Apply the specified phase values to this vector.
      *
-     * @param p0               The zeroth order phase value
-     * @param p1               The first order phase value
-     * @param phaseAbs         if false apply the specified values, if true subtract the
-     *                         currently stored ph0 and ph1 values from the specified values and then
+     * @param p0 The zeroth order phase value
+     * @param p1 The first order phase value
+     * @param phaseAbs if false apply the specified values, if true subtract the
+     * currently stored ph0 and ph1 values from the specified values and then
      * @param discardImaginary Discard the imaginary values and convert vector
-     *                         to real. Phasing is a little faster if you do this (and saves calling a
-     *                         seperate REAL operation.
+     * to real. Phasing is a little faster if you do this (and saves calling a
+     * seperate REAL operation.
      * @return this vector
      */
     public VecBase phase(double p0, double p1, boolean phaseAbs, boolean discardImaginary) {
@@ -2509,12 +2601,13 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * used here for updating the vector header, but are the values used for
      * setting up pReal and pImag.
      *
-     * @param p0               The zeroth order phase value.
-     * @param p1               The first order phase value from the specified values and then
+     * @param p0 The zeroth order phase value.
+     * @param p1 The first order phase value from the specified values and then
      * @param discardImaginary Discard the imaginary values and convert vector
-     *                         to real. Phasing is a little faster
-     * @param pReal            Array of real values of phase corrections
-     * @param pImag            Array of imaginary values of phase corrections
+     * to real. Phasing is a little faster
+     *
+     * @param pReal Array of real values of phase corrections
+     * @param pImag Array of imaginary values of phase corrections
      * @return this vector
      */
     public VecBase phase(double p0, double p1, boolean discardImaginary, double[] pReal, double[] pImag) {
@@ -2589,7 +2682,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Multiply either rvec[index] and ivec[index] or cvec[index] by factor
      *
-     * @param index  position to multiply
+     * @param index position to multiply
      * @param factor multiply by this value
      */
     public void multiply(int index, Complex factor) {
@@ -2613,7 +2706,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Multiply either rvec[index] and ivec[index] or cvec[index] by
      * (realFactor, imagFactor)
      *
-     * @param index      position to multiply
+     * @param index position to multiply
      * @param realFactor real part of value to multiply by
      * @param imagFactor imaginary part of value to multiply by
      */
@@ -2683,11 +2776,12 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Performs multiplication on the rvec and ivec elements at index with the
      * complex number (realFactor, imagFactor).
-     *
-     * @param imagFactor imaginary part of factor
      * @literal { Caller guarantees that 0 <= index < size, and the matrix is complex.}
+     *
      * @index position to multiply
      * @realFactor real part of factor
+     *
+     * @param imagFactor imaginary part of factor
      */
     private void multiplyValue(int index, double realFactor, double imagFactor) {
         rvec[index] = rvec[index] * realFactor - ivec[index] * imagFactor;
@@ -2699,8 +2793,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * correction. Used in the autophase by max method.
      *
      * @param first start of region
-     * @param last  end of region
-     * @param p0    phase value
+     * @param last end of region
+     * @param p0 phase value
      * @return sum of values
      */
     protected double sumRealRegion(int first, int last, double p0) {
@@ -2759,7 +2853,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * If the vector is smaller than size of array it will be resized up to the
      * size of the array.
      *
-     * @param values  the array of real values values
+     * @param values the array of real values values
      * @param valuesI the array of imaginary values
      */
     public void copy(double[] values, double[] valuesI) {
@@ -2820,11 +2914,11 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Trim a vector to a new size and starting point
      *
-     * @param start   Starting point in original size
+     * @param start Starting point in original size
      * @param newSize Size after trimming
      * @return this vector
      * @throws VecException if start is out of range of vector or vector doesn't
-     *                      have valid data arrays
+     * have valid data arrays
      */
     public VecBase trim(int start, int newSize)
             throws VecException {
@@ -2954,7 +3048,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Return the location and value of the maximum in specified range of vector
      *
      * @param first starting point of range
-     * @param last  ending point of range
+     * @param last ending point of range
      * @return IndexValue object with information about the max
      */
     public IndexValue maxIndex(int first, int last) {
@@ -3020,7 +3114,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Return the location and value of the minimum in specified range of vector
      *
      * @param first starting point of range
-     * @param last  ending point of range
+     * @param last ending point of range
      * @return IndexValue object with information about the min
      */
     public IndexValue minIndex(int first, int last) {
@@ -3073,204 +3167,111 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         return new IndexValue(iMin, minValue);
     }
 
+    @Override
+    public String exportData(String rootName, String suffix) throws IOException {
+        return exportData(rootName, suffix, false);
+    }
+
+    public String exportData(String rootName, String suffix, boolean littleEndian) throws IOException {
+        int index = 0;
+        if ((pt != null) && (pt.length > 1)) {
+            index = pt[1][0];
+        }
+        String outFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
+
+        try (FileOutputStream oStream = new FileOutputStream(outFileName)) {
+            int nElem = isComplex ? 2 : 1;
+            ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8 * nElem);
+            if (littleEndian) {
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            }
+            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
+            if (isComplex) {
+                for (int i = 0; i < size; i++) {
+                    doubleBuffer.put(getReal(i));
+                    doubleBuffer.put(getImag(i));
+                }
+            } else {
+                doubleBuffer.put(rvec, 0, size);
+            }
+            FileChannel channel = oStream.getChannel();
+            channel.write(byteBuffer);
+        } catch (IOException ioE) {
+            throw ioE;
+        }
+        String parFileName = String.format("%s%04d.%s.par", rootName, index + 1, suffix);
+        try (FileOutputStream oStream = new FileOutputStream(parFileName)) {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(2 * Integer.SIZE / 8);
+            if (littleEndian) {
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            }
+            IntBuffer intBuffer = byteBuffer.asIntBuffer();
+            intBuffer.put(0, 1);
+            intBuffer.put(1, size);
+            FileChannel channel = oStream.getChannel();
+            channel.write(byteBuffer);
+        } catch (IOException ioE) {
+            throw ioE;
+        }
+        return outFileName;
+    }
+
     public void dump() throws IOException {
         dump(null);
     }
 
-    public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
-        return null;
-    }
+    public void dump(String outName) throws IOException {
 
-    /**
-     * Return a vector from the map of named and stored vectors
-     *
-     * @param name lookup vector with this name
-     * @return vector with the specified name (or null if it doesn't exist)
-     */
-    public static VecBase get(String name) {
-        return vecMap.get(name);
-    }
-
-    /**
-     * Return a vector from the map of named and stored vectors
-     *
-     * @param name lookup vector with this name
-     */
-    public static void put(String name, VecBase vec) {
-        vecMap.put(name, vec);
-    }
-
-    /**
-     * Remove a vector (if present) from the map of named and stored vectors
-     *
-     * @param name lookup vector with this name
-     * @return true if a vector with that name existed
-     */
-    public static boolean remove(String name) {
-        return vecMap.remove(name) != null;
-    }
-
-    /**
-     * Return a list of names of stored vectors.
-     *
-     * @return the list of names
-     */
-    public static ArrayList<String> getVectorNames() {
-        return new ArrayList<>(vecMap.keySet());
-    }
-
-    /**
-     * Copy the dataset location of one vector to that of another vector
-     *
-     * @param inVec  source vector
-     * @param outVec target vector
-     */
-    public static void copyLocation(VecBase inVec, VecBase outVec) {
-        if (inVec.pt != null) {
-            outVec.pt = new int[inVec.pt.length][2];
-            for (int i = 0; i < inVec.pt.length; i++) {
-                outVec.pt[i][0] = inVec.pt[i][0];
-                outVec.pt[i][1] = inVec.pt[i][1];
+        FileWriter fileWriter = null;
+        if (outName != null) {
+            fileWriter = new FileWriter(outName);
+        }
+        try (FileWriter fw = fileWriter) {
+            for (int i = 0; i < size; i++) {
+                String dump = isComplex ? String.format("%3d %.5f %.5f%n", i, getReal(i), getImag(i)) : String.format("%3d %.5f%n", i, getReal(i));
+                if (fw != null) {
+                    fw.write(dump);
+                } else {
+                    System.out.println(dump);
+                }
             }
         }
-        if (inVec.dim != null) {
-            outVec.dim = new int[inVec.dim.length];
-            System.arraycopy(inVec.dim, 0, outVec.dim, 0, inVec.dim.length);
-        }
     }
 
-    /**
-     * Copy one complex array to another. Number of values copies is the smaller
-     * of the two vector sizes. The target vector is not resized.
-     *
-     * @param source the source array
-     * @param target the target array
-     */
-    public static void complexCopy(Complex[] source, Complex[] target) {
-        int csize = source.length;
-        if (target.length < csize) {
-            csize = target.length;
-        }
-        System.arraycopy(source, 0, target, 0, csize);
+    public String importData(String rootName, String suffix) throws IOException {
+        return importData(rootName, suffix, false);
     }
 
-    /**
-     * @param orig array to check
-     * @return original array
-     */
-    public static Complex[] arrayCheckPowerOfTwo(Complex[] orig) {
-        int asize = orig.length;
-        if (!ArithmeticUtils.isPowerOfTwo(asize)) {
-            int n = 1;
-            while (asize > n) {
-                n *= 2;
+    public String importData(String rootName, String suffix, boolean littleEndian) throws IOException {
+        int index = 0;
+        if ((pt != null) && (pt.length > 1)) {
+            index = pt[1][0];
+        }
+        String inFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
+
+        try (FileInputStream oStream = new FileInputStream(inFileName)) {
+            int nElem = isComplex ? 2 : 1;
+            ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8 * nElem);
+            if (littleEndian) {
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
             }
-            Complex[] copy = new Complex[n];
-            System.arraycopy(orig, 0, copy, 0, asize);
-            System.arraycopy(copy, 0, orig, 0, asize);  // seems a little silly
-        }
-        return orig;
-    }
+            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
+            FileChannel channel = oStream.getChannel();
+            channel.read(byteBuffer);
+            if (isComplex) {
+                for (int i = 0; i < size; i++) {
+                    double rValue = doubleBuffer.get(i * 2);
+                    double iValue = doubleBuffer.get(i * 2 + 1);
+                    setComplex(i, rValue, iValue);
+                }
 
-    /**
-     * Copy the reference information from one vector to another vector.
-     *
-     * @param source the source vector
-     * @param target the target vector
-     */
-    static public void copyRef(VecBase source, VecBase target) {
-        target.dwellTime = source.dwellTime;
-        target.centerFreq = source.centerFreq;
-        target.refValue = source.refValue;
-        target.freqDomain = source.getFreqDomain();
-        target.ph0 = source.ph0;
-        target.ph1 = source.ph1;
-        target.groupDelay = source.groupDelay;
-        target.zfSize = source.zfSize;
-        target.tdSize = source.tdSize;
-        target.extFirst = source.extFirst;
-        target.extLast = source.extLast;
-        if (source.inSignalRegion != null) {
-            target.inSignalRegion = source.inSignalRegion.clone();
-        } else {
-            target.inSignalRegion = null;
-        }
-        VecBase.copyLocation(source, target);
-    }
-
-    /**
-     * Add a one array to a multiple of a second array and store in a third
-     * array
-     *
-     * @param avec  first array
-     * @param size  number of values to add
-     * @param bvec  multiply these values by scale before adding to avec
-     * @param scale factor to multiply by
-     * @param cvec  store result
-     */
-    public static void addMulVector(double[] avec, int size, double[] bvec, double scale, double[] cvec) {
-        int i;
-
-        for (i = 0; i < size; i++) {
-            cvec[i] = avec[i] + bvec[i] * scale;
-        }
-    }
-
-    /**
-     * Add a one vector to a multiple of a second vector and store in a third
-     * vector
-     *
-     * @param avec  first vector
-     * @param size  number of values to add
-     * @param bvec  multiply these values by scale before adding to avec
-     * @param scale factor to multiply by
-     * @param cvec  store result
-     */
-    public static void addMulVector(VecBase avec, int size, VecBase bvec, double scale,
-                                    VecBase cvec) {
-        int i;
-
-        for (i = 0; i < size; i++) {
-            double dReal = avec.getReal(i) + bvec.getReal(i) * scale;
-            double dImaginary = avec.getImag(i) + bvec.getImag(i) * scale;
-            cvec.set(i, new Complex(dReal, dImaginary));
-        }
-    }
-
-    private static double sumVector(double[] vec, int size) {
-        int i;
-        double sum = 0.0;
-        for (i = 0; i < size; i++) {
-            sum += vec[i];
-        }
-        return sum;
-    }
-
-    /**
-     * Return the first power of 2 equal to or greater than specified size
-     *
-     * @param mySize test size
-     * @return power of 2 size
-     */
-    public static int checkPowerOf2(int mySize) {
-        int n = mySize;
-        if (!ArithmeticUtils.isPowerOfTwo(mySize)) {
-            n = 1;
-            while (mySize > n) {
-                n *= 2;
+            } else {
+                doubleBuffer.get(rvec);
             }
+        } catch (IOException ioE) {
+            throw ioE;
         }
-        return n;
-    }
-
-    public static double phaseMin(double ph) {
-        while (ph > 180) {
-            ph -= 360.0;
-        }
-        while (ph < -180) {
-            ph += 360.0;
-        }
-        return ph;
+        return inFileName;
     }
 
     /**
@@ -3306,5 +3307,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
     }
 
-
+    public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
+        return null;
+    }
 }

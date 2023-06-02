@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import java.util.ArrayList;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
@@ -24,17 +25,19 @@ import javafx.event.EventHandler;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.effect.InnerShadow;
-import javafx.scene.input.*;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.paint.Color;
-
-import java.util.ArrayList;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 /**
  * ListCell for scriptView in FXMLController. Allows Operations to be draggable.
  *
@@ -45,10 +48,13 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
     private static OperationListCell source;
     private static OperationListCell target;
     private static ArrayList<OperationListCell> cells = new ArrayList<>(20);
-    private static int failedIndex = -1;
-    private static Integer moveIndex = null;
     private ListView scriptView;
+
+    private static int failedIndex = -1;
+
     private OperationListCell temp;
+
+    private static Integer moveIndex = null;
 
     public OperationListCell(ListView scriptView) {
         cells.add(this);
@@ -64,7 +70,7 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
                 moveIndex = temp.indexProperty().getValue();
                 OperationListCell.source = temp;
                 /* drag was detected, start a drag-and-drop gesture*/
-                /* allow any transfer mode */
+ /* allow any transfer mode */
                 Dragboard db = source.startDragAndDrop(TransferMode.COPY);
 
                 /* Put a string on a dragboard */
@@ -79,7 +85,7 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
         this.setOnDragOver(new EventHandler<DragEvent>() {
             public void handle(DragEvent event) {
                 /* data is dragged over the target */
-                /* accept it only if it is not dragged from the same node
+ /* accept it only if it is not dragged from the same node 
                  * and if it has a string data */
                 if (target != null) {
                     target.setEffect(null);
@@ -103,7 +109,7 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
         this.setOnDragEntered(new EventHandler<DragEvent>() {
             public void handle(DragEvent event) {
                 /* the drag-and-drop gesture entered the target */
-                /* show to the user that it is an actual gesture target */
+ /* show to the user that it is an actual gesture target */
                 if (event.getGestureSource() != target
                         && event.getDragboard().hasString()) {
                     InnerShadow is = new InnerShadow();
@@ -128,7 +134,7 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
         this.setOnDragDropped(new EventHandler<DragEvent>() {
             public void handle(DragEvent event) {
                 /* data dropped */
-                /* if there is a string data on dragboard, read it and use it */
+ /* if there is a string data on dragboard, read it and use it */
                 if (target != null) {
                     target.setEffect(null);
                 }
@@ -140,7 +146,7 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
                 if (db.hasString()) {
                     success = true;
                 }
-                /* let the source know whether the string was successfully
+                /* let the source know whether the string was successfully 
                  * transferred and used */
                 event.setDropCompleted(success);
 
@@ -153,7 +159,7 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
                 ObservableList<String> listItems = scriptView.getItems();
 
                 /* the drag and drop gesture ended */
-                /* if the data was successfully moved, clear it */
+ /* if the data was successfully moved, clear it */
                 if (event != null && target != null && target.getIndex() >= 0) {
                     if (event.getTransferMode() == TransferMode.COPY) {
                         int sourceIndex = Math.max(0, source.getIndex());
@@ -209,6 +215,15 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
         }
     }
 
+    /**
+     * When ListItems changes, update all the cells
+     */
+    public static void updateCells() {
+        for (OperationListCell cell : cells) {
+            cell.updateCell();
+        }
+    }
+
     private void setOperationFailed() {
         InnerShadow is = new InnerShadow();
 
@@ -218,15 +233,6 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
 
     private void resetEffects() {
         this.setEffect(null);
-    }
-
-    /**
-     * When ListItems changes, update all the cells
-     */
-    public static void updateCells() {
-        for (OperationListCell cell : cells) {
-            cell.updateCell();
-        }
     }
 
     public static void setFailedIndex(int index) {

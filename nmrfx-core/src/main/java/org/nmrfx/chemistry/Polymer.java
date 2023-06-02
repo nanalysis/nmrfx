@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -26,38 +26,6 @@ import static java.util.Objects.requireNonNull;
 @PluginAPI("ring")
 public class Polymer extends Entity {
 
-    static String[] cyclicClosers = {
-            "CA", "N", "2.5",
-            "C", "N", "1.32",
-            "C", "H", "2.044",
-            "C", "CA", "2.452",
-            "O", "H", "3.174",
-            "O", "N", "2.271"
-    };
-    ArrayList<AtomSpecifier> deletedAtoms = new ArrayList<AtomSpecifier>();
-    ArrayList<BondSpecifier> addedBonds = new ArrayList<BondSpecifier>();
-    private Map<String, Residue> residues;
-    private List<Residue> residueList = new ArrayList<>();
-    private Residue firstResidue = null;
-    private Residue lastResidue = null;
-    private String polymerType = "";
-    private String strandID = "A";
-    private String nomenclature = "IUPAC";
-    private boolean capped = true;
-    private boolean libraryMode = true;
-
-    public Polymer(String name) {
-        this.name = name;
-        this.label = name;
-        residues = new HashMap<>();
-    }
-
-    public Polymer(String label, String name) {
-        this.name = name;
-        this.label = label;
-        residues = new HashMap<>();
-    }
-
     /**
      * @return the firstResidue
      */
@@ -70,6 +38,64 @@ public class Polymer extends Entity {
      */
     public Residue getLastResidue() {
         return lastResidue;
+    }
+
+    private Map<String, Residue> residues;
+    private List<Residue> residueList = new ArrayList<>();
+    private Residue firstResidue = null;
+    private Residue lastResidue = null;
+    private String polymerType = "";
+    private String strandID = "A";
+    private String nomenclature = "IUPAC";
+    private boolean capped = true;
+    private boolean libraryMode = true;
+    ArrayList<AtomSpecifier> deletedAtoms = new ArrayList<AtomSpecifier>();
+    ArrayList<BondSpecifier> addedBonds = new ArrayList<BondSpecifier>();
+    static String[] cyclicClosers = {
+        "CA", "N", "2.5",
+        "C", "N", "1.32",
+        "C", "H", "2.044",
+        "C", "CA", "2.452",
+        "O", "H", "3.174",
+        "O", "N", "2.271"
+    };
+
+    class PolymerIterator implements Iterator<Residue> {
+
+        Residue current = getFirstResidue();
+
+        public boolean hasNext() {
+            return (current != null);
+        }
+
+        public Residue next() {
+            Residue result = current;
+            if (current == null) {
+                throw new NoSuchElementException();
+            }
+            current = current.next;
+            return result;
+        }
+
+        public void remove() {
+            if (current != null) {
+                Residue hold = current.next;
+                removeResidue(current);
+                current = hold;
+            }
+        }
+    }
+
+    public Polymer(String name) {
+        this.name = name;
+        this.label = name;
+        residues = new HashMap<>();
+    }
+
+    public Polymer(String label, String name) {
+        this.name = name;
+        this.label = label;
+        residues = new HashMap<>();
     }
 
     public Iterator<Residue> iterator() {
@@ -198,10 +224,6 @@ public class Polymer extends Entity {
         return polymerType;
     }
 
-    public void setPolymerType(String s) {
-        polymerType = s;
-    }
-
     public boolean isCapped() {
         return capped;
     }
@@ -239,6 +261,10 @@ public class Polymer extends Entity {
 
     public void setStrandID(String s) {
         strandID = s;
+    }
+
+    public void setPolymerType(String s) {
+        polymerType = s;
     }
 
     public String getOneLetterCode() {
@@ -346,7 +372,7 @@ public class Polymer extends Entity {
     /**
      * getCyclicConstraints returns a list of constraints necessary to create a
      * cyclic polymer.
-     * <p>
+     *
      * Is called by addCyclicBond in refine.py
      */
     public List<String> getCyclicConstraints() {
@@ -372,31 +398,5 @@ public class Polymer extends Entity {
             constraints.add(constraint);
         }
         return constraints;
-    }
-
-    class PolymerIterator implements Iterator<Residue> {
-
-        Residue current = getFirstResidue();
-
-        public boolean hasNext() {
-            return (current != null);
-        }
-
-        public Residue next() {
-            Residue result = current;
-            if (current == null) {
-                throw new NoSuchElementException();
-            }
-            current = current.next;
-            return result;
-        }
-
-        public void remove() {
-            if (current != null) {
-                Residue hold = current.next;
-                removeResidue(current);
-                current = hold;
-            }
-        }
     }
 }

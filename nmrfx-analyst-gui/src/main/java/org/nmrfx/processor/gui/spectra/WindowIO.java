@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ *
  * @author brucejohnson
  */
 public class WindowIO implements FileWatchListener {
@@ -63,8 +64,8 @@ public class WindowIO implements FileWatchListener {
     Stage stage;
     BorderPane borderPane;
     ListView<String> listView;
-    Path dir;
     private NMRFxFileWatcher watcher;
+    Path dir;
 
     public void create() {
         stage = new Stage(StageStyle.DECORATED);
@@ -128,25 +129,6 @@ public class WindowIO implements FileWatchListener {
                 log.warn(ex.getMessage(), ex);
             }
         }
-    }
-
-    void updateFavoritesOnFxThread() {
-        Fx.runOnFxThread(this::updateFavorites);
-    }
-
-    @Override
-    public void onCreated(File file) {
-        updateFavoritesOnFxThread();
-    }
-
-    @Override
-    public void onModified(File file) {
-        updateFavoritesOnFxThread();
-    }
-
-    @Override
-    public void onDeleted(File file) {
-        updateFavoritesOnFxThread();
     }
 
     public static void loadWindow() {
@@ -261,7 +243,7 @@ public class WindowIO implements FileWatchListener {
         Predicate<String> predicate2 = STAGE_PATTERN2.asPredicate();
 
         if (Files.isDirectory(directory)) {
-            try (Stream<Path> files = Files.list(directory)) {
+            try (Stream<Path> files = Files.list(directory)){
                 files.sequential().filter(path
                                 -> predicate.test(path.getFileName().toString()) || predicate2.test(path.getFileName().toString())).
                         forEach(path -> {
@@ -272,7 +254,7 @@ public class WindowIO implements FileWatchListener {
                             }
                         });
             } catch (IOException ex) {
-                log.warn(ex.getMessage(), ex);
+                log.warn(ex.getMessage(),ex);
             }
         }
     }
@@ -303,6 +285,25 @@ public class WindowIO implements FileWatchListener {
             i++;
         }
         GUIScripter.setController(activeController);
+    }
+
+    void updateFavoritesOnFxThread() {
+        Fx.runOnFxThread(this::updateFavorites);
+    }
+
+    @Override
+    public void onCreated(File file) {
+        updateFavoritesOnFxThread();
+    }
+
+    @Override
+    public void onModified(File file) {
+        updateFavoritesOnFxThread();
+    }
+
+    @Override
+    public void onDeleted(File file) {
+        updateFavoritesOnFxThread();
     }
 
 }

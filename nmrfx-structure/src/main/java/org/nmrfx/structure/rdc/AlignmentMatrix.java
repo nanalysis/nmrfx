@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,14 +17,22 @@
  */
 package org.nmrfx.structure.rdc;
 
-import org.apache.commons.math3.geometry.euclidean.threed.*;
-import org.apache.commons.math3.linear.*;
-import org.nmrfx.chemistry.RDC;
-
 import java.util.HashMap;
 import java.util.List;
+import org.apache.commons.math3.geometry.euclidean.threed.NotARotationMatrixException;
+import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
+import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
+import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+import org.nmrfx.chemistry.RDC;
 
 /**
+ *
  * @author brucejohnson
  */
 public class AlignmentMatrix {
@@ -36,9 +44,6 @@ public class AlignmentMatrix {
     static final HashMap<String, Double> maxRDCDict = new HashMap<>();
     static final HashMap<String, Double> gammaIDict = new HashMap();
     static final HashMap<String, Double> gammaSDict = new HashMap();
-    static double gammaH = 2.68e8;
-    static double gammaN = -2.71e7;
-    static double scaleHN = (gammaH * gammaN) / ((1.0e-10) * (1.0e-10) * (1.0e-10));
 
     static {
         disDict.put("HN", 1.04);
@@ -59,12 +64,16 @@ public class AlignmentMatrix {
         gammaSDict.put("H", 2.68e8);
     }
 
+    static double gammaH = 2.68e8;
+    static double gammaN = -2.71e7;
+    static double scaleHN = (gammaH * gammaN) / ((1.0e-10) * (1.0e-10) * (1.0e-10));
+
     final RealMatrix saupeMat;
-    final double globalScale;
     RealVector eigenValues;
     RealMatrix eigenVectors;
     EigenDecomposition eig;
     RealMatrix Sdiag;
+    final double globalScale;
     double[][] euler;
 
     public AlignmentMatrix(RealMatrix matrix, double globalScale) {
@@ -90,6 +99,24 @@ public class AlignmentMatrix {
         double[][] s = {{sXX, sXY, sXZ}, {sXY, sYY, sYZ}, {sXZ, sYZ, sZZ}};
         saupeMat = new Array2DRowRealMatrix(s);
         this.globalScale = 1.0;
+    }
+
+    public static AlignmentMatrix getValidMatrix(double sXX, double sYY, double sZZ, double sXY, double sXZ, double sYZ) {
+        AlignmentMatrix aMat = new AlignmentMatrix(sXX, sYY, sZZ, sXY, sXZ, sYZ);
+        if (aMat.validate()) {
+            System.out.println("valid 1");
+            aMat.eig = new EigenDecomposition(aMat.saupeMat);
+            aMat.Sdiag = aMat.eig.getD();
+            double Sxx = aMat.Sdiag.getEntry(0, 0);
+            double Syy = aMat.Sdiag.getEntry(1, 1);
+            double Szz = aMat.Sdiag.getEntry(2, 2);
+            if ((Sxx >= -0.5 && Sxx <= 1.0) && (Syy >= -0.5 && Syy <= 1.0) && (Szz >= -0.5 && Szz <= 1.0)) {
+                System.out.println("valid 2");
+                aMat.sortEigen(aMat.eig);
+                return aMat;
+            }
+        }
+        return null;
     }
 
     public boolean validate() {
@@ -264,7 +291,7 @@ public class AlignmentMatrix {
     public double calcMagnitude() {
         return 0.5 * maxRDCDict.get("HN") * calcSAxial();
     }
-
+    
     public double[][] calcEulerAngles(double[][] R) {
         double Rxz = R[0][2];
         double Ryz = R[1][2];
@@ -338,6 +365,30 @@ public class AlignmentMatrix {
         }
     }
 
+    public static RealMatrix setupDirectionMatrix(List<RDC> rdcs) {
+        int nVectors = rdcs.size();
+        double[][] A = new double[nVectors][5];
+        int iRow = 0;
+        // calculate the direction cosines and construct the matrix A. Based on orderten_svd_dipole.c
+        for (RDC rdcVec : rdcs) {
+            Vector3D normVec = rdcVec.getVector().normalize();
+            double dcosX = normVec.getX();
+            double dcosY = normVec.getY();
+            double dcosZ = normVec.getZ();
+            double ddcosX = dcosX * dcosX;
+            double ddcosY = dcosY * dcosY;
+            double ddcosZ = dcosZ * dcosZ;
+            A[iRow][0] = ddcosY - ddcosX;
+            A[iRow][1] = ddcosZ - ddcosX;
+            A[iRow][2] = 2 * dcosX * dcosY;
+            A[iRow][3] = 2 * dcosX * dcosZ;
+            A[iRow][4] = 2 * dcosY * dcosZ;
+            iRow++;
+        }
+        RealMatrix directionMatrix = new Array2DRowRealMatrix(A);
+        return directionMatrix;
+    }
+
     public void calcRDC(RealMatrix directionMatrix, List<RDC> vectors) {
         RealMatrix scaledMat = saupeMat;
         double sYY = scaledMat.getEntry(1, 1);
@@ -354,6 +405,51 @@ public class AlignmentMatrix {
             double rdc = result.getEntry(i) * Math.abs(rdcVec.getMaxRDC());
             rdcVec.setRDC(rdc);
         }
+    }
+
+    /**
+     * Calculates the maximum RDCConstraint value associated with two atoms in a
+     * Molecule object.
+     *
+     * @param vector Vector3D object that represents the vector associated with
+     * the two atoms.
+     * @param aType1 String of the type of the first atom of the vector.
+     * @param aType2 String of the type of the second atom of the vector.
+     * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint
+     * value based on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDCConstraint value
+     * with the scaling method used in CYANA.
+     * @return double parameter that is the maxRDC value.
+     */
+    public static double calcMaxRDC(Vector3D vector, String aType1, String aType2, boolean calcMaxRDC, boolean scale) {
+
+        String type = aType1 + aType2;
+        double r;
+        if (disDict.containsKey(type)) {
+            r = disDict.get(type) * 1.0e-10;
+        } else {
+            r = vector.getNorm() * 1e-10;
+        }
+
+        double maxRDC = 1.0;
+        if (!calcMaxRDC && maxRDCDict.containsKey(type)) {
+            maxRDC = maxRDCDict.get(type);
+        } else {
+            double gammaI = gammaIDict.get(aType1);
+            double gammaS = gammaSDict.get(aType2);
+            if (r != 0) {
+                if (calcMaxRDC) {
+                    maxRDC = PREFACTOR * ((gammaI * gammaS) / (r * r * r));
+                } else if (scale) {
+                    maxRDC = 24350.0 * (gammaI * gammaS) / ((r * r * r) * scaleHN);
+                }
+            } else {
+                if (maxRDCDict.containsKey(type)) {
+                    maxRDC = maxRDCDict.get(type);
+                }
+            }
+        }
+        return maxRDC;
     }
 
     public String toString() {
@@ -397,92 +493,5 @@ public class AlignmentMatrix {
         sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[0][0], euler[0][1], euler[0][2] + 180.0));
         return sBuilder.toString();
 
-    }
-
-    public static AlignmentMatrix getValidMatrix(double sXX, double sYY, double sZZ, double sXY, double sXZ, double sYZ) {
-        AlignmentMatrix aMat = new AlignmentMatrix(sXX, sYY, sZZ, sXY, sXZ, sYZ);
-        if (aMat.validate()) {
-            System.out.println("valid 1");
-            aMat.eig = new EigenDecomposition(aMat.saupeMat);
-            aMat.Sdiag = aMat.eig.getD();
-            double Sxx = aMat.Sdiag.getEntry(0, 0);
-            double Syy = aMat.Sdiag.getEntry(1, 1);
-            double Szz = aMat.Sdiag.getEntry(2, 2);
-            if ((Sxx >= -0.5 && Sxx <= 1.0) && (Syy >= -0.5 && Syy <= 1.0) && (Szz >= -0.5 && Szz <= 1.0)) {
-                System.out.println("valid 2");
-                aMat.sortEigen(aMat.eig);
-                return aMat;
-            }
-        }
-        return null;
-    }
-
-    public static RealMatrix setupDirectionMatrix(List<RDC> rdcs) {
-        int nVectors = rdcs.size();
-        double[][] A = new double[nVectors][5];
-        int iRow = 0;
-        // calculate the direction cosines and construct the matrix A. Based on orderten_svd_dipole.c
-        for (RDC rdcVec : rdcs) {
-            Vector3D normVec = rdcVec.getVector().normalize();
-            double dcosX = normVec.getX();
-            double dcosY = normVec.getY();
-            double dcosZ = normVec.getZ();
-            double ddcosX = dcosX * dcosX;
-            double ddcosY = dcosY * dcosY;
-            double ddcosZ = dcosZ * dcosZ;
-            A[iRow][0] = ddcosY - ddcosX;
-            A[iRow][1] = ddcosZ - ddcosX;
-            A[iRow][2] = 2 * dcosX * dcosY;
-            A[iRow][3] = 2 * dcosX * dcosZ;
-            A[iRow][4] = 2 * dcosY * dcosZ;
-            iRow++;
-        }
-        RealMatrix directionMatrix = new Array2DRowRealMatrix(A);
-        return directionMatrix;
-    }
-
-    /**
-     * Calculates the maximum RDCConstraint value associated with two atoms in a
-     * Molecule object.
-     *
-     * @param vector     Vector3D object that represents the vector associated with
-     *                   the two atoms.
-     * @param aType1     String of the type of the first atom of the vector.
-     * @param aType2     String of the type of the second atom of the vector.
-     * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint
-     *                   value based on the vector distance.
-     * @param scale      Boolean of whether to calculate the max RDCConstraint value
-     *                   with the scaling method used in CYANA.
-     * @return double parameter that is the maxRDC value.
-     */
-    public static double calcMaxRDC(Vector3D vector, String aType1, String aType2, boolean calcMaxRDC, boolean scale) {
-
-        String type = aType1 + aType2;
-        double r;
-        if (disDict.containsKey(type)) {
-            r = disDict.get(type) * 1.0e-10;
-        } else {
-            r = vector.getNorm() * 1e-10;
-        }
-
-        double maxRDC = 1.0;
-        if (!calcMaxRDC && maxRDCDict.containsKey(type)) {
-            maxRDC = maxRDCDict.get(type);
-        } else {
-            double gammaI = gammaIDict.get(aType1);
-            double gammaS = gammaSDict.get(aType2);
-            if (r != 0) {
-                if (calcMaxRDC) {
-                    maxRDC = PREFACTOR * ((gammaI * gammaS) / (r * r * r));
-                } else if (scale) {
-                    maxRDC = 24350.0 * (gammaI * gammaS) / ((r * r * r) * scaleHN);
-                }
-            } else {
-                if (maxRDCDict.containsKey(type)) {
-                    maxRDC = maxRDCDict.get(type);
-                }
-            }
-        }
-        return maxRDC;
     }
 }

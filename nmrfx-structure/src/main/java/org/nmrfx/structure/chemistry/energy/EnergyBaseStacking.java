@@ -6,11 +6,11 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.chemistry.Atom;
+import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
-import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
-
 /**
+ *
  * @author brucejohnson
  */
 public class EnergyBaseStacking extends EnergyDistancePairs {
@@ -25,8 +25,8 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
     }
 
     public void addPair(int i, int j, int iUnit, int jUnit, double r0,
-                        int baseAtom1a, int baseAtom1b,
-                        int baseAtom2a, int baseAtom2b) {
+            int baseAtom1a, int baseAtom1b,
+            int baseAtom2a, int baseAtom2b) {
         if (i != j) {
             addPair(i, j, iUnit, jUnit, r0);
             int iPair = nPairs - 1;
@@ -47,7 +47,7 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
             baseAtoms2b = resize(baseAtoms2b, newSize);
         }
     }
-
+    
     @Override
     public double calcEnergy(boolean calcDeriv, double weight, double eWeight) {
         FastVector3D[] vecCoords = eCoords.getVecCoords();
@@ -117,6 +117,18 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
         return sum;
     }
 
+    public static double getEnergy(int i, double r2, double weight) {
+        double energy = 0.0;
+        if ((r2 > 16.0) && (r2 < 36.0)) {
+            double r = Math.sqrt(r2);
+            double du = (r - 4.0) / 2.0;
+            double g = -0.2 * (2.0 * Math.pow(du, 3.0) - 3.0 * Math.pow(du, 2.0) + 1.0);
+            energy = weight * g;
+        }
+        return energy;
+
+    }
+
     @Override
     public ViolationStats getError(int i, double limitVal, double weight) {
         String modeType = "STK";
@@ -138,17 +150,5 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
         }
 
         return stat;
-    }
-
-    public static double getEnergy(int i, double r2, double weight) {
-        double energy = 0.0;
-        if ((r2 > 16.0) && (r2 < 36.0)) {
-            double r = Math.sqrt(r2);
-            double du = (r - 4.0) / 2.0;
-            double g = -0.2 * (2.0 * Math.pow(du, 3.0) - 3.0 * Math.pow(du, 2.0) + 1.0);
-            energy = weight * g;
-        }
-        return energy;
-
     }
 }

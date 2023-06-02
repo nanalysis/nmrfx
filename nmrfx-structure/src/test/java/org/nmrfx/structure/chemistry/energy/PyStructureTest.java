@@ -4,7 +4,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.python.util.PythonInterpreter;
-
 import java.nio.file.Path;
 
 public class PyStructureTest {
@@ -16,8 +15,8 @@ public class PyStructureTest {
         interp.exec("import sys");
         interp.exec("sys.path.append('src/test/python')");
         interp.execfile(path.toString());
-        var pyResult = interp.eval("result.failures");
-        for (var item : pyResult.asIterable()) {
+        var pyResult =  interp.eval("result.failures");
+        for (var item: pyResult.asIterable()) {
             System.out.println("item FAILURE " + item);
         }
         return pyResult.__len__();
@@ -26,12 +25,12 @@ public class PyStructureTest {
     @Test
     public void teststruct() {
         int nFailures = executeScript("teststruct.py");
-        Assert.assertEquals(0, nFailures);
+        Assert.assertEquals(0,  nFailures);
     }
 
     @Test
     public void testrnalinks() {
         int nFailures = executeScript("testrnalinks.py");
-        Assert.assertEquals(0, nFailures);
+        Assert.assertEquals(0,  nFailures);
     }
 }

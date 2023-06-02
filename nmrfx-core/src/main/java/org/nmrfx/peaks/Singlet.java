@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ *
  * @author brucejohnson
  */
 public class Singlet extends Coupling {
@@ -47,8 +48,28 @@ public class Singlet extends Coupling {
     }
 
     @Override
+    public boolean isCoupled() {
+        return false;
+    }
+
+    @Override
     public String getMultiplicity() {
         return "s";
+    }
+
+    @Override
+    public String getCouplingsAsString() {
+        return String.valueOf(0.0);
+
+    }
+
+    @Override
+    public String getCouplingsAsSimpleString() {
+        return "";
+    }
+
+    protected Coupling adjustCouplings(final Multiplet multiplet, final int iCoupling, final double newValue) {
+        return this;
     }
 
     @Override
@@ -77,26 +98,6 @@ public class Singlet extends Coupling {
         ArrayList<TreeLine> lines = new ArrayList<>();
         lines.add(new TreeLine(0.0, 0.0, 0.0, 0.0));
         return lines;
-    }
-
-    @Override
-    public String getCouplingsAsString() {
-        return String.valueOf(0.0);
-
-    }
-
-    @Override
-    public String getCouplingsAsSimpleString() {
-        return "";
-    }
-
-    @Override
-    public boolean isCoupled() {
-        return false;
-    }
-
-    protected Coupling adjustCouplings(final Multiplet multiplet, final int iCoupling, final double newValue) {
-        return this;
     }
 
 }

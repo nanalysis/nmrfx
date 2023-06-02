@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,20 +17,21 @@
  */
 package org.nmrfx.processor.gui.undo;
 
-import javafx.beans.property.SimpleBooleanProperty;
-
 import java.util.ArrayList;
 import java.util.List;
+import javafx.beans.property.SimpleBooleanProperty;
 
 /**
+ *
  * @author Bruce Johnson
  */
 public class UndoManager {
 
-    public SimpleBooleanProperty undoable = new SimpleBooleanProperty(false);
-    public SimpleBooleanProperty redoable = new SimpleBooleanProperty(false);
     List<UndoRedo> queue = new ArrayList<>();
     int index = -1;
+
+    public SimpleBooleanProperty undoable = new SimpleBooleanProperty(false);
+    public SimpleBooleanProperty redoable = new SimpleBooleanProperty(false);
 
     public void add(String name, ChartUndo undo, ChartUndo redo) {
         UndoRedo newItem = new UndoRedo(name, undo, redo);

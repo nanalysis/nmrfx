@@ -11,7 +11,6 @@ public class PeakDistance implements Comparable<PeakDistance> {
         this.distance = distance;
         this.deltas = deltas;
     }
-
     public PeakDistance(Peak peak, double distance) {
         this.peak = peak;
         this.distance = distance;

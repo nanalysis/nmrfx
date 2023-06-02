@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,8 @@
  */
 package org.nmrfx.processor.math.apache;
 
+import java.io.Serializable;
+
 import org.apache.commons.math3.Field;
 import org.apache.commons.math3.FieldElement;
 import org.apache.commons.math3.exception.DimensionMismatchException;
@@ -27,8 +29,6 @@ import org.apache.commons.math3.linear.AbstractFieldMatrix;
 import org.apache.commons.math3.linear.FieldMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.util.MathArrays;
-
-import java.io.Serializable;
 
 public class FieldDiagonalMatrix<T extends FieldElement<T>> extends AbstractFieldMatrix<T> implements
         Serializable {
@@ -47,15 +47,25 @@ public class FieldDiagonalMatrix<T extends FieldElement<T>> extends AbstractFiel
     private final Field<T> field;
 
     /**
+     * Get a reference to the underlying data array. This methods returns internal data, <strong>not</strong> a fresh
+     * copy of it.
+     *
+     * @return the 2-dimensional array of entries.
+     */
+    public T[] getDataRef() {
+        return data;
+    }
+
+    /**
      * Create a new {@code FieldDiagonalMatrix<T>} with the supplied row and column dimensions.
      *
-     * @param field           Field to which the elements belong.
-     * @param rowDimension    Number of rows in the new matrix.
+     * @param field Field to which the elements belong.
+     * @param rowDimension Number of rows in the new matrix.
      * @param columnDimension Number of columns in the new matrix.
      * @throws NotStrictlyPositiveException if row or column dimension is not positive.
      */
     public FieldDiagonalMatrix(final Field<T> field, final int rowDimension,
-                               final int columnDimension)
+            final int columnDimension)
             throws NotStrictlyPositiveException {
         super(field, rowDimension, columnDimension);
         this.field = field;
@@ -79,7 +89,7 @@ public class FieldDiagonalMatrix<T extends FieldElement<T>> extends AbstractFiel
      * Constructs a Zdiagmat and initializes it to a constant.
      *
      * @param order The order of the new Zdiagmat
-     * @param val   The value to which the diagonal is to be initialized
+     * @param val The value to which the diagonal is to be initialized
      * @return A Zdiagmat whose diagonal is val.
      */
     public FieldDiagonalMatrix(final int dimension, T val) {
@@ -160,13 +170,19 @@ public class FieldDiagonalMatrix<T extends FieldElement<T>> extends AbstractFiel
     }
 
     /**
-     * Get a reference to the underlying data array. This methods returns internal data, <strong>not</strong> a fresh
-     * copy of it.
-     *
-     * @return the 2-dimensional array of entries.
+     * {@inheritDoc}
      */
-    public T[] getDataRef() {
-        return data;
+    @Override
+    public int getRowDimension() {
+        return data.length;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getColumnDimension() {
+        return data.length;
     }
 
     @Override
@@ -217,21 +233,5 @@ public class FieldDiagonalMatrix<T extends FieldElement<T>> extends AbstractFiel
             MatrixUtils.checkRowIndex(this, row);
             data[row] = data[row].multiply(factor);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getRowDimension() {
-        return data.length;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getColumnDimension() {
-        return data.length;
     }
 }

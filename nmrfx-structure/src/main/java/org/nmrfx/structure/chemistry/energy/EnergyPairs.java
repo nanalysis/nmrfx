@@ -8,6 +8,7 @@ package org.nmrfx.structure.chemistry.energy;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
 /**
+ *
  * @author brucejohnson
  */
 public class EnergyPairs {
@@ -129,7 +130,7 @@ public class EnergyPairs {
                 branches[jUnit].subtractToG(v2.getValues());
             }
         }
-        if (dMax > 100000.0) {
+       if (dMax > 100000.0) {
             System.out.printf("WARNING: Gradient %8.2g ", dMax);
             ViolationStats stats = getError(iMax, 0.1, 1.0, -1.0);
             if (stats != null) {

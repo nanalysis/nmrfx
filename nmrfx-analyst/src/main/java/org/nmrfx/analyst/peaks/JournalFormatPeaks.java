@@ -5,9 +5,6 @@
  */
 package org.nmrfx.analyst.peaks;
 
-import org.apache.commons.text.TextStringBuilder;
-import org.yaml.snakeyaml.Yaml;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -17,16 +14,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.text.TextStringBuilder;
+import org.yaml.snakeyaml.Yaml;
+
 /**
+ *
  * @author brucejohnson
  */
 public class JournalFormatPeaks {
 
     static Map<String, JournalFormat> journalFormats = new HashMap<>();
-
-    public void loadFormats() {
-
-    }
 
     static JournalFormat parseYamlMap(Map<String, Object> map) {
         JournalFormat jformat = new JournalFormat();
@@ -39,10 +36,13 @@ public class JournalFormatPeaks {
         jformat.o = (String) map.get("o");
         jformat.sep = (String) map.get("sep");
         jformat.jPrec = (Integer) map.get("jprec");
-        jformat.ppmPrec = (Integer) map.get("ppmprec");
-        ;
+        jformat.ppmPrec = (Integer) map.get("ppmprec");;
         jformat.broad = (Double) map.get("broad");
         return jformat;
+    }
+
+    public void loadFormats() {
+
     }
 
     public static void loadYaml(String fileName) throws FileNotFoundException, IOException {

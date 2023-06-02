@@ -9,16 +9,16 @@ package org.nmrfx.analyst.gui.molecule3D;
 // https://github.com/prideout/blog-source/blob/master/p44/deploy/Article.txt
 
 
+import java.util.ArrayList;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import javafx.geometry.Point3D;
 import javafx.scene.shape.TriangleMesh;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
-import java.util.ArrayList;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-
 /**
+ *
  * @author brucejohnson
  */
 public class Tessellation {
@@ -27,6 +27,34 @@ public class Tessellation {
     ArrayList<Face> faces = null;
     Vector3D lastPerpVec = null;
     ArrayList<TubeNode> tubeNodes = null;
+
+    class Face {
+
+        final int vert0;
+        final int vert1;
+        final int vert2;
+        final int tex0;
+        final int tex1;
+        final int tex2;
+
+        Face(int vert0, int vert1, int vert2) {
+            this.vert0 = vert0;
+            this.vert1 = vert1;
+            this.vert2 = vert2;
+            this.tex0 = 0;
+            this.tex1 = 0;
+            this.tex2 = 0;
+        }
+
+        Face(int vert0, int vert1, int vert2, int tex0, int tex1, int tex2) {
+            this.vert0 = vert0;
+            this.vert1 = vert1;
+            this.vert2 = vert2;
+            this.tex0 = tex0;
+            this.tex1 = tex1;
+            this.tex2 = tex2;
+        }
+    }
 
     void createSurface(int nSlices, int nStacks, BiFunction<Double, Double, Vector3D> surfFunc) {
         vertices = new ArrayList<>();
@@ -236,34 +264,6 @@ public class Tessellation {
         int nSlices = tubeNodes.size();
         this.tubeNodes = tubeNodes;
         createTube(nSlices, nStacks, (u, v) -> tubeShape(u, v));
-    }
-
-    class Face {
-
-        final int vert0;
-        final int vert1;
-        final int vert2;
-        final int tex0;
-        final int tex1;
-        final int tex2;
-
-        Face(int vert0, int vert1, int vert2) {
-            this.vert0 = vert0;
-            this.vert1 = vert1;
-            this.vert2 = vert2;
-            this.tex0 = 0;
-            this.tex1 = 0;
-            this.tex2 = 0;
-        }
-
-        Face(int vert0, int vert1, int vert2, int tex0, int tex1, int tex2) {
-            this.vert0 = vert0;
-            this.vert1 = vert1;
-            this.vert2 = vert2;
-            this.tex0 = tex0;
-            this.tex1 = tex1;
-            this.tex2 = tex2;
-        }
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,14 +17,13 @@
  */
 package org.nmrfx.processor.math.apache;
 
+import static org.nmrfx.processor.math.apache.ComplexSingularValueDecomposition.premultiplyA;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexField;
 import org.apache.commons.math3.linear.Array2DRowFieldMatrix;
 import org.apache.commons.math3.linear.ArrayFieldVector;
 import org.apache.commons.math3.linear.FieldMatrix;
 import org.apache.commons.math3.util.FastMath;
-
-import static org.nmrfx.processor.math.apache.ComplexSingularValueDecomposition.premultiplyA;
 
 /**
  * Computes a Householder QR decomposition.Specifically, given a matrix A there are is a unitary matrix U such that
@@ -36,8 +35,8 @@ import static org.nmrfx.processor.math.apache.ComplexSingularValueDecomposition.
  * <br>
  * Comments: The routines to postmultiply by Q are soft coded and should ultimately be replaced.
  *
- * @author G. W. Stewart
  * @version Pre-alpha
+ * @author G. W. Stewart
  */
 public class ComplexHouseholderQRDecomposition {
 
@@ -100,7 +99,7 @@ public class ComplexHouseholderQRDecomposition {
      *
      * @param B A Zmat
      * @return QB
-     * @throws Exception Thrown for inconsistent dimensions.
+     * @exception Exception Thrown for inconsistent dimensions.
      */
     public FieldMatrix<Complex> qb(FieldMatrix<Complex> B) throws Exception {
         if (B.getColumnDimension() != ncol) {

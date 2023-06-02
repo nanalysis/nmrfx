@@ -39,13 +39,7 @@ import java.util.List;
 public class IstMatrix extends MatrixOperation {
 
     private static final Logger log = LoggerFactory.getLogger(IstMatrix.class);
-    private final static int NPHASE = 4;
-    /**
-     * Calculate statistics.
-     */
-    boolean calcStats = false;
-    boolean doSineBell = false;
-    double fpMul = 0.5;
+
     /**
      * Cutoff threshold as a fraction of maximum height : e.g. 0.98.
      *
@@ -53,12 +47,14 @@ public class IstMatrix extends MatrixOperation {
      * @see #cutAboveThreshold
      */
     private double threshold = 0.98;
+
     /**
      * Number of loops to iterate over : e.g. 300.
      *
      * @see #ist
      */
     private int loops = 100;
+
     /**
      * Sample schedule used for non-uniform sampling. Specifies array elements
      * where data is present.
@@ -68,10 +64,12 @@ public class IstMatrix extends MatrixOperation {
      * @see SampleSchedule
      */
     private SampleSchedule sampleSchedule = null;
+
     /**
      * Sample schedule hash map.
      */
     private HashMap sampleHash = null;
+
     /**
      * Specifies one of several cutoff algorithms. Supported algorithms are:
      * <i>abs</i> <i>phased</i> <i>phasedpos</i>
@@ -80,19 +78,75 @@ public class IstMatrix extends MatrixOperation {
      * @see #cutAboveThreshold
      */
     private String alg = "abs";
+
     /**
      * Optional flag used with algorithm to return inverse-FT'ed data, instead
      * of FT'ed data.
      */
     private boolean final_ift = true;
+
     /**
      * 2D matrix size.
      */
     private int[] msize;
+
+    private final static int NPHASE = 4;
+
     /**
      * 2D phase array: [f1ph0, f1ph1, f2ph0, f2ph1].
      */
     private double[] phase = new double[NPHASE];  // init zero values
+
+    /**
+     * Calculate statistics.
+     */
+    boolean calcStats = false;
+
+    boolean doSineBell = false;
+
+    double fpMul = 0.5;
+
+    @Override
+    public Operation eval(Vec vector) throws ProcessingException {
+        try {
+            MatrixND matrixND = new MatrixND(vector.getSize() * 2);
+            for (int i = 0; i < vector.getSize(); i++) {
+                matrixND.setValue(vector.getReal(i), i * 2);
+                matrixND.setValue(vector.getImag(i), i * 2 + 1);
+            }
+            if (sampleSchedule == null) {
+                sampleSchedule = vector.schedule;
+            }
+            istMatrixNDWithHFT(matrixND);
+
+            for (int i = 0; i < vector.getSize(); i++) {
+                double real = matrixND.getValue(i * 2);
+                double imag = matrixND.getValue(i * 2 + 1);
+                vector.set(i, real, imag);
+            }
+        } catch (Exception e) {
+            throw new ProcessingException(e.getLocalizedMessage());
+        }
+        return this;
+    }
+
+    @Override
+    public Operation evalMatrix(MatrixType matrix) {
+        if (matrix instanceof MatrixND) {
+            MatrixND matrixND = (MatrixND) matrix;
+            matrixND.ensurePowerOf2();
+            for (int i = 0; i < matrixND.getNDim(); i++) {
+                matrixND.setVSizes(matrixND.getSizes());
+            }
+        }
+
+        if (alg.equals("std")) {
+            istMatrixNDWithHFT((MatrixND) matrix);
+        } else {
+            istMatrix((Matrix) matrix);
+        }
+        return this;
+    }
 
     /**
      * Create calculation for Matrix Iterative Soft Threshold.
@@ -141,48 +195,6 @@ public class IstMatrix extends MatrixOperation {
                 this.phase[i] = (Double) phaseList.get(i);
             }
         }
-    }
-
-    @Override
-    public Operation eval(Vec vector) throws ProcessingException {
-        try {
-            MatrixND matrixND = new MatrixND(vector.getSize() * 2);
-            for (int i = 0; i < vector.getSize(); i++) {
-                matrixND.setValue(vector.getReal(i), i * 2);
-                matrixND.setValue(vector.getImag(i), i * 2 + 1);
-            }
-            if (sampleSchedule == null) {
-                sampleSchedule = vector.schedule;
-            }
-            istMatrixNDWithHFT(matrixND);
-
-            for (int i = 0; i < vector.getSize(); i++) {
-                double real = matrixND.getValue(i * 2);
-                double imag = matrixND.getValue(i * 2 + 1);
-                vector.set(i, real, imag);
-            }
-        } catch (Exception e) {
-            throw new ProcessingException(e.getLocalizedMessage());
-        }
-        return this;
-    }
-
-    @Override
-    public Operation evalMatrix(MatrixType matrix) {
-        if (matrix instanceof MatrixND) {
-            MatrixND matrixND = (MatrixND) matrix;
-            matrixND.ensurePowerOf2();
-            for (int i = 0; i < matrixND.getNDim(); i++) {
-                matrixND.setVSizes(matrixND.getSizes());
-            }
-        }
-
-        if (alg.equals("std")) {
-            istMatrixNDWithHFT((MatrixND) matrix);
-        } else {
-            istMatrix((Matrix) matrix);
-        }
-        return this;
     }
 
     /**
@@ -264,6 +276,146 @@ public class IstMatrix extends MatrixOperation {
         input.copyMatrix(addbuf);
         input.hift2dNoswapZF();
         copyValues(orig.getMatrix(), input.getMatrix());  // copy orig non-zero values
+    }
+
+    public static int[] genSrcTargetMap(SampleSchedule sampleSchedule, MatrixND matrix) {
+        int[][] samples = sampleSchedule.getSamples();
+        int nComplex = (int) Math.round(Math.pow(2, matrix.getNDim()));
+        int[] srcTargetMap = new int[samples.length * nComplex];
+        int i = 0;
+        for (int[] sample : samples) {
+            int[] complexSample = new int[sample.length];
+            for (int k = 0; k < nComplex; k++) {
+                int divisor = 1;
+                for (int j = 0; j < sample.length; j++) {
+                    int cDelta = (k / divisor) % 2;
+                    divisor *= 2;
+                    complexSample[sample.length - j - 1] = sample[sample.length - j - 1] * 2 + cDelta;
+                }
+                int offset = matrix.getOffset(complexSample);
+                srcTargetMap[i++] = offset;
+            }
+        }
+        return srcTargetMap;
+    }
+    public static int[] genZFSrcTargetMap(MatrixND matrixND, int[] origSizes, boolean constrainEdges) {
+        int nOrig = 1;
+        for (int sz: origSizes) {
+            nOrig *= sz;
+        }
+        int[] srcTargetMap = new int[nOrig];
+
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(origSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        int i = 0;
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            int offset = matrixND.getOffset(counts);
+            srcTargetMap[i++] = offset;
+        }
+        return srcTargetMap;
+    }
+
+    static boolean isInSkipList(List<int[]> skipList, int[] counts) {
+       for (int[] skip:skipList) {
+           boolean inList = true;
+           for (int i=0;i<counts.length;i++) {
+               if (skip[i] < 0)  {
+                   continue;
+               }
+               if (skip[i] != counts[i]) {
+                   inList = false;
+                   break;
+               }
+           }
+           if (inList) {
+               return true;
+           }
+       }
+       return false;
+    }
+
+    public static int[] genZFList(MatrixND matrixND, int[] origSizes, boolean constrainEdges, List<int[]> skipList) {
+        int nElems = matrixND.getNElems();
+        boolean[] validPositions = new boolean[nElems];
+
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(origSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            if (skipList.isEmpty() || !isInSkipList(skipList, counts)) {
+                int offset = matrixND.getOffset(counts);
+                validPositions[offset] = true;
+            }
+        }
+        if (constrainEdges) {
+            int[] edge = new int[matrixND.getNDim()];
+            if (edge.length == 1) {
+                int offset = matrixND.getOffset(edge);
+                validPositions[offset] = true;
+            } else {
+                for (int i = 0; i < matrixND.getNDim(); i++) {
+                    for (int j = 0; j < matrixND.getNDim(); j++) {
+                        if (i != j) {
+                            edge[j] = matrixND.getSize(j) - 1;
+                        }
+                    }
+                    for (int k = 0; k < matrixND.getSize(i); k++) {
+                        edge[i] = k;
+                        int offset = matrixND.getOffset(edge);
+                        validPositions[offset] = true;
+                    }
+                }
+            }
+        }
+
+        List<Integer> zeroList = new ArrayList<>();
+        int i = 0;
+        for (var valid : validPositions) {
+            if (!valid) {
+                zeroList.add(i);
+            }
+            i++;
+        }
+        int[] zeroArray = zeroList.stream().mapToInt(zv -> zv).toArray();
+
+        return zeroArray;
+    }
+
+    public static int[] genZeroList(SampleSchedule sampleSchedule, MatrixND matrix) {
+        int[][] samples = sampleSchedule.getSamples();
+        boolean[] validPositions = new boolean[matrix.getNElems()];
+        int nComplex = (int) Math.round(Math.pow(2, matrix.getNDim()));
+        int nZeros = matrix.getNElems() - samples.length * nComplex;
+        int nValid = 0;
+        for (int[] sample : samples) {
+            int[] complexSample = new int[sample.length];
+            for (int k = 0; k < nComplex; k++) {
+                int divisor = 1;
+                for (int j = 0; j < sample.length; j++) {
+                    int cDelta = (k / divisor) % 2;
+                    divisor *= 2;
+                    complexSample[sample.length - j - 1] = sample[sample.length - j - 1] * 2 + cDelta;
+                }
+                int offset = matrix.getOffset(complexSample);
+                if (offset >= validPositions.length) {
+                }
+                validPositions[offset] = true;
+                nValid++;
+            }
+        }
+        int[] zeroList = new int[nZeros];
+        int i = 0;
+        int k = 0;
+        for (boolean valid : validPositions) {
+            if (!valid) {
+                zeroList[k++] = i;
+            }
+            i++;
+        }
+        return zeroList;
     }
 
     private void istMatrixNDWithHFT(MatrixND matrix) {
@@ -600,147 +752,6 @@ public class IstMatrix extends MatrixOperation {
                 }
             }
         }
-    }
-
-    public static int[] genSrcTargetMap(SampleSchedule sampleSchedule, MatrixND matrix) {
-        int[][] samples = sampleSchedule.getSamples();
-        int nComplex = (int) Math.round(Math.pow(2, matrix.getNDim()));
-        int[] srcTargetMap = new int[samples.length * nComplex];
-        int i = 0;
-        for (int[] sample : samples) {
-            int[] complexSample = new int[sample.length];
-            for (int k = 0; k < nComplex; k++) {
-                int divisor = 1;
-                for (int j = 0; j < sample.length; j++) {
-                    int cDelta = (k / divisor) % 2;
-                    divisor *= 2;
-                    complexSample[sample.length - j - 1] = sample[sample.length - j - 1] * 2 + cDelta;
-                }
-                int offset = matrix.getOffset(complexSample);
-                srcTargetMap[i++] = offset;
-            }
-        }
-        return srcTargetMap;
-    }
-
-    public static int[] genZFSrcTargetMap(MatrixND matrixND, int[] origSizes, boolean constrainEdges) {
-        int nOrig = 1;
-        for (int sz : origSizes) {
-            nOrig *= sz;
-        }
-        int[] srcTargetMap = new int[nOrig];
-
-        MultidimensionalCounter mdCounter = new MultidimensionalCounter(origSizes);
-        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
-        int i = 0;
-        while (iterator.hasNext()) {
-            iterator.next();
-            int[] counts = iterator.getCounts();
-            int offset = matrixND.getOffset(counts);
-            srcTargetMap[i++] = offset;
-        }
-        return srcTargetMap;
-    }
-
-    static boolean isInSkipList(List<int[]> skipList, int[] counts) {
-        for (int[] skip : skipList) {
-            boolean inList = true;
-            for (int i = 0; i < counts.length; i++) {
-                if (skip[i] < 0) {
-                    continue;
-                }
-                if (skip[i] != counts[i]) {
-                    inList = false;
-                    break;
-                }
-            }
-            if (inList) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static int[] genZFList(MatrixND matrixND, int[] origSizes, boolean constrainEdges, List<int[]> skipList) {
-        int nElems = matrixND.getNElems();
-        boolean[] validPositions = new boolean[nElems];
-
-        MultidimensionalCounter mdCounter = new MultidimensionalCounter(origSizes);
-        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
-        while (iterator.hasNext()) {
-            iterator.next();
-            int[] counts = iterator.getCounts();
-            if (skipList.isEmpty() || !isInSkipList(skipList, counts)) {
-                int offset = matrixND.getOffset(counts);
-                validPositions[offset] = true;
-            }
-        }
-        if (constrainEdges) {
-            int[] edge = new int[matrixND.getNDim()];
-            if (edge.length == 1) {
-                int offset = matrixND.getOffset(edge);
-                validPositions[offset] = true;
-            } else {
-                for (int i = 0; i < matrixND.getNDim(); i++) {
-                    for (int j = 0; j < matrixND.getNDim(); j++) {
-                        if (i != j) {
-                            edge[j] = matrixND.getSize(j) - 1;
-                        }
-                    }
-                    for (int k = 0; k < matrixND.getSize(i); k++) {
-                        edge[i] = k;
-                        int offset = matrixND.getOffset(edge);
-                        validPositions[offset] = true;
-                    }
-                }
-            }
-        }
-
-        List<Integer> zeroList = new ArrayList<>();
-        int i = 0;
-        for (var valid : validPositions) {
-            if (!valid) {
-                zeroList.add(i);
-            }
-            i++;
-        }
-        int[] zeroArray = zeroList.stream().mapToInt(zv -> zv).toArray();
-
-        return zeroArray;
-    }
-
-    public static int[] genZeroList(SampleSchedule sampleSchedule, MatrixND matrix) {
-        int[][] samples = sampleSchedule.getSamples();
-        boolean[] validPositions = new boolean[matrix.getNElems()];
-        int nComplex = (int) Math.round(Math.pow(2, matrix.getNDim()));
-        int nZeros = matrix.getNElems() - samples.length * nComplex;
-        int nValid = 0;
-        for (int[] sample : samples) {
-            int[] complexSample = new int[sample.length];
-            for (int k = 0; k < nComplex; k++) {
-                int divisor = 1;
-                for (int j = 0; j < sample.length; j++) {
-                    int cDelta = (k / divisor) % 2;
-                    divisor *= 2;
-                    complexSample[sample.length - j - 1] = sample[sample.length - j - 1] * 2 + cDelta;
-                }
-                int offset = matrix.getOffset(complexSample);
-                if (offset >= validPositions.length) {
-                }
-                validPositions[offset] = true;
-                nValid++;
-            }
-        }
-        int[] zeroList = new int[nZeros];
-        int i = 0;
-        int k = 0;
-        for (boolean valid : validPositions) {
-            if (!valid) {
-                zeroList[k++] = i;
-            }
-            i++;
-        }
-        return zeroList;
     }
 
 }

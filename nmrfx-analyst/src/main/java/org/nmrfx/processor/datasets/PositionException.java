@@ -1,24 +1,18 @@
+
 package org.nmrfx.processor.datasets;
 
 import java.io.IOException;
 
 /**
+ *
  * @author brucejohnson
  */
 class PositionException extends IOException {
-
+    
     String message;
     long limit;
     int position;
     int[] offsets;
-
-    PositionException(String message, long limit, int position, int... offsets) {
-        super();
-        this.message = message;
-        this.limit = limit;
-        this.position = position;
-        this.offsets = offsets;
-    }
 
     @Override
     public String getMessage() {
@@ -30,4 +24,12 @@ class PositionException extends IOException {
         return sBuilder.toString();
     }
 
+    PositionException(String message, long limit, int position, int... offsets) {
+        super();
+        this.message = message;
+        this.limit = limit;
+        this.position = position;
+        this.offsets = offsets;
+    }
+    
 }

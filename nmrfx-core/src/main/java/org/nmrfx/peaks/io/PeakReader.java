@@ -31,13 +31,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ *
  * @author Bruce Johnson
  */
 @PythonAPI("pscript")
 public class PeakReader {
 
-    final boolean linkResonances;
     Map<Long, List<PeakDim>> resMap = null;
+    final boolean linkResonances;
 
     public PeakReader() {
         this(false);
@@ -414,6 +415,23 @@ public class PeakReader {
     }
 
     /*
+    dataset ndim
+    C_nhsqcsegr_b.nv        2
+    id      label   units   sf      sw      fp      idtol   pattern relation        folding abspos  acqdim
+    1       HN"ppm  499.83770751953125      2617.1875       0.0     0.007815036643363612                    0.0     circular        true    true
+    2       N"ppm   50.653602600097656      2000.0  0.0     0.15423384712985722                     0.0     circular        true    false
+    index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     N.P     N.WH    N.B     N.E     N.J     N.U     volume  intensity       status  comment flags
+    0       0               8.94238 0.03142 0.03220 ++                              132.96933       0.39033 0.40230 ++                      0.0     1.5329096       0               0
+     */
+    public static Map<String, Integer> headerMap(String[] header) {
+        Map<String, Integer> map = new HashMap<>();
+        for (int i = 0; i < header.length; i++) {
+            map.put(header[i], i);
+        }
+        return map;
+    }
+
+    /*
 
     if {[gets $fileid fields] == -1} {
         error "Can't read first line"
@@ -551,30 +569,12 @@ public class PeakReader {
 
     }
 
-    /*
-    dataset ndim
-    C_nhsqcsegr_b.nv        2
-    id      label   units   sf      sw      fp      idtol   pattern relation        folding abspos  acqdim
-    1       HN"ppm  499.83770751953125      2617.1875       0.0     0.007815036643363612                    0.0     circular        true    true
-    2       N"ppm   50.653602600097656      2000.0  0.0     0.15423384712985722                     0.0     circular        true    false
-    index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     N.P     N.WH    N.B     N.E     N.J     N.U     volume  intensity       status  comment flags
-    0       0               8.94238 0.03142 0.03220 ++                              132.96933       0.39033 0.40230 ++                      0.0     1.5329096       0               0
-     */
-    public static Map<String, Integer> headerMap(String[] header) {
-        Map<String, Integer> map = new HashMap<>();
-        for (int i = 0; i < header.length; i++) {
-            map.put(header[i], i);
-        }
-        return map;
-    }
-
     /**
      * Converts a String into a list of Strings based on white space or tab characters.
      * Quotes are removed from the string. If there is an inner quote, that will be kept. Example {123.h5'} -> 123.h5'
      * and {123.h5''} -> 123.h5''
      * In this method, quote characters are any of the following four characters: ", ', {, }, Empty quotes are returned
      * as an empty string in the list.
-     *
      * @param line The String to parse.
      * @return The parsed String as a list.
      */
@@ -628,7 +628,7 @@ public class PeakReader {
 
     public static boolean hasSparkyDataHeight(String[] fields) {
         int nFields = fields.length;
-        return (nFields > 2) && fields[nFields - 2].equals("Data") && fields[nFields - 1].equals("Height");
+        return (nFields > 2) && fields[nFields - 2].equals("Data") && fields[nFields-1].equals("Height");
     }
 
     public static int countSparkyDims(String[] fields) {

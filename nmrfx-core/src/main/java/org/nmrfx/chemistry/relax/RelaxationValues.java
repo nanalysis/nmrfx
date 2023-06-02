@@ -1,5 +1,5 @@
 /*
- * NMRFx Analyst :
+ * NMRFx Analyst : 
  * Copyright (C) 2004-2021 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@ package org.nmrfx.chemistry.relax;
 import org.nmrfx.annotations.PluginAPI;
 
 /**
+ *
  * @author brucejohnson
  */
 @PluginAPI("ring")
@@ -39,7 +40,7 @@ public interface RelaxationValues {
 
     ResonanceSource getResonanceSource();
 
-    public static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format) {
+    public  static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format) {
         stringBuilder.append("\t");
         if (val != null) {
             stringBuilder.append(String.format(format, val));
@@ -50,7 +51,7 @@ public interface RelaxationValues {
         }
     }
 
-    public static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format, String defaultValue) {
+    public  static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format, String defaultValue) {
         if (val != null) {
             stringBuilder.append(String.format(format, val));
         } else {
@@ -62,8 +63,7 @@ public interface RelaxationValues {
             stringBuilder.append(defaultValue);
         }
     }
-
-    public static void appendValue(StringBuilder stringBuilder, Double val, String format, String defaultValue) {
+    public  static void appendValue(StringBuilder stringBuilder, Double val,  String format, String defaultValue) {
         if (val != null) {
             stringBuilder.append(String.format(format, val));
         } else {

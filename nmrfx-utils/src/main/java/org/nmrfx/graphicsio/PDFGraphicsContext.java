@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ *
  * @author brucejohnson
  */
 public class PDFGraphicsContext implements GraphicsContextInterface {
@@ -109,6 +110,63 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     public void nativeCoords(boolean state) {
         this.nativeCoords = state;
+    }
+
+    private float getTextAnchor(String text) {
+        try {
+            float width = font.getStringWidth(text) / 1000.0f * fontSize;
+            return switch (textAlignment) {
+                case CENTER -> width * 0.5f;
+                case LEFT -> 0.0f;
+                case RIGHT -> width;
+                default -> 0.0f;
+            };
+        } catch (IOException ex) {
+            return 0.0f;
+        }
+    }
+
+    private float getTextDY() {
+        double dYf = switch (textBaseline) {
+            case BASELINE, BOTTOM -> 0.0;
+            case TOP -> 1.0;
+            case CENTER -> 0.5;
+        };
+        return (float) (dYf * fontSize);
+    }
+
+    public void startText() {
+        try {
+            contentStream.setFont(font, fontSize);
+            contentStream.beginText();
+        } catch (IOException ioE) {
+            log.error(ioE.getMessage(), ioE);
+        }
+    }
+
+    public void showText(String message, float startX, float startY) throws GraphicsIOException {
+        try {
+            contentStream.newLineAtOffset(startX, startY);
+            contentStream.showText(message);
+        } catch (IOException ioE) {
+            log.error(ioE.getMessage(), ioE);
+        }
+    }
+
+    public void endText() throws GraphicsIOException {
+        try {
+            contentStream.endText();
+        } catch (IOException ioE) {
+            log.error(ioE.getMessage(), ioE);
+        }
+    }
+
+    private float tX(double x) {
+        return nativeCoords ? (float) x : (float) (scaleX * x) + border;
+    }
+
+    private float tY(double y) {
+        return nativeCoords ? (float) y : (float) (pageWidth - (scaleY * y)) - border;
     }
 
     @Override
@@ -291,6 +349,103 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
+    public void setFill(Paint p) {
+        fill = (Color) p;
+        int r = (int) (255 * fill.getRed());
+        int g = (int) (255 * fill.getGreen());
+        int b = (int) (255 * fill.getBlue());
+        try {
+            contentStream.setNonStrokingColor(r, g, b);
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public void setFont(Font fxfont) {
+        this.fxFont = fxfont;
+        fontSize = (float) Math.round(fxfont.getSize() * scaleX);
+        try {
+            contentStream.setFont(font, fontSize);
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public void setGlobalAlpha(double alpha) {
+    }
+
+    @Override
+    public void setLineCap(StrokeLineCap cap) {
+        int pdCap;
+        if (null == cap) {
+            pdCap = 0;
+        } else {
+            pdCap = switch (cap) {
+                case ROUND -> 1;
+                case SQUARE -> 2;
+                default -> 0;
+            };
+        }
+        try {
+            contentStream.setLineCapStyle(pdCap);
+        } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public void setLineDashes(double... dashes) {
+        float[] floatDashes;
+        if (dashes == null) {
+            floatDashes = new float[0];
+        } else {
+            floatDashes = new float[dashes.length];
+            for (int i = 0; i < dashes.length; i++) {
+                floatDashes[i] = (float) dashes[i];
+            }
+        }
+        try {
+            contentStream.setLineDashPattern(floatDashes, (float) 0.0);
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public void setLineWidth(double lw) {
+        try {
+            contentStream.setLineWidth((float) lw);
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public void setStroke(Paint p) {
+        Color color = (Color) p;
+        int r = (int) (255 * color.getRed());
+        int g = (int) (255 * color.getGreen());
+        int b = (int) (255 * color.getBlue());
+        try {
+            contentStream.setStrokingColor(r, g, b);
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public void setTextAlign(TextAlignment align) {
+        textAlignment = align;
+    }
+
+    @Override
+    public void setTextBaseline(VPos baseline) {
+        textBaseline = baseline;
+    }
+
+    @Override
     public void setTransform(Affine xform) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
@@ -380,160 +535,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
-    }
-
-    @Override
-    public void setFill(Paint p) {
-        fill = (Color) p;
-        int r = (int) (255 * fill.getRed());
-        int g = (int) (255 * fill.getGreen());
-        int b = (int) (255 * fill.getBlue());
-        try {
-            contentStream.setNonStrokingColor(r, g, b);
-        } catch (IOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public void setFont(Font fxfont) {
-        this.fxFont = fxfont;
-        fontSize = (float) Math.round(fxfont.getSize() * scaleX);
-        try {
-            contentStream.setFont(font, fontSize);
-        } catch (IOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public void setLineWidth(double lw) {
-        try {
-            contentStream.setLineWidth((float) lw);
-        } catch (IOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public void setStroke(Paint p) {
-        Color color = (Color) p;
-        int r = (int) (255 * color.getRed());
-        int g = (int) (255 * color.getGreen());
-        int b = (int) (255 * color.getBlue());
-        try {
-            contentStream.setStrokingColor(r, g, b);
-        } catch (IOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public void setGlobalAlpha(double alpha) {
-    }
-
-    @Override
-    public void setLineCap(StrokeLineCap cap) {
-        int pdCap;
-        if (null == cap) {
-            pdCap = 0;
-        } else {
-            pdCap = switch (cap) {
-                case ROUND -> 1;
-                case SQUARE -> 2;
-                default -> 0;
-            };
-        }
-        try {
-            contentStream.setLineCapStyle(pdCap);
-        } catch (IOException ex) {
-            log.warn(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public void setLineDashes(double... dashes) {
-        float[] floatDashes;
-        if (dashes == null) {
-            floatDashes = new float[0];
-        } else {
-            floatDashes = new float[dashes.length];
-            for (int i = 0; i < dashes.length; i++) {
-                floatDashes[i] = (float) dashes[i];
-            }
-        }
-        try {
-            contentStream.setLineDashPattern(floatDashes, (float) 0.0);
-        } catch (IOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public void setTextAlign(TextAlignment align) {
-        textAlignment = align;
-    }
-
-    @Override
-    public void setTextBaseline(VPos baseline) {
-        textBaseline = baseline;
-    }
-
-    private float getTextAnchor(String text) {
-        try {
-            float width = font.getStringWidth(text) / 1000.0f * fontSize;
-            return switch (textAlignment) {
-                case CENTER -> width * 0.5f;
-                case LEFT -> 0.0f;
-                case RIGHT -> width;
-                default -> 0.0f;
-            };
-        } catch (IOException ex) {
-            return 0.0f;
-        }
-    }
-
-    private float getTextDY() {
-        double dYf = switch (textBaseline) {
-            case BASELINE, BOTTOM -> 0.0;
-            case TOP -> 1.0;
-            case CENTER -> 0.5;
-        };
-        return (float) (dYf * fontSize);
-    }
-
-    public void startText() {
-        try {
-            contentStream.setFont(font, fontSize);
-            contentStream.beginText();
-        } catch (IOException ioE) {
-            log.error(ioE.getMessage(), ioE);
-        }
-    }
-
-    public void showText(String message, float startX, float startY) throws GraphicsIOException {
-        try {
-            contentStream.newLineAtOffset(startX, startY);
-            contentStream.showText(message);
-        } catch (IOException ioE) {
-            log.error(ioE.getMessage(), ioE);
-        }
-    }
-
-    public void endText() throws GraphicsIOException {
-        try {
-            contentStream.endText();
-        } catch (IOException ioE) {
-            log.error(ioE.getMessage(), ioE);
-        }
-    }
-
-    private float tX(double x) {
-        return nativeCoords ? (float) x : (float) (scaleX * x) + border;
-    }
-
-    private float tY(double y) {
-        return nativeCoords ? (float) y : (float) (pageWidth - (scaleY * y)) - border;
     }
 
     public void saveFile() throws GraphicsIOException {

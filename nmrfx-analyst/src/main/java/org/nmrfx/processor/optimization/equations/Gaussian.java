@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,10 +17,7 @@
  */
 package org.nmrfx.processor.optimization.equations;
 
-import org.nmrfx.processor.optimization.DataUtil;
-import org.nmrfx.processor.optimization.Equation;
-import org.nmrfx.processor.optimization.EstParam;
-import org.nmrfx.processor.optimization.VecID;
+import org.nmrfx.processor.optimization.*;
 
 /**
  * Author: graham Class: Gaussian Desc: -
@@ -32,64 +29,64 @@ public class Gaussian extends OptFunction {
         setParams(VecID.A, VecID.B, VecID.F);
 
         setPartialDerivatives(new Equation[]{
-                // dY/dA
-                new Equation() {
-                    public VecID name() {
-                        return VecID.A;
-                    }
-
-                    public int getID() {
-                        return getUnboundParamIndex(name());
-                    }
-
-                    public double value(double[] pts, double[] ival) {
-                        double b = getParamVal(VecID.B, pts);
-                        double fr = getParamVal(VecID.F, pts);
-                        double x = ival[getVarIndex(VecID.X) - 1];
-                        double dX = (fr - x);
-                        return 1 / Math.exp(dX * dX / b);
-                    }
-                },
-                // dY/dB
-                new Equation() {
-                    public VecID name() {
-                        return VecID.B;
-                    }
-
-                    public int getID() {
-                        return getUnboundParamIndex(name());
-                    }
-
-                    public double value(double[] pts, double[] ival) {
-                        double a = getParamVal(VecID.A, pts);
-                        double b = getParamVal(VecID.B, pts);
-                        double fr = getParamVal(VecID.F, pts);
-                        double x = ival[getVarIndex(VecID.X) - 1];
-                        double dX = (fr - x);
-                        return (a * dX * dX) / (b * b * Math.exp(dX * dX / b));
-
-                    }
-                },
-                // dY/dC
-                new Equation() {
-                    public VecID name() {
-                        return VecID.F;
-                    }
-
-                    public int getID() {
-                        return getUnboundParamIndex(name());
-                    }
-
-                    public double value(double[] pts, double[] ival) {
-                        double a = getParamVal(VecID.A, pts);
-                        double b = getParamVal(VecID.B, pts);
-                        double fr = getParamVal(VecID.F, pts);
-                        double x = ival[getVarIndex(VecID.X) - 1];
-                        double dX = fr - x;
-                        return -(a * (2 * fr - 2 * x)) / (b * Math.exp(dX * dX / b));
-
-                    }
+            // dY/dA
+            new Equation() {
+                public VecID name() {
+                    return VecID.A;
                 }
+
+                public int getID() {
+                    return getUnboundParamIndex(name());
+                }
+
+                public double value(double[] pts, double[] ival) {
+                    double b = getParamVal(VecID.B, pts);
+                    double fr = getParamVal(VecID.F, pts);
+                    double x = ival[getVarIndex(VecID.X) - 1];
+                    double dX = (fr - x);
+                    return 1 / Math.exp(dX * dX / b);
+                }
+            },
+            // dY/dB
+            new Equation() {
+                public VecID name() {
+                    return VecID.B;
+                }
+
+                public int getID() {
+                    return getUnboundParamIndex(name());
+                }
+
+                public double value(double[] pts, double[] ival) {
+                    double a = getParamVal(VecID.A, pts);
+                    double b = getParamVal(VecID.B, pts);
+                    double fr = getParamVal(VecID.F, pts);
+                    double x = ival[getVarIndex(VecID.X) - 1];
+                    double dX = (fr - x);
+                    return (a * dX * dX) / (b * b * Math.exp(dX * dX / b));
+
+                }
+            },
+            // dY/dC
+            new Equation() {
+                public VecID name() {
+                    return VecID.F;
+                }
+
+                public int getID() {
+                    return getUnboundParamIndex(name());
+                }
+
+                public double value(double[] pts, double[] ival) {
+                    double a = getParamVal(VecID.A, pts);
+                    double b = getParamVal(VecID.B, pts);
+                    double fr = getParamVal(VecID.F, pts);
+                    double x = ival[getVarIndex(VecID.X) - 1];
+                    double dX = fr - x;
+                    return -(a * (2 * fr - 2 * x)) / (b * Math.exp(dX * dX / b));
+
+                }
+            }
         });
 
         // y = a * (exp(-x / b) + exp(-x / C))
@@ -114,11 +111,6 @@ public class Gaussian extends OptFunction {
     }
 
     @Override
-    public String getFunctionName() {
-        return "y = a * (exp(-(x-f)^2 / b)";
-    }
-
-    @Override
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
         double xMid = DataUtil.getMidValue1Side(VecID.Y, VecID.X, getDataSetPtr());
@@ -139,5 +131,10 @@ public class Gaussian extends OptFunction {
                 }
             }
         }
+    }
+
+    @Override
+    public String getFunctionName() {
+        return "y = a * (exp(-(x-f)^2 / b)";
     }
 }

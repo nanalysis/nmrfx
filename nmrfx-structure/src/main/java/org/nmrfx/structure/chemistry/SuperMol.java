@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,13 +18,11 @@
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.SpatialSet;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import org.nmrfx.chemistry.MoleculeBase;
 
 public class SuperMol {
 

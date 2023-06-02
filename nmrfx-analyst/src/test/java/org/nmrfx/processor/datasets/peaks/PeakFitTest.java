@@ -115,7 +115,6 @@ public class PeakFitTest {
             Assert.assertEquals(aa[i], best[i], atol[i]);
         }
     }
-
     @Test
     public void testFitCMAESWithShape() throws Exception {
         int nDim = astart.length;

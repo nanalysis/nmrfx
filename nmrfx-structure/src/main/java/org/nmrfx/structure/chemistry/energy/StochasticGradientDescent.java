@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ *
  * @author johnsonb
  */
 public class StochasticGradientDescent extends GradientRefinement {
@@ -34,6 +35,30 @@ public class StochasticGradientDescent extends GradientRefinement {
 
     public TrajectoryWriter trajectoryWriter = null;
     RandomDataGenerator randomData = new RandomDataGenerator();
+
+    public class Checker extends SimpleValueChecker {
+
+        public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
+            super(relativeThreshold, absoluteThreshold, maxIter);
+        }
+
+        public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
+            boolean converged = super.converged(iteration, previous, current);
+            if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
+                long time = System.currentTimeMillis();
+                long deltaTime = time - startTime;
+                report(iteration, nEvaluations, deltaTime, dihedrals.energyList.atomList.size(), current.getValue());
+                if (trajectoryWriter != null) {
+                    try {
+                        trajectoryWriter.writeStructure();
+                    } catch (MissingCoordinatesException ex) {
+                        log.error(ex.getMessage(), ex);
+                    }
+                }
+            }
+            return converged;
+        }
+    }
 
     public StochasticGradientDescent(final Dihedral dihedrals) {
         super(dihedrals);
@@ -87,30 +112,6 @@ public class StochasticGradientDescent extends GradientRefinement {
         System.arraycopy(point, 0, dihedrals.angleValues, 0, point.length);
         putDihedrals();
         molecule.genCoords(false, null);
-    }
-
-    public class Checker extends SimpleValueChecker {
-
-        public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
-            super(relativeThreshold, absoluteThreshold, maxIter);
-        }
-
-        public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
-            boolean converged = super.converged(iteration, previous, current);
-            if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
-                long time = System.currentTimeMillis();
-                long deltaTime = time - startTime;
-                report(iteration, nEvaluations, deltaTime, dihedrals.energyList.atomList.size(), current.getValue());
-                if (trajectoryWriter != null) {
-                    try {
-                        trajectoryWriter.writeStructure();
-                    } catch (MissingCoordinatesException ex) {
-                        log.error(ex.getMessage(), ex);
-                    }
-                }
-            }
-            return converged;
-        }
     }
 
 }

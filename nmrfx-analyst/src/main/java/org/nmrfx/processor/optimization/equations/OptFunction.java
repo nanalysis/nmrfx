@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,28 +16,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * Generic template for estimation problem functions.
  */
 package org.nmrfx.processor.optimization.equations;
 
-import org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction;
-import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
-import org.apache.commons.math3.analysis.MultivariateVectorFunction;
 import org.nmrfx.processor.optimization.*;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction;
+import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
+import org.apache.commons.math3.analysis.MultivariateVectorFunction;
 
 /**
+ *
  * @author graham
  */
 public abstract class OptFunction implements
         DifferentiableMultivariateVectorFunction, MultivariateVectorFunction, Function {
     //Data container for value list ie. xlist/xvec, etc.
 
-    static private HashMap<String, Class> equationMap = new HashMap<String, Class>();
     private DataRMap dsp;
     //Data container for parameter values
     private EstParamSet psp;
@@ -48,6 +47,7 @@ public abstract class OptFunction implements
     private int nPar;
     private HashMap<VecID, Equation> partialMap;
     private Equation yfuncx;
+    static private HashMap<String, Class> equationMap = new HashMap<String, Class>();
 
     public OptFunction() {
         registerEquation(getClass(), getFunctionName());
@@ -72,34 +72,6 @@ public abstract class OptFunction implements
 
     public String getFunctionName() {
         return "";
-    }
-
-    //TODO - 062409 ID#0012
-    //> Ditch the copy and just return a ref
-    public VecID[] getIndependentVarNames() {
-        VecID[] copy = new VecID[varList.length - 1];
-
-        for (int n = 1; n < varList.length; n++) {
-            copy[n - 1] = varList[n];
-        }
-
-        return copy;
-    }
-
-    /*____________________________________________________________________________________
-     * Object function characteristics
-     *
-     */
-    public VecID getDependentVarName() {
-        return dVar;
-    }
-
-    public VecID[] getAllVarNames() {
-        return varList;
-    }
-
-    public VecID[] getAllParamNames() {
-        return paramList;
     }
 
     public void setParams(VecID... params) {
@@ -271,6 +243,34 @@ public abstract class OptFunction implements
 
     public DataRMap getDataSetPtr() {
         return dsp;
+    }
+
+    /*____________________________________________________________________________________
+     * Object function characteristics
+     *
+     */
+    public VecID getDependentVarName() {
+        return dVar;
+    }
+
+    //TODO - 062409 ID#0012
+    //> Ditch the copy and just return a ref
+    public VecID[] getIndependentVarNames() {
+        VecID[] copy = new VecID[varList.length - 1];
+
+        for (int n = 1; n < varList.length; n++) {
+            copy[n - 1] = varList[n];
+        }
+
+        return copy;
+    }
+
+    public VecID[] getAllVarNames() {
+        return varList;
+    }
+
+    public VecID[] getAllParamNames() {
+        return paramList;
     }
 
     public VecID[] getAllUnboundParamNames() {

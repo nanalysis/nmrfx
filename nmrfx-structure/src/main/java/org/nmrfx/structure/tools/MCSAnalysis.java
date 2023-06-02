@@ -1,31 +1,31 @@
 package org.nmrfx.structure.tools;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.structure.chemistry.Molecule;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
+ *
  * @author brucejohnson
  */
 public class MCSAnalysis {
 
     final PeakList peakList;
+    PeakList peakListRef = null;
     final int[] iDims;
     final double[] alphas;
     final double[] tols;
-    PeakList peakListRef = null;
     Molecule molecule = null;
     String[] aNames;
 
     public MCSAnalysis(PeakList peakList, double[] tols, double[] alphas,
-                       String[] dimNames, Molecule molecule, String[] aNames) {
+            String[] dimNames, Molecule molecule, String[] aNames) {
         this.molecule = molecule;
         this.peakList = peakList;
         this.alphas = alphas.clone();
@@ -43,7 +43,7 @@ public class MCSAnalysis {
     }
 
     public MCSAnalysis(PeakList peakList, double[] tols, double[] alphas,
-                       String[] dimNames, PeakList peakListRef) {
+            String[] dimNames, PeakList peakListRef) {
         this.peakList = peakList;
         this.peakListRef = peakListRef;
         this.alphas = alphas.clone();
@@ -57,6 +57,24 @@ public class MCSAnalysis {
             peakList.addSearchDim(dimNames[i], tols[i]);
             iDims[i] = peakList.getListDim(dimNames[i]);
         }
+    }
+
+    public class Hit {
+
+        int index;
+        String atomName;
+        Peak peak;
+        double dis;
+        int nPeaks;
+
+        public Hit(int index, String atomName, Peak peak, double dis, int nPeaks) {
+            this.index = index;
+            this.atomName = atomName;
+            this.peak = peak;
+            this.dis = dis;
+            this.nPeaks = nPeaks;
+        }
+
     }
 
     double getDisMax() {
@@ -168,23 +186,5 @@ public class MCSAnalysis {
         }
         double mean = sum / nShifted;
         return mean;
-    }
-
-    public class Hit {
-
-        int index;
-        String atomName;
-        Peak peak;
-        double dis;
-        int nPeaks;
-
-        public Hit(int index, String atomName, Peak peak, double dis, int nPeaks) {
-            this.index = index;
-            this.atomName = atomName;
-            this.peak = peak;
-            this.dis = dis;
-            this.nPeaks = nPeaks;
-        }
-
     }
 }

@@ -1,15 +1,5 @@
 package org.nmrfx.processor.tools;
 
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.nmrfx.datasets.RegionData;
-import org.nmrfx.peaks.io.PeakReader;
-import org.nmrfx.processor.datasets.Dataset;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -20,8 +10,18 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.linear.SingularValueDecomposition;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.datasets.RegionData;
+import org.nmrfx.peaks.io.PeakReader;
 
 /**
+ *
  * @author brucejohnson
  */
 public class MatrixAnalyzer {
@@ -231,6 +231,33 @@ public class MatrixAnalyzer {
         return scannerRows;
     }
 
+    static String getStringValue(String[] fields, Map<String, Integer> headerMap, String colName, String defaultValue) {
+        String value = defaultValue;
+        Integer index = headerMap.get(colName);
+        if (index != null) {
+            value = fields[index];
+        }
+        return value;
+    }
+
+    static Double getDoubleValue(String[] fields, Map<String, Integer> headerMap, String colName, Double defaultValue) {
+        Double value = defaultValue;
+        Integer index = headerMap.get(colName);
+        if (index != null) {
+            value = Double.parseDouble(fields[index]);
+        }
+        return value;
+    }
+
+    static Integer getIntegerValue(String[] fields, Map<String, Integer> headerMap, String colName, Integer defaultValue) {
+        Integer value = defaultValue;
+        Integer index = headerMap.get(colName);
+        if (index != null) {
+            value = Integer.parseInt(fields[index]);
+        }
+        return value;
+    }
+
     public void readScannerFile(String fileName) throws IOException {
         Path path = Paths.get(fileName);
         FileSystem fileSystem = path.getFileSystem();
@@ -276,32 +303,5 @@ public class MatrixAnalyzer {
                 }
             }
         }
-    }
-
-    static String getStringValue(String[] fields, Map<String, Integer> headerMap, String colName, String defaultValue) {
-        String value = defaultValue;
-        Integer index = headerMap.get(colName);
-        if (index != null) {
-            value = fields[index];
-        }
-        return value;
-    }
-
-    static Double getDoubleValue(String[] fields, Map<String, Integer> headerMap, String colName, Double defaultValue) {
-        Double value = defaultValue;
-        Integer index = headerMap.get(colName);
-        if (index != null) {
-            value = Double.parseDouble(fields[index]);
-        }
-        return value;
-    }
-
-    static Integer getIntegerValue(String[] fields, Map<String, Integer> headerMap, String colName, Integer defaultValue) {
-        Integer value = defaultValue;
-        Integer index = headerMap.get(colName);
-        if (index != null) {
-            value = Integer.parseInt(fields[index]);
-        }
-        return value;
     }
 }

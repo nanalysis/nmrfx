@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
+ *
  * @author Bruce Johnson
  */
 public class PathTool implements PeakNavigable, ControllerTool {
@@ -361,7 +362,6 @@ public class PathTool implements PeakNavigable, ControllerTool {
             }
         }
     }
-
     void loadPathData(PATHMODE pathMode) {
         peakPaths = null;
         ScannerTool scannerTool = AnalystApp.getAnalystApp().getScannerTool();

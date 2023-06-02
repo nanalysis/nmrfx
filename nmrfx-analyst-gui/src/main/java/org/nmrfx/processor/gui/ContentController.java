@@ -38,6 +38,17 @@ public class ContentController {
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
     MapChangeListener mapChangeListener = change -> update();
 
+    public static ContentController create(FXMLController fxmlController, Pane processorPane) {
+        Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml")
+                .withParent(processorPane);
+        ContentController controller = builder.getController();
+        controller.fxmlController = fxmlController;
+        controller.datasetViewController = new DatasetView(fxmlController, controller);
+        builder.getNode().visibleProperty().addListener(e -> controller.updatePeakView());
+        controller.update();
+        return controller;
+    }
+
     @FXML
     public void initialize() {
         peakView.setSourceFooter(showOnlyCompatibleBox);
@@ -66,14 +77,15 @@ public class ContentController {
         update();
     }
 
+
     public void update() {
         if (isShowing()) {
             Platform.runLater(() -> {
-                chart = fxmlController.getActiveChart();
-                chart.setChartDisabled(true);
-                datasetViewController.updateDatasetView();
-                updatePeakView();
-                chart.setChartDisabled(false);
+                        chart = fxmlController.getActiveChart();
+                        chart.setChartDisabled(true);
+                        datasetViewController.updateDatasetView();
+                        updatePeakView();
+                        chart.setChartDisabled(false);
             });
         }
     }
@@ -113,16 +125,5 @@ public class ContentController {
             }
         }
         peakView.getTargetItems().addListener(peakTargetListener);
-    }
-
-    public static ContentController create(FXMLController fxmlController, Pane processorPane) {
-        Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml")
-                .withParent(processorPane);
-        ContentController controller = builder.getController();
-        controller.fxmlController = fxmlController;
-        controller.datasetViewController = new DatasetView(fxmlController, controller);
-        builder.getNode().visibleProperty().addListener(e -> controller.updatePeakView());
-        controller.update();
-        return controller;
     }
 }

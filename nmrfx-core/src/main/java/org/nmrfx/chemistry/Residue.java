@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,22 +28,34 @@ import static org.nmrfx.chemistry.io.PDBFile.isIUPACMode;
 @PluginAPI("ring")
 public class Residue extends Compound {
 
-    public final static Map<String, String> PSEUDO_MAP = new HashMap<>();
     static final double DELTA_V3 = 121.8084 * Math.PI / 180.0;
+
+    public Residue previous = null;
+    public Residue next = null;
+    public Polymer polymer;
+    private char oneLetter = 0;
+    private boolean standard = false;
+    static Map standardResSet = new TreeMap();
+    Map<String, Atom[]> pseudoMap = new HashMap<>();
     private final static String[] compliantAminoAcid = {"C", "CA", "N"};
     private final static String[] compliantNucleicAcid = {"C5'", "O5'", "P"};
-    static Map standardResSet = new TreeMap();
+    private String lastBackBoneAtomName = null;
+    private String firstBackBoneAtomName = null;
+    public Residue pairedTo = null;
+    public SecondaryStructure secStruct = null;
+    public final static Map<String, String> PSEUDO_MAP = new HashMap<>();
+    boolean libraryMode = false;
 
     static {
         String[] standardResidues = {
-                "ala", "a", "arg", "r", "asn", "n", "asp", "d", "cys", "c", "gln", "q", "glu", "e",
-                "gly", "g", "his", "h", "ile", "i", "leu", "l", "lys", "k", "met", "m", "phe", "f",
-                "pro", "p", "ser", "s", "thr", "t", "trp", "w", "tyr", "y", "val", "v", "mse", "m",
-                "dade", "a", "dcyt", "c", "dgua", "g", "dthy", "t",
-                "da", "a", "dc", "c", "dg", "g", "dt", "t",
-                "rade", "a", "rcyt", "c", "rgua", "g", "rura", "u",
-                "ra", "a", "rc", "c", "rg", "g", "ru", "u",
-                "a", "a", "c", "c", "g", "g", "u", "u"
+            "ala", "a", "arg", "r", "asn", "n", "asp", "d", "cys", "c", "gln", "q", "glu", "e",
+            "gly", "g", "his", "h", "ile", "i", "leu", "l", "lys", "k", "met", "m", "phe", "f",
+            "pro", "p", "ser", "s", "thr", "t", "trp", "w", "tyr", "y", "val", "v", "mse", "m",
+            "dade", "a", "dcyt", "c", "dgua", "g", "dthy", "t",
+            "da", "a", "dc", "c", "dg", "g", "dt", "t",
+            "rade", "a", "rcyt", "c", "rgua", "g", "rura", "u",
+            "ra", "a", "rc", "c", "rg", "g", "ru", "u",
+            "a", "a", "c", "c", "g", "g", "u", "u"
         };
         for (int i = 0; i < standardResidues.length; i += 2) {
             standardResSet.put(standardResidues[i], standardResidues[i + 1]);
@@ -63,17 +75,11 @@ public class Residue extends Compound {
 
     }
 
-    public Residue previous = null;
-    public Residue next = null;
-    public Polymer polymer;
-    public Residue pairedTo = null;
-    public SecondaryStructure secStruct = null;
-    Map<String, Atom[]> pseudoMap = new HashMap<>();
-    boolean libraryMode = false;
-    private char oneLetter = 0;
-    private boolean standard = false;
-    private String lastBackBoneAtomName = null;
-    private String firstBackBoneAtomName = null;
+    public enum RES_POSITION {
+        START,
+        MIDDLE,
+        END;
+    }
 
     public Residue(String number, String name) {
         this.number = number;
@@ -109,58 +115,9 @@ public class Residue extends Compound {
         super.atomMap = new HashMap();
     }
 
-    public void libraryMode(boolean value) {
-        this.libraryMode = value;
-    }
-
-    public boolean libraryMode() {
-        return libraryMode;
-    }
-
-    public boolean isStandard() {
-        return standard;
-    }
-
-    public void setNonStandard() {
-        standard = false;
-    }
-
-    public char getOneLetter() {
-        if (oneLetter == 0) {
-            if (standard) {
-                oneLetter = ((String) standardResSet.get(name.toLowerCase())).toUpperCase().charAt(0);
-            } else {
-                oneLetter = 'X';
-            }
-        }
-        return oneLetter;
-    }
-
-    public Polymer getPolymer() {
-        return polymer;
-    }
-
-    public Residue getPrevious() {
-        return previous;
-    }
-
-    public Residue getNext() {
-        return next;
-    }
-
-    public SecondaryStructure getSecondaryStructure() {
-        return secStruct;
-    }
-
     @Override
-    public int getIDNum() {
-        return iRes + 1;
-    }
-
-    @Override
-    public void removeAtom(final Atom atom) {
-        super.removeAtom(atom);
-        polymer.removeAtom(atom);
+    public void addAtom(final Atom atom) {
+        addAtom(null, atom);
     }
 
     @Override
@@ -173,8 +130,9 @@ public class Residue extends Compound {
     }
 
     @Override
-    public void addAtom(final Atom atom) {
-        addAtom(null, atom);
+    public void removeAtom(final Atom atom) {
+        super.removeAtom(atom);
+        polymer.removeAtom(atom);
     }
 
     @Override
@@ -243,32 +201,52 @@ public class Residue extends Compound {
         return atom;
     }
 
-    /**
-     * Converts sequence information to a String in NEF format.
-     *
-     * @param idx  int. The line index.
-     * @param link String. Linkage (e.g. start, end, single).
-     * @return String in NEF format.
-     */
-    @Override
-    public String toNEFSequenceString(int idx, String link) {
-        //chain ID
-        char chainID = ' ';
-        //sequence code
-        int num = Integer.parseInt(this.getNumber());
-        String polymerName = this.polymer.getName();
-        chainID = polymerName.charAt(0);
+    public void libraryMode(boolean value) {
+        this.libraryMode = value;
+    }
 
-        //residue name
-        String resName = this.name;
-        if (resName.length() > 3) {
-            resName = resName.substring(0, 3);
+    public boolean libraryMode() {
+        return libraryMode;
+    }
+
+    public boolean isStandard() {
+        return standard;
+    }
+
+    public void setNonStandard() {
+        standard = false;
+    }
+
+    public char getOneLetter() {
+        if (oneLetter == 0) {
+            if (standard) {
+                oneLetter = ((String) standardResSet.get(name.toLowerCase())).toUpperCase().charAt(0);
+            } else {
+                oneLetter = 'X';
+            }
         }
+        return oneLetter;
+    }
 
-        //residue variant
-        String resVar = this.label;
+    public Polymer getPolymer() {
+        return polymer;
+    }
 
-        return String.format("%8d %7s %7d %9s %-14s %-7s", idx, chainID, num, resName, link, resVar);
+    public Residue getPrevious() {
+        return previous;
+    }
+
+    public Residue getNext() {
+        return next;
+    }
+
+    public SecondaryStructure getSecondaryStructure() {
+        return secStruct;
+    }
+
+    @Override
+    public int getIDNum() {
+        return iRes + 1;
     }
 
     public void addPseudoAtoms(String pseudoAtomName, ArrayList<String> atomGroup) {
@@ -515,6 +493,14 @@ public class Residue extends Compound {
         return dihedral;
     }
 
+    public void setFirstBackBoneAtom(String name) {
+        firstBackBoneAtomName = name;
+    }
+
+    public void setLastBackBoneAtom(String name) {
+        lastBackBoneAtomName = name;
+    }
+
     public Atom getFirstBackBoneAtom() {
         if (firstBackBoneAtomName != null) {
             return this.getAtom(firstBackBoneAtomName);
@@ -534,10 +520,6 @@ public class Residue extends Compound {
         return atom;
     }
 
-    public void setFirstBackBoneAtom(String name) {
-        firstBackBoneAtomName = name;
-    }
-
     public Atom getLastBackBoneAtom() {
         if (lastBackBoneAtomName != null) {
             return this.getAtom(lastBackBoneAtomName);
@@ -546,10 +528,6 @@ public class Residue extends Compound {
         String searchString = pType.equals("polypeptide") ? "C" : "O3'";
         Atom atom = this.getAtom(searchString);
         return atom;
-    }
-
-    public void setLastBackBoneAtom(String name) {
-        lastBackBoneAtomName = name;
     }
 
     public void removeConnectors() {
@@ -787,6 +765,34 @@ public class Residue extends Compound {
     }
 
     /**
+     * Converts sequence information to a String in NEF format.
+     *
+     * @param idx int. The line index.
+     * @param link String. Linkage (e.g. start, end, single).
+     * @return String in NEF format.
+     */
+    @Override
+    public String toNEFSequenceString(int idx, String link) {
+        //chain ID
+        char chainID = ' ';
+        //sequence code
+        int num = Integer.parseInt(this.getNumber());
+        String polymerName = this.polymer.getName();
+        chainID = polymerName.charAt(0);
+
+        //residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+
+        //residue variant
+        String resVar = this.label;
+
+        return String.format("%8d %7s %7d %9s %-14s %-7s", idx, chainID, num, resName, link, resVar);
+    }
+
+    /**
      * Converts sequence information to a String in mmCIF format.
      *
      * @param pdb boolean. Whether to write lines in PDBX format.
@@ -828,7 +834,7 @@ public class Residue extends Compound {
     /**
      * Convert structure configuration information to a String in mmCIF format.
      *
-     * @param idx     int. The line index.
+     * @param idx int. The line index.
      * @param lastRes Residue. The last residue in the sequence.
      * @return String in mmCIF format.
      */
@@ -886,7 +892,7 @@ public class Residue extends Compound {
     /**
      * Convert sheet information to a String in mmCIF format.
      *
-     * @param idx     int. The line index.
+     * @param idx int. The line index.
      * @param lastRes Residue. The last residue in the sequence.
      * @return
      */
@@ -932,8 +938,8 @@ public class Residue extends Compound {
     /**
      * Convert torsion angle information to a String in mmCIF format.
      *
-     * @param angles      double[]. List of the torsion angles: [phi, psi].
-     * @param idx         int. The line index.
+     * @param angles double[]. List of the torsion angles: [phi, psi].
+     * @param idx int. The line index.
      * @param pdbModelNum int. The PDB model number.
      * @return String in mmCIF format.
      */
@@ -948,16 +954,16 @@ public class Residue extends Compound {
             //PDB model num
             sBuilder.append(String.format("%-4d", pdbModelNum));
 
-            // residue name
+            // residue name 
             String resName = this.name;
             sBuilder.append(String.format("%-6s", resName));
 
-            // chain code
+            // chain code 
             String polymerName = this.polymer.getName();
             char chainID = polymerName.charAt(0);
             sBuilder.append(String.format("%-4s", chainID));
 
-            // sequence code
+            // sequence code 
             int seqCode = this.getIDNum();
             sBuilder.append(String.format("%-4d", seqCode));
 
@@ -989,11 +995,5 @@ public class Residue extends Compound {
                 iAtom.rotActive = state;
             }
         }
-    }
-
-    public enum RES_POSITION {
-        START,
-        MIDDLE,
-        END;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,18 +17,22 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.Resonance;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 /**
+ *
  * @author Bruce Johnson
  */
 public class SimpleResonance implements Resonance {
 
     String atomName = "";
-    List<PeakDim> peakDims = new ArrayList<>();
     private List<String> names;
+    List<PeakDim> peakDims = new ArrayList<>();
     private long id;
 
     public SimpleResonance(long id) {
@@ -38,6 +42,20 @@ public class SimpleResonance implements Resonance {
 
     public void clearPeakDims() {
         peakDims = null;
+    }
+
+    @Override
+    public void setName(List<String> newNames) {
+        if (names == null) {
+            names = new ArrayList<>();
+        }
+        names.clear();
+        names.addAll(newNames);
+    }
+
+    @Override
+    public void remove(PeakDim peakDim) {
+        peakDims.remove(peakDim);
     }
 
     @Override
@@ -60,32 +78,18 @@ public class SimpleResonance implements Resonance {
         return result;
     }
 
-    public void setAtomName(String aName) {
-        atomName = aName;
-    }
-
     @Override
     public void setName(String name) {
         setName(List.of(name));
     }
 
-    @Override
-    public void setName(List<String> newNames) {
-        if (names == null) {
-            names = new ArrayList<>();
-        }
-        names.clear();
-        names.addAll(newNames);
+    public void setAtomName(String aName) {
+        atomName = aName;
     }
 
     @Override
     public String getAtomName() {
         return atomName;
-    }
-
-    @Override
-    public void remove(PeakDim peakDim) {
-        peakDims.remove(peakDim);
     }
 
     @Override
@@ -95,14 +99,13 @@ public class SimpleResonance implements Resonance {
     }
 
     @Override
-    public List<PeakDim> getPeakDims() {
-        // fixme should be unmodifiable or copy
-        return peakDims;
+    public void setID(long value) {
+        id = value;
     }
 
     @Override
-    public void setID(long value) {
-        id = value;
+    public long getID() {
+        return id;
     }
 
     @Override
@@ -123,16 +126,17 @@ public class SimpleResonance implements Resonance {
     }
 
     @Override
+    public List<PeakDim> getPeakDims() {
+        // fixme should be unmodifiable or copy
+        return peakDims;
+    }
+
+    @Override
     public void add(PeakDim peakDim) {
         peakDim.setResonance(this);
         if (!peakDims.contains(peakDim)) {
             peakDims.add(peakDim);
         }
-    }
-
-    @Override
-    public long getID() {
-        return id;
     }
 
     public Double getPPMAvg(String condition) {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -33,15 +33,50 @@ import org.slf4j.LoggerFactory;
 import smile.math.BFGS;
 
 /**
+ *
  * @author johnsonb
  */
 public class GradientRefinement extends Refinement {
     private static final Logger log = LoggerFactory.getLogger(GradientRefinement.class);
 
     public static boolean NLCG = true;
-    private static ProgressUpdater progressUpdater = null;
-    public TrajectoryWriter trajectoryWriter = null;
     private boolean useNumericDerivatives = false;
+    public TrajectoryWriter trajectoryWriter = null;
+    private static ProgressUpdater progressUpdater = null;
+
+    public class Checker extends SimpleValueChecker {
+
+        public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
+            super(relativeThreshold, absoluteThreshold, maxIter);
+        }
+
+        public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
+            boolean converged = super.converged(iteration, previous, current);
+            if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
+                long time = System.currentTimeMillis();
+                long deltaTime = time - startTime;
+                int nContacts = molecule.getEnergyCoords().getNContacts();
+                report("GMIN", iteration, nContacts, current.getValue());
+                if (trajectoryWriter != null) {
+                    if ((progressUpdater != null) || (trajectoryWriter != null)) {
+                        molecule.updateFromVecCoords();
+
+                        if (trajectoryWriter != null) {
+                            try {
+                                trajectoryWriter.writeStructure();
+                            } catch (MissingCoordinatesException ex) {
+                                log.warn(ex.getMessage(), ex);
+                            }
+                        }
+                        if (progressUpdater != null) {
+                            progressUpdater.updateStatus(String.format("Step: %6d Energy: %7.1f", iteration, current.getValue()));
+                        }
+                    }
+                }
+            }
+            return converged;
+        }
+    }
 
     public GradientRefinement(final Dihedral dihedrals) {
         super(dihedrals);
@@ -51,6 +86,10 @@ public class GradientRefinement extends Refinement {
 
     public void setTrajectoryWriter(TrajectoryWriter trajectoryWriter) {
         this.trajectoryWriter = trajectoryWriter;
+    }
+
+    public static void setUpdater(ProgressUpdater updater) {
+        progressUpdater = updater;
     }
 
     public void gradMinimize(int nSteps, double tolerance) {
@@ -264,44 +303,6 @@ public class GradientRefinement extends Refinement {
         }
         double[] result = {maxDeriv, maxError};
         return result;
-    }
-
-    public static void setUpdater(ProgressUpdater updater) {
-        progressUpdater = updater;
-    }
-
-    public class Checker extends SimpleValueChecker {
-
-        public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
-            super(relativeThreshold, absoluteThreshold, maxIter);
-        }
-
-        public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
-            boolean converged = super.converged(iteration, previous, current);
-            if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
-                long time = System.currentTimeMillis();
-                long deltaTime = time - startTime;
-                int nContacts = molecule.getEnergyCoords().getNContacts();
-                report("GMIN", iteration, nContacts, current.getValue());
-                if (trajectoryWriter != null) {
-                    if ((progressUpdater != null) || (trajectoryWriter != null)) {
-                        molecule.updateFromVecCoords();
-
-                        if (trajectoryWriter != null) {
-                            try {
-                                trajectoryWriter.writeStructure();
-                            } catch (MissingCoordinatesException ex) {
-                                log.warn(ex.getMessage(), ex);
-                            }
-                        }
-                        if (progressUpdater != null) {
-                            progressUpdater.updateStatus(String.format("Step: %6d Energy: %7.1f", iteration, current.getValue()));
-                        }
-                    }
-                }
-            }
-            return converged;
-        }
     }
 
 }

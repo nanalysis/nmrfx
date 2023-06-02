@@ -13,11 +13,41 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ *
  * @author brucejohnson
  */
 public class FragmentScoring {
 
     static Map<String, MultivariateGaussianDistribution> aaDistMap = new HashMap<>();
+
+    public static class AAScore {
+
+        final double score;
+        final String name;
+        double norm;
+
+        public AAScore(String name, double score) {
+            this.score = score;
+            this.name = name;
+        }
+
+        public Double getScore() {
+            return score;
+        }
+
+        public Double getNorm() {
+            return norm;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void normalize(double sum) {
+            norm = score / sum;
+        }
+
+    }
 
     static void initMolAaDistMap() {
         BMRBStats.loadAllIfEmpty();
@@ -53,7 +83,6 @@ public class FragmentScoring {
             aaDistMap.put(aaName, dist);
         }
     }
-
     static void initAADistMap() {
         BMRBStats.loadAllIfEmpty();
         for (String aaName : AtomParser.getAANames()) {
@@ -124,7 +153,7 @@ public class FragmentScoring {
     }
 
     public static Double scoreAtomPPM(final Residue residue, final String atomName,
-                                      final double ppm, final double sdevMul) {
+            final double ppm, final double sdevMul) {
         Double result = null;
         String resName = residue.getName();
         resName = resName.toLowerCase();
@@ -181,35 +210,6 @@ public class FragmentScoring {
         matchScore.totalScore = pValue;
 
         return matchScore;
-    }
-
-    public static class AAScore {
-
-        final double score;
-        final String name;
-        double norm;
-
-        public AAScore(String name, double score) {
-            this.score = score;
-            this.name = name;
-        }
-
-        public Double getScore() {
-            return score;
-        }
-
-        public Double getNorm() {
-            return norm;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void normalize(double sum) {
-            norm = score / sum;
-        }
-
     }
 
 }

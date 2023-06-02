@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,23 +16,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.peaks;
 
 import java.util.ArrayList;
+import static java.util.Comparator.comparing;
 import java.util.List;
 
-import static java.util.Comparator.comparing;
-
 /**
+ *
  * @author brucejohnson
  */
 public class ComplexCoupling extends Coupling {
 
     List<RelMultipletComponent> components = new ArrayList<>();
+
+    @Override
+    public String getMultiplicity() {
+        return "m";
+    }
+
+    @Override
+    public boolean isCoupled() {
+        return true;
+    }
 
     public ComplexCoupling(final Multiplet multiplet, List<AbsMultipletComponent> absComponents) {
         this.multiplet = multiplet;
@@ -60,7 +70,7 @@ public class ComplexCoupling extends Coupling {
     }
 
     ComplexCoupling(final Multiplet multiplet, final double[] deltaPPMs,
-                    final double[] intensities, final double[] volumes, final double lineWidthPPM) {
+            final double[] intensities, final double[] volumes, final double lineWidthPPM) {
         this.multiplet = multiplet;
         double max = Double.NEGATIVE_INFINITY;
         double sum = 0.0;
@@ -105,8 +115,32 @@ public class ComplexCoupling extends Coupling {
     }
 
     @Override
-    public String getMultiplicity() {
+    public String getCouplingsAsString() {
         return "m";
+    }
+
+    @Override
+    public String getCouplingsAsSimpleString() {
+        return "";
+    }
+
+    public int getFrequencyCount() {
+        return components.size();
+    }
+
+    @Override
+    public ArrayList<TreeLine> getSplittingGraph() {
+        ArrayList<TreeLine> lines = new ArrayList<>();
+        PeakDim peakDimRef = multiplet.getPeakDim();
+        double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
+        components.stream().map((comp) -> (-comp.getOffset() / sf)).forEachOrdered((deltaPPM) -> {
+            lines.add(new TreeLine(0.0, 0.0, deltaPPM, 0.0));
+        });
+        return lines;
+    }
+
+    final void sortByFreq() {
+        components.sort(comparing((p) -> p.getOffset()));
     }
 
     @Override
@@ -124,40 +158,6 @@ public class ComplexCoupling extends Coupling {
     @Override
     public List<RelMultipletComponent> getRelComponentList() {
         return components;
-    }
-
-    @Override
-    public ArrayList<TreeLine> getSplittingGraph() {
-        ArrayList<TreeLine> lines = new ArrayList<>();
-        PeakDim peakDimRef = multiplet.getPeakDim();
-        double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
-        components.stream().map((comp) -> (-comp.getOffset() / sf)).forEachOrdered((deltaPPM) -> {
-            lines.add(new TreeLine(0.0, 0.0, deltaPPM, 0.0));
-        });
-        return lines;
-    }
-
-    @Override
-    public String getCouplingsAsString() {
-        return "m";
-    }
-
-    @Override
-    public String getCouplingsAsSimpleString() {
-        return "";
-    }
-
-    @Override
-    public boolean isCoupled() {
-        return true;
-    }
-
-    public int getFrequencyCount() {
-        return components.size();
-    }
-
-    final void sortByFreq() {
-        components.sort(comparing((p) -> p.getOffset()));
     }
 
 }

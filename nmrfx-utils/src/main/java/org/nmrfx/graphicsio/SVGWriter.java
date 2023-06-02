@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -34,6 +34,7 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 
 /**
+ *
  * @author brucejohnson
  */
 
@@ -59,6 +60,11 @@ public class SVGWriter implements GraphicsIO {
     FileOutputStream stream;
     XMLStreamWriter writer;
     String clipPath = "";
+
+    @Override
+    public void create(boolean landScape, String fileName) throws GraphicsIOException {
+        create(landScape, 1024, 1024, fileName);
+    }
 
     @Override
     public void create(boolean landScape, double width, double height, String fileName) throws GraphicsIOException {
@@ -92,13 +98,72 @@ public class SVGWriter implements GraphicsIO {
     }
 
     @Override
-    public void create(boolean landScape, String fileName) throws GraphicsIOException {
-        create(landScape, 1024, 1024, fileName);
-    }
-
-    @Override
     public void drawText(String text, double x, double y, String anchor, double rotate) throws GraphicsIOException {
         showCenteredText(text, x, y, anchor, rotate);
+    }
+
+    public void showCenteredText(String text, double x, double y, String anchor, double rotate) throws GraphicsIOException, IllegalArgumentException {
+        int aLen = anchor.length();
+        //  <text fill="black" x="295.7" y="708.0" text-anchor="middle" dy="14">8.0</text>
+        String textAnchor = "start";
+        double dYf = 0.0;
+        if (aLen > 0) {
+            switch (anchor) {
+                case "nw":
+                    textAnchor = "start";
+                    dYf = 1.0;
+                    break;
+                case "n":
+                    textAnchor = "middle";
+                    dYf = 1.0;
+                    break;
+                case "ne":
+                    textAnchor = "end";
+                    dYf = 1.0;
+                    break;
+                case "e":
+                    textAnchor = "end";
+                    dYf = 0.5;
+                    break;
+                case "se":
+                    textAnchor = "end";
+                    dYf = 0.0;
+                    break;
+                case "s":
+                    textAnchor = "middle";
+                    dYf = 0.0;
+                    break;
+                case "sw":
+                    textAnchor = "start";
+                    dYf = 0.0;
+                    break;
+                case "w":
+                    textAnchor = "start";
+                    dYf = 0.5;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid anchor \"" + anchor + "\"");
+            }
+        }
+
+        try {
+            writer.writeStartElement("text");
+            writer.writeAttribute("fill", "black");
+            writer.writeAttribute("x", format(x));
+            writer.writeAttribute("y", format(y));
+            writer.writeAttribute("text-anchor", textAnchor);
+            writer.writeAttribute("dy", format(dYf * fontSize));
+            if (rotate != 0.0) {
+                String transform = String.format("rotate(%f,%f,%f)", -rotate, x, y);
+                writer.writeAttribute("transform", transform);
+            }
+            writer.writeCharacters(text);
+            writer.writeEndElement();
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
+
     }
 
     @Override
@@ -119,7 +184,7 @@ public class SVGWriter implements GraphicsIO {
 
     @Override
     public void drawPolyLine(double[] x, double[] y, int n) throws GraphicsIOException {
-        //<polyline points="0,0  30,0  15,30" style="stroke:#006600;"/>
+        //<polyline points="0,0  30,0  15,30" style="stroke:#006600;"/>   
         StringBuilder pointBuilder = new StringBuilder();
         for (int i = 0; i < n; i++) {
             pointBuilder.append(format(x[i]));
@@ -225,70 +290,6 @@ public class SVGWriter implements GraphicsIO {
     @Override
     public double getHeight() {
         return pageHeight;
-    }
-
-    public void showCenteredText(String text, double x, double y, String anchor, double rotate) throws GraphicsIOException, IllegalArgumentException {
-        int aLen = anchor.length();
-        //  <text fill="black" x="295.7" y="708.0" text-anchor="middle" dy="14">8.0</text>
-        String textAnchor = "start";
-        double dYf = 0.0;
-        if (aLen > 0) {
-            switch (anchor) {
-                case "nw":
-                    textAnchor = "start";
-                    dYf = 1.0;
-                    break;
-                case "n":
-                    textAnchor = "middle";
-                    dYf = 1.0;
-                    break;
-                case "ne":
-                    textAnchor = "end";
-                    dYf = 1.0;
-                    break;
-                case "e":
-                    textAnchor = "end";
-                    dYf = 0.5;
-                    break;
-                case "se":
-                    textAnchor = "end";
-                    dYf = 0.0;
-                    break;
-                case "s":
-                    textAnchor = "middle";
-                    dYf = 0.0;
-                    break;
-                case "sw":
-                    textAnchor = "start";
-                    dYf = 0.0;
-                    break;
-                case "w":
-                    textAnchor = "start";
-                    dYf = 0.5;
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid anchor \"" + anchor + "\"");
-            }
-        }
-
-        try {
-            writer.writeStartElement("text");
-            writer.writeAttribute("fill", "black");
-            writer.writeAttribute("x", format(x));
-            writer.writeAttribute("y", format(y));
-            writer.writeAttribute("text-anchor", textAnchor);
-            writer.writeAttribute("dy", format(dYf * fontSize));
-            if (rotate != 0.0) {
-                String transform = String.format("rotate(%f,%f,%f)", -rotate, x, y);
-                writer.writeAttribute("transform", transform);
-            }
-            writer.writeCharacters(text);
-            writer.writeEndElement();
-            writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
-        }
-
     }
 
     private String format(double value) {

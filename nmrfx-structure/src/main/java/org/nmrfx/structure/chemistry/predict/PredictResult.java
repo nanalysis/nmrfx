@@ -5,14 +5,15 @@
 package org.nmrfx.structure.chemistry.predict;
 
 /**
+ *
  * @author brucejohnson
  */
 public class PredictResult {
-    final int shell;
     HOSEStat cStat;
     HOSEStat hStat;
+    final int shell;
 
-    public PredictResult(HOSEStat cStat, HOSEStat hStat, final int shell) {
+    public PredictResult(HOSEStat cStat, HOSEStat hStat,final int shell) {
         this.cStat = cStat;
         this.hStat = hStat;
         this.shell = shell;
@@ -29,9 +30,8 @@ public class PredictResult {
             throw new IllegalArgumentException("No stat of type " + type);
         }
     }
-
     public int getShell() {
         return shell;
     }
-
+    
 }

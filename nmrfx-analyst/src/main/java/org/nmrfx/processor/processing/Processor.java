@@ -67,71 +67,14 @@ import java.util.concurrent.atomic.AtomicReference;
 @PythonAPI({"nmrpar", "pyproc"})
 public class Processor {
     private static final Logger log = LoggerFactory.getLogger(Processor.class);
-    /**
-     * If True then processes will stop querying for unprocessed vectors to
-     * process.
-     */
-    public static boolean stopProcessing = false;
     private static long MEMORY_MODE_LIMIT = 536870912L;
     private static boolean TEST_CORRUPTION_MODE = false;
     private static int iDataNum = 0;
-    /**
-     * The number of processes to create.
-     */
-    private static int numProcessors;
-    /**
-     * Processor is a singleton which is able to control and communicate with
-     * processes.
-     */
-    private static Processor processor;
-    /**
-     * List of processes for thread pool.
-     */
-    private static ArrayList<Runnable> processes = null;
-    /**
-     * List of processes, one for each dimension. Used with runProcesses().
-     */
-    private static ArrayList<ProcessOps> dimProcesses = null;
-    /**
-     * The name of the current ProcessOps that Operations and Vec vector will
-     * automatically be added to.
-     */
-    private static ProcessOps defaultProcess;
-    private static ProgressUpdater progressUpdater;
-    private final List<ProcessorAvailableStatusListener> listeners = new ArrayList<>();
-    private final AtomicBoolean processorAvailable = new AtomicBoolean(true);
-    public ScanRegion scanregion;
-    /**
-     * This flag is to test IOController / non-IOController IO for debugging.
-     */
-    public boolean useIOController = true;
-    public boolean resizeFlag = false;
-    /**
-     * The number of dimensions in dataset.
-     */
-    public int nDim = 0;
-    /**
-     * The sizes of dataset to actually populate.
-     */
-    public int[] acqSizesToUse = null;
-    /**
-     * The sizes of time domain data.
-     */
-    public int[] acquiredTDSizes = null;
-    /**
-     * The complex nature of time domain data.
-     */
-    boolean[] complex = null;
-    boolean[] newComplex = null;
-    int[] adjustedTDSizes;
-    int[] groupSizes;
-    String[] acqOrderToUse;
-    AtomicInteger vectorsRead = new AtomicInteger(0);
-    boolean modeND = true;
-    MatrixTypeService datasetWriter;
-    LineShapeCatalog simVecProcessor = null;
+
+
     private String fileName;
     private Dataset dataset;
+    public ScanRegion scanregion;
     /**
      * The points to read Vectors from. Can be passed in as null.
      */
@@ -140,10 +83,12 @@ public class Processor {
      * Dimension array for reading data.
      */
     private int[] dim;
+
     /**
      * Dimension array for mapping dataset dimension to FID dimension.
      */
     private int[] mapToFID;
+
     /**
      * Dimension array for mapping FID dimension to dataset dimension.
      */
@@ -160,10 +105,12 @@ public class Processor {
      * The number of vectors or matrices which have been written
      */
     private AtomicInteger mathObjectsWritten = new AtomicInteger(0);
+
     /**
      * The number of vectors which need to be written
      */
     private int itemsToWrite = 0;
+
     /**
      * The number of vectors which need to be read
      */
@@ -185,6 +132,10 @@ public class Processor {
      */
     private AtomicInteger matricesRead = new AtomicInteger(0);
     /**
+     * The number of processes to create.
+     */
+    private static int numProcessors;
+    /**
      * The size of each vector which will be read.
      */
     private int vectorSize;
@@ -193,14 +144,66 @@ public class Processor {
      * stop.
      */
     private AtomicBoolean endOfFile = new AtomicBoolean(false);
+    /**
+     * If True then processes will stop querying for unprocessed vectors to
+     * process.
+     */
+    public static boolean stopProcessing = false;
+    /**
+     * Processor is a singleton which is able to control and communicate with
+     * processes.
+     */
+    private static Processor processor;
+    /**
+     * List of processes for thread pool.
+     */
+    private static ArrayList<Runnable> processes = null;
     private ExecutorService pool;
+    /**
+     * List of processes, one for each dimension. Used with runProcesses().
+     */
+    private static ArrayList<ProcessOps> dimProcesses = null;
+    /**
+     * The name of the current ProcessOps that Operations and Vec vector will
+     * automatically be added to.
+     */
+    private static ProcessOps defaultProcess;
+
+    /**
+     * This flag is to test IOController / non-IOController IO for debugging.
+     */
+    public boolean useIOController = true;
+
     private AtomicBoolean processorError = new AtomicBoolean(false);
     private AtomicReference<String> errorMessage = new AtomicReference("");
     private AtomicBoolean matrixMode = new AtomicBoolean(false);
+
     private ArrayList<NMRData> nmrDataSets = new ArrayList<>();
     private boolean nvDataset = false;
     private boolean nvComplex;
+    public boolean resizeFlag = false;
     private boolean keepDatasetOpen = false;
+    /**
+     * The number of dimensions in dataset.
+     */
+    public int nDim = 0;
+    /**
+     * The sizes of dataset to actually populate.
+     */
+    public int[] acqSizesToUse = null;
+    /**
+     * The sizes of time domain data.
+     */
+    public int[] acquiredTDSizes = null;
+    /**
+     * The complex nature of time domain data.
+     */
+    boolean[] complex = null;
+    boolean[] newComplex = null;
+    int[] adjustedTDSizes;
+    int[] groupSizes;
+    String[] acqOrderToUse;
+
     /**
      * Acquisition order array.
      */
@@ -213,22 +216,26 @@ public class Processor {
      * Flag that signifies if the processor is currently processing processes.
      */
     private Boolean isRunning = false;
+
     private AtomicBoolean doneWriting = new AtomicBoolean(false);
+
     private AtomicInteger vecReadCount = new AtomicInteger(0);
+
+    AtomicInteger vectorsRead = new AtomicInteger(0);
+
     private MultiVecCounter tmult;
+
+    private static ProgressUpdater progressUpdater;
+    boolean modeND = true;
     private double elapsedTime = 0.0;
+
+    MatrixTypeService datasetWriter;
+
+    LineShapeCatalog simVecProcessor = null;
+
+    private final List<ProcessorAvailableStatusListener> listeners = new ArrayList<>();
+    private final AtomicBoolean processorAvailable = new AtomicBoolean(true);
     private boolean tempFileMode = false;
-
-    private Processor() {
-        processes = new ArrayList<>();
-        defaultProcess = null;
-
-        //force NvLiteShell to be created
-        numProcessors = Runtime.getRuntime().availableProcessors() / 2;
-        if (numProcessors < 1) {
-            numProcessors = 1;
-        }
-    }
 
     private void resetVecReadCount() {
         vecReadCount.set(0);
@@ -240,6 +247,21 @@ public class Processor {
         }
     }
 
+    public static void setUpdater(ProgressUpdater updater) {
+        progressUpdater = updater;
+    }
+
+    /**
+     * @return the only processor
+     */
+    public static Processor getProcessor() {
+        if (processor == null) {
+            processor = new Processor();
+            createDefaultProcess();
+        }
+        return processor;
+    }
+
     /**
      * @create and return only processor
      */
@@ -248,6 +270,27 @@ public class Processor {
         createDefaultProcess();
         dimProcesses.clear();
         processes.clear();
+    }
+
+    private static void createDefaultProcess() {
+        if (processes == null) {
+            processes = new ArrayList<>();
+        }
+        if (dimProcesses == null) {
+            dimProcesses = new ArrayList<>();
+        }
+        defaultProcess = new ProcessOps();
+    }
+
+    private Processor() {
+        processes = new ArrayList<>();
+        defaultProcess = null;
+
+        //force NvLiteShell to be created
+        numProcessors = Runtime.getRuntime().availableProcessors() / 2;
+        if (numProcessors < 1) {
+            numProcessors = 1;
+        }
     }
 
     public ProcessOps getCurrent() throws ProcessingException {
@@ -261,10 +304,6 @@ public class Processor {
      */
     public ProcessOps getDefaultProcess() {
         return defaultProcess;
-    }
-
-    private void setDefaultProcess(ProcessOps p) {
-        defaultProcess = p;
     }
 
     public ProcessOps createProcess() {
@@ -281,6 +320,10 @@ public class Processor {
     public ProcessOps createProcess(String name) {
         ProcessOps temp = new ProcessOps(name);
         return temp;
+    }
+
+    private void setDefaultProcess(ProcessOps p) {
+        defaultProcess = p;
     }
 
     /**
@@ -321,7 +364,7 @@ public class Processor {
             return openNV(fileName, null, writeable);
         } //        else if ("fid".equals(filetype)) {
         //            return openFID(fileName, null);
-        //        }
+        //        } 
         else {
             log.warn("Do not recognize filetype {}", filetype);
             return false;
@@ -386,7 +429,7 @@ public class Processor {
         }
         int nDim = nmrData.getNDim();
         int nArray = 0;
-        groupSizes = new int[nDim + nArray];
+        groupSizes = new int[nDim+nArray];
         for (int i = 1; i < nDim; i++) {
             int arraySize = nmrData.getArraySize(i);
             if (arraySize != 0) {
@@ -829,6 +872,23 @@ public class Processor {
 
     private int mapToFID(int i) {
         return mapToFID[i];
+    }
+
+    public static boolean useMemoryMode(int[] datasetSizes) {
+        long size = Float.BYTES;
+        for (int i = 0; i < datasetSizes.length; i++) {
+            size *= datasetSizes[i];
+        }
+        return useMemoryMode(size);
+    }
+
+    public static boolean useMemoryMode(long size) {
+        return size <= MEMORY_MODE_LIMIT;
+    }
+
+    // used from Python for testing
+    public static void setMemoryModeLimit(long size) {
+        MEMORY_MODE_LIMIT = size;
     }
 
     // called from Python
@@ -1712,10 +1772,6 @@ public class Processor {
         return matricesRead.getAndIncrement();
     }
 
-    public int getNumProcessors() {
-        return numProcessors;
-    }
-
     public void setNumProcessors(int n) {
         numProcessors = n;
         if (numProcessors < 1) {
@@ -1723,12 +1779,16 @@ public class Processor {
         }
     }
 
-    public int getVectorsPerProcess() {
-        return vectorsPerProcess;
+    public int getNumProcessors() {
+        return numProcessors;
     }
 
     public void setVectorsPerProcess(int n) {
         vectorsPerProcess = n;
+    }
+
+    public int getVectorsPerProcess() {
+        return vectorsPerProcess;
     }
 
     public boolean getNvComplex() {
@@ -1793,48 +1853,6 @@ public class Processor {
 
     public boolean isProcessorAvailable() {
         return processorAvailable.get();
-    }
-
-    public static void setUpdater(ProgressUpdater updater) {
-        progressUpdater = updater;
-    }
-
-    /**
-     * @return the only processor
-     */
-    public static Processor getProcessor() {
-        if (processor == null) {
-            processor = new Processor();
-            createDefaultProcess();
-        }
-        return processor;
-    }
-
-    private static void createDefaultProcess() {
-        if (processes == null) {
-            processes = new ArrayList<>();
-        }
-        if (dimProcesses == null) {
-            dimProcesses = new ArrayList<>();
-        }
-        defaultProcess = new ProcessOps();
-    }
-
-    public static boolean useMemoryMode(int[] datasetSizes) {
-        long size = Float.BYTES;
-        for (int i = 0; i < datasetSizes.length; i++) {
-            size *= datasetSizes[i];
-        }
-        return useMemoryMode(size);
-    }
-
-    public static boolean useMemoryMode(long size) {
-        return size <= MEMORY_MODE_LIMIT;
-    }
-
-    // used from Python for testing
-    public static void setMemoryModeLimit(long size) {
-        MEMORY_MODE_LIMIT = size;
     }
 
     public static void setTestCorruptionMode(boolean state) {

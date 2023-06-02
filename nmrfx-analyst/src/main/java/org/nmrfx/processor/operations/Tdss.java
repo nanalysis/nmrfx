@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,7 @@ import org.nmrfx.math.units.Unit;
 import org.nmrfx.processor.math.Vec;
 
 /**
+ *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -31,6 +32,12 @@ public class Tdss extends Operation {
     private final int nPasses;
     private final double shiftPoints;
     private final Unit unit;
+
+    @Override
+    public Tdss eval(Vec vector) throws OperationException {
+        tdss(vector);
+        return this;
+    }
 
     public Tdss(int winSize, int nPasses, double shiftPoints) {
         this.winSize = winSize;
@@ -44,12 +51,6 @@ public class Tdss extends Operation {
         this.nPasses = nPasses;
         this.unit = unit;
         this.shiftPoints = 0;
-    }
-
-    @Override
-    public Tdss eval(Vec vector) throws OperationException {
-        tdss(vector);
-        return this;
     }
 
     private void tdss(Vec vector) throws OperationException {

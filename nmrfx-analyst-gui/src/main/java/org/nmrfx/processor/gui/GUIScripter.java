@@ -27,12 +27,33 @@ import java.util.stream.Collectors;
  */
 @PythonAPI("gscript")
 public class GUIScripter {
+    final PolyChart useChart;
     static FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
     static Map<String, String> keyActions = new HashMap<>();
-    final PolyChart useChart;
 
     public GUIScripter() {
         useChart = null;
+    }
+
+    public static void setController(FXMLController controllerValue) {
+        AnalystApp.getFXMLControllerManager().setActiveController(controllerValue);
+        controller = controllerValue;
+    }
+
+    public static void setActiveController() {
+        controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+    }
+
+    public static FXMLController getController() {
+        // controller may have been closed and unregistered without GUIScripter being notified
+        if (!AnalystApp.getFXMLControllerManager().isRegistered(controller)) {
+            controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+        }
+        return controller;
+    }
+
+    public static FXMLController getActiveController() {
+        return AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
     }
 
     public GUIScripter(String chartName) {
@@ -660,6 +681,15 @@ public class GUIScripter {
         });
     }
 
+    public static String toRGBCode(Color color) {
+        return ColorProperty.toRGBCode(color);
+    }
+
+    public static Color getColor(String colorString) {
+        return Color.web(colorString);
+
+    }
+
     public Cursor getCursor() throws InterruptedException, ExecutionException {
         FutureTask<Cursor> future = new FutureTask(() -> {
             return getActiveController().getActiveChart().getCanvasCursor();
@@ -678,6 +708,20 @@ public class GUIScripter {
     public void setTitle(String title) {
         Fx.runOnFxThread(() -> {
             getActiveController().getStage().setTitle(title);
+        });
+    }
+
+    public static void showPeak(String peakSpecifier) {
+        Fx.runOnFxThread(() -> {
+            FXMLController activeController = getActiveController();
+            activeController.refreshPeakView(peakSpecifier);
+        });
+    }
+
+    public static void showPeak(Peak peak) {
+        Fx.runOnFxThread(() -> {
+            FXMLController activeController = getActiveController();
+            activeController.refreshPeakView(peak);
         });
     }
 
@@ -704,50 +748,6 @@ public class GUIScripter {
         Fx.runOnFxThread(() -> {
             KeyBindings.registerGlobalKeyAction(keyStr, GUIScripter::chartCommand);
             keyActions.put(keyStr, actionStr);
-        });
-    }
-
-    public static void setActiveController() {
-        controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-    }
-
-    public static FXMLController getController() {
-        // controller may have been closed and unregistered without GUIScripter being notified
-        if (!AnalystApp.getFXMLControllerManager().isRegistered(controller)) {
-            controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-        }
-        return controller;
-    }
-
-    public static void setController(FXMLController controllerValue) {
-        AnalystApp.getFXMLControllerManager().setActiveController(controllerValue);
-        controller = controllerValue;
-    }
-
-    public static FXMLController getActiveController() {
-        return AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-    }
-
-    public static String toRGBCode(Color color) {
-        return ColorProperty.toRGBCode(color);
-    }
-
-    public static Color getColor(String colorString) {
-        return Color.web(colorString);
-
-    }
-
-    public static void showPeak(String peakSpecifier) {
-        Fx.runOnFxThread(() -> {
-            FXMLController activeController = getActiveController();
-            activeController.refreshPeakView(peakSpecifier);
-        });
-    }
-
-    public static void showPeak(Peak peak) {
-        Fx.runOnFxThread(() -> {
-            FXMLController activeController = getActiveController();
-            activeController.refreshPeakView(peak);
         });
     }
 

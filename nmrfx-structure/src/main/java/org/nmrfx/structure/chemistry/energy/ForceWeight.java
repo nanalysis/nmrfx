@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,9 +19,6 @@ package org.nmrfx.structure.chemistry.energy;
 
 public class ForceWeight {
 
-    final double cutoffSq = 64.0;
-    final double cutoffSwitchSq = 36.0;
-    final double cutoffDem = 28.0;
     private final double electrostatic;
     private final double dihedralProb;
     private final double dihedral;
@@ -34,15 +31,18 @@ public class ForceWeight {
     private final double irp;
     private final double stacking;
     private final double nbMin;
+    final double cutoffSq = 64.0;
+    final double cutoffSwitchSq = 36.0;
+    final double cutoffDem = 28.0;
 
     public ForceWeight() {
         this(-1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 0.5);
     }
 
     public ForceWeight(final double electrostatic, final double cffnb,
-                       final double repel, final double noe, double tortionAngle,
-                       double dihedral, double irp, double shift, double bond,
-                       double stacking, double nbMin) {
+            final double repel, final double noe, double tortionAngle,
+            double dihedral, double irp, double shift, double bond,
+            double stacking, double nbMin) {
         this.electrostatic = electrostatic;
         this.cffnb = cffnb;
         this.repel = repel;

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@ package org.nmrfx.peaks;
 import java.util.List;
 
 /**
+ *
  * @author Bruce Johnson
  */
 public interface Resonance {
@@ -44,14 +45,14 @@ public interface Resonance {
 
     void merge(Resonance resB);
 
+    static void merge(Resonance resA, Resonance resB) {
+        resA.merge(resB);
+    }
+
     void add(PeakDim peakDim);
 
     default boolean isLabelValid() {
         return true;
-    }
-
-    static void merge(Resonance resA, Resonance resB) {
-        resA.merge(resB);
     }
 
 }

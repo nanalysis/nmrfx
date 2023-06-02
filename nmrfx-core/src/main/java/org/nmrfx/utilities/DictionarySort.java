@@ -1,6 +1,6 @@
 package org.nmrfx.utilities;
 
-import java.util.Comparator;
+import java.util.*;
 
 // Code originally from JTcl
 public class DictionarySort<T> implements Comparator<T> {
@@ -11,7 +11,6 @@ public class DictionarySort<T> implements Comparator<T> {
     }
 
     // FIXME, add mode that is case insensitive?
-
     /**
      * Compares the order of two strings in "dictionary" order. Copied from Qsort.java of tcljava
      *

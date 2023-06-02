@@ -9,6 +9,7 @@ import org.ejml.data.DMatrixRMaj;
 import org.ejml.data.ZMatrixRMaj;
 
 /**
+ *
  * @author brucejohnson
  */
 public class KronProduct {

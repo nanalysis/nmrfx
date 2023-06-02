@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,14 +17,27 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.Order;
+import java.util.ArrayDeque;
+
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Bond;
+import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
-
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.nmrfx.chemistry.IBond;
+import org.nmrfx.chemistry.Polymer;
 
 /**
+ *
  * @author brucejohnson
  */
 public class HoseCodeGenerator {
@@ -40,6 +53,14 @@ public class HoseCodeGenerator {
             }
         }
         return shellNodes;
+    }
+
+    class NodeComparator implements Comparator<MNode> {
+
+        @Override
+        public int compare(MNode o1, MNode o2) {
+            return o2.compareTo(o1);
+        }
     }
 
     private void initNodeValue(Entity entity, MNode mNode) {
@@ -297,13 +318,5 @@ public class HoseCodeGenerator {
 
     public void scoreNode(MNode mNode) {
         String elemName = mNode.getAtom().getElementName();
-    }
-
-    class NodeComparator implements Comparator<MNode> {
-
-        @Override
-        public int compare(MNode o1, MNode o2) {
-            return o2.compareTo(o1);
-        }
     }
 }

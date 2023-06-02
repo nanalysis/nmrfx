@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,20 +17,20 @@
  */
 package org.nmrfx.processor.math;
 
-import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.translate.Base64;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
+import org.apache.commons.math3.complex.Complex;
 
 /**
+ *
  * @author brucejohnson
  */
 public class VecConverters {
 
-    final boolean isComplex;
     final private Vec vec;
+    final boolean isComplex;
 
     public VecConverters(Vec vec) {
         this.vec = vec;
@@ -330,27 +330,6 @@ public class VecConverters {
         }
     }
 
-    public Vec base64ToFloat(String s) {
-        byte[] byteArray = Base64.decode(s);
-        int n = byteArray.length / 4;
-        resize(n, false);
-        bytesToFloat(byteArray, vec.getRvec());
-        vec.swapBytes();
-
-        return vec;
-    }
-
-    public Vec base64ToDouble(String s) {
-        byte[] byteArray = Base64.decode(s);
-        int n = byteArray.length / 8;
-        resize(n, false);
-
-        bytesToDouble(byteArray, vec.getRvec());
-        vec.swapBytes8();
-
-        return vec;
-    }
-
     public static void bytesToFloat(byte[] byteArray, double[] fVec) {
         int n = byteArray.length / 4;
 
@@ -386,6 +365,16 @@ public class VecConverters {
         }
     }
 
+    public Vec base64ToFloat(String s) {
+        byte[] byteArray = Base64.decode(s);
+        int n = byteArray.length / 4;
+        resize(n, false);
+        bytesToFloat(byteArray, vec.getRvec());
+        vec.swapBytes();
+
+        return vec;
+    }
+
     public static void bytesToDouble(byte[] byteArray, double[] fVec) {
         int n = byteArray.length / 8;
 
@@ -414,6 +403,17 @@ public class VecConverters {
 
             fVec[i] = Double.longBitsToDouble(longVal);
         }
+    }
+
+    public Vec base64ToDouble(String s) {
+        byte[] byteArray = Base64.decode(s);
+        int n = byteArray.length / 8;
+        resize(n, false);
+
+        bytesToDouble(byteArray, vec.getRvec());
+        vec.swapBytes8();
+
+        return vec;
     }
 
 }

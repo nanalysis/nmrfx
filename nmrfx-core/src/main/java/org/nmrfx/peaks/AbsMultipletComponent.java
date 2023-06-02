@@ -1,21 +1,21 @@
 package org.nmrfx.peaks;
 
-import org.nmrfx.datasets.DatasetBase;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.nmrfx.datasets.DatasetBase;
 
 /**
+ *
  * @author brucejohnson
  */
 public class AbsMultipletComponent extends MultipletComponent {
 
-    public AbsMultipletComponent(Multiplet multiplet, double offset, double intensity, double volume, double lw) {
-        super(multiplet, offset, intensity, volume, lw);
-    }
-
     public void setOffset(double offset) {
         this.offset = offset;
+    }
+
+    public AbsMultipletComponent(Multiplet multiplet, double offset, double intensity, double volume, double lw) {
+        super(multiplet, offset, intensity, volume, lw);
     }
 
     public RelMultipletComponent toRelative(double center, double sf) {
@@ -28,7 +28,7 @@ public class AbsMultipletComponent extends MultipletComponent {
     }
 
     public void getRegion(DatasetBase theFile, int[] pdim, int[][] p,
-                          int[] cpt, double[] width) {
+            int[] cpt, double[] width) {
 
         double pc = getOffset();
         double lw = getLineWidth();

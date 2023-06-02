@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,27 +16,62 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.processor.optimization;
 
+import org.nmrfx.processor.optimization.equations.OptFunction;
+import java.util.*;
 import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optimization.PointVectorValuePair;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.nmrfx.processor.optimization.equations.OptFunction;
-
-import java.util.Random;
 
 /**
+ *
  * @author graham
  */
 public class Simulation {
 
     Random rNum = new Random();
+
+    private class SortableParam implements Comparable {
+
+        private final double[] values;
+        private final int sIndex;
+
+        SortableParam(PointVectorValuePair v, int sIndex) {
+            values = v.getPoint();
+            this.sIndex = sIndex;
+        }
+
+        public double[] getValues() {
+            return values;
+        }
+
+        public double getValueToSort() {
+            return values[sIndex];
+        }
+
+        public int compareTo(Object o) {
+            SortableParam sp = (SortableParam) o;
+            double cVal1, cVal2;
+
+            cVal1 = this.getValueToSort();
+            cVal2 = sp.getValueToSort();
+
+            if (cVal1 < cVal2) {
+                return -1;
+            } else if (cVal1 > cVal2) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    }
     private int iterations;
     private double[] wt;
     private PointVectorValuePair[] dSet;
@@ -45,9 +80,9 @@ public class Simulation {
     private PointVectorValuePair bestFitTarget;
 
     public Simulation(OptFunction func,
-                      double[] wt,
-                      double sdev,
-                      int iterations) {
+            double[] wt,
+            double sdev,
+            int iterations) {
         this.func = func;
         this.wt = wt;
         this.sdev = sdev;
@@ -134,40 +169,5 @@ public class Simulation {
         }
 
         return rVals;
-    }
-
-    private class SortableParam implements Comparable {
-
-        private final double[] values;
-        private final int sIndex;
-
-        SortableParam(PointVectorValuePair v, int sIndex) {
-            values = v.getPoint();
-            this.sIndex = sIndex;
-        }
-
-        public double[] getValues() {
-            return values;
-        }
-
-        public double getValueToSort() {
-            return values[sIndex];
-        }
-
-        public int compareTo(Object o) {
-            SortableParam sp = (SortableParam) o;
-            double cVal1, cVal2;
-
-            cVal1 = this.getValueToSort();
-            cVal2 = sp.getValueToSort();
-
-            if (cVal1 < cVal2) {
-                return -1;
-            } else if (cVal1 > cVal2) {
-                return 1;
-            } else {
-                return 0;
-            }
-        }
     }
 }

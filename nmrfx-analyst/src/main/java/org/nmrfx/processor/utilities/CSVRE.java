@@ -1,11 +1,8 @@
 package org.nmrfx.processor.utilities;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.util.*;
+import java.util.regex.*;
 // FIXME BAJ should replace with opencsv?
 /*
  * Copyright (c) Ian F. Darwin, http://www.darwinsys.com/, 1996-2002.
@@ -32,40 +29,40 @@ import java.util.regex.Pattern;
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  * Java, the Duke mascot, and all variants of Sun's Java "steaming coffee
  * cup" logo are trademarks of Sun Microsystems. Sun's, and James Gosling's,
- * pioneering role in inventing and promulgating (and standardizing) the Java
+ * pioneering role in inventing and promulgating (and standardizing) the Java 
  * language and environment is gratefully acknowledged.
- *
+ * 
  * The pioneering role of Dennis Ritchie and Bjarne Stroustrup, of AT&T, for
  * inventing predecessor languages C and C++ is also gratefully acknowledged.
  */
 
-/* Simple demo of CSV matching using Regular Expressions.
+ /* Simple demo of CSV matching using Regular Expressions.
  * Does NOT use the "CSV" class defined in the Java CookBook.
  * RE Pattern from Chapter 7, Mastering Regular Expressions (p. 205, first edn.)
  */
 public class CSVRE {
 
+    /**
+     * The rather involved pattern used to match CSV's consists of three alternations: the first matches quoted fields,
+     * the second unquoted, the third null fields
+     */
+    private static String sepStr = ",";
     public static final String CSV_PATTERN
             = //	"\"([^\"\\\\]*(\\\\.[^\"\\\\]*)*)\",?|([^,]+),?|,";
             "\"(([^\"])|(\"\"))+\",?|([^,]+),?|,";
     public static final String TAB_PATTERN = "\"(([^\"])|(\"\"))+\"\t?|([^\t]+)\t?|\t";
     public static final String SPACE_PATTERN = "\"(([^\"])|(\"\"))+\" ?|([^ ]+) ?| ";
+    public static final String GEN_PATTERN = "\"(([^\"])|(\"\"))+\"" + sepStr
+            + "?|([^" + sepStr + "]+)" + sepStr + "?|" + sepStr;
     static Pattern tabPattern = null;
     static Pattern commaPattern = null;
     static Pattern spacePattern = null;
     static Pattern tabPattern2 = null;
     static Pattern commaPattern2 = null;
     static Pattern spacePattern2 = null;
-    /**
-     * The rather involved pattern used to match CSV's consists of three alternations: the first matches quoted fields,
-     * the second unquoted, the third null fields
-     */
-    private static String sepStr = ",";
-    public static final String GEN_PATTERN = "\"(([^\"])|(\"\"))+\"" + sepStr
-            + "?|([^" + sepStr + "]+)" + sepStr + "?|" + sepStr;
 
     static {
         sepStr = "\t";
@@ -90,6 +87,18 @@ public class CSVRE {
 
     static Pattern makePattern2(String sepStr) {
         return Pattern.compile("(" + sepStr + "$)");
+    }
+
+    public static void main(String[] argv) throws IOException {
+        String line;
+
+        // Construct a new Regular Expression parser.
+        BufferedReader is = new BufferedReader(new InputStreamReader(System.in));
+
+        // For each line...
+        while ((line = is.readLine()) != null) {
+            parseLine(" ", line);
+        }
     }
 
     public static String[] parseLine(String sepStr, String line) {
@@ -137,17 +146,5 @@ public class CSVRE {
         resultFields = (String[]) resultVec.toArray(resultFields);
 
         return resultFields;
-    }
-
-    public static void main(String[] argv) throws IOException {
-        String line;
-
-        // Construct a new Regular Expression parser.
-        BufferedReader is = new BufferedReader(new InputStreamReader(System.in));
-
-        // For each line...
-        while ((line = is.readLine()) != null) {
-            parseLine(" ", line);
-        }
     }
 }

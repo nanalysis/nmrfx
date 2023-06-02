@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,31 +16,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.utils.properties;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
 import javafx.collections.ListChangeListener;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 /**
+ *
  * @author brucejohnson
  */
 public class CheckComboOperationItem extends OperationItem implements ObservableStringValue {
 
-    private final Collection<?> choices;
     String defaultValue;
     String value;
     ListChangeListener listener;
+    private final Collection<?> choices;
     private List<String> values = new ArrayList<>();
 
     public CheckComboOperationItem(ListChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
@@ -73,6 +73,10 @@ public class CheckComboOperationItem extends OperationItem implements Observable
         }
     }
 
+    public List<String> getValues() {
+        return values;
+    }
+
     @Override
     public boolean isDefault() {
         if (defaultValue == null) {
@@ -100,17 +104,12 @@ public class CheckComboOperationItem extends OperationItem implements Observable
     }
 
     @Override
-    public String getStringRep() {
-        return '\'' + value + '\'';
-    }
-
-    public List<String> getValues() {
-        return values;
+    public String get() {
+        return value;
     }
 
     @Override
-    public String get() {
-        return value;
+    public void removeListener(ChangeListener<? super String> listener) {
     }
 
     @Override
@@ -126,10 +125,11 @@ public class CheckComboOperationItem extends OperationItem implements Observable
     }
 
     @Override
-    public void addListener(ChangeListener<? super String> cl) {
+    public String getStringRep() {
+        return '\'' + value + '\'';
     }
 
     @Override
-    public void removeListener(ChangeListener<? super String> listener) {
+    public void addListener(ChangeListener<? super String> cl) {
     }
 }

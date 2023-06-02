@@ -25,7 +25,6 @@ public class LogLevelCellFormatter extends TableCell<LogRecord, LogLevel> {
 
     /**
      * Creates a Glyph based on the provided log level.
-     *
      * @param logLevel The LogLevel to use
      * @return a Glyph
      */

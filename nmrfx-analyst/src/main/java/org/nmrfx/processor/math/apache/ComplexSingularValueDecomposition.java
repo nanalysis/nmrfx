@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * ComplexSingularValueDecomposition implements the singular value decomposition of a Complex Matrix.
+ *
  */
 public class ComplexSingularValueDecomposition {
     private static final Logger log = LoggerFactory.getLogger(ComplexSingularValueDecomposition.class);
@@ -312,14 +313,14 @@ public class ComplexSingularValueDecomposition {
      * Generates a Householder transformation from within the part of row r of a Complex array (altered) extending from
      * columns c1 to c2. The method overwrites the row with the result of applying the transformation.
      *
-     * @param A  The matrix from which the transformation is to be generated (altered)
-     * @param r  The index of the generating row
+     * @param A The matrix from which the transformation is to be generated (altered)
+     * @param r The index of the generating row
      * @param c1 The index of the column in which the generating row begins
      * @param c2 The index of the column in which the generating row ends
      * @return A Z1 of length r2-r1+1 containing the Householder vector
      */
     private ArrayFieldVector<Complex> genr(Complex[][] A, int r, int c1,
-                                           int c2) {
+            int c2) {
         int j, cu;
         double norm, s;
         Complex scale;
@@ -367,98 +368,20 @@ public class ComplexSingularValueDecomposition {
     }
 
     /**
-     * Multiply Complex matrix A by Householder transformation vector
-     *
-     * @param A  The matrix to which the transformation is to be applied (altered)
-     * @param u  The Householder vector
-     * @param r1 The index of the first row to which the transformation is to be applied
-     * @param r2 The index of the last row to which the transformation is to be applied
-     * @param c1 The index of the first column to which the transformation is index of the to be applied
-     * @param c2 The index of the last column to which the transformation is to be applied
-     * @param v  A work array of length at least c2-c1+1
-     * @throws Exception if u or v has too few columns
-     */
-    private void transformAwithU(Complex[][] A, Complex[] u, int r1, int r2, int c1,
-                                 int c2, Complex[] v) throws Exception {
-
-        int i, j;
-
-        if (r2 < r1 || c2 < c1) {
-            return;
-        }
-
-        if (c2 - c1 + 1 > u.length) {
-            throw new Exception("Householder vector too short.");
-        }
-
-        if (r2 - r1 + 1 > v.length) {
-            throw new Exception("Work vector too short.");
-        }
-
-        double real, imag;
-        for (i = r1; i <= r2; i++) {
-            v[i - r1] = Complex.ZERO;
-            for (j = c1; j <= c2; j++) {
-                real = v[i - r1].getReal() + A[i][j].getReal()
-                        * u[j - c1].getReal() - A[i][j].getImaginary()
-                        * u[j - c1].getImaginary();
-                imag = v[i - r1].getImaginary() + A[i][j].getReal()
-                        * u[j - c1].getImaginary() + A[i][j].getImaginary()
-                        * u[j - c1].getReal();
-                v[i - r1] = new Complex(real, imag);
-            }
-        }
-
-        for (i = r1; i <= r2; i++) {
-            for (j = c1; j <= c2; j++) {
-                real = A[i][j].getReal() - v[i - r1].getReal()
-                        * u[j - c1].getReal() - v[i - r1].getImaginary()
-                        * u[j - c1].getImaginary();
-                imag = A[i][j].getImaginary() + v[i - r1].getReal()
-                        * u[j - c1].getImaginary() - v[i - r1].getImaginary()
-                        * u[j - c1].getReal();
-                A[i][j] = new Complex(real, imag);
-            }
-        }
-    }
-
-    /**
-     * Multiply Complex matrix A by Householder transformation vector
-     *
-     * @param A  The matrix to which the transformation is to be applied (altered)
-     * @param u  The Householder vector
-     * @param r1 The index of the first row to which the transformation is to be applied
-     * @param r2 The index of the last row to which the transformation is to be applied
-     * @param c1 The index of the first column to which the transformation is index of the to be applied
-     * @param c2 The index of the last column to which the transformation is to be applied
-     * @throws Exception if u or v has too few columns
-     */
-    private void transformAwithU(Complex[][] A, Complex[] u, int r1, int r2, int c1,
-                                 int c2) throws Exception {
-
-        if (r2 < r1) {
-            return;
-        }
-
-        transformAwithU(A, u, r1, r2, c1, c2, new ArrayFieldVector<>(r2 - r1 + 1,
-                Complex.ZERO).getDataRef());
-    }
-
-    /**
      * Premultiplies the Householder transformation contained in a Vector into a Matrix A[r1:r2,c1:c2] and overwrites
      * Matrix A[r1:r2,c1:c2] with the results. If r1 &gt; r2 or c1 &gt; c2 the method does nothing.
      *
-     * @param u  The Householder vector
-     * @param A  The Matrix to which the transformation is to be applied (altered)
+     * @param u The Householder vector
+     * @param A The Matrix to which the transformation is to be applied (altered)
      * @param r1 The index of the first row to which the transformation is to be applied
      * @param r2 The index of the last row to which the transformation is to be applied
      * @param c1 The index of the first column to which the transformation is index of the to be applied
      * @param c2 The index of the last column to which the transformation is to be applied
-     * @param v  A work array of length at least c2-c1+1
+     * @param v A work array of length at least c2-c1+1
      * @throws Exception if arrays to small
      */
     public static void premultiplyA(Complex[] u, Complex[][] A, int r1, int r2, int c1,
-                                    int c2, Complex[] v) throws Exception {
+            int c2, Complex[] v) throws Exception {
         int i, j;
 
         if (r2 < r1 || c2 < c1) {
@@ -504,7 +427,7 @@ public class ComplexSingularValueDecomposition {
     }
 
     public static void premultiplyA(Complex[] u, Complex[][] A, int r1, int r2, int c1,
-                                    int c2) throws Exception {
+            int c2) throws Exception {
 
         if (c1 > c2) {
             return;
@@ -515,17 +438,95 @@ public class ComplexSingularValueDecomposition {
     }
 
     /**
+     * Multiply Complex matrix A by Householder transformation vector
+     *
+     * @param A The matrix to which the transformation is to be applied (altered)
+     * @param u The Householder vector
+     * @param r1 The index of the first row to which the transformation is to be applied
+     * @param r2 The index of the last row to which the transformation is to be applied
+     * @param c1 The index of the first column to which the transformation is index of the to be applied
+     * @param c2 The index of the last column to which the transformation is to be applied
+     * @param v A work array of length at least c2-c1+1
+     * @throws Exception if u or v has too few columns
+     */
+    private void transformAwithU(Complex[][] A, Complex[] u, int r1, int r2, int c1,
+            int c2, Complex[] v) throws Exception {
+
+        int i, j;
+
+        if (r2 < r1 || c2 < c1) {
+            return;
+        }
+
+        if (c2 - c1 + 1 > u.length) {
+            throw new Exception("Householder vector too short.");
+        }
+
+        if (r2 - r1 + 1 > v.length) {
+            throw new Exception("Work vector too short.");
+        }
+
+        double real, imag;
+        for (i = r1; i <= r2; i++) {
+            v[i - r1] = Complex.ZERO;
+            for (j = c1; j <= c2; j++) {
+                real = v[i - r1].getReal() + A[i][j].getReal()
+                        * u[j - c1].getReal() - A[i][j].getImaginary()
+                        * u[j - c1].getImaginary();
+                imag = v[i - r1].getImaginary() + A[i][j].getReal()
+                        * u[j - c1].getImaginary() + A[i][j].getImaginary()
+                        * u[j - c1].getReal();
+                v[i - r1] = new Complex(real, imag);
+            }
+        }
+
+        for (i = r1; i <= r2; i++) {
+            for (j = c1; j <= c2; j++) {
+                real = A[i][j].getReal() - v[i - r1].getReal()
+                        * u[j - c1].getReal() - v[i - r1].getImaginary()
+                        * u[j - c1].getImaginary();
+                imag = A[i][j].getImaginary() + v[i - r1].getReal()
+                        * u[j - c1].getImaginary() - v[i - r1].getImaginary()
+                        * u[j - c1].getReal();
+                A[i][j] = new Complex(real, imag);
+            }
+        }
+    }
+
+    /**
+     * Multiply Complex matrix A by Householder transformation vector
+     *
+     * @param A The matrix to which the transformation is to be applied (altered)
+     * @param u The Householder vector
+     * @param r1 The index of the first row to which the transformation is to be applied
+     * @param r2 The index of the last row to which the transformation is to be applied
+     * @param c1 The index of the first column to which the transformation is index of the to be applied
+     * @param c2 The index of the last column to which the transformation is to be applied
+     * @throws Exception if u or v has too few columns
+     */
+    private void transformAwithU(Complex[][] A, Complex[] u, int r1, int r2, int c1,
+            int c2) throws Exception {
+
+        if (r2 < r1) {
+            return;
+        }
+
+        transformAwithU(A, u, r1, r2, c1, c2, new ArrayFieldVector<>(r2 - r1 + 1,
+                Complex.ZERO).getDataRef());
+    }
+
+    /**
      * Generates a Householder transformation from within the part of column c of a Zmat (altered) extending from rows
      * r1 to r2. The method overwrites the column with the result of applying the transformation.
      *
-     * @param A  The matrix from which the transformation is to be generated (altered)
+     * @param A The matrix from which the transformation is to be generated (altered)
      * @param r1 The index of the row in which the generating column begins
      * @param r2 The index of the row in which the generating column ends
-     * @param c  The index of the generating column
+     * @param c The index of the generating column
      * @return A Z1 of length r2-r1+1 containing the Householder vector
      */
     public static ArrayFieldVector<Complex> genc(Complex[][] A, int r1, int r2,
-                                                 int c) {
+            int c) {
 
         int i, ru;
         double norm;
@@ -619,7 +620,6 @@ public class ComplexSingularValueDecomposition {
     // }
     //
     // }
-
     /**
      * Rot generates and manipulates plane rotations. Given a 2-vector compontents are x and y, there is a unitary
      * matrix P such that
@@ -628,7 +628,7 @@ public class ComplexSingularValueDecomposition {
      *      P|x| =  |   c      s||x| = |z|
      *       |y|    |-conj(s)  c||y|   |0|
      * </pre>
-     * <p>
+     *
      * The number c, which is always real, is the cosine of the rotation. The number s, which may be complex is the sine
      * of the rotation.
      * <p>
@@ -636,11 +636,15 @@ public class ComplexSingularValueDecomposition {
      * difference between real and complex rotations is that si and zi are zero for the former. The final routines will
      * do the efficient thing.
      *
-     * @author G. W. Stewart
      * @version Pre-alpha
+     * @author G. W. Stewart
      */
     public static class Rot {
 
+        /**
+         * The cosine of the rotation
+         */
+        protected double c;
         /**
          * The sine of the rotation
          */
@@ -649,10 +653,6 @@ public class ComplexSingularValueDecomposition {
          * The transformed vector
          */
         public Complex z;
-        /**
-         * The cosine of the rotation
-         */
-        protected double c;
 
         /**
          * Given a real 2-vector, genc generates a real plane rotation P such that
@@ -712,15 +712,15 @@ public class ComplexSingularValueDecomposition {
         /**
          * Multiplies columns (ii1:ii2,jj1) and A(ii2:ii2,jj1) of a Zmat (altered) by a plane rotation.
          *
-         * @param A  The Zmat (altered)
-         * @param P  The rotation
+         * @param A The Zmat (altered)
+         * @param P The rotation
          * @param i1 The first index of the column range
          * @param i2 The second index of the column range
          * @param j1 The index of the first column
          * @param j2 The index of the second column
          */
         public static void ap(Complex[][] A, Rot P, int i1, int i2, int j1,
-                              int j2) {
+                int j2) {
             double t1r, t1i, t2r, t2i;
 
             for (int i = i1; i <= i2; i++) {
@@ -743,15 +743,15 @@ public class ComplexSingularValueDecomposition {
          * Multiplies columns (ii1:ii2,jj1) and A(ii2:ii2,jj1) of a Zmat (altered) by the conjugate transpose of plane
          * rotation.
          *
-         * @param A  The Zmat (altered)
-         * @param P  The rotation
+         * @param A The Zmat (altered)
+         * @param P The rotation
          * @param i1 The first index of the column range
          * @param i2 The second index of the column range
          * @param j1 The index of the first column
          * @param j2 The index of the second column
          */
         public static void aph(Complex[][] A, Rot P, int i1, int i2, int j1,
-                               int j2) {
+                int j2) {
             double j2r;
             double j2i;
             double j1r;

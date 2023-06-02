@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,6 +21,7 @@ import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 
 /**
+ *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -29,6 +30,16 @@ public class Zf extends Operation implements Invertible {
     private final int factor;
     private final int newSize;
     private final int pad;
+
+    @Override
+    public Zf eval(Vec vector) throws OperationException {
+        if (invertOp) {
+            izf(vector);
+        } else {
+            zf(vector);
+        }
+        return this;
+    }
 
     public Zf(Integer factor, Integer newSize, Integer pad) throws OperationException {
         this(factor, newSize, pad, false);
@@ -71,16 +82,6 @@ public class Zf extends Operation implements Invertible {
         this.invertOp = inverse;
     }
 
-    @Override
-    public Zf eval(Vec vector) throws OperationException {
-        if (invertOp) {
-            izf(vector);
-        } else {
-            zf(vector);
-        }
-        return this;
-    }
-
     private void zf(Vec vector) throws OperationException {
         int size = vector.getSize();
 
@@ -99,4 +100,4 @@ public class Zf extends Operation implements Invertible {
         int size = vector.getTDSize();
         vector.resize(size);
     }
-}
+    }

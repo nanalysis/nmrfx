@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -26,6 +26,7 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.utils.properties.ColorProperty;
 
 /**
+ *
  * @author brucejohnson
  */
 public class SliceAttributes {
@@ -60,12 +61,12 @@ public class SliceAttributes {
         return offsetTracking;
     }
 
-    public boolean getOffsetTracking() {
-        return offsetTrackingProperty().get();
-    }
-
     public void setOffsetTracking(boolean value) {
         offsetTrackingProperty().set(value);
+    }
+
+    public boolean getOffsetTracking() {
+        return offsetTrackingProperty().get();
     }
 
     public DoubleProperty offsetXValueProperty() {
@@ -75,12 +76,12 @@ public class SliceAttributes {
         return offsetXValue;
     }
 
-    public double getOffsetXValue() {
-        return offsetXValueProperty().get();
-    }
-
     public void setOffsetXValue(double value) {
         offsetXValueProperty().set(value);
+    }
+
+    public double getOffsetXValue() {
+        return offsetXValueProperty().get();
     }
 
     public DoubleProperty offsetYValueProperty() {
@@ -90,12 +91,12 @@ public class SliceAttributes {
         return offsetYValue;
     }
 
-    public double getOffsetYValue() {
-        return offsetYValueProperty().get();
-    }
-
     public void setOffsetYValue(double value) {
         offsetYValueProperty().set(value);
+    }
+
+    public double getOffsetYValue() {
+        return offsetYValueProperty().get();
     }
 
     public DoubleProperty scaleValueProperty() {
@@ -105,12 +106,12 @@ public class SliceAttributes {
         return scaleValue;
     }
 
-    public double getScaleValue() {
-        return scaleValueProperty().get();
-    }
-
     public void setScaleValue(double value) {
         scaleValueProperty().set(value);
+    }
+
+    public double getScaleValue() {
+        return scaleValueProperty().get();
     }
 
     public ColorProperty slice1ColorProperty() {
@@ -120,12 +121,12 @@ public class SliceAttributes {
         return slice1Color;
     }
 
-    public Color getSlice1Color() {
-        return slice1ColorProperty().get();
-    }
-
     public void setSlice1Color(Color value) {
         slice1ColorProperty().set(value);
+    }
+
+    public Color getSlice1Color() {
+        return slice1ColorProperty().get();
     }
 
     public ColorProperty slice2ColorProperty() {
@@ -135,12 +136,12 @@ public class SliceAttributes {
         return slice2Color;
     }
 
-    public Color getSlice2Color() {
-        return slice2ColorProperty().get();
-    }
-
     public void setSlice2Color(Color value) {
         slice2ColorProperty().set(value);
+    }
+
+    public Color getSlice2Color() {
+        return slice2ColorProperty().get();
     }
 
     public BooleanProperty useDatasetColorProperty() {
@@ -150,12 +151,12 @@ public class SliceAttributes {
         return useDatasetColor;
     }
 
-    public boolean getUseDatasetColor() {
-        return useDatasetColorProperty().get();
-    }
-
     public void setUseDatasetColor(boolean value) {
         useDatasetColorProperty().set(value);
+    }
+
+    public boolean getUseDatasetColor() {
+        return useDatasetColorProperty().get();
     }
 
     public BooleanProperty slice1StateProperty() {
@@ -165,12 +166,12 @@ public class SliceAttributes {
         return slice1State;
     }
 
-    public boolean getSlice1State() {
-        return slice1StateProperty().get();
-    }
-
     public void setSlice1State(boolean value) {
         slice1StateProperty().set(value);
+    }
+
+    public boolean getSlice1State() {
+        return slice1StateProperty().get();
     }
 
     public BooleanProperty slice2StateProperty() {
@@ -180,12 +181,12 @@ public class SliceAttributes {
         return slice2State;
     }
 
-    public boolean getSlice2State() {
-        return slice2StateProperty().get();
-    }
-
     public void setSlice2State(boolean value) {
         slice2StateProperty().set(value);
+    }
+
+    public boolean getSlice2State() {
+        return slice2StateProperty().get();
     }
 
 }

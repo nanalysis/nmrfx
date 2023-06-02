@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -41,6 +41,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ *
  * @author brucejohnson
  */
 public class PropertyManager {
@@ -58,12 +59,12 @@ public class PropertyManager {
     ListView scriptView;
     ProcessorController processorController;
     ObservableList<String> listItems;
-    PopOver popOver;
-    ObservableList<PropertySheet.Item> propItems = FXCollections.observableArrayList();
-    ChangeListener<Number> scriptOpListener = null;
     private int currentIndex = -1;
     private String currentOp = "";
     private TextField opTextField;
+    PopOver popOver;
+    ObservableList<PropertySheet.Item> propItems = FXCollections.observableArrayList();
+    ChangeListener<Number> scriptOpListener = null;
 
     PropertyManager(ProcessorController processorController, final ListView scriptView, PropertySheet propertySheet, ObservableList<String> listItems, TextField opTextField, PopOver popOver) {
         this.processorController = processorController;
@@ -392,6 +393,27 @@ public class PropertyManager {
 
     }
 
+    public static Map<String, String> parseOpString(String op) {
+        Map<String, String> values = new HashMap<>();
+        Pattern pattern = null;
+        String opPars = "";
+        if (!op.equals("")) {
+            opPars = op.substring(op.indexOf('(') + 1, op.length() - 1);
+            pattern = Pattern.compile(patternString);
+            Matcher matcher = pattern.matcher(opPars);
+            while (matcher.find()) {
+                if (matcher.groupCount() > 1) {
+                    String parName = matcher.group(1);
+                    String parValue = matcher.group(2);
+                    parValue = parValue.replace("'", "");
+                    parValue = parValue.replace("\"", "");
+                    values.put(parName, parValue);
+                }
+            }
+        }
+        return values;
+    }
+
     void setupItems() {
         List<?> pyDocs = processorController.chartProcessor.getDocs();
         for (int i = 0; i < pyDocs.size(); i += 4) {
@@ -677,27 +699,6 @@ public class PropertyManager {
             propItems.add(new BooleanOperationItem(boolListener, false, op, "disabled", "Disable this operation"));
         }
 
-    }
-
-    public static Map<String, String> parseOpString(String op) {
-        Map<String, String> values = new HashMap<>();
-        Pattern pattern = null;
-        String opPars = "";
-        if (!op.equals("")) {
-            opPars = op.substring(op.indexOf('(') + 1, op.length() - 1);
-            pattern = Pattern.compile(patternString);
-            Matcher matcher = pattern.matcher(opPars);
-            while (matcher.find()) {
-                if (matcher.groupCount() > 1) {
-                    String parName = matcher.group(1);
-                    String parValue = matcher.group(2);
-                    parValue = parValue.replace("'", "");
-                    parValue = parValue.replace("\"", "");
-                    values.put(parName, parValue);
-                }
-            }
-        }
-        return values;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,25 +39,25 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
     private static final Logger log = LoggerFactory.getLogger(SubMatrixFile.class);
 
     static StorageCache cache = new StorageCache();
-    final boolean writable;
+    private RandomAccessFile raFile;
+    FileChannel fc;
     private final DatasetBase dataset;
     private final File file;
+    private long totalSize;
     private final int dataType;
-    private final int BYTES = Float.BYTES;
-    FileChannel fc;
+    final boolean writable;
     DatasetLayout layout;
+    private final int BYTES = Float.BYTES;
     ByteBuffer[] byteBuffers = new ByteBuffer[1];
     int currentBuffer = -1;
     DatasetKey[] keys;
-    private RandomAccessFile raFile;
-    private long totalSize;
 
     /**
      * An object that represents a mapping of specified dataset with a memory
      * map.
      *
-     * @param dataset  Dataset object that uses this mapped matrix file
-     * @param raFile   The Random access file that actually stores data
+     * @param dataset Dataset object that uses this mapped matrix file
+     * @param raFile The Random access file that actually stores data
      * @param writable true if the mapping should be writable
      * @throws IOException if an I/O error occurs
      */
@@ -73,18 +73,6 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
 
     public DatasetLayout getLayout() {
         return layout;
-    }
-
-    @Override
-    public final synchronized void writeHeader(boolean nvExtra) {
-        if (file != null) {
-            DatasetHeaderIO headerIO = new DatasetHeaderIO(dataset);
-            if (file.getPath().contains(".ucsf")) {
-                headerIO.writeHeaderUCSF(layout, raFile, nvExtra);
-            } else {
-                headerIO.writeHeader(layout, raFile);
-            }
-        }
     }
 
     void init() throws IOException {
@@ -106,8 +94,15 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
     }
 
     @Override
-    public boolean isWritable() {
-        return writable;
+    public final synchronized void writeHeader(boolean nvExtra) {
+        if (file != null) {
+            DatasetHeaderIO headerIO = new DatasetHeaderIO(dataset);
+            if (file.getPath().contains(".ucsf")) {
+                headerIO.writeHeaderUCSF(layout, raFile, nvExtra);
+            } else {
+                headerIO.writeHeader(layout, raFile);
+            }
+        }
     }
 
     @Override
@@ -123,12 +118,13 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         }
     }
 
-    int getBlockPosition(int... offsets) {
-        int blockNum = 0;
-        for (int iDim = 0; iDim < offsets.length; iDim++) {
-            blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
-        }
-        return blockNum;
+    @Override
+    public boolean isWritable() {
+        return writable;
+    }
+
+    protected void startVecGet(int... offsets) {
+        // return start position, block, stride, nPoints 
     }
 
     @Override
@@ -143,12 +139,42 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         return position;
     }
 
+    @Override
+    public long pointPosition(int... offsets) {
+        long blockNum = 0;
+        long offsetInBlock = 0;
+        for (int iDim = 0; iDim < offsets.length; iDim++) {
+            blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
+            offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
+        }
+        long position = blockNum * layout.blockPoints + offsetInBlock;
+        return position;
+    }
+
+    int getBlockPosition(int... offsets) {
+        int blockNum = 0;
+        for (int iDim = 0; iDim < offsets.length; iDim++) {
+            blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
+        }
+        return blockNum;
+    }
+
     public int getOffsetInBlock(int... offsets) {
         int offsetInBlock = 0;
         for (int iDim = 0; iDim < offsets.length; iDim++) {
             offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
         }
         return offsetInBlock;
+    }
+
+    @Override
+    public int getSize(final int dim) {
+        return layout.sizes[dim];
+    }
+
+    @Override
+    public long getTotalSize() {
+        return totalSize;
     }
 
     synchronized ByteBuffer readBlock(long iBlock) throws IOException {
@@ -163,18 +189,6 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         return buffer;
     }
 
-    @Override
-    public long pointPosition(int... offsets) {
-        long blockNum = 0;
-        long offsetInBlock = 0;
-        for (int iDim = 0; iDim < offsets.length; iDim++) {
-            blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
-            offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
-        }
-        long position = blockNum * layout.blockPoints + offsetInBlock;
-        return position;
-    }
-
     synchronized void writeBlock(int iBlock, ByteBuffer buffer) throws IOException {
         long blockPos = iBlock * (layout.blockPoints * BYTES + layout.blockHeaderSize) + layout.fileHeaderSize;
         buffer.position(0);
@@ -182,8 +196,19 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
     }
 
     @Override
-    public int getSize(final int dim) {
-        return layout.sizes[dim];
+    public float getFloat(int... offsets) throws IOException {
+        int blockPos = getBlockPosition(offsets);
+        int offset = getOffsetInBlock(offsets);
+        DatasetKey key = keys[blockPos];
+        return cache.io(key, offset, 0.0f, 0);
+    }
+
+    @Override
+    public void setFloat(float d, int... offsets) throws IOException {
+        int blockPos = getBlockPosition(offsets);
+        int offset = getOffsetInBlock(offsets);
+        DatasetKey key = keys[blockPos];
+        cache.io(key, offset, d, 1);
     }
 
     public synchronized void blockVectorIO(int first, int last, int[] point, int dim, double scale, VecBase vector, int mode) throws IOException {
@@ -275,32 +300,6 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
 
         }
     }
-
-    @Override
-    public long getTotalSize() {
-        return totalSize;
-    }
-
-    @Override
-    public float getFloat(int... offsets) throws IOException {
-        int blockPos = getBlockPosition(offsets);
-        int offset = getOffsetInBlock(offsets);
-        DatasetKey key = keys[blockPos];
-        return cache.io(key, offset, 0.0f, 0);
-    }
-
-    @Override
-    public void setFloat(float d, int... offsets) throws IOException {
-        int blockPos = getBlockPosition(offsets);
-        int offset = getOffsetInBlock(offsets);
-        DatasetKey key = keys[blockPos];
-        cache.io(key, offset, d, 1);
-    }
-
-    protected void startVecGet(int... offsets) {
-        // return start position, block, stride, nPoints
-    }
-
 
     @Override
     public void writeVector(int first, int last, int[] point, int dim, double scale, VecBase vector) throws IOException {

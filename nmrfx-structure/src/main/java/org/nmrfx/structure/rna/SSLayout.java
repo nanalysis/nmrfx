@@ -4,35 +4,40 @@
  */
 package org.nmrfx.structure.rna;
 
-import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.geometry.euclidean.twod.Line;
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-import org.apache.commons.math3.optim.*;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
-import org.apache.commons.math3.random.MersenneTwister;
+import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.util.Precision;
-import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.SimpleBounds;
+import org.apache.commons.math3.optim.InitialGuess;
+import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+import org.apache.commons.math3.geometry.euclidean.twod.Line;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 public class SSLayout implements MultivariateFunction {
 
     private static final Logger log = LoggerFactory.getLogger(SSLayout.class);
-    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
     private final int[][] interactions;
     private final int[] basePairs;
     private final int[] basePairs2;
     private final double[] baseBondLength;
+    StructureType[] structureTypes;
+    public int[] ssClass;
+    private int nFree = 0;
     private final double[] values;
     private final double[][] coords;
     private final boolean[] coordsSet;
@@ -41,22 +46,20 @@ public class SSLayout implements MultivariateFunction {
     private final boolean[] angleFixed;
     private final int[] angleRelations;
     private final int[] nAngles;
+    private double[] inputSigma;
+    private double[][] boundaries = null;
     private final double targetSeqDistance = 1.0;
     private final double targetPairDistance = 1.0;
     private final double targetPair2Distance = Math.sqrt(targetSeqDistance * targetSeqDistance + targetPairDistance * targetPairDistance);
     private final double targetNBDistance = 1.2;
     private final int nNuc;
+    private int nSet;
     private final int[] nucChain;
-    public int[] ssClass;
-    StructureType[] structureTypes;
     int limit = 10;
     int nHelices = 0;
     int nLoops = 0;
     List<List<String>> sequences;
-    private int nFree = 0;
-    private double[] inputSigma;
-    private double[][] boundaries = null;
-    private int nSet;
+    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
 
     public SSLayout(int... nValues) {
         int n = 0;
@@ -96,6 +99,75 @@ public class SSLayout implements MultivariateFunction {
             angleTargets[i] = -2000.0;
             angleRelations[i] = 0;
         }
+    }
+
+    public static SSLayout createLayout(Molecule mol) throws InvalidMoleculeException {
+        List<List<String>> sequences = setupSequence(mol);
+        int[] seqLens = new int[sequences.size()];
+        int i = 0;
+        for (List<String> sequence : sequences) {
+            seqLens[i++] = sequence.size();
+        }
+        SSLayout ssLayout = new SSLayout(seqLens);
+        ssLayout.sequences = sequences;
+        return ssLayout;
+    }
+
+    interface StructureType {
+
+        int getID();
+
+    }
+
+    class Loop implements StructureType {
+
+        final List<Integer> bases;
+        final List<Integer> helices;
+        final int id;
+
+        Loop(List<Integer> bases, List<Integer> helices, int iLoop) {
+            this.bases = new ArrayList<>();
+            this.helices = new ArrayList<>();
+            this.bases.addAll(bases);
+            this.helices.addAll(helices);
+            id = iLoop;
+        }
+
+        public int getID() {
+            return id;
+        }
+    }
+
+    class Helix implements StructureType {
+
+        final List<Integer> bases;
+        final int id;
+
+        Helix(List<Integer> bases, int iHelix) {
+            this.bases = new ArrayList<>();
+            this.bases.addAll(bases);
+            id = iHelix;
+        }
+
+        public int getID() {
+            return id;
+        }
+    }
+
+    public static List<List<String>> setupSequence(Molecule mol) throws InvalidMoleculeException {
+        List<List<String>> sequences = new ArrayList<>();
+        for (Polymer polymer : mol.getPolymers()) {
+            if (polymer.isRNA()) {
+                List<String> sequence = new ArrayList<>();
+                sequences.add(sequence);
+                for (Residue residue : polymer.getResidues()) {
+                    String resName = residue.getName().substring(0, 1);
+                    sequence.add(resName + residue.getNumber());
+                }
+            }
+        }
+        return sequences;
+
     }
 
     public List<List<String>> getSequences() {
@@ -762,7 +834,7 @@ public class SSLayout implements MultivariateFunction {
                         levels[leftIndex]++;
                     } else if (rightIndex != -1) {
                         levels[rightIndex]--;
-                        int start = levelMap[levels[rightIndex]][rightIndex];
+                        int start = levelMap[levels[rightIndex]][rightIndex];                        
                         int end = i;
                         addPair(start, end);
 
@@ -772,10 +844,10 @@ public class SSLayout implements MultivariateFunction {
                 log.warn(aiE.getMessage(), aiE);
                 return;
             }
-        }
+        } 
     }
-
-    public List<Residue> interpVienna(String vienna, List<Residue> res) {
+    
+        public List<Residue> interpVienna(String vienna, List<Residue> res) {
         String leftBrackets = "({[";
         String rightBrackets = ")}]";
         int[][] levelMap = new int[vienna.length()][leftBrackets.length()];
@@ -792,7 +864,7 @@ public class SSLayout implements MultivariateFunction {
                         levels[leftIndex]++;
                     } else if (rightIndex != -1) {
                         levels[rightIndex]--;
-                        int start = levelMap[levels[rightIndex]][rightIndex];
+                        int start = levelMap[levels[rightIndex]][rightIndex];                        
                         int end = i;
                         addPair(start, end);
                         res.get(start).pairedTo = res.get(end);
@@ -814,75 +886,6 @@ public class SSLayout implements MultivariateFunction {
 
     public int[] getBasePairs() {
         return basePairs.clone();
-    }
-
-    public static SSLayout createLayout(Molecule mol) throws InvalidMoleculeException {
-        List<List<String>> sequences = setupSequence(mol);
-        int[] seqLens = new int[sequences.size()];
-        int i = 0;
-        for (List<String> sequence : sequences) {
-            seqLens[i++] = sequence.size();
-        }
-        SSLayout ssLayout = new SSLayout(seqLens);
-        ssLayout.sequences = sequences;
-        return ssLayout;
-    }
-
-    public static List<List<String>> setupSequence(Molecule mol) throws InvalidMoleculeException {
-        List<List<String>> sequences = new ArrayList<>();
-        for (Polymer polymer : mol.getPolymers()) {
-            if (polymer.isRNA()) {
-                List<String> sequence = new ArrayList<>();
-                sequences.add(sequence);
-                for (Residue residue : polymer.getResidues()) {
-                    String resName = residue.getName().substring(0, 1);
-                    sequence.add(resName + residue.getNumber());
-                }
-            }
-        }
-        return sequences;
-
-    }
-
-    interface StructureType {
-
-        int getID();
-
-    }
-
-    class Loop implements StructureType {
-
-        final List<Integer> bases;
-        final List<Integer> helices;
-        final int id;
-
-        Loop(List<Integer> bases, List<Integer> helices, int iLoop) {
-            this.bases = new ArrayList<>();
-            this.helices = new ArrayList<>();
-            this.bases.addAll(bases);
-            this.helices.addAll(helices);
-            id = iLoop;
-        }
-
-        public int getID() {
-            return id;
-        }
-    }
-
-    class Helix implements StructureType {
-
-        final List<Integer> bases;
-        final int id;
-
-        Helix(List<Integer> bases, int iHelix) {
-            this.bases = new ArrayList<>();
-            this.bases.addAll(bases);
-            id = iHelix;
-        }
-
-        public int getID() {
-            return id;
-        }
     }
 
     public static void main(String[] args) {

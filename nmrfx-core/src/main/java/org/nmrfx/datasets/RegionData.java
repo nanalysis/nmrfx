@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -32,7 +32,7 @@ package org.nmrfx.datasets;
 public class RegionData {
 
     static final private String[] FIELDS = {"Min", "Max", "Extreme", "Center", "RVolume", "EVolume", "Mean", "RMS", "N", "MaxPt"};
-    private final DatasetBase dataset;
+
     protected int npoints = 0;
     protected int nEllipse = 0;
     protected double value = 0.0;
@@ -50,6 +50,7 @@ public class RegionData {
     protected double mean = 0.0;
     int[] maxPoint;
     double[] dmaxPoint;
+    private final DatasetBase dataset;
 
     public RegionData(DatasetBase dataset) {
         this.dataset = dataset;
@@ -206,6 +207,7 @@ public class RegionData {
     }
 
     /**
+     *
      * Return the sum of values in a rectangular region around center
      *
      * @return the rectangular volume
@@ -264,7 +266,6 @@ public class RegionData {
     public void setSVar(double svar) {
         this.svar = svar;
     }
-
     /**
      * Return the rms of deviations from mean in region
      *
@@ -277,7 +278,6 @@ public class RegionData {
     public void setRMS(double rms) {
         this.rms = rms;
     }
-
     /**
      * Return the mean of the values in the rectangular region
      *
@@ -314,6 +314,10 @@ public class RegionData {
         this.dmaxPoint = maxD.clone();
     }
 
+    public static String[] getFields() {
+        return FIELDS;
+    }
+
     public double getValue(String name) {
         double result = 0.0;
         switch (name) {
@@ -343,9 +347,5 @@ public class RegionData {
                 break;
         }
         return result;
-    }
-
-    public static String[] getFields() {
-        return FIELDS;
     }
 }

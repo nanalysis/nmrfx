@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
+ *
  * @author brucejohnson
  */
 public class ByteConversion {

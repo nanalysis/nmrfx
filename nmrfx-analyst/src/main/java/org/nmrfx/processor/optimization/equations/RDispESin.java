@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,10 +17,7 @@
  */
 package org.nmrfx.processor.optimization.equations;
 
-import org.nmrfx.processor.optimization.DataUtil;
-import org.nmrfx.processor.optimization.Equation;
-import org.nmrfx.processor.optimization.EstParam;
-import org.nmrfx.processor.optimization.VecID;
+import org.nmrfx.processor.optimization.*;
 
 /**
  * Author: graham Class: RDispSin Desc: -
@@ -32,64 +29,64 @@ public class RDispESin extends OptFunction {
         setParams(VecID.A, VecID.B, VecID.C);
 
         setPartialDerivatives(new Equation[]{
-                // dY/dA
-                new Equation() {
-                    public VecID name() {
-                        return VecID.A;
-                    }
-
-                    public int getID() {
-                        return getUnboundParamIndex(name());
-                    }
-
-                    public double value(double[] pts, double[] ival) {
-                        double a = getParamVal(VecID.A, pts);
-                        double b = getParamVal(VecID.B, pts);
-                        double c = getParamVal(VecID.C, pts);
-                        double x = ival[getVarIndex(VecID.X) - 1];
-                        return Math.exp((a * x * Math.sin(b / x)) / b - c - a) * ((x * Math.sin(b / x)) / b - 1);
-
-                    }
-                },
-                // dY/dB
-                new Equation() {
-                    public VecID name() {
-                        return VecID.B;
-                    }
-
-                    public int getID() {
-                        return getUnboundParamIndex(name());
-                    }
-
-                    public double value(double[] pts, double[] ival) {
-                        double a = getParamVal(VecID.A, pts);
-                        double b = getParamVal(VecID.B, pts);
-                        double c = getParamVal(VecID.C, pts);
-                        double x = ival[getVarIndex(VecID.X) - 1];
-
-                        return -Math.exp(-(a - a * Math.sin(b / x) / (b / x) + c))
-                                * ((a * Math.sin(b / x)) / (b * b / x) - (a * Math.cos(b / x)) / b);
-                    }
-                },
-                // dY/dC
-                new Equation() {
-                    public VecID name() {
-                        return VecID.C;
-                    }
-
-                    public int getID() {
-                        return getUnboundParamIndex(name());
-                    }
-
-                    public double value(double[] pts, double[] ival) {
-                        double a = getParamVal(VecID.A, pts);
-                        double b = getParamVal(VecID.B, pts);
-                        double c = getParamVal(VecID.C, pts);
-                        double x = ival[getVarIndex(VecID.X) - 1];
-// fixme check for x=0;
-                        return -Math.exp(-(a - a * Math.sin(b / x) / (b / x) + c));
-                    }
+            // dY/dA
+            new Equation() {
+                public VecID name() {
+                    return VecID.A;
                 }
+
+                public int getID() {
+                    return getUnboundParamIndex(name());
+                }
+
+                public double value(double[] pts, double[] ival) {
+                    double a = getParamVal(VecID.A, pts);
+                    double b = getParamVal(VecID.B, pts);
+                    double c = getParamVal(VecID.C, pts);
+                    double x = ival[getVarIndex(VecID.X) - 1];
+                    return Math.exp((a * x * Math.sin(b / x)) / b - c - a) * ((x * Math.sin(b / x)) / b - 1);
+
+                }
+            },
+            // dY/dB
+            new Equation() {
+                public VecID name() {
+                    return VecID.B;
+                }
+
+                public int getID() {
+                    return getUnboundParamIndex(name());
+                }
+
+                public double value(double[] pts, double[] ival) {
+                    double a = getParamVal(VecID.A, pts);
+                    double b = getParamVal(VecID.B, pts);
+                    double c = getParamVal(VecID.C, pts);
+                    double x = ival[getVarIndex(VecID.X) - 1];
+
+                    return -Math.exp(-(a - a * Math.sin(b / x) / (b / x) + c))
+                            * ((a * Math.sin(b / x)) / (b * b / x) - (a * Math.cos(b / x)) / b);
+                }
+            },
+            // dY/dC
+            new Equation() {
+                public VecID name() {
+                    return VecID.C;
+                }
+
+                public int getID() {
+                    return getUnboundParamIndex(name());
+                }
+
+                public double value(double[] pts, double[] ival) {
+                    double a = getParamVal(VecID.A, pts);
+                    double b = getParamVal(VecID.B, pts);
+                    double c = getParamVal(VecID.C, pts);
+                    double x = ival[getVarIndex(VecID.X) - 1];
+// fixme check for x=0;
+                    return -Math.exp(-(a - a * Math.sin(b / x) / (b / x) + c));
+                }
+            }
         });
 
         // y = a-a*sin(b*x)/(b*x)+c
@@ -113,10 +110,6 @@ public class RDispESin extends OptFunction {
         });
     }
 
-    public String getFunctionName() {
-        return "y = exp(-(A-A*sin(B/x)/(B/x)+C)";
-    }
-
     public void calcGuessParams() {
         EstParam[] eps = getEstParams();
         double yAtMinX = DataUtil.getYAtMinX(VecID.Y, VecID.X, getDataSetPtr());
@@ -138,5 +131,9 @@ public class RDispESin extends OptFunction {
                 }
             }
         }
+    }
+
+    public String getFunctionName() {
+        return "y = exp(-(A-A*sin(B/x)/(B/x)+C)";
     }
 }

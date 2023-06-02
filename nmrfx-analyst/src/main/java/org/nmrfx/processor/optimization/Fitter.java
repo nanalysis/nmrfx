@@ -1,11 +1,19 @@
 package org.nmrfx.processor.optimization;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.function.BiFunction;
+import java.util.stream.IntStream;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.NotPositiveException;
 import org.apache.commons.math3.exception.NotStrictlyPositiveException;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
-import org.apache.commons.math3.optim.*;
+import org.apache.commons.math3.optim.InitialGuess;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.optim.SimpleBounds;
+import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
@@ -18,11 +26,6 @@ import org.codehaus.commons.compiler.CompileException;
 import org.codehaus.janino.ExpressionEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.function.BiFunction;
-import java.util.stream.IntStream;
 
 public class Fitter {
 
@@ -46,6 +49,36 @@ public class Fitter {
 
     public Fitter() {
 
+    }
+
+
+    public static Fitter getFitter(BiFunction<double[], double[], Double> function) {
+        Fitter fitter = new Fitter();
+        fitter.function = function;
+        return fitter;
+    }
+
+    public static Fitter getArrayFitter(BiFunction<double[], double[][], Double> function) {
+        Fitter fitter = new Fitter();
+        fitter.valuesFunction = function;
+        return fitter;
+    }
+
+    public static Fitter getExpressionFitter(String expression, String[] parNames, String[] varNames) throws CompileException {
+        Fitter fitter = new Fitter();
+
+        ExpressionEvaluator ee = new ExpressionEvaluator();
+        Class[] allClasses = new Class[parNames.length + varNames.length];
+        String[] allNames = new String[parNames.length + varNames.length];
+        System.arraycopy(parNames, 0, allNames, 0, parNames.length);
+        System.arraycopy(varNames, 0, allNames, parNames.length, varNames.length);
+
+        Arrays.fill(allClasses, double.class);
+        ee.setParameters(allNames, allClasses);
+        ee.setExpressionType(double.class);
+        ee.cook(expression);
+        fitter.ee = ee;
+        return fitter;
     }
 
     public double evalExpression(double[] pars, double[] vars) {
@@ -139,81 +172,33 @@ public class Fitter {
         return yValues;
     }
 
-    public double[] bootstrap(double[] guess, int nSim) {
-        reportFitness = false;
-        int nPar = start.length;
-        parValues = new double[nPar + 1][nSim];
-
-        IntStream.range(0, nSim).parallel().forEach(iSim -> {
-            double[][] newX = new double[xValues.length][yValues.length];
-            double[] newY = new double[yValues.length];
-            double[] newErr = new double[yValues.length];
-            Optimizer optimizer = new Optimizer();
-            for (int iValue = 0; iValue < yValues.length; iValue++) {
-                int rI = random.nextInt(yValues.length);
-                for (int xIndex = 0; xIndex < newX.length; xIndex++) {
-                    newX[xIndex][iValue] = xValues[xIndex][rI];
-                }
-                newY[iValue] = yValues[rI];
-                newErr[iValue] = errValues[rI];
-            }
-
-            // fixme  idNum should be set in above loop
-            optimizer.setXYE(newX, newY, newErr);
-
-            PointValuePair result;
-            try {
-                result = optimizer.refineCMAES(guess, inputSigma);
-            } catch (Exception ex) {
-                return;
-            }
-            double[] rPoint = result.getPoint();
-            for (int j = 0; j < nPar; j++) {
-                parValues[j][iSim] = rPoint[j];
-            }
-            parValues[nPar][iSim] = result.getValue();
-        });
-
-        double[] parSDev = new double[nPar];
-        for (int i = 0; i < nPar; i++) {
-            DescriptiveStatistics dStat = new DescriptiveStatistics(parValues[i]);
-            parSDev[i] = dStat.getStandardDeviation();
-        }
-        return parSDev;
-    }
-
-    public static Fitter getFitter(BiFunction<double[], double[], Double> function) {
-        Fitter fitter = new Fitter();
-        fitter.function = function;
-        return fitter;
-    }
-
-    public static Fitter getArrayFitter(BiFunction<double[], double[][], Double> function) {
-        Fitter fitter = new Fitter();
-        fitter.valuesFunction = function;
-        return fitter;
-    }
-
-    public static Fitter getExpressionFitter(String expression, String[] parNames, String[] varNames) throws CompileException {
-        Fitter fitter = new Fitter();
-
-        ExpressionEvaluator ee = new ExpressionEvaluator();
-        Class[] allClasses = new Class[parNames.length + varNames.length];
-        String[] allNames = new String[parNames.length + varNames.length];
-        System.arraycopy(parNames, 0, allNames, 0, parNames.length);
-        System.arraycopy(varNames, 0, allNames, parNames.length, varNames.length);
-
-        Arrays.fill(allClasses, double.class);
-        ee.setParameters(allNames, allClasses);
-        ee.setExpressionType(double.class);
-        ee.cook(expression);
-        fitter.ee = ee;
-        return fitter;
-    }
-
     class Optimizer implements MultivariateFunction {
 
         RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
+
+        public class Checker extends SimpleValueChecker {
+
+            public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
+                super(relativeThreshold, absoluteThreshold, maxIter);
+            }
+
+            @Override
+            public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
+                boolean converged = super.converged(iteration, previous, current);
+                if (reportFitness) {
+                    if (converged) {
+                        System.out.println(previous.getValue() + " " + current.getValue());
+                    }
+                    if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
+                        long time = System.currentTimeMillis();
+                        long deltaTime = time - startTime;
+                        System.out.println(deltaTime + " " + iteration + " " + current.getValue());
+                    }
+                }
+                return converged;
+            }
+        }
+
         double[][] xValues;
         double[] yValues;
         double[] errValues;
@@ -335,8 +320,7 @@ public class Fitter {
                         new ObjectiveFunction(this), GoalType.MINIMIZE,
                         new SimpleBounds(normLower, normUpper),
                         new InitialGuess(normGuess));
-            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException |
-                     TooManyEvaluationsException e) {
+            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
                 throw new Exception("failure to fit data " + e.getMessage());
             }
             endTime = System.currentTimeMillis();
@@ -345,28 +329,48 @@ public class Fitter {
 
             return deNormResult;
         }
+    }
 
-        public class Checker extends SimpleValueChecker {
+    public double[] bootstrap(double[] guess, int nSim) {
+        reportFitness = false;
+        int nPar = start.length;
+        parValues = new double[nPar + 1][nSim];
 
-            public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
-                super(relativeThreshold, absoluteThreshold, maxIter);
-            }
-
-            @Override
-            public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
-                boolean converged = super.converged(iteration, previous, current);
-                if (reportFitness) {
-                    if (converged) {
-                        System.out.println(previous.getValue() + " " + current.getValue());
-                    }
-                    if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
-                        long time = System.currentTimeMillis();
-                        long deltaTime = time - startTime;
-                        System.out.println(deltaTime + " " + iteration + " " + current.getValue());
-                    }
+        IntStream.range(0, nSim).parallel().forEach(iSim -> {
+            double[][] newX = new double[xValues.length][yValues.length];
+            double[] newY = new double[yValues.length];
+            double[] newErr = new double[yValues.length];
+            Optimizer optimizer = new Optimizer();
+            for (int iValue = 0; iValue < yValues.length; iValue++) {
+                int rI = random.nextInt(yValues.length);
+                for (int xIndex = 0; xIndex < newX.length; xIndex++) {
+                    newX[xIndex][iValue] = xValues[xIndex][rI];
                 }
-                return converged;
+                newY[iValue] = yValues[rI];
+                newErr[iValue] = errValues[rI];
             }
+
+            // fixme  idNum should be set in above loop
+            optimizer.setXYE(newX, newY, newErr);
+
+            PointValuePair result;
+            try {
+                result = optimizer.refineCMAES(guess, inputSigma);
+            } catch (Exception ex) {
+                return;
+            }
+            double[] rPoint = result.getPoint();
+            for (int j = 0; j < nPar; j++) {
+                parValues[j][iSim] = rPoint[j];
+            }
+            parValues[nPar][iSim] = result.getValue();
+        });
+
+        double[] parSDev = new double[nPar];
+        for (int i = 0; i < nPar; i++) {
+            DescriptiveStatistics dStat = new DescriptiveStatistics(parValues[i]);
+            parSDev[i] = dStat.getStandardDeviation();
         }
+        return parSDev;
     }
 }

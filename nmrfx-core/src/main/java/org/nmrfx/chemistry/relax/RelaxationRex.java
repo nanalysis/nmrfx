@@ -1,5 +1,5 @@
 /*
- * NMRFx Analyst :
+ * NMRFx Analyst : 
  * Copyright (C) 2004-2021 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,7 @@ import org.nmrfx.annotations.PluginAPI;
 import java.util.Map;
 
 /**
+ *
  * @author mbeckwith
  */
 @PluginAPI("ring")
@@ -31,7 +32,7 @@ public class RelaxationRex extends RelaxationData {
     Double RexError;
 
     public RelaxationRex(String ID, relaxTypes expType, ResonanceSource resSource, double field, double temperature,
-                         Double value, Double error, Double RexValue, Double RexError, Map<String, String> extras) {
+            Double value, Double error, Double RexValue, Double RexError, Map<String, String> extras) {
 
         super(ID, expType, resSource, field, temperature, value, error, extras);
 

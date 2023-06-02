@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ *
  * @author brucejohnson
  */
 public class CouplingList {

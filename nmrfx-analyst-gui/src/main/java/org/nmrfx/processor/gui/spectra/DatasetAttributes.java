@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -668,7 +668,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         }
         rearrangeDim(dimC, ptC);
         int size = ptC[0][1] - ptC[0][0] + 1;
-        if ((iDim == 0) && theFile.getComplex(0)) {
+        if ((iDim  == 0) && theFile.getComplex(0)) {
             ptC[0][0] *= 2;
             ptC[0][1] *= 2;
         }
@@ -1227,7 +1227,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
 
     public void setDims(int[] newDims) {
         for (int i = 0; i < newDims.length; i++) {
-            setDim(newDims[i], i);
+            setDim(newDims[i],i);
         }
     }
 
@@ -1464,7 +1464,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
             limit[1] = (theFile.getSizeReal(dim[i]) - 1) / theFile.getSw(dim[i]);
         } else if (mode == AXMODE.PPM) {
             limit[1] = theFile.pointToPPM(dim[i], 0.0);
-            limit[0] = theFile.pointToPPM(dim[i],
+            limit[0] =  theFile.pointToPPM(dim[i],
                     (theFile.getSizeReal(dim[i]) - 1));
         }
 

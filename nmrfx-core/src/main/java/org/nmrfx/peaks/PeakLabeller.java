@@ -22,13 +22,13 @@
  */
 package org.nmrfx.peaks;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.Residue;
-
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.Residue;
 
 /**
  * @author brucejohnson
@@ -39,6 +39,10 @@ public class PeakLabeller {
     static Pattern rPat2 = Pattern.compile("^(.+:)?([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
     static Pattern rPat3 = Pattern.compile("^(.+:)?([a-zA-Z]+)([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
     static Pattern rPat4 = Pattern.compile("^(.+:)?([a-zA-Z]+)?([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
+
+    public record ChainResAtomSpecifier(String chain, String resName, int resNum, String atomName) {
+    }
+
 
     public static Optional<ChainResAtomSpecifier> parse(String specifier) {
         Matcher matcher = rPat4.matcher(specifier);
@@ -104,8 +108,5 @@ public class PeakLabeller {
                     }
                 }
         );
-    }
-
-    public record ChainResAtomSpecifier(String chain, String resName, int resNum, String atomName) {
     }
 }

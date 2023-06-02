@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,18 +17,22 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import java.util.Optional;
 import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.input.*;
+import javafx.scene.input.ContextMenuEvent;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.RotateEvent;
+import javafx.scene.input.ScrollEvent;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 
-import java.util.Optional;
-
 /**
+ *
  * @author brucejohnson
  */
 public class CanvasBindings {
@@ -116,6 +120,7 @@ public class CanvasBindings {
             });
             mouseNode.requestFocus();
         });
+
 
 
         mouseNode.setOnMouseMoved((MouseEvent mouseEvent) -> {

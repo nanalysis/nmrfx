@@ -58,17 +58,17 @@ public class VecIndex {
     }
 
     @Override
-    public int hashCode() {
-        int result = Arrays.hashCode(inVecs);
-        result = 31 * result + Arrays.hashCode(outVecs);
-        return result;
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         VecIndex vecIndex = (VecIndex) o;
         return Arrays.equals(inVecs, vecIndex.inVecs) && Arrays.equals(outVecs, vecIndex.outVecs);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.hashCode(inVecs);
+        result = 31 * result + Arrays.hashCode(outVecs);
+        return result;
     }
 }

@@ -20,12 +20,12 @@ package org.nmrfx.structure.chemistry.energy;
 
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
 import org.apache.commons.math3.exception.MathInternalError;
-import org.apache.commons.math3.exception.MathUnsupportedOperationException;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import org.apache.commons.math3.exception.MathUnsupportedOperationException;
 import org.apache.commons.math3.exception.util.LocalizedFormats;
-import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.optim.OptimizationData;
 import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.GradientMultivariateOptimizer;
 import org.apache.commons.math3.optim.nonlinear.scalar.LineSearch;
@@ -46,73 +46,127 @@ import org.apache.commons.math3.optim.nonlinear.scalar.gradient.Preconditioner;
  * @since 2.0
  */
 public class NonLinearConjugateGradientOptimizer
-        extends GradientMultivariateOptimizer {
-    /**
-     * Update formula for the beta parameter.
-     */
+    extends GradientMultivariateOptimizer {
+    /** Update formula for the beta parameter. */
     private final Formula updateFormula;
-    /**
-     * Preconditioner (may be null).
-     */
+    /** Preconditioner (may be null). */
     private final Preconditioner preconditioner;
-    /**
-     * Line search algorithm.
-     */
+    /** Line search algorithm. */
     private final LineSearch line;
+
+    /**
+     * Available choices of update formulas for the updating the parameter
+     * that is used to compute the successive conjugate search directions.
+     * For non-linear conjugate gradients, there are
+     * two formulas:
+     * <ul>
+     *   <li>Fletcher-Reeves formula</li>
+     *   <li>Polak-Ribière formula</li>
+     * </ul>
+     *
+     * On the one hand, the Fletcher-Reeves formula is guaranteed to converge
+     * if the start point is close enough of the optimum whether the
+     * Polak-Ribière formula may not converge in rare cases. On the
+     * other hand, the Polak-Ribière formula is often faster when it
+     * does converge. Polak-Ribière is often used.
+     *
+     * @since 2.0
+     */
+    public enum Formula {
+        /** Fletcher-Reeves formula. */
+        FLETCHER_REEVES,
+        /** Polak-Ribière formula. */
+        POLAK_RIBIERE
+    }
+
+    /**
+     * The initial step is a factor with respect to the search direction
+     * (which itself is roughly related to the gradient of the function).
+     * <br/>
+     * It is used to find an interval that brackets the optimum in line
+     * search.
+     *
+     * @since 3.1
+     * @deprecated As of v3.3, this class is not used anymore.
+     * This setting is replaced by the {@code initialBracketingRange}
+     * argument to the new constructors.
+     */
+    @Deprecated
+    public static class BracketingStep implements OptimizationData {
+        /** Initial step. */
+        private final double initialStep;
+
+        /**
+         * @param step Initial step for the bracket search.
+         */
+        public BracketingStep(double step) {
+            initialStep = step;
+        }
+
+        /**
+         * Gets the initial step.
+         *
+         * @return the initial step.
+         */
+        public double getBracketingStep() {
+            return initialStep;
+        }
+    }
 
     /**
      * Constructor with default tolerances for the line search (1e-8) and
      * {@link IdentityPreconditioner preconditioner}.
      *
      * @param updateFormula formula to use for updating the &beta; parameter,
-     *                      must be one of {@link Formula#FLETCHER_REEVES} or
-     *                      {@link Formula#POLAK_RIBIERE}.
-     * @param checker       Convergence checker.
+     * must be one of {@link Formula#FLETCHER_REEVES} or
+     * {@link Formula#POLAK_RIBIERE}.
+     * @param checker Convergence checker.
      */
     public NonLinearConjugateGradientOptimizer(final Formula updateFormula,
                                                ConvergenceChecker<PointValuePair> checker) {
         this(updateFormula,
-                checker,
-                1e-8,
-                1e-8,
-                1e-8,
-                new IdentityPreconditioner());
+             checker,
+             1e-8,
+             1e-8,
+             1e-8,
+             new IdentityPreconditioner());
     }
 
     /**
      * Constructor with default {@link IdentityPreconditioner preconditioner}.
      *
-     * @param updateFormula    formula to use for updating the &beta; parameter,
-     *                         must be one of {@link Formula#FLETCHER_REEVES} or
-     *                         {@link Formula#POLAK_RIBIERE}.
-     * @param checker          Convergence checker.
+     * @param updateFormula formula to use for updating the &beta; parameter,
+     * must be one of {@link Formula#FLETCHER_REEVES} or
+     * {@link Formula#POLAK_RIBIERE}.
+     * @param checker Convergence checker.
      * @param lineSearchSolver Solver to use during line search.
      * @deprecated as of 3.3. Please use
-     * {@link #NonLinearConjugateGradientOptimizer(Formula, ConvergenceChecker, double, double, double)} instead.
+     * {@link #NonLinearConjugateGradientOptimizer(Formula,ConvergenceChecker,double,double,double)} instead.
      */
     @Deprecated
     public NonLinearConjugateGradientOptimizer(final Formula updateFormula,
                                                ConvergenceChecker<PointValuePair> checker,
                                                final UnivariateSolver lineSearchSolver) {
         this(updateFormula,
-                checker,
-                lineSearchSolver,
-                new IdentityPreconditioner());
+             checker,
+             lineSearchSolver,
+             new IdentityPreconditioner());
     }
 
     /**
      * Constructor with default {@link IdentityPreconditioner preconditioner}.
      *
-     * @param updateFormula          formula to use for updating the &beta; parameter,
-     *                               must be one of {@link Formula#FLETCHER_REEVES} or
-     *                               {@link Formula#POLAK_RIBIERE}.
-     * @param checker                Convergence checker.
-     * @param relativeTolerance      Relative threshold for line search.
-     * @param absoluteTolerance      Absolute threshold for line search.
+     * @param updateFormula formula to use for updating the &beta; parameter,
+     * must be one of {@link Formula#FLETCHER_REEVES} or
+     * {@link Formula#POLAK_RIBIERE}.
+     * @param checker Convergence checker.
+     * @param relativeTolerance Relative threshold for line search.
+     * @param absoluteTolerance Absolute threshold for line search.
      * @param initialBracketingRange Extent of the initial interval used to
-     *                               find an interval that brackets the optimum in order to perform the
-     *                               line search.
-     * @see LineSearch#LineSearch(MultivariateOptimizer, double, double, double)
+     * find an interval that brackets the optimum in order to perform the
+     * line search.
+     *
+     * @see LineSearch#LineSearch(MultivariateOptimizer,double,double,double)
      * @since 3.3
      */
     public NonLinearConjugateGradientOptimizer(final Formula updateFormula,
@@ -121,22 +175,22 @@ public class NonLinearConjugateGradientOptimizer
                                                double absoluteTolerance,
                                                double initialBracketingRange) {
         this(updateFormula,
-                checker,
-                relativeTolerance,
-                absoluteTolerance,
-                initialBracketingRange,
-                new IdentityPreconditioner());
+             checker,
+             relativeTolerance,
+             absoluteTolerance,
+             initialBracketingRange,
+             new IdentityPreconditioner());
     }
 
     /**
-     * @param updateFormula    formula to use for updating the &beta; parameter,
-     *                         must be one of {@link Formula#FLETCHER_REEVES} or
-     *                         {@link Formula#POLAK_RIBIERE}.
-     * @param checker          Convergence checker.
+     * @param updateFormula formula to use for updating the &beta; parameter,
+     * must be one of {@link Formula#FLETCHER_REEVES} or
+     * {@link Formula#POLAK_RIBIERE}.
+     * @param checker Convergence checker.
      * @param lineSearchSolver Solver to use during line search.
-     * @param preconditioner   Preconditioner.
+     * @param preconditioner Preconditioner.
      * @deprecated as of 3.3. Please use
-     * {@link #NonLinearConjugateGradientOptimizer(Formula, ConvergenceChecker, double, double, double, Preconditioner)} instead.
+     * {@link #NonLinearConjugateGradientOptimizer(Formula,ConvergenceChecker,double,double,double,Preconditioner)} instead.
      */
     @Deprecated
     public NonLinearConjugateGradientOptimizer(final Formula updateFormula,
@@ -144,25 +198,26 @@ public class NonLinearConjugateGradientOptimizer
                                                final UnivariateSolver lineSearchSolver,
                                                final Preconditioner preconditioner) {
         this(updateFormula,
-                checker,
-                lineSearchSolver.getRelativeAccuracy(),
-                lineSearchSolver.getAbsoluteAccuracy(),
-                lineSearchSolver.getAbsoluteAccuracy(),
-                preconditioner);
+             checker,
+             lineSearchSolver.getRelativeAccuracy(),
+             lineSearchSolver.getAbsoluteAccuracy(),
+             lineSearchSolver.getAbsoluteAccuracy(),
+             preconditioner);
     }
 
     /**
-     * @param updateFormula          formula to use for updating the &beta; parameter,
-     *                               must be one of {@link Formula#FLETCHER_REEVES} or
-     *                               {@link Formula#POLAK_RIBIERE}.
-     * @param checker                Convergence checker.
-     * @param preconditioner         Preconditioner.
-     * @param relativeTolerance      Relative threshold for line search.
-     * @param absoluteTolerance      Absolute threshold for line search.
+     * @param updateFormula formula to use for updating the &beta; parameter,
+     * must be one of {@link Formula#FLETCHER_REEVES} or
+     * {@link Formula#POLAK_RIBIERE}.
+     * @param checker Convergence checker.
+     * @param preconditioner Preconditioner.
+     * @param relativeTolerance Relative threshold for line search.
+     * @param absoluteTolerance Absolute threshold for line search.
      * @param initialBracketingRange Extent of the initial interval used to
-     *                               find an interval that brackets the optimum in order to perform the
-     *                               line search.
-     * @see LineSearch#LineSearch(MultivariateOptimizer, double, double, double)
+     * find an interval that brackets the optimum in order to perform the
+     * line search.
+     *
+     * @see LineSearch#LineSearch(MultivariateOptimizer,double,double,double)
      * @since 3.3
      */
     public NonLinearConjugateGradientOptimizer(final Formula updateFormula,
@@ -176,9 +231,9 @@ public class NonLinearConjugateGradientOptimizer
         this.updateFormula = updateFormula;
         this.preconditioner = preconditioner;
         line = new LineSearch(this,
-                relativeTolerance,
-                absoluteTolerance,
-                initialBracketingRange);
+                              relativeTolerance,
+                              absoluteTolerance,
+                              initialBracketingRange);
     }
 
     /**
@@ -186,25 +241,13 @@ public class NonLinearConjugateGradientOptimizer
      */
     @Override
     public PointValuePair optimize(OptimizationData... optData)
-            throws TooManyEvaluationsException {
+        throws TooManyEvaluationsException {
         // Set up base class and perform computation.
         return super.optimize(optData);
     }
+    
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void parseOptimizationData(OptimizationData... optData) {
-        // Allow base class to register its own data.
-        super.parseOptimizationData(optData);
-
-        checkParameters();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     protected PointValuePair doOptimize() {
         final ConvergenceChecker<PointValuePair> checker = getConvergenceChecker();
@@ -260,31 +303,31 @@ public class NonLinearConjugateGradientOptimizer
             for (int i = 0; i < n; ++i) {
                 delta += r[i] * newSteepestDescent[i];
             }
-            if (deltaOld == 0) {
+            if (deltaOld == 0){
                 return current;
             }
 
             final double beta;
             switch (updateFormula) {
-                case FLETCHER_REEVES:
-                    beta = delta / deltaOld;
-                    break;
-                case POLAK_RIBIERE:
-                    double deltaMid = 0;
-                    for (int i = 0; i < r.length; ++i) {
-                        deltaMid += r[i] * steepestDescent[i];
-                    }
-                    beta = (delta - deltaMid) / deltaOld;
-                    break;
-                default:
-                    // Should never happen.
-                    throw new MathInternalError();
+            case FLETCHER_REEVES:
+                beta = delta / deltaOld;
+                break;
+            case POLAK_RIBIERE:
+                double deltaMid = 0;
+                for (int i = 0; i < r.length; ++i) {
+                    deltaMid += r[i] * steepestDescent[i];
+                }
+                beta = (delta - deltaMid) / deltaOld;
+                break;
+            default:
+                // Should never happen.
+                throw new MathInternalError();
             }
             steepestDescent = newSteepestDescent;
 
             // Compute conjugate search direction.
             if (getIterations() % n == 0 ||
-                    beta < 0) {
+                beta < 0) {
                 // Break conjugation: reset search direction.
                 searchDirection = steepestDescent.clone();
             } else {
@@ -297,90 +340,32 @@ public class NonLinearConjugateGradientOptimizer
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void parseOptimizationData(OptimizationData... optData) {
+        // Allow base class to register its own data.
+        super.parseOptimizationData(optData);
+
+        checkParameters();
+    }
+
+    /** Default identity preconditioner. */
+    public static class IdentityPreconditioner implements Preconditioner {
+        /** {@inheritDoc} */
+        public double[] precondition(double[] variables, double[] r) {
+            return r.clone();
+        }
+    }
+
+    /**
      * @throws MathUnsupportedOperationException if bounds were passed to the
-     *                                           {@link #optimize(OptimizationData[]) optimize} method.
+     * {@link #optimize(OptimizationData[]) optimize} method.
      */
     private void checkParameters() {
         if (getLowerBound() != null ||
-                getUpperBound() != null) {
+            getUpperBound() != null) {
             throw new MathUnsupportedOperationException(LocalizedFormats.CONSTRAINT);
-        }
-    }
-
-    /**
-     * Available choices of update formulas for the updating the parameter
-     * that is used to compute the successive conjugate search directions.
-     * For non-linear conjugate gradients, there are
-     * two formulas:
-     * <ul>
-     *   <li>Fletcher-Reeves formula</li>
-     *   <li>Polak-Ribière formula</li>
-     * </ul>
-     * <p>
-     * On the one hand, the Fletcher-Reeves formula is guaranteed to converge
-     * if the start point is close enough of the optimum whether the
-     * Polak-Ribière formula may not converge in rare cases. On the
-     * other hand, the Polak-Ribière formula is often faster when it
-     * does converge. Polak-Ribière is often used.
-     *
-     * @since 2.0
-     */
-    public enum Formula {
-        /**
-         * Fletcher-Reeves formula.
-         */
-        FLETCHER_REEVES,
-        /**
-         * Polak-Ribière formula.
-         */
-        POLAK_RIBIERE
-    }
-
-    /**
-     * The initial step is a factor with respect to the search direction
-     * (which itself is roughly related to the gradient of the function).
-     * <br/>
-     * It is used to find an interval that brackets the optimum in line
-     * search.
-     *
-     * @since 3.1
-     * @deprecated As of v3.3, this class is not used anymore.
-     * This setting is replaced by the {@code initialBracketingRange}
-     * argument to the new constructors.
-     */
-    @Deprecated
-    public static class BracketingStep implements OptimizationData {
-        /**
-         * Initial step.
-         */
-        private final double initialStep;
-
-        /**
-         * @param step Initial step for the bracket search.
-         */
-        public BracketingStep(double step) {
-            initialStep = step;
-        }
-
-        /**
-         * Gets the initial step.
-         *
-         * @return the initial step.
-         */
-        public double getBracketingStep() {
-            return initialStep;
-        }
-    }
-
-    /**
-     * Default identity preconditioner.
-     */
-    public static class IdentityPreconditioner implements Preconditioner {
-        /**
-         * {@inheritDoc}
-         */
-        public double[] precondition(double[] variables, double[] r) {
-            return r.clone();
         }
     }
 }

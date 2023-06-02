@@ -1,6 +1,7 @@
 package org.nmrfx.structure.seqassign;
 
 /**
+ *
  * @author brucejohnson
  */
 public class StandardPPM {

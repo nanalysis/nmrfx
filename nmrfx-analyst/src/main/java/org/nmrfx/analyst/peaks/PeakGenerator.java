@@ -21,12 +21,41 @@ public class PeakGenerator {
     static final String[][] PATTERN_HNCOCACB = {{"H", "N", "-1.CB"}, {"H", "N", "-1.CA"}};
     static final String[][] PATTERN_HNCA = {{"H", "N", "CA"}, {"H", "N", "-1.CA"}};
     static final String[][] PATTERN_HNCACB = {{"H", "N", "CB"}, {"H", "N", "-1.CB"}, {"H", "N", "CA"}, {"H", "N", "-1.CA"}};
+
+    public enum PeakGeneratorTypes {
+        Proton_1D,
+        HSQC_13C(PATTERN_HSQC_13C),
+        HSQC_15N(PATTERN_HSQC_15N),
+        HMBC,
+        TOCSY,
+        NOESY,
+        RNA_NOESY_2nd_str,
+        HNCO(PATTERN_HNCO),
+        HNCOCA(PATTERN_HNCOCA),
+        HNCOCACB(PATTERN_HNCOCACB),
+        HNCACO(PATTERN_HNCACO),
+        HNCA(PATTERN_HNCA),
+        HNCACB(PATTERN_HNCACB);
+
+        final String[][] pattern;
+
+        PeakGeneratorTypes() {
+            this.pattern = null;
+        }
+
+        PeakGeneratorTypes(String[][] pattern) {
+            this.pattern = pattern;
+        }
+    }
+
+
     Molecule molecule = (Molecule) MoleculeFactory.getActive();
     Map<Atom, List<JCoupling>> jCouplingMap = null;
     Map<Atom, List<JCoupling>> tocsyCouplingMap = null;
     Map<Atom, List<JCoupling>> hmbcCouplingMap = null;
     int assignIndex;
     int refIndex;
+
     public PeakGenerator(int assignIndex, int refIndex) {
         this.assignIndex = assignIndex;
         this.refIndex = refIndex;
@@ -83,6 +112,7 @@ public class PeakGenerator {
         peak.setIntensity((float) intensity);
         peak.setVolume1((float) intensity);
     }
+
 
     String getListName(DatasetBase dataset, String listName, String tail) {
         if ((listName == null) || listName.isBlank()) {
@@ -233,6 +263,7 @@ public class PeakGenerator {
                 });
     }
 
+
     public void generateTOCSY(PeakList peakList, int limit) {
         generateTocsyCouplings(limit);
         Atom[] atoms = new Atom[2];
@@ -265,6 +296,38 @@ public class PeakGenerator {
                     addPeak(peakList, intensity, atoms);
                 });
     }
+
+    /*
+        def genDistancePeaks(self, dataset, listName="", condition="sim", scheme="", tol=5.0):
+        self.setWidths([self.widthH, self.widthH])
+        if dataset != None and dataset != "":
+            if not isinstance(dataset,DatasetBase):
+                dataset = DatasetBase.getDataset(dataset)
+            labelScheme = dataset.getProperty("labelScheme")
+            self.setLabelScheme(labelScheme)
+            if scheme == "":
+                scheme = dataset.getProperty("editScheme")
+        if scheme == "":
+            scheme = "aa"
+
+        (d1Edited, d2Edited) = editingModes[scheme]
+        peakList = self.getPeakList(dataset, listName)
+        self.mol.selectAtoms("*.H*")
+        protonPairs = self.mol.getDistancePairs(tol, False)
+        for protonPair in protonPairs:
+            dis = protonPair.getDistance()
+            if dis > 4.0:
+                volume = 0.2
+            elif dis > 3.0:
+                volume = 0.5
+            else:
+                volume = 1.0
+            intensity = volume
+            self.addProtonPairPeak(peakList, protonPair.getAtom1(), protonPair.getAtom2(), intensity, d1Edited, d2Edited)
+            self.addProtonPairPeak(peakList, protonPair.getAtom2(), protonPair.getAtom1(), intensity, d1Edited, d2Edited)
+        return peakList
+
+     */
 
     public void generateNOESY(PeakList peakList, double tol) throws InvalidMoleculeException {
         int nDim = peakList.getNDim();
@@ -318,38 +381,6 @@ public class PeakGenerator {
             }
         });
     }
-
-    /*
-        def genDistancePeaks(self, dataset, listName="", condition="sim", scheme="", tol=5.0):
-        self.setWidths([self.widthH, self.widthH])
-        if dataset != None and dataset != "":
-            if not isinstance(dataset,DatasetBase):
-                dataset = DatasetBase.getDataset(dataset)
-            labelScheme = dataset.getProperty("labelScheme")
-            self.setLabelScheme(labelScheme)
-            if scheme == "":
-                scheme = dataset.getProperty("editScheme")
-        if scheme == "":
-            scheme = "aa"
-
-        (d1Edited, d2Edited) = editingModes[scheme]
-        peakList = self.getPeakList(dataset, listName)
-        self.mol.selectAtoms("*.H*")
-        protonPairs = self.mol.getDistancePairs(tol, False)
-        for protonPair in protonPairs:
-            dis = protonPair.getDistance()
-            if dis > 4.0:
-                volume = 0.2
-            elif dis > 3.0:
-                volume = 0.5
-            else:
-                volume = 1.0
-            intensity = volume
-            self.addProtonPairPeak(peakList, protonPair.getAtom1(), protonPair.getAtom2(), intensity, d1Edited, d2Edited)
-            self.addProtonPairPeak(peakList, protonPair.getAtom2(), protonPair.getAtom1(), intensity, d1Edited, d2Edited)
-        return peakList
-
-     */
 
     public void generateRNANOESYSecStr(Dataset dataset, PeakList peakList, int useN) {
         String script = String.format("molGen.genRNASecStrPeaks(datasetName, listName=listName, useN=%d)", useN);
@@ -436,32 +467,6 @@ public class PeakGenerator {
                 intensity = 0.5;
             }
             addPeak(peakList, intensity, atoms);
-        }
-    }
-
-    public enum PeakGeneratorTypes {
-        Proton_1D,
-        HSQC_13C(PATTERN_HSQC_13C),
-        HSQC_15N(PATTERN_HSQC_15N),
-        HMBC,
-        TOCSY,
-        NOESY,
-        RNA_NOESY_2nd_str,
-        HNCO(PATTERN_HNCO),
-        HNCOCA(PATTERN_HNCOCA),
-        HNCOCACB(PATTERN_HNCOCACB),
-        HNCACO(PATTERN_HNCACO),
-        HNCA(PATTERN_HNCA),
-        HNCACB(PATTERN_HNCACB);
-
-        final String[][] pattern;
-
-        PeakGeneratorTypes() {
-            this.pattern = null;
-        }
-
-        PeakGeneratorTypes(String[][] pattern) {
-            this.pattern = pattern;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Optional;
 
 /**
+ *
  * @author brucejohnson
  */
 //TODO uncomment once core & utils are merged
@@ -57,6 +58,10 @@ public class XYCanvasBarChart extends XYCanvasChart {
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         gC.clearRect(xPos, yPos, width, height);
         drawChart(gC);
+    }
+
+    public void annotate(GraphicsContextInterface gC) {
+
     }
 
     @Override
@@ -101,18 +106,14 @@ public class XYCanvasBarChart extends XYCanvasChart {
         gC.restore();
     }
 
+    void drawSeries(GraphicsContextInterface gC) {
+        doSeries(gC, null);
+    }
+
     @Override
     public Optional<Hit> pickChart(double mouseX, double mouseY, double hitRadius) {
         PickPoint pickPt = new PickPoint(mouseX, mouseY, hitRadius);
         return doSeries(null, pickPt);
-    }
-
-    public void annotate(GraphicsContextInterface gC) {
-
-    }
-
-    void drawSeries(GraphicsContextInterface gC) {
-        doSeries(gC, null);
     }
 
     Optional<Hit> doSeries(GraphicsContextInterface gC, PickPoint pickPt) {

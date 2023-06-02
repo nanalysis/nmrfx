@@ -1,6 +1,7 @@
 package org.nmrfx.chemistry;
 
 /**
+ *
  * @author Bruce Johnson
  */
 public interface IBond {

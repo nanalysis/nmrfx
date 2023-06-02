@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,17 +17,16 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.CoordSet;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.utilities.NvUtil;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import org.nmrfx.chemistry.Util;
+import java.util.*;
 
 public class IdPeak {
 
     static final int N_PEAK_ID = 500;
+    private MoleculeBase molecule;
     List<SpatialSet> atomList = new ArrayList<>();
     ArrayList[] protonList = new ArrayList[2];
     double keepThresh = 10000.0;
@@ -35,7 +34,6 @@ public class IdPeak {
     boolean useRef = false;
     int start = 1;
     int ppmSet = 0;
-    private MoleculeBase molecule;
 
     public void clearAtomList() {
         atomList.clear();
@@ -125,6 +123,23 @@ public class IdPeak {
             }
         }
         return matchList;
+    }
+
+    public static double getPPMDelta(double testPPM, MatchCriteria mC) {
+// fixme need to to alias (if iFoldCount < 0)
+        int iFoldCount = mC.getFoldCount();
+        if (iFoldCount < 0) {
+            iFoldCount = -iFoldCount;
+        }
+        double deltaMin = Double.MAX_VALUE;
+        for (int iFold = -iFoldCount; iFold <= iFoldCount; iFold++) {
+            double ppm = mC.getPpm() + iFold * mC.getFolding();
+            double delta = testPPM - ppm;
+            if (Math.abs(delta) < Math.abs(deltaMin)) {
+                deltaMin = delta;
+            }
+        }
+        return deltaMin;
     }
 
     boolean checkPPM(SpatialSet sSet, MatchCriteria mC, int iFold) {
@@ -249,6 +264,52 @@ public class IdPeak {
      */
     public void setMolecule(MoleculeBase molecule) {
         this.molecule = molecule;
+    }
+
+    class SpatialSetPPMComparator implements Comparator {
+
+        @Override
+        public int compare(Object o1, Object o2) {
+            Double ppm1 = null;
+            Double ppm2 = null;
+            int result;
+            if (o1 instanceof SpatialSet) {
+                SpatialSet a1 = (SpatialSet) o1;
+                PPMv ppmv1 = a1.getPPM(ppmSet);
+                if ((ppmv1 == null) && useRef) {
+                    ppmv1 = a1.getRefPPM();
+                }
+                if (ppmv1 != null) {
+                    ppm1 = ppmv1.getValue();
+                }
+            } else if (o1 instanceof Double) {
+                ppm1 = (Double) o1;
+            }
+            if (o2 instanceof SpatialSet) {
+                SpatialSet a2 = (SpatialSet) o2;
+                PPMv ppmv2 = a2.getPPM(ppmSet);
+                if ((ppmv2 == null) && useRef) {
+                    ppmv2 = a2.getRefPPM();
+                }
+                if (ppmv2 != null) {
+                    ppm2 = ppmv2.getValue();
+                }
+            } else if (o2 instanceof Double) {
+                ppm2 = (Double) o2;
+            }
+            if (ppm1 != null) {
+                if (ppm2 == null) {
+                    result = 1;
+                } else {
+                    result = Double.compare(ppm1, ppm2);
+                }
+            } else if (ppm2 == null) {
+                result = 0;
+            } else {
+                result = -1;
+            }
+            return result;
+        }
     }
 
     public void getAtomsWithPPMs() {
@@ -405,251 +466,6 @@ public class IdPeak {
         MatchCriteria matchCriteria = new MatchCriteria(i, ppm, tol, atomPats, resPats, relation, 0.0, 0);
 
         return matchCriteria;
-    }
-
-    IdResult GetDistances(SpatialSet[] spatialSets, MatchCriteria[] matchCriteria) {
-        int nDim = spatialSets.length;
-        SpatialSet proton1 = null;
-        SpatialSet proton2 = null;
-        PPMv ppmv;
-        double[] dp = new double[nDim];
-        double dismin = 1.0e6;
-        double dismax = -1.0e6;
-        double dissum = 0.0;
-        int ndis = 0;
-        int nthresh = 0;
-        double percent;
-        double dis;
-        String[] aname = new String[nDim];
-        Point3 point1;
-        Point3 point2;
-        int j;
-        long longVal;
-        IdResult idResult = new IdResult(nDim);
-        for (j = 0; j < nDim; j++) {
-            aname[j] = spatialSets[j].atom.name;
-            idResult.setSpatialSet(j, spatialSets[j]);
-            if (proton1 == null) {
-                if (aname[j].toUpperCase().charAt(0) == 'H') {
-                    proton1 = spatialSets[j];
-                }
-            } else if (aname[j].toUpperCase().charAt(0) == 'H') {
-                proton2 = spatialSets[j];
-            }
-
-            ppmv = spatialSets[j].getPPM(ppmSet);
-            if ((ppmv == null) && useRef) {
-                ppmv = spatialSets[j].getRefPPM();
-            }
-
-            if (ppmv != null) {
-                double delta = getPPMDelta(ppmv.getValue(), matchCriteria[j]);
-                dp[j] = 100.0 * delta / matchCriteria[j].getTol();
-                idResult.dp[j] = dp[j];
-            } else {
-                idResult.dp[j] = 1.0e30;
-                System.out.println("no ppm");
-            }
-        }
-
-        int[] structureList = molecule.getActiveStructures();
-
-        if ((proton1 == null) || (proton2 == null) || (structureList.length == 0)) {
-        } else {
-            for (int jStruct = 0; jStruct < structureList.length; jStruct++) {
-                int iStructure = structureList[jStruct];
-                point1 = proton1.getPoint(iStructure);
-                point2 = proton2.getPoint(iStructure);
-
-                if ((point1 == null) || (point2 == null)) {
-                    continue;
-                }
-
-                dis = Atom.calcDistance(point1, point2);
-                if (dis < dismin) {
-                    dismin = dis;
-                }
-                if (dis > dismax) {
-                    dismax = dis;
-                }
-                dissum += dis;
-
-                if (dis < disThresh) {
-                    nthresh++;
-                }
-
-                ndis++;
-            }
-
-            if (ndis > 0) {
-                dis = dissum / ndis;
-                percent = 100.0 * (((double) nthresh) / ((double) ndis));
-                idResult.hasDistances = true;
-            } else {
-                percent = 100.0;
-                dis = 0.0;
-                dismin = 0.0;
-                dismax = 0.0;
-            }
-
-            if (dismin > keepThresh) {
-                return (null);
-            }
-            idResult.dis = dis;
-            idResult.dismin = dismin;
-            idResult.dismax = dismax;
-            idResult.inRange = percent;
-        }
-
-        return idResult;
-    }
-
-    public List<String> getResults(List<SpatialSet>[] matchList, MatchCriteria[] matchCriteria) {
-        List<String> result = new ArrayList<>();
-        int nDim = matchList.length;
-        int[] idx = new int[nDim];
-        for (int i = 0; i < nDim; i++) {
-            if (matchList[i].isEmpty()) {
-                return result;
-            }
-
-            idx[i] = 0;
-        }
-
-        SpatialSet[] spatialSets = new SpatialSet[nDim];
-
-        while (true) {
-            for (int i = 0; i < nDim; i++) {
-                spatialSets[i] = matchList[i].get(idx[i]);
-            }
-
-            if (CheckPattern(spatialSets, matchCriteria)) {
-                IdResult idResult = GetDistances(spatialSets, matchCriteria);
-                if (idResult != null) {
-                    result.add(idResult.toString());
-                }
-            }
-            int i;
-            for (i = 0; i < nDim; i++) {
-                idx[i]++;
-
-                if (idx[i] >= matchList[i].size()) {
-                    idx[i] = 0;
-                } else {
-                    break;
-                }
-            }
-
-            if (i == nDim) {
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    public ArrayList<IdResult> getIdResults(List<SpatialSet>[] matchList, MatchCriteria[] matchCriteria) {
-        int nDim = matchList.length;
-        int[] idx = new int[nDim];
-        ArrayList<IdResult> result = new ArrayList<>();
-        for (int i = 0; i < nDim; i++) {
-            if (matchList[i].isEmpty()) {
-                return result;
-            }
-
-            idx[i] = 0;
-        }
-
-        SpatialSet[] spatialSets = new SpatialSet[nDim];
-
-        while (true) {
-            for (int i = 0; i < nDim; i++) {
-                spatialSets[i] = (SpatialSet) matchList[i].get(idx[i]);
-            }
-
-            if (CheckPattern(spatialSets, matchCriteria)) {
-                IdResult idResult = GetDistances(spatialSets, matchCriteria);
-                if (idResult != null) {
-                    result.add(idResult);
-                }
-            }
-            int i;
-            for (i = 0; i < nDim; i++) {
-                idx[i]++;
-
-                if (idx[i] >= matchList[i].size()) {
-                    idx[i] = 0;
-                } else {
-                    break;
-                }
-            }
-
-            if (i == nDim) {
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    public ArrayList<IdResult> getResults2(List<SpatialSet>[] matchList, MatchCriteria[] matchCriteria) {
-        int nDim = matchList.length;
-        int[] idx = new int[nDim];
-        ArrayList<IdResult> result = new ArrayList<>();
-        for (int i = 0; i < nDim; i++) {
-            if ((matchList[i] == null) || (matchList[i].isEmpty())) {
-                return result;
-            }
-
-            idx[i] = 0;
-        }
-
-        SpatialSet[] spatialSets = new SpatialSet[nDim];
-
-        while (true) {
-            for (int i = 0; i < nDim; i++) {
-                spatialSets[i] = (SpatialSet) matchList[i].get(idx[i]);
-            }
-
-            IdResult idResult = GetDistances(spatialSets, matchCriteria);
-            if (idResult != null) {
-                result.add(idResult);
-            }
-
-            int i;
-            for (i = 0; i < nDim; i++) {
-                idx[i]++;
-
-                if (idx[i] >= matchList[i].size()) {
-                    idx[i] = 0;
-                } else {
-                    break;
-                }
-            }
-
-            if (i == nDim) {
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    public static double getPPMDelta(double testPPM, MatchCriteria mC) {
-// fixme need to to alias (if iFoldCount < 0)
-        int iFoldCount = mC.getFoldCount();
-        if (iFoldCount < 0) {
-            iFoldCount = -iFoldCount;
-        }
-        double deltaMin = Double.MAX_VALUE;
-        for (int iFold = -iFoldCount; iFold <= iFoldCount; iFold++) {
-            double ppm = mC.getPpm() + iFold * mC.getFolding();
-            double delta = testPPM - ppm;
-            if (Math.abs(delta) < Math.abs(deltaMin)) {
-                deltaMin = delta;
-            }
-        }
-        return deltaMin;
     }
 
     static boolean CheckPattern(SpatialSet[] spatialSets, MatchCriteria[] matchCriteria) {
@@ -891,49 +707,231 @@ public class IdPeak {
         return ok;
     }
 
-    class SpatialSetPPMComparator implements Comparator {
+    IdResult GetDistances(SpatialSet[] spatialSets, MatchCriteria[] matchCriteria) {
+        int nDim = spatialSets.length;
+        SpatialSet proton1 = null;
+        SpatialSet proton2 = null;
+        PPMv ppmv;
+        double[] dp = new double[nDim];
+        double dismin = 1.0e6;
+        double dismax = -1.0e6;
+        double dissum = 0.0;
+        int ndis = 0;
+        int nthresh = 0;
+        double percent;
+        double dis;
+        String[] aname = new String[nDim];
+        Point3 point1;
+        Point3 point2;
+        int j;
+        long longVal;
+        IdResult idResult = new IdResult(nDim);
+        for (j = 0; j < nDim; j++) {
+            aname[j] = spatialSets[j].atom.name;
+            idResult.setSpatialSet(j, spatialSets[j]);
+            if (proton1 == null) {
+                if (aname[j].toUpperCase().charAt(0) == 'H') {
+                    proton1 = spatialSets[j];
+                }
+            } else if (aname[j].toUpperCase().charAt(0) == 'H') {
+                proton2 = spatialSets[j];
+            }
 
-        @Override
-        public int compare(Object o1, Object o2) {
-            Double ppm1 = null;
-            Double ppm2 = null;
-            int result;
-            if (o1 instanceof SpatialSet) {
-                SpatialSet a1 = (SpatialSet) o1;
-                PPMv ppmv1 = a1.getPPM(ppmSet);
-                if ((ppmv1 == null) && useRef) {
-                    ppmv1 = a1.getRefPPM();
-                }
-                if (ppmv1 != null) {
-                    ppm1 = ppmv1.getValue();
-                }
-            } else if (o1 instanceof Double) {
-                ppm1 = (Double) o1;
+            ppmv = spatialSets[j].getPPM(ppmSet);
+            if ((ppmv == null) && useRef) {
+                ppmv = spatialSets[j].getRefPPM();
             }
-            if (o2 instanceof SpatialSet) {
-                SpatialSet a2 = (SpatialSet) o2;
-                PPMv ppmv2 = a2.getPPM(ppmSet);
-                if ((ppmv2 == null) && useRef) {
-                    ppmv2 = a2.getRefPPM();
-                }
-                if (ppmv2 != null) {
-                    ppm2 = ppmv2.getValue();
-                }
-            } else if (o2 instanceof Double) {
-                ppm2 = (Double) o2;
-            }
-            if (ppm1 != null) {
-                if (ppm2 == null) {
-                    result = 1;
-                } else {
-                    result = Double.compare(ppm1, ppm2);
-                }
-            } else if (ppm2 == null) {
-                result = 0;
+
+            if (ppmv != null) {
+                double delta = getPPMDelta(ppmv.getValue(), matchCriteria[j]);
+                dp[j] = 100.0 * delta / matchCriteria[j].getTol();
+                idResult.dp[j] = dp[j];
             } else {
-                result = -1;
+                idResult.dp[j] = 1.0e30;
+                System.out.println("no ppm");
             }
-            return result;
         }
+
+        int[] structureList = molecule.getActiveStructures();
+
+        if ((proton1 == null) || (proton2 == null) || (structureList.length == 0)) {
+        } else {
+            for (int jStruct = 0; jStruct < structureList.length; jStruct++) {
+                int iStructure = structureList[jStruct];
+                point1 = proton1.getPoint(iStructure);
+                point2 = proton2.getPoint(iStructure);
+
+                if ((point1 == null) || (point2 == null)) {
+                    continue;
+                }
+
+                dis = Atom.calcDistance(point1, point2);
+                if (dis < dismin) {
+                    dismin = dis;
+                }
+                if (dis > dismax) {
+                    dismax = dis;
+                }
+                dissum += dis;
+
+                if (dis < disThresh) {
+                    nthresh++;
+                }
+
+                ndis++;
+            }
+
+            if (ndis > 0) {
+                dis = dissum / ndis;
+                percent = 100.0 * (((double) nthresh) / ((double) ndis));
+                idResult.hasDistances = true;
+            } else {
+                percent = 100.0;
+                dis = 0.0;
+                dismin = 0.0;
+                dismax = 0.0;
+            }
+
+            if (dismin > keepThresh) {
+                return (null);
+            }
+            idResult.dis = dis;
+            idResult.dismin = dismin;
+            idResult.dismax = dismax;
+            idResult.inRange = percent;
+        }
+
+        return idResult;
+    }
+
+    public List<String> getResults(List<SpatialSet>[] matchList, MatchCriteria[] matchCriteria) {
+        List<String> result = new ArrayList<>();
+        int nDim = matchList.length;
+        int[] idx = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            if (matchList[i].isEmpty()) {
+                return result;
+            }
+
+            idx[i] = 0;
+        }
+
+        SpatialSet[] spatialSets = new SpatialSet[nDim];
+
+        while (true) {
+            for (int i = 0; i < nDim; i++) {
+                spatialSets[i] = matchList[i].get(idx[i]);
+            }
+
+            if (CheckPattern(spatialSets, matchCriteria)) {
+                IdResult idResult = GetDistances(spatialSets, matchCriteria);
+                if (idResult != null) {
+                    result.add(idResult.toString());
+                }
+            }
+            int i;
+            for (i = 0; i < nDim; i++) {
+                idx[i]++;
+
+                if (idx[i] >= matchList[i].size()) {
+                    idx[i] = 0;
+                } else {
+                    break;
+                }
+            }
+
+            if (i == nDim) {
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    public ArrayList<IdResult> getIdResults(List<SpatialSet>[] matchList, MatchCriteria[] matchCriteria) {
+        int nDim = matchList.length;
+        int[] idx = new int[nDim];
+        ArrayList<IdResult> result = new ArrayList<>();
+        for (int i = 0; i < nDim; i++) {
+            if (matchList[i].isEmpty()) {
+                return result;
+            }
+
+            idx[i] = 0;
+        }
+
+        SpatialSet[] spatialSets = new SpatialSet[nDim];
+
+        while (true) {
+            for (int i = 0; i < nDim; i++) {
+                spatialSets[i] = (SpatialSet) matchList[i].get(idx[i]);
+            }
+
+            if (CheckPattern(spatialSets, matchCriteria)) {
+                IdResult idResult = GetDistances(spatialSets, matchCriteria);
+                if (idResult != null) {
+                    result.add(idResult);
+                }
+            }
+            int i;
+            for (i = 0; i < nDim; i++) {
+                idx[i]++;
+
+                if (idx[i] >= matchList[i].size()) {
+                    idx[i] = 0;
+                } else {
+                    break;
+                }
+            }
+
+            if (i == nDim) {
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    public ArrayList<IdResult> getResults2(List<SpatialSet>[] matchList, MatchCriteria[] matchCriteria) {
+        int nDim = matchList.length;
+        int[] idx = new int[nDim];
+        ArrayList<IdResult> result = new ArrayList<>();
+        for (int i = 0; i < nDim; i++) {
+            if ((matchList[i] == null) || (matchList[i].isEmpty())) {
+                return result;
+            }
+
+            idx[i] = 0;
+        }
+
+        SpatialSet[] spatialSets = new SpatialSet[nDim];
+
+        while (true) {
+            for (int i = 0; i < nDim; i++) {
+                spatialSets[i] = (SpatialSet) matchList[i].get(idx[i]);
+            }
+
+            IdResult idResult = GetDistances(spatialSets, matchCriteria);
+            if (idResult != null) {
+                result.add(idResult);
+            }
+
+            int i;
+            for (i = 0; i < nDim; i++) {
+                idx[i]++;
+
+                if (idx[i] >= matchList[i].size()) {
+                    idx[i] = 0;
+                } else {
+                    break;
+                }
+            }
+
+            if (i == nDim) {
+                break;
+            }
+        }
+
+        return result;
     }
 }

@@ -19,6 +19,9 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+
+import java.util.*;
+import java.util.function.Consumer;
 import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -30,20 +33,18 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
 import org.nmrfx.utils.GUIUtils;
 
-import java.util.*;
-import java.util.function.Consumer;
-
 /**
+ *
  * @author brucejohnson
  */
 public class AnalyzerBar {
 
-    private final Map<String, TextField> fieldMap = new HashMap<>();
     FXMLController controller;
     Consumer closeAction = null;
     VBox vBox;
     GridPane gridPane;
     DatasetBase dataset;
+    private final Map<String, TextField> fieldMap = new HashMap<>();
     Optional<RegionData> result = Optional.empty();
     String[] fieldNames = {"Max", "Min", "RVolume", "N", "Mean", "RMS", "S/N", "DNoise"};
 

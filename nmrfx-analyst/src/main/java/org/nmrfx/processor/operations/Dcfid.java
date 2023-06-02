@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,6 +21,7 @@ import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.math.Vec;
 
 /**
+ *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -28,14 +29,14 @@ public class Dcfid extends Operation {
 
     private final double val;
 
-    public Dcfid(double val) {
-        this.val = val;
-    }
-
     @Override
     public Dcfid eval(Vec vector) throws OperationException {
         dcfid(vector);
         return this;
+    }
+
+    public Dcfid(double val) {
+        this.val = val;
     }
 
     private void dcfid(Vec vector) throws OperationException {

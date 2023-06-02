@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,35 +17,39 @@
  */
 package org.nmrfx.processor.math;
 
-import org.apache.commons.math3.analysis.MultivariateFunction;
+import java.util.ArrayList;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
-import org.apache.commons.math3.optim.*;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
-import org.apache.commons.math3.random.MersenneTwister;
+import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.util.Precision;
-
-import java.util.ArrayList;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.SimpleBounds;
+import org.apache.commons.math3.optim.InitialGuess;
+import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.analysis.MultivariateFunction;
 
 
 public class SignalOpt implements MultivariateFunction {
-    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
     private final Complex[] values;
     private final Complex[] testVec;
     private final int vecSize;
     private final int nSignals;
     private final double[] parameters;
-    private final Complex[] fd;
-    private final Complex[] pa;
-    private final int start = 0;
     private double[] inputSigma;
     private double[][] boundaries = null;
     private double[][] normBoundaries = null;
     private double[] normValues;
+
+    private final Complex[] fd;
+    private final Complex[] pa;
+    private final int start = 0;
+    public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
 
     public SignalOpt(Complex[] testVec, int vecSize, Complex[] fd, Complex[] pa) {
         this.testVec = testVec;
@@ -96,8 +100,7 @@ public class SignalOpt implements MultivariateFunction {
                     boundaries[1][i] = parameters[i] + 0.1;
                     if (boundaries[0][i] <= 0.0) {
                         boundaries[0][i] = 1.0e-8;
-                    }
-                    break;
+                    }   break;
                 case 1:
                     boundaries[0][i] = parameters[i] - 0.1;
                     boundaries[1][i] = parameters[i] + 0.1;
@@ -107,8 +110,7 @@ public class SignalOpt implements MultivariateFunction {
                     boundaries[1][i] = parameters[i] + 0.1;
                     if (boundaries[0][i] <= 0.0) {
                         boundaries[0][i] = 1.0e-8;
-                    }
-                    break;
+                    }   break;
                 case 3:
                     boundaries[0][i] = parameters[i] - 0.1;
                     boundaries[1][i] = parameters[i] + 0.1;

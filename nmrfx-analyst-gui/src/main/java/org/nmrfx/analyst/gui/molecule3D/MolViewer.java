@@ -33,13 +33,26 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
+ *
  * @author Dub
  */
 public class MolViewer extends Pane {
     private static final Logger log = LoggerFactory.getLogger(MolViewer.class);
+
+    private double mousePosX;
+    private double mousePosY;
+    private double mouseOldX;
+    private double mouseOldY;
+    private double mouseDeltaX;
+    private double mouseDeltaY;
+    private boolean mouseMoved = false;
     private final double cameraDistance = 100;
-    private final CameraTransformer cameraTransform = new CameraTransformer();
+
     MolSceneController controller;
+    private Group rootGroup;
+    private SubScene subScene;
+    private PerspectiveCamera camera;
+    private final CameraTransformer cameraTransform = new CameraTransformer();
     Xform molGroup;
     Xform selGroup;
     Text text = null;
@@ -48,21 +61,23 @@ public class MolViewer extends Pane {
     Affine transTransform = new Affine();
     List<LabelNode> labelNodes = new ArrayList<>();
     Pane twoDPane;
+
     ArrayList<MolSelectionListener> selectionListeners = new ArrayList<>();
-    private double mousePosX;
-    private double mousePosY;
-    private double mouseOldX;
-    private double mouseOldY;
-    private double mouseDeltaX;
-    private double mouseDeltaY;
-    private boolean mouseMoved = false;
-    private Group rootGroup;
-    private SubScene subScene;
-    private PerspectiveCamera camera;
 
     public MolViewer(MolSceneController controller, Pane twoDPane) {
         this.controller = controller;
         this.twoDPane = twoDPane;
+    }
+
+    class LabelNode {
+
+        final Node node;
+        final Label label;
+
+        LabelNode(Node node, Label label) {
+            this.node = node;
+            this.label = label;
+        }
     }
 
     @Override
@@ -152,7 +167,7 @@ public class MolViewer extends Pane {
                 return;
             }
             PickResult res = event.getPickResult();
-            //you can get a reference to the clicked node like this
+            //you can get a reference to the clicked node like this 
             boolean clearIt = true;
             if (res.getIntersectedNode() instanceof Node) {
                 Node node = (Node) res.getIntersectedNode();
@@ -328,6 +343,23 @@ public class MolViewer extends Pane {
         }
     }
 
+    class MolPrimitives {
+
+        final ArrayList<Bond> bonds;
+        final ArrayList<Atom> atoms;
+        final ArrayList<BondLine> bondLines;
+        final ArrayList<AtomSphere> atomSpheres;
+        final Molecule mol;
+
+        MolPrimitives(Molecule molecule, int iStructure) {
+            this.mol = molecule;
+            bonds = molecule.getBondList();
+            atoms = molecule.getAtomList();
+            bondLines = MolCoords.createBondLines(bonds, iStructure);
+            atomSpheres = MolCoords.createAtomList(atoms, iStructure);
+        }
+    }
+
     private void createItems(String type) throws InvalidMoleculeException {
         int iStructure = 0;
         Molecule molecule = Molecule.getActive();
@@ -438,8 +470,8 @@ public class MolViewer extends Pane {
      * Adds a box around the molecule.
      *
      * @param iStructure int Structure number
-     * @param radius     double Radius of cylinder in plot
-     * @param tag        String Tag applied to every associated object
+     * @param radius double Radius of cylinder in plot
+     * @param tag String Tag applied to every associated object
      * @throws InvalidMoleculeException
      */
     public void addBox(int iStructure, double radius, String tag) throws InvalidMoleculeException {
@@ -495,9 +527,9 @@ public class MolViewer extends Pane {
      * SVD or RDC calculations.
      *
      * @param iStructure int Structure number
-     * @param radius     double Radius of cylinder in plot
-     * @param tag        String Tag applied to every associated object
-     * @param type       String Axis type (rdc, svd, original).
+     * @param radius double Radius of cylinder in plot
+     * @param tag String Tag applied to every associated object
+     * @param type String Axis type (rdc, svd, original).
      * @throws InvalidMoleculeException
      */
     public void addAxes(int iStructure, double radius, String tag, String type) throws InvalidMoleculeException {
@@ -652,7 +684,7 @@ public class MolViewer extends Pane {
     }
 
     public void createItems(String mode, String[] args, ArrayList<Bond> bonds,
-                            List<BondLine> bondLines, List<Atom> atoms, List<AtomSphere> atomSpheres) {
+            List<BondLine> bondLines, List<Atom> atoms, List<AtomSphere> atomSpheres) {
         String type = "";
         String text = "";
         double sphereRadius = 0.3;
@@ -794,33 +826,5 @@ public class MolViewer extends Pane {
             }
         }
         controller.updateRemoveMenu(items);
-    }
-
-    class LabelNode {
-
-        final Node node;
-        final Label label;
-
-        LabelNode(Node node, Label label) {
-            this.node = node;
-            this.label = label;
-        }
-    }
-
-    class MolPrimitives {
-
-        final ArrayList<Bond> bonds;
-        final ArrayList<Atom> atoms;
-        final ArrayList<BondLine> bondLines;
-        final ArrayList<AtomSphere> atomSpheres;
-        final Molecule mol;
-
-        MolPrimitives(Molecule molecule, int iStructure) {
-            this.mol = molecule;
-            bonds = molecule.getBondList();
-            atoms = molecule.getAtomList();
-            bondLines = MolCoords.createBondLines(bonds, iStructure);
-            atomSpheres = MolCoords.createAtomList(atoms, iStructure);
-        }
     }
 }

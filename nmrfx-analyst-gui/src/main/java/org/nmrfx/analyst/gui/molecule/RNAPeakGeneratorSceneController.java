@@ -88,23 +88,26 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
     TextField firstResidueField;
     @FXML
     TextField lastResidueField;
+    @FXML
+    private ComboBox<String> genDatasetNameField;
+
     ObservableList<String> selGroupList;
+
     Stage stage;
     String[][] baseAtoms = {
-            {"H2", "C2", "H8", "C8"}, // Adenine
-            {"H61", "H62", "N6"},
-            {"H8", "C8"},// Guanine
-            {"H21", "H22", "N2"},
-            {"H5", "C5", "H6", "C6"},// Uridine
-            {"H3", "N3"},
-            {"H5", "C5", "H6", "C6"},//Cytosine
-            {"H41", "H42", "N4"}
+        {"H2", "C2", "H8", "C8"}, // Adenine
+        {"H61", "H62", "N6"},
+        {"H8", "C8"},// Guanine
+        {"H21", "H22", "N2"},
+        {"H5", "C5", "H6", "C6"},// Uridine
+        {"H3", "N3"},
+        {"H5", "C5", "H6", "C6"},//Cytosine
+        {"H41", "H42", "N4"}
     };
     String[] riboseAtoms = {"H1'", "H2'", "H3'", "C1'", "C2'", "C3'", "H4'", "H5'", "H5''", "C4'", "C5'"};
     String[] baseChars = {"A", "G", "U", "C"};
+
     CheckBox[][][] checkBoxes = new CheckBox[4][3][];
-    @FXML
-    private ComboBox<String> genDatasetNameField;
 
     /**
      * Initializes the controller class.
@@ -626,13 +629,13 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
 
     }
 
-    public Stage getStage() {
-        return stage;
-    }
-
     @Override
     public void setStage(Stage stage) {
         this.stage = stage;
+    }
+
+    public Stage getStage() {
+        return stage;
     }
 
     public static RNAPeakGeneratorSceneController create() {

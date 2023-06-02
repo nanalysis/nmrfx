@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,17 +30,19 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ *
  * @author Bruce Johnson
  */
 public class EnergyCoords {
     private static final Logger log = LoggerFactory.getLogger(EnergyCoords.class);
-    public static final double RSCALE = Math.pow(2.0, -1.0 / 6.0);
+
     static final double PI32 = Math.PI * Math.sqrt(Math.PI);
+    public static final double RSCALE = Math.pow(2.0, -1.0 / 6.0);
+
     private static final int[][] offsets = {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0}, {-1, 1, 0}, {0, 0, 1},
-            {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
-            {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
+    {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
+    {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
     };
-    private static double hbondDelta = 0.60;
     FastVector3D[] vecCoords = null;
     EnergyDistancePairs eDistancePairs;
     EnergyConstraintPairs eConstraintPairs;
@@ -65,6 +67,8 @@ public class EnergyCoords {
     boolean[][] fixed;
     Map<Integer, Set<Integer>> kSwap = null;
     boolean setupShifts = false;
+
+    private static double hbondDelta = 0.60;
 
     public EnergyCoords() {
         this.forceWeight = new ForceWeight();
@@ -202,8 +206,7 @@ public class EnergyCoords {
         String atomName = iAtomNewSub.substring(iAtomNewSub.indexOf(".") + 1);
         if (atomName.length() < 1) {
             return 'n';
-        }
-        ;
+        };
 
         if (iAtomOldSub.equals(iAtomNewSub) && jAtomNew.equals(jAtomOld)) {
             return 'i';
@@ -242,6 +245,23 @@ public class EnergyCoords {
         return calcDihedral(av, bv, cv, dv);
     }
 
+    /**
+     * Calculates the dihedral angle
+     *
+     * @param a first point
+     * @param b second point
+     * @param c third point
+     * @param d fourth point
+     * @return angle
+     */
+    public static double calcDihedral(final FastVector3D a, final FastVector3D b, final FastVector3D c, final FastVector3D d) {
+        Point3 a3 = new Point3(a.getX(), a.getY(), a.getZ());
+        Point3 b3 = new Point3(b.getX(), b.getY(), b.getZ());
+        Point3 c3 = new Point3(c.getX(), c.getY(), c.getZ());
+        Point3 d3 = new Point3(d.getX(), d.getY(), d.getZ());
+        return AtomMath.calcDihedral(a3, b3, c3, d3);
+    }
+
     double[][] getBoundaries() {
         double[][] bounds = new double[3][2];
         for (int i = 0; i < 3; i++) {
@@ -263,7 +283,7 @@ public class EnergyCoords {
     }
 
     public void setRadii(double hardSphere, boolean includeH,
-                         double shrinkValue, double shrinkHValue, boolean useFF) {
+            double shrinkValue, double shrinkHValue, boolean useFF) {
         try {
             AtomEnergyProp.readPropFile();
         } catch (IOException ex) {
@@ -304,8 +324,8 @@ public class EnergyCoords {
     }
 
     public void setCells(EnergyPairs ePairs, int deltaEnd, double limit,
-                         double hardSphere, boolean includeH, double shrinkValue,
-                         double shrinkHValue, boolean useFF) {
+            double hardSphere, boolean includeH, double shrinkValue,
+            double shrinkHValue, boolean useFF) {
         double limit2 = limit * limit;
         double[][] bounds = getBoundaries();
         int[] nCells = new int[3];
@@ -594,23 +614,6 @@ public class EnergyCoords {
         }
         return close;
 
-    }
-
-    /**
-     * Calculates the dihedral angle
-     *
-     * @param a first point
-     * @param b second point
-     * @param c third point
-     * @param d fourth point
-     * @return angle
-     */
-    public static double calcDihedral(final FastVector3D a, final FastVector3D b, final FastVector3D c, final FastVector3D d) {
-        Point3 a3 = new Point3(a.getX(), a.getY(), a.getZ());
-        Point3 b3 = new Point3(b.getX(), b.getY(), b.getZ());
-        Point3 c3 = new Point3(c.getX(), c.getY(), c.getZ());
-        Point3 d3 = new Point3(d.getX(), d.getY(), d.getZ());
-        return AtomMath.calcDihedral(a3, b3, c3, d3);
     }
 
 }

@@ -3,14 +3,17 @@ package org.nmrfx.utilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.nio.file.FileVisitResult;
-import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import java.util.zip.*;
 
 public class Zipper extends SimpleFileVisitor<Path> {
 
@@ -60,24 +63,6 @@ public class Zipper extends SimpleFileVisitor<Path> {
         }
     }
 
-    // Print each directory visited.
-    @Override
-    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-        String filePath = dir.toString();
-        int filePathLen = filePath.length();
-        int startLen = startingDir.getAbsolutePath().length();
-        if (startLen < filePathLen) {
-            try {
-                ZipEntry ze = new ZipEntry(filePath.substring(startingDir.getAbsolutePath().length() + 1, filePath.length()) + "/");
-                zos.putNextEntry(ze);
-                zos.closeEntry();
-            } catch (IOException ioE) {
-                log.warn(ioE.getMessage(), ioE);
-            }
-        }
-        return FileVisitResult.CONTINUE;
-    }
-
     @Override
     public FileVisitResult visitFile(Path path, BasicFileAttributes attr) {
         if (attr.isSymbolicLink()) {
@@ -101,6 +86,24 @@ public class Zipper extends SimpleFileVisitor<Path> {
         return FileVisitResult.CONTINUE;
     }
 
+    // Print each directory visited.
+    @Override
+    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+        String filePath = dir.toString();
+        int filePathLen = filePath.length();
+        int startLen = startingDir.getAbsolutePath().length();
+        if (startLen < filePathLen) {
+            try {
+                ZipEntry ze = new ZipEntry(filePath.substring(startingDir.getAbsolutePath().length() + 1, filePath.length()) + "/");
+                zos.putNextEntry(ze);
+                zos.closeEntry();
+            } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
+            }
+        }
+        return FileVisitResult.CONTINUE;
+    }
+
     // If there is some error accessing
     // the file, let the user know.
     // If you don't override this method
@@ -108,7 +111,7 @@ public class Zipper extends SimpleFileVisitor<Path> {
     // is thrown.
     @Override
     public FileVisitResult visitFileFailed(Path file,
-                                           IOException exc) {
+            IOException exc) {
         log.warn(exc.getMessage(), exc);
         return FileVisitResult.CONTINUE;
     }

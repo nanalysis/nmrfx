@@ -3,11 +3,12 @@ package org.nmrfx.structure.chemistry.predict;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.InputStreamReader;
 
 /**
+ *
  * @author Bruce Johnson
  */
 public class RNAStats {
@@ -29,37 +30,6 @@ public class RNAStats {
         this.sdev = sdev;
         this.min = min;
         this.max = max;
-    }
-
-    public String toString() {
-        StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append(String.format("N %2d ", nValues));
-        sBuilder.append(String.format("Mean %.2f ", mean));
-        sBuilder.append(String.format("+/- %.2f ", sdev));
-        sBuilder.append(String.format("Range: %.2f ", min));
-        sBuilder.append(String.format("-%.2f", max));
-
-        return sBuilder.toString();
-    }
-
-    public double getMean() {
-        return mean;
-    }
-
-    public double getMin() {
-        return min;
-    }
-
-    public double getMax() {
-        return max;
-    }
-
-    public double getSDev() {
-        return sdev;
-    }
-
-    public int getN() {
-        return nValues;
     }
 
     static String genKey(String[] fields) {
@@ -106,6 +76,37 @@ public class RNAStats {
         }
         String newKey = sBuilder.toString();
         return statMap.get(newKey);
+    }
+
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(String.format("N %2d ", nValues));
+        sBuilder.append(String.format("Mean %.2f ", mean));
+        sBuilder.append(String.format("+/- %.2f ", sdev));
+        sBuilder.append(String.format("Range: %.2f ", min));
+        sBuilder.append(String.format("-%.2f", max));
+
+        return sBuilder.toString();
+    }
+
+    public double getMean() {
+        return mean;
+    }
+
+    public double getMin() {
+        return min;
+    }
+
+    public double getMax() {
+        return max;
+    }
+
+    public double getSDev() {
+        return sdev;
+    }
+    
+    public int getN() {
+        return nValues;
     }
 
     public static boolean loaded() {

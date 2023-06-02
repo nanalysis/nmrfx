@@ -6,6 +6,7 @@
 package org.nmrfx.peaks;
 
 /**
+ *
  * @author brucejohnson
  */
 public abstract class MultipletComponent {

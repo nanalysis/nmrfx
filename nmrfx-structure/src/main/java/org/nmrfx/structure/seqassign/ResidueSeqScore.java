@@ -5,11 +5,11 @@
  */
 package org.nmrfx.structure.seqassign;
 
+import java.util.Collection;
 import org.nmrfx.chemistry.Residue;
 
-import java.util.Collection;
-
 /**
+ *
  * @author brucejohnson
  */
 public class ResidueSeqScore implements Comparable<ResidueSeqScore> {
@@ -17,12 +17,6 @@ public class ResidueSeqScore implements Comparable<ResidueSeqScore> {
     final Residue firstResidue;
     final int nResidues;
     double score;
-
-    public ResidueSeqScore(Residue firstResidue, int nResidues, double score) {
-        this.firstResidue = firstResidue;
-        this.nResidues = nResidues;
-        this.score = score;
-    }
 
     public Residue getFirstResidue() {
         return firstResidue;
@@ -36,13 +30,14 @@ public class ResidueSeqScore implements Comparable<ResidueSeqScore> {
         return score;
     }
 
-    public void norm(double norm) {
-        score /= norm;
+    public ResidueSeqScore(Residue firstResidue, int nResidues, double score) {
+        this.firstResidue = firstResidue;
+        this.nResidues = nResidues;
+        this.score = score;
     }
 
-    @Override
-    public int compareTo(ResidueSeqScore o) {
-        return Double.compare(o.score, score);
+    public void norm(double norm) {
+        score /= norm;
     }
 
     public static void norm(Collection<ResidueSeqScore> seqScores) {
@@ -55,6 +50,11 @@ public class ResidueSeqScore implements Comparable<ResidueSeqScore> {
             seqScore.norm(sum);
 
         }
+    }
+
+    @Override
+    public int compareTo(ResidueSeqScore o) {
+        return Double.compare(o.score, score);
     }
 
 }

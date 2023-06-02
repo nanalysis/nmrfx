@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures
+ * NMRFx Structure : A Program for Calculating Structures 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,10 +18,7 @@
 package org.nmrfx.chemistry.search;
 
 import org.nmrfx.chemistry.Atom;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.*;
 
 public class MNode implements Comparable, Comparator {
 
@@ -37,6 +34,15 @@ public class MNode implements Comparable, Comparator {
     MNode lastRotatable = null;
     boolean ringClosure = false;
 
+    @Override
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        String atomName = atom != null ? atom.getShortName() : "noatom";
+        int pid = parent != null ? parent.id : -1;
+        sBuilder.append("id ").append(id).append(" pid ").append(pid).append(" sh ").append(shell).append(" pp ").append(pathPos).append(" atm ").append(atomName).append(" rng ").append(ringClosure).append(" v ").append(value);
+        return sBuilder.toString();
+    }
+
     public MNode() {
         nodes = new ArrayList();
         this.id = -1;
@@ -47,17 +53,12 @@ public class MNode implements Comparable, Comparator {
         this.id = id;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sBuilder = new StringBuilder();
-        String atomName = atom != null ? atom.getShortName() : "noatom";
-        int pid = parent != null ? parent.id : -1;
-        sBuilder.append("id ").append(id).append(" pid ").append(pid).append(" sh ").append(shell).append(" pp ").append(pathPos).append(" atm ").append(atomName).append(" rng ").append(ringClosure).append(" v ").append(value);
-        return sBuilder.toString();
-    }
-
     public void addNode(MNode iNode) {
         nodes.add(iNode);
+    }
+
+    public void setValue(int i) {
+        value = i;
     }
 
     public int getID() {
@@ -88,10 +89,6 @@ public class MNode implements Comparable, Comparator {
         return (value);
     }
 
-    public void setValue(int i) {
-        value = i;
-    }
-
     public int getIndexInShell() {
         return indexInShell;
     }
@@ -100,12 +97,12 @@ public class MNode implements Comparable, Comparator {
         indexInShell = index;
     }
 
-    public Atom getAtom() {
-        return atom;
-    }
-
     public void setAtom(Atom atom) {
         this.atom = atom;
+    }
+
+    public Atom getAtom() {
+        return atom;
     }
 
     public int compareTo(Object y) {

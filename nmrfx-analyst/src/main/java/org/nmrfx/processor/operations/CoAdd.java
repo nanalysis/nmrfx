@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data
+ * NMRFx Processor : A Program for Processing NMR Data 
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -78,9 +79,8 @@ public class CoAdd extends Operation {
         return this;
     }
 
-    public CoAdd clone() {
-        CoAdd temp = new CoAdd(coef);
-        return temp;
+    public static ArrayList<Vec> getArrayList() {
+        return new ArrayList<Vec>();
     }
 
     public void combine(List<Vec> vectors) {
@@ -114,7 +114,8 @@ public class CoAdd extends Operation {
         }
     }
 
-    public static ArrayList<Vec> getArrayList() {
-        return new ArrayList<Vec>();
+    public CoAdd clone() {
+        CoAdd temp = new CoAdd(coef);
+        return temp;
     }
 }

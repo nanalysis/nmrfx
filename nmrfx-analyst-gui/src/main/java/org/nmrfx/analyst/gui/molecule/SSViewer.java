@@ -30,15 +30,14 @@ public class SSViewer extends Pane {
 
     private static final Logger log = LoggerFactory.getLogger(SSViewer.class);
     private static final int N_ATOMS = 7;
-    private final SimpleBooleanProperty drawNumbersProp = new SimpleBooleanProperty(false);
-    private final SimpleBooleanProperty showActiveProp = new SimpleBooleanProperty(true);
-    private final SimpleStringProperty constraintTypeProp = new SimpleStringProperty("All");
-    private final List<String> displayAtomTypes = new ArrayList<>();
-    private final SimpleBooleanProperty hydrogenPredictionProp = new SimpleBooleanProperty(true);
+
+    record AtomCoord(double x, double y) {}
+
     Group drawingGroup;
     Group infoGroup;
     Pane pane;
     SSLayout ssLayout;
+
     ArrayList<Point2D> points = new ArrayList<>();
     int[] basePairs = null;
     int[] basePairAtoms = null;
@@ -47,10 +46,17 @@ public class SSViewer extends Pane {
     ArrayList<String> constraintPairs = new ArrayList<>();
     Map<String, AtomCoord> atomMap = new HashMap<>();
     AtomCoord[] deltaCoords = null;
+
     // if true, draw lines connecting bases in sequence
     boolean seqState = true;
     boolean basePairState = true;
     boolean constraintPairState = true;
+    private final SimpleBooleanProperty drawNumbersProp = new SimpleBooleanProperty(false);
+    private final SimpleBooleanProperty showActiveProp = new SimpleBooleanProperty(true);
+    private final SimpleStringProperty constraintTypeProp = new SimpleStringProperty("All");
+    private final List<String> displayAtomTypes = new ArrayList<>();
+    private final SimpleBooleanProperty hydrogenPredictionProp = new SimpleBooleanProperty(true);
+
     double centerX;
     double centerY;
     double paneCenterX;
@@ -58,6 +64,7 @@ public class SSViewer extends Pane {
     double paneWidth;
     double paneHeight;
     double scale = 10.0;
+
     public SSViewer() {
         initScene();
     }
@@ -211,7 +218,7 @@ public class SSViewer extends Pane {
     }
 
     void showInfo(MouseEvent e, String resNum, String aName) {
-        String aType = hydrogenPredictionProp.get() ? ".H" : ".C";
+        String aType = hydrogenPredictionProp.get()  ? ".H" : ".C";
         String atomSpec = resNum + aType + aName;
         Node node = (Node) e.getSource();
         double x = node.getBoundsInParent().getMinX();
@@ -518,7 +525,7 @@ public class SSViewer extends Pane {
                 if ((j < 0) && !displayAtomTypes.contains("Exchangeable")) {
                     continue;
                 }
-                if ((j >= 0) && (j < 2) && !displayAtomTypes.contains("Base")) {
+                if ((j >= 0) && (j< 2) && !displayAtomTypes.contains("Base")) {
                     continue;
                 }
                 if (j > 1) {
@@ -564,7 +571,7 @@ public class SSViewer extends Pane {
                     } else if (resChar == 'G') {
                         text = "21";
                     }
-                } else {
+                } else  {
                     text = "1";
                 }
                 if (!text.equals("")) {
@@ -716,7 +723,7 @@ public class SSViewer extends Pane {
         width *= 0.4;
         AtomCoord c1 = atomMap.get(a1);
         AtomCoord c2 = atomMap.get(a2);
-        if ((c1 != null) && (c2 != null)) {
+        if ((c1 != null) &&  (c2 != null)) {
             double div = 5.0;
             if (r1.equals(r2)) {
                 div = 1.0;
@@ -792,8 +799,5 @@ public class SSViewer extends Pane {
         this.constraintPairs.clear();
         this.constraintPairs.addAll(constraintPairs);
         constraintPairState = true;
-    }
-
-    record AtomCoord(double x, double y) {
     }
 }
