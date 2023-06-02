@@ -37,6 +37,7 @@ import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Rectangle;
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
@@ -78,7 +79,7 @@ public class DrawSpectrum {
 
     static final double degtorad = Math.PI / 180.0;
     static final long MAX_TIME = 2000;
-    NMRAxis[] axes;
+    Axis[] axes;
     private boolean useThread = true;
     private SpectrumViewParameters viewPar = new SpectrumViewParameters();
     static Color[] gradColors = new Color[0];
@@ -103,7 +104,7 @@ public class DrawSpectrum {
     private long lastPlotTime = 0;
     Rectangle clipRect = null;
 
-    public DrawSpectrum(NMRAxis[] axes, Canvas canvas) {
+    public DrawSpectrum(Axis[] axes, Canvas canvas) {
         this.axes = axes;
         this.canvas = canvas;
         if (canvas != null) {
@@ -128,7 +129,7 @@ public class DrawSpectrum {
         this.disDim = disDim;
     }
 
-    public void setAxes(NMRAxis[] axes) {
+    public void setAxes(Axis[] axes) {
         this.axes = axes;
     }
 
@@ -225,8 +226,8 @@ public class DrawSpectrum {
         return modes;
     }
 
-    NMRAxis[] getAxes() {
-        NMRAxis[] tempAxes = new NMRAxis[axes.length];
+    Axis[] getAxes() {
+        Axis[] tempAxes = new Axis[axes.length];
         System.arraycopy(axes, 0, tempAxes, 0, axes.length);
         return tempAxes;
     }
@@ -251,7 +252,7 @@ public class DrawSpectrum {
         DrawSpectrum drawSpectrum;
         List<DatasetAttributes> dataAttrList;
         AXMODE[] axModes;
-        NMRAxis[] axes;
+        Axis[] axes;
         float[] levels;
         int nRunning = 0;
         boolean done = false;
@@ -576,7 +577,7 @@ public class DrawSpectrum {
 
     }
 
-    static double[][] getPix(NMRAxis[] axes, DatasetAttributes dataAttr) {
+    static double[][] getPix(Axis[] axes, DatasetAttributes dataAttr) {
         DatasetBase dataset = dataAttr.getDataset();
         double xPoint1 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][0]);
         double xPoint2 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][1]);
@@ -995,7 +996,7 @@ public class DrawSpectrum {
     public void drawSubVector(Vec vec, int orientation, int dataOffset, AXMODE axMode,
             DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, double ppm1, double ppm2) {
         int size = vec.getSize();
-        NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
+        Axis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
 
         double indexAxisDelta = (ppm1 - ppm2) / vec.getSize();
         double dValue = ppm2;
@@ -1007,7 +1008,7 @@ public class DrawSpectrum {
     public void drawVector(VecBase vec, int orientation, int dataOffset, AXMODE axMode, boolean drawReal, double ph0, double ph1, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec, boolean integralMode) {
         int size = vec.getSize();
         double phase1Delta = ph1 / (size - 1);
-        NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
+        Axis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
 
         int vecStartPoint;
         int vecEndPoint;
@@ -1016,7 +1017,7 @@ public class DrawSpectrum {
             vecStartPoint = axMode.getIndex(vec, indexAxis.getLowerBound());
             vecEndPoint = axMode.getIndex(vec, indexAxis.getUpperBound());
             indexAxisDelta = axMode.getIncrement(vec, indexAxis.getLowerBound(), indexAxis.getUpperBound());
-        } else if (indexAxis.getReverse()) {
+        } else if (indexAxis.isReversed()) {
             vecStartPoint = vec.getSize() - 1;
             vecEndPoint = 0;
             dataOffset = 0;
@@ -1213,7 +1214,7 @@ public class DrawSpectrum {
         nPoints = 0;
         if (dataset.getVec() != null) {
             VecBase vec = dataset.getVec();
-            NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
+            Axis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
             int vecStartPoint = axMode.getIndex(vec, indexAxis.getLowerBound());
             int vecEndPoint = axMode.getIndex(vec, indexAxis.getUpperBound());
 
@@ -1237,7 +1238,7 @@ public class DrawSpectrum {
         DatasetBase dataset = dataAttributes.getDataset();
         if (dataset.getVec() != null) {
             VecBase vec = dataset.getVec();
-            NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
+            Axis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
             int vecStartPoint = axMode.getIndex(vec, indexAxis.getLowerBound());
             int vecEndPoint = axMode.getIndex(vec, indexAxis.getUpperBound());
 

@@ -46,6 +46,7 @@ package org.nmrfx.processor.gui.spectra;
 import javafx.scene.shape.CubicCurveTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsIOException;
 
@@ -149,7 +150,7 @@ class BezierPath {
     }
 
     public static void makeBezierCurve(double[] ncoords, int numSteps,
-            GraphicsContextInterface gC, double smoothValue, double xOffset, double yOffset, double width, double height, NMRAxis xAxis, NMRAxis yAxis) throws GraphicsIOException {
+                                       GraphicsContextInterface gC, double smoothValue, double xOffset, double yOffset, double width, double height, Axis xAxis, Axis yAxis) throws GraphicsIOException {
         // Assume we need to calculate the control
         // points between (x1,y1) and (x2,y2).
         // Then x0,y0 - the previous vertex,

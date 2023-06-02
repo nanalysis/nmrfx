@@ -16,17 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.nmrfx.processor.gui.spectra;
+package org.nmrfx.chart;
 
-//TODO to move closer to Axis, because Axis is actually the implementation, even if hidden behind NMRAxis
-//TODO see if regrouping Axis / NMRAxis would be a problem
-public interface NMRAxisLimits {
-
+public interface AxisLimits {
     double getLowerBound();
 
     double getUpperBound();
 
-    boolean getReverse();
+    boolean isReversed();
 
     void setReverse(boolean state);
 
@@ -35,5 +32,4 @@ public interface NMRAxisLimits {
     String getLabel();
 
     double getDisplayPosition(Number value);
-
 }

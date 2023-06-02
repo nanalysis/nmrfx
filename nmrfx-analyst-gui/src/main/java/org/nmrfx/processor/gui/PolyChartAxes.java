@@ -6,7 +6,6 @@ import org.apache.commons.lang3.Range;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
 
 import java.util.List;
 
@@ -14,11 +13,11 @@ public class PolyChartAxes {
     public static final int X_INDEX = 0;
     public static final int Y_INDEX = 1;
 
-    private final NMRAxis xAxis = new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50);
-    private final NMRAxis yAxis = new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200);
+    private final Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 200, 50);
+    private final Axis yAxis = new Axis(Orientation.VERTICAL, 0, 100, 50, 200);
     private final ObservableList<DatasetAttributes> datasetAttributesList; // shared with PolyChart
 
-    private NMRAxis[] axes = {xAxis, yAxis}; //TODO replace with list?
+    private Axis[] axes = {xAxis, yAxis}; //TODO replace with list?
     private DatasetAttributes.AXMODE[] axModes = {DatasetAttributes.AXMODE.PPM, DatasetAttributes.AXMODE.PPM};
 
     public PolyChartAxes(ObservableList<DatasetAttributes> datasetAttributesList) {
@@ -36,15 +35,15 @@ public class PolyChartAxes {
         return axes.length;
     }
 
-    public NMRAxis getX() {
+    public Axis getX() {
         return axes[X_INDEX];
     }
 
-    public NMRAxis getY() {
+    public Axis getY() {
         return axes[Y_INDEX];
     }
 
-    public NMRAxis get(int iDim) {
+    public Axis get(int iDim) {
         return iDim < axes.length ? axes[iDim] : null;
     }
 
@@ -57,7 +56,7 @@ public class PolyChartAxes {
     }
 
     @Deprecated(forRemoval = true)
-    public NMRAxis[] axisArray() {
+    public Axis[] axisArray() {
         return axes;
     }
 
@@ -69,7 +68,7 @@ public class PolyChartAxes {
     public void resetFrom(PolyChart chart, DatasetAttributes datasetAttrs, int nAxes) {
         DatasetBase dataset = datasetAttrs.getDataset();
 
-        axes = new NMRAxis[nAxes];
+        axes = new Axis[nAxes];
         axes[X_INDEX] = xAxis;
         axes[Y_INDEX] = yAxis;
         axModes = new DatasetAttributes.AXMODE[nAxes];
@@ -92,7 +91,7 @@ public class PolyChartAxes {
         DatasetBase dataset = datasetAttrs.getDataset();
         int[] dims = datasetAttrs.getDims();
 
-        axes = new NMRAxis[nAxes];
+        axes = new Axis[nAxes];
         axes[X_INDEX] = xAxis;
         axes[Y_INDEX] = yAxis;
         axModes = new DatasetAttributes.AXMODE[nAxes];
@@ -101,7 +100,7 @@ public class PolyChartAxes {
         for (int i = 2; i < nAxes; i++) {
             double[] ppmLimits = datasetAttrs.getMaxLimits(i);
             double centerPPM = (ppmLimits[X_INDEX] + ppmLimits[Y_INDEX]) / 2.0;
-            axes[i] = new NMRAxis(Orientation.HORIZONTAL, centerPPM, centerPPM, X_INDEX, Y_INDEX);
+            axes[i] = new Axis(Orientation.HORIZONTAL, centerPPM, centerPPM, X_INDEX, Y_INDEX);
             if (dataset.getFreqDomain(dims[i])) {
                 axModes[i] = DatasetAttributes.AXMODE.PPM;
             } else {
@@ -123,7 +122,7 @@ public class PolyChartAxes {
     }
 
     public void setMinMax(int iAxis, double min, double max) {
-        NMRAxis axis = get(iAxis);
+        Axis axis = get(iAxis);
         if (axis != null) {
             axis.setMinMax(min, max);
         }
@@ -208,7 +207,7 @@ public class PolyChartAxes {
      * @return true if the axis range is within the provided range
      */
     public boolean currentRangeWithinNewRange(double[] limits, int iAxis) {
-        NMRAxis axis = get(iAxis);
+        Axis axis = get(iAxis);
         Range<Double> range = Range.between(limits[0], limits[1]);
         return range.contains(axis.getLowerBound()) && range.contains(axis.getUpperBound());
     }
@@ -240,11 +239,11 @@ public class PolyChartAxes {
     }
 
     public void setAxisState(boolean leftEdge, boolean bottomEdge) {
-        xAxis.setShowTicsAndLabels(bottomEdge);
+        xAxis.setTicksAndLabelsVisible(bottomEdge);
         xAxis.setTickLabelsVisible(bottomEdge);
         xAxis.setTickMarksVisible(bottomEdge);
         xAxis.setLabelVisible(bottomEdge);
-        yAxis.setShowTicsAndLabels(leftEdge);
+        yAxis.setTicksAndLabelsVisible(leftEdge);
         yAxis.setTickLabelsVisible(leftEdge);
         yAxis.setTickMarksVisible(leftEdge);
         yAxis.setLabelVisible(leftEdge);

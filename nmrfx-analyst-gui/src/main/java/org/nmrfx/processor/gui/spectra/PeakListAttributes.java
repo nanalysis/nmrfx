@@ -21,6 +21,7 @@ import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.*;
@@ -72,8 +73,8 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     Optional<List<Multiplet>> multipletsInRegion = Optional.empty();
     Set<Peak> selectedPeaks = new HashSet<>();
     Set<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
-    NMRAxis xAxis = null;
-    NMRAxis yAxis = null;
+    Axis xAxis = null;
+    Axis yAxis = null;
     double[][] foldLimits = null;
 
     public IntegerProperty nplanesProperty() {
@@ -250,7 +251,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         int nDataDim = dataAttr.nDim;
         double[][] limits = new double[nDataDim][2];
         for (int i = 0; i < nDataDim; i++) {
-            NMRAxis axis = chart.getAxes().get(i);
+            Axis axis = chart.getAxes().get(i);
             if (chart.getAxes().getMode(i) == DatasetAttributes.AXMODE.PPM) {
                 limits[i][0] = axis.getLowerBound();
                 limits[i][1] = axis.getUpperBound();

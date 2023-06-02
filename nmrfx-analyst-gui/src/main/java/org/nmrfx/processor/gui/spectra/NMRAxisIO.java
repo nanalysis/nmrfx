@@ -17,11 +17,12 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import org.nmrfx.chart.AxisLimits;
+
 /**
- *
  * @author brucejohnson
  */
-public class NMRAxisIO extends NMRAxisBase implements NMRAxisLimits {
+public class NMRAxisIO extends NMRAxisBase implements AxisLimits {
 
     private double lowerBound;
     private double upperBound;

@@ -16,10 +16,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.controlsfx.control.RangeSlider;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
@@ -601,7 +601,7 @@ public class AttributesController implements Initializable {
 
     void setLimits() {
         for (int i = 0; i < chart.getAxes().count(); i++) {
-            NMRAxis axis = chart.getAxes().get(i);
+            Axis axis = chart.getAxes().get(i);
             double lower = axis.getLowerBound();
             double upper = axis.getUpperBound();
             if (i > 1 && !chart.getDatasetAttributes().isEmpty()) {

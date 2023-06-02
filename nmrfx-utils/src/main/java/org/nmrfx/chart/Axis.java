@@ -17,7 +17,6 @@
  */
 package org.nmrfx.chart;
 
- import javafx.beans.property.BooleanProperty;
  import javafx.beans.property.DoubleProperty;
  import javafx.beans.property.SimpleDoubleProperty;
  import javafx.geometry.Orientation;
@@ -39,7 +38,7 @@ package org.nmrfx.chart;
  */
 //TODO uncomment once core & utils are merged
 //@PluginAPI("ring")
-public class Axis {
+public class Axis implements AxisLimits {
 
     public enum Bound {
         Lower, Upper
@@ -48,15 +47,15 @@ public class Axis {
     private static final double GRID_MINOR_LINE_WIDTH = 0.5;
     private static final double GRID_MAJOR_LINE_WIDTH = 1.0;
     private static final double GRID_DASHES = 1;
+    private static final double TARGET_PIX = 85.0;
 
-    Orientation orientation;
-    double ticSize = 10.0;
+    private static Font defaultFont = null;
+
+    private final Orientation orientation;
+    private double ticSize = 10.0;
     private double width;
-    private DoubleProperty widthProp;
     private double height;
-    private DoubleProperty heightProp;
     private boolean reverse;
-    private BooleanProperty reverseProp;
     private String label = "";
     private String ticFormatString = "%.1f";
     private boolean zeroIncluded = false;
@@ -64,24 +63,21 @@ public class Axis {
     private double yOrigin = 800.0;
     private double labelFontSize = 16;
     private double ticFontSize = 12;
-    private double lineWidth = 1.0;
+    private final double lineWidth = 1.0;
     private Color color = Color.BLACK;
-    private static Font defaultFont = null;
-    private String fontFamily = "Liberation Sans";
-    private Font ticFont = new Font(ticFontSize);
-    private Font labelFont = new Font(labelFontSize);
-    public static double targetPix = 85.0;
-    private double defaultUpper;
-    private double defaultLower;
+    private final String fontFamily = "Liberation Sans";
+    private Font ticFont;
+    private Font labelFont;
+    private final double defaultUpper;
+    private final double defaultLower;
     private boolean tickMarksVisible = true;
     private boolean tickLabelsVisible = true;
     private boolean labelVisible = true;
     private boolean autoRanging = false;
-    double autoRangeScale = 10.0;
     private double gridLength = 0.0;
-    TickInfo tInfo = new TickInfo();
+    private TickInfo tInfo = new TickInfo();
 
-    static void loadFont() {
+    private static void loadFont() {
         InputStream iStream = Axis.class.getResourceAsStream("/LiberationSans-Regular.ttf");
         defaultFont = Font.loadFont(iStream, 12);
     }
@@ -301,8 +297,7 @@ public class Axis {
 
         }
         setMinMax(min, max);
-        double[] result = {min, max};
-        return result;
+        return new double[]{min, max};
     }
 
     public double getRange() {
@@ -336,7 +331,7 @@ public class Axis {
         return labelFontSize;
     }
 
-    class TickInfo {
+    static class TickInfo {
 
         double minorSpace;
         double majorSpace;
@@ -348,23 +343,21 @@ public class Axis {
         int nDecimals;
 
         public String toString() {
-            String value = String.format("%.3f %.3f %.3f %.3f %.3f %3f", minorStart, minorSpace, majorStart, majorSpace, majorEnd, incr);
-            return value;
+            return String.format("%.3f %.3f %.3f %.3f %.3f %3f", minorStart, minorSpace, majorStart, majorSpace, majorEnd, incr);
         }
     }
 
     private void getTickPositions() {
         double length = VERTICAL == getOrientation() ? getHeight() : getWidth();
         tInfo = getTickInfo(getLowerBound(), getUpperBound(), length);
-        ticFormatString = new StringBuilder("%.").append(Integer.toString(tInfo.nDecimals)).append("f").toString();
-
+        ticFormatString = "%." + tInfo.nDecimals + "f";
     }
 
     private TickInfo getTickInfo(double lower, double upper, double length) {
         TickInfo tf = new TickInfo();
         tf.centerMode = false;
         if (length > 0) {
-            double nTic1 = length / targetPix;
+            double nTic1 = length / TARGET_PIX;
             double range = upper - lower;
             double scale = range / nTic1;
             double logScale = Math.log10(scale);
@@ -470,7 +463,7 @@ public class Axis {
         }
     }
 
-    private void drawHorizontalAxis(GraphicsContextInterface gC) throws GraphicsIOException {
+    private void drawHorizontalAxis(GraphicsContextInterface gC) {
         gC.setTextAlign(TextAlignment.CENTER);
         gC.strokeLine(xOrigin, yOrigin, xOrigin + width, yOrigin);
         double value = tInfo.minorStart;
@@ -530,7 +523,7 @@ public class Axis {
 
     }
 
-    private void drawVerticalAxis(GraphicsContextInterface gC) throws GraphicsIOException {
+    private void drawVerticalAxis(GraphicsContextInterface gC) {
         gC.setTextBaseline(VPos.CENTER);
         gC.setTextAlign(TextAlignment.RIGHT);
         gC.strokeLine(xOrigin, yOrigin, xOrigin, yOrigin - height);
@@ -604,7 +597,7 @@ public class Axis {
         tickLabelsVisible = state;
     }
 
-    public boolean getTickLabelsVisible() {
+    public boolean isTickLabelsVisible() {
         return tickLabelsVisible;
     }
 
@@ -612,16 +605,22 @@ public class Axis {
         labelVisible = state;
     }
 
-    public boolean getLabelVisible() {
+    public boolean isLabelVisible() {
         return labelVisible;
     }
 
-    public void setVisible(boolean state) {
-
+    public void setTicksAndLabelsVisible(boolean visible) {
+        setTickLabelsVisible(visible);
+        setTickMarksVisible(visible);
+        setLabelVisible(visible);
     }
 
-    public boolean isVisible() {
-        return true;
+    public void updateLabel(String label) {
+        if (!isLabelVisible()) {
+            setLabel("");
+        } else if (!label.equals(getLabel())) {
+            setLabel(label);
+        }
     }
 
     public void copyTo(Axis newAxis) {
@@ -629,11 +628,9 @@ public class Axis {
         newAxis.setLabel(getLabel());
         newAxis.setLabelFontSize(getLabelFontSize());
         newAxis.setAutoRanging(isAutoRanging());
-        newAxis.setLabelVisible(getLabelVisible());
+        newAxis.setLabelVisible(isLabelVisible());
         newAxis.setReverse(isReversed());
         newAxis.setTickFontSize(getTickFontSize());
-        newAxis.setTickLabelsVisible(getTickLabelsVisible());
-        newAxis.setVisible(isVisible());
+        newAxis.setTickLabelsVisible(isTickLabelsVisible());
     }
-
 }

@@ -36,6 +36,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
 import org.apache.commons.collections4.list.TreeList;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
@@ -76,8 +77,8 @@ public class DrawPeaks {
     static Path g1DPath = new Path();
     static Path g2DPath = new Path();
 
-    NMRAxis xAxis;
-    NMRAxis yAxis;
+    Axis xAxis;
+    Axis yAxis;
 
     int jmode = 0;
     int disDim = 0;

@@ -20,10 +20,10 @@ package org.nmrfx.processor.gui.spectra.crosshair;
 import javafx.geometry.Orientation;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
 
 import java.util.Collection;
 import java.util.List;
@@ -39,8 +39,8 @@ public class CrossHairs {
 
     private final PolyChart chart;
     private final FXMLController controller;
-    private final NMRAxis xAxis;
-    private final NMRAxis yAxis;
+    private final Axis xAxis;
+    private final Axis yAxis;
 
     private final CrossHair primary = new CrossHair(0);
     private final CrossHair secondary = new CrossHair(1);
@@ -113,7 +113,7 @@ public class CrossHairs {
         SpectrumStatusBar statusBar = getController().getStatusBar();
         getCrossHairLine(index, orientation).setVisible(false);
         int iAxis = orientation == Orientation.HORIZONTAL ? 1 : 0;
-        NMRAxis axis = chart.getAxes().get(iAxis);
+        Axis axis = chart.getAxes().get(iAxis);
         double value = index == 1 ? axis.getLowerBound() : axis.getUpperBound();
         statusBar.setCrossText(orientation, index, value, true);
     }
@@ -154,7 +154,7 @@ public class CrossHairs {
             for (Orientation orientation : Orientation.values()) {
                 CrossHairLine line = getCrossHairLine(index, orientation);
                 int iAxis = orientation == Orientation.HORIZONTAL ? 1 : 0;
-                NMRAxis axis = chart.getAxes().get(iAxis);
+                Axis axis = chart.getAxes().get(iAxis);
                 if (!isInRange(index, line.getOrientation())) {
                     line.setVisible(false);
                     double value = index == 1 ? axis.getLowerBound() : axis.getUpperBound();
@@ -296,7 +296,7 @@ public class CrossHairs {
     }
 
     private void setPosition(int index, Orientation orientation, double value) {
-        NMRAxis axis = orientation == Orientation.HORIZONTAL ? yAxis : xAxis;
+        Axis axis = orientation == Orientation.HORIZONTAL ? yAxis : xAxis;
         value = axis.getValueForDisplay(value).doubleValue();
         getCrossHairLine(index, orientation).setPosition(value);
     }

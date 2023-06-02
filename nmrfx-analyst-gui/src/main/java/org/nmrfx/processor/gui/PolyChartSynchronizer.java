@@ -1,7 +1,6 @@
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.chart.Axis;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,7 +146,7 @@ public class PolyChartSynchronizer {
                 .toList();
     }
 
-    private NMRAxis findAxis(PolyChart chart, String dimensionName) {
+    private Axis findAxis(PolyChart chart, String dimensionName) {
         List<String> dimNames = chart.getDimNames();
         for (int i = 0; i < dimNames.size(); i++) {
             if (dimNames.get(i).equals(dimensionName)) {
