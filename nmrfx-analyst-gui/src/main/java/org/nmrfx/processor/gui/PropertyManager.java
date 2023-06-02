@@ -221,8 +221,8 @@ public class PropertyManager {
             if (item.getName().equals("ph1")) {
                 adjustPhasePivot(propertySheet.getItems(), oldValue, newValue);
             } else if (item.getName().equals("ph0")) {
-                if (chart.getController().isPhaseSliderVisible()) {
-                    chart.getController().getPhaser().handlePh0Reset(newValue.doubleValue(), false);
+                if (chart.getFXMLController().isPhaseSliderVisible()) {
+                    chart.getFXMLController().getPhaser().handlePh0Reset(newValue.doubleValue(), false);
                 }
             }
         }
@@ -239,9 +239,9 @@ public class PropertyManager {
             if (pivotFraction != 0.0) {
                 Double newPH0 = oldPH0 - deltaPH1 * pivotFraction;
                 ph0Item.setValue(newPH0);
-                if (chart.getController().isPhaseSliderVisible()) {
-                    chart.getController().getPhaser().handlePh0Reset(newPH0, false);
-                    chart.getController().getPhaser().handlePh1Reset(newValue.doubleValue(), false);
+                if (chart.getFXMLController().isPhaseSliderVisible()) {
+                    chart.getFXMLController().getPhaser().handlePh0Reset(newPH0, false);
+                    chart.getFXMLController().getPhaser().handlePh1Reset(newValue.doubleValue(), false);
                 }
             }
         }

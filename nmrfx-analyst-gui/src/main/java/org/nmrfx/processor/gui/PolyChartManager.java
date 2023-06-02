@@ -51,7 +51,7 @@ public class PolyChartManager {
 
     public void unregisterChart(PolyChart chart) {
         allCharts.remove(chart);
-        chart.getController().removeChart(chart);
+        chart.getFXMLController().removeChart(chart);
         if (chart == activeChart.get()) {
             if (allCharts.isEmpty()) {
                 activeChart.set(null);
@@ -88,7 +88,7 @@ public class PolyChartManager {
     public void setActiveChart(PolyChart chart) {
         activeChart.set(chart);
         currentDataset.set(chart.getDataset());
-        chart.getController().setActiveChart(chart);
+        chart.getFXMLController().setActiveChart(chart);
     }
 
     public PolyChart getActiveChart() {

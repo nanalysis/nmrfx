@@ -157,11 +157,11 @@ public class FXMLControllerManager {
             activeChart = PolyChartManager.getInstance().getFirstChart();
         }
 
-        if (activeChart == null || activeChart.getController() == null) {
+        if (activeChart == null || activeChart.getFXMLController() == null) {
             setActiveController(null);
         } else {
-            setActiveController(activeChart.getController());
-            activeChart.getController().setActiveChart(activeChart);
+            setActiveController(activeChart.getFXMLController());
+            activeChart.getFXMLController().setActiveChart(activeChart);
         }
     }
 

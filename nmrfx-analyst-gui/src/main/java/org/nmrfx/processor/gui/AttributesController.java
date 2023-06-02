@@ -610,8 +610,8 @@ public class AttributesController implements Initializable {
                 int lowPt = chart.getAxes().getMode(i).getIndex(dataAttr, i, lower);
                 int upPt = chart.getAxes().getMode(i).getIndex(dataAttr, i, upper);
 
-                chart.controller.getStatusBar().updatePlaneSpinner(lowPt, i, 0);
-                chart.controller.getStatusBar().updatePlaneSpinner(upPt, i, 1);
+                chart.getFXMLController().getStatusBar().updatePlaneSpinner(lowPt, i, 0);
+                chart.getFXMLController().getStatusBar().updatePlaneSpinner(upPt, i, 1);
             }
         }
     }
@@ -1267,7 +1267,7 @@ public class AttributesController implements Initializable {
 
     List<PolyChart> getCharts(boolean all) {
         if (all) {
-            return chart.getController().getCharts();
+            return chart.getFXMLController().getCharts();
         } else {
             return Collections.singletonList(chart);
         }
