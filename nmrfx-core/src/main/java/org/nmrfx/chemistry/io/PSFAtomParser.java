@@ -18,8 +18,6 @@
 
 package org.nmrfx.chemistry.io;
 
-import org.nmrfx.chemistry.io.AtomParser;
-
 public class PSFAtomParser extends AtomParser {
 
     public PSFAtomParser(String string) {

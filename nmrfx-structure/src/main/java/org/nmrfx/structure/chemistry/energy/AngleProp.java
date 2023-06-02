@@ -18,7 +18,6 @@
 
 package org.nmrfx.structure.chemistry.energy;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**

@@ -17,12 +17,6 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import javafx.scene.canvas.Canvas;
 import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
@@ -36,6 +30,12 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Bruce Johnson

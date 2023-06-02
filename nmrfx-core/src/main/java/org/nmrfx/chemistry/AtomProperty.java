@@ -23,10 +23,10 @@
  */
 package org.nmrfx.chemistry;
 
-import java.util.*;
-
 import org.nmrfx.utilities.NMRFxColor;
 import org.nmrfx.utilities.NvUtil;
+
+import java.util.*;
 
 /**
  * @author brucejohnson

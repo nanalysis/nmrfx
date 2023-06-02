@@ -22,8 +22,6 @@
  */
 package org.nmrfx.peaks;
 
-import org.nmrfx.peaks.PeakList;
-
 /**
  * @author brucejohnson
  */

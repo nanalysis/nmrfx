@@ -3,8 +3,6 @@ package org.nmrfx.math;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 public class VecBaseTest {
 
     private VecBase getVec() {

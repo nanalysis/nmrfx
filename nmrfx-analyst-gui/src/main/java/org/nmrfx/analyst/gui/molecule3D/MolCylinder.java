@@ -10,10 +10,9 @@ import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
-
-import javax.vecmath.*;
-
 import org.nmrfx.chemistry.Point3;
+
+import javax.vecmath.Vector3d;
 
 public class MolCylinder extends Group implements MolItem {
 

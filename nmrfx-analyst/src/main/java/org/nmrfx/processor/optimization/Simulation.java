@@ -22,15 +22,14 @@
  */
 package org.nmrfx.processor.optimization;
 
-import org.nmrfx.processor.optimization.equations.OptFunction;
-
-import java.util.*;
-
 import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optimization.PointVectorValuePair;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.processor.optimization.equations.OptFunction;
+
+import java.util.Random;
 
 /**
  * @author graham

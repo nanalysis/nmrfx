@@ -18,10 +18,9 @@
 package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.SecondaryStructure;
 
 import java.util.List;
-
-import org.nmrfx.chemistry.SecondaryStructure;
 
 /**
  * @author bajlabuser

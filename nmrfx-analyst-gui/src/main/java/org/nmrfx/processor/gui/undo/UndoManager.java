@@ -17,10 +17,10 @@
  */
 package org.nmrfx.processor.gui.undo;
 
+import javafx.beans.property.SimpleBooleanProperty;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import javafx.beans.property.SimpleBooleanProperty;
 
 /**
  * @author Bruce Johnson

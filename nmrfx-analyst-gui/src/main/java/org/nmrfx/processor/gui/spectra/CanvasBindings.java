@@ -17,20 +17,16 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import java.util.Optional;
-
 import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.RotateEvent;
-import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.*;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+
+import java.util.Optional;
 
 /**
  * @author brucejohnson

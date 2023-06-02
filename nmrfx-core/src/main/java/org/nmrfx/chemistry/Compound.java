@@ -17,7 +17,9 @@
  */
 package org.nmrfx.chemistry;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 public class Compound extends Entity implements AtomIterable {
 

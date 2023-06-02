@@ -4,10 +4,10 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
-import java.util.ArrayList;
-
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
+
+import java.util.ArrayList;
 
 /**
  * @author brucejohnson

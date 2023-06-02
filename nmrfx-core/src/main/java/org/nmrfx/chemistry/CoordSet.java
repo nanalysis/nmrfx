@@ -24,7 +24,8 @@
 package org.nmrfx.chemistry;
 
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author Johnbruc

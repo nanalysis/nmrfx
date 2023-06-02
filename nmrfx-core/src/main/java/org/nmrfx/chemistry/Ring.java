@@ -27,8 +27,6 @@ package org.nmrfx.chemistry;
 
 import java.util.List;
 
-import org.nmrfx.chemistry.Atom;
-
 /**
  * @author Bruce A. Johnson <bruce at onemoonscientific.com>
  */

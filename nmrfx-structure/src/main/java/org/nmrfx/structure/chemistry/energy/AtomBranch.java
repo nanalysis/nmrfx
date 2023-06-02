@@ -18,6 +18,8 @@
 
 package org.nmrfx.structure.chemistry.energy;
 
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.RealVector;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.fastlinear.FastDiagonalMatrix;
 import org.nmrfx.structure.fastlinear.FastMatrix;
@@ -25,9 +27,6 @@ import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
 import java.util.ArrayList;
-
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.RealVector;
 
 /**
  * @author brucejohnson

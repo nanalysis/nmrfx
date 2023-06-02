@@ -17,11 +17,11 @@
  */
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

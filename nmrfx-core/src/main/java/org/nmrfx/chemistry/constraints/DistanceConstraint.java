@@ -17,15 +17,15 @@
  */
 package org.nmrfx.chemistry.constraints;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.chemistry.SpatialSetGroup;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class DistanceConstraint implements Constraint {
 

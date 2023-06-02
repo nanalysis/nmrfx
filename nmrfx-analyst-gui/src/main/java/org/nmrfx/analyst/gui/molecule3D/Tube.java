@@ -1,8 +1,8 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import java.util.*;
-
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
+import java.util.ArrayList;
 
 public class Tube {
 

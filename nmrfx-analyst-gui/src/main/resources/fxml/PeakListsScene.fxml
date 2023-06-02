@@ -1,35 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.MenuButton?>
-<?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
-
-<BorderPane fx:id="peakListsBorderPane" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.analyst.gui.peaks.PeakListsTableController">
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane fx:id="peakListsBorderPane" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.analyst.gui.peaks.PeakListsTableController">
     <center>
         <BorderPane>
             <top>
             </top>
             <center>
-                <GridPane fx:id="gridPane" />
+                <GridPane fx:id="gridPane"/>
             </center>
             <bottom>
-                <HBox fx:id="integralToolBar" />
+                <HBox fx:id="integralToolBar"/>
             </bottom>
         </BorderPane>
     </center>
     <bottom>
-        <HBox fx:id="typeToolBar" />
+        <HBox fx:id="typeToolBar"/>
     </bottom>
-   <top>
-      <ToolBar prefHeight="40.0" prefWidth="600.0" BorderPane.alignment="CENTER">
-         <items>
-            <MenuButton fx:id="editMenuButton" mnemonicParsing="false" text="Edit" />
-            <Button fx:id="refreshButton" mnemonicParsing="false" text="Refresh" />
-            <Button fx:id="inspectorButton" mnemonicParsing="false" text="Inspector" />
-            <Button fx:id="tableButton" mnemonicParsing="false" text="Table" />
-         </items></ToolBar>
-   </top>
+    <top>
+        <ToolBar prefHeight="40.0" prefWidth="600.0" BorderPane.alignment="CENTER">
+            <items>
+                <MenuButton fx:id="editMenuButton" mnemonicParsing="false" text="Edit"/>
+                <Button fx:id="refreshButton" mnemonicParsing="false" text="Refresh"/>
+                <Button fx:id="inspectorButton" mnemonicParsing="false" text="Inspector"/>
+                <Button fx:id="tableButton" mnemonicParsing="false" text="Table"/>
+            </items>
+        </ToolBar>
+    </top>
 </BorderPane>

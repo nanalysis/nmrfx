@@ -18,14 +18,13 @@
 package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.chemistry.HydrogenBond;
+import org.nmrfx.structure.rna.AllBasePairs.BPConstraint;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.nmrfx.chemistry.Point3;
-import org.nmrfx.structure.rna.AllBasePairs.BPConstraint;
 
 /**
  * @author bajlabuser

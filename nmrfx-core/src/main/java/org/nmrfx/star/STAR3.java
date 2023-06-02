@@ -20,7 +20,7 @@ package org.nmrfx.star;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
 
 public class STAR3 extends STAR3Base {
 

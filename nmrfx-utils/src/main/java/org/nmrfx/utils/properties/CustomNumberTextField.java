@@ -17,15 +17,15 @@
  */
 package org.nmrfx.utils.properties;
 
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.Optional;
-import java.util.function.DoubleFunction;
-
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import org.controlsfx.control.textfield.CustomTextField;
+
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Optional;
+import java.util.function.DoubleFunction;
 
 public class CustomNumberTextField extends CustomTextField {
 

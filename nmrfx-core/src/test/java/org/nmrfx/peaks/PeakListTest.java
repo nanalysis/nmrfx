@@ -4,7 +4,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.io.MoleculeIOException;
-import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.io.Sequence;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.project.ProjectBase;
@@ -12,9 +11,6 @@ import org.nmrfx.project.ProjectBase;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
-
-import static org.junit.Assert.*;
 
 public class PeakListTest {
     PeakList getPeakList(String fileName) throws IOException {

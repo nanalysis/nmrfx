@@ -17,18 +17,19 @@
  */
 package org.nmrfx.chemistry.constraints;
 
-import java.io.File;
-import java.io.IOException;
-
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Point3;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Stream;
-
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-import org.nmrfx.chemistry.Atom;
 
 /**
  * @author brucejohnson

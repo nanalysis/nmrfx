@@ -1,8 +1,11 @@
 package org.nmrfx.processor.utilities;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 // FIXME BAJ should replace with opencsv?
 /*
  * Copyright (c) Ian F. Darwin, http://www.darwinsys.com/, 1996-2002.

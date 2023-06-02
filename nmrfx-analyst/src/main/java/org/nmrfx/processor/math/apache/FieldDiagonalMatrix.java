@@ -17,8 +17,6 @@
  */
 package org.nmrfx.processor.math.apache;
 
-import java.io.Serializable;
-
 import org.apache.commons.math3.Field;
 import org.apache.commons.math3.FieldElement;
 import org.apache.commons.math3.exception.DimensionMismatchException;
@@ -29,6 +27,8 @@ import org.apache.commons.math3.linear.AbstractFieldMatrix;
 import org.apache.commons.math3.linear.FieldMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.util.MathArrays;
+
+import java.io.Serializable;
 
 public class FieldDiagonalMatrix<T extends FieldElement<T>> extends AbstractFieldMatrix<T> implements
         Serializable {

@@ -2,15 +2,14 @@ package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-
-import static org.junit.Assert.*;
-
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
+
+import static org.junit.Assert.*;
 
 public class ListOperationItemTest {
     private ListOperationItemTypeSelector typeSelector;

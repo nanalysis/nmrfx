@@ -5,23 +5,17 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
 import org.nmrfx.chemistry.Atom;
-
-import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
-
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.*;
+
+import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 
 /**
  * @author brucejohnson

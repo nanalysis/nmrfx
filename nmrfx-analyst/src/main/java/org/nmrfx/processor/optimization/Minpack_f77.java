@@ -123,9 +123,9 @@ public class Minpack_f77 extends Object {
      * @param fvec An output vector that contains the m functions [residuals] evaluated at x.
      * @param fjac An output m by n array. The upper n by n submatrix of fjac contains an upper triangular matrix R with
      *             diagonal elements of nonincreasing magnitude such that      <pre>
-     *                             t    t         t
-     *                            P (jac jac)P = R R,
-     *             </pre> where P is a permutation matrix and jac is the final calculated Jacobian. Column j of P is column ipvt[j]
+     *                                         t    t         t
+     *                                        P (jac jac)P = R R,
+     *                         </pre> where P is a permutation matrix and jac is the final calculated Jacobian. Column j of P is column ipvt[j]
      *             of the identity matrix. The lower trapezoidal part of fjac contains information generated during the computation
      *             of R.
      * @param tol  tol is a nonnegative input variable. Termination occurs when the algorithm estimates either that the
@@ -636,9 +636,9 @@ public class Minpack_f77 extends Object {
      * @param fvec   An output vector that contains the m functions [residuals] evaluated at x.
      * @param fjac   An output m by n array. The upper n by n submatrix of fjac contains an upper triangular matrix R with
      *               diagonal elements of nonincreasing magnitude such that      <pre>
-     *                               t    t         t
-     *                              P (jac jac)P = R R,
-     *               </pre> where P is a permutation matrix and jac is the final calculated Jacobian. Column j of P is column ipvt[j]
+     *                                             t    t         t
+     *                                            P (jac jac)P = R R,
+     *                             </pre> where P is a permutation matrix and jac is the final calculated Jacobian. Column j of P is column ipvt[j]
      *               of the identity matrix. The lower trapezoidal part of fjac contains information generated during the computation
      *               of R.
      * @param ftol   A nonnegative input variable. Termination occurs when both the actual and predicted relative

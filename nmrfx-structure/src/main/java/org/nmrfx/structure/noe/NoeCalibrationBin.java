@@ -19,7 +19,6 @@
 package org.nmrfx.structure.noe;
 
 import org.nmrfx.chemistry.constraints.Noe;
-import org.nmrfx.structure.noe.NoeCalibration;
 
 /**
  * @author brucejohnson

@@ -1,30 +1,20 @@
 package org.nmrfx.structure.noe;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.Constraint;
 import org.nmrfx.chemistry.constraints.Noe;
 import org.nmrfx.chemistry.constraints.NoeSet;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.SpectralDim;
-import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.chemistry.Atom;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.structure.chemistry.IdPeak;
 import org.nmrfx.structure.chemistry.IdResult;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.MatchCriteria;
-import org.nmrfx.chemistry.SpatialSet;
-import org.nmrfx.chemistry.Util;
-import org.nmrfx.peaks.PeakList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 /**
  * @author brucejohnson

@@ -5,15 +5,15 @@
  */
 package org.nmrfx.processor.optimization;
 
+import org.apache.commons.math3.special.Erf;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import org.apache.commons.math3.special.Erf;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakList;
 
 /**
  * Coupling information about a given cluster to facilitate Bipartite Match.

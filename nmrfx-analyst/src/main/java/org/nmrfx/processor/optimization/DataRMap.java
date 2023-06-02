@@ -17,7 +17,8 @@
  */
 package org.nmrfx.processor.optimization;
 
-import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
 
 /* DataRMap
  *  Provides elementary hash map via VecID to allow arbitrary dimensioning

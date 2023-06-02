@@ -17,25 +17,19 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import java.util.Arrays;
-
-import org.nmrfx.chemistry.Atom;
-
-import java.util.List;
-import java.util.Random;
-
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.optim.InitialGuess;
-import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.PointValuePair;
-import org.apache.commons.math3.optim.SimpleBounds;
-import org.apache.commons.math3.optim.SimpleValueChecker;
+import org.apache.commons.math3.optim.*;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.util.Precision;
+import org.nmrfx.chemistry.Atom;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 /**
  * @author johnsonb

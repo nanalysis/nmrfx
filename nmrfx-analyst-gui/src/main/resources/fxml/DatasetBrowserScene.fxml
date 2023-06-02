@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import java.lang.*?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.*?>
-<?import org.controlsfx.control.tableview2.*?>
-
+<?import org.controlsfx.control.tableview2.TableView2?>
 <BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
             prefHeight="350.0" prefWidth="600" styleClass="mainFxmlClass"
             fx:id="attrBorderPane"
@@ -14,7 +12,7 @@
     <top>
         <VBox>
             <children>
-                <ToolBar fx:id="toolBar" prefHeight="40.0"  prefWidth="600"
+                <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="600"
                          BorderPane.alignment="CENTER">
                     <items>
                     </items>
@@ -24,14 +22,14 @@
                         <ChoiceBox fx:id="dirTypeChoiceBox" prefWidth="100">
                         </ChoiceBox>
                         <TextField fx:id="directoryTextField" HBox.hgrow="ALWAYS">
-                            
+
                         </TextField>
                     </children>
                 </HBox>
             </children>
         </VBox>
     </top>
-    <center>  
+    <center>
         <TableView2 fx:id="tableView">
             <columns>
             </columns>

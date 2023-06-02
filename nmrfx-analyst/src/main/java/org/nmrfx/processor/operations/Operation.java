@@ -17,8 +17,8 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.Vec;
 import org.nmrfx.math.VecException;
+import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

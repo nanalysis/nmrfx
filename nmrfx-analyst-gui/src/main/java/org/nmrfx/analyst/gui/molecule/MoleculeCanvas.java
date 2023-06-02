@@ -5,9 +5,6 @@
  */
 package org.nmrfx.analyst.gui.molecule;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
@@ -16,6 +13,9 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.structure.chemistry.Molecule;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Bruce Johnson

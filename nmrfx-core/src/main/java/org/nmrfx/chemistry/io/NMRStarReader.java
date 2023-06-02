@@ -18,44 +18,29 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.annotations.PluginAPI;
-import org.nmrfx.chemistry.relax.*;
-import org.nmrfx.chemistry.Order;
-
-import java.io.BufferedReader;
-
-import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.chemistry.*;
-import org.nmrfx.chemistry.constraints.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
-import org.nmrfx.chemistry.AtomResonance;
+import org.nmrfx.chemistry.constraints.*;
+import org.nmrfx.chemistry.relax.OrderPar;
+import org.nmrfx.chemistry.relax.RelaxationData;
+import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
+import org.nmrfx.chemistry.relax.RelaxationRex;
+import org.nmrfx.chemistry.relax.ResonanceSource;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.*;
+import org.nmrfx.peaks.io.PeakPathReader;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.star.Saveframe;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.util.*;
-
-import org.nmrfx.peaks.AbsMultipletComponent;
-import org.nmrfx.peaks.ComplexCoupling;
-import org.nmrfx.peaks.CouplingPattern;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.Resonance;
-import org.nmrfx.peaks.ResonanceFactory;
-import org.nmrfx.peaks.SpectralDim;
-import org.nmrfx.peaks.Peak;
 import org.nmrfx.utilities.NvUtil;
-import org.nmrfx.peaks.io.PeakPathReader;
-import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.file.FileSystems;
+import java.util.*;
 
 /**
  * @author brucejohnson

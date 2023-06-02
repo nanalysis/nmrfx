@@ -18,10 +18,10 @@
 
 package org.nmrfx.chemistry.constraints;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Point3;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Point3;
 
 /**
  * This class represents a pair of atoms for which the distance will be computed

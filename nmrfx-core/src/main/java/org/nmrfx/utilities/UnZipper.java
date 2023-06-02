@@ -1,15 +1,11 @@
 package org.nmrfx.utilities;
 
-import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.io.File;
-import java.io.InputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.nio.file.SimpleFileVisitor;
+import java.io.*;
 import java.nio.file.Path;
-import java.util.zip.*;
+import java.nio.file.SimpleFileVisitor;
 import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public class UnZipper extends SimpleFileVisitor<Path> {
 

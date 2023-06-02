@@ -17,16 +17,8 @@
  */
 package org.nmrfx.analyst.gui.molecule;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -35,6 +27,9 @@ import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author brucejohnson

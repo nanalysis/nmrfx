@@ -17,14 +17,14 @@
  */
 package org.nmrfx.processor.math.apache;
 
-import static org.nmrfx.processor.math.apache.ComplexSingularValueDecomposition.premultiplyA;
-
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexField;
 import org.apache.commons.math3.linear.Array2DRowFieldMatrix;
 import org.apache.commons.math3.linear.ArrayFieldVector;
 import org.apache.commons.math3.linear.FieldMatrix;
 import org.apache.commons.math3.util.FastMath;
+
+import static org.nmrfx.processor.math.apache.ComplexSingularValueDecomposition.premultiplyA;
 
 /**
  * Computes a Householder QR decomposition.Specifically, given a matrix A there are is a unitary matrix U such that

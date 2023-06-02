@@ -2,7 +2,7 @@ package org.nmrfx.processor.datasets.peaks;
 
 import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.ARRAYED_FIT_MODE.SINGLE;
 import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FITJ_MODE.FIT;
-import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FIT_MODE.*;
+import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FIT_MODE.ALL;
 
 public class PeakFitParameters {
     public enum ARRAYED_FIT_MODE {

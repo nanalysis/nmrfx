@@ -1,17 +1,16 @@
 package org.nmrfx.chemistry;
 
 import org.nmrfx.annotations.PluginAPI;
-import org.nmrfx.chemistry.search.MNode;
-import org.nmrfx.chemistry.search.MTree;
-
-import java.io.*;
-import java.util.*;
-
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.io.Sequence;
+import org.nmrfx.chemistry.search.MNode;
+import org.nmrfx.chemistry.search.MTree;
 import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.*;
 
 @PluginAPI("ring")
 public class MoleculeBase implements Serializable, ITree {

@@ -17,10 +17,10 @@
  */
 package org.nmrfx.datasets;
 
-import java.io.IOException;
-
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.math.VecBase;
+
+import java.io.IOException;
 
 /**
  * Interface for memory-mapped matrix files.

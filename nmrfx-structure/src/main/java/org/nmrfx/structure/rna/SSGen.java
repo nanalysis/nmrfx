@@ -19,12 +19,11 @@ package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.SecondaryStructure;
+import org.nmrfx.structure.chemistry.Molecule;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.chemistry.SecondaryStructure;
 
 /**
  * @author bajlabuser

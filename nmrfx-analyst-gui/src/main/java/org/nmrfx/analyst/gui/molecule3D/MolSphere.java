@@ -1,16 +1,14 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
 import javafx.geometry.Point3D;
-
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
-
-import javax.vecmath.*;
-
 import org.nmrfx.chemistry.Point3;
+
+import javax.vecmath.Vector3d;
 
 public class MolSphere extends Group implements MolItem {
 

@@ -1,4 +1,3 @@
-
 package org.nmrfx.structure.chemistry.miner;
 
 import org.nmrfx.annotations.PluginAPI;

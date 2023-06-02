@@ -17,14 +17,13 @@
  */
 package org.nmrfx.chemistry.constraints;
 
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Point3;
 
 import java.util.*;
-
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MoleculeBase;
 
 /**
  * @author brucejohnson

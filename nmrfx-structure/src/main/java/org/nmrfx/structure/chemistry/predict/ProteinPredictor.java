@@ -1,22 +1,18 @@
 package org.nmrfx.structure.chemistry.predict;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.io.PDBAtomParser;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
+
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
-import org.nmrfx.chemistry.*;
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.chemistry.io.PDBAtomParser;
-import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
+import java.util.*;
 
 public class ProteinPredictor {
 

@@ -1,19 +1,14 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Collections;
-import java.util.Objects;
-import java.util.TreeSet;
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.stream.Stream;
-
 import org.apache.commons.collections4.bag.HashBag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class HosePrediction {
 

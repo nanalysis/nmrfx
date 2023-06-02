@@ -1,4 +1,3 @@
-
 package org.nmrfx.chemistry;
 
 import java.util.List;

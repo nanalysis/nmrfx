@@ -17,19 +17,18 @@
  */
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.complex.ComplexUtils;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.processor.processing.ProcessingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.complex.ComplexUtils;
-import org.apache.commons.math3.util.FastMath;
-import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Bruce Johnson

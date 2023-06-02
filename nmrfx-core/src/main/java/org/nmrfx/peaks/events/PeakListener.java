@@ -26,8 +26,6 @@
  */
 package org.nmrfx.peaks.events;
 
-import org.nmrfx.peaks.events.PeakEvent;
-
 import java.util.EventListener;
 
 /**

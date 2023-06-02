@@ -17,10 +17,10 @@
  */
 package org.nmrfx.processor.gui.utils;
 
+import javafx.application.Platform;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeSupport;
-
-import javafx.application.Platform;
 
 /**
  * @author brucejohnson

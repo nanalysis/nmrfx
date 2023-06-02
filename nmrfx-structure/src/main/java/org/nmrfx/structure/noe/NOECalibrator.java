@@ -22,9 +22,9 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.DistanceStat;
-import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.chemistry.constraints.Flags;
 import org.nmrfx.chemistry.constraints.Noe;
+import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.slf4j.Logger;
@@ -32,7 +32,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static org.nmrfx.chemistry.constraints.Noe.*;
+import static org.nmrfx.chemistry.constraints.Noe.avgDistance;
+import static org.nmrfx.chemistry.constraints.Noe.getAtoms;
 
 /**
  * @author brucejohnson

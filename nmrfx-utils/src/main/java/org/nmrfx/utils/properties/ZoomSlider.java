@@ -23,19 +23,12 @@
  */
 package org.nmrfx.utils.properties;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.GridPane;
-
-import static javafx.scene.layout.GridPane.setHgrow;
-
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -44,6 +37,10 @@ import javafx.scene.text.Font;
 import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import org.controlsfx.control.textfield.CustomTextField;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * @author brucejohnson

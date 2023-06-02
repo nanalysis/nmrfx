@@ -19,13 +19,12 @@ package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.structure.chemistry.Molecule;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.nmrfx.structure.chemistry.Molecule;
 
 /**
  * @author bajlabuser

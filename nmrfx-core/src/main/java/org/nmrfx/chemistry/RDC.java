@@ -5,9 +5,9 @@
  */
 package org.nmrfx.chemistry;
 
-import java.util.HashMap;
-
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
+import java.util.HashMap;
 
 /**
  * @author brucejohnson

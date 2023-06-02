@@ -17,9 +17,9 @@
  */
 package org.nmrfx.processor.math;
 
-import java.util.Comparator;
-
 import org.apache.commons.math3.util.FastMath;
+
+import java.util.Comparator;
 
 /**
  * @author Bruce Johnson

@@ -24,7 +24,6 @@ import javafx.scene.control.MenuItem;
 import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.tools.PeakLinker;
 
 /**

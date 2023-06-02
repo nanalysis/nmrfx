@@ -23,10 +23,10 @@
  */
 package org.nmrfx.utils.properties;
 
-import java.util.Optional;
-
 import javafx.beans.value.ObservableValue;
 import org.controlsfx.control.PropertySheet.Item;
+
+import java.util.Optional;
 
 /**
  * @author brucejohnson

@@ -17,6 +17,12 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomResonance;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.peaks.events.FreezeListener;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -24,14 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.AtomResonance;
-
 import static org.nmrfx.chemistry.AtomResonance.resonanceLoopStrings;
-
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.peaks.events.FreezeListener;
 
 /**
  * @author Bruce Johnson

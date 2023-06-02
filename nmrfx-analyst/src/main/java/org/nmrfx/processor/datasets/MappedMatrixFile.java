@@ -17,14 +17,6 @@
  */
 package org.nmrfx.processor.datasets;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.FloatBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.datasets.DatasetHeaderIO;
 import org.nmrfx.datasets.DatasetLayout;
@@ -32,6 +24,14 @@ import org.nmrfx.datasets.DatasetStorageInterface;
 import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.FloatBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 
 /**
  * Create a memory-mapped interface to a Dataset file

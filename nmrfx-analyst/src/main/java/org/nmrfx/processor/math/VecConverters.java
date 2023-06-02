@@ -17,13 +17,12 @@
  */
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.translate.Base64;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
-
-import org.apache.commons.math3.complex.Complex;
 
 /**
  * @author brucejohnson

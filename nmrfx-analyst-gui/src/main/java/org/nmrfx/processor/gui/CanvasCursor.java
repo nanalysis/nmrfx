@@ -2,8 +2,6 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.scene.Cursor;
-import javafx.scene.ImageCursor;
-import javafx.scene.image.Image;
 import org.apache.commons.lang3.SystemUtils;
 
 public enum CanvasCursor {

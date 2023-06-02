@@ -18,9 +18,9 @@
 
 package org.nmrfx.chemistry;
 
-import java.io.*;
-
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
+import java.io.Serializable;
 
 public class Point3 extends Vector3D implements Serializable {
 

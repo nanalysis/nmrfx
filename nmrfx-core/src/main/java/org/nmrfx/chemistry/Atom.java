@@ -17,22 +17,21 @@
  */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.annotations.PluginAPI;
-import org.nmrfx.chemistry.relax.OrderPar;
-import org.nmrfx.chemistry.relax.RelaxationData;
-import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
 import org.nmrfx.chemistry.io.AtomParser;
-
-import javax.vecmath.Point2d;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import org.nmrfx.chemistry.relax.OrderPar;
+import org.nmrfx.chemistry.relax.RelaxationData;
 import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
 import org.nmrfx.chemistry.relax.SpectralDensity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.vecmath.Point2d;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @PluginAPI({"residuegen", "ring"})
 public class Atom implements IAtom, Comparable<Atom> {

@@ -1,9 +1,9 @@
 package org.nmrfx.peaks;
 
+import org.nmrfx.datasets.DatasetBase;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.nmrfx.datasets.DatasetBase;
 
 /**
  * @author brucejohnson

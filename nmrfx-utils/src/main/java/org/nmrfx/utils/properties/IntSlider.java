@@ -23,16 +23,16 @@
  */
 package org.nmrfx.utils.properties;
 
-import java.text.NumberFormat;
-
 import javafx.beans.binding.Bindings;
-import javafx.scene.control.TextField;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
 import javafx.util.StringConverter;
 import javafx.util.converter.FormatStringConverter;
+
+import java.text.NumberFormat;
 
 /**
  * @author brucejohnson

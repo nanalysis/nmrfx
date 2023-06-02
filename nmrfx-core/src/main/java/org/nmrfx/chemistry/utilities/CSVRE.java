@@ -20,9 +20,12 @@ package org.nmrfx.chemistry.utilities;
 
 import org.nmrfx.annotations.PluginAPI;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /* Simple demo of CSV matching using Regular Expressions.

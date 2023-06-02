@@ -5,20 +5,15 @@
  */
 package org.nmrfx.analyst.peaks;
 
+import org.apache.commons.lang3.text.StrSubstitutor;
+import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.peaks.*;
+import org.nmrfx.processor.datasets.Dataset;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.lang3.text.StrSubstitutor;
-import org.nmrfx.datasets.Nuclei;
-import org.nmrfx.peaks.Coupling;
-import org.nmrfx.peaks.CouplingPattern;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.Singlet;
-import org.nmrfx.processor.datasets.Dataset;
 
 /**
  * @author brucejohnson

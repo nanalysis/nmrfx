@@ -1,12 +1,12 @@
 package org.nmrfx.processor.optimization;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.ArrayList;
-
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Performs Bipartite Match on two peak lists, an experimental and predicted

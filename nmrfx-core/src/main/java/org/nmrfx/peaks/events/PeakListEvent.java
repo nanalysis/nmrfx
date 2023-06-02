@@ -26,8 +26,6 @@
  */
 package org.nmrfx.peaks.events;
 
-import java.util.EventObject;
-
 /**
  * @author brucejohnson
  */

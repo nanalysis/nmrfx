@@ -17,14 +17,14 @@
  */
 package org.nmrfx.chemistry;
 
+import org.apache.commons.math3.util.FastMath;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * @author Bruce Johnson

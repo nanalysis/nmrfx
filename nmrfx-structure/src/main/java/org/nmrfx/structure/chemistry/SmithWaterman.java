@@ -18,7 +18,7 @@
 
 package org.nmrfx.structure.chemistry;
 
-import java.util.*;
+import java.util.ArrayList;
 
 public class SmithWaterman {
 

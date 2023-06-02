@@ -22,7 +22,9 @@ import org.nmrfx.processor.math.Vec;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.*;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 
 public class BucketedMatrix {
 

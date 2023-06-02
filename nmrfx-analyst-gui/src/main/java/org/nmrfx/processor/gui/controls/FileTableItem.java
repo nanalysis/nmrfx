@@ -17,14 +17,17 @@
  */
 package org.nmrfx.processor.gui.controls;
 
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleLongProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.paint.Color;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import javafx.beans.property.*;
-import javafx.scene.paint.Color;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
 /**
  * @author Bruce Johnson

@@ -17,12 +17,12 @@
  */
 package org.nmrfx.utils.properties;
 
-import java.util.function.IntFunction;
-
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import org.controlsfx.control.textfield.CustomTextField;
+
+import java.util.function.IntFunction;
 
 public class CustomIntegerTextField extends CustomTextField {
 

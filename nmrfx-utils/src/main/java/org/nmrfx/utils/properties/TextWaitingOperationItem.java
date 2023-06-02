@@ -23,8 +23,6 @@
  */
 package org.nmrfx.utils.properties;
 
-import java.util.function.Consumer;
-
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
@@ -37,6 +35,8 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 import org.controlsfx.control.PropertySheet.Item;
+
+import java.util.function.Consumer;
 
 /**
  * @author brucejohnson

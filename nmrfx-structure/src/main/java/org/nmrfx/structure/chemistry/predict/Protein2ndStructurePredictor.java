@@ -17,15 +17,15 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
-import org.nd4j.linalg.factory.Nd4j;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 /*
  *

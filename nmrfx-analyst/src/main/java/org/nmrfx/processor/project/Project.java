@@ -5,7 +5,9 @@
  */
 package org.nmrfx.processor.project;
 
-import java.beans.PropertyChangeListener;
+import org.nmrfx.peaks.ResonanceFactory;
+import org.nmrfx.project.ProjectBase;
+
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -14,9 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.nmrfx.peaks.ResonanceFactory;
-import org.nmrfx.project.ProjectBase;
 
 /**
  * @author Bruce Johnson

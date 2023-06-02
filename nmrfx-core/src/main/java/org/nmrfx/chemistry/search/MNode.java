@@ -19,7 +19,9 @@ package org.nmrfx.chemistry.search;
 
 import org.nmrfx.chemistry.Atom;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class MNode implements Comparable, Comparator {
 

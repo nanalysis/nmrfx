@@ -17,22 +17,17 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.constraints.AngleConstraint;
-import org.nmrfx.chemistry.*;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class RNARotamer {
 

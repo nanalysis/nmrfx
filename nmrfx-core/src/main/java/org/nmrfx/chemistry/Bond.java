@@ -19,7 +19,7 @@ package org.nmrfx.chemistry;
 
 import org.nmrfx.annotations.PluginAPI;
 
-import java.io.*;
+import java.io.Serializable;
 
 @PluginAPI("residuegen")
 public class Bond implements IBond, Serializable {

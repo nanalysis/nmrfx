@@ -17,24 +17,14 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Compound;
-import org.nmrfx.chemistry.CoordSet;
-import org.nmrfx.chemistry.Entity;
-import org.nmrfx.chemistry.PPMv;
-import org.nmrfx.chemistry.Point3;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.SpatialSet;
+import org.apache.commons.math3.geometry.euclidean.threed.Line;
+import org.apache.commons.math3.geometry.euclidean.threed.Plane;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.nmrfx.chemistry.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.geometry.euclidean.threed.Plane;
-import org.apache.commons.math3.geometry.euclidean.threed.Line;
-import org.nmrfx.chemistry.MoleculeBase;
 
 public class RingCurrentShift {
 

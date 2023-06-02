@@ -17,9 +17,9 @@
  */
 package org.nmrfx.structure.fastlinear;
 
-import java.util.Arrays;
-
 import org.apache.commons.math3.linear.RealMatrix;
+
+import java.util.Arrays;
 
 /**
  * @author Bruce Johnson

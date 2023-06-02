@@ -18,13 +18,13 @@
 
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.chemistry.constraints.Constraint;
+import org.nmrfx.chemistry.constraints.ConstraintSet;
+import org.nmrfx.peaks.InvalidPeakException;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
-
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.chemistry.constraints.Constraint;
-import org.nmrfx.chemistry.constraints.ConstraintSet;
 
 /**
  * @author brucejohnson

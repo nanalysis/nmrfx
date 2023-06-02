@@ -17,22 +17,18 @@
  */
 package org.nmrfx.structure.rdc;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.math3.geometry.enclosing.EnclosingBall;
 import org.apache.commons.math3.geometry.enclosing.WelzlEncloser;
-import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
-import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
-import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
-import org.apache.commons.math3.geometry.euclidean.threed.SphereGenerator;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.geometry.euclidean.threed.*;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomEnergyProp;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Point3;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author brucejohnson

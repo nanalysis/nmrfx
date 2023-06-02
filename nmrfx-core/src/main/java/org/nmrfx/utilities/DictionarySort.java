@@ -1,6 +1,6 @@
 package org.nmrfx.utilities;
 
-import java.util.*;
+import java.util.Comparator;
 
 // Code originally from JTcl
 public class DictionarySort<T> implements Comparator<T> {

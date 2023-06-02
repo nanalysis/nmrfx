@@ -4,14 +4,13 @@
  */
 package org.nmrfx.analyst.compounds;
 
+import org.apache.commons.math3.stat.StatUtils;
 import org.nmrfx.processor.math.Vec;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.math3.stat.StatUtils;
 
 /**
  * @author brucejohnson

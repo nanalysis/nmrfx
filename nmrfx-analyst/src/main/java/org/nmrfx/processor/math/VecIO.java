@@ -17,12 +17,12 @@
  */
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.complex.Complex;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-
-import org.apache.commons.math3.complex.Complex;
 
 /**
  * @author brucejohnson

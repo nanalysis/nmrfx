@@ -1,17 +1,18 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import java.util.*;
-
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
-
-import javax.vecmath.*;
-
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
+import javax.vecmath.Vector3d;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class Spheres extends Group implements MolItem {
 

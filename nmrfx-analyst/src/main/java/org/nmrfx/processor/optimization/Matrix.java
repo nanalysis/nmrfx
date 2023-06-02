@@ -17,6 +17,8 @@
  */
 package org.nmrfx.processor.optimization;
 
+import org.apache.commons.math3.util.FastMath;
+
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.StreamTokenizer;
@@ -24,8 +26,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
-
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * Jama = Java Matrix class.

@@ -1,7 +1,5 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import java.util.*;
-
 import javafx.collections.ObservableList;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
@@ -13,11 +11,14 @@ import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
-
-import javax.vecmath.*;
-
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.Bond;
+
+import javax.vecmath.Vector3d;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class MolCylinders extends Group implements MolItem {
 

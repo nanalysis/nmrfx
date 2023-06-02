@@ -5,14 +5,14 @@
  */
 package org.nmrfx.structure.rdc;
 
-import java.util.List;
-import java.util.Random;
-
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.nmrfx.chemistry.RDC;
+
+import java.util.List;
+import java.util.Random;
 
 /**
  * @author brucejohnson

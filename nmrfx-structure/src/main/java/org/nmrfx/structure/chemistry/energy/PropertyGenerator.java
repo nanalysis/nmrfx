@@ -1,14 +1,16 @@
 package org.nmrfx.structure.chemistry.energy;
 
-import java.util.*;
-import java.io.*;
-import java.text.NumberFormat;
-import java.text.DecimalFormat;
-
 import org.nmrfx.chemistry.*;
-import org.nmrfx.structure.chemistry.*;
+import org.nmrfx.structure.chemistry.HydrogenBond;
+import org.nmrfx.structure.chemistry.MissingCoordinatesException;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.*;
 
 public class PropertyGenerator {
 

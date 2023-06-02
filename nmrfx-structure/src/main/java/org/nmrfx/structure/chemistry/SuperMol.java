@@ -18,12 +18,13 @@
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.SpatialSet;
 
-import java.util.*;
-
-import org.nmrfx.chemistry.MoleculeBase;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class SuperMol {
 

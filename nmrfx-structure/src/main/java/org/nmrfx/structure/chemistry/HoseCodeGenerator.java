@@ -17,27 +17,12 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.chemistry.Order;
-
-import java.util.ArrayDeque;
-
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Bond;
-import org.nmrfx.chemistry.Entity;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import org.nmrfx.chemistry.IBond;
-import org.nmrfx.chemistry.Polymer;
 
 /**
  * @author brucejohnson

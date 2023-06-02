@@ -21,7 +21,9 @@ import org.nmrfx.chemistry.*;
 import org.nmrfx.peaks.Peak;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 
 enum DisTypes {
 

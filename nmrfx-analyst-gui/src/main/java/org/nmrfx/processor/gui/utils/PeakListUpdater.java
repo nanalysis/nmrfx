@@ -17,6 +17,12 @@
  */
 package org.nmrfx.processor.gui.utils;
 
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.events.PeakEvent;
+import org.nmrfx.peaks.events.PeakListener;
+import org.nmrfx.utilities.Updater;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -24,12 +30,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.events.PeakEvent;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.events.PeakListener;
-import org.nmrfx.utilities.Updater;
 
 /**
  * @author brucejohnson

@@ -17,7 +17,14 @@
  */
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.apache.commons.math3.transform.DftNormalization;
+import org.apache.commons.math3.transform.FastFourierTransformer;
+import org.apache.commons.math3.transform.TransformType;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.math.Bessel;
 import org.nmrfx.processor.processing.ProcessingException;
 
 import java.io.FileInputStream;
@@ -30,14 +37,6 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.apache.commons.math3.transform.DftNormalization;
-import org.apache.commons.math3.transform.FastFourierTransformer;
-import org.apache.commons.math3.transform.TransformType;
-import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.math.Bessel;
 
 public class MatrixND implements MatrixType {
 

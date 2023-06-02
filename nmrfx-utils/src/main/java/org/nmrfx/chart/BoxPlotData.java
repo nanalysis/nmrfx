@@ -5,9 +5,9 @@
  */
 package org.nmrfx.chart;
 
-import java.util.Arrays;
-
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+
+import java.util.Arrays;
 
 /**
  * @author brucejohnson

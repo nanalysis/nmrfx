@@ -25,19 +25,12 @@
  */
 package org.nmrfx.structure.chemistry.ring;
 
-import org.nmrfx.chemistry.Ring;
 import org.nmrfx.chemistry.Atom;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
 import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.ITree;
+import org.nmrfx.chemistry.Ring;
+
+import java.util.*;
 
 /**
  * @author Richard L. Apodaca <rapodaca at metamolecular.com>

@@ -17,26 +17,17 @@
  */
 package org.nmrfx.chemistry.io;
 
-import org.nmrfx.chemistry.Order;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
-import org.nmrfx.chemistry.AtomEnergyProp;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author brucejohnson

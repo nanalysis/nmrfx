@@ -1,16 +1,11 @@
 package org.nmrfx.structure.chemistry.miner;
 
-import java.util.*;
-
 import org.nmrfx.annotations.PluginAPI;
-import org.nmrfx.chemistry.AtomContainer;
-import org.nmrfx.chemistry.IAtom;
-import org.nmrfx.chemistry.IBond;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Order;
-import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.chemistry.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 @PluginAPI("residuegen")
 public class PathIterator implements Iterator<List<Integer>> {

@@ -5,6 +5,9 @@
  */
 package org.nmrfx.analyst.peaks;
 
+import org.apache.commons.text.TextStringBuilder;
+import org.yaml.snakeyaml.Yaml;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -13,9 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.text.TextStringBuilder;
-import org.yaml.snakeyaml.Yaml;
 
 /**
  * @author brucejohnson

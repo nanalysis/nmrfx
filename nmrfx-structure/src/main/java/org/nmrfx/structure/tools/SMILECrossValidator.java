@@ -1,10 +1,10 @@
 package org.nmrfx.structure.tools;
 
-import smile.validation.CrossValidation;
 import smile.data.DataFrame;
 import smile.data.formula.Formula;
 import smile.regression.LASSO;
 import smile.regression.LinearModel;
+import smile.validation.CrossValidation;
 import smile.validation.RegressionValidations;
 
 

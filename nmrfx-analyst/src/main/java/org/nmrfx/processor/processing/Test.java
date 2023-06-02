@@ -17,12 +17,11 @@
  */
 package org.nmrfx.processor.processing;
 
-import org.nmrfx.processor.processing.processes.ProcessOps;
-import org.nmrfx.processor.operations.WriteVector;
 import org.nmrfx.processor.operations.Hft;
 import org.nmrfx.processor.operations.Phase;
 import org.nmrfx.processor.operations.Real;
-import org.nmrfx.processor.processing.processes.IncompleteProcessException;
+import org.nmrfx.processor.operations.WriteVector;
+import org.nmrfx.processor.processing.processes.ProcessOps;
 
 /**
  * @author johnsonb

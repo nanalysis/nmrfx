@@ -17,14 +17,9 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
-
 import org.apache.commons.math3.complex.Complex;
+
+import java.nio.*;
 
 /**
  * @author brucejohnson

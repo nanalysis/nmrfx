@@ -17,6 +17,10 @@
  */
 package org.nmrfx.processor.datasets;
 
+import org.apache.commons.collections4.map.LRUMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
@@ -28,10 +32,6 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Collections;
 import java.util.Map;
-
-import org.apache.commons.collections4.map.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MapInfo {
 

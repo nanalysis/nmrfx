@@ -1,7 +1,7 @@
 package org.nmrfx.chemistry;
 
-import java.util.List;
 import javax.vecmath.Point2d;
+import java.util.List;
 
 /**
  * @author Bruce Johnson

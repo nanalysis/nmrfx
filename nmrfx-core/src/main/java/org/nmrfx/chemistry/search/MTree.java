@@ -17,9 +17,9 @@
  */
 package org.nmrfx.chemistry.search;
 
-import java.util.*;
-
 import org.nmrfx.chemistry.Ring;
+
+import java.util.*;
 
 public class MTree {
 

@@ -18,11 +18,10 @@
 
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
-import org.apache.commons.math3.complex.Complex;
-
 import org.junit.Assert;
 import org.junit.Test;
 

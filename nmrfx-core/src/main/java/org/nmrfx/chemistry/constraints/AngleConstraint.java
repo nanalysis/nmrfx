@@ -17,13 +17,9 @@
  */
 package org.nmrfx.chemistry.constraints;
 
-import java.util.List;
+import org.nmrfx.chemistry.*;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.SpatialSet;
-import org.nmrfx.chemistry.Util;
+import java.util.List;
 
 /**
  * This class determines if the angle boundary is valid - angle boundary for

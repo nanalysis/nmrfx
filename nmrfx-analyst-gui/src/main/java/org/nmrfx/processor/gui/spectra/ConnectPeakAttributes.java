@@ -17,10 +17,10 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import java.util.List;
-
 import javafx.scene.paint.Color;
 import org.nmrfx.peaks.Peak;
+
+import java.util.List;
 
 /**
  * @author tedcolon

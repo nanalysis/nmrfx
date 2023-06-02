@@ -18,15 +18,11 @@
 
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.chemistry.*;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
-
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.CoordSet;
-import org.nmrfx.chemistry.Entity;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.SpatialSet;
 
 /**
  * @author brucejohnson

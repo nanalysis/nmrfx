@@ -17,21 +17,21 @@
  */
 package org.nmrfx.processor.optimization;
 
-import java.util.Random;
-
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.MathIllegalStateException;
-import org.apache.commons.math3.optim.PointValuePair;
-import org.apache.commons.math3.util.FastMath;
-import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.SimpleBounds;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.processor.datasets.peaks.LineShapes;
+
+import java.util.Random;
 
 public class LorentzGaussND implements MultivariateFunction {
 

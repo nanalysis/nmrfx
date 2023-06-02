@@ -17,13 +17,14 @@
  */
 package org.nmrfx.processor.optimization.equations;
 
-import org.nmrfx.processor.optimization.*;
+import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.nmrfx.processor.optimization.NNLSMat;
+import org.nmrfx.processor.optimization.SineSignal;
 
 import java.util.ArrayList;
 import java.util.Collections;
-
-import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.linear.*;
 
 public class LorentzIWJ implements MultivariateFunction {
 

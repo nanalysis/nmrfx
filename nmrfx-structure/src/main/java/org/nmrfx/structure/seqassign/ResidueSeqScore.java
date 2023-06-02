@@ -5,9 +5,9 @@
  */
 package org.nmrfx.structure.seqassign;
 
-import java.util.Collection;
-
 import org.nmrfx.chemistry.Residue;
+
+import java.util.Collection;
 
 /**
  * @author brucejohnson

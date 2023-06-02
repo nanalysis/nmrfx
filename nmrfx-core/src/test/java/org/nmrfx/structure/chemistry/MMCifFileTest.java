@@ -5,18 +5,6 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.chemistry.InvalidMoleculeException;
@@ -24,6 +12,14 @@ import org.nmrfx.chemistry.io.MMcifReader;
 import org.nmrfx.chemistry.io.MMcifWriter;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * @author Martha

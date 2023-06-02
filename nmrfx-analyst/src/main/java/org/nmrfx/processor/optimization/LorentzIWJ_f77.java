@@ -17,14 +17,13 @@
  */
 package org.nmrfx.processor.optimization;
 
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.nmrfx.peaks.CouplingItem;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
 
 public class LorentzIWJ_f77 implements Lmdif_fcn {
     // epsmch is the machine precision

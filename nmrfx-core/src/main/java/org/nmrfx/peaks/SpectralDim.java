@@ -26,13 +26,11 @@
  */
 package org.nmrfx.peaks;
 
-import java.util.ArrayList;
-import java.util.DoubleSummaryStatistics;
-import java.util.List;
-import java.util.Optional;
-
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.Nuclei;
+
+import java.util.DoubleSummaryStatistics;
+import java.util.Optional;
 
 /**
  * @author brucejohnson

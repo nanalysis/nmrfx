@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import java.lang.*?>
-<?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.*?>
-
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.BorderPane?>
+<?import org.controlsfx.control.MasterDetailPane?>
 <BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
             prefHeight="350.0" prefWidth="600" styleClass="mainFxmlClass"
             fx:id="attrBorderPane"
@@ -17,7 +14,7 @@
             </items>
         </ToolBar>
     </top>
-    <center>  
+    <center>
         <MasterDetailPane fx:id="masterDetailPane">
         </MasterDetailPane>
     </center>

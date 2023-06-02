@@ -5,10 +5,10 @@
  */
 package org.nmrfx.structure.chemistry.miner;
 
-import java.io.StringReader;
-
 import org.codehaus.commons.compiler.CompilerFactoryFactory;
 import org.codehaus.commons.compiler.IClassBodyEvaluator;
+
+import java.io.StringReader;
 
 /**
  * @author Bruce Johnson

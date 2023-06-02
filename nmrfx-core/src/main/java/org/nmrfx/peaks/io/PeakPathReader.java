@@ -17,19 +17,19 @@
  */
 package org.nmrfx.peaks.io;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.peaks.PeakPath;
+import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
 import org.nmrfx.utilities.NvUtil;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author brucejohnson

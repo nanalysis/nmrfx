@@ -20,12 +20,11 @@ package org.nmrfx.structure.rna;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.structure.chemistry.Molecule;
 
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.nmrfx.structure.chemistry.Molecule;
 
 /**
  * @author Bruce Johnson

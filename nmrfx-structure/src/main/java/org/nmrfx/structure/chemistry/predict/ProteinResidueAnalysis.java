@@ -5,10 +5,10 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
+import org.nmrfx.chemistry.Residue;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.nmrfx.chemistry.Residue;
 
 /**
  * @author brucejohnson

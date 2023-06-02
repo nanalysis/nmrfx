@@ -23,8 +23,6 @@
  */
 package org.nmrfx.math;
 
-import org.nmrfx.math.VecException;
-
 /**
  * Thrown when a Vec should be real / complex or use the Apache formatting.
  *

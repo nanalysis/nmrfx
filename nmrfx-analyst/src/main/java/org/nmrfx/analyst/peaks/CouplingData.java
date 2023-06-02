@@ -1,9 +1,9 @@
 package org.nmrfx.analyst.peaks;
 
+import org.nmrfx.peaks.CouplingItem;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.nmrfx.peaks.CouplingItem;
 
 /**
  * @author Bruce Johnson

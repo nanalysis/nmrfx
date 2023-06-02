@@ -22,13 +22,12 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.utilities.Format;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import org.nmrfx.datasets.DatasetBase;
 
 /**
  * @author brucejohnson

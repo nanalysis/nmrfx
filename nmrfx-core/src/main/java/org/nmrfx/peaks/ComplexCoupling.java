@@ -23,10 +23,9 @@
 package org.nmrfx.peaks;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static java.util.Comparator.comparing;
-
-import java.util.List;
 
 /**
  * @author brucejohnson

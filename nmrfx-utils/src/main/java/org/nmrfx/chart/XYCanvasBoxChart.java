@@ -17,10 +17,6 @@
  */
 package org.nmrfx.chart;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Orientation;
 import javafx.scene.canvas.Canvas;
@@ -31,6 +27,10 @@ import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author brucejohnson

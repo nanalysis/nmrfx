@@ -23,13 +23,13 @@
  */
 package org.nmrfx.utils.properties;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableObjectValue;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * @author johnsonb

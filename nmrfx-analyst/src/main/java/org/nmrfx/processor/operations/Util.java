@@ -17,20 +17,14 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.Vec;
+import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.util.MathArrays;
 import org.nmrfx.math.VecException;
+import org.nmrfx.processor.math.Vec;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.DecompositionSolver;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.apache.commons.math3.util.MathArrays;
 
 /**
  * Utility functions involving Vectors, mostly pulled from VecMat and the Math

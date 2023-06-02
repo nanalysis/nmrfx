@@ -5,41 +5,26 @@
  */
 package org.nmrfx.structure.project;
 
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.io.*;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.project.ProjectBase;
+import org.nmrfx.star.ParseException;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.DirectoryIteratorException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.HashMap;
+import java.nio.file.*;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
-import org.nmrfx.project.ProjectBase;
-import org.nmrfx.star.ParseException;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.chemistry.io.MoleculeIOException;
-import org.nmrfx.chemistry.io.NMRStarReader;
-import org.nmrfx.chemistry.io.NMRStarWriter;
-import org.nmrfx.chemistry.io.PDBFile;
-import org.nmrfx.chemistry.io.PPMFiles;
-import org.nmrfx.chemistry.io.SDFile;
-import org.nmrfx.chemistry.io.Sequence;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Bruce Johnson

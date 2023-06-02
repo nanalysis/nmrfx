@@ -23,9 +23,9 @@
  */
 package org.nmrfx.utils.properties;
 
-import java.util.Collection;
-
 import javafx.beans.value.ChangeListener;
+
+import java.util.Collection;
 
 /**
  * @author brucejohnson

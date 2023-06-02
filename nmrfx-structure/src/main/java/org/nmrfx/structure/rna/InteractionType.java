@@ -6,10 +6,10 @@
 package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Residue;
-
-import java.util.*;
-
 import org.nmrfx.chemistry.SecondaryStructure;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author bajlabuser

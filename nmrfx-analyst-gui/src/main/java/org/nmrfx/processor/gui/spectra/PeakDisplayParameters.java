@@ -22,9 +22,9 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import org.nmrfx.peaks.Peak;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.utilities.NvUtil;
 

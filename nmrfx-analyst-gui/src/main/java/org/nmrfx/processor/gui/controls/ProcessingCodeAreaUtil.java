@@ -17,8 +17,16 @@
  */
 package org.nmrfx.processor.gui.controls;
 
+import javafx.concurrent.Task;
+import org.fxmisc.richtext.CodeArea;
+import org.fxmisc.richtext.LineNumberFactory;
+import org.fxmisc.richtext.model.StyleSpans;
+import org.fxmisc.richtext.model.StyleSpansBuilder;
 import org.nmrfx.processor.gui.OperationInfo;
 import org.nmrfx.processor.gui.RefManager;
+import org.reactfx.EventStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -28,16 +36,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javafx.concurrent.Task;
-
-import org.fxmisc.richtext.CodeArea;
-import org.fxmisc.richtext.LineNumberFactory;
-import org.fxmisc.richtext.model.StyleSpans;
-import org.fxmisc.richtext.model.StyleSpansBuilder;
-import org.reactfx.EventStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ProcessingCodeAreaUtil {
 

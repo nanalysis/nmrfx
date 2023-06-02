@@ -1,4 +1,3 @@
-
 package org.nmrfx.utilities;
 
 import java.io.File;

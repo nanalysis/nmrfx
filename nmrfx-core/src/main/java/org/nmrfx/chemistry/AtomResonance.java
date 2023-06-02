@@ -19,18 +19,17 @@ package org.nmrfx.chemistry;
 
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.utilities.NvUtil;
-
-import java.util.List;
-import java.util.Map;
-
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.peaks.SimpleResonance;
 import org.nmrfx.star.Loop;
-import org.nmrfx.star.Saveframe;
 import org.nmrfx.star.ParseException;
+import org.nmrfx.star.Saveframe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Bruce Johnson

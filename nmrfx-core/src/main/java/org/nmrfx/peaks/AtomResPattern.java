@@ -17,12 +17,12 @@
  */
 package org.nmrfx.peaks;
 
-import java.util.*;
-
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.chemistry.AtomSpecifier;
 import org.nmrfx.chemistry.Residue;
+
+import java.util.*;
 
 /**
  * @author brucejohnson
