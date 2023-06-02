@@ -29,72 +29,72 @@ import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 public class ChartDrawingLayers {
     // Manages grid layout when displaying multiple charts on the same drawing canvas
     // Also contains chart instances (as javafx Region objects)
-    private final GridPaneCanvas chartGroup;
+    private final GridPaneCanvas grid;
 
     // Base layer (background): contains the spectra, axes, ...
-    private final Canvas canvas = new Canvas();
+    private final Canvas base = new Canvas();
 
     // Second layer: contains peaks and annotations
-    private final Canvas peakCanvas = new Canvas();
+    private final Canvas peaksAndAnnotations = new Canvas();
 
     // Third layer: contains slices and drag-boxes
-    private final Canvas annoCanvas = new Canvas();
+    private final Canvas slicesAndDragBoxes = new Canvas();
 
     // Top level (foreground): contains crosshairs, highlighted regions, selected canvas handles
     // Equivalent to a glasspane in swing
-    private final Pane plotContent = new Pane();
+    private final Pane top = new Pane();
 
 
     public ChartDrawingLayers(FXMLController controller, StackPane stack) {
-        plotContent.setMouseTransparent(true);
+        top.setMouseTransparent(true);
 
-        chartGroup = new GridPaneCanvas(controller, canvas);
-        chartGroup.addCharts(1, controller.getCharts());
-        chartGroup.setMouseTransparent(true);
-        chartGroup.setManaged(true);
+        grid = new GridPaneCanvas(controller, base);
+        grid.addCharts(1, controller.getCharts());
+        grid.setMouseTransparent(true);
+        grid.setManaged(true);
 
-        canvas.setManaged(false);
-        peakCanvas.setManaged(false);
-        annoCanvas.setManaged(false);
-        plotContent.setManaged(false);
-        chartGroup.widthProperty().addListener(observable -> updateCanvasWidth());
-        chartGroup.heightProperty().addListener(observable -> updateCanvasHeight());
+        base.setManaged(false);
+        peaksAndAnnotations.setManaged(false);
+        slicesAndDragBoxes.setManaged(false);
+        top.setManaged(false);
+        grid.widthProperty().addListener(observable -> updateCanvasWidth());
+        grid.heightProperty().addListener(observable -> updateCanvasHeight());
 
-        stack.getChildren().addAll(canvas, chartGroup, peakCanvas, annoCanvas, plotContent);
+        stack.getChildren().addAll(base, grid, peaksAndAnnotations, slicesAndDragBoxes, top);
     }
 
     private void updateCanvasWidth() {
-        double width = chartGroup.getWidth();
-        canvas.setWidth(width);
-        peakCanvas.setWidth(width);
-        annoCanvas.setWidth(width);
+        double width = grid.getWidth();
+        base.setWidth(width);
+        peaksAndAnnotations.setWidth(width);
+        slicesAndDragBoxes.setWidth(width);
     }
 
     private void updateCanvasHeight() {
-        double height = chartGroup.getHeight();
-        canvas.setHeight(height);
-        peakCanvas.setHeight(height);
-        annoCanvas.setHeight(height);
+        double height = grid.getHeight();
+        base.setHeight(height);
+        peaksAndAnnotations.setHeight(height);
+        slicesAndDragBoxes.setHeight(height);
     }
 
     //XXX try to remove accessor usages from FXMLController
-    public GridPaneCanvas getChartGroup() {
-        return chartGroup;
+    public GridPaneCanvas getGrid() {
+        return grid;
     }
 
-    public Canvas getCanvas() {
-        return canvas;
+    public Canvas getBase() {
+        return base;
     }
 
-    public Canvas getPeakCanvas() {
-        return peakCanvas;
+    public Canvas getPeaksAndAnnotations() {
+        return peaksAndAnnotations;
     }
 
-    public Canvas getAnnoCanvas() {
-        return annoCanvas;
+    public Canvas getSlicesAndDragBoxes() {
+        return slicesAndDragBoxes;
     }
 
-    public Pane getPlotContent() {
-        return plotContent;
+    public Pane getTop() {
+        return top;
     }
 }

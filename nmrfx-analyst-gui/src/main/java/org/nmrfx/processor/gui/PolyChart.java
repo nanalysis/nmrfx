@@ -155,11 +155,11 @@ public class PolyChart extends Region implements PeakListener {
         this.controller = controller;
         this.name = name;
         this.drawingLayers = drawingLayers;
-        drawSpectrum = new DrawSpectrum(axes, drawingLayers.getCanvas());
+        drawSpectrum = new DrawSpectrum(axes, drawingLayers.getBase());
         drawSpectrum.setupHaltButton(controller.getHaltButton());
 
         initChart();
-        drawPeaks = new DrawPeaks(this, drawingLayers.getPeakCanvas());
+        drawPeaks = new DrawPeaks(this, drawingLayers.getPeaksAndAnnotations());
         setVisible(false);
     }
 
@@ -264,7 +264,7 @@ public class PolyChart extends Region implements PeakListener {
 
     private void initChart() {
         crossHairs = new CrossHairs(this);
-        drawingLayers.getPlotContent().getChildren().addAll(crossHairs.getAllGraphicalLines());
+        drawingLayers.getTop().getChildren().addAll(crossHairs.getAllGraphicalLines());
 
         highlightRect.setVisible(false);
         highlightRect.setStroke(Color.BLUE);
@@ -274,24 +274,24 @@ public class PolyChart extends Region implements PeakListener {
                 PolyChartManager.getInstance().activeChartProperty().isEqualTo(this)
                         .and(PolyChartManager.getInstance().multipleChartsProperty())
                         .or(chartSelected));
-        drawingLayers.getPlotContent().getChildren().add(highlightRect);
+        drawingLayers.getTop().getChildren().add(highlightRect);
         canvasHandles.forEach(handle -> handle.visibleProperty().bind(chartSelected));
-        drawingLayers.getPlotContent().getChildren().addAll(canvasHandles);
+        drawingLayers.getTop().getChildren().addAll(canvasHandles);
         loadData();
         axes.init(this);
-        drawingLayers.getCanvas().setCursor(CanvasCursor.SELECTOR.getCursor());
+        drawingLayers.getBase().setCursor(CanvasCursor.SELECTOR.getCursor());
         MapChangeListener<String, PeakList> mapChangeListener = change -> purgeInvalidPeakListAttributes();
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);
-        dragBindings = new DragBindings(controller, drawingLayers.getCanvas());
+        dragBindings = new DragBindings(controller, drawingLayers.getBase());
         specMenu = new SpectrumMenu(this);
         peakMenu = new PeakMenu(this);
         regionMenu = new RegionMenu(this);
         integralMenu = new IntegralMenu(this);
-        setDragHandlers(drawingLayers.getCanvas());
-        drawingLayers.getCanvas().requestFocus();
+        setDragHandlers(drawingLayers.getBase());
+        drawingLayers.getBase().requestFocus();
     }
 
 
@@ -300,7 +300,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public Canvas getCanvas() {
-        return drawingLayers.getCanvas();
+        return drawingLayers.getBase();
     }
 
     public PolyChartAxes getAxes() {
@@ -308,13 +308,13 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void close() {
-        drawingLayers.getPlotContent().getChildren().removeAll(crossHairs.getAllGraphicalLines());
+        drawingLayers.getTop().getChildren().removeAll(crossHairs.getAllGraphicalLines());
 
         highlightRect.visibleProperty().unbind();
-        drawingLayers.getPlotContent().getChildren().remove(highlightRect);
+        drawingLayers.getTop().getChildren().remove(highlightRect);
         for (var canvasHandle : canvasHandles) {
-            drawingLayers.getPlotContent().getChildren().remove(canvasHandle);
-            drawingLayers.getPlotContent().visibleProperty().unbind();
+            drawingLayers.getTop().getChildren().remove(canvasHandle);
+            drawingLayers.getTop().visibleProperty().unbind();
         }
 
         PolyChartManager.getInstance().unregisterChart(this);
@@ -326,7 +326,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public Cursor getCanvasCursor() {
-        return drawingLayers.getCanvas().getCursor();
+        return drawingLayers.getBase().getCursor();
     }
 
     public boolean contains(double x, double y) {
@@ -402,9 +402,9 @@ public class PolyChart extends Region implements PeakListener {
     public void dragBox(MOUSE_ACTION mouseAction, double[] dragStart, double x, double y) {
         int dragTol = 4;
         if ((Math.abs(x - dragStart[0]) > dragTol) || (Math.abs(y - dragStart[1]) > dragTol)) {
-            GraphicsContext annoGC = drawingLayers.getAnnoCanvas().getGraphicsContext2D();
-            double annoWidth = drawingLayers.getAnnoCanvas().getWidth();
-            double annoHeight = drawingLayers.getAnnoCanvas().getHeight();
+            GraphicsContext annoGC = drawingLayers.getSlicesAndDragBoxes().getGraphicsContext2D();
+            double annoWidth = drawingLayers.getSlicesAndDragBoxes().getWidth();
+            double annoHeight = drawingLayers.getSlicesAndDragBoxes().getHeight();
             annoGC.clearRect(0, 0, annoWidth, annoHeight);
             double dX = Math.abs(x - dragStart[0]);
             double dY = Math.abs(y - dragStart[1]);
@@ -474,9 +474,9 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public boolean finishBox(MOUSE_ACTION mouseAction, double[] dragStart, double x, double y) {
-        GraphicsContext annoGC = drawingLayers.getAnnoCanvas().getGraphicsContext2D();
-        double annoWidth = drawingLayers.getAnnoCanvas().getWidth();
-        double annoHeight = drawingLayers.getAnnoCanvas().getHeight();
+        GraphicsContext annoGC = drawingLayers.getSlicesAndDragBoxes().getGraphicsContext2D();
+        double annoWidth = drawingLayers.getSlicesAndDragBoxes().getWidth();
+        double annoHeight = drawingLayers.getSlicesAndDragBoxes().getHeight();
         annoGC.clearRect(0, 0, annoWidth, annoHeight);
         double[][] limits;
         if (is1D()) {
@@ -1818,9 +1818,9 @@ public class PolyChart extends Region implements PeakListener {
             return;
         }
         useImmediateMode = false;
-        GraphicsContext gCC = drawingLayers.getCanvas().getGraphicsContext2D();
+        GraphicsContext gCC = drawingLayers.getBase().getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
-        GraphicsContextInterface gCPeaks = new GraphicsContextProxy(drawingLayers.getPeakCanvas().getGraphicsContext2D());
+        GraphicsContextInterface gCPeaks = new GraphicsContextProxy(drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D());
         if (is1D()) {
             axes.setYAxisByLevel();
         }
@@ -1902,9 +1902,9 @@ public class PolyChart extends Region implements PeakListener {
                 gC.strokeLine(xPos + width - borders.getRight(), yPos + borders.getTop(), xPos + width - borders.getRight(), yPos + height - borders.getBottom());
             }
 
-            drawingLayers.getPeakCanvas().setWidth(drawingLayers.getCanvas().getWidth());
-            drawingLayers.getPeakCanvas().setHeight(drawingLayers.getCanvas().getHeight());
-            GraphicsContext peakGC = drawingLayers.getPeakCanvas().getGraphicsContext2D();
+            drawingLayers.getPeaksAndAnnotations().setWidth(drawingLayers.getBase().getWidth());
+            drawingLayers.getPeaksAndAnnotations().setHeight(drawingLayers.getBase().getHeight());
+            GraphicsContext peakGC = drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D();
             peakGC.clearRect(xPos, yPos, width, height);
             gC.beginPath();
 
@@ -2900,8 +2900,8 @@ public class PolyChart extends Region implements PeakListener {
 
     public void drawPeakLists(boolean clear) {
 
-        if (drawingLayers.getPeakCanvas() != null) {
-            GraphicsContextInterface peakGC = new GraphicsContextProxy(drawingLayers.getPeakCanvas().getGraphicsContext2D());
+        if (drawingLayers.getPeaksAndAnnotations() != null) {
+            GraphicsContextInterface peakGC = new GraphicsContextProxy(drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D());
             drawPeakLists(clear, peakGC);
         }
     }
@@ -2911,9 +2911,9 @@ public class PolyChart extends Region implements PeakListener {
         double yPos = getLayoutY();
         double width = getWidth();
         double height = getHeight();
-        if (drawingLayers.getPeakCanvas() != null) {
-            drawingLayers.getPeakCanvas().setWidth(drawingLayers.getCanvas().getWidth());
-            drawingLayers.getPeakCanvas().setHeight(drawingLayers.getCanvas().getHeight());
+        if (drawingLayers.getPeaksAndAnnotations() != null) {
+            drawingLayers.getPeaksAndAnnotations().setWidth(drawingLayers.getBase().getWidth());
+            drawingLayers.getPeaksAndAnnotations().setHeight(drawingLayers.getBase().getHeight());
             try {
                 if (peakGC instanceof GraphicsContextProxy) {
                     peakGC.clearRect(xPos, yPos, width, height);
@@ -3200,7 +3200,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     void drawSelectedPeaks(PeakListAttributes peakListAttr) {
-        GraphicsContext gCC = drawingLayers.getPeakCanvas().getGraphicsContext2D();
+        GraphicsContext gCC = drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         drawSelectedPeaks(peakListAttr, gC);
 
@@ -3216,7 +3216,7 @@ public class PolyChart extends Region implements PeakListener {
 
     void drawPeakPaths() {
         if (!peakPaths.isEmpty()) {
-            GraphicsContext gCC = drawingLayers.getPeakCanvas().getGraphicsContext2D();
+            GraphicsContext gCC = drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D();
             GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
             gC.save();
             gC.beginPath();
@@ -3518,10 +3518,10 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     protected void loadData() {
-        drawingLayers.getCanvas().setCache(true);
-        drawingLayers.getPeakCanvas().setCache(true);
-        drawingLayers.getPeakCanvas().setMouseTransparent(true);
-        drawingLayers.getAnnoCanvas().setMouseTransparent(true);
+        drawingLayers.getBase().setCache(true);
+        drawingLayers.getPeaksAndAnnotations().setCache(true);
+        drawingLayers.getPeaksAndAnnotations().setMouseTransparent(true);
+        drawingLayers.getSlicesAndDragBoxes().setMouseTransparent(true);
     }
 
     public void setSliceStatus(boolean state) {
@@ -3533,16 +3533,16 @@ public class PolyChart extends Region implements PeakListener {
         double yPos = getLayoutY();
         double width = getWidth();
         double height = getHeight();
-        drawingLayers.getAnnoCanvas().setWidth(drawingLayers.getCanvas().getWidth());
-        drawingLayers.getAnnoCanvas().setHeight(drawingLayers.getCanvas().getHeight());
-        GraphicsContext annoGC = drawingLayers.getAnnoCanvas().getGraphicsContext2D();
+        drawingLayers.getSlicesAndDragBoxes().setWidth(drawingLayers.getBase().getWidth());
+        drawingLayers.getSlicesAndDragBoxes().setHeight(drawingLayers.getBase().getHeight());
+        GraphicsContext annoGC = drawingLayers.getSlicesAndDragBoxes().getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(annoGC);
         gC.clearRect(xPos, yPos, width, height);
         drawSlices(gC);
     }
 
     public void drawSlices(GraphicsContextInterface gC) {
-        if (drawingLayers.getAnnoCanvas() != null) {
+        if (drawingLayers.getSlicesAndDragBoxes() != null) {
             if (sliceAttributes.slice1StateProperty().get()) {
                 drawSlice(gC, 0, VERTICAL);
                 drawSlice(gC, 0, HORIZONTAL);
@@ -3595,7 +3595,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void extractSlice(int iOrient) {
-        if (drawingLayers.getAnnoCanvas() == null) {
+        if (drawingLayers.getSlicesAndDragBoxes() == null) {
             return;
         }
         DatasetBase dataset = getDataset();

@@ -677,12 +677,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
-                chartDrawingLayers.getPlotContent().setVisible(false);
+                chartDrawingLayers.getTop().setVisible(false);
                 GUIUtils.snapNode(chartPane, selectedFile);
             } catch (IOException ex) {
                 GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
             } finally {
-                chartDrawingLayers.getPlotContent().setVisible(true);
+                chartDrawingLayers.getTop().setVisible(true);
             }
         }
     }
@@ -709,7 +709,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (fileName != null) {
             try {
                 PDFGraphicsContext pdfGC = new PDFGraphicsContext();
-                pdfGC.create(true, chartDrawingLayers.getCanvas().getWidth(), chartDrawingLayers.getCanvas().getHeight(), fileName);
+                pdfGC.create(true, chartDrawingLayers.getBase().getWidth(), chartDrawingLayers.getBase().getHeight(), fileName);
                 for (PolyChart chart : charts) {
                     chart.exportVectorGraphics(pdfGC);
                 }
@@ -743,7 +743,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (fileName != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
             try {
-                svgGC.create(chartDrawingLayers.getCanvas().getWidth(), chartDrawingLayers.getCanvas().getHeight(), fileName);
+                svgGC.create(chartDrawingLayers.getBase().getWidth(), chartDrawingLayers.getBase().getHeight(), fileName);
                 for (PolyChart chart : charts) {
                     chart.exportVectorGraphics(svgGC);
                 }
@@ -760,7 +760,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         SVGGraphicsContext svgGC = new SVGGraphicsContext();
         try {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            svgGC.create(chartDrawingLayers.getCanvas().getWidth(), chartDrawingLayers.getCanvas().getHeight(), stream);
+            svgGC.create(chartDrawingLayers.getBase().getWidth(), chartDrawingLayers.getBase().getHeight(), stream);
             for (PolyChart chart : charts) {
                 chart.exportVectorGraphics(svgGC);
             }
@@ -835,7 +835,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         chartDrawingLayers = new ChartDrawingLayers(this, chartPane);
         activeChart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
-        new CanvasBindings(this, chartDrawingLayers.getCanvas()).setHandlers();
+        new CanvasBindings(this, chartDrawingLayers.getBase()).setHandlers();
         initToolBar(toolBar);
         charts.add(activeChart);
 
@@ -843,7 +843,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             if (arg2.getWidth() < 1.0 || arg2.getHeight() < 1.0) {
                 return;
             }
-            chartDrawingLayers.getChartGroup().requestLayout();
+            chartDrawingLayers.getGrid().requestLayout();
         });
 
         statusBar.setMode(1);
@@ -884,16 +884,16 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public Cursor getCurrentCursor() {
-        return chartDrawingLayers.getCanvas().getCursor();
+        return chartDrawingLayers.getBase().getCursor();
     }
 
     public void setCurrentCursor(Cursor cursor) {
-        chartDrawingLayers.getCanvas().setCursor(cursor);
+        chartDrawingLayers.getBase().setCursor(cursor);
     }
 
     public void setCursor() {
         Cursor cursor = cursorProperty.getValue();
-        chartDrawingLayers.getCanvas().setCursor(cursor);
+        chartDrawingLayers.getBase().setCursor(cursor);
         for (PolyChart chart : charts) {
             chart.getCrossHairs().setAllStates(CanvasCursor.isCrosshair(cursor));
         }
@@ -1003,7 +1003,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void removeChart(PolyChart chart) {
         if (chart != null) {
-            chartDrawingLayers.getChartGroup().getChildren().remove(chart);
+            chartDrawingLayers.getGrid().getChildren().remove(chart);
             charts.remove(chart);
             if (chart == activeChart) {
                 if (charts.isEmpty()) {
@@ -1012,7 +1012,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                     activeChart = charts.get(0);
                 }
             }
-            chartDrawingLayers.getChartGroup().requestLayout();
+            chartDrawingLayers.getGrid().requestLayout();
             for (PolyChart refreshChart : charts) {
                 refreshChart.layoutPlotChildren();
             }
@@ -1054,30 +1054,30 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 addChart();
             }
         }
-        chartDrawingLayers.getChartGroup().addCharts(chartDrawingLayers.getChartGroup().getRows(), charts);
+        chartDrawingLayers.getGrid().addCharts(chartDrawingLayers.getGrid().getRows(), charts);
     }
 
     public void arrange(int nRows) {
-        chartDrawingLayers.getChartGroup().setRows(nRows);
-        chartDrawingLayers.getChartGroup().calculateAndSetOrientation();
+        chartDrawingLayers.getGrid().setRows(nRows);
+        chartDrawingLayers.getGrid().calculateAndSetOrientation();
     }
 
     public void draw() {
-        chartDrawingLayers.getChartGroup().layoutChildren();
+        chartDrawingLayers.getGrid().layoutChildren();
     }
 
     public void addChart() {
         PolyChart chart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
         charts.add(chart);
         chart.setChartDisabled(true);
-        chartDrawingLayers.getChartGroup().addChart(chart);
+        chartDrawingLayers.getGrid().addChart(chart);
         activeChart = chart;
     }
 
     public void setBorderState(boolean state) {
         minBorders.set(state);
-        chartDrawingLayers.getChartGroup().updateConstraints();
-        chartDrawingLayers.getChartGroup().layoutChildren();
+        chartDrawingLayers.getGrid().updateConstraints();
+        chartDrawingLayers.getGrid().layoutChildren();
     }
 
     public double[][] prepareChildren(int nRows, int nCols) {
@@ -1189,7 +1189,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void removeSelectedChart() {
         if (charts.size() > 1) {
             getActiveChart().close();
-            arrange(chartDrawingLayers.getChartGroup().getOrientation());
+            arrange(chartDrawingLayers.getGrid().getOrientation());
         }
     }
 
@@ -1206,7 +1206,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 List<DatasetAttributes> current = new ArrayList<>(datasetAttrs);
                 setNCharts(current.size());
                 chart.getDatasetAttributes().clear();
-                chartDrawingLayers.getChartGroup().setOrientation(orient, true);
+                chartDrawingLayers.getGrid().setOrientation(orient, true);
                 for (int i = 0; i < charts.size(); i++) {
                     DatasetAttributes datasetAttr = current.get(i);
                     PolyChart iChart = charts.get(i);
@@ -1224,22 +1224,22 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                     iChart.getCrossHairs().setAllStates(true);
                 }
                 setChartDisable(false);
-                chartDrawingLayers.getChartGroup().layoutChildren();
+                chartDrawingLayers.getGrid().layoutChildren();
                 charts.forEach(PolyChart::refresh);
                 return;
             }
         }
-        chartDrawingLayers.getChartGroup().setOrientation(orient, true);
+        chartDrawingLayers.getGrid().setOrientation(orient, true);
         setChartDisable(false);
-        chartDrawingLayers.getChartGroup().layoutChildren();
+        chartDrawingLayers.getGrid().layoutChildren();
     }
 
     public int arrangeGetRows() {
-        return chartDrawingLayers.getChartGroup().getRows();
+        return chartDrawingLayers.getGrid().getRows();
     }
 
     public int arrangeGetColumns() {
-        return chartDrawingLayers.getChartGroup().getColumns();
+        return chartDrawingLayers.getGrid().getColumns();
     }
 
     public void alignCenters() {
