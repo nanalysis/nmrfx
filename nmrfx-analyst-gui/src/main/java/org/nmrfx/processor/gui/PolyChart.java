@@ -1808,11 +1808,11 @@ public class PolyChart extends Region implements PeakListener {
             return;
         }
         useImmediateMode = false;
-        GraphicsContextInterface gC = drawingLayers.getGraphicsProxyFor(ChartDrawingLayers.Item.Spectrum);
-        GraphicsContextInterface gCPeaks = drawingLayers.getGraphicsProxyFor(ChartDrawingLayers.Item.Peaks);
         if (is1D()) {
             axes.setYAxisByLevel();
         }
+
+        GraphicsContextInterface gC = drawingLayers.getGraphicsProxyFor(ChartDrawingLayers.Item.Spectrum);
         try {
             gC.save();
             gC.clearRect(xPos, yPos, width, height);
@@ -1891,7 +1891,7 @@ public class PolyChart extends Region implements PeakListener {
                 gC.strokeLine(xPos + width - borders.getRight(), yPos + borders.getTop(), xPos + width - borders.getRight(), yPos + height - borders.getBottom());
             }
 
-            GraphicsContext peakGC = drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D();
+            GraphicsContext peakGC = drawingLayers.getGraphicsContextFor(ChartDrawingLayers.Item.Peaks);
             peakGC.clearRect(xPos, yPos, width, height);
             gC.beginPath();
 
@@ -1899,7 +1899,9 @@ public class PolyChart extends Region implements PeakListener {
             if (!datasetAttributesList.isEmpty()) {
                 drawPeakLists(true);
             }
-            drawAnnotations(gCPeaks);
+
+            GraphicsContextInterface gcAnnotations = drawingLayers.getGraphicsProxyFor(ChartDrawingLayers.Item.Annotations);
+            drawAnnotations(gcAnnotations);
             crossHairs.refresh();
             gC.restore();
             highlightChart();
@@ -2886,11 +2888,8 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void drawPeakLists(boolean clear) {
-
-        if (drawingLayers.getPeaksAndAnnotations() != null) {
-            GraphicsContextInterface peakGC = new GraphicsContextProxy(drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D());
-            drawPeakLists(clear, peakGC);
-        }
+        GraphicsContextInterface peakGC = drawingLayers.getGraphicsProxyFor(ChartDrawingLayers.Item.Peaks);
+        drawPeakLists(clear, peakGC);
     }
 
     public void drawPeakLists(boolean clear, GraphicsContextInterface peakGC) {
@@ -2898,41 +2897,40 @@ public class PolyChart extends Region implements PeakListener {
         double yPos = getLayoutY();
         double width = getWidth();
         double height = getHeight();
-        if (drawingLayers.getPeaksAndAnnotations() != null) {
-            try {
-                if (peakGC instanceof GraphicsContextProxy) {
-                    peakGC.clearRect(xPos, yPos, width, height);
-                }
-                if (peakFont.getSize() != PreferencesController.getPeakFontSize()) {
-                    peakFont = new Font(FONT_FAMILY, PreferencesController.getPeakFontSize());
-                }
-                peakGC.setFont(peakFont);
 
-                final Iterator<PeakListAttributes> peakListIterator = peakListAttributesList.iterator();
-                while (peakListIterator.hasNext()) {
-                    PeakListAttributes peakListAttr = peakListIterator.next();
-                    if (peakListAttr.getPeakList().peaks() == null) {
-                        peakListAttr.getPeakList().removePeakChangeListener(this);
-                        peakListIterator.remove();
-                    }
-                }
-                if (peakStatus.get()) {
-                    for (PeakListAttributes peakListAttr : peakListAttributesList) {
-                        if (clear) {
-                            peakListAttr.clearPeaksInRegion();
-                        }
-                        if (peakListAttr.getDrawPeaks()) {
-                            drawPeakList(peakListAttr, peakGC);
-                        }
-                    }
-                }
-                if (!peakPaths.isEmpty()) {
-                    drawPeakPaths();
-                }
-                drawAnnotations(peakGC);
-            } catch (Exception ioE) {
-                log.warn(ioE.getMessage(), ioE);
+        try {
+            if (peakGC instanceof GraphicsContextProxy) {
+                peakGC.clearRect(xPos, yPos, width, height);
             }
+            if (peakFont.getSize() != PreferencesController.getPeakFontSize()) {
+                peakFont = new Font(FONT_FAMILY, PreferencesController.getPeakFontSize());
+            }
+            peakGC.setFont(peakFont);
+
+            final Iterator<PeakListAttributes> peakListIterator = peakListAttributesList.iterator();
+            while (peakListIterator.hasNext()) {
+                PeakListAttributes peakListAttr = peakListIterator.next();
+                if (peakListAttr.getPeakList().peaks() == null) {
+                    peakListAttr.getPeakList().removePeakChangeListener(this);
+                    peakListIterator.remove();
+                }
+            }
+            if (peakStatus.get()) {
+                for (PeakListAttributes peakListAttr : peakListAttributesList) {
+                    if (clear) {
+                        peakListAttr.clearPeaksInRegion();
+                    }
+                    if (peakListAttr.getDrawPeaks()) {
+                        drawPeakList(peakListAttr, peakGC);
+                    }
+                }
+            }
+            if (!peakPaths.isEmpty()) {
+                drawPeakPaths();
+            }
+            drawAnnotations(peakGC);
+        } catch (Exception ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 
@@ -3185,10 +3183,8 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     void drawSelectedPeaks(PeakListAttributes peakListAttr) {
-        GraphicsContext gCC = drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D();
-        GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
+        GraphicsContextInterface gC = drawingLayers.getGraphicsProxyFor(ChartDrawingLayers.Item.Peaks);
         drawSelectedPeaks(peakListAttr, gC);
-
     }
 
     public void clearPeakPaths() {
@@ -3201,8 +3197,7 @@ public class PolyChart extends Region implements PeakListener {
 
     void drawPeakPaths() {
         if (!peakPaths.isEmpty()) {
-            GraphicsContext gCC = drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D();
-            GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
+            GraphicsContextInterface gC = drawingLayers.getGraphicsProxyFor(ChartDrawingLayers.Item.Peaks);
             gC.save();
             gC.beginPath();
             gC.rect(getLayoutX() + borders.getLeft(), getLayoutY() + borders.getTop(), axes.getX().getWidth(), axes.getY().getHeight());

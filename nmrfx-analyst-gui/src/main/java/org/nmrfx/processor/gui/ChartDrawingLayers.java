@@ -36,7 +36,10 @@ import org.nmrfx.processor.gui.spectra.DragBindings;
 public class ChartDrawingLayers {
     enum Item {
         Spectrum,
-        Peaks
+        Peaks,
+        Annotations,
+        Slices,
+        DragBoxes,
     }
 
     // Manages grid layout when displaying multiple charts on the same drawing canvas
@@ -129,7 +132,8 @@ public class ChartDrawingLayers {
     public GraphicsContext getGraphicsContextFor(Item item) {
         Canvas canvas =  switch (item) {
             case Spectrum -> base;
-            case Peaks -> peaksAndAnnotations;
+            case Peaks, Annotations -> peaksAndAnnotations;
+            case Slices, DragBoxes -> slicesAndDragBoxes;
         };
 
         return canvas.getGraphicsContext2D();
@@ -146,10 +150,6 @@ public class ChartDrawingLayers {
 
     public Canvas getBase() {
         return base;
-    }
-
-    public Canvas getPeaksAndAnnotations() {
-        return peaksAndAnnotations;
     }
 
     public Canvas getSlicesAndDragBoxes() {
