@@ -148,7 +148,6 @@ public class PolyChart extends Region implements PeakListener {
     private KeyBindings keyBindings;
     private MouseBindings mouseBindings;
     private GestureBindings gestureBindings;
-    private DragBindings dragBindings;
     private CrossHairs crossHairs;
 
     protected PolyChart(FXMLController controller, String name, ChartDrawingLayers drawingLayers) {
@@ -284,13 +283,11 @@ public class PolyChart extends Region implements PeakListener {
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);
-        dragBindings = new DragBindings(controller, drawingLayers.getBase());
         specMenu = new SpectrumMenu(this);
         peakMenu = new PeakMenu(this);
         regionMenu = new RegionMenu(this);
         integralMenu = new IntegralMenu(this);
-        setDragHandlers(drawingLayers.getBase());
-        drawingLayers.getBase().requestFocus();
+        drawingLayers.requestFocus();
     }
 
 
@@ -358,12 +355,6 @@ public class PolyChart extends Region implements PeakListener {
 
     public ChartMenu getRegionMenu() {
         return regionMenu;
-    }
-
-    private void setDragHandlers(Node mouseNode) {
-        mouseNode.setOnDragOver((DragEvent event) -> dragBindings.mouseDragOver(event));
-        mouseNode.setOnDragDropped((DragEvent event) -> dragBindings.mouseDragDropped(event));
-        mouseNode.setOnDragExited((DragEvent event) -> mouseNode.setStyle("-fx-border-color: #C6C6C6;"));
     }
 
     public SliceAttributes getSliceAttributes() {

@@ -835,7 +835,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         chartDrawingLayers = new ChartDrawingLayers(this, chartPane);
         activeChart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
-        new CanvasBindings(this, chartDrawingLayers.getBase()).setHandlers();
         initToolBar(toolBar);
         charts.add(activeChart);
 

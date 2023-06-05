@@ -18,12 +18,16 @@
 package org.nmrfx.processor.gui;
 
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.DragEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
+import org.nmrfx.processor.gui.spectra.CanvasBindings;
+import org.nmrfx.processor.gui.spectra.DragBindings;
 
 /**
  * Layers on which NMR charts are drawn.
@@ -75,6 +79,17 @@ public class ChartDrawingLayers {
         top.setMouseTransparent(true);
 
         stack.getChildren().addAll(base, grid, peaksAndAnnotations, slicesAndDragBoxes, top);
+        setupEventHandlers(controller);
+    }
+
+    private void setupEventHandlers(FXMLController controller) {
+        CanvasBindings canvasBindings = new CanvasBindings(controller, base);
+        canvasBindings.setHandlers();
+
+        DragBindings dragBindings = new DragBindings(controller, base);
+        base.setOnDragOver(dragBindings::mouseDragOver);
+        base.setOnDragDropped(dragBindings::mouseDragDropped);
+        base.setOnDragExited((DragEvent event) -> base.setStyle("-fx-border-color: #C6C6C6;"));
     }
 
     private void updateCanvasWidth() {
@@ -105,6 +120,10 @@ public class ChartDrawingLayers {
 
     public Cursor getCursor() {
         return base.getCursor();
+    }
+
+    public void requestFocus() {
+        base.requestFocus();
     }
 
     public GraphicsContext getGraphicsContextFor(Item item) {
