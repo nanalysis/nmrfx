@@ -709,7 +709,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (fileName != null) {
             try {
                 PDFGraphicsContext pdfGC = new PDFGraphicsContext();
-                pdfGC.create(true, chartDrawingLayers.getBase().getWidth(), chartDrawingLayers.getBase().getHeight(), fileName);
+                pdfGC.create(true, chartDrawingLayers.getWidth(), chartDrawingLayers.getHeight(), fileName);
                 for (PolyChart chart : charts) {
                     chart.exportVectorGraphics(pdfGC);
                 }
@@ -743,7 +743,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (fileName != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
             try {
-                svgGC.create(chartDrawingLayers.getBase().getWidth(), chartDrawingLayers.getBase().getHeight(), fileName);
+                svgGC.create(chartDrawingLayers.getWidth(), chartDrawingLayers.getHeight(), fileName);
                 for (PolyChart chart : charts) {
                     chart.exportVectorGraphics(svgGC);
                 }
@@ -760,7 +760,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         SVGGraphicsContext svgGC = new SVGGraphicsContext();
         try {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            svgGC.create(chartDrawingLayers.getBase().getWidth(), chartDrawingLayers.getBase().getHeight(), stream);
+            svgGC.create(chartDrawingLayers.getWidth(), chartDrawingLayers.getHeight(), stream);
             for (PolyChart chart : charts) {
                 chart.exportVectorGraphics(svgGC);
             }
@@ -884,16 +884,16 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public Cursor getCurrentCursor() {
-        return chartDrawingLayers.getBase().getCursor();
+        return chartDrawingLayers.getCursor();
     }
 
     public void setCurrentCursor(Cursor cursor) {
-        chartDrawingLayers.getBase().setCursor(cursor);
+        chartDrawingLayers.setCursor(cursor);
     }
 
     public void setCursor() {
         Cursor cursor = cursorProperty.getValue();
-        chartDrawingLayers.getBase().setCursor(cursor);
+        chartDrawingLayers.setCursor(cursor);
         for (PolyChart chart : charts) {
             chart.getCrossHairs().setAllStates(CanvasCursor.isCrosshair(cursor));
         }

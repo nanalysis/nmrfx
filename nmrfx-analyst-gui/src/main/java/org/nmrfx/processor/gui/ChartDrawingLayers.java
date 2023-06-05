@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
@@ -82,6 +83,22 @@ public class ChartDrawingLayers {
         base.setHeight(height);
         peaksAndAnnotations.setHeight(height);
         slicesAndDragBoxes.setHeight(height);
+    }
+
+    public double getWidth() {
+        return base.getWidth();
+    }
+
+    public double getHeight() {
+        return base.getHeight();
+    }
+
+    public void setCursor(Cursor value) {
+        base.setCursor(value);
+    }
+
+    public Cursor getCursor() {
+        return base.getCursor();
     }
 
     public GraphicsContext getGraphicsContextFor(Item item) {

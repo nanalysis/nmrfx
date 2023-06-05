@@ -279,7 +279,7 @@ public class PolyChart extends Region implements PeakListener {
         drawingLayers.getTop().getChildren().addAll(canvasHandles);
         loadData();
         axes.init(this);
-        drawingLayers.getBase().setCursor(CanvasCursor.SELECTOR.getCursor());
+        drawingLayers.setCursor(CanvasCursor.SELECTOR.getCursor());
         MapChangeListener<String, PeakList> mapChangeListener = change -> purgeInvalidPeakListAttributes();
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
         keyBindings = new KeyBindings(this);
@@ -326,7 +326,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public Cursor getCanvasCursor() {
-        return drawingLayers.getBase().getCursor();
+        return drawingLayers.getCursor();
     }
 
     public boolean contains(double x, double y) {
@@ -1818,9 +1818,8 @@ public class PolyChart extends Region implements PeakListener {
             return;
         }
         useImmediateMode = false;
-        GraphicsContext gCC = drawingLayers.getBase().getGraphicsContext2D();
-        GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
-        GraphicsContextInterface gCPeaks = new GraphicsContextProxy(drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D());
+        GraphicsContextInterface gC = drawingLayers.getGraphicsProxyFor(ChartDrawingLayers.Item.Spectrum);
+        GraphicsContextInterface gCPeaks = drawingLayers.getGraphicsProxyFor(ChartDrawingLayers.Item.Peaks);
         if (is1D()) {
             axes.setYAxisByLevel();
         }
@@ -1902,8 +1901,8 @@ public class PolyChart extends Region implements PeakListener {
                 gC.strokeLine(xPos + width - borders.getRight(), yPos + borders.getTop(), xPos + width - borders.getRight(), yPos + height - borders.getBottom());
             }
 
-            drawingLayers.getPeaksAndAnnotations().setWidth(drawingLayers.getBase().getWidth());
-            drawingLayers.getPeaksAndAnnotations().setHeight(drawingLayers.getBase().getHeight());
+            drawingLayers.getPeaksAndAnnotations().setWidth(drawingLayers.getWidth());
+            drawingLayers.getPeaksAndAnnotations().setHeight(drawingLayers.getHeight());
             GraphicsContext peakGC = drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D();
             peakGC.clearRect(xPos, yPos, width, height);
             gC.beginPath();
@@ -2912,8 +2911,9 @@ public class PolyChart extends Region implements PeakListener {
         double width = getWidth();
         double height = getHeight();
         if (drawingLayers.getPeaksAndAnnotations() != null) {
-            drawingLayers.getPeaksAndAnnotations().setWidth(drawingLayers.getBase().getWidth());
-            drawingLayers.getPeaksAndAnnotations().setHeight(drawingLayers.getBase().getHeight());
+            //XXX why? they should already hav ethe same size, they are bound together
+            drawingLayers.getPeaksAndAnnotations().setWidth(drawingLayers.getWidth());
+            drawingLayers.getPeaksAndAnnotations().setHeight(drawingLayers.getHeight());
             try {
                 if (peakGC instanceof GraphicsContextProxy) {
                     peakGC.clearRect(xPos, yPos, width, height);
@@ -3518,6 +3518,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     protected void loadData() {
+        //XXX move to ChartDrawingLayers
         drawingLayers.getBase().setCache(true);
         drawingLayers.getPeaksAndAnnotations().setCache(true);
         drawingLayers.getPeaksAndAnnotations().setMouseTransparent(true);
@@ -3533,8 +3534,8 @@ public class PolyChart extends Region implements PeakListener {
         double yPos = getLayoutY();
         double width = getWidth();
         double height = getHeight();
-        drawingLayers.getSlicesAndDragBoxes().setWidth(drawingLayers.getBase().getWidth());
-        drawingLayers.getSlicesAndDragBoxes().setHeight(drawingLayers.getBase().getHeight());
+        drawingLayers.getSlicesAndDragBoxes().setWidth(drawingLayers.getWidth());
+        drawingLayers.getSlicesAndDragBoxes().setHeight(drawingLayers.getHeight());
         GraphicsContext annoGC = drawingLayers.getSlicesAndDragBoxes().getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(annoGC);
         gC.clearRect(xPos, yPos, width, height);
