@@ -152,10 +152,6 @@ public class ChartDrawingLayers {
         return base;
     }
 
-    public Canvas getSlicesAndDragBoxes() {
-        return slicesAndDragBoxes;
-    }
-
     public Pane getTop() {
         return top;
     }
