@@ -1891,8 +1891,6 @@ public class PolyChart extends Region implements PeakListener {
                 gC.strokeLine(xPos + width - borders.getRight(), yPos + borders.getTop(), xPos + width - borders.getRight(), yPos + height - borders.getBottom());
             }
 
-            drawingLayers.getPeaksAndAnnotations().setWidth(drawingLayers.getWidth());
-            drawingLayers.getPeaksAndAnnotations().setHeight(drawingLayers.getHeight());
             GraphicsContext peakGC = drawingLayers.getPeaksAndAnnotations().getGraphicsContext2D();
             peakGC.clearRect(xPos, yPos, width, height);
             gC.beginPath();
@@ -2901,9 +2899,6 @@ public class PolyChart extends Region implements PeakListener {
         double width = getWidth();
         double height = getHeight();
         if (drawingLayers.getPeaksAndAnnotations() != null) {
-            //XXX why? they should already hav ethe same size, they are bound together
-            drawingLayers.getPeaksAndAnnotations().setWidth(drawingLayers.getWidth());
-            drawingLayers.getPeaksAndAnnotations().setHeight(drawingLayers.getHeight());
             try {
                 if (peakGC instanceof GraphicsContextProxy) {
                     peakGC.clearRect(xPos, yPos, width, height);
