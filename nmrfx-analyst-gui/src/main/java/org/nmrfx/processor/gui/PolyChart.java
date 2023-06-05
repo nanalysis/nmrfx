@@ -277,7 +277,6 @@ public class PolyChart extends Region implements PeakListener {
         drawingLayers.getTop().getChildren().add(highlightRect);
         canvasHandles.forEach(handle -> handle.visibleProperty().bind(chartSelected));
         drawingLayers.getTop().getChildren().addAll(canvasHandles);
-        loadData();
         axes.init(this);
         drawingLayers.setCursor(CanvasCursor.SELECTOR.getCursor());
         MapChangeListener<String, PeakList> mapChangeListener = change -> purgeInvalidPeakListAttributes();
@@ -3515,14 +3514,6 @@ public class PolyChart extends Region implements PeakListener {
 
     public double getPivotFraction() {
         return phaseFraction;
-    }
-
-    protected void loadData() {
-        //XXX move to ChartDrawingLayers
-        drawingLayers.getBase().setCache(true);
-        drawingLayers.getPeaksAndAnnotations().setCache(true);
-        drawingLayers.getPeaksAndAnnotations().setMouseTransparent(true);
-        drawingLayers.getSlicesAndDragBoxes().setMouseTransparent(true);
     }
 
     public void setSliceStatus(boolean state) {

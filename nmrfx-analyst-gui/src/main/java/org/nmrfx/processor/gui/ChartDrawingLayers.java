@@ -54,19 +54,25 @@ public class ChartDrawingLayers {
 
 
     public ChartDrawingLayers(FXMLController controller, StackPane stack) {
-        top.setMouseTransparent(true);
-
         grid = new GridPaneCanvas(controller, base);
         grid.addCharts(1, controller.getCharts());
         grid.setMouseTransparent(true);
         grid.setManaged(true);
-
-        base.setManaged(false);
-        peaksAndAnnotations.setManaged(false);
-        slicesAndDragBoxes.setManaged(false);
-        top.setManaged(false);
         grid.widthProperty().addListener(observable -> updateCanvasWidth());
         grid.heightProperty().addListener(observable -> updateCanvasHeight());
+
+        base.setManaged(false);
+        base.setCache(true);
+
+        peaksAndAnnotations.setManaged(false);
+        peaksAndAnnotations.setCache(true);
+        peaksAndAnnotations.setMouseTransparent(true);
+
+        slicesAndDragBoxes.setManaged(false);
+        slicesAndDragBoxes.setMouseTransparent(true);
+
+        top.setManaged(false);
+        top.setMouseTransparent(true);
 
         stack.getChildren().addAll(base, grid, peaksAndAnnotations, slicesAndDragBoxes, top);
     }
