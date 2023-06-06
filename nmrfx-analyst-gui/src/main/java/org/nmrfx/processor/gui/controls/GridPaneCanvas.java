@@ -86,7 +86,7 @@ public class GridPaneCanvas extends GridPane {
         super.layoutChildren();
         double width = getWidth();
         double height = getHeight();
-        controller.resizeCanvases(width, height);
+
         GraphicsContext gC = canvas.getGraphicsContext2D();
         gC.clearRect(0, 0, width, height);
         if (controller.getBgColor() != null) {

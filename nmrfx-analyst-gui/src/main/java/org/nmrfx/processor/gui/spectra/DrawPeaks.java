@@ -27,6 +27,7 @@ import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Path;
@@ -101,12 +102,11 @@ public class DrawPeaks {
     Color selectFill = new Color(1.0f, 1.0f, 0.0f, 0.4f);
     private boolean multipletMode = false;
     List<PeakBox> lastTextBoxes = new TreeList<>();
-    GraphicsContextInterface g2;
+    GraphicsContext g2;
 
-    public DrawPeaks(PolyChart chart, Canvas peakCanvas) {
+    public DrawPeaks(PolyChart chart, GraphicsContext graphics) {
         this.chart = chart;
-        this.g2 = new GraphicsContextProxy(peakCanvas.getGraphicsContext2D());
-        //   setParameters();
+        this.g2 = graphics;
         regions = new HashSet[nRegions];
 
         for (int i = 0; i < regions.length; i++) {

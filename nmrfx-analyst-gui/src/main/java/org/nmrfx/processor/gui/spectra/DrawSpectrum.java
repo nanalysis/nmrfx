@@ -82,7 +82,7 @@ public class DrawSpectrum {
     private final ContoursDrawingService contoursDrawing;
     private final double[][] xy = new double[2][];
     private final PolyChartAxes axes;
-    private GraphicsContextInterface g2;
+    private final GraphicsContextInterface g2;
     private double stackWidth = 0.0;
     private double stackY = 0.0;
     private int nPoints = 0;
@@ -91,12 +91,9 @@ public class DrawSpectrum {
     private long startTime = 0;
     private Rectangle clipRect = null;
 
-    public DrawSpectrum(PolyChartAxes axes, Canvas canvas) {
+    public DrawSpectrum(PolyChartAxes axes, GraphicsContextProxy graphics) {
         this.axes = axes;
-        if (canvas != null) {
-            GraphicsContext g2C = canvas.getGraphicsContext2D();
-            g2 = new GraphicsContextProxy(g2C);
-        }
+        g2 = graphics;
         contoursGeneration = new ContourGenerationService(this);
         contoursDrawing = new ContoursDrawingService(this);
     }
