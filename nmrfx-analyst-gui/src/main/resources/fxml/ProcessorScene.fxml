@@ -53,7 +53,7 @@
                 </VBox>
             </Tab>
             <Tab closable="false" text="Operations">
-                <VBox>
+                <VBox fx:id="accordionDemo">
                     <children>
                         <HBox VBox.vgrow="NEVER">
                             <children>
