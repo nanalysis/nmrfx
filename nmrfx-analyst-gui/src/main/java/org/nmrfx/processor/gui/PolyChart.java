@@ -26,12 +26,10 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.*;
 import javafx.geometry.*;
 import javafx.scene.Cursor;
-import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ChoiceDialog;
-import javafx.scene.input.DragEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
@@ -263,7 +261,7 @@ public class PolyChart extends Region implements PeakListener {
 
     private void initChart() {
         crossHairs = new CrossHairs(this);
-        drawingLayers.getTop().getChildren().addAll(crossHairs.getAllGraphicalLines());
+        drawingLayers.getTopPane().getChildren().addAll(crossHairs.getAllGraphicalLines());
 
         highlightRect.setVisible(false);
         highlightRect.setStroke(Color.BLUE);
@@ -273,9 +271,9 @@ public class PolyChart extends Region implements PeakListener {
                 PolyChartManager.getInstance().activeChartProperty().isEqualTo(this)
                         .and(PolyChartManager.getInstance().multipleChartsProperty())
                         .or(chartSelected));
-        drawingLayers.getTop().getChildren().add(highlightRect);
+        drawingLayers.getTopPane().getChildren().add(highlightRect);
         canvasHandles.forEach(handle -> handle.visibleProperty().bind(chartSelected));
-        drawingLayers.getTop().getChildren().addAll(canvasHandles);
+        drawingLayers.getTopPane().getChildren().addAll(canvasHandles);
         axes.init(this);
         drawingLayers.setCursor(CanvasCursor.SELECTOR.getCursor());
         MapChangeListener<String, PeakList> mapChangeListener = change -> purgeInvalidPeakListAttributes();
@@ -296,7 +294,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public Canvas getCanvas() {
-        return drawingLayers.getBase();
+        return drawingLayers.getBaseCanvas();
     }
 
     public PolyChartAxes getAxes() {
@@ -304,13 +302,13 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void close() {
-        drawingLayers.getTop().getChildren().removeAll(crossHairs.getAllGraphicalLines());
+        drawingLayers.getTopPane().getChildren().removeAll(crossHairs.getAllGraphicalLines());
 
         highlightRect.visibleProperty().unbind();
-        drawingLayers.getTop().getChildren().remove(highlightRect);
+        drawingLayers.getTopPane().getChildren().remove(highlightRect);
         for (var canvasHandle : canvasHandles) {
-            drawingLayers.getTop().getChildren().remove(canvasHandle);
-            drawingLayers.getTop().visibleProperty().unbind();
+            drawingLayers.getTopPane().getChildren().remove(canvasHandle);
+            drawingLayers.getTopPane().visibleProperty().unbind();
         }
 
         PolyChartManager.getInstance().unregisterChart(this);

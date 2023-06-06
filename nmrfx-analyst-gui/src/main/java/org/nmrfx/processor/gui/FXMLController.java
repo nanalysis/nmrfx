@@ -68,7 +68,6 @@ import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
-import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayTool;
 import org.nmrfx.processor.gui.spectra.WindowIO;
@@ -677,12 +676,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
-                chartDrawingLayers.getTop().setVisible(false);
+                chartDrawingLayers.getTopPane().setVisible(false);
                 GUIUtils.snapNode(chartPane, selectedFile);
             } catch (IOException ex) {
                 GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
             } finally {
-                chartDrawingLayers.getTop().setVisible(true);
+                chartDrawingLayers.getTopPane().setVisible(true);
             }
         }
     }

@@ -18,7 +18,6 @@
 package org.nmrfx.processor.gui;
 
 import javafx.scene.Cursor;
-import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.DragEvent;
@@ -143,16 +142,15 @@ public class ChartDrawingLayers {
         return new GraphicsContextProxy(getGraphicsContextFor(item));
     }
 
-    //XXX try to remove accessor usages from FXMLController
     public GridPaneCanvas getGrid() {
         return grid;
     }
 
-    public Canvas getBase() {
+    public Canvas getBaseCanvas() {
         return base;
     }
 
-    public Pane getTop() {
+    public Pane getTopPane() {
         return top;
     }
 }
