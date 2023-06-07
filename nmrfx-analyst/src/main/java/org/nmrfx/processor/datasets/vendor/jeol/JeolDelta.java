@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.vendor.jeol;
 
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
@@ -267,14 +268,12 @@ public class JeolDelta implements NMRData {
 
     @Override
     public double[] getCoefs(int dim) {
-        double dcoefs[] = {1, 0, 0, 0, 0, 0, -1, 0}; // fixme
-        return dcoefs;
-
+        return AcquisitionType.HYPER.getCoefficients();
     }
 
     @Override
     public String getSymbolicCoefs(int dim) {
-        return "hyper";
+        return AcquisitionType.HYPER.getLabel();
     }
 
     @Override
