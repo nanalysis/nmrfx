@@ -885,7 +885,7 @@ public class ChartProcessor {
 
         int nDim = getNMRData().getNDim();
         for (int i = 1; i < nDim; i++) {
-            acqMode[i] = "hyper";
+            acqMode[i] = AcquisitionType.HYPER.getLabel();
         }
 
         for (Map.Entry<String, List<String>> entry : mapOpLists.entrySet()) {

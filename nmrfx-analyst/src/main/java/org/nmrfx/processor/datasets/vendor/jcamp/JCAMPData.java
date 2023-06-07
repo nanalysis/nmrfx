@@ -773,7 +773,7 @@ public class JCAMPData implements NMRData {
             return false;
         }
 
-        if ("sep".equals(getSymbolicCoefs(dim))) {
+        if (AcquisitionType.SEP.getLabel().equals(getSymbolicCoefs(dim))) {
             return false;
         }
         boolean reverse = block.optional($REVERSE, dim).map(JCampRecord::getString)
