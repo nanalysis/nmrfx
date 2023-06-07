@@ -475,7 +475,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         if (dataset != null) {
             ProcessorController processorController = getActiveChart().getProcessorController(false);
-            if (processorController != null && (!dataset.getFile().equals(chartProcessor.datasetFile))) {
+            if (processorController != null && (!dataset.getFile().equals(chartProcessor.getDatasetFile()))) {
                 processorPane.getChildren().clear();
                 getActiveChart().setProcessorController(null);
                 processorController.cleanUp();

@@ -82,13 +82,13 @@ public class ChartProcessor {
      */
     private final List<Vec> saveVectors = new ArrayList<>();
     private final List<?> pyDocs;
-    File datasetFile;
-    File datasetFileTemp;
+    private File datasetFile;
+    private File datasetFileTemp;
     /**
      * Display chart used for rendering vectors.
      */
-    PolyChart chart;
-    FXMLController fxmlController;
+    private PolyChart chart;
+    private FXMLController fxmlController;
     /**
      * Map of lists of operations with key being the dimension the operations
      * apply to
@@ -172,6 +172,22 @@ public class ChartProcessor {
         chart.getFXMLController().setChartProcessor(this);
         initEmptyVecs();
         execScript("", false, false);
+    }
+
+    public File getDatasetFile() {
+        return datasetFile;
+    }
+
+    public void setDatasetFile(File datasetFile) {
+        this.datasetFile = datasetFile;
+    }
+
+    public void setDatasetFileTemp(File datasetFileTemp) {
+        this.datasetFileTemp = datasetFileTemp;
+    }
+
+    public void setFxmlController(FXMLController fxmlController) {
+        this.fxmlController = fxmlController;
     }
 
     public String getAcqOrder() {
@@ -430,7 +446,8 @@ public class ChartProcessor {
                 fileIndices[j] = index + j;
                 nmrData.readVector(vecDim, index + j, newVec);
                 if (nmrData.getGroupSize(vecDim) > 1) {
-                    //XXX use constants here
+                    //XXX use constants here: find all usages of these strings and put them in a static class
+                    // reused at least in vendor data classes
                     if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho")) {
                         newVec.eaCombine(ECHO_ANTI_ECHO_COEFS);
                     } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho-r")) {

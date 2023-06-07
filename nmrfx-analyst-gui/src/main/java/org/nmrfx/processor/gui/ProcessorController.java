@@ -242,7 +242,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         controller.chart = chart;
         chart.setProcessorController(controller);
         controller.chartProcessor.setChart(chart);
-        controller.chartProcessor.fxmlController = fxmlController;
+        controller.chartProcessor.setFxmlController(fxmlController);
         controller.processorPane = processorPane;
         controller.pane = builder.getNode();
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
@@ -474,12 +474,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 currentDataset.close();
             }
         } else {
-            if (chartProcessor.datasetFile != null) {
+            if (chartProcessor.getDatasetFile() != null) {
                 if (currentDataset != null) {
                     currentDataset.close();
                 }
                 boolean viewingDataset = isViewingDataset();
-                chart.getFXMLController().openDataset(chartProcessor.datasetFile, false, true);
+                chart.getFXMLController().openDataset(chartProcessor.getDatasetFile(), false, true);
                 viewMode.setValue(DisplayMode.SPECTRUM);
                 if (!viewingDataset) {
                     chart.full();
@@ -579,8 +579,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     // Set available as halt may happen before code flow reaches the Processor
                     Processor.getProcessor().setProcessorAvailableStatus(true);
                     chartProcessor.reloadData();
-                    chartProcessor.datasetFile = null;
-                    chartProcessor.datasetFileTemp = null;
+                    chartProcessor.setDatasetFile(null);
+                    chartProcessor.setDatasetFileTemp(null);
                     viewingDataset(false);
                     ProjectBase.getActive().removeDataset(currentDatasetName);
                     chart.refresh();
