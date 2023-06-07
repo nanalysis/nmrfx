@@ -266,10 +266,6 @@ public class ScannerTool implements ControllerTool {
         return chart;
     }
 
-    public FXMLController getFXMLController() {
-        return controller;
-    }
-
     public ScanTable getScanTable() {
         return scanTable;
     }
