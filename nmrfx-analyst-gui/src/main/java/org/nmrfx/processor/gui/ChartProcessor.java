@@ -530,7 +530,7 @@ public class ChartProcessor {
     }
 
     public void setScripts(List<String> newHeaderList, Map<String, List<String>> opMap) {
-        if ((opMap.size() == 0) || (opMap == null)) {
+        if (opMap == null || opMap.size() == 0) {
             return;
         }
         mapOpLists = new TreeMap<>(new DimensionComparator());
