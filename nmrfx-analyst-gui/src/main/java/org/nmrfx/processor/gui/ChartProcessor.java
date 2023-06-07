@@ -1282,6 +1282,8 @@ public class ChartProcessor {
     /**
      * Compare dimensions ("D1", "D2,3", "D2", "D3", ...) grouping by prefix when a comma separator is present.
      * Dimensions with comma are considered lower than the full dimension, ie "D2,3" < "D2".
+     * <br>
+     * Dimensions with comma are used for NUS. D2,3 must appear before D2 and D3 so that this step can fill in the non-acquired data vectors.
      */
     static class DimensionComparator implements Comparator<String> {
         @Override
