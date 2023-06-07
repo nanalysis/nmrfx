@@ -20,6 +20,7 @@ package org.nmrfx.processor.datasets.vendor.bruker;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.nmrfx.datasets.DatasetLayout;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -483,7 +484,7 @@ public class BrukerData implements NMRData {
     @Override
     public boolean getNegateImag(int iDim) {
         if (iDim > 0) {
-            return !f1coefS[iDim].equals("sep");
+            return !f1coefS[iDim].equals(AcquisitionType.SEP.getLabel());
         } else {
             return false;
         }
@@ -1084,26 +1085,26 @@ public class BrukerData implements NMRData {
                     case 3:
                         complexDim[i - 1] = false;
                         fttype[i - 1] = "rft";
-                        f1coefS[i - 1] = "real";
+                        f1coefS[i - 1] = AcquisitionType.REAL.getLabel();
                         break;
                     case 4:
                         f1coef[i - 1] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
-                        f1coefS[i - 1] = "hyper-r";
+                        f1coefS[i - 1] = AcquisitionType.HYPER_R.getLabel();
                         break;
                     case 0:
                     case 5:
                         f1coef[i - 1] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
                         complexDim[i - 1] = true;
                         fttype[i - 1] = "negate";
-                        f1coefS[i - 1] = "hyper";
+                        f1coefS[i - 1] = AcquisitionType.HYPER.getLabel();
                         break;
                     case 6:
                         f1coef[i - 1] = new double[]{1, 0, -1, 0, 0, 1, 0, 1};
                         deltaPh0_2 = 90.0;
-                        f1coefS[i - 1] = "echo-antiecho-r";
+                        f1coefS[i - 1] = AcquisitionType.ECHO_ANTI_ECHO_R.getLabel();
                         break;
                     case 1:
-                        f1coefS[i - 1] = "sep";
+                        f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
                         if (getValues(i - 1).size() > 0) {
                             complexDim[i - 1] = false;
                         } else {
@@ -1113,7 +1114,7 @@ public class BrukerData implements NMRData {
                         break;
                     default:
                         f1coef[i - 1] = new double[]{1, 0, 0, 1};
-                        f1coefS[i - 1] = "sep";
+                        f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
                         break;
                 }
             }
