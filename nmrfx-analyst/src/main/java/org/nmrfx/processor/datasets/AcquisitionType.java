@@ -7,10 +7,11 @@ import java.util.Arrays;
 public enum AcquisitionType {
     SEP("sep"),
     REAL("real"),
-    ECHO_ANTIECHO("echo-antiecho", 1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0),
-    ECHO_ANTI_ECHO_R("echo-antiecho-r", 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, -1.0),
-    HYPER("hyper", 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0),
-    HYPER_R("hyper-r", 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    GE("ge", 1, 0, 1, 0, 1, 0, 1, 0),
+    ECHO_ANTIECHO("echo-antiecho", 1, 0, -1, 0, 0, 1, 0, 1),
+    ECHO_ANTI_ECHO_R("echo-antiecho-r", 1, 0, 1, 0, 0, 1, 0, -1),
+    HYPER("hyper", 1, 0, 0, 0, 0, 0, -1, 0),
+    HYPER_R("hyper-r", 1, 0, 0, 0, 0, 0, 1, 0);
 
     private final String label;
     private final double[] coefficients;
@@ -26,6 +27,11 @@ public enum AcquisitionType {
 
     public double[] getCoefficients() {
         return coefficients.clone();
+    }
+
+    @Override
+    public String toString() {
+        return label;
     }
 
     @Nullable
