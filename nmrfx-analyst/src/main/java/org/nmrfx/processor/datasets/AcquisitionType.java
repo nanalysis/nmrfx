@@ -5,6 +5,8 @@ import org.codehaus.commons.nullanalysis.Nullable;
 import java.util.Arrays;
 
 public enum AcquisitionType {
+    SEP("sep"),
+    REAL("real"),
     ECHO_ANTIECHO("echo-antiecho", 1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0),
     ECHO_ANTI_ECHO_R("echo-antiecho-r", 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, -1.0),
     HYPER("hyper", 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0),
