@@ -93,7 +93,7 @@ public class ChartProcessor {
      * Map of lists of operations with key being the dimension the operations
      * apply to
      */
-    private Map<String, List<String>> mapOpLists = new TreeMap<>(new DimComparator());
+    private Map<String, List<String>> mapOpLists = new TreeMap<>(new DimensionComparator());
     /**
      * Which Vec of the list of vectors should currently be displayed
      */
@@ -528,7 +528,7 @@ public class ChartProcessor {
     }
 
     public Map<String, List<String>> getScriptList() {
-        Map<String, List<String>> copyOfMapOpLists = new TreeMap<String, List<String>>(new DimComparator());
+        Map<String, List<String>> copyOfMapOpLists = new TreeMap<>(new DimensionComparator());
         if (mapOpLists != null) {
             for (Map.Entry<String, List<String>> entry : mapOpLists.entrySet()) {
                 List<String> newList = new ArrayList<>();
@@ -545,10 +545,8 @@ public class ChartProcessor {
         if ((opMap.size() == 0) || (opMap == null)) {
             return;
         }
-        mapOpLists = new TreeMap<String, List<String>>(new DimComparator());
-        for (Map.Entry<String, List<String>> entry : opMap.entrySet()) {
-            mapOpLists.put(entry.getKey(), entry.getValue());
-        }
+        mapOpLists = new TreeMap<>(new DimensionComparator());
+        mapOpLists.putAll(opMap);
         ArrayList<String> opList = (ArrayList<String>) mapOpLists.get(vecDimName);
         headerList.clear();
         headerList.addAll(newHeaderList);
@@ -1051,7 +1049,7 @@ public class ChartProcessor {
         acqMode = new String[nDim];
 
         if ((mapOpLists == null) || (mapOpLists.size() != nDim)) {
-            mapOpLists = new TreeMap<String, List<String>>(new DimComparator());
+            mapOpLists = new TreeMap<>(new DimensionComparator());
         }
         Map<String, List<String>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>();
@@ -1297,47 +1295,42 @@ public class ChartProcessor {
         }
     }
 
-    class DimComparator implements Comparator {
-
+    /**
+     * Compare dimensions ("D1", "D2,3", "D2", "D3", ...) grouping by prefix when a comma separator is present.
+     * Dimensions with comma are considered lower than the full dimension, ie "D2,3" < "D2".
+     */
+    static class DimensionComparator implements Comparator<String> {
         @Override
-        public int compare(Object o1, Object o2) {
-            int result = 0;
-            if ((o1 == null) && (o2 == null)) {
-                result = 0;
-            } else if (o1 == null) {
-                result = 1;
-            } else if (o2 == null) {
-                result = -1;
-            } else {
-                String s1 = (String) o1;
-                String s2 = (String) o2;
-                if (!s1.equals("s2")) {
-                    int comma1 = s1.indexOf(',');
-                    int comma2 = s2.indexOf(',');
-                    String s1c = s1;
-                    if (comma1 != -1) {
-                        s1c = s1.substring(0, comma1);
-                    }
-                    String s2c = s2;
-                    if (comma2 != -1) {
-                        s2c = s2.substring(0, comma2);
-                    }
-                    if ((comma1 == -1) && (comma2 == -1)) {
-                        result = s1.compareTo(s2);
-                    } else if ((comma1 != -1) && (comma2 != -1)) {
-                        result = s1.compareTo(s2);
-                    } else if (s1c.equals(s2c)) {
-                        if (comma1 != -1) {
-                            result = -1;
-                        } else {
-                            result = 1;
-                        }
-                    } else {
-                        result = s1c.compareTo(s2c);
-                    }
-                }
+        public int compare(String a, String b) {
+            if (a == null && b == null)
+                return 0;
+            if (a == null)
+                return 1;
+            if (b == null)
+                return -1;
+
+            // split strings on ","
+            int separatorA = a.indexOf(',');
+            int separatorB = b.indexOf(',');
+            boolean hasSeparatorA = separatorA >= 0;
+            boolean hasSeparatorB = separatorB >= 0;
+
+            // if both strings have a ",", or none have, use a normal string comparison
+            if (hasSeparatorA == hasSeparatorB) {
+                return a.compareTo(b);
             }
-            return result;
+
+            // one of the string has a prefix, the other doesn't, check if the complete string is the prefix of the other one
+            // ex: if a="D2,1" and b="D2", then b is the prefix of a.
+            if (hasSeparatorA && a.startsWith(b)) {
+                return -1;
+            }
+            if (hasSeparatorB && b.startsWith(a)) {
+                return 1;
+            }
+
+            // the strings are unrelated (one isn't a prefix of the other), use normal string comparison
+            return a.compareTo(b);
         }
     }
 }
