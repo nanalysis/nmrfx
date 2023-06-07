@@ -42,8 +42,11 @@ import java.util.List;
  */
 @PythonAPI("pyproc")
 public class NESTANMREx extends MatrixOperation {
+    private static final String ROOT_NAME = "test";
+    private static final String IN_SUFFIX = "nestain";
+    private static final String OUT_SUFFIX = "nestaout";
 
-    public static File nestaExecutable = new File("NESTANMR");
+    private static File nestaExecutable = new File("NESTANMR");
     private final int iterations;
     private final int rwIterations;
     private final int method;
@@ -54,9 +57,6 @@ public class NESTANMREx extends MatrixOperation {
     private final String schedFile;
     private final double[] phases;  // init zero values
 
-    private final String rootName = "test";
-    private final String inSuffix = "nestain";
-    private final String outSuffix = "nestaout";
 
     FileSystem fileSys = FileSystems.getDefault();
     ProcessBuilder pb = new ProcessBuilder();
@@ -160,13 +160,13 @@ public class NESTANMREx extends MatrixOperation {
     @Override
     public Operation evalMatrix(MatrixType matrix) throws ProcessingException {
         int fileIndex = matrix.getIndex();
-        Path fileRoot = fileSys.getPath(nestDir.getPath(), rootName);
+        Path fileRoot = fileSys.getPath(nestDir.getPath(), ROOT_NAME);
         String matFileName;
         if (phases != null) {
             matrix.phase(phases);
         }
         try {
-            matFileName = matrix.exportData(fileRoot.toString(), inSuffix, true);
+            matFileName = matrix.exportData(fileRoot.toString(), IN_SUFFIX, true);
         } catch (IOException ioE) {
             throw new ProcessingException(ioE.getMessage());
         }
@@ -185,7 +185,7 @@ public class NESTANMREx extends MatrixOperation {
             throw new ProcessingException(e.getLocalizedMessage());
         }
         try {
-            String outFileName = matrix.importData(fileRoot.toString(), outSuffix, true);
+            String outFileName = matrix.importData(fileRoot.toString(), OUT_SUFFIX, true);
             Files.delete(fileSys.getPath(matFileName));
             Files.delete(fileSys.getPath(matFileName + ".par"));
             Files.delete(fileSys.getPath(outFileName));

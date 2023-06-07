@@ -13,7 +13,7 @@ import java.util.Map;
 public class Solvents {
 
     private static final String SOLVENT_FILE_NAME = "solvents.yaml";
-    static Map<String, Solvent> solvents = new HashMap<>();
+    private static final Map<String, Solvent> solvents = new HashMap<>();
 
     public static void loadYaml() {
         int max = 0;

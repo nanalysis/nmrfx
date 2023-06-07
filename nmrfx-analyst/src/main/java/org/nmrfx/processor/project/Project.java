@@ -21,10 +21,6 @@ import java.util.Map;
  * @author Bruce Johnson
  */
 public class Project extends ProjectBase {
-
-    static String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
-    static final Map<String, Project> projects = new HashMap<>();
-    static Project activeProject = null;
     public ResonanceFactory resFactory;
 
     public Project(String name) {
@@ -35,10 +31,6 @@ public class Project extends ProjectBase {
         peakLists = new HashMap<>();
 
         setActive();
-    }
-
-    public static void setPCS(PropertyChangeSupport newPCS) {
-        pcs = newPCS;
     }
 
     private ResonanceFactory getNewResFactory() {
@@ -55,41 +47,4 @@ public class Project extends ProjectBase {
         }
         return resFact;
     }
-
-    private static Project getNewStructureProject(String name) {
-        Project project = null;
-        try {
-            Class c = Class.forName("org.nmrfx.project.StructureProject");
-            project = (Project) c.getDeclaredConstructor(String.class).newInstance(name);
-        } catch (Exception ex) {
-            project = getNewGUIProject(name);
-        }
-        return project;
-    }
-
-    private static Project getNewGUIProject(String name) {
-        Project project = null;
-        try {
-            Class c = Class.forName("org.nmrfx.project.GUIProject");
-            project = (Project) c.getDeclaredConstructor(String.class).newInstance(name);
-        } catch (Exception ex) {
-            project = new Project(name);
-        }
-        return project;
-    }
-
-    public void createProject(Path projectDir) throws IOException {
-        if (Files.exists(projectDir)) {
-            throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
-        }
-        FileSystem fileSystem = FileSystems.getDefault();
-        Files.createDirectory(projectDir);
-        for (String subDir : SUB_DIR_TYPES) {
-            Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
-            Files.createDirectory(subDirectory);
-        }
-        setProjectDir(projectDir);
-    }
-
-
 }

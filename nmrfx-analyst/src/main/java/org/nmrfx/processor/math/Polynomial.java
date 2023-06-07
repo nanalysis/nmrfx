@@ -33,10 +33,10 @@ import java.util.Comparator;
  * @author brucejohnson
  */
 public class Polynomial {
-
     private static final Logger log = LoggerFactory.getLogger(Polynomial.class);
 
-    public static double rootTol = 1.0e-6;
+    private static final double ROOT_TOL = 1.0e-6;
+
     double eps = 1.1102230246252e-16;
     double big = Double.MAX_VALUE;
     double small = Double.MIN_VALUE;
@@ -689,7 +689,7 @@ public class Polynomial {
             }
             u = Math.abs(xc) + Math.abs(yc);
             double checkValue = u + Math.abs(dx) + Math.abs(dy);
-            if (!Precision.equals(u, checkValue, rootTol) && !Precision.equals(fc, 0.0, rootTol)) {
+            if (!Precision.equals(u, checkValue, ROOT_TOL) && !Precision.equals(fc, 0.0, ROOT_TOL)) {
                 gotoIter = true;
                 continue;  // go to iter
             }

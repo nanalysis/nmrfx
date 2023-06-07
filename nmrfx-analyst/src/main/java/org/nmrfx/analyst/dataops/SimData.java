@@ -13,7 +13,7 @@ import java.util.*;
  */
 public class SimData {
 
-    static Map<String, SimData> simDataMap = new TreeMap<>();
+    private static final Map<String, SimData> simDataMap = new TreeMap<>();
 
     double ppmScale = 20.0;
     double jScale = 250.0;

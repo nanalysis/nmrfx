@@ -41,7 +41,7 @@ import java.util.List;
 public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(BigMappedMatrixFile.class);
-    private static int MAPPING_SIZE = 1 << 30;
+    private static final int MAPPING_SIZE = 1 << 30;
     private File file;
     Dataset dataset;
     private RandomAccessFile raFile;
@@ -105,24 +105,6 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     public DatasetLayout getLayout() {
         return layout;
-    }
-
-    /**
-     * Set the mapping size which determines how many map segments are used.
-     *
-     * @param newMapSize the mapping size in MBytes (1024 x 1024 bytes)
-     */
-    public static void setMapSize(final int newMapSize) {
-        MAPPING_SIZE = newMapSize * 1024 * 1024;
-    }
-
-    /**
-     * Return the mapping size which determines how many map segments are used.
-     *
-     * @return the mapping size
-     */
-    public static int getMapSize() {
-        return MAPPING_SIZE / 1024 / 1024;
     }
 
     @Override

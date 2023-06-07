@@ -20,9 +20,8 @@ package org.nmrfx.processor.math;
 import org.apache.commons.math3.complex.Complex;
 
 public class Cfft {
-
-    static double[] sineTable = null;
-    static double[] cosTable = null;
+    private static double[] sineTable = null;
+    private static double[] cosTable = null;
 
     static void fillTables(int n) {
         sineTable = new double[n];

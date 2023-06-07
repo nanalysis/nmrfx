@@ -22,7 +22,7 @@ import static java.util.Comparator.reverseOrder;
  */
 public class Multiplets {
     private static final Logger log = LoggerFactory.getLogger(Multiplets.class);
-    public static double DOUBLETRATIO = 3.0;
+    public static final double DOUBLETRATIO = 3.0;
 
     public static PeakDim getMultipletRoot(Multiplet multiplet) throws IllegalArgumentException {
         return multiplet == null ? null : multiplet.getPeakDim();

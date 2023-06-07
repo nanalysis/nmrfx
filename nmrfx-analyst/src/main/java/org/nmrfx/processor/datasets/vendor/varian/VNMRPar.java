@@ -27,8 +27,8 @@ import java.util.*;
 public class VNMRPar {
     private static final Logger log = LoggerFactory.getLogger(VNMRPar.class);
 
-    static Map<String, Map> parGroups = new HashMap<String, Map>();
-    static long nParGroups = 0;
+    private static final Map<String, Map> parGroups = new HashMap<>();
+    private static long nParGroups = 0;
     public String name = null;
     String attrLine = null;
     String[] valueLines = null;

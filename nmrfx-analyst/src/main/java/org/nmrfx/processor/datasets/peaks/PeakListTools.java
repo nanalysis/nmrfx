@@ -57,22 +57,6 @@ import static org.nmrfx.processor.datasets.peaks.PeakListTools.GuessType.*;
 public class PeakListTools {
     private static final Logger log = LoggerFactory.getLogger(PeakListTools.class);
 
-    public static ResonanceFactory resFactory() {
-        Project project = (Project) Project.getActive();
-        return project.resFactory;
-    }
-
-
-    /**
-     *
-     */
-    public static Map<String, PeakList> peakListTable = new LinkedHashMap<>();
-
-    /**
-     *
-     */
-    public boolean inMem;
-
     public static void swap(double[] limits) {
         double hold;
 
