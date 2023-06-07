@@ -1277,21 +1277,17 @@ public class ChartProcessor {
         return scriptBuilder.toString();
     }
 
-    record VecIndexScore(VecIndex vecIndex, int maxIndex, double score) implements Comparable {
-
+    record VecIndexScore(VecIndex vecIndex, int maxIndex, double score) implements Comparable<VecIndexScore> {
         @Override
-        public int compareTo(Object o) {
-            if (o == null) {
-                return 1;
-            } else if (!(o instanceof VecIndexScore)) {
-                return 1;
-            } else {
-                int compare = Double.compare(score, ((VecIndexScore) o).score());
-                if (compare == 0) {
-                    compare = Integer.compare(maxIndex, ((VecIndexScore) o).maxIndex());
-                }
-                return compare;
+        public int compareTo(VecIndexScore o) {
+            // compare on score first
+            int scoreComparison = Double.compare(score, o.score());
+            if (scoreComparison != 0) {
+                return scoreComparison;
             }
+
+            // then on index if the scores are identical
+            return Integer.compare(maxIndex, o.maxIndex());
         }
     }
 
