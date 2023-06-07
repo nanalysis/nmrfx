@@ -151,7 +151,7 @@ public class ChartProcessor {
         return nmrDataObj;
     }
 
-    public SimpleBooleanProperty getAreOperationListsValidProperty() {
+    public SimpleBooleanProperty areOperationListsValidProperty() {
         return areOperationListsValid;
     }
 
@@ -159,11 +159,7 @@ public class ChartProcessor {
         return nmrDataProperty().get();
     }
 
-    public void setNMRData(NMRData value) {
-        nmrDataProperty().set(value);
-    }
-
-    ProcessOps getProcess() {
+    private ProcessOps getProcess() {
         return AnalystPythonInterpreter.eval("getCurrentProcess()", ProcessOps.class);
     }
 
@@ -328,17 +324,15 @@ public class ChartProcessor {
         fixDSP = value;
     }
 
-    public VecIndex getNextIndex(NMRData nmrData, int[] rows) {
+    private VecIndex getNextIndex(NMRData nmrData, int[] rows) {
         int index = 0;
         if (rows.length > 0) {
             index = rows[0];
         }
         VecIndex vecIndex = null;
         if (vecDim == 0) {
-            int nVectors = vectorsPerGroup;
             if (multiVecCounter != null) {
                 if (rows.length == 1) {
-
                     vecIndex = multiVecCounter.getNextGroup(index);
                 } else {
                     index = multiVecCounter.findOutGroup(rows);
@@ -387,8 +381,9 @@ public class ChartProcessor {
         double mean = stats.getMean();
         double sdev = stats.getStandardDeviation();
         double threshold = mean + ratio * sdev;
+        vecIndices.sort(Collections.reverseOrder());
+
         List<VecIndexScore> result = new ArrayList<>();
-        Collections.sort(vecIndices, Collections.reverseOrder());
         int n = Math.min(vecIndices.size(), maxN);
         for (int i = 0; i < n; i++) {
             var vecIndexScore = vecIndices.get(i);
@@ -435,6 +430,7 @@ public class ChartProcessor {
                 fileIndices[j] = index + j;
                 nmrData.readVector(vecDim, index + j, newVec);
                 if (nmrData.getGroupSize(vecDim) > 1) {
+                    //XXX use constants here
                     if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho")) {
                         newVec.eaCombine(ECHO_ANTI_ECHO_COEFS);
                     } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho-r")) {
@@ -480,7 +476,7 @@ public class ChartProcessor {
         }
     }
 
-    public void initEmptyVecs() {
+    private void initEmptyVecs() {
         vectors.clear();
         saveVectors.clear();
         int nPoints = 2048;
@@ -519,7 +515,7 @@ public class ChartProcessor {
         }
     }
 
-    public Map<String, List<String>> getScriptList() {
+    private Map<String, List<String>> getScriptList() {
         Map<String, List<String>> copyOfMapOpLists = new TreeMap<>(new DimensionComparator());
         if (mapOpLists != null) {
             for (Map.Entry<String, List<String>> entry : mapOpLists.entrySet()) {
@@ -634,7 +630,7 @@ public class ChartProcessor {
         datasetType = value;
     }
 
-    public String getScriptFileName() {
+    private String getScriptFileName() {
         File file = new File(getNMRData().getFilePath());
         String fileName = file.getName();
         String scriptFileName;
@@ -694,7 +690,7 @@ public class ChartProcessor {
         Files.write(path, script.getBytes());
     }
 
-    public String getDatasetNameFromScript() {
+    private String getDatasetNameFromScript() {
         File file = getDefaultScriptFile();
         StringBuilder resultBuilder = new StringBuilder();
         if (file.exists()) {
@@ -733,7 +729,7 @@ public class ChartProcessor {
         return scriptLoaded;
     }
 
-    String buildScript() {
+    protected String buildScript() {
         if (mapOpLists == null) {
             return "";
         }
@@ -770,7 +766,6 @@ public class ChartProcessor {
         if (mapOpLists == null) {
             return "";
         }
-        String lineSep = System.lineSeparator();
         StringBuilder scriptBuilder = new StringBuilder();
         String indent = "";
         scriptBuilder.append(processorController.refManager.getParString(nDim, indent));
@@ -779,15 +774,15 @@ public class ChartProcessor {
         return scriptBuilder.toString();
     }
 
-    boolean scriptHasDataset(String script) {
+    protected boolean scriptHasDataset(String script) {
         return !script.contains("_DATASET_");
     }
 
-    String removeDatasetName(String script) {
+    protected String removeDatasetName(String script) {
         return script.replaceFirst("CREATE\\([^\\)]++\\)", "CREATE(_DATASET_)");
     }
 
-    Optional<String> fixDatasetName(String script) {
+    protected Optional<String> fixDatasetName(String script) {
         final Optional<String> emptyResult = Optional.empty();
 
         if (!scriptHasDataset(script)) {
@@ -882,7 +877,7 @@ public class ChartProcessor {
         return mapDim;
     }
 
-    public String[] getCombineMode() {
+    private String[] getCombineMode() {
         if (getNMRData() == null) {
             return null;
         }
@@ -923,7 +918,7 @@ public class ChartProcessor {
         return !mapOpLists.isEmpty();
     }
 
-    public String getScriptCmds(int nDim, String indent, boolean includeRun) {
+    private String getScriptCmds(int nDim, String indent, boolean includeRun) {
         String lineSep = System.lineSeparator();
         StringBuilder scriptBuilder = new StringBuilder();
         int nDatasetDims = 0;
@@ -972,11 +967,11 @@ public class ChartProcessor {
         return scriptBuilder.toString();
     }
 
-    public void setFlags(Map<String, Boolean> flags) {
+    private void setFlags(Map<String, Boolean> flags) {
         getNMRData().setFidFlags(flags);
     }
 
-    void updateCounter() {
+    private void updateCounter() {
         NMRData nmrData = getNMRData();
         String[] acqOrder = nmrData.getAcqOrder();
 
@@ -1028,7 +1023,7 @@ public class ChartProcessor {
     }
 
     public void setData(NMRData data, boolean clearOps) {
-        setNMRData(data);
+        nmrDataProperty().set(data);
         setDatasetType(data.getPreferredDatasetType());
 
         datasetFile = null;
@@ -1044,8 +1039,7 @@ public class ChartProcessor {
             mapOpLists = new TreeMap<>(new DimensionComparator());
         }
         Map<String, List<String>> listOfScripts = getScriptList();
-        List<String> saveHeaderList = new ArrayList<>();
-        saveHeaderList.addAll(headerList);
+        List<String> saveHeaderList = new ArrayList<>(headerList);
 
         // when setting data reset vecdim back to 0 as it could have been set to
         // a value higher than the number of dimensions
@@ -1230,7 +1224,7 @@ public class ChartProcessor {
         }
     }
 
-    public void addFIDToPython() {
+    private void addFIDToPython() {
         AnalystPythonInterpreter.exec("from pyproc import *");
         AnalystPythonInterpreter.exec("useLocal()");
         AnalystPythonInterpreter.exec("fidInfo = makeFIDInfo()");

@@ -573,7 +573,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             }
             if (operationList.isEmpty()) {
                 propertyManager.clearPropSheet();
-                if (!chartProcessor.getAreOperationListsValidProperty().get()) {
+                if (!chartProcessor.areOperationListsValidProperty().get()) {
                     String currentDatasetName = chart.getDataset().getName();
                     haltProcessAction();
                     // Set available as halt may happen before code flow reaches the Processor
@@ -993,7 +993,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void processDataset(boolean idleModeValue) {
-        if (!Processor.getProcessor().isProcessorAvailable() || !chartProcessor.getAreOperationListsValidProperty().get()) {
+        if (!Processor.getProcessor().isProcessorAvailable() || !chartProcessor.areOperationListsValidProperty().get()) {
             return;
         }
         Processor.getProcessor().setProcessorAvailableStatus(false);
@@ -1230,7 +1230,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         processDatasetButton.disableProperty()
                 .bind(stateProperty.isEqualTo(Worker.State.RUNNING)
                         .or(chartProcessor.nmrDataProperty().isNull())
-                        .or(chartProcessor.getAreOperationListsValidProperty().not())
+                        .or(chartProcessor.areOperationListsValidProperty().not())
                         .or(processorAvailable.isEqualTo(false)));
         haltProcessButton.disableProperty().bind(stateProperty.isNotEqualTo(Worker.State.RUNNING));
 
