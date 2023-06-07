@@ -77,25 +77,26 @@ public class AnalystApp extends Application {
     public static final String ICON_FONT_SIZE_STR = "7pt";
     // The default font size
     public static final String REG_FONT_SIZE_STR = "9pt";
-    private static final PopOverTools popoverTool = new PopOverTools();
-    private static final List<Stage> stages = new ArrayList<>();
-    private static final String appName = "NMRFx Analyst";
+    private static final String APP_NAME = "NMRFx Analyst";
 
-    private static FXMLControllerManager fxmlControllerManager;
-    private static PreferencesController preferencesController;
-    private static DatasetsController datasetController;
-    private static HostServices hostServices;
-    private static AnalystApp analystApp = null;
-    private static MenuBar mainMenuBar = null;
-    private static FileMenuActions fileMenuActions;
-    private static MoleculeMenuActions molMenuActions;
-    private static PeakMenuActions peakMenuActions;
-    private static SpectrumMenuActions spectrumMenuActions;
-    private static ProjectMenuActions projectMenuActions;
-    private static ViewMenuItems viewMenuActions;
-    private static boolean startInAdvanced = true;
-    private static boolean advancedIsActive = false;
-    private static ObservableMap<String, MoleculeBase> moleculeMap;
+    private static AnalystApp analystApp;
+    private static final FXMLControllerManager fxmlControllerManager = new FXMLControllerManager();
+    private static final List<Stage> stages = new ArrayList<>();
+
+    private final PopOverTools popoverTool = new PopOverTools();
+    private PreferencesController preferencesController;
+    private DatasetsController datasetController;
+    private HostServices hostServices;
+    private MenuBar mainMenuBar = null;
+    private FileMenuActions fileMenuActions;
+    private MoleculeMenuActions molMenuActions;
+    private PeakMenuActions peakMenuActions;
+    private SpectrumMenuActions spectrumMenuActions;
+    private ProjectMenuActions projectMenuActions;
+    private ViewMenuItems viewMenuActions;
+    private boolean startInAdvanced = true;
+    private boolean advancedIsActive = false;
+    private ObservableMap<String, MoleculeBase> moleculeMap;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -116,10 +117,10 @@ public class AnalystApp extends Application {
 
         Platform.setImplicitExit(true);
         hostServices = getHostServices();
-        stage.setTitle(appName + " " + getVersion());
+        stage.setTitle(APP_NAME + " " + getVersion());
 
         if (mainMenuBar == null) {
-            mainMenuBar = makeMenuBar(appName);
+            mainMenuBar = makeMenuBar(APP_NAME);
         }
 
         AnalystPythonInterpreter.initialize(getParameters());
@@ -229,7 +230,7 @@ public class AnalystApp extends Application {
         mailingListItem.setOnAction(this::showMailingListAction);
 
         MenuItem refMenuItem = new MenuItem("NMRFx Publication");
-        refMenuItem.setOnAction(e -> AnalystApp.hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6"));
+        refMenuItem.setOnAction(e -> hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6"));
 
         MenuItem openSourceItem = new MenuItem("Open Source Libraries");
         openSourceItem.setOnAction(this::showOpenSourceAction);
@@ -723,10 +724,6 @@ public class AnalystApp extends Application {
     }
 
     public static FXMLControllerManager getFXMLControllerManager() {
-        if (fxmlControllerManager == null) {
-            fxmlControllerManager = new FXMLControllerManager();
-        }
-
         return fxmlControllerManager;
     }
 
@@ -746,11 +743,11 @@ public class AnalystApp extends Application {
     }
 
     public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
-        moleculeMap.addListener(listener);
+        AnalystApp.getAnalystApp().moleculeMap.addListener(listener);
     }
 
     public static MenuBar getMenuBar() {
-        return analystApp.makeMenuBar(appName);
+        return analystApp.makeMenuBar(APP_NAME);
     }
 
     public static AnalystApp getAnalystApp() {
@@ -758,7 +755,7 @@ public class AnalystApp extends Application {
     }
 
     public static String getAppName() {
-        return appName;
+        return APP_NAME;
     }
 
     public static ProjectBase getActive() {
