@@ -36,6 +36,7 @@ import org.nmrfx.processor.gui.spectra.SpecRegion;
 import org.nmrfx.utils.properties.*;
 import org.python.core.PyComplex;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -392,6 +393,7 @@ public class PropertyManager {
 
     }
 
+    @Nonnull
     public static Map<String, String> parseOpString(String op) {
         Map<String, String> values = new HashMap<>();
         Pattern pattern = null;

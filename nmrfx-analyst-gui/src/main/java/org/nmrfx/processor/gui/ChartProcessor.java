@@ -606,7 +606,7 @@ public class ChartProcessor {
         } else if (mapOpLists.containsKey(dimName)) {
             oldList.addAll(mapOpLists.get(dimName));
         }
-        getCombineMode();
+        updateAcqModeFromTdComb();
         if (!processorController.isViewingDataset()) {
             reloadData();
         }
@@ -873,41 +873,36 @@ public class ChartProcessor {
         return mapDim;
     }
 
-    private String[] getCombineMode() {
+    private void updateAcqModeFromTdComb() {
         if (getNMRData() == null) {
-            return null;
+            return;
         }
+
         int nDim = getNMRData().getNDim();
-        String[] result = new String[nDim];
         for (int i = 1; i < nDim; i++) {
             acqMode[i] = "hyper";
         }
 
         for (Map.Entry<String, List<String>> entry : mapOpLists.entrySet()) {
-            if (entry.getValue() != null) {
-                ArrayList<String> scriptList = (ArrayList<String>) entry.getValue();
-                if ((scriptList != null) && (!scriptList.isEmpty())) {
-                    for (String string : scriptList) {
-                        if (string.contains("TDCOMB")) {
-                            Map<String, String> values = PropertyManager.parseOpString(string);
-                            if (values != null) {
-                                int dim = 1;
-                                if (values.containsKey("dim")) {
-                                    String value = values.get("dim");
-                                    dim = Integer.parseInt(value) - 1;
-                                }
-                                if (values.containsKey("coef")) {
-                                    String value = values.get("coef");
-                                    value = value.replace("'", "");
-                                    acqMode[dim] = value;
-                                }
-                            }
+            List<String> scriptList = entry.getValue();
+            if (scriptList != null && !scriptList.isEmpty()) {
+                for (String string : scriptList) {
+                    if (string.contains("TDCOMB")) {
+                        Map<String, String> values = PropertyManager.parseOpString(string);
+                        int dim = 1;
+                        if (values.containsKey("dim")) {
+                            String value = values.get("dim");
+                            dim = Integer.parseInt(value) - 1;
+                        }
+                        if (values.containsKey("coef")) {
+                            String value = values.get("coef");
+                            value = value.replace("'", "");
+                            acqMode[dim] = value;
                         }
                     }
                 }
             }
         }
-        return result;
     }
 
     public boolean hasCommands() {
