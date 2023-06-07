@@ -56,66 +56,67 @@ public class ChartProcessor {
     private static final Logger log = LoggerFactory.getLogger(ChartProcessor.class);
 
     public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
-    static double[] echoAntiEchoCoefs = {1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0};
-    static double[] echoAntiEchoRCoefs = {1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, -1.0};
-    static double[] hyperCoefs = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0};
-    static double[] hyperRCoefs = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
-    final ProcessorController processorController;
+
+    //These should not be modifiable, but there is no technical guarantee.
+    private static final double[] ECHO_ANTI_ECHO_COEFS = {1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0};
+    private static final double[] ECHO_ANTI_ECHO_R_COEFS = {1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, -1.0};
+    private static final double[] HYPER_COEFS = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0};
+    private static final double[] HYPER_R_COEFS = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+
+    private final ProcessorController processorController;
     private final SimpleBooleanProperty areOperationListsValid = new SimpleBooleanProperty(false);
-    File datasetFile;
-    File datasetFileTemp;
     /**
      * List of commands to be executed at beginning of script.
      */
-    List<String> headerList = new ArrayList<>();
-    /**
-     * Map of lists of operations with key being the dimension the operations
-     * apply to
-     */
-    Map<String, List<String>> mapOpLists = new TreeMap<>(new DimComparator());
+    private final List<String> headerList = new ArrayList<>();
     /**
      * List of Vec objects that contain data used in interactive processing. The
      * number of Vec objects correspond to the number of vectors in the raw data
      * that have the same indirect acquisition times
      */
-    ArrayList<Vec> vectors = new ArrayList<>();
+    private final List<Vec> vectors = new ArrayList<>();
     /**
      * List of Vec objects that save copy of data used in interactive
      * processing. Used to restore vectors when an error happens during
      * processing
      */
-    ArrayList<Vec> saveVectors = new ArrayList<>();
+    private final List<Vec> saveVectors = new ArrayList<>();
+    private final List<?> pyDocs;
+    File datasetFile;
+    File datasetFileTemp;
+    /**
+     * Display chart used for rendering vectors.
+     */
+    PolyChart chart;
+    FXMLController fxmlController;
+    /**
+     * Map of lists of operations with key being the dimension the operations
+     * apply to
+     */
+    private Map<String, List<String>> mapOpLists = new TreeMap<>(new DimComparator());
     /**
      * Which Vec of the list of vectors should currently be displayed
      */
-
-    int iVec = 0;
+    private int iVec = 0;
     /**
      * Array of strings representing the acquisition modes (like hypercomplex or
      * echo-antiecho) that were used in acquiring each indirect dimension.
      * Currently, only used in reading vectors from raw data file for
      * interactive processing.
      */
-
-    String[] acqMode = null;
+    private String[] acqMode = null;
     /**
      * Should Bruker FIDs be corrected when loading them for the DSP artifact at
      * beginning of FID.
      */
-    boolean fixDSP = true;
+    private boolean fixDSP = true;
     /**
      * How many vectors are present in data file for each unique combination of
-     * indirect acquisition times. Typically 2 for 2D, 4 for 3D etc.
+     * indirect acquisition times. Typically, 2 for 2D, 4 for 3D etc.
      */
-    int vectorsPerGroup = 2;
-    /**
-     * Display chart used for rendering vectors.
-     */
-    PolyChart chart;
-    List<?> pyDocs;
-    boolean scriptValid = false;
-    int[] mapToDataset = null;
-    FXMLController fxmlController;
+    private int vectorsPerGroup = 2;
+    private boolean scriptValid = false;
+    private int[] mapToDataset = null;
     private boolean lastWasFreqDomain = false;
     private SimpleObjectProperty<NMRData> nmrDataObj;
     /**
@@ -443,13 +444,13 @@ public class ChartProcessor {
                 nmrData.readVector(vecDim, index + j, newVec);
                 if (nmrData.getGroupSize(vecDim) > 1) {
                     if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho")) {
-                        newVec.eaCombine(echoAntiEchoCoefs);
+                        newVec.eaCombine(ECHO_ANTI_ECHO_COEFS);
                     } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho-r")) {
-                        newVec.eaCombine(echoAntiEchoRCoefs);
+                        newVec.eaCombine(ECHO_ANTI_ECHO_R_COEFS);
                     } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper")) {
-                        newVec.eaCombine(hyperCoefs);
+                        newVec.eaCombine(HYPER_COEFS);
                     } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper-r")) {
-                        newVec.eaCombine(hyperRCoefs);
+                        newVec.eaCombine(HYPER_R_COEFS);
                     } else {
                         newVec.hcCombine();
                     }
@@ -527,7 +528,7 @@ public class ChartProcessor {
     }
 
     public Map<String, List<String>> getScriptList() {
-        Map<String, List<String>> copyOfMapOpLists = new TreeMap<>(new DimComparator());
+        Map<String, List<String>> copyOfMapOpLists = new TreeMap<String, List<String>>(new DimComparator());
         if (mapOpLists != null) {
             for (Map.Entry<String, List<String>> entry : mapOpLists.entrySet()) {
                 List<String> newList = new ArrayList<>();
@@ -544,7 +545,7 @@ public class ChartProcessor {
         if ((opMap.size() == 0) || (opMap == null)) {
             return;
         }
-        mapOpLists = new TreeMap<>(new DimComparator());
+        mapOpLists = new TreeMap<String, List<String>>(new DimComparator());
         for (Map.Entry<String, List<String>> entry : opMap.entrySet()) {
             mapOpLists.put(entry.getKey(), entry.getValue());
         }
@@ -1050,7 +1051,7 @@ public class ChartProcessor {
         acqMode = new String[nDim];
 
         if ((mapOpLists == null) || (mapOpLists.size() != nDim)) {
-            mapOpLists = new TreeMap<>(new DimComparator());
+            mapOpLists = new TreeMap<String, List<String>>(new DimComparator());
         }
         Map<String, List<String>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>();
