@@ -565,10 +565,7 @@ public class ChartProcessor {
         }
         scriptValid = false;
         List<String> newList = new ArrayList<>(processorController.getOperationList());
-        boolean clearedOperations = false;
-        if (newList.isEmpty() && vecDimName.equals("D1")) {
-            clearedOperations = true;
-        }
+        boolean clearedOperations = newList.isEmpty() && vecDimName.equals("D1");
         areOperationListsValid.set(!clearedOperations);
         mapOpLists.put(vecDimName, newList);
         ProcessorController pController = processorController;
@@ -577,7 +574,6 @@ public class ChartProcessor {
         } else {
             execScriptList(false);
         }
-
     }
 
     public String getVecDimName() {
@@ -757,7 +753,7 @@ public class ChartProcessor {
         String indent = "";
         scriptBuilder.append(processorController.refManager.getParString(nDim, indent));
         scriptBuilder.append(processorController.getLSScript());
-        String scriptCmds = getScriptCmds(nDim, indent, true);
+        String scriptCmds = getScriptCmds(nDim, indent);
         scriptBuilder.append(scriptCmds);
         return scriptBuilder.toString();
     }
@@ -769,7 +765,7 @@ public class ChartProcessor {
         StringBuilder scriptBuilder = new StringBuilder();
         String indent = "";
         scriptBuilder.append(processorController.refManager.getParString(nDim, indent));
-        String scriptCmds = getScriptCmds(nDim, indent, true);
+        String scriptCmds = getScriptCmds(nDim, indent);
         scriptBuilder.append(scriptCmds);
         return scriptBuilder.toString();
     }
@@ -845,7 +841,7 @@ public class ChartProcessor {
     }
 
     private String suggestDatasetName() {
-        String datasetName = "";
+        String datasetName;
         String filePath = getNMRData().getFilePath();
         File file = new File(filePath);
         String fileName = file.getName();
@@ -918,7 +914,7 @@ public class ChartProcessor {
         return !mapOpLists.isEmpty();
     }
 
-    private String getScriptCmds(int nDim, String indent, boolean includeRun) {
+    private String getScriptCmds(int nDim, String indent) {
         String lineSep = System.lineSeparator();
         StringBuilder scriptBuilder = new StringBuilder();
         int nDatasetDims = 0;
@@ -941,10 +937,8 @@ public class ChartProcessor {
                             log.warn("Unable to parse dimension number.", nFE);
                         }
                     }
-                    if (!processorController.refManager.getSkip(parDim)) {
-                        if (dimMode.equals("D") && (dimNum != -1)) {
-                            mapToDataset[dimNum] = nDatasetDims++;
-                        }
+                    if (!processorController.refManager.getSkip(parDim) && dimNum != -1) {
+                        mapToDataset[dimNum] = nDatasetDims++;
                     }
                 }
                 ArrayList<String> scriptList = (ArrayList<String>) entry.getValue();
@@ -961,9 +955,7 @@ public class ChartProcessor {
                 }
             }
         }
-        if (includeRun) {
-            scriptBuilder.append(indent).append("run()");
-        }
+        scriptBuilder.append(indent).append("run()");
         return scriptBuilder.toString();
     }
 
@@ -1073,8 +1065,7 @@ public class ChartProcessor {
         int nDim = nmrData.getNDim();
         iVec = 0;
         execScript("", false, false);
-        if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
-            NMRViewData nvData = (NMRViewData) nmrData;
+        if ((nmrData instanceof NMRViewData nvData) && !nmrData.isFID()) {
             chart.setDataset(nvData.getDataset());
             chart.getCrossHairs().setStates(true, true, true, true);
             int[] sizes = new int[0];
@@ -1157,8 +1148,7 @@ public class ChartProcessor {
             if (pE instanceof IncompleteProcessException) {
                 OperationListCell.failedOperation(((IncompleteProcessException) pE).index);
                 processorController.setProcessingStatus(pE.getMessage(), false, pE);
-            } else if (pE instanceof PyException) {
-                PyException pyE = (PyException) pE;
+            } else if (pE instanceof PyException pyE) {
                 if (pyE.getCause() == null) {
                     if (pE.getLocalizedMessage() != null) {
                         processorController.setProcessingStatus("pyerror " + pE.getLocalizedMessage(), false, pE);
