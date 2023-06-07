@@ -328,11 +328,6 @@ public class ChartProcessor {
         fixDSP = value;
     }
 
-    public int[] loadVectors(int i) {
-        int[] rows = {i};
-        return loadVectors(1, rows);
-    }
-
     public VecIndex getNextIndex(NMRData nmrData, int[] rows) {
         int index = 0;
         if (rows.length > 0) {
@@ -404,7 +399,7 @@ public class ChartProcessor {
         return result;
     }
 
-    public int[] loadVectors(int iDim, int[] rows) {
+    private int[] loadVectors(int ... rows) {
         NMRData nmrData = getNMRData();
         int nPoints = nmrData.getNPoints();
         if (vecDim != 0) {
@@ -502,7 +497,7 @@ public class ChartProcessor {
 
     public void vecRow(int[] rows) {
         if (getNMRData() != null) {
-            int[] fileIndices = loadVectors(1, rows);
+            int[] fileIndices = loadVectors(rows);
             processorController.setFileIndex(fileIndices);
             try {
                 ProcessOps process = getProcess();
