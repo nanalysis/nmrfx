@@ -101,11 +101,6 @@ public class RefManager {
                 chartProcessor.setFixDSP((Boolean) updateItem.getValue());
                 refresh = true;
                 break;
-            case "EchoAntiecho":
-                boolean boolValue = (Boolean) updateItem.getValue();
-                chartProcessor.setEchoAntiEcho(boolValue);
-                refresh = true;
-                break;
             case "dataset":
                 break;
             case "datatype":

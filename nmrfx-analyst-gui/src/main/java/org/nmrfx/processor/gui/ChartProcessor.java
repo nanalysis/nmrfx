@@ -178,9 +178,6 @@ public class ChartProcessor {
         execScript("", false, false);
     }
 
-    public void setEchoAntiEcho(boolean value) {
-    }
-
     public String getAcqOrder() {
         return getAcqOrder(false);
     }
