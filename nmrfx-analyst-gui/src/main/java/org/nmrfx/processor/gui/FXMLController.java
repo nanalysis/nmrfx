@@ -34,6 +34,7 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -828,10 +829,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         borderPane.setLeft(null);
-        if (!AnalystApp.isMac()) {
-            MenuBar menuBar = AnalystApp.getMenuBar();
-            topBar.getChildren().add(0, menuBar);
-        }
+        initializeToggleButtons();
         chartDrawingLayers = new ChartDrawingLayers(this, chartPane);
         activeChart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
         initToolBar(toolBar);
@@ -861,6 +859,39 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         contentPane = new AnchorPane();
         contentController = ContentController.create(this, contentPane);
         borderPane.heightProperty().addListener(e -> contentController.updateScrollSize(borderPane));
+    }
+
+    /**
+     * Initialize the toggle buttons Phasing, Attributes and Contents. On mac these buttons will appear right
+     * aligned in a separate top menu in the window, otherwise they will appear right aligned in the file menu.
+     */
+    public void initializeToggleButtons() {
+        MenuBar menuBar = AnalystApp.getMenuBar();
+        ToggleButton phaserButton = new ToggleButton("Phasing");
+        ToggleButton attributesButton = new ToggleButton("Attributes");
+        ToggleButton contentButton = new ToggleButton("Content");
+        attributesButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
+        contentButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
+        phaserButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
+        phaserButton.getStyleClass().add("toolButton");
+        attributesButton.getStyleClass().add("toolButton");
+        contentButton.getStyleClass().add("toolButton");
+        SegmentedButton groupButton = new SegmentedButton(phaserButton, contentButton, attributesButton);
+        if (!AnalystApp.isMac()) {
+            groupButton.maxHeightProperty().bind(menuBar.heightProperty());
+            StackPane sp = new StackPane(menuBar, groupButton);
+            sp.setAlignment(Pos.CENTER_RIGHT);
+            topBar.getChildren().add(0, sp);
+        } else {
+            ToolBar toggleButtonToolbar = new ToolBar();
+            // Remove padding from top and bottom to match style of how the buttons appear on non mac os
+            Insets current = toggleButtonToolbar.getPadding();
+            toggleButtonToolbar.setPadding(new Insets(0, current.getRight(), 0, current.getLeft()));
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            toggleButtonToolbar.getItems().addAll(spacer, groupButton);
+            topBar.getChildren().add(0, toggleButtonToolbar);
+        }
     }
 
     /**
@@ -1653,25 +1684,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         filler.setMinWidth(20);
         buttons.add(filler);
 
-        ToggleButton phaserButton = new ToggleButton("Phasing");
-        ToggleButton attributesButton = new ToggleButton("Attributes");
-        ToggleButton contentButton = new ToggleButton("Content");
-        attributesButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
-        contentButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
-        phaserButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
-        phaserButton.getStyleClass().add("toolButton");
-        attributesButton.getStyleClass().add("toolButton");
-        contentButton.getStyleClass().add("toolButton");
-        SegmentedButton groupButton = new SegmentedButton(phaserButton, contentButton, attributesButton);
-
-
         for (Node node : buttons) {
             if (node instanceof Button) {
                 node.getStyleClass().add("toolButton");
             }
         }
         toolBar.getItems().addAll(buttons);
-        toolBar.getItems().add(groupButton);
 
         ToolBar btoolBar = new ToolBar();
         ToolBar btoolBar2 = new ToolBar();
