@@ -90,10 +90,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
-
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
-    private static final String[] basicOps = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
-    private static final String[] commonOps = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
+    private static final String[] BASIC_OPS = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
+    private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
+    private static final AtomicBoolean aListUpdated = new AtomicBoolean(false);
 
     private enum DisplayMode {
         FID("FID"),
@@ -228,7 +228,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     ProcessingCodeAreaUtil codeAreaUtil;
     private ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
-    static AtomicBoolean aListUpdated = new AtomicBoolean(false);
     private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     private AtomicReference<Dataset> saveObject = new AtomicReference<>();
     ScheduledFuture futureUpdate = null;
@@ -1260,7 +1259,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         Menu menu = new Menu("Commonly Grouped Operations");
         menuItems.add(menu);
         List<MenuItem> subMenuItems = new ArrayList<>();
-        for (String op : basicOps) {
+        for (String op : BASIC_OPS) {
             MenuItem menuItem = new MenuItem(op);
             menuItem.addEventHandler(ActionEvent.ACTION, this::opSequenceMenuAction);
             subMenuItems.add(menuItem);
@@ -1270,7 +1269,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         Menu commonOpMenu = new Menu("Common Operations");
         menuItems.add(commonOpMenu);
         List<MenuItem> commonOpMenuItems = new ArrayList<>();
-        for (String op : commonOps) {
+        for (String op : COMMON_OPS) {
             MenuItem menuItem = new MenuItem(op);
             menuItem.addEventHandler(ActionEvent.ACTION, this::opMenuAction);
             commonOpMenuItems.add(menuItem);

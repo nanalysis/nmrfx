@@ -45,8 +45,7 @@ import java.util.regex.Pattern;
  * @author brucejohnson
  */
 public class PropertyManager {
-
-    private static String patternString = "(\\w+)=((\\[[^\\[]*\\])|(\"[^\"]*\")|('[^']*')|([^,]+))";
+    private static final String PATTERN_STRING = "(\\w+)=((\\[[^\\[]*\\])|(\"[^\"]*\")|('[^']*')|([^,]+))";
 
     ChangeListener<Number> doubleListener;
     ChangeListener<Number> doubleSliderListener;
@@ -362,7 +361,7 @@ public class PropertyManager {
         String opPars = "";
         if (!op.equals("")) {
             opPars = op.substring(op.indexOf('(') + 1, op.length() - 1);
-            pattern = Pattern.compile(patternString);
+            pattern = Pattern.compile(PATTERN_STRING);
         }
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         for (PropertySheet.Item item : propItems) {
@@ -400,7 +399,7 @@ public class PropertyManager {
         String opPars = "";
         if (!op.equals("")) {
             opPars = op.substring(op.indexOf('(') + 1, op.length() - 1);
-            pattern = Pattern.compile(patternString);
+            pattern = Pattern.compile(PATTERN_STRING);
             Matcher matcher = pattern.matcher(opPars);
             while (matcher.find()) {
                 if (matcher.groupCount() > 1) {

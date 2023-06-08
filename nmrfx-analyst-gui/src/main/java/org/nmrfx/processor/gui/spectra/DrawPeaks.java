@@ -26,7 +26,6 @@ package org.nmrfx.processor.gui.spectra;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -39,7 +38,6 @@ import javafx.scene.transform.Affine;
 import org.apache.commons.collections4.list.TreeList;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
-import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.Peak.Corner;
@@ -63,20 +61,14 @@ import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.P
  * @author brucejohnson
  */
 public class DrawPeaks {
-
     private static final Logger log = LoggerFactory.getLogger(DrawPeaks.class);
-    static int nRegions = 32;
-    static int minHitSize = 5;
-    static double widthLimit = 0.0001;
-    char[] anchorS = {'s', ' '};
-    char[] anchorW = {' ', 'w'};
-    double frOffset = 0.05;
 
-    /**
-     * Creates a new instance of PeakRenderer
-     */
-    static Path g1DPath = new Path();
-    static Path g2DPath = new Path();
+    public static final int MIN_HIT_SIZE = 5;
+    private static final int N_REGIONS = 32;
+    private static final double WIDTH_LIMIT = 0.0001;
+    private static final double PEAK_2_D_STROKE = 1.0;
+
+    double frOffset = 0.05;
 
     Axis xAxis;
     Axis yAxis;
@@ -85,17 +77,11 @@ public class DrawPeaks {
     int disDim = 0;
     PolyChart chart = null;
     int peakDisType = 0;
-    int peakLabelType = 0;
     int multipletLabelType = PeakDisplayParameters.MULTIPLET_LABEL_SUMMARY;
     boolean treeOn = false;
     boolean peakDisOn = true;
     boolean peakDisOff = true;
-    static double peak2DStroke = 1.0;
-    double peak1DStroke = peak2DStroke;
-    static double peakOvalStroke = 2.0;
-    int iPeakList = 0;
-    float dY = 0;
-    float dXRegion = 0.0f;
+    double peak1DStroke = PEAK_2_D_STROKE;
     double deltaY = 12.0;
 
     HashSet[] regions = null;
@@ -107,7 +93,7 @@ public class DrawPeaks {
     public DrawPeaks(PolyChart chart, GraphicsContext graphics) {
         this.chart = chart;
         this.g2 = graphics;
-        regions = new HashSet[nRegions];
+        regions = new HashSet[N_REGIONS];
 
         for (int i = 0; i < regions.length; i++) {
             regions[i] = new HashSet();
@@ -704,12 +690,12 @@ public class DrawPeaks {
             int growWidth = 0;
             int growHeight = 0;
             int width = (int) box.getWidth();
-            if (width < minHitSize) {
-                growWidth = minHitSize - width;
+            if (width < MIN_HIT_SIZE) {
+                growWidth = MIN_HIT_SIZE - width;
             }
             int height = (int) box.getHeight();
-            if (height < minHitSize) {
-                growHeight = minHitSize - height;
+            if (height < MIN_HIT_SIZE) {
+                growHeight = MIN_HIT_SIZE - height;
             }
             // fixme why are we doing this (from old code) and should it grow symmetrically
             // gues we try to hit small rect for selectivity, then expand if no hit
@@ -1031,7 +1017,7 @@ public class DrawPeaks {
                 ctr[0] = ctr0 + ((j0 * ((jx * (kx - 1)) + 1)) / 2.0);
                 ctr[1] = ctr1 + ((j1 * ((jy * (ky - 1)) + 1)) / 2.0);
 
-                g2.setLineWidth(peak2DStroke);
+                g2.setLineWidth(PEAK_2_D_STROKE);
 
                 if (erase) {
                     // FIXME
@@ -1408,8 +1394,8 @@ public class DrawPeaks {
                 List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
                 for (AbsMultipletComponent comp : comps) {
                     double wid = comp.getLineWidth();
-                    if (wid < widthLimit) {
-                        wid = widthLimit;
+                    if (wid < WIDTH_LIMIT) {
+                        wid = WIDTH_LIMIT;
                     }
 
                     if (wid < minWid) {
@@ -1454,8 +1440,8 @@ public class DrawPeaks {
                     for (AbsMultipletComponent comp : comps) {
                         double c = comp.getOffset();
                         double w = comp.getLineWidth();
-                        if (w < widthLimit) {
-                            w = widthLimit;
+                        if (w < WIDTH_LIMIT) {
+                            w = WIDTH_LIMIT;
                         }
                         double shapeFactor = peakDim.getShapeFactorValue();
                         double a = comp.getIntensity();
@@ -1568,8 +1554,8 @@ public class DrawPeaks {
                 renderSimulatedMultiplet(g2, eraseFirst);
             } else {
                 double w = peak.peakDims[dim].getLineWidthValue();
-                if (w < widthLimit) {
-                    w = widthLimit;
+                if (w < WIDTH_LIMIT) {
+                    w = WIDTH_LIMIT;
                 }
                 double shapeFactor = peak.peakDims[dim].getShapeFactorValue();
                 double[] coords = genPeakShape(1.0, shapeFactor);
@@ -1592,8 +1578,8 @@ public class DrawPeaks {
             List<AbsMultipletComponent> comps = peak.peakDims[dim].getMultiplet().getAbsComponentList();
             for (AbsMultipletComponent comp : comps) {
                 double w = comp.getLineWidth();
-                if (w < widthLimit) {
-                    w = widthLimit;
+                if (w < WIDTH_LIMIT) {
+                    w = WIDTH_LIMIT;
                 }
 
                 double intensity = comp.getIntensity();

@@ -45,8 +45,20 @@ import java.util.prefs.Preferences;
  * @author johnsonb
  */
 public class PreferencesController implements Initializable, StageBasedController {
-
     private static final Logger log = LoggerFactory.getLogger(PreferencesController.class);
+    private static final Map<String, String> recentMap = new HashMap<>();
+
+    private static File nestaNMR = null;
+    private static File datasetDir = null;
+    private static String location = null;
+    private static Integer nProcesses = null;
+    private static IntegerProperty tickFontSizeProp = null;
+    private static IntegerProperty labelFontSizeProp = null;
+    private static IntegerProperty peakFontSizeProp = null;
+    private static BooleanProperty fitPeakShapeProp = null;
+    private static BooleanProperty constrainPeakShapeProp = null;
+    private static DoubleProperty peakShapeDirectFactorProp = null;
+    private static DoubleProperty peakShapeIndirectFactorProp = null;
 
     @FXML
     PropertySheet prefSheet;
@@ -56,18 +68,6 @@ public class PreferencesController implements Initializable, StageBasedControlle
     ChangeListener<Integer> nprocessListener;
     Stage stage;
 
-    static File nestaNMR = null;
-    static File datasetDir = null;
-    private static Map<String, String> recentMap = new HashMap<>();
-    static String location = null;
-    static Integer nProcesses = null;
-    static IntegerProperty tickFontSizeProp = null;
-    static IntegerProperty labelFontSizeProp = null;
-    static IntegerProperty peakFontSizeProp = null;
-    static BooleanProperty fitPeakShapeProp = null;
-    static BooleanProperty constrainPeakShapeProp = null;
-    static DoubleProperty peakShapeDirectFactorProp = null;
-    static DoubleProperty peakShapeIndirectFactorProp = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {

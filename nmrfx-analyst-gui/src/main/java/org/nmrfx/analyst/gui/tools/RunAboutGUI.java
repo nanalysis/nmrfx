@@ -74,8 +74,9 @@ import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 public class RunAboutGUI implements PeakListener, ControllerTool {
 
     private static final Logger log = LoggerFactory.getLogger(RunAboutGUI.class);
-    static Font activeFont = Font.font(null, FontWeight.BOLD, 14);
-    static Font regularFont = Font.font(null, FontWeight.NORMAL, 14);
+    private static final Font ACTIVE_FONT = Font.font(null, FontWeight.BOLD, 14);
+    private static final Font REGULAR_FONT = Font.font(null, FontWeight.NORMAL, 14);
+    private static final Background DELETE_BACKGROUND = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
 
     FXMLController controller;
     FXMLController refController;
@@ -87,11 +88,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     MenuButton arrangeMenuButton;
     ToggleButton deleteButton;
     ChoiceBox<SpinSystems.ClusterModes> clusterModesChoiceBox;
-    PeakNavigable peakNavigable;
     PeakList navigationPeakList;
     SimpleObjectProperty<PeakList> refListObj = new SimpleObjectProperty<>();
     Peak currentPeak;
-    static Background deleteBackground = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
     List<Peak> matchPeaks = new ArrayList<>();
     int matchIndex = 0;
@@ -1054,7 +1053,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             rect.setStroke(null);
             rect.setFill(Color.WHITE);
             textItem.setFill(Color.BLACK);
-            textItem.setFont(regularFont);
+            textItem.setFont(REGULAR_FONT);
             rect.setMouseTransparent(true);
             line.setMouseTransparent(true);
             textItem.setMouseTransparent(true);
@@ -1084,13 +1083,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
 
         void setActive() {
-            textItem.setFont(activeFont);
+            textItem.setFont(ACTIVE_FONT);
             textItem.setFill(Color.BLUE);
             setColor(Color.WHITE);
         }
 
         void setInactive() {
-            textItem.setFont(regularFont);
+            textItem.setFont(REGULAR_FONT);
             textItem.setFill(Color.BLACK);
             setColor(Color.LIGHTGRAY);
         }
@@ -1384,7 +1383,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         if (!useSpinSystem && (currentPeak != null)) {
             if (currentPeak.getStatus() < 0) {
                 deleteButton.setSelected(true);
-                peakIdField.setBackground(deleteBackground);
+                peakIdField.setBackground(DELETE_BACKGROUND);
             } else {
                 deleteButton.setSelected(false);
                 peakIdField.setBackground(defaultBackground);

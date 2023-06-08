@@ -27,9 +27,9 @@ import java.util.stream.Collectors;
  */
 @PythonAPI("gscript")
 public class GUIScripter {
-    final PolyChart useChart;
-    static FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-    static Map<String, String> keyActions = new HashMap<>();
+    private static final Map<String, String> keyActions = new HashMap<>();
+    private static FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+    private final PolyChart useChart;
 
     public GUIScripter() {
         useChart = null;

@@ -76,7 +76,6 @@ public class ScannerTool implements ControllerTool {
     ToggleGroup measureTypeGroup = new ToggleGroup();
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
-    static Consumer createControllerAction = null;
     TRACTGUI tractGUI = null;
     TablePlotGUI plotGUI = null;
     MinerController miner;
@@ -108,10 +107,6 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
-    }
-
-    public static void addCreateAction(Consumer<ScannerTool> action) {
-        createControllerAction = action;
     }
 
     @Override

@@ -36,12 +36,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class PeakListUpdater implements Updater {
 
-    static List<PeakListener> globalListeners = new ArrayList<>();
+    private static final List<PeakListener> globalListeners = new ArrayList<>();
+    private static final AtomicBoolean aListUpdated = new AtomicBoolean(false);
+    private static final AtomicBoolean needToFireEvent = new AtomicBoolean(false);
 
     protected ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     PeakList peakList;
-    static AtomicBoolean aListUpdated = new AtomicBoolean(false);
-    static AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     ScheduledFuture futureUpdate = null;
 
     public PeakListUpdater(PeakList peakList) {

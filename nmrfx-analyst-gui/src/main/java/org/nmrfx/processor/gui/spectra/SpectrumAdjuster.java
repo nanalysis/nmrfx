@@ -35,10 +35,9 @@ import java.util.*;
  * @author brucejohnson
  */
 public class SpectrumAdjuster {
-
-    static Map<String, Double> datasetUndo = new HashMap<>();
-    static Map<String, Double> peakUndo = new HashMap<>();
-    static String undoChartName;
+    private static final Map<String, Double> datasetUndo = new HashMap<>();
+    private static final Map<String, Double> peakUndo = new HashMap<>();
+    private static String undoChartName;
 
     public static void showRefInput() {
         PolyChart chart = PolyChartManager.getInstance().getActiveChart();

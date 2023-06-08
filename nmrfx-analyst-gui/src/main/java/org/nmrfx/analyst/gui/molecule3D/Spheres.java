@@ -11,24 +11,20 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import javax.vecmath.Vector3d;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class Spheres extends Group implements MolItem {
+    private static final double MIN_SEL_RADIUS = 0.15;
 
-    static final private double minSelRadius = 0.15;
     String molName = null;
     int iStructure = 0;
     int xDivisions = 15;
     float radius = 0.4f;
     double scale;
-    boolean useAtomRadius = false;
     List<Vector3D> vecs = null;
     Vector3D center;
     Vector3d a = new Vector3d(0.0, 0.0, 0.0);
     Vector3d b = new Vector3d(0.0, 0.0, 0.0);
     Color color;
-    static Map parameterMap = new TreeMap();
 
     public Spheres(String molName, List<Vector3D> vecs, Color color, double radius, Vector3D center, double scale, String tag) {
         this.molName = molName;
@@ -53,8 +49,8 @@ public class Spheres extends Group implements MolItem {
         center[1] = node.getTranslateY();
         center[2] = node.getTranslateZ();
         double selRadius = ((javafx.scene.shape.Sphere) node).getRadius() * 1.3;
-        if (selRadius < minSelRadius) {
-            selRadius = minSelRadius;
+        if (selRadius < MIN_SEL_RADIUS) {
+            selRadius = MIN_SEL_RADIUS;
         }
         MolSphere sphere = new MolSphere(center, selRadius, Color.GOLD, "selection");
         return sphere;

@@ -23,12 +23,12 @@ import java.util.List;
 
 public class PeakMenuActions extends MenuActions {
     private static PeakTableController peakTableController;
+    private static PeakGeneratorGUI peakGeneratorGUI;
     private LigandScannerController scannerController;
     private NOETableController noeTableController;
     private AtomBrowser atomBrowser;
     private CheckMenuItem assignOnPick;
     private PeakAtomPicker peakAtomPicker;
-    private static PeakGeneratorGUI peakGeneratorGUI;
 
     public PeakMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);

@@ -49,12 +49,11 @@ import java.util.stream.Stream;
  */
 public class GUIProject extends ProjectBase {
     private static final Logger log = LoggerFactory.getLogger(GUIProject.class);
-
-    static String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
-
-    Git git;
-
+    private static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     private static boolean commitActive = false;
+
+    private Git git;
+
 
     public GUIProject(String name) {
         super(name);

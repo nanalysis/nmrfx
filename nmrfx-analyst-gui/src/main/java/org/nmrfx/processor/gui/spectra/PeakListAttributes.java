@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.nmrfx.processor.gui.spectra.DrawPeaks.minHitSize;
+import static org.nmrfx.processor.gui.spectra.DrawPeaks.MIN_HIT_SIZE;
 import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.Number;
 
 /**
@@ -647,12 +647,12 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
             int growWidth = 0;
             int growHeight = 0;
             int width = (int) box.getWidth();
-            if (width < minHitSize) {
-                growWidth = minHitSize - width;
+            if (width < MIN_HIT_SIZE) {
+                growWidth = MIN_HIT_SIZE - width;
             }
             int height = (int) box.getHeight();
-            if (height < minHitSize) {
-                growHeight = minHitSize - height;
+            if (height < MIN_HIT_SIZE) {
+                growHeight = MIN_HIT_SIZE - height;
             }
             // fixme why are we doing this (from old code) and should it grow symmetrically
             // gues we try to hit small rect for selectivity, then expand if no hit

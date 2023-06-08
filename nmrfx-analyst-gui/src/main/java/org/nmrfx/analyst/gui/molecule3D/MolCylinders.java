@@ -17,12 +17,10 @@ import org.nmrfx.chemistry.Bond;
 import javax.vecmath.Vector3d;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class MolCylinders extends Group implements MolItem {
-
-    static final private double minSelRadius = 0.1;
+    private static final double MIN_SEL_RADIUS = 0.1;
+    private final static double DEGTORAD = 180.0 / Math.PI;
 
     String molName = null;
     int iStructure = 0;
@@ -32,8 +30,6 @@ public class MolCylinders extends Group implements MolItem {
     List<BondLine> bondLines = null;
     Vector3d a = new Vector3d(0.0, 0.0, 0.0);
     Vector3d b = new Vector3d(0.0, 0.0, 0.0);
-    static Map parameterMap = new TreeMap();
-    private final static double DEGTORAD = 180.0 / Math.PI;
 
     public MolCylinders(String molName, List<Bond> bonds, List<BondLine> bondLines, double radius, String tag) {
         this.molName = molName;
@@ -114,8 +110,8 @@ public class MolCylinders extends Group implements MolItem {
         if (node instanceof Cylinder) {
             Cylinder cylinder = (Cylinder) node;
             double selRadius = cylinder.getRadius() * 1.2;
-            if (selRadius < minSelRadius) {
-                selRadius = minSelRadius;
+            if (selRadius < MIN_SEL_RADIUS) {
+                selRadius = MIN_SEL_RADIUS;
             }
             String nodeID = node.getId();
             String[] nodeIDParts = nodeID.split("\\.");
