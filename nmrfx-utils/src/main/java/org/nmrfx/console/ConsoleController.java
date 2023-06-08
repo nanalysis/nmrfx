@@ -107,14 +107,7 @@ public class ConsoleController extends OutputStream implements Initializable, St
         consoleController = Fxml.load(ConsoleController.class, "ConsoleScene.fxml")
                 .withStage(stage)
                 .getController();
-
-        stage.show();
-        Screen screen = Screen.getPrimary();
-        Rectangle2D screenSize = screen.getBounds();
-        stage.toFront();
-        stage.setY(screenSize.getHeight() - stage.getHeight());
         stage.setOnCloseRequest(consoleController.close);
-
         return consoleController;
     }
 
@@ -248,6 +241,8 @@ public class ConsoleController extends OutputStream implements Initializable, St
 
     public void show() {
         stage.show();
+        // if the stage has been minimized, show it
+        stage.setIconified(false);
         stage.toFront();
     }
 
