@@ -11,12 +11,9 @@ import org.nmrfx.analyst.peaks.JournalFormatPeaks;
 import org.nmrfx.processor.gui.PolyChart;
 
 public class JournalTool {
-    static String formatName = "JMedCh";
-    VBox vBox;
-    AnnoJournalFormat annoJournalFormat;
-
-    public JournalTool() {
-    }
+    private String formatName = "JMedCh";
+    private VBox vBox;
+    private AnnoJournalFormat annoJournalFormat;
 
     public VBox getBox() {
         return vBox;

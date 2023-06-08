@@ -28,16 +28,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
  * @author Bruce Johnson
  */
 public class PeakNavigator implements PeakListener {
+    private static final Background DELETE_BACKGROUND = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
 
     ToolBar navigatorToolBar;
     TextField peakIdField;
@@ -46,7 +41,6 @@ public class PeakNavigator implements PeakListener {
     PeakNavigable peakNavigable;
     PeakList peakList;
     Peak currentPeak;
-    static Background deleteBackground = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
     Optional<List<Peak>> matchPeaks = Optional.empty();
     int matchIndex = 0;
@@ -330,7 +324,7 @@ public class PeakNavigator implements PeakListener {
         }
         if ((currentPeak != null) && (currentPeak.getStatus() < 0)) {
             deleteButton.setSelected(true);
-            peakIdField.setBackground(deleteBackground);
+            peakIdField.setBackground(DELETE_BACKGROUND);
         } else {
             deleteButton.setSelected(false);
             peakIdField.setBackground(defaultBackground);

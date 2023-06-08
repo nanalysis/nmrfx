@@ -30,10 +30,10 @@ import java.util.function.Consumer;
  * @author brucejohnson
  */
 public class PeakMenuBar {
+    private static final Map<String, Consumer<PeakList>> extras = new LinkedHashMap<>();
 
-    final PeakMenuTarget menuTarget;
-    MenuButton peakListMenu = null;
-    static Map<String, Consumer<PeakList>> extras = new LinkedHashMap<>();
+    private final PeakMenuTarget menuTarget;
+    private MenuButton peakListMenu = null;
 
     public PeakMenuBar(PeakMenuTarget menuTarget) {
         this.menuTarget = menuTarget;

@@ -28,6 +28,7 @@ import javafx.scene.input.*;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -41,17 +42,13 @@ import java.util.ArrayList;
  * @author johnsonb
  */
 public class OperationListCell<T> extends ListCell<T> implements ChangeListener<Number> {
-
+    private static final List<OperationListCell> cells = new ArrayList<>(20);
+    private static int failedIndex = -1;
     private static OperationListCell source;
     private static OperationListCell target;
-    private static ArrayList<OperationListCell> cells = new ArrayList<>(20);
+
     private ListView scriptView;
-
-    private static int failedIndex = -1;
-
     private OperationListCell temp;
-
-    private static Integer moveIndex = null;
 
     public OperationListCell(ListView scriptView) {
         cells.add(this);
@@ -64,7 +61,6 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
 
         this.setOnDragDetected(new EventHandler<MouseEvent>() {
             public void handle(MouseEvent event) {
-                moveIndex = temp.indexProperty().getValue();
                 OperationListCell.source = temp;
                 /* drag was detected, start a drag-and-drop gesture*/
                 /* allow any transfer mode */

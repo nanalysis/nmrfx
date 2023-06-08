@@ -442,7 +442,6 @@ public class PeakDisplayParameters {
     static final String[] multipletLabelTypes = {
             "None", "Number", "Atom", "Summary", "PPM"
     };
-    static Font defaultPeakFont = new Font("SansSerif", 10);
     Color colorOn = Color.BLACK;
     Color colorOff = Color.RED;
     int colorType = COLOR_BY_PLANE;

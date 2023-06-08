@@ -37,17 +37,16 @@ import java.util.function.Consumer;
  * @author brucejohnson
  */
 public class ColorSchemes {
+    private static final Map<String, Map<String, String>> maps = new HashMap<>();
+    private static final DoubleProperty lowValue = new SimpleDoubleProperty(0);
+    private static final DoubleProperty highValue = new SimpleDoubleProperty(100);
+    private static final BooleanProperty reverse = new SimpleBooleanProperty(false);
+    private static final StringProperty selectedColorClass = new SimpleStringProperty();
+    private static Stage stage = null;
+    private static GridPane gridPane = null;
+    private static Consumer<String> consumer = null;
 
-    static Stage stage = null;
-    static GridPane gridPane = null;
-    static Consumer<String> consumer = null;
-    static Map<String, Map<String, String>> maps = new HashMap<>();
-    static DoubleProperty lowValue = new SimpleDoubleProperty(0);
-    static DoubleProperty highValue = new SimpleDoubleProperty(100);
-    static BooleanProperty reverse = new SimpleBooleanProperty(false);
-    static StringProperty selectedColorClass = new SimpleStringProperty();
-
-    public static void loadColors(String fileName) throws FileNotFoundException, IOException {
+    public static void loadColors(String fileName) throws IOException {
         BufferedReader bf = null;
         if (fileName.startsWith("resource:")) {
             InputStream inputStream = ColorSchemes.class.getResourceAsStream(fileName.substring(9));

@@ -11,12 +11,10 @@ import org.nmrfx.chemistry.Atom;
 import javax.vecmath.Vector3d;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class MolSpheres extends Group implements MolItem {
+    private static final double MIN_SEL_RADIUS = 0.15;
 
-    static final private double minSelRadius = 0.15;
     String molName = null;
     int iStructure = 0;
     int xDivisions = 15;
@@ -26,8 +24,6 @@ public class MolSpheres extends Group implements MolItem {
     List<AtomSphere> atomSpheres = null;
     Vector3d a = new Vector3d(0.0, 0.0, 0.0);
     Vector3d b = new Vector3d(0.0, 0.0, 0.0);
-    static Map parameterMap = new TreeMap();
-    private final static double DEGTORAD = 180.0 / Math.PI;
 
     public MolSpheres(String molName, List<Atom> atoms, List<AtomSphere> atomSpheres, double radius, boolean useAtomRadius, String tag) {
         this.molName = molName;
@@ -51,8 +47,8 @@ public class MolSpheres extends Group implements MolItem {
         center[1] = node.getTranslateY();
         center[2] = node.getTranslateZ();
         double selRadius = ((javafx.scene.shape.Sphere) node).getRadius() * 1.3;
-        if (selRadius < minSelRadius) {
-            selRadius = minSelRadius;
+        if (selRadius < MIN_SEL_RADIUS) {
+            selRadius = MIN_SEL_RADIUS;
         }
         MolSphere sphere = new MolSphere(center, selRadius, Color.GOLD, "selection");
         return sphere;

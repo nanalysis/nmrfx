@@ -35,9 +35,9 @@ import java.util.List;
  * @author brucejohnson
  */
 public class SequenceGUI {
+    private static Stage stage = null;
 
     AnalystApp analystApp;
-    static Stage stage = null;
     ChoiceBox<String> polymerType;
     BorderPane borderPane = new BorderPane();
     Scene stageScene = new Scene(borderPane, 900, 600);

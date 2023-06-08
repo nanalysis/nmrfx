@@ -70,10 +70,10 @@ import java.util.stream.Collectors;
  * @author johnsonb
  */
 public class PeakAttrController implements Initializable, StageBasedController, PeakNavigable, PeakMenuTarget {
-
     private static final Logger log = LoggerFactory.getLogger(PeakAttrController.class);
 
-    static PeakListTypes peakListTypes = null;
+    private static PeakListTypes peakListTypes = null;
+
     private Stage stage;
     @FXML
     private TabPane tabPane;

@@ -85,7 +85,11 @@ public class SpectrumStatusBar {
         formatter.setMaximumFractionDigits(2);
     }
 
-    static final int MAX_SPINNERS = 4;
+    private static final int MAX_SPINNERS = 4;
+    private static final String[] DIM_NAMES = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
+    private static final String[] ROW_NAMES = {"X", "Row", "Plane", "A", "B", "C", "D", "E"};
+    private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
+
     CustomNumberTextField[][] crossText = new CustomNumberTextField[2][2];
     FXMLController controller;
     CheckBox complexStatus = new CheckBox("Complex");
@@ -159,7 +163,7 @@ public class SpectrumStatusBar {
                 }
                 spinner.getEditor().setBackground(defaultBackground);
             } catch (NumberFormatException nfE) {
-                spinner.getEditor().setBackground(errorBackground);
+                spinner.getEditor().setBackground(ERROR_BACKGROUND);
             }
             return result;
         }
@@ -174,9 +178,6 @@ public class SpectrumStatusBar {
     boolean[][] iconStates = new boolean[2][2];
     Pane filler1 = new Pane();
     Pane filler2 = new Pane();
-    static String[] dimNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
-    static String[] rowNames = {"X", "Row", "Plane", "A", "B", "C", "D", "E"};
-    static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
     boolean arrayMode = false;
     int currentMode = 0;
@@ -258,7 +259,7 @@ public class SpectrumStatusBar {
         }
         for (int i = 0; i < dimMenus.length; i++) {
             final int iAxis = i;
-            String rowName = dimNames[iAxis];
+            String rowName = DIM_NAMES[iAxis];
 
             MenuButton mButton = new MenuButton(rowName);
             dimMenus[i] = mButton;
@@ -289,7 +290,7 @@ public class SpectrumStatusBar {
 
         for (int i = 0; i < rowMenus.length; i++) {
             final int iAxis = i + 1;
-            String rowName = rowNames[iAxis];
+            String rowName = ROW_NAMES[iAxis];
 
             MenuButton mButton = new MenuButton(rowName);
             rowMenus[i] = mButton;
@@ -867,7 +868,7 @@ public class SpectrumStatusBar {
         dimMenu.getItems().clear();
         chart.getFirstDatasetAttributes().ifPresent(attr -> {
             int nDim = attr.nDim;
-            String rowName = dimNames[iAxis];
+            String rowName = DIM_NAMES[iAxis];
             for (int iDim = 0; iDim < nDim; iDim++) {
                 String dimName = attr.getDataset().getLabel(iDim);
                 MenuItem menuItem = new MenuItem(iDim + 1 + ":" + dimName);

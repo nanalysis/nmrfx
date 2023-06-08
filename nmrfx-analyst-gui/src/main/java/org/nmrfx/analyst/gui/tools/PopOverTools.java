@@ -10,7 +10,7 @@ import org.nmrfx.processor.gui.spectra.IntegralHit;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 
 public class PopOverTools {
-    static PopOver popOver = new PopOver();
+    private static final PopOver popOver = new PopOver();
 
     public void hide(boolean always) {
         if (popOver.isShowing() && (always || !popOver.isDetached())) {

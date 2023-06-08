@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 public class PeakPicking {
     private static final Logger log = LoggerFactory.getLogger(PeakPicking.class);
 
-    static Consumer singlePickAction = null;
+    private static Consumer singlePickAction = null;
 
     public static void registerSinglePickAction(Consumer func) {
         singlePickAction = func;

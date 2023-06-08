@@ -52,6 +52,7 @@ import static org.nmrfx.analyst.gui.molecule3D.MolSceneController.StructureCalcu
 
 public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
+    private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
     private Stage stage;
     SSViewer ssViewer;
@@ -95,7 +96,6 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     List<CheckMenuItem> atomCheckItems = new ArrayList<>();
 
-    static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     StackPane stackPane = new StackPane();
     Pane twoDPane = new Pane();
@@ -385,7 +385,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             if ((dotBracket.length() == nChars) && (nLeft == nRight)) {
                 dotBracketPane.setBackground(defaultBackground);
             } else {
-                dotBracketPane.setBackground(errorBackground);
+                dotBracketPane.setBackground(ERROR_BACKGROUND);
             }
 
         }
