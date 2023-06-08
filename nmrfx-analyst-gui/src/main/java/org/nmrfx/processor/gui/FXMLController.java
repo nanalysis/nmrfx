@@ -836,6 +836,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         activeChart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
         initToolBar(toolBar);
         charts.add(activeChart);
+        chartDrawingLayers.getGrid().addCharts(1, charts);
 
         mainBox.layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
             if (arg2.getWidth() < 1.0 || arg2.getHeight() < 1.0) {
