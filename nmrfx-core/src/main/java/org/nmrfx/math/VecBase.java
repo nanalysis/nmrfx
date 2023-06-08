@@ -25,7 +25,8 @@ import java.util.Map;
 public class VecBase extends PySequence implements MatrixType, DatasetStorageInterface {
 
     public static final PyType ATYPE = PyType.fromClass(VecBase.class);
-    private static Map<String, VecBase> vecMap = new HashMap<>();
+    private static final Map<String, VecBase> vecMap = new HashMap<>();
+
     /**
      * Array of doubles used for storing data when the Vec is real or the real
      * part of complex data when a Complex array is not used

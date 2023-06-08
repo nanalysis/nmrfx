@@ -33,13 +33,12 @@ import java.util.regex.Pattern;
 
 @PluginAPI("ring")
 public class PDBFile {
-
     private static final Logger log = LoggerFactory.getLogger(PDBFile.class);
 
-    static public boolean allowSequenceDiff = true;
-    static private boolean iupacMode = true;
-    static private String localReslibDir = "";
-    static private HashMap<String, String> reslibMap = new HashMap<String, String>();
+    private static final boolean ALLOW_SEQUENCE_DIFF = true;
+    private static final Map<String, String> reslibMap = new HashMap<String, String>();
+    private static boolean iupacMode = true;
+    private static String localReslibDir = "";
 
     static {
         reslibMap.put("IUPAC", "resource:/reslib_iu");
@@ -555,7 +554,7 @@ public class PDBFile {
                         }
                         if (!AtomParser.isResNameConsistant(residue.getName(), atomParse.resName)) {
                             String msg = "Residue " + polymerName + ":" + residue.getName() + " at " + atomParse.resNum + " is not same as in file " + atomParse.resName;
-                            if (allowSequenceDiff) {
+                            if (ALLOW_SEQUENCE_DIFF) {
                                 log.warn(msg);
                                 log.warn(string);
                                 continue;

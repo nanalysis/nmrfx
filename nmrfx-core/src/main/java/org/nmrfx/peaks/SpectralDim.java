@@ -38,7 +38,7 @@ import java.util.Optional;
 @PluginAPI("ring")
 public class SpectralDim {
 
-    static String loopStrings[] = {
+    private static final String[] loopStrings = {
             "_Spectral_dim.ID",
             "_Spectral_dim.Atom_type",
             "_Spectral_dim.Atom_isotope_number",

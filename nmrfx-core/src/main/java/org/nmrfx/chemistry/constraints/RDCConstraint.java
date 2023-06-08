@@ -99,7 +99,7 @@ public class RDCConstraint extends RDC implements Constraint {
     public String toSTARString() {
         StringBuilder result = new StringBuilder();
         char sep = ' ';
-        result.append(RDCConstraintSet.ID++);
+        result.append(RDCConstraintSet.id++);
         result.append(sep);
         getAtom1().getSpatialSet().addToSTARString(result);
         result.append(sep);

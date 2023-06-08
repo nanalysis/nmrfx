@@ -21,7 +21,7 @@ import java.util.List;
 public class RemoteDataset {
 
     private static final Logger log = LoggerFactory.getLogger(RemoteDataset.class);
-    static List<RemoteDataset> datasets = new ArrayList<>();
+    private static List<RemoteDataset> datasets = new ArrayList<>();
 
     @Expose
     private String path;

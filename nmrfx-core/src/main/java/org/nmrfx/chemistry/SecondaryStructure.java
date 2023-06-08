@@ -25,9 +25,7 @@ import java.util.List;
  * @author bajlabuser
  */
 public abstract class SecondaryStructure {
-
     public static int globalCounter = 0;
-    public static String name;
     public int globalIndex = 0;
     public int localIndex = 0;
     public int size;

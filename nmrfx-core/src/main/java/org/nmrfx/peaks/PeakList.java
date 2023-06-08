@@ -26,7 +26,7 @@ import static java.util.Comparator.comparing;
 @PluginAPI("ring")
 public class PeakList {
 
-    static ResonanceFactory resFactory = new ResonanceFactory();
+    private static final ResonanceFactory resFactory = new ResonanceFactory();
     /**
      *
      */
@@ -34,7 +34,7 @@ public class PeakList {
     /**
      *
      */
-    static List<FreezeListener> freezeListeners = new ArrayList<>();
+    private static final List<FreezeListener> freezeListeners = new ArrayList<>();
     public int idLast;
     /**
      *
@@ -50,7 +50,6 @@ public class PeakList {
     protected final Map<Integer, Peak> indexMap = new HashMap<>();
     boolean slideable = false;
     boolean requireSliderCondition = false;
-    static boolean globalRequireSliderCondition = false;
     protected List<SearchDim> searchDims = new ArrayList<>();
     Optional<Measures> measures = Optional.empty();
     Map<String, String> properties = new HashMap<>();

@@ -29,12 +29,16 @@ import java.util.regex.Pattern;
 
 public class AtomEnergyProp {
     private static final Logger log = LoggerFactory.getLogger(AtomEnergyProp.class);
+    private static final Pattern DIH_PATTERN = Pattern.compile("(^\\S.)-(\\S.)-(\\S.)-(\\S.)\\s+([\\d]+)\\s+([-.0-9]+)\\s+([-.0-9]+)\\s+([-.0-9]+)\\s*(.*)");
+    private static final double RSCALE = 0.68; //scaling factor
+    private static final double HBOND_DELTA = 0.30;
+    private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
+    private static final Map<Integer, AtomEnergyProp> defaultMap = new HashMap<>();
+    private static final Map<String, Integer> torsionMap = new HashMap<>();
 
-    static final Pattern dihPattern = Pattern.compile("(^\\S.)-(\\S.)-(\\S.)-(\\S.)\\s+([\\d]+)\\s+([-.0-9]+)\\s+([-.0-9]+)\\s+([-.0-9]+)\\s*(.*)");
     public static double[][][] irpTable;
-
-    private static boolean FILE_LOADED = false;
-    private static boolean PARM_FILE_LOADED = false;
+    private static boolean fileLoaded = false;
+    private static boolean parmFileLoaded = false;
 
     final String name;
     private final int aNum;
@@ -54,12 +58,6 @@ public class AtomEnergyProp {
     private final double mass;
     // hbond donor (1), acceptor (-1)
     private final int hbondMode;
-    //scaling factor
-    private static final double rscale = 0.68;
-    private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
-    private static final double hbondDelta = 0.30;
-    private static final Map<Integer, AtomEnergyProp> DEFAULT_MAP = new HashMap<>();
-    protected static Map<String, Integer> torsionMap = new HashMap<>();
 
     public AtomEnergyProp(final String name, int aNum, final double a, final double b, final double r, final double rh, final double e, final double c, final double mass, final int hbondMode) {
         this.name = name;
@@ -75,13 +73,13 @@ public class AtomEnergyProp {
     }
 
     public static void readPropFile() throws IOException {
-        if (!FILE_LOADED) {
+        if (!fileLoaded) {
             readPropFile("reslib_iu/params.txt");
         }
     }
 
     public static void readPropFile(String fileName) throws IOException {
-        FILE_LOADED = true;
+        fileLoaded = true;
         Reader reader;
         if (fileName.startsWith("reslib_iu")) {
             ClassLoader cl = ClassLoader.getSystemClassLoader();
@@ -120,26 +118,26 @@ public class AtomEnergyProp {
                 }
             });
         }
-        DEFAULT_MAP.put(1, get("H"));
-        DEFAULT_MAP.put(6, get("CT"));
-        DEFAULT_MAP.put(7, get("N"));
-        DEFAULT_MAP.put(8, get("O"));
-        DEFAULT_MAP.put(9, get("F"));
-        DEFAULT_MAP.put(12, get("MG"));
-        DEFAULT_MAP.put(15, get("P"));
-        DEFAULT_MAP.put(16, get("S"));
-        DEFAULT_MAP.put(17, get("Cl"));
-        DEFAULT_MAP.put(20, get("C0"));
-        DEFAULT_MAP.put(26, get("FE"));
-        DEFAULT_MAP.put(29, get("CU"));
-        DEFAULT_MAP.put(30, get("Zn"));
-        DEFAULT_MAP.put(35, get("Br"));
-        DEFAULT_MAP.put(53, get("I"));
+        defaultMap.put(1, get("H"));
+        defaultMap.put(6, get("CT"));
+        defaultMap.put(7, get("N"));
+        defaultMap.put(8, get("O"));
+        defaultMap.put(9, get("F"));
+        defaultMap.put(12, get("MG"));
+        defaultMap.put(15, get("P"));
+        defaultMap.put(16, get("S"));
+        defaultMap.put(17, get("Cl"));
+        defaultMap.put(20, get("C0"));
+        defaultMap.put(26, get("FE"));
+        defaultMap.put(29, get("CU"));
+        defaultMap.put(30, get("Zn"));
+        defaultMap.put(35, get("Br"));
+        defaultMap.put(53, get("I"));
 
     }
 
     public static void makeIrpMap() throws IOException {
-        if (!PARM_FILE_LOADED) {
+        if (!parmFileLoaded) {
             makeIrpMap("reslib_iu/parm15ipq_10.3.dat");
         }
     }
@@ -156,7 +154,7 @@ public class AtomEnergyProp {
     }
 
     public static void makeIrpMap(String fileName) throws IOException {
-        PARM_FILE_LOADED = true;
+        parmFileLoaded = true;
         Reader reader;
         if (fileName.startsWith("reslib_iu")) {
             ClassLoader cl = ClassLoader.getSystemClassLoader();
@@ -177,7 +175,7 @@ public class AtomEnergyProp {
         try (BufferedReader bufReader = new BufferedReader(reader)) {
             while ((line = bufReader.readLine()) != null) {
                 line = line.trim();
-                Matcher matcher = dihPattern.matcher(line);
+                Matcher matcher = DIH_PATTERN.matcher(line);
                 if (matcher.matches()) {
                     String key = getAtomKey(matcher, 4);
                     double barrier = Double.parseDouble(matcher.group(6));
@@ -265,7 +263,7 @@ public class AtomEnergyProp {
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
-        return DEFAULT_MAP.get(aNum);
+        return defaultMap.get(aNum);
     }
 
     public String getName() {
@@ -339,7 +337,7 @@ public class AtomEnergyProp {
 
         double r = FastMath.sqrt(iProp.getR() * jProp.getR());
         double ea = -FastMath.sqrt(iProp.getE() * jProp.getE());
-        double r2 = (rscale * r) * (rscale * r);
+        double r2 = (RSCALE * r) * (RSCALE * r);
         double rh1 = iProp.getRh();
         double rh2 = jProp.getRh();
         if ((atom1.getAtomicNumber() != 1) || (atom2.getAtomicNumber() != 1) || jProp.getName().equals("HO")) {
@@ -384,8 +382,8 @@ public class AtomEnergyProp {
 
         int hbond = iProp.hbondMode * jProp.hbondMode;
         if (hbond < 0) {
-            rh1 -= hbondDelta;
-            rh2 -= hbondDelta;
+            rh1 -= HBOND_DELTA;
+            rh2 -= HBOND_DELTA;
         }
         if (atom1.getAtomicNumber() != 1) {
             rh1 -= shrinkValue;

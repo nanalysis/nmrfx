@@ -27,23 +27,22 @@ import static org.nmrfx.chemistry.io.PDBFile.isIUPACMode;
 
 @PluginAPI("ring")
 public class Residue extends Compound {
-
-    static final double DELTA_V3 = 121.8084 * Math.PI / 180.0;
+    private static final double DELTA_V3 = 121.8084 * Math.PI / 180.0;
+    private static final Map<String, String> STANDARD_RES_SET = new TreeMap<>();
+    private static final String[] COMPLIANT_AMINO_ACID = {"C", "CA", "N"};
+    private static final String[] COMPLIANT_NUCLEIC_ACID = {"C5'", "O5'", "P"};
+    private static final Map<String, String> PSEUDO_MAP = new HashMap<>();
 
     public Residue previous = null;
     public Residue next = null;
     public Polymer polymer;
     private char oneLetter = 0;
     private boolean standard = false;
-    static Map standardResSet = new TreeMap();
     Map<String, Atom[]> pseudoMap = new HashMap<>();
-    private final static String[] compliantAminoAcid = {"C", "CA", "N"};
-    private final static String[] compliantNucleicAcid = {"C5'", "O5'", "P"};
     private String lastBackBoneAtomName = null;
     private String firstBackBoneAtomName = null;
     public Residue pairedTo = null;
     public SecondaryStructure secStruct = null;
-    public final static Map<String, String> PSEUDO_MAP = new HashMap<>();
     boolean libraryMode = false;
 
     static {
@@ -58,7 +57,7 @@ public class Residue extends Compound {
                 "a", "a", "c", "c", "g", "g", "u", "u"
         };
         for (int i = 0; i < standardResidues.length; i += 2) {
-            standardResSet.put(standardResidues[i], standardResidues[i + 1]);
+            STANDARD_RES_SET.put(standardResidues[i], standardResidues[i + 1]);
         }
         PSEUDO_MAP.put("ALA:QB", "MB");
         PSEUDO_MAP.put("ILE:QG2", "MG");
@@ -72,7 +71,6 @@ public class Residue extends Compound {
         PSEUDO_MAP.put("VAL:QG1", "MG1");
         PSEUDO_MAP.put("VAL:QG2", "MG2");
         PSEUDO_MAP.put("VAL:QQG", "QG");
-
     }
 
     public enum RES_POSITION {
@@ -85,7 +83,7 @@ public class Residue extends Compound {
         this.number = number;
         super.name = name;
         super.label = name;
-        if (standardResSet.containsKey(name.toLowerCase())) {
+        if (STANDARD_RES_SET.containsKey(name.toLowerCase())) {
             standard = true;
         }
         try {
@@ -102,7 +100,7 @@ public class Residue extends Compound {
         this.number = number;
         super.name = name;
         super.label = variant;
-        if (standardResSet.containsKey(name.toLowerCase())) {
+        if (STANDARD_RES_SET.containsKey(name.toLowerCase())) {
             standard = true;
         }
         try {
@@ -220,7 +218,7 @@ public class Residue extends Compound {
     public char getOneLetter() {
         if (oneLetter == 0) {
             if (standard) {
-                oneLetter = ((String) standardResSet.get(name.toLowerCase())).toUpperCase().charAt(0);
+                oneLetter = ((String) STANDARD_RES_SET.get(name.toLowerCase())).toUpperCase().charAt(0);
             } else {
                 oneLetter = 'X';
             }
@@ -558,7 +556,7 @@ public class Residue extends Compound {
          */
 
         String pType = polymer.getPolymerType(); // 'polypeptide' or 'nucleicacid'
-        String[] atomStrings = pType.equals("polypeptide") ? compliantAminoAcid : compliantNucleicAcid;
+        String[] atomStrings = pType.equals("polypeptide") ? COMPLIANT_AMINO_ACID : COMPLIANT_NUCLEIC_ACID;
         for (String atomString : atomStrings) {
             Atom atom = this.getAtom(atomString);
             if (atom == null) {
@@ -600,7 +598,7 @@ public class Residue extends Compound {
          *
          */
         boolean isProtein = this.polymer.getPolymerType().equals("polypeptide");
-        String[] compliantArray = isProtein ? compliantAminoAcid : compliantNucleicAcid;
+        String[] compliantArray = isProtein ? COMPLIANT_AMINO_ACID : COMPLIANT_NUCLEIC_ACID;
         Point3[] pts = new Point3[4];
         for (int i = 0; i < compliantArray.length; i++) {
             pts[i] = this.getAtom(compliantArray[i]).getPoint();

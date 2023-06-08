@@ -33,36 +33,28 @@ import java.util.stream.Stream;
  * @author brucejohnson
  */
 public class Sequence {
-
     private static final Logger log = LoggerFactory.getLogger(Sequence.class);
-    private Atom connectAtom = null;
-    private Bond connectBond = null;
-    private Atom connectBranch = null;
-    private int connectPosition = -1;
-    private MoleculeBase molecule;
-    private final static Map<String, String> residueAliases = new HashMap<>();
-    private final static List<String> AMINO_ACID_NAMES = new ArrayList<>();
-    private String entryAtomName = null;
-    private String exitAtomName = null;
-    public static boolean useCoarse = false;
+    private static final boolean USE_COARSE = false;
+    private static final Map<String, String> RESIDUE_ALIASES = new HashMap<>();
+    private static final List<String> AMINO_ACID_NAMES = new ArrayList<>();
 
     static {
-        residueAliases.put("rade", "a");
-        residueAliases.put("ra", "a");
-        residueAliases.put("rgua", "g");
-        residueAliases.put("rg", "g");
-        residueAliases.put("rcyt", "c");
-        residueAliases.put("rc", "c");
-        residueAliases.put("rura", "u");
-        residueAliases.put("ura", "u");
-        residueAliases.put("ruri", "u");
-        residueAliases.put("ru", "u");
-        residueAliases.put("dade", "da");
-        residueAliases.put("dgua", "dg");
-        residueAliases.put("dcyt", "dc");
-        residueAliases.put("dthy", "dt");
-        residueAliases.put("dura", "du");
-        residueAliases.put("duri", "du");
+        RESIDUE_ALIASES.put("rade", "a");
+        RESIDUE_ALIASES.put("ra", "a");
+        RESIDUE_ALIASES.put("rgua", "g");
+        RESIDUE_ALIASES.put("rg", "g");
+        RESIDUE_ALIASES.put("rcyt", "c");
+        RESIDUE_ALIASES.put("rc", "c");
+        RESIDUE_ALIASES.put("rura", "u");
+        RESIDUE_ALIASES.put("ura", "u");
+        RESIDUE_ALIASES.put("ruri", "u");
+        RESIDUE_ALIASES.put("ru", "u");
+        RESIDUE_ALIASES.put("dade", "da");
+        RESIDUE_ALIASES.put("dgua", "dg");
+        RESIDUE_ALIASES.put("dcyt", "dc");
+        RESIDUE_ALIASES.put("dthy", "dt");
+        RESIDUE_ALIASES.put("dura", "du");
+        RESIDUE_ALIASES.put("duri", "du");
     }
 
     static {
@@ -87,8 +79,15 @@ public class Sequence {
         AMINO_ACID_NAMES.add("trp");
         AMINO_ACID_NAMES.add("tyr");
         AMINO_ACID_NAMES.add("val");
-
     }
+
+    private Atom connectAtom = null;
+    private Bond connectBond = null;
+    private Atom connectBranch = null;
+    private int connectPosition = -1;
+    private MoleculeBase molecule;
+    private String entryAtomName = null;
+    private String exitAtomName = null;
 
     public Sequence() {
     }
@@ -141,7 +140,7 @@ public class Sequence {
                 checkFieldCount(fields);
                 String aName = fields[1];
                 String aType = fields[2];
-                if (aType.endsWith("cg") && !useCoarse) {
+                if (aType.endsWith("cg") && !USE_COARSE) {
                     return;
                 }
                 if (fields.length > 7) {
@@ -212,7 +211,7 @@ public class Sequence {
                 }
                 for (int iField = 3; iField < nFields; iField++) {
                     String atomName = fields[iField];
-                    if (atomName.endsWith("c") && !useCoarse) {
+                    if (atomName.endsWith("c") && !USE_COARSE) {
                         continue;
                     }
                     Order order = Order.SINGLE;
@@ -710,7 +709,7 @@ public class Sequence {
             resName = PDBAtomParser.pdbResToPRFName(resName, 'r');
 
             if (!setPolymerType) {
-                if (residueAliases.values().contains(resName)) {
+                if (RESIDUE_ALIASES.values().contains(resName)) {
                     polymerType = "nucleicacid";
                     setPolymerType = true;
                 } else if (AMINO_ACID_NAMES.contains(resName)) {
@@ -827,7 +826,7 @@ public class Sequence {
     }
 
     public static String getAliased(String name) {
-        String newName = residueAliases.get(name);
+        String newName = RESIDUE_ALIASES.get(name);
         if (newName == null) {
             newName = name;
         }

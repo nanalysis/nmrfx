@@ -447,7 +447,7 @@ public class NOEAssign {
                 } else {
                     spSets[i] = spSets[i - 2].atom.getParent().spatialSet;
                 }
-                PPMv ppmv = spSets[i].getPPM(Noe.ppmSet);
+                PPMv ppmv = spSets[i].getPPM(Noe.PPM_SET);
                 double dp;
                 if (ppmv != null) {
                     double delta = IdPeak.getPPMDelta(ppmv.getValue(), matchCriteria[i]);

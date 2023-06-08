@@ -20,7 +20,7 @@ import static java.util.Comparator.comparing;
 @PluginAPI("ring")
 public class Peak implements Comparable, PeakOrMulti {
 
-    static String peakStrings[] = {
+    private static final String[] peakStrings = {
             "_Peak.ID",
             "_Peak.Figure_of_merit",
             "_Peak.Details",
@@ -29,12 +29,12 @@ public class Peak implements Comparable, PeakOrMulti {
             "_Peak.Color",
             "_Peak.Flag",
             "_Peak.Label_corner",};
-    static String peakGeneralCharStrings[] = {
+    private static final String[] peakGeneralCharStrings = {
             "_Peak_general_char.Peak_ID",
             "_Peak_general_char.Intensity_val",
             "_Peak_general_char.Intensity_val_err",
             "_Peak_general_char.Measurement_method",};
-    static String peakCharStrings[] = {
+    private static final String[] peakCharStrings = {
             "_Peak_char.Peak_ID",
             "_Peak_char.Peak_contribution_ID",
             "_Peak_char.Spectral_dim_ID",
@@ -56,20 +56,20 @@ public class Peak implements Comparable, PeakOrMulti {
             "_Peak_char.Coupling_detail",
             "_Peak_char.Frozen"};
 
-    static String spectralTransitionStrings[] = {
+    private static final String[] spectralTransitionStrings = {
             "_Spectral_transition.ID",
             "_Spectral_transition.Peak_ID",
             "_Spectral_transition.Figure_of_merit",
             "_Spectral_transition.Details",};
 
-    static String spectralTransitionGeneralCharStrings[] = {
+    private static final String[] spectralTransitionGeneralCharStrings = {
             "_Spectral_transition_general_char.Spectral_transition_ID",
             "_Spectral_transition_general_char.Peak_ID",
             "_Spectral_transition_general_char.Intensity_val",
             "_Spectral_transition_general_char.Intensity_val_err",
             "_Spectral_transition_general_char.Measurement_method",};
 
-    static String spectralTransitionCharStrings[] = {
+    private static final String[] spectralTransitionCharStrings = {
             "_Spectral_transition_char.Spectral_transition_ID",
             "_Spectral_transition_char.Peak_ID",
             "_Spectral_transition_char.Spectral_dim_ID",
@@ -85,7 +85,7 @@ public class Peak implements Comparable, PeakOrMulti {
             "_Spectral_transition_char.Decay_rate_val_err",
             "_Spectral_transition_char.Derivation_method_ID",};
 
-    static String peakComplexCouplingStrings[] = {
+    private static final String[] peakComplexCouplingStrings = {
             "_Peak_complex_multiplet.ID",
             "_Peak_complex_multiplet.Peak_ID",
             "_Peak_complex_multiplet.Spectral_dim_ID",
@@ -98,7 +98,7 @@ public class Peak implements Comparable, PeakOrMulti {
             "_Peak_complex_multiplet.Volume_val_err",
             "_Peak_complex_multiplet.Line_width_val",
             "_Peak_complex_multiplet.Line_width_val_err"};
-    static String peakCouplingPatternStrings[] = {
+    private static final String[] peakCouplingPatternStrings = {
             "_Peak_coupling.ID",
             "_Peak_coupling.Peak_ID",
             "_Peak_coupling.Spectral_dim_ID",
@@ -112,25 +112,25 @@ public class Peak implements Comparable, PeakOrMulti {
             "_Peak_coupling.Intensity_val_err",
             "_Peak_coupling.Partner_Peak_coupling_ID"
     };
-    static final public int NFLAGS = 16;
-    static final public int COMPOUND = 1;
-    static final public int MINOR = 2;
-    static final public int SOLVENT = 4;
-    static final public int ARTIFACT = 8;
-    static final public int IMPURITY = 16;
-    static final public int CHEMSHIFT_REF = 32;
-    static final public int QUANTITY_REF = 64;
-    static final public int COMBO_REF = 128;
-    static final public int WATER = 256;
-    static final public int[][] FREEZE_COLORS = {{255, 165, 0}, {255, 0, 255}, {255, 0, 0}};
-    protected static final int N_TYPES = 9;
-    protected static String[] peakTypes = new String[N_TYPES];
+    public static final int NFLAGS = 16;
+    public static final int COMPOUND = 1;
+    public static final int MINOR = 2;
+    public static final int SOLVENT = 4;
+    public static final int ARTIFACT = 8;
+    public static final int IMPURITY = 16;
+    public static final int CHEMSHIFT_REF = 32;
+    public static final int QUANTITY_REF = 64;
+    public static final int COMBO_REF = 128;
+    public static final int WATER = 256;
+    public static final int[][] FREEZE_COLORS = {{255, 165, 0}, {255, 0, 255}, {255, 0, 0}};
+    private static final int N_TYPES = 9;
+    private static final String[] PEAK_TYPES = new String[N_TYPES];
 
     static {
         int j = 1;
 
         for (int i = 0; i < N_TYPES; i++) {
-            peakTypes[i] = typeToString(j);
+            PEAK_TYPES[i] = typeToString(j);
             j *= 2;
         }
     }
@@ -331,7 +331,7 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public static String[] getPeakTypes() {
-        return peakTypes;
+        return PEAK_TYPES;
     }
 
     @Override

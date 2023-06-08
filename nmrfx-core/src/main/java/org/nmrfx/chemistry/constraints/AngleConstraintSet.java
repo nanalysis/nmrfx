@@ -29,6 +29,8 @@ import java.util.*;
  * @author brucejohnson
  */
 public class AngleConstraintSet implements ConstraintSet, Iterable {
+    public static char[] violCharArray = new char[0];
+    public static int id = 1;
 
     private final MolecularConstraints molecularConstraints;
     private final ArrayList<AngleConstraint> constraints = new ArrayList<>();
@@ -36,8 +38,6 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
     int nStructures = 0;
     private final String name;
     boolean dirty = true;
-    public static char[] violCharArray = new char[0];
-    public static int ID = 1;
 
     private AngleConstraintSet(MolecularConstraints molecularConstraints,
                                String name) {
@@ -255,6 +255,6 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
 
     @Override
     public void resetWriting() {
-        ID = 1;
+        id = 1;
     }
 }

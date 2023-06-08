@@ -31,6 +31,50 @@ import java.util.List;
  */
 public class DistanceConstraintSet implements ConstraintSet, Iterable {
 
+    private static final String[] angleConstraintLoopStrings = {
+            "_Torsion_angle_constraint.ID",
+            "_Torsion_angle_constraint.Torsion_angle_name",
+            "_Torsion_angle_constraint.Assembly_atom_ID_1",
+            "_Torsion_angle_constraint.Entity_assembly_ID_1",
+            "_Torsion_angle_constraint.Entity_ID_1",
+            "_Torsion_angle_constraint.Comp_index_ID_1",
+            "_Torsion_angle_constraint.Seq_ID_1",
+            "_Torsion_angle_constraint.Comp_ID_1",
+            "_Torsion_angle_constraint.Atom_ID_1",
+            "_Torsion_angle_constraint.Atom_type_1",
+            "_Torsion_angle_constraint.Resonance_ID_1",
+            "_Torsion_angle_constraint.Assembly_atom_ID_2",
+            "_Torsion_angle_constraint.Entity_assembly_ID_2",
+            "_Torsion_angle_constraint.Entity_ID_2",
+            "_Torsion_angle_constraint.Comp_index_ID_2",
+            "_Torsion_angle_constraint.Seq_ID_2",
+            "_Torsion_angle_constraint.Comp_ID_2",
+            "_Torsion_angle_constraint.Atom_ID_2",
+            "_Torsion_angle_constraint.Atom_type_2",
+            "_Torsion_angle_constraint.Resonance_ID_2",
+            "_Torsion_angle_constraint.Assembly_atom_ID_3",
+            "_Torsion_angle_constraint.Entity_assembly_ID_3",
+            "_Torsion_angle_constraint.Entity_ID_3",
+            "_Torsion_angle_constraint.Comp_index_ID_3",
+            "_Torsion_angle_constraint.Seq_ID_3",
+            "_Torsion_angle_constraint.Comp_ID_3",
+            "_Torsion_angle_constraint.Atom_ID_3",
+            "_Torsion_angle_constraint.Atom_type_3",
+            "_Torsion_angle_constraint.Resonance_ID_3",
+            "_Torsion_angle_constraint.Assembly_atom_ID_4",
+            "_Torsion_angle_constraint.Entity_assembly_ID_4",
+            "_Torsion_angle_constraint.Entity_ID_4",
+            "_Torsion_angle_constraint.Comp_index_ID_4",
+            "_Torsion_angle_constraint.Seq_ID_4",
+            "_Torsion_angle_constraint.Comp_ID_4",
+            "_Torsion_angle_constraint.Atom_ID_4",
+            "_Torsion_angle_constraint.Atom_type_4",
+            "_Torsion_angle_constraint.Resonance_ID_4",
+            "_Torsion_angle_constraint.Angle_lower_bound_val",
+            "_Torsion_angle_constraint.Angle_upper_bound_val",
+            "_Torsion_angle_constraint.Entry_ID",
+            "_Torsion_angle_constraint.Gen_dist_constraint_list_ID",};
+
     private final MolecularConstraints molecularConstraints;
     private final ArrayList<DistanceConstraint> constraints = new ArrayList<>();
     int nStructures = 0;
@@ -150,49 +194,6 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
         });
         dirty = false;
     }
-
-    private static String[] angleConstraintLoopStrings = {
-            "_Torsion_angle_constraint.ID",
-            "_Torsion_angle_constraint.Torsion_angle_name",
-            "_Torsion_angle_constraint.Assembly_atom_ID_1",
-            "_Torsion_angle_constraint.Entity_assembly_ID_1",
-            "_Torsion_angle_constraint.Entity_ID_1",
-            "_Torsion_angle_constraint.Comp_index_ID_1",
-            "_Torsion_angle_constraint.Seq_ID_1",
-            "_Torsion_angle_constraint.Comp_ID_1",
-            "_Torsion_angle_constraint.Atom_ID_1",
-            "_Torsion_angle_constraint.Atom_type_1",
-            "_Torsion_angle_constraint.Resonance_ID_1",
-            "_Torsion_angle_constraint.Assembly_atom_ID_2",
-            "_Torsion_angle_constraint.Entity_assembly_ID_2",
-            "_Torsion_angle_constraint.Entity_ID_2",
-            "_Torsion_angle_constraint.Comp_index_ID_2",
-            "_Torsion_angle_constraint.Seq_ID_2",
-            "_Torsion_angle_constraint.Comp_ID_2",
-            "_Torsion_angle_constraint.Atom_ID_2",
-            "_Torsion_angle_constraint.Atom_type_2",
-            "_Torsion_angle_constraint.Resonance_ID_2",
-            "_Torsion_angle_constraint.Assembly_atom_ID_3",
-            "_Torsion_angle_constraint.Entity_assembly_ID_3",
-            "_Torsion_angle_constraint.Entity_ID_3",
-            "_Torsion_angle_constraint.Comp_index_ID_3",
-            "_Torsion_angle_constraint.Seq_ID_3",
-            "_Torsion_angle_constraint.Comp_ID_3",
-            "_Torsion_angle_constraint.Atom_ID_3      _Torsion_angle_constraint.Atom_type_3",
-            "_Torsion_angle_constraint.Resonance_ID_3",
-            "_Torsion_angle_constraint.Assembly_atom_ID_4",
-            "_Torsion_angle_constraint.Entity_assembly_ID_4",
-            "_Torsion_angle_constraint.Entity_ID_4",
-            "_Torsion_angle_constraint.Comp_index_ID_4",
-            "_Torsion_angle_constraint.Seq_ID_4",
-            "_Torsion_angle_constraint.Comp_ID_4",
-            "_Torsion_angle_constraint.Atom_ID_4",
-            "_Torsion_angle_constraint.Atom_type_4",
-            "_Torsion_angle_constraint.Resonance_ID_4",
-            "_Torsion_angle_constraint.Angle_lower_bound_val",
-            "_Torsion_angle_constraint.Angle_upper_bound_val",
-            "_Torsion_angle_constraint.Entry_ID",
-            "_Torsion_angle_constraint.Gen_dist_constraint_list_ID",};
 
     @Override
     public String[] getLoopStrings() {

@@ -24,9 +24,8 @@ import org.nmrfx.chemistry.SecondaryStructure;
  * @author bajlabuser, mbeckwith
  */
 public class ProteinHelix extends SecondaryStructure {
-
-    public static int localCounter = 0;
-    static String name = "Helix";
+    private static final String NAME = "Helix";
+    private static int localCounter = 0;
 
     public ProteinHelix(Residue firstResidue, Residue lastResidue) {
         localIndex = localCounter++;
@@ -56,6 +55,6 @@ public class ProteinHelix extends SecondaryStructure {
 
     @Override
     public String getName() {
-        return name;
+        return NAME;
     }
 }
