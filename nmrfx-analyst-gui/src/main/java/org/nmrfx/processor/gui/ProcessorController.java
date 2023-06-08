@@ -65,7 +65,7 @@ import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
-import org.nmrfx.processor.gui.GUI.ModifiableAccordion;
+import org.nmrfx.processor.gui.GUI.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
@@ -1186,7 +1186,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         scriptView.setVisible(false);
         propertySheet.setVisible(false);
         accordionDemo.getChildren().clear();
-        ModifiableAccordion ma = new ModifiableAccordion();
+        ModifiableAccordionScrollPane ma = new ModifiableAccordionScrollPane();
         TitledPane tp1 = new TitledPane("Apodization", propertyManager.getPropertySheet("APODIZE(lbOn=True, lb=0.5)"));
         TitledPane tp2 = new TitledPane("Zero Fill", propertyManager.getPropertySheet("ZF()"));
         TitledPane tp3 = new TitledPane("Fourier Transform", propertyManager.getPropertySheet("FT()"));
