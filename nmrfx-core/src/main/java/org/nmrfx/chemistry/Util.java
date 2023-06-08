@@ -31,14 +31,10 @@ import java.util.regex.Pattern;
  */
 public class Util {
 
-    static boolean strictlyNEF;
+    private static boolean strictlyNEF;
 
-    static public void setStrictlyNEF(boolean state) {
+    public static void setStrictlyNEF(boolean state) {
         strictlyNEF = state;
-    }
-
-    static public boolean isStrictlyNEF() {
-        return strictlyNEF;
     }
 
     public static boolean hasSameShift(Atom atom, Atom partnerAtom) {
@@ -63,7 +59,7 @@ public class Util {
         return result;
     }
 
-    public static final String getXYName(Atom atom) {
+    public static String getXYName(Atom atom) {
         Optional<Atom> partner = Optional.empty();
         String result;
         Atom atom1 = atom;
@@ -93,7 +89,7 @@ public class Util {
         return result;
     }
 
-    public static final boolean nefMatch(Atom atom, String pat) {
+    public static boolean nefMatch(Atom atom, String pat) {
         boolean result = nefMatch(atom.name.toLowerCase(), pat);
         if (result && ((pat.contains("x") && !pat.equals("oxt")) || pat.contains("y"))) {
             Optional<Atom> partner = Optional.empty();
@@ -161,7 +157,7 @@ public class Util {
      * @param pat Pattern which may contain special characters.
      * @return true if string matches within the pattern
      */
-    public static final boolean stringMatch(String str, String pat) {
+    public static boolean stringMatch(String str, String pat) {
         char[] strArr = str.toCharArray();
         char[] patArr = pat.toCharArray();
         int strLen = str.length(); // Cache the len of str.

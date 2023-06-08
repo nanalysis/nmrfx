@@ -37,20 +37,17 @@ import java.util.*;
 
 @PluginAPI("ring")
 public class MMcifReader {
-
     private static final Logger log = LoggerFactory.getLogger(MMcifReader.class);
-    static boolean DEBUG = false;
+    private static final String INVALID_ATOM_WARN_MSG_TEMPLATE = "invalid atom in chem comp atom saveframe \"{}.{}\"";
 
     final MMCIF mmcif;
     final File cifFile;
 
     Map entities = new HashMap();
     boolean hasResonances = false;
-    Map<Long, List<PeakDim>> resMap = new HashMap<>();
     Map<String, Character> chainCodeMap = new HashMap<>();
     Map<Integer, MMCIFEntity> entityMap = new HashMap<>();
 
-    private static final String INVALID_ATOM_WARN_MSG_TEMPLATE = "invalid atom in chem comp atom saveframe \"{}.{}\"";
 
     public MMcifReader(final File cifFile, final MMCIF star3) {
         this.mmcif = star3;

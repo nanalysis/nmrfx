@@ -22,10 +22,8 @@ import java.util.Hashtable;
 import java.util.List;
 
 public class NvUtil {
-
-
-    static Hashtable colorTable = null;
-    static Hashtable iColorTable = null;
+    private static Hashtable colorTable = null;
+    private static Hashtable iColorTable = null;
 
     static {
         initColorTable();

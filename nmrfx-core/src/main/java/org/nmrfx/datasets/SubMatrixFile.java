@@ -37,19 +37,16 @@ import java.nio.channels.FileChannel;
  */
 public class SubMatrixFile implements DatasetStorageInterface, Closeable {
     private static final Logger log = LoggerFactory.getLogger(SubMatrixFile.class);
+    private static final StorageCache cache = new StorageCache();
 
-    static StorageCache cache = new StorageCache();
     private RandomAccessFile raFile;
     FileChannel fc;
     private final DatasetBase dataset;
     private final File file;
     private long totalSize;
-    private final int dataType;
     final boolean writable;
     DatasetLayout layout;
     private final int BYTES = Float.BYTES;
-    ByteBuffer[] byteBuffers = new ByteBuffer[1];
-    int currentBuffer = -1;
     DatasetKey[] keys;
 
     /**
@@ -66,7 +63,6 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         this.dataset = dataset;
         this.file = file;
         this.layout = layout;
-        dataType = dataset.getDataType();
         this.writable = writable;
         init();
     }

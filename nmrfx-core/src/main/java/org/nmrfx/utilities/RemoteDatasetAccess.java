@@ -14,12 +14,12 @@ import java.util.stream.Stream;
  * @author brucejohnson
  */
 public class RemoteDatasetAccess {
+    private static final int REMOTE_PORT = 22;
+    private static final int SESSION_TIMEOUT = 10000;
+    private static final int CHANNEL_TIMEOUT = 5000;
 
     public String userName = "";
     public String remoteHost = "";
-    public static int REMOTE_PORT = 22;
-    public static int SESSION_TIMEOUT = 10000;
-    public static int CHANNEL_TIMEOUT = 5000;
     JSch jsch = new JSch();
     String userdir = System.getProperty("user.home");
     FileSystem fileSystem = FileSystems.getDefault();

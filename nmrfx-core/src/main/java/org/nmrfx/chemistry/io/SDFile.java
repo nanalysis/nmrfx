@@ -32,23 +32,21 @@ import java.util.regex.Pattern;
  * @author brucejohnson
  */
 public class SDFile {
-
     private static final Logger log = LoggerFactory.getLogger(SDFile.class);
 
-    static final int MOLECULE = 0;
-    static final int ATOM = 1;
-    static final int BOND = 2;
-    static final int LIST = 3;
-    static final int STEXT = 4;
-    static final int PROP = 5;
-    static final int FREE = 6;
-    static final int VALUE = 7;
-    static final int HEADER_LENGTH = 4;
+    private static final int MOLECULE = 0;
+    private static final int ATOM = 1;
+    private static final int BOND = 2;
+    private static final int LIST = 3;
+    private static final int STEXT = 4;
+    private static final int PROP = 5;
+    private static final int FREE = 6;
+    private static final int VALUE = 7;
+    private static final int HEADER_LENGTH = 4;
     private static final Pattern[] supportedMolFormatsPatterns = {
             Pattern.compile("(\\d+\s+\\d+\s+\\d+\s+\\d+\s+\\d+\s+)(?)(\\d+\s+V2000)")};
     private static final List<String> MATCHING_EXTENSIONS = List.of(".mol", ".sdf");
-
-    static Pattern pattern = Pattern.compile("> +<(.*)>");
+    private static final Pattern PATTERN = Pattern.compile("> +<(.*)>");
 
     int nMols = 0;
     MoleculeBase molecule = null;
@@ -344,7 +342,7 @@ public class SDFile {
                 if (string.equals("$$$$")) {
                     break;
                 } else if (string.startsWith(">")) {
-                    Matcher matcher = pattern.matcher(string);
+                    Matcher matcher = PATTERN.matcher(string);
                     sBuilder.setLength(0);
                     if (matcher.matches()) {
                         valueName = matcher.group(1);

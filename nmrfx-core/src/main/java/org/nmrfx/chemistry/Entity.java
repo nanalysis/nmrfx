@@ -24,32 +24,6 @@ import java.util.*;
 
 @PluginAPI("ring")
 public class Entity implements AtomContainer, Serializable, ITree {
-
-    public static String[] entityStrings = {
-            "_Entity.Ambiguous_conformational_states",
-            "_Entity.Ambiguous_chem_comp_sites",
-            "_Entity.Nstd_monomer",
-            "_Entity.Nstd_chirality",
-            "_Entity.Nstd_linkage",
-            "_Entity.Nonpolymer_comp_ID",
-            "_Entity.Nonpolymer_comp_label",
-            "_Entity.Number_of_monomers",
-            "_Entity.Paramagnetic",
-            "_Entity.Thiol_state",
-            "_Entity.Src_method",
-            "_Entity.Fragment",};
-    public final static String[] entityCompIndexLoopStrings = {
-            "_Entity_comp_index.ID",
-            "_Entity_comp_index.Auth_seq_ID",
-            "_Entity_comp_index.Comp_ID",
-            "_Entity_comp_index.Comp_label",
-            "_Entity_comp_index.Entity_ID",};
-    public final static String[] entityPolySeqLoopStrings = {
-            "_Entity_poly_seq.Hetero",
-            "_Entity_poly_seq.Mon_ID",
-            "_Entity_poly_seq.Num",
-            "_Entity_poly_seq.Comp_index_ID",
-            "_Entity_poly_seq.Entity_ID",};
     public String name = null;
     public String label = null;
     String pdbChain = "";

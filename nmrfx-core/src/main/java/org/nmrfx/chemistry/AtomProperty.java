@@ -32,10 +32,10 @@ import java.util.*;
  * @author brucejohnson
  */
 public class AtomProperty {
-
-    static final HashMap map = new HashMap();
-    static int nextAnum = 0;
     private static final String GENERIC_COLOR = "gray";
+    private static final Map<String, AtomProperty> byName = new HashMap<>();
+    static int nextAnum = 0; //XXX used as counter in constructor: field declaration order is important
+
     public static final AtomProperty X = new AtomProperty("X", 0.8f,
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty H = new AtomProperty("H", 1.2f, "light green",
@@ -257,7 +257,7 @@ public class AtomProperty {
     static {
         for (Iterator iter = VALUES.iterator(); iter.hasNext(); ) {
             AtomProperty atomProp = (AtomProperty) iter.next();
-            map.put(atomProp.name, atomProp);
+            byName.put(atomProp.name, atomProp);
         }
     }
 
@@ -337,7 +337,7 @@ public class AtomProperty {
         if (elemName.length() > 1) {
             elemName = elemName.replace(elemName.substring(1), elemName.substring(1).toLowerCase());
         }
-        AtomProperty atomProp = (AtomProperty) map.get(elemName);
+        AtomProperty atomProp = byName.get(elemName);
 
         if (atomProp != null) {
             return (byte) atomProp.aNum;
@@ -351,7 +351,7 @@ public class AtomProperty {
         if (elemName.length() > 1) {
             elemName = elemName.replace(elemName.substring(1), elemName.substring(1).toLowerCase());
         }
-        AtomProperty atomProp = (AtomProperty) map.get(elemName);
+        AtomProperty atomProp = byName.get(elemName);
 
         if (atomProp == null) {
             return X;

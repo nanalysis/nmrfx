@@ -49,8 +49,6 @@ public class NMRNEFReader {
 
     Map entities = new HashMap();
     boolean hasResonances = false;
-    Map<Long, List<PeakDim>> resMap = new HashMap<>();
-    public static boolean DEBUG = false;
 
     public NMRNEFReader(final File nefFile, final STAR3 nef) {
         this.nef = nef;

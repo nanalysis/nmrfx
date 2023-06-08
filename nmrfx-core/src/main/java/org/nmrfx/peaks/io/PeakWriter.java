@@ -32,7 +32,7 @@ import java.util.Map;
 @PythonAPI("pscript")
 public class PeakWriter {
 
-    static final String[] XPKDIMSTRINGS = {
+    private static final String[] XPKDIMSTRINGS = {
             "label",
             "code",
             "units",
@@ -46,7 +46,7 @@ public class PeakWriter {
             "folding",
             "abspos",
             "acqdim"};
-    static final String[] NEF_PEAK_DIM_STRINGS = {"_nef_spectrum_dimension.dimension_id",
+    private static final String[] NEF_PEAK_DIM_STRINGS = {"_nef_spectrum_dimension.dimension_id",
             "_nef_spectrum_dimension.axis_unit",
             "_nef_spectrum_dimension.axis_code",
             "_nef_spectrum_dimension.spectrometer_frequency",
@@ -57,7 +57,7 @@ public class PeakWriter {
             "_nef_spectrum_dimension.is_acquisition"};
 
     // //     1   ppm   1H    500.13   4.998700337912143    9.898700337912143    circular   true   true
-    static final String[] NEF_PEAK_ROW_STRINGS = {"_nef_peak.ordinal",
+    private static final String[] NEF_PEAK_ROW_STRINGS = {"_nef_peak.ordinal",
             "_nef_peak.peak_id",
             "_nef_peak.volume",
             "_nef_peak.volume_uncertainty",
@@ -81,7 +81,7 @@ public class PeakWriter {
             "_nef_peak.sequence_code_3",
             "_nef_peak.residue_type_3",
             "_nef_peak.atom_name_3"};
-    static String[] ASSIGNED_PEAK_CHEMSHIFT_STRINGS = {
+    private static final String[] ASSIGNED_PEAK_CHEMSHIFT_STRINGS = {
             "_Assigned_peak_chem_shift.Peak_ID",
             "_Assigned_peak_chem_shift.Spectral_dim_ID",
             "_Assigned_peak_chem_shift.Val",

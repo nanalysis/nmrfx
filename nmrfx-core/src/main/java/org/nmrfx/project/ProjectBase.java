@@ -46,11 +46,11 @@ import static java.util.Objects.requireNonNullElse;
 public class ProjectBase {
     private static final Logger log = LoggerFactory.getLogger(ProjectBase.class);
 
-    public static final Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
-    public static final Pattern INDEX2_PATTERN = Pattern.compile("^.*_([0-9]+).*");
+    private static final Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
+    private static final Pattern INDEX2_PATTERN = Pattern.compile("^.*_([0-9]+).*");
     private static final Map<String, SaveframeProcessor> saveframeProcessors = new HashMap<>();
-    protected static PropertyChangeSupport pcs = null;
-    static ProjectBase activeProject = null;
+    private static PropertyChangeSupport pcs = null;
+    private static ProjectBase activeProject = null;
     final String name;
     protected Path projectDir = null;
     protected Map<String, PeakPaths> peakPaths = new HashMap<>();

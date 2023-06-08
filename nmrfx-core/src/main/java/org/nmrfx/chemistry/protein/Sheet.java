@@ -24,9 +24,8 @@ import org.nmrfx.chemistry.SecondaryStructure;
  * @author bajlabuser, mbeckwith
  */
 public class Sheet extends SecondaryStructure {
-
-    public static int localCounter = 0;
-    public static String name = "Sheet";
+    private static final String NAME = "Sheet";
+    private static int localCounter = 0;
 
     public Sheet(Residue firstResidue, Residue lastResidue) {
         localIndex = localCounter++;
@@ -43,6 +42,6 @@ public class Sheet extends SecondaryStructure {
 
     @Override
     public String getName() {
-        return name;
+        return NAME;
     }
 }
