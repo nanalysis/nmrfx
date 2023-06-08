@@ -67,8 +67,8 @@ import java.util.stream.IntStream;
 public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     private static final Logger log = LoggerFactory.getLogger(Dataset.class);
-    private static long BIG_MAP_LIMIT = Integer.MAX_VALUE / 2;
-    static boolean useCacheFile = false;
+    private static final long BIG_MAP_LIMIT = Integer.MAX_VALUE / 2;
+    private static boolean useCacheFile = false;
 
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
     LineShapeCatalog simVecs = null;
@@ -489,10 +489,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
         dataset.layout = newLayout;
         return newDataFile;
-    }
-
-    public static void setBigMapLimit(long size) {
-        BIG_MAP_LIMIT = size;
     }
 
     @Override
@@ -1429,37 +1425,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     synchronized public static List<String> names() {
         return ProjectBase.getActive().getDatasetNames();
     }
-
-    static String[] exptListLoopString = {
-            "_Experiment.ID",
-            "_Experiment.Name",
-            "_Experiment.Raw_data_flag",
-            "_Experiment.NMR_spec_expt_ID",
-            "_Experiment.NMR_spec_expt_label",
-            "_Experiment.Sample_ID",
-            "_Experiment.Sample_label",
-            "_Experiment.Sample_state",
-            "_Experiment.Sample_volume",
-            "_Experiment.Sample_volume_units",
-            "_Experiment.Sample_condition_list_ID",
-            "_Experiment.Sample_condition_list_label",
-            "_Experiment.Sample_spinning_rate",
-            "_Experiment.Sample_angle",
-            "_Experiment.NMR_tube_type",
-            "_Experiment.NMR_spectrometer_ID",
-            "_Experiment.NMR_spectrometer_label",
-            "_Experiment.NMR_spectrometer_probe_ID",
-            "_Experiment.NMR_spectrometer_probe_label",
-            "_Experiment.NMR_spectral_processing_ID",
-            "_Experiment.NMR_spectral_processing_label",
-            "_Experiment.Experiment_list_ID",};
-    static String[] exptFileLoopString = {
-            "_Experiment_file.ID",
-            "_Experiment_file.Name",
-            "_Experiment_file.Type",
-            "_Experiment_file.Directory_path",
-            "_Experiment_file.Details",
-            "_Experiment_file.Experiment_list_ID",};
 
     /**
      * Test of speed of accessing data in file

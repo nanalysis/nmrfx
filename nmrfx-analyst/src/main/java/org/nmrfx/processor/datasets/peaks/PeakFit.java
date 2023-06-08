@@ -40,8 +40,8 @@ import org.nmrfx.processor.optimization.SineSignal;
 import java.util.*;
 
 public class PeakFit implements MultivariateFunction {
-
-    static RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
+    private static final RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
+    
     final PeakFitParameters fitParameters;
     final boolean fitShape;
     final boolean constrainShape;

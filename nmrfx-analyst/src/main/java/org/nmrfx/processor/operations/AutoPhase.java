@@ -34,8 +34,8 @@ import org.nmrfx.processor.processing.ProcessingException;
 @PythonAPI("pyproc")
 public class AutoPhase extends Operation {
 
-    public static AtomicDouble lastPh0 = new AtomicDouble(0.0);
-    public static AtomicDouble lastPh1 = new AtomicDouble(0.0);
+    public static final AtomicDouble lastPh0 = new AtomicDouble(0.0);
+    public static final AtomicDouble lastPh1 = new AtomicDouble(0.0);
 
     private final boolean firstOrder;
     private final boolean maxMode;

@@ -37,7 +37,7 @@ public class ComplexSingularValueDecomposition {
     /**
      * Limits the number of iterations in the SVD algorithm
      */
-    public static int MAXITER = 30;
+    private static final int MAXITER = 30;
     /**
      * The matrix of left singular vectors
      */

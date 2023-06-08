@@ -34,8 +34,11 @@ import java.util.Collections;
  * @author Bruce Johnson
  */
 public class GRINS {
-
     private static final Logger log = LoggerFactory.getLogger(GRINS.class);
+
+    private static final double THRESHOLD_SCALE = 0.8;
+    private static final double NOISE_SCALE = 5.0;
+
     final MatrixND matrix;
     final double noise;
     final boolean preserve;
@@ -46,8 +49,6 @@ public class GRINS {
     final double[] phase;
     final String logFileName;
 
-    public static double thresholdScale = 0.8;
-    public static double noiseScale = 5.0;
     boolean calcLorentz = true;
     boolean calcGauss = false;
     double fracLorentz = 1.0;
@@ -118,12 +119,12 @@ public class GRINS {
                 double[] measure = matrix.measure(false, 0.0, Double.MAX_VALUE);
                 double max = Math.max(FastMath.abs(measure[0]), FastMath.abs(measure[1]));
                 // fixme threshold based on abs value
-                double globalThreshold = max * thresholdScale;
-                if (globalThreshold > lastThreshold * thresholdScale) {
-                    globalThreshold = lastThreshold * thresholdScale;
+                double globalThreshold = max * THRESHOLD_SCALE;
+                if (globalThreshold > lastThreshold * THRESHOLD_SCALE) {
+                    globalThreshold = lastThreshold * THRESHOLD_SCALE;
                 }
                 lastThreshold = globalThreshold;
-                double noiseThreshold = noiseValue * noiseScale;
+                double noiseThreshold = noiseValue * NOISE_SCALE;
                 if (globalThreshold < noiseThreshold) {
                     break;
                 }

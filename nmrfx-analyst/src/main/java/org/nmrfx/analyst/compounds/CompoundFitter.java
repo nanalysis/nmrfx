@@ -43,7 +43,7 @@ public class CompoundFitter implements MultivariateFunction {
 
     private static final Logger log = LoggerFactory.getLogger(CompoundFitter.class);
 
-    public static int MAX_SHIFT = 15;
+    public static final int MAX_SHIFT = 15;
 
     ArrayList<CompoundRegion> cList = new ArrayList<>();
     List<CompoundMatch> cMatches = new ArrayList<>();

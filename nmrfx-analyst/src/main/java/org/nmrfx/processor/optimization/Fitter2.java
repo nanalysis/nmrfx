@@ -29,9 +29,8 @@ import java.util.stream.IntStream;
 // we may refactor so Fitter2 extends, or replaces Fitter
 
 public class Fitter2 {
-
     private static final Logger log = LoggerFactory.getLogger(Fitter2.class);
-    static RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
+    private static final RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
 
     boolean reportFitness = false;
     int reportAt = 10;

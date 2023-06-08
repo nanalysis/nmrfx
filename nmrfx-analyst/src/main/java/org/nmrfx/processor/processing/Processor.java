@@ -67,8 +67,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @PythonAPI({"nmrpar", "pyproc"})
 public class Processor {
     private static final Logger log = LoggerFactory.getLogger(Processor.class);
-    private static long MEMORY_MODE_LIMIT = 536870912L;
-    private static boolean TEST_CORRUPTION_MODE = false;
+    private static long memoryModeLimit = 536870912L;
+    private static boolean testCorruptionMode = false;
     private static int iDataNum = 0;
 
 
@@ -143,12 +143,7 @@ public class Processor {
      * True if the file has been completely read so that loading vectors will
      * stop.
      */
-    private AtomicBoolean endOfFile = new AtomicBoolean(false);
-    /**
-     * If True then processes will stop querying for unprocessed vectors to
-     * process.
-     */
-    public static boolean stopProcessing = false;
+    private final AtomicBoolean endOfFile = new AtomicBoolean(false);
     /**
      * Processor is a singleton which is able to control and communicate with
      * processes.
@@ -883,12 +878,12 @@ public class Processor {
     }
 
     public static boolean useMemoryMode(long size) {
-        return size <= MEMORY_MODE_LIMIT;
+        return size <= memoryModeLimit;
     }
 
     // used from Python for testing
     public static void setMemoryModeLimit(long size) {
-        MEMORY_MODE_LIMIT = size;
+        memoryModeLimit = size;
     }
 
     // called from Python
@@ -1251,7 +1246,7 @@ public class Processor {
                             for (NMRData nmrData : nmrDataSets) {
                                 temp = new Vec(vectorSize, nmrData.isComplex(dim[0]));
                                 nmrData.readVector(vecIndex.inVecs[j], temp);
-                                if (TEST_CORRUPTION_MODE) {
+                                if (testCorruptionMode) {
                                     for (int[] rowSkip : nmrData.getSkipIndices()) {
                                         if (rowSkip[0] == vecIndex.getOutVec(j)[1][0]) {
                                             temp.rand();
@@ -1856,6 +1851,6 @@ public class Processor {
     }
 
     public static void setTestCorruptionMode(boolean state) {
-        TEST_CORRUPTION_MODE = state;
+        testCorruptionMode = state;
     }
 }

@@ -35,8 +35,10 @@ import java.util.Set;
  */
 public abstract class OptFunction implements
         DifferentiableMultivariateVectorFunction, MultivariateVectorFunction, Function {
-    //Data container for value list ie. xlist/xvec, etc.
 
+    private static final Map<String, Class> equationMap = new HashMap<>();
+
+    //Data container for value list ie. xlist/xvec, etc.
     private DataRMap dsp;
     //Data container for parameter values
     private EstParamSet psp;
@@ -47,7 +49,6 @@ public abstract class OptFunction implements
     private int nPar;
     private HashMap<VecID, Equation> partialMap;
     private Equation yfuncx;
-    static private HashMap<String, Class> equationMap = new HashMap<String, Class>();
 
     public OptFunction() {
         registerEquation(getClass(), getFunctionName());

@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
 public class Fitter {
 
     private static final Logger log = LoggerFactory.getLogger(Fitter.class);
-    static RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
+    private static final RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
 
     boolean reportFitness = false;
     int reportAt = 10;

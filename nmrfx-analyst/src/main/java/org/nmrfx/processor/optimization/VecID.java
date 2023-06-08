@@ -59,9 +59,8 @@ public enum VecID {
     }
 
     private static class VarHash {
-
         private static final int HASH_SIZE = 26;
-        private static int[] h = new int[HASH_SIZE];
+        private static final int[] h = new int[HASH_SIZE];
 
         public static int getVarIndex(VecID varName) {
             return h[varName.getValue()];

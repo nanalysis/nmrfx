@@ -80,10 +80,9 @@ import static org.nmrfx.processor.math.VecUtil.nnlsFit;
 public class Vec extends VecBase {
 
     public static final PyType VTYPE = PyType.fromClass(Vec.class);
-
-    static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
-
     public static final String TYPE_NAME = "nmrfxvector";
+
+    private static final GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
 
     private double[] annotationData = null;
 

@@ -22,7 +22,7 @@ import java.util.Set;
  */
 public class JournalFormatPeaks {
 
-    static Map<String, JournalFormat> journalFormats = new HashMap<>();
+    private static final Map<String, JournalFormat> journalFormats = new HashMap<>();
 
     static JournalFormat parseYamlMap(Map<String, Object> map) {
         JournalFormat jformat = new JournalFormat();
