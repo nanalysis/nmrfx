@@ -134,7 +134,10 @@ public class FXMLControllerManager {
         AnalystApp.registerStage(stage);
 
         stage.focusedProperty().addListener(observable -> focusChanged(controller));
-        stage.setOnCloseRequest(e -> closeController(controller));
+        stage.setOnCloseRequest(e -> {
+            closeController(controller);
+            AnalystApp.removeStage(stage);
+        });
         stage.show();
 
         return controller;
