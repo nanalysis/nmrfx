@@ -829,7 +829,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         borderPane.setLeft(null);
-        initializeToggleButtons();
+        initializeRightPaneContentControlToggleButtons();
         chartDrawingLayers = new ChartDrawingLayers(this, chartPane);
         activeChart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
         initToolBar(toolBar);
@@ -865,7 +865,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
      * Initialize the toggle buttons Phasing, Attributes and Contents. On mac these buttons will appear right
      * aligned in a separate top menu in the window, otherwise they will appear right aligned in the file menu.
      */
-    public void initializeToggleButtons() {
+    private void initializeRightPaneContentControlToggleButtons() {
         MenuBar menuBar = AnalystApp.getMenuBar();
         ToggleButton phaserButton = new ToggleButton("Phasing");
         ToggleButton attributesButton = new ToggleButton("Attributes");
@@ -877,12 +877,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         attributesButton.getStyleClass().add("toolButton");
         contentButton.getStyleClass().add("toolButton");
         SegmentedButton groupButton = new SegmentedButton(phaserButton, contentButton, attributesButton);
-        if (!AnalystApp.isMac()) {
-            groupButton.maxHeightProperty().bind(menuBar.heightProperty());
-            StackPane sp = new StackPane(menuBar, groupButton);
-            sp.setAlignment(Pos.CENTER_RIGHT);
-            topBar.getChildren().add(0, sp);
-        } else {
+        if (AnalystApp.isMac()) {
             ToolBar toggleButtonToolbar = new ToolBar();
             // Remove padding from top and bottom to match style of how the buttons appear on non mac os
             Insets current = toggleButtonToolbar.getPadding();
@@ -891,6 +886,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             HBox.setHgrow(spacer, Priority.ALWAYS);
             toggleButtonToolbar.getItems().addAll(spacer, groupButton);
             topBar.getChildren().add(0, toggleButtonToolbar);
+        } else {
+            groupButton.maxHeightProperty().bind(menuBar.heightProperty());
+            StackPane sp = new StackPane(menuBar, groupButton);
+            sp.setAlignment(Pos.CENTER_RIGHT);
+            topBar.getChildren().add(0, sp);
         }
     }
 
