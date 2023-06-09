@@ -3,12 +3,8 @@ package org.nmrfx.utilities;
 import com.jcraft.jsch.*;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * @author brucejohnson
@@ -27,7 +23,6 @@ public class RemoteDatasetAccess {
     ChannelSftp sftp = null;
     String password = null;
     boolean passwordValid = false;
-    Optional<Boolean> useIdentity = Optional.empty();
 
     public RemoteDatasetAccess(String userName, String remoteHost) {
         this.userName = userName;
@@ -44,25 +39,6 @@ public class RemoteDatasetAccess {
 
     public boolean passwordValid() {
         return passwordValid;
-    }
-
-    public boolean useIdentity() {
-        if (useIdentity.isPresent()) {
-            return useIdentity.get();
-        }
-        File knownHostsFile = fileSystem.getPath(userdir, ".ssh", "known_hosts").toFile();
-        File identityFile = fileSystem.getPath(userdir, ".ssh", "id_rsa").toFile();
-        boolean ok = false;
-
-        if (knownHostsFile.exists() && identityFile.exists()) {
-            try (Stream<String> lines = Files.lines(identityFile.toPath())) {
-                ok = lines.anyMatch(line -> line.startsWith(remoteHost));
-            } catch (IOException ex) {
-                ok = false;
-            }
-        }
-        useIdentity = Optional.of(ok);
-        return useIdentity.get();
     }
 
     Session getSession() throws JSchException {
@@ -122,7 +98,4 @@ public class RemoteDatasetAccess {
         return true;
     }
 
-    public void parseIndex() {
-
-    }
 }
