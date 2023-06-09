@@ -149,6 +149,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private BorderPane mainBox;
     @FXML
     private StackPane processorPane;
+    @FXML
+    private HBox leftBar;
     private double previousStageRestoreWidth = 0;
     private double previousStageRestoreProcControllerWidth = 0;
     private boolean previousStageRestoreProcControllerVisible = false;
@@ -1587,7 +1589,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     private void initToolBar(ToolBar toolBar) {
         ArrayList<Node> buttons = new ArrayList<>();
-
         ButtonBase bButton;
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(this::showDatasetsAction);
@@ -1690,6 +1691,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             }
         }
         toolBar.getItems().addAll(buttons);
+        // Make all buttons the same width to align the edges
+        toolBar.widthProperty().addListener((observable, oldValue, newValue) -> GUIUtils.nodeAdjustWidths(buttons));
 
         ToolBar btoolBar = new ToolBar();
         ToolBar btoolBar2 = new ToolBar();
