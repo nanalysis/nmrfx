@@ -2,12 +2,11 @@ package org.nmrfx.utilities;
 
 import java.io.*;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public class UnZipper extends SimpleFileVisitor<Path> {
+public class UnZipper {
     private static final int BUFFER_SIZE = 16384;
     private final File zipFile;
     private final File destDir;
