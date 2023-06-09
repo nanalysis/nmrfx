@@ -244,9 +244,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         controller.chartProcessor.setFxmlController(fxmlController);
         controller.processorPane = processorPane;
         controller.pane = builder.getNode();
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
-        closeButton.setOnAction(e -> controller.hide());
-        controller.toolBar.getItems().add(closeButton);
         fxmlController.processorCreated(controller.pane);
 
         return controller;

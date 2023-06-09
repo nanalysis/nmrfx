@@ -20,9 +20,6 @@ public class ViewMenuItems extends MenuActions {
 
     @Override
     public void basic() {
-        MenuItem procMenuItem = new MenuItem(PROCESSOR_MENU_TEXT);
-        procMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().showProcessorAction(e));
-
         MenuItem dataMenuItem = new MenuItem("Show Datasets");
         dataMenuItem.setOnAction(this::showDatasetsTable);
 
@@ -36,16 +33,7 @@ public class ViewMenuItems extends MenuActions {
         MenuItem integralTableItem = new MenuItem("Show Regions Table");
         integralTableItem.setOnAction(e -> showRegionsTable());
 
-        menu.getItems().addAll(consoleMenuItem, logConsoleMenuItem, dataMenuItem, integralTableItem, procMenuItem);
-        menu.onShowingProperty().set(e -> verifyMenuItems());
-    }
-
-    private void verifyMenuItems() {
-        for (MenuItem menuItem : menu.getItems()) {
-            if (PROCESSOR_MENU_TEXT.equals(menuItem.getText())) {
-                menuItem.setDisable(!AnalystApp.getFXMLControllerManager().getOrCreateActiveController().isProcessorControllerAvailable());
-            }
-        }
+        menu.getItems().addAll(consoleMenuItem, logConsoleMenuItem, dataMenuItem, integralTableItem);
     }
 
     @Override
