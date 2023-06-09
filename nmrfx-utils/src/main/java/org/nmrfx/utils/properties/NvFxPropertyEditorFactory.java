@@ -16,11 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.utils.properties;
 
 import de.jensd.fx.glyphs.GlyphsDude;
@@ -55,8 +50,17 @@ import java.util.Collection;
 //TODO add annotations once core and utils are merged
 // @PluginAPI("ring")
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
-
     private static final Logger log = LoggerFactory.getLogger(NvFxPropertyEditorFactory.class);
+
+    private static final Class<?>[] NUMERIC_TYPES = new Class[]{
+            byte.class, Byte.class,
+            short.class, Short.class,
+            int.class, Integer.class,
+            long.class, Long.class,
+            float.class, Float.class,
+            double.class, Double.class,
+            BigInteger.class, BigDecimal.class
+    };
 
     public NvFxPropertyEditorFactory() {
         super();
@@ -153,22 +157,12 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
         return super.call(item);
     }
 
-    private static Class<?>[] numericTypes = new Class[]{
-            byte.class, Byte.class,
-            short.class, Short.class,
-            int.class, Integer.class,
-            long.class, Long.class,
-            float.class, Float.class,
-            double.class, Double.class,
-            BigInteger.class, BigDecimal.class
-    };
-
     // there should be better ways to do this
     private static boolean isNumber(Class<?> type) {
         if (type == null) {
             return false;
         }
-        for (Class<?> cls : numericTypes) {
+        for (Class<?> cls : NUMERIC_TYPES) {
             if (type == cls) {
                 return true;
             }

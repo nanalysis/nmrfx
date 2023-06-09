@@ -42,12 +42,12 @@ import java.util.function.Consumer;
  * @author brucejohnson
  */
 public class TextWaitingOperationItem extends OperationItem implements ObservableStringValue {
+    private static final Background ACTIVE_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY));
 
     ChangeListener<? super String> listener;
     Consumer<Item> f;
     String value;
     String defaultValue;
-    static Background activeBackground = new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
 
     public TextWaitingOperationItem(ChangeListener listener, Consumer<Item> f, String defaultValue, String category, String name, String description) {
@@ -134,9 +134,7 @@ public class TextWaitingOperationItem extends OperationItem implements Observabl
             textField.setBackground(defaultBackground);
             f.accept(this);
         } else {
-            textField.setBackground(activeBackground);
-
+            textField.setBackground(ACTIVE_BACKGROUND);
         }
     }
-
 }
