@@ -17,11 +17,11 @@ import static java.nio.file.StandardWatchEventKinds.*;
  * @author brucejohnson
  */
 public class NMRFxFileWatcher implements Runnable {
-
     private static final Logger log = LoggerFactory.getLogger(NMRFxFileWatcher.class);
-    File watchDir;
-    protected static final Map<String, WatchService> watchServices = new HashMap<>();
-    protected List<FileWatchListener> listeners = new ArrayList<>();
+    private static final Map<String, WatchService> watchServices = new HashMap<>();
+
+    private final List<FileWatchListener> listeners = new ArrayList<>();
+    private final File watchDir;
 
     public NMRFxFileWatcher(File dir) {
         this.watchDir = dir;
@@ -31,21 +31,15 @@ public class NMRFxFileWatcher implements Runnable {
         if (watchDir.exists()) {
             Path path = Paths.get(watchDir.getAbsolutePath());
             if (!watchServices.containsKey(path.toString())) {
-                Thread thread = new Thread(this);
+                Thread thread = new Thread(this, getClass().getName());
                 thread.setDaemon(true);
                 thread.start();
             }
         }
     }
 
-    public static WatchService getWatcher(String pathString) {
-        return watchServices.get(pathString);
-    }
-
-    public NMRFxFileWatcher addListener(FileWatchListener listener) {
+    public void addListener(FileWatchListener listener) {
         listeners.add(listener);
-        return this;
-
     }
 
     public static boolean remove(String pathString) {
@@ -54,7 +48,7 @@ public class NMRFxFileWatcher implements Runnable {
             try {
                 service.close();
             } catch (IOException ex) {
-                log.warn(ex.getMessage(), ex);
+                log.warn("Unable to close WatchService", ex);
             }
         }
         return service != null;
@@ -69,15 +63,14 @@ public class NMRFxFileWatcher implements Runnable {
             watchServices.put(path.toString(), watchService);
 
             while (pollEvents(watchService)) {
+                // do nothing, only poll
             }
-
         } catch (IOException | InterruptedException | ClosedWatchServiceException e) {
             Thread.currentThread().interrupt();
         }
-
     }
 
-    protected boolean pollEvents(WatchService watchService) throws InterruptedException {
+    private boolean pollEvents(WatchService watchService) throws InterruptedException {
         WatchKey key = watchService.take();
         Path path = (Path) key.watchable();
 
@@ -86,22 +79,15 @@ public class NMRFxFileWatcher implements Runnable {
         }
 
         return key.reset();
-
     }
 
     private void notifyListeners(WatchEvent.Kind<?> kind, File file) {
         if (kind == ENTRY_CREATE) {
-            for (FileWatchListener listener : listeners) {
-                listener.onCreated(file);
-            }
+            listeners.forEach(listener -> listener.onCreated(file));
         } else if (kind == ENTRY_DELETE) {
-            for (FileWatchListener listener : listeners) {
-                listener.onDeleted(file);
-            }
+            listeners.forEach(listener -> listener.onDeleted(file));
         } else if (kind == ENTRY_MODIFY) {
-            for (FileWatchListener listener : listeners) {
-                listener.onModified(file);
-            }
+            listeners.forEach(listener -> listener.onModified(file));
         }
     }
 }
