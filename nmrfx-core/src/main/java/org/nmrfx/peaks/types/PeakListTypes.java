@@ -1,9 +1,12 @@
 package org.nmrfx.peaks.types;
 
+import org.nmrfx.annotations.YamlEntity;
+
 import java.util.List;
 
+@YamlEntity("peakpat")
 public class PeakListTypes {
-    List<PeakListType> types;
+    private List<PeakListType> types;
 
     public List<PeakListType> getTypes() {
         return types;

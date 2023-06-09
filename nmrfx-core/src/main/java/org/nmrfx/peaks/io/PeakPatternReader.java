@@ -10,23 +10,11 @@ import java.util.List;
 import java.util.Map;
 
 public class PeakPatternReader {
-
     public static PeakListTypes loadYaml() throws IOException {
-        Map<String, Object> yamlData = null;
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         try (InputStream istream = cl.getResourceAsStream("peakpat.yaml")) {
             Yaml yaml = new Yaml(new Constructor(PeakListTypes.class));
-            PeakListTypes types = yaml.load(istream);
-            return types;
+            return yaml.load(istream);
         }
     }
-
-    private void processYaml(Map<String, Object> yamlData) {
-        var typeList = (List<Map<String, Object>>) yamlData.get("types");
-        for (Map<String, Object> typeMap : typeList) {
-            String name = (String) typeMap.get("name");
-            String dims = (String) typeMap.get("dims");
-        }
-    }
-
 }

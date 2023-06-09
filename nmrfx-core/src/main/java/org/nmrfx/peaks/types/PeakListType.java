@@ -1,5 +1,6 @@
 package org.nmrfx.peaks.types;
 
+import org.nmrfx.annotations.YamlEntity;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 
@@ -7,9 +8,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@YamlEntity("peakpat")
 public class PeakListType {
-    String name;
-    List<PeakListTypeDim> dims;
+    private String name;
+    private List<PeakListTypeDim> dims;
 
     public List<PeakListTypeDim> getDims() {
         return dims;
