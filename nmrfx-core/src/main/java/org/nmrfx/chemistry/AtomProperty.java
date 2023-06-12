@@ -21,7 +21,9 @@ package org.nmrfx.chemistry;
 import org.nmrfx.utilities.NMRFxColor;
 import org.nmrfx.utilities.NvUtil;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * All atoms from the periodic table, declared specific order so that each enum value's ordinal matches with the periodic table's element number.
@@ -133,23 +135,11 @@ public enum AtomProperty {
     Lr("Lr", 1.0f, 0.0f);
 
     private static final String GENERIC_COLOR = "gray";
+    private static final List<AtomProperty> VALUES = List.of(values());
     private static final Map<String, AtomProperty> byName = new HashMap<>();
 
-
-    private static final AtomProperty[] PRIVATE_VALUES = {
-            X, H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, K, Ca,
-            Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge, As, Se, Br, Kr, Rb, Sr, Y,
-            Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I, Xe, Cs, Ba, La,
-            Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta, W, Re,
-            Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At, Rn, Fr, Ra, Ac, Th, Pa, U, Np,
-            Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Lr
-    };
-    public static final List VALUES = Collections.unmodifiableList(Arrays.asList(
-            PRIVATE_VALUES));
-
     static {
-        for (Iterator iter = VALUES.iterator(); iter.hasNext(); ) {
-            AtomProperty atomProp = (AtomProperty) iter.next();
+        for (AtomProperty atomProp : VALUES) {
             byName.put(atomProp.name, atomProp);
         }
     }
@@ -212,15 +202,15 @@ public enum AtomProperty {
     }
 
     public static String getElementName(int eNum) {
-        if ((eNum < 1) || (eNum >= VALUES.size())) {
+        if (eNum < 1 || eNum >= VALUES.size()) {
             return null;
         }
 
-        return ((AtomProperty) VALUES.get(eNum)).name;
+        return VALUES.get(eNum).name;
     }
 
     public byte getElementNumber() {
-        return getElementNumber(name);
+        return (byte) ordinal();
     }
 
     public static byte getElementNumber(String elemName) {
@@ -244,18 +234,14 @@ public enum AtomProperty {
         }
         AtomProperty atomProp = byName.get(elemName);
 
-        if (atomProp == null) {
-            return X;
-        } else {
-            return atomProp;
-        }
+        return atomProp == null ? X : atomProp;
     }
 
     public static AtomProperty get(int eNum) {
-        if ((eNum < 0) || (eNum >= VALUES.size())) {
+        if (eNum < 0 || eNum >= VALUES.size()) {
             return null;
         }
 
-        return ((AtomProperty) VALUES.get(eNum));
+        return VALUES.get(eNum);
     }
 }
