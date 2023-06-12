@@ -85,7 +85,6 @@ public class AnalystApp extends Application {
 
     private final PopOverTools popoverTool = new PopOverTools();
     private PreferencesController preferencesController;
-    private DatasetsController datasetController;
     private HostServices hostServices;
     private MenuBar mainMenuBar = null;
     private FileMenuActions fileMenuActions;
@@ -642,16 +641,6 @@ public class AnalystApp extends Application {
 
     public void showPopover(PolyChart chart, Bounds objectBounds, Object hitObject) {
         popoverTool.showPopover(chart, objectBounds, hitObject);
-    }
-
-    @FXML
-    void showDatasetsTable(ActionEvent event) {
-        if (datasetController == null) {
-            datasetController = DatasetsController.create();
-        }
-        datasetController.refresh();
-        datasetController.getStage().show();
-        datasetController.getStage().toFront();
     }
 
     /**
