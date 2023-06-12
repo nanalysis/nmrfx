@@ -83,6 +83,7 @@ public class SpectrumStatusBar {
     private final MenuButton toolButton = new MenuButton("Tools");
     private final List<ButtonBase> specialButtons = new ArrayList<>();
     private final Button peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
+    private final ToggleButton phaserButton = new ToggleButton("Phasing");
 
     private boolean arrayMode = false;
     private DataMode currentMode = DataMode.FID;
@@ -207,6 +208,9 @@ public class SpectrumStatusBar {
         primaryToolbar.getItems().add(filler);
         primaryToolbar.getItems().add(complexStatus);
         complexStatus.setOnAction(this::complexStatusChanged);
+        phaserButton.setOnAction(event -> controller.updatePhaser(phaserButton.isSelected()));
+
+        primaryToolbar.getItems().add(phaserButton);
 
         controller.getActiveChart().getDisDimProperty().addListener(displayedDimensionsListener);
         PolyChartManager.getInstance().activeChartProperty().addListener(this::setChart);
@@ -552,7 +556,7 @@ public class SpectrumStatusBar {
             Pane nodeFiller = createHorizontalSpacer();
             nodes.add(nodeFiller);
         }
-
+        nodes.add(phaserButton);
         primaryToolbar.getItems().setAll(nodes);
     }
 
@@ -634,6 +638,7 @@ public class SpectrumStatusBar {
         if (currentMode == DataMode.FID) {
             nodes.add(complexStatus);
         }
+        nodes.add(phaserButton);
 
         primaryToolbar.getItems().setAll(nodes);
     }
