@@ -8,7 +8,6 @@ package org.nmrfx.processor.gui;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.Peak;
@@ -34,10 +33,10 @@ import java.util.function.Consumer;
 public class PeakPicking {
     private static final Logger log = LoggerFactory.getLogger(PeakPicking.class);
 
-    private static Consumer singlePickAction = null;
+    private static Consumer<Peak> onSinglePeakSelected = null;
 
-    public static void registerSinglePickAction(Consumer func) {
-        singlePickAction = func;
+    public static void registerSinglePickSelectionAction(Consumer<Peak> action) {
+        onSinglePeakSelected = action;
     }
 
     public static void peakPickActive(FXMLController fxmlController, double level) {
@@ -237,16 +236,17 @@ public class PeakPicking {
             dialog.showAndWait();
         }
         chart.setPeakStatus(true);
-        if ((peak != null)) {
-            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-            if (controller.isPeakAttrControllerShowing()) {
-                controller.getPeakAttrController().gotoPeak(peak);
+
+        if (peak != null) {
+            if (FXMLController.isPeakAttrControllerShowing()) {
+                FXMLController.getPeakAttrController().gotoPeak(peak);
+            }
+
+            if (onSinglePeakSelected != null) {
+                onSinglePeakSelected.accept(peak);
             }
         }
-        if ((peak != null) && (singlePickAction != null)) {
-            singlePickAction.accept(peak);
-        }
+
         return peakList;
     }
-
 }
