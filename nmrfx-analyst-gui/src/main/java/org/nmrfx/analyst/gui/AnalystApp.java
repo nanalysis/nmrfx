@@ -49,6 +49,7 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.console.ConsoleController;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.plugin.api.EntryPoint;
@@ -126,7 +127,7 @@ public class AnalystApp extends Application {
         AnalystPythonInterpreter.initialize(getParameters());
         ConsoleController.create(AnalystPythonInterpreter.getInterpreter(), "NMRFx Console");
         LogConsoleController.create();
-        PeakPicking.registerSinglePickAction(this::pickedPeakAction);
+        PeakPicking.registerSinglePickSelectionAction(this::pickedPeakAction);
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
@@ -262,9 +263,9 @@ public class AnalystApp extends Application {
         return menuBar;
     }
 
-    void pickedPeakAction(Object peakObject) {
+    void pickedPeakAction(Peak peak) {
         if (peakMenuActions != null) {
-            peakMenuActions.pickedPeakAction(peakObject);
+            peakMenuActions.pickedPeakAction(peak);
         }
     }
 
