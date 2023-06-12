@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 
 public class DatasetView {
     FXMLController fxmlController;
-    ContentController attributesController;
     ListSelectionView<String> datasetView;
     ListChangeListener<String> datasetTargetListener;
     Integer startIndex = null;
@@ -37,7 +36,6 @@ public class DatasetView {
 
     public DatasetView(FXMLController fxmlController, ContentController controller) {
         this.fxmlController = fxmlController;
-        this.attributesController = controller;
         datasetView = controller.datasetView;
         datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> {
             PolyChart chart = this.fxmlController.getActiveChart();

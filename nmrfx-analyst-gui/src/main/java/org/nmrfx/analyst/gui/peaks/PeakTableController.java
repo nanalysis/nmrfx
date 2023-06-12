@@ -25,7 +25,6 @@ package org.nmrfx.analyst.gui.peaks;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -229,11 +228,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         tableView.setEditable(true);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         updateColumns(0);
-        ListChangeListener listener = (ListChangeListener) (ListChangeListener.Change c) -> {
-            int nSelected = tableView.getSelectionModel().getSelectedItems().size();
-            boolean state = nSelected == 1;
-        };
-        tableView.getSelectionModel().getSelectedIndices().addListener(listener);
         tableView.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
                 if (!tableView.getSelectionModel().getSelectedItems().isEmpty()) {
@@ -438,10 +432,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         controller.showPeakAttr();
         controller.getPeakAttrController().gotoPeak(peak);
         controller.getPeakAttrController().getStage().toFront();
-
-    }
-
-    void closePeak() {
 
     }
 }
