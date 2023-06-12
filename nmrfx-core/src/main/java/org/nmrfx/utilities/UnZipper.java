@@ -21,27 +21,31 @@ public class UnZipper {
             throw new IOException("Unable to create destination directory: " + destDir.getAbsolutePath());
         }
 
-        ZipFile inFile = new ZipFile(zipFile);
-        final Enumeration<? extends ZipEntry> entries = inFile.entries();
-        while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
-            File file = Path.of(destDir.getPath(), entry.getName()).toFile();
-            File parentDir = file.getParentFile();
-            if (!parentDir.exists() && !parentDir.mkdirs()) {
-                throw new IOException("Unable to create directory: " + parentDir.getAbsolutePath());
-            }
-
-            if (entry.isDirectory()) {
-                // if the entry is a directory, make the directory
-                if (!file.mkdirs()) {
-                    throw new IOException("Unable to create directory: " + file.getAbsolutePath());
-                }
-            } else {
-                // if the entry is a file, extracts it
-                extractFile(inFile, entry, file.toString());
+        try(ZipFile inFile = new ZipFile(zipFile)) {
+            Enumeration<? extends ZipEntry> entries = inFile.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                extractZipEntry(inFile, entry);
             }
         }
-        inFile.close();
+    }
+
+    private void extractZipEntry(ZipFile inFile, ZipEntry entry) throws IOException {
+        File file = Path.of(destDir.getPath(), entry.getName()).toFile();
+        File parentDir = file.getParentFile();
+        if (!parentDir.exists() && !parentDir.mkdirs()) {
+            throw new IOException("Unable to create directory: " + parentDir.getAbsolutePath());
+        }
+
+        if (entry.isDirectory()) {
+            // if the entry is a directory, make the directory
+            if (!file.mkdirs()) {
+                throw new IOException("Unable to create directory: " + file.getAbsolutePath());
+            }
+        } else {
+            // if the entry is a file, extracts it
+            extractFile(inFile, entry, file.toString());
+        }
     }
 
     private void extractFile(ZipFile inFile, ZipEntry zipEntry, String filePath) throws IOException {
