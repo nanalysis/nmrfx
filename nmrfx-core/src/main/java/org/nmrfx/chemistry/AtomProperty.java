@@ -21,9 +21,7 @@ package org.nmrfx.chemistry;
 import org.nmrfx.utilities.NMRFxColor;
 import org.nmrfx.utilities.NvUtil;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * All atoms from the periodic table, declared specific order so that each enum value's ordinal matches with the periodic table's element number.
@@ -136,13 +134,6 @@ public enum AtomProperty {
 
     private static final String GENERIC_COLOR = "gray";
     private static final List<AtomProperty> VALUES = List.of(values());
-    private static final Map<String, AtomProperty> byName = new HashMap<>();
-
-    static {
-        for (AtomProperty atomProp : VALUES) {
-            byName.put(atomProp.name, atomProp);
-        }
-    }
 
     private final String name;
     private final float radius;
@@ -214,27 +205,15 @@ public enum AtomProperty {
     }
 
     public static byte getElementNumber(String elemName) {
-        elemName = elemName.toUpperCase();
-        if (elemName.length() > 1) {
-            elemName = elemName.replace(elemName.substring(1), elemName.substring(1).toLowerCase());
-        }
-        AtomProperty atomProp = byName.get(elemName);
-
-        if (atomProp != null) {
-            return (byte) atomProp.ordinal();
-        } else {
-            return 0;
-        }
+        return get(elemName).getElementNumber();
     }
 
     public static AtomProperty get(String elemName) {
-        elemName = elemName.toUpperCase();
-        if (elemName.length() > 1) {
-            elemName = elemName.replace(elemName.substring(1), elemName.substring(1).toLowerCase());
+        try {
+            return AtomProperty.valueOf(normalizeName(elemName));
+        } catch (IllegalArgumentException e) {
+            return X;
         }
-        AtomProperty atomProp = byName.get(elemName);
-
-        return atomProp == null ? X : atomProp;
     }
 
     public static AtomProperty get(int eNum) {
@@ -243,5 +222,14 @@ public enum AtomProperty {
         }
 
         return VALUES.get(eNum);
+    }
+
+    public static String normalizeName(String elemName) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(Character.toUpperCase(elemName.charAt(0)));
+        for (int i = 1; i < elemName.length(); i++) {
+            builder.append(Character.toLowerCase(elemName.charAt(i)));
+        }
+        return builder.toString();
     }
 }
