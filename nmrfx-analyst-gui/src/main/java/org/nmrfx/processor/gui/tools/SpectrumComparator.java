@@ -28,7 +28,6 @@ public class SpectrumComparator {
 
     private static final Logger log = LoggerFactory.getLogger(SpectrumComparator.class);
     VBox vBox;
-    FXMLController controller;
     PolyChart chart;
     ToolBar toolBar1;
     ToolBar toolBar2;
@@ -38,7 +37,6 @@ public class SpectrumComparator {
     private ColorPicker[] datasetColorPickers = new ColorPicker[2];
 
     public SpectrumComparator(FXMLController controller, Consumer closeAction) {
-        this.controller = controller;
         this.closeAction = closeAction;
         this.chart = controller.getActiveChart();
     }
@@ -47,7 +45,7 @@ public class SpectrumComparator {
         return vBox;
     }
 
-    public void close(Object o) {
+    public void close() {
         closeAction.accept(this);
     }
 
@@ -60,7 +58,7 @@ public class SpectrumComparator {
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
-        closeButton.setOnAction(e -> close(this));
+        closeButton.setOnAction(e -> close());
 
         ArrayList<Button> dataset1Buttons = new ArrayList<>();
         ArrayList<Button> dataset2Buttons = new ArrayList<>();
@@ -169,10 +167,6 @@ public class SpectrumComparator {
         }
 
         chart.refresh();
-    }
-
-    void allDatasets() {
-
     }
 
     int getActiveDataset(int iSet) {
