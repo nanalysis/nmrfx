@@ -62,33 +62,15 @@ import java.util.*;
 public class SpectrumStatusBar {
 
     private static final Logger log = LoggerFactory.getLogger(SpectrumStatusBar.class);
-
-    private enum DisplayMode {
-        TRACES("Traces (1D)"),
-        STACKPLOT("Stack Plot"),
-        CONTOURS("Contours (2D)");
-        private final String strValue;
-
-        DisplayMode(String strValue) {
-            this.strValue = strValue;
-        }
-
-        @Override
-        public String toString() {
-            return this.strValue;
-        }
-    }
-
     static final DecimalFormat formatter = new DecimalFormat();
-
-    static {
-        formatter.setMaximumFractionDigits(2);
-    }
-
     private static final int MAX_SPINNERS = 4;
     private static final String[] DIM_NAMES = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
     private static final String[] ROW_NAMES = {"X", "Row", "Plane", "A", "B", "C", "D", "E"};
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
+
+    static {
+        formatter.setMaximumFractionDigits(2);
+    }
 
     CustomNumberTextField[][] crossText = new CustomNumberTextField[2][2];
     FXMLController controller;
@@ -97,8 +79,6 @@ public class SpectrumStatusBar {
     SegmentedButton cursorButtons;
     List<ButtonBase> specialButtons = new ArrayList<>();
     Button peakPickButton;
-
-
     Spinner<Integer>[][] planeSpinner = new Spinner[MAX_SPINNERS][2];
     CheckBox[] valueModeBox = new CheckBox[MAX_SPINNERS];
     MenuButton[] dimMenus = new MenuButton[MAX_SPINNERS + 2];
@@ -114,65 +94,6 @@ public class SpectrumStatusBar {
     ChangeListener<Integer>[][] planeListeners = new ChangeListener[MAX_SPINNERS][2];
     ToolBar btoolBar1;
     ToolBar btoolBar2;
-
-    class SpinnerConverter extends IntegerStringConverter {
-        final int axNum;
-        final int spinNum;
-        boolean valueMode = false;
-
-        SpinnerConverter(int axNum, int spinNum) {
-            this.axNum = axNum;
-            this.spinNum = spinNum;
-        }
-
-        @Override
-        public String toString(Integer iValue) {
-            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
-            if (showValue) {
-                var doubleOpt = getPlaneValue(axNum, iValue - 1);
-                return doubleOpt.isPresent() ? String.format("%.2f", doubleOpt.get()) : "";
-            } else {
-                return String.valueOf(iValue);
-            }
-        }
-
-        @Override
-        public Integer fromString(String s) {
-            int result = 1;
-            Spinner<Integer> spinner = planeSpinner[axNum - 2][spinNum];
-            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
-            if (showValue) {
-                return spinner.getValueFactory().getValue();
-            }
-            try {
-                if (s.length() > 0) {
-                    if (s.contains(".")) {
-                        double planePPM = Double.parseDouble(s);
-                        int planeIndex = findPlane(planePPM, axNum);
-                        if (planeIndex == -1) {
-                            var dataAttrOpt = getDatasetAttributes();
-                            if (dataAttrOpt.isPresent()) {
-                                DatasetAttributes dataAttr = dataAttrOpt.get();
-                                planeIndex = DatasetAttributes.AXMODE.PPM.getIndex(dataAttr, axNum, planePPM);
-                            }
-                        }
-                        result = planeIndex + 1;
-                    } else {
-                        result = Integer.parseInt(s);
-                    }
-                }
-                spinner.getEditor().setBackground(defaultBackground);
-            } catch (NumberFormatException nfE) {
-                spinner.getEditor().setBackground(ERROR_BACKGROUND);
-            }
-            return result;
-        }
-
-        void setValueMode(boolean mode) {
-            valueMode = mode;
-        }
-    }
-
     StackPane[][] crossTextIcons = new StackPane[2][2];
     StackPane[][] limitTextIcons = new StackPane[2][2];
     boolean[][] iconStates = new boolean[2][2];
@@ -181,7 +102,6 @@ public class SpectrumStatusBar {
     Background defaultBackground = null;
     boolean arrayMode = false;
     int currentMode = 0;
-
     public SpectrumStatusBar(FXMLController controller) {
         this.controller = controller;
     }
@@ -879,5 +799,79 @@ public class SpectrumStatusBar {
                 }
             }
         });
+    }
+
+    private enum DisplayMode {
+        TRACES("Traces (1D)"),
+        STACKPLOT("Stack Plot"),
+        CONTOURS("Contours (2D)");
+        private final String strValue;
+
+        DisplayMode(String strValue) {
+            this.strValue = strValue;
+        }
+
+        @Override
+        public String toString() {
+            return this.strValue;
+        }
+    }
+
+    class SpinnerConverter extends IntegerStringConverter {
+        final int axNum;
+        final int spinNum;
+        boolean valueMode = false;
+
+        SpinnerConverter(int axNum, int spinNum) {
+            this.axNum = axNum;
+            this.spinNum = spinNum;
+        }
+
+        @Override
+        public Integer fromString(String s) {
+            int result = 1;
+            Spinner<Integer> spinner = planeSpinner[axNum - 2][spinNum];
+            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
+            if (showValue) {
+                return spinner.getValueFactory().getValue();
+            }
+            try {
+                if (s.length() > 0) {
+                    if (s.contains(".")) {
+                        double planePPM = Double.parseDouble(s);
+                        int planeIndex = findPlane(planePPM, axNum);
+                        if (planeIndex == -1) {
+                            var dataAttrOpt = getDatasetAttributes();
+                            if (dataAttrOpt.isPresent()) {
+                                DatasetAttributes dataAttr = dataAttrOpt.get();
+                                planeIndex = DatasetAttributes.AXMODE.PPM.getIndex(dataAttr, axNum, planePPM);
+                            }
+                        }
+                        result = planeIndex + 1;
+                    } else {
+                        result = Integer.parseInt(s);
+                    }
+                }
+                spinner.getEditor().setBackground(defaultBackground);
+            } catch (NumberFormatException nfE) {
+                spinner.getEditor().setBackground(ERROR_BACKGROUND);
+            }
+            return result;
+        }
+
+        @Override
+        public String toString(Integer iValue) {
+            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
+            if (showValue) {
+                var doubleOpt = getPlaneValue(axNum, iValue - 1);
+                return doubleOpt.isPresent() ? String.format("%.2f", doubleOpt.get()) : "";
+            } else {
+                return String.valueOf(iValue);
+            }
+        }
+
+        void setValueMode(boolean mode) {
+            valueMode = mode;
+        }
     }
 }
