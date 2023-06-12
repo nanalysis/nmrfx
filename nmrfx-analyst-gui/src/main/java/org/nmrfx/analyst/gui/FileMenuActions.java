@@ -2,11 +2,9 @@ package org.nmrfx.analyst.gui;
 
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import javafx.stage.Stage;
 import org.nmrfx.processor.gui.PreferencesController;
 
 public class FileMenuActions extends MenuActions {
-    private DatasetBrowserController browserController = null;
 
     public FileMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);
@@ -63,11 +61,6 @@ public class FileMenuActions extends MenuActions {
     }
 
     void showDataBrowser() {
-        if (browserController == null) {
-            browserController = DatasetBrowserController.create();
-        }
-        Stage browserStage = browserController.getStage();
-        browserStage.toFront();
-        browserStage.show();
+        AnalystApp.getAnalystApp().getOrCreateDatasetBrowserController().show();
     }
 }

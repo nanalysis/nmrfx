@@ -84,6 +84,7 @@ public class AnalystApp extends Application {
     private static final List<Stage> stages = new ArrayList<>();
 
     private final PopOverTools popoverTool = new PopOverTools();
+    private DatasetBrowserController datasetBrowserController;
     private PreferencesController preferencesController;
     private HostServices hostServices;
     private MenuBar mainMenuBar = null;
@@ -641,6 +642,13 @@ public class AnalystApp extends Application {
 
     public void showPopover(PolyChart chart, Bounds objectBounds, Object hitObject) {
         popoverTool.showPopover(chart, objectBounds, hitObject);
+    }
+
+    public DatasetBrowserController getOrCreateDatasetBrowserController() {
+        if (datasetBrowserController == null) {
+            datasetBrowserController = DatasetBrowserController.create();
+        }
+        return datasetBrowserController;
     }
 
     /**

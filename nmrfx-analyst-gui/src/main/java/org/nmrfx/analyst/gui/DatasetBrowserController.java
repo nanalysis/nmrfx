@@ -98,6 +98,11 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
         return stage;
     }
 
+    public void show() {
+        stage.toFront();
+        stage.show();
+    }
+
     boolean initRemoteDatasetAccess() {
         if (rdA == null) {
             String remoteHost = AnalystPrefs.getRemoteHostName();
@@ -134,11 +139,9 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
     }
 
     public static DatasetBrowserController create() {
-        DatasetBrowserController controller = Fxml.load(DatasetBrowserController.class, "DatasetBrowserScene.fxml")
+        return Fxml.load(DatasetBrowserController.class, "DatasetBrowserScene.fxml")
                 .withNewStage("Dataset Browser")
                 .getController();
-        controller.stage.show();
-        return controller;
     }
 
     void initToolBar() {
