@@ -26,6 +26,7 @@ import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.SpectrumStatusBar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
@@ -239,7 +240,7 @@ public class SimFitMolController extends SimMolController {
             sumDataset = datasets[names.indexOf("sum")];
             currentDataset = datasets[names.indexOf("current")];
 
-            controller.getStatusBar().setMode(1);
+            controller.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
             for (Dataset dataset : datasets) {
                 if (!chart.containsDataset(dataset)) {
                     chart.setDataset(dataset, true, false);
