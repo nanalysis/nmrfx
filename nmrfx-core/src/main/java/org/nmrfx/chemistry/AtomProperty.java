@@ -28,41 +28,41 @@ import java.util.List;
  */
 public enum AtomProperty {
     X(0.8f, 0.0f),
-    H(1.2f, "light green", 0.0f),
-    He(1.4f, "pink", 0.0f),
-    Li(1.82f, "firebrick", 0.0f),
-    B(1.0f, "green", 0.0f),
-    Be(1.0f, "white", 0.0f),
-    C(1.7f, "dark gray", 0.0f),
-    N(1.55f, "light blue", 0.0f),
-    O(1.52f, "red", 0.0f),
-    F(1.47f, "goldenrod", 0.0f),
-    Ne(1.54f, "white", 0.0f),
-    Na(2.27f, "blue", 0.0f),
-    Mg(1.73f, "forest green", 0.0f),
-    Al(1.0f, "dark gray", 0.0f),
-    Si(2.1f, "goldenrod", 0.0f),
-    P(1.8f, "orange", 0.0f),
-    S(1.8f, 1.0f, 0.8f, 0.2f, 0.0f),
-    Cl(1.75f, "green", 0.0f),
+    H(1.2f, 0.0f, "light green"),
+    He(1.4f, 0.0f, "pink"),
+    Li(1.82f, 0.0f, "firebrick"),
+    B(1.0f, 0.0f, "green"),
+    Be(1.0f, 0.0f, "white"),
+    C(1.7f, 0.0f, "dark gray"),
+    N(1.55f, 0.0f, "light blue"),
+    O(1.52f, 0.0f, "red"),
+    F(1.47f, 0.0f, "goldenrod"),
+    Ne(1.54f, 0.0f, "white"),
+    Na(2.27f, 0.0f, "blue"),
+    Mg(1.73f, 0.0f, "forest green"),
+    Al(1.0f, 0.0f, "dark gray"),
+    Si(2.1f, 0.0f, "goldenrod"),
+    P(1.8f, 0.0f, "orange"),
+    S(1.8f, 0.0f, 1.0f, 0.8f, 0.2f),
+    Cl(1.75f, 0.0f, "green"),
     Ar(1.88f, 0.0f),
     K(2.75f, 0.0f),
-    Ca(1.0f, "dark gray", 0.0f),
+    Ca(1.0f, 0.0f, "dark gray"),
     Sc(1.0f, 0.0f),
-    Ti(1.0f, "dark gray", 0.0f),
+    Ti(1.0f, 0.0f, "dark gray"),
     V(1.0f, 0.0f),
-    Cr(1.0f, "dark gray", 0.0f),
-    Mn(1.0f, "dark gray", 0.0f),
-    Fe(1.0f, "orange", 0.0f),
+    Cr(1.0f, 0.0f, "dark gray"),
+    Mn(1.0f, 0.0f, "dark gray"),
+    Fe(1.0f, 0.0f, "orange"),
     Co(1.0f, 0.0f),
-    Ni(1.0f, "brown", 0.0f),
-    Cu(1.0f, "brown", 0.0f),
-    Zn(1.0f, "brown", 0.0f),
+    Ni(1.0f, 0.0f, "brown"),
+    Cu(1.0f, 0.0f, "brown"),
+    Zn(1.0f, 0.0f, "brown"),
     Ga(1.0f, 0.0f),
     Ge(1.0f, 0.0f),
     As(1.0f, 0.0f),
     Se(1.0f, 0.0f),
-    Br(1.0f, "brown", 0.0f),
+    Br(1.0f, 0.0f, "brown"),
     Kr(1.0f, 0.0f),
     Rb(1.0f, 0.0f),
     Sr(1.0f, 0.0f),
@@ -74,16 +74,16 @@ public enum AtomProperty {
     Ru(1.0f, 0.0f),
     Rh(1.0f, 0.0f),
     Pd(1.0f, 0.0f),
-    Ag(1.0f, "dark gray", 0.0f),
+    Ag(1.0f, 0.0f, "dark gray"),
     Cd(1.0f, 0.0f),
     In(1.0f, 0.0f),
     Sn(1.0f, 0.0f),
     Sb(1.0f, 0.0f),
     Te(1.0f, 0.0f),
-    I(1.0f, "purple", 0.0f),
+    I(1.0f, 0.0f, "purple"),
     Xe(1.0f, 0.0f),
     Cs(1.0f, 0.0f),
-    Ba(1.0f, "orange", 0.0f),
+    Ba(1.0f, 0.0f, "orange"),
     La(1.0f, 0.0f),
     Ce(1.0f, 0.0f),
     Pr(1.0f, 0.0f),
@@ -106,7 +106,7 @@ public enum AtomProperty {
     Os(1.0f, 0.0f),
     Ir(1.0f, 0.0f),
     Pt(1.0f, 0.0f),
-    Au(1.0f, "goldenrod", 0.0f),
+    Au(1.0f, 0.0f, "goldenrod"),
     Hg(1.0f, 0.0f),
     Tl(1.0f, 0.0f),
     Pb(1.0f, 0.0f),
@@ -141,7 +141,7 @@ public enum AtomProperty {
     private final float blue;
     private final float mass;
 
-    AtomProperty(float radius, float red, float green, float blue, float mass) {
+    AtomProperty(float radius, float mass, float red, float green, float blue) {
         this.radius = radius;
         this.red = red;
         this.green = green;
@@ -149,7 +149,7 @@ public enum AtomProperty {
         this.mass = mass;
     }
 
-    AtomProperty(float radius, String colorName, float mass) {
+    AtomProperty(float radius, float mass, String colorName) {
         this.radius = radius;
 
         NMRFxColor color = NvUtil.color(colorName);
@@ -159,9 +159,8 @@ public enum AtomProperty {
         this.mass = mass;
     }
 
-
     AtomProperty(float radius, float mass) {
-        this(radius, GENERIC_COLOR, mass);
+        this(radius, mass, GENERIC_COLOR);
     }
 
     public float getRed() {
