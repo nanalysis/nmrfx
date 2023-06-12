@@ -220,7 +220,7 @@ public class SpectrumStatusBar {
         Arrays.stream(CanvasCursor.values())
                 .map(SpectrumStatusBar::createCursorToggleButton)
                 .forEach(cursorButtons.getButtons()::add);
-        cursorButtons.getButtons().get(0).setSelected(true);
+        cursorButtons.getButtons().get(CanvasCursor.SELECTOR.ordinal()).setSelected(true);
         cursorButtons.getToggleGroup().selectedToggleProperty()
                 .addListener((observable, oldValue, newValue) -> cursorButtonToggled(newValue));
     }
@@ -519,38 +519,42 @@ public class SpectrumStatusBar {
         }
     }
 
-    //TODO split primary/secondary
     public void set1DArray(int nDim, int nRows) {
         arrayMode = true;
         setPlaneRanges(2, nRows);
-        List<Node> primaryNodes = new ArrayList<>();
-        List<Node> secondaryNodes = new ArrayList<>();
-        secondaryNodes.add(toolButton);
+        updatePrimaryToolbarFor1DArray(nDim);
+        updateSecondaryToolbarFor1DArray();
+    }
+
+    private void updatePrimaryToolbarFor1DArray(int nDim) {
+        ObservableList<Node> nodes = primaryToolbar.getItems();
+        nodes.clear();
+
         if (isStacked()) {
             displayModeComboBox.getSelectionModel().select(DisplayMode.STACKPLOT);
         } else {
             displayModeComboBox.getSelectionModel().select(DisplayMode.TRACES);
         }
-        primaryNodes.add(displayModeComboBox);
+        nodes.add(displayModeComboBox);
 
         HBox.setHgrow(primaryFiller, Priority.ALWAYS);
         HBox.setHgrow(secondaryFiller, Priority.ALWAYS);
-        primaryNodes.add(primaryFiller);
+        nodes.add(primaryFiller);
 
-        primaryNodes.add(new Label("Cursor:"));
-        cursorButtons.getButtons().get(3).setDisable(false);
-        primaryNodes.add(cursorButtons);
+        nodes.add(new Label("Cursor:"));
+        cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(false);
+        nodes.add(cursorButtons);
         for (int j = 1; j >= 0; j--) {
             if (j == 1) {
-                primaryNodes.add(new Label("X:"));
+                nodes.add(new Label("X:"));
             } else {
-                primaryNodes.add(new Label("I:"));
+                nodes.add(new Label("I:"));
             }
             for (int i = 0; i < 2; i++) {
-                primaryNodes.add(crossText[i][j]);
+                nodes.add(crossText[i][j]);
             }
         }
-        primaryNodes.add(secondaryFiller);
+        nodes.add(secondaryFiller);
         PolyChart activeChart = controller.getActiveChart();
         List<Integer> drawList;
         for (int i = 1; i < nDim; i++) {
@@ -560,16 +564,17 @@ public class SpectrumStatusBar {
                 // Use the current drawlist and update the spinner to the first number
                 updateRowSpinner(drawList.get(0), i);
             }
-            primaryNodes.add(rowMenus[i - 1]);
-            primaryNodes.add(planeSpinner[i - 1][0]);
+            nodes.add(rowMenus[i - 1]);
+            nodes.add(planeSpinner[i - 1][0]);
             Pane nodeFiller = new Pane();
             HBox.setHgrow(nodeFiller, Priority.ALWAYS);
-            primaryNodes.add(nodeFiller);
+            nodes.add(nodeFiller);
         }
-        primaryToolbar.getItems().clear();
-        primaryToolbar.getItems().addAll(primaryNodes);
+    }
+
+    private void updateSecondaryToolbarFor1DArray() {
         secondaryToolbar.getItems().clear();
-        secondaryToolbar.getItems().addAll(secondaryNodes);
+        secondaryToolbar.getItems().add(toolButton);
     }
 
     public DataMode getMode() {
@@ -591,88 +596,85 @@ public class SpectrumStatusBar {
         currentMode = mode;
         currentModeDimensions = dimensions;
         arrayMode = false;
-        setupPrimaryToolbar();
-        setupSecondaryToolbar();
+        setupPrimaryToolbarForSelectedMode();
+        setupSecondaryToolbarForSelectedMode();
         setPlaneRanges();
     }
 
-    private void setupPrimaryToolbar() {
-        List<Node> primaryNodes = new ArrayList<>();
+    private void setupPrimaryToolbarForSelectedMode() {
+        ObservableList<Node> nodes = primaryToolbar.getItems();
+        nodes.clear();
 
         if (currentMode == DataMode.DATASET_1D) {
-            cursorButtons.getButtons().get(3).setDisable(false);
+            cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(false);
         } else if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
-            cursorButtons.getButtons().get(3).setDisable(true);
+            cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(true);
         }
 
         if (currentMode == DataMode.DATASET_2D) {
             displayModeComboBox.getSelectionModel().select(DisplayMode.CONTOURS);
-            primaryNodes.add(displayModeComboBox);
+            nodes.add(displayModeComboBox);
         }
 
         //TODO rework fillers: do we need instance fields?
         HBox.setHgrow(primaryFiller, Priority.ALWAYS);
-        primaryNodes.add(primaryFiller);
+        nodes.add(primaryFiller);
 
-        primaryNodes.add(new Label("Cursor:"));
-        primaryNodes.add(cursorButtons);
+        nodes.add(new Label("Cursor:"));
+        nodes.add(cursorButtons);
 
         //TODO unroll/rewrite this loop
         for (int j = 1; j >= 0; j--) {
             if (j == 1 && (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS)) {
-                primaryNodes.add(dimMenus[0]);
+                nodes.add(dimMenus[0]);
             }
             if (j == 0) {
                 if (currentMode == DataMode.DATASET_ND_PLUS) {
-                    primaryNodes.add(dimMenus[1]);
+                    nodes.add(dimMenus[1]);
                 } else if (currentMode == DataMode.DATASET_2D) {
-                    primaryNodes.add(new Label("Y:"));
+                    nodes.add(new Label("Y:"));
                 }
             }
             for (int i = 0; i < 2; i++) {
-                primaryNodes.add(crossText[i][j]);
+                nodes.add(crossText[i][j]);
             }
         }
 
         HBox.setHgrow(secondaryFiller, Priority.ALWAYS);
-        primaryNodes.add(secondaryFiller); // secondary filler in primary node?
+        nodes.add(secondaryFiller); //XXX secondary filler in primary node?
 
         if (currentMode == DataMode.FID) {
-            primaryNodes.add(complexStatus);
+            nodes.add(complexStatus);
         }
 
         //TODO describe what happens for > 2D here
         for (int i = 2; i < currentModeDimensions; i++) {
-            primaryNodes.add(dimMenus[i]);
-            primaryNodes.add(planeSpinner[i - 2][0]);
-            primaryNodes.add(planeSpinner[i - 2][1]);
+            nodes.add(dimMenus[i]);
+            nodes.add(planeSpinner[i - 2][0]);
+            nodes.add(planeSpinner[i - 2][1]);
             ((SpinnerConverter) planeSpinner[i - 2][0].getValueFactory().getConverter()).setValueMode(true);
             ((SpinnerConverter) planeSpinner[i - 2][1].getValueFactory().getConverter()).setValueMode(true);
-            primaryNodes.add(valueModeBox[i - 2]);
+            nodes.add(valueModeBox[i - 2]);
             Pane nodeFiller = new Pane();
             HBox.setHgrow(nodeFiller, Priority.ALWAYS);
-            primaryNodes.add(nodeFiller);
+            nodes.add(nodeFiller);
         }
-
-        primaryToolbar.getItems().clear();
-        primaryToolbar.getItems().addAll(primaryNodes);
     }
 
-    private void setupSecondaryToolbar() {
-        List<Node> secondaryNodes = new ArrayList<>();
+    private void setupSecondaryToolbarForSelectedMode() {
+        ObservableList<Node> nodes = secondaryToolbar.getItems();
+        nodes.clear();
         if (currentMode != DataMode.FID) {
-            secondaryNodes.add(toolButton);
-            secondaryNodes.add(ToolBarUtils.makeFiller(10));
+            nodes.add(toolButton);
+            nodes.add(ToolBarUtils.makeFiller(10));
         }
         if (currentMode == DataMode.DATASET_1D) {
-            secondaryNodes.addAll(specialButtons);
+            nodes.addAll(specialButtons);
         } else if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
-            secondaryNodes.add(peakPickButton);
+            nodes.add(peakPickButton);
         }
 
-        secondaryNodes.add(ToolBarUtils.makeFiller(10));
-        secondaryToolbar.getItems().clear();
-        secondaryToolbar.getItems().addAll(secondaryNodes);
+        nodes.add(ToolBarUtils.makeFiller(10));
     }
 
     public boolean isComplex() {
