@@ -835,6 +835,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         chartDrawingLayers = new ChartDrawingLayers(this, chartPane);
         activeChart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
         initToolBar(toolBar);
+        initStatusBar();
         charts.add(activeChart);
         chartDrawingLayers.getGrid().addCharts(1, charts);
 
@@ -1672,13 +1673,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(groupButton);
+    }
 
-        ToolBar btoolBar = new ToolBar();
-        ToolBar btoolBar2 = new ToolBar();
-        btoolVBox.getChildren().addAll(btoolBar, btoolBar2);
-        statusBar.buildBar(btoolBar, btoolBar2);
+    private void initStatusBar() {
+        statusBar.init();
+        btoolVBox.getChildren().addAll(statusBar.getToolbars());
         AnalystApp.getAnalystApp().addStatusBarTools(statusBar);
-
     }
 
     private List<PolyChart> getCharts(boolean all) {

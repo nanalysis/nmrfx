@@ -76,6 +76,8 @@ public class SpectrumStatusBar {
     private final Pane filler1 = new Pane();
     private final Pane filler2 = new Pane();
     private final Background defaultBackground = null;
+    private final ToolBar btoolBar1 = new ToolBar();
+    private final ToolBar btoolBar2 = new ToolBar();
     private SegmentedButton cursorButtons;
     private Button peakPickButton;
     private ComboBox<DisplayMode> displayModeComboBox = null;
@@ -86,8 +88,6 @@ public class SpectrumStatusBar {
             displayModeComboBox.setValue(DisplayMode.CONTOURS);
         }
     });
-    private ToolBar btoolBar1;
-    private ToolBar btoolBar2;
     private boolean arrayMode = false;
     private int currentMode = 0;
 
@@ -100,9 +100,11 @@ public class SpectrumStatusBar {
         return controller;
     }
 
-    public void buildBar(ToolBar btoolBar, ToolBar btoolBar2) {
-        this.btoolBar1 = btoolBar;
-        this.btoolBar2 = btoolBar2;
+    public List<Node> getToolbars() {
+        return List.of(btoolBar1, btoolBar2);
+    }
+
+    public void init() {
         peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
         peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
         buildCursorBar();
@@ -115,7 +117,7 @@ public class SpectrumStatusBar {
                 crossText[index][orientationIndex].setPrefWidth(75.0);
                 crossText[index][orientationIndex].setFunction(controller.getActiveChart().getCrossHairUpdateFunction(index, orientation));
 
-                btoolBar.getItems().add(crossText[index][orientationIndex]);
+                btoolBar1.getItems().add(crossText[index][orientationIndex]);
                 StackPane stackPane = makeIcon(index, orientation, false);
                 crossTextIcons[index][orientationIndex] = stackPane;
                 crossText[index][orientationIndex].setRight(stackPane);
@@ -133,7 +135,7 @@ public class SpectrumStatusBar {
 
         Pane filler = new Pane();
         HBox.setHgrow(filler, Priority.ALWAYS);
-        btoolBar.getItems().add(filler);
+        btoolBar1.getItems().add(filler);
 
         for (int i = 0; i < planeSpinner.length; i++) {
             final int iDim = i + 2;
@@ -216,8 +218,8 @@ public class SpectrumStatusBar {
         }
         filler = new Pane();
         HBox.setHgrow(filler, Priority.ALWAYS);
-        btoolBar.getItems().add(filler);
-        btoolBar.getItems().add(complexStatus);
+        btoolBar1.getItems().add(filler);
+        btoolBar1.getItems().add(complexStatus);
         complexStatus.setOnAction(this::complexStatus);
 
         controller.getActiveChart().getDisDimProperty().addListener(displayedDimensionsListener);
