@@ -79,7 +79,7 @@ public class SpectrumStatusBar {
     private final MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
     private ComboBox<DisplayMode> displayModeComboBox = null;
     private final ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = this::chartDisplayDimensionChanged;
-    private SegmentedButton cursorButtons;
+    private SegmentedButton cursorButtons = new SegmentedButton();
 
 
     // tools & additional buttons
@@ -97,7 +97,7 @@ public class SpectrumStatusBar {
     public void init() {
         peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
         peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
-        buildCursorBar();
+        initCursorButtonGroup();
         setupTools();
 
         for (int index = 0; index < 2; index++) {
@@ -216,31 +216,27 @@ public class SpectrumStatusBar {
         PolyChartManager.getInstance().activeChartProperty().addListener(this::setChart);
     }
 
-    private void buildCursorBar() {
-        List<ToggleButton> buttons = new ArrayList<>();
-        ToggleButton crosshairButton = GlyphsDude.createIconToggleButton(CanvasCursor.CROSSHAIR.getIcon(), "Crosshair",
+    private void initCursorButtonGroup() {
+        Arrays.stream(CanvasCursor.values())
+                .map(SpectrumStatusBar::createCursorToggleButton)
+                .forEach(cursorButtons.getButtons()::add);
+        cursorButtons.getButtons().get(0).setSelected(true);
+        cursorButtons.getToggleGroup().selectedToggleProperty()
+                .addListener((observable, oldValue, newValue) -> cursorButtonToggled(newValue));
+    }
+
+    private static ToggleButton createCursorToggleButton(CanvasCursor cursor) {
+        ToggleButton button = GlyphsDude.createIconToggleButton(cursor.getIcon(), cursor.getLabel(),
                 AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.RIGHT);
-        crosshairButton.setUserData(CanvasCursor.CROSSHAIR);
-        ToggleButton selectorButton = GlyphsDude.createIconToggleButton(CanvasCursor.SELECTOR.getIcon(), "Selector",
-                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.RIGHT);
-        selectorButton.setUserData(CanvasCursor.SELECTOR);
-        ToggleButton peakButton = GlyphsDude.createIconToggleButton(CanvasCursor.PEAK.getIcon(), "Peak",
-                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.RIGHT);
-        peakButton.setUserData(CanvasCursor.PEAK);
-        ToggleButton regionButton = GlyphsDude.createIconToggleButton(CanvasCursor.REGION.getIcon(), "Region",
-                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.RIGHT);
-        regionButton.setUserData(CanvasCursor.REGION);
-        buttons.add(selectorButton);
-        buttons.add(crosshairButton);
-        buttons.add(peakButton);
-        buttons.add(regionButton);
-        for (ButtonBase button : buttons) {
-            button.setMinWidth(50);
+        button.setUserData(cursor);
+        button.setMinWidth(50);
+        return button;
+    }
+
+    private void cursorButtonToggled(Toggle toggle) {
+        if (toggle != null && toggle.getUserData() instanceof CanvasCursor selected) {
+            controller.setCursor(selected.getCursor());
         }
-        cursorButtons = new SegmentedButton();
-        cursorButtons.getButtons().addAll(buttons);
-        selectorButton.setSelected(true);
-        cursorButtons.getToggleGroup().selectedToggleProperty().addListener((ChangeListener<? super Toggle>) (a, b, c) -> toggleChanged(c));
     }
 
     @PluginAPI("parametric")
@@ -267,13 +263,6 @@ public class SpectrumStatusBar {
             displayModeComboBox.setValue(DisplayMode.TRACES);
         } else {
             displayModeComboBox.setValue(DisplayMode.CONTOURS);
-        }
-    }
-
-    private void toggleChanged(Toggle toggle) {
-        if (toggle != null) {
-            CanvasCursor canvasCursor = (CanvasCursor) toggle.getUserData();
-            controller.setCursor(canvasCursor.getCursor());
         }
     }
 
