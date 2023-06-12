@@ -609,29 +609,24 @@ public class SpectrumStatusBar {
         nodes.add(new Label("Cursor:"));
         nodes.add(cursorButtons);
 
-        //TODO unroll/rewrite this loop
-        for (int j = 1; j >= 0; j--) {
-            if (j == 1 && (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS)) {
-                nodes.add(dimMenus[0]);
-            }
-            if (j == 0) {
-                if (currentMode == DataMode.DATASET_ND_PLUS) {
-                    nodes.add(dimMenus[1]);
-                } else if (currentMode == DataMode.DATASET_2D) {
-                    nodes.add(new Label("Y:"));
-                }
-            }
-            for (int i = 0; i < 2; i++) {
-                nodes.add(crossText[i][j]);
-            }
+        //first dimension cross-hair
+        if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
+            nodes.add(dimMenus[0]);
         }
+        nodes.add(crossText[0][1]);
+        nodes.add(crossText[1][1]);
 
+        //second dimension cross-hair
+        if (currentMode == DataMode.DATASET_ND_PLUS) {
+            nodes.add(dimMenus[1]);
+        } else if (currentMode == DataMode.DATASET_2D) {
+            nodes.add(new Label("Y:"));
+        }
+        nodes.add(crossText[0][0]);
+        nodes.add(crossText[1][0]);
         nodes.add(createHorizontalSpacer());
-        if (currentMode == DataMode.FID) {
-            nodes.add(complexStatus);
-        }
 
-        //TODO describe what happens for > 2D here
+        // additional dimension spinners
         for (int i = 2; i < currentModeDimensions; i++) {
             nodes.add(dimMenus[i]);
             nodes.add(planeSpinner[i - 2][0]);
@@ -639,8 +634,12 @@ public class SpectrumStatusBar {
             ((SpinnerConverter) planeSpinner[i - 2][0].getValueFactory().getConverter()).setValueMode(true);
             ((SpinnerConverter) planeSpinner[i - 2][1].getValueFactory().getConverter()).setValueMode(true);
             nodes.add(valueModeBox[i - 2]);
-            Pane nodeFiller = createHorizontalSpacer();
-            nodes.add(nodeFiller);
+            nodes.add(createHorizontalSpacer());
+        }
+
+        // complex checkbox, only for FID
+        if (currentMode == DataMode.FID) {
+            nodes.add(complexStatus);
         }
 
         primaryToolbar.getItems().setAll(nodes);
