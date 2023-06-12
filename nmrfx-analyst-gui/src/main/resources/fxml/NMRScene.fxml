@@ -4,7 +4,7 @@
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.*?>
 <?import java.net.URL?>
-<HBox prefHeight="600.0" prefWidth="900.0" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
+<HBox prefHeight="720.0" prefWidth="1080.0" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
       xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="org.nmrfx.processor.gui.FXMLController">
     <children>
