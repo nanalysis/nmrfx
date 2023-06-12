@@ -16,11 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
@@ -52,7 +47,6 @@ import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.DecimalFormat;
 import java.util.*;
 
 /**
@@ -60,48 +54,42 @@ import java.util.*;
  */
 @PluginAPI("parametric")
 public class SpectrumStatusBar {
-
     private static final Logger log = LoggerFactory.getLogger(SpectrumStatusBar.class);
-    static final DecimalFormat formatter = new DecimalFormat();
     private static final int MAX_SPINNERS = 4;
     private static final String[] DIM_NAMES = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
     private static final String[] ROW_NAMES = {"X", "Row", "Plane", "A", "B", "C", "D", "E"};
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
-
-    static {
-        formatter.setMaximumFractionDigits(2);
-    }
-
-    CustomNumberTextField[][] crossText = new CustomNumberTextField[2][2];
-    FXMLController controller;
-    CheckBox complexStatus = new CheckBox("Complex");
-    MenuButton toolButton = new MenuButton("Tools");
-    SegmentedButton cursorButtons;
-    List<ButtonBase> specialButtons = new ArrayList<>();
-    Button peakPickButton;
-    Spinner<Integer>[][] planeSpinner = new Spinner[MAX_SPINNERS][2];
-    CheckBox[] valueModeBox = new CheckBox[MAX_SPINNERS];
-    MenuButton[] dimMenus = new MenuButton[MAX_SPINNERS + 2];
-    ComboBox<DisplayMode> displayModeComboBox = null;
-    ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = ((observable, oldValue, newValue) -> {
+    final CheckBox complexStatus = new CheckBox("Complex");
+    private final CustomNumberTextField[][] crossText = new CustomNumberTextField[2][2];
+    private final FXMLController controller;
+    private final MenuButton toolButton = new MenuButton("Tools");
+    private final List<ButtonBase> specialButtons = new ArrayList<>();
+    private final Spinner<Integer>[][] planeSpinner = new Spinner[MAX_SPINNERS][2];
+    private final CheckBox[] valueModeBox = new CheckBox[MAX_SPINNERS];
+    private final MenuButton[] dimMenus = new MenuButton[MAX_SPINNERS + 2];
+    private final MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
+    private final ChangeListener<Integer>[][] planeListeners = new ChangeListener[MAX_SPINNERS][2];
+    private final StackPane[][] crossTextIcons = new StackPane[2][2];
+    private final StackPane[][] limitTextIcons = new StackPane[2][2];
+    private final boolean[][] iconStates = new boolean[2][2];
+    private final Pane filler1 = new Pane();
+    private final Pane filler2 = new Pane();
+    private final Background defaultBackground = null;
+    private SegmentedButton cursorButtons;
+    private Button peakPickButton;
+    private ComboBox<DisplayMode> displayModeComboBox = null;
+    private final ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = ((observable, oldValue, newValue) -> {
         if (newValue == PolyChart.DISDIM.OneDX) {
             displayModeComboBox.setValue(DisplayMode.TRACES);
         } else {
             displayModeComboBox.setValue(DisplayMode.CONTOURS);
         }
     });
-    MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
-    ChangeListener<Integer>[][] planeListeners = new ChangeListener[MAX_SPINNERS][2];
-    ToolBar btoolBar1;
-    ToolBar btoolBar2;
-    StackPane[][] crossTextIcons = new StackPane[2][2];
-    StackPane[][] limitTextIcons = new StackPane[2][2];
-    boolean[][] iconStates = new boolean[2][2];
-    Pane filler1 = new Pane();
-    Pane filler2 = new Pane();
-    Background defaultBackground = null;
-    boolean arrayMode = false;
-    int currentMode = 0;
+    private ToolBar btoolBar1;
+    private ToolBar btoolBar2;
+    private boolean arrayMode = false;
+    private int currentMode = 0;
+
     public SpectrumStatusBar(FXMLController controller) {
         this.controller = controller;
     }
