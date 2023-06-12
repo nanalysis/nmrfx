@@ -67,7 +67,6 @@ public class SpectrumStatusBar {
 
     // cursor, measure spinners, etc
     private final ToolBar primaryToolbar = new ToolBar();
-    private final Pane primaryFiller = new Pane();
     private final CheckBox complexStatus = new CheckBox("Complex");
     private final CustomNumberTextField[][] crossText = new CustomNumberTextField[2][2];
     private final StackPane[][] crossTextIcons = new StackPane[2][2];
@@ -78,16 +77,15 @@ public class SpectrumStatusBar {
     private final CheckBox[] valueModeBox = new CheckBox[MAX_SPINNERS];
     private final MenuButton[] dimMenus = new MenuButton[MAX_SPINNERS + 2];
     private final MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
-    private ComboBox<DisplayMode> displayModeComboBox = null;
+    private final ComboBox<DisplayMode> displayModeComboBox = new ComboBox<>();
     private final ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = this::chartDisplayDimensionChanged;
     private final SegmentedButton cursorButtons = new SegmentedButton();
 
     // tools & additional buttons
     private final ToolBar secondaryToolbar = new ToolBar();
-    private final Pane secondaryFiller = new Pane();
     private final MenuButton toolButton = new MenuButton("Tools");
     private final List<ButtonBase> specialButtons = new ArrayList<>();
-    private Button peakPickButton;
+    private final Button peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
 
     public SpectrumStatusBar(FXMLController controller) {
         this.controller = controller;
@@ -95,7 +93,6 @@ public class SpectrumStatusBar {
 
     // can't be called from constructor: relies on controller.getActiveChart(), which returns null at construction
     public void init() {
-        peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
         peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
         initCursorButtonGroup();
         setupTools();
@@ -123,8 +120,7 @@ public class SpectrumStatusBar {
             }
         }
 
-        Pane filler = new Pane();
-        HBox.setHgrow(filler, Priority.ALWAYS);
+        Pane filler = createHorizontalSpacer();
         primaryToolbar.getItems().add(filler);
 
         for (int i = 0; i < planeSpinner.length; i++) {
@@ -184,7 +180,6 @@ public class SpectrumStatusBar {
                 menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
             }
         }
-        displayModeComboBox = new ComboBox<>();
         displayModeComboBox.getItems().setAll(DisplayMode.values());
         displayModeComboBox.getSelectionModel().selectedItemProperty().addListener(e -> displayModeComboBoxSelectionChanged());
 
@@ -536,10 +531,7 @@ public class SpectrumStatusBar {
             displayModeComboBox.getSelectionModel().select(DisplayMode.TRACES);
         }
         nodes.add(displayModeComboBox);
-
-        HBox.setHgrow(primaryFiller, Priority.ALWAYS);
-        HBox.setHgrow(secondaryFiller, Priority.ALWAYS);
-        nodes.add(primaryFiller);
+        nodes.add(createHorizontalSpacer());
 
         nodes.add(new Label("Cursor:"));
         cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(false);
@@ -554,7 +546,7 @@ public class SpectrumStatusBar {
                 nodes.add(crossText[i][j]);
             }
         }
-        nodes.add(secondaryFiller);
+        nodes.add(createHorizontalSpacer());
         PolyChart activeChart = controller.getActiveChart();
         List<Integer> drawList;
         for (int i = 1; i < nDim; i++) {
@@ -566,8 +558,7 @@ public class SpectrumStatusBar {
             }
             nodes.add(rowMenus[i - 1]);
             nodes.add(planeSpinner[i - 1][0]);
-            Pane nodeFiller = new Pane();
-            HBox.setHgrow(nodeFiller, Priority.ALWAYS);
+            Pane nodeFiller = createHorizontalSpacer();
             nodes.add(nodeFiller);
         }
     }
@@ -616,10 +607,7 @@ public class SpectrumStatusBar {
             nodes.add(displayModeComboBox);
         }
 
-        //TODO rework fillers: do we need instance fields?
-        HBox.setHgrow(primaryFiller, Priority.ALWAYS);
-        nodes.add(primaryFiller);
-
+        nodes.add(createHorizontalSpacer());
         nodes.add(new Label("Cursor:"));
         nodes.add(cursorButtons);
 
@@ -640,9 +628,7 @@ public class SpectrumStatusBar {
             }
         }
 
-        HBox.setHgrow(secondaryFiller, Priority.ALWAYS);
-        nodes.add(secondaryFiller); //XXX secondary filler in primary node?
-
+        nodes.add(createHorizontalSpacer());
         if (currentMode == DataMode.FID) {
             nodes.add(complexStatus);
         }
@@ -655,8 +641,7 @@ public class SpectrumStatusBar {
             ((SpinnerConverter) planeSpinner[i - 2][0].getValueFactory().getConverter()).setValueMode(true);
             ((SpinnerConverter) planeSpinner[i - 2][1].getValueFactory().getConverter()).setValueMode(true);
             nodes.add(valueModeBox[i - 2]);
-            Pane nodeFiller = new Pane();
-            HBox.setHgrow(nodeFiller, Priority.ALWAYS);
+            Pane nodeFiller = createHorizontalSpacer();
             nodes.add(nodeFiller);
         }
     }
@@ -825,6 +810,12 @@ public class SpectrumStatusBar {
                 }
             }
         });
+    }
+
+    private static Pane createHorizontalSpacer() {
+        Pane spacer = new Pane();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        return spacer;
     }
 
     public enum DataMode {
