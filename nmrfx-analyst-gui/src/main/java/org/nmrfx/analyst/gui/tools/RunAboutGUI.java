@@ -278,7 +278,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         } catch (IOException e) {
             GUIUtils.warn("RunAbout:load yaml", e.getMessage());
         }
-        PeakPicking.registerSinglePickAction(this::pickedPeakAction);
+        PeakPicking.registerSinglePickSelectionAction(this::pickedPeakAction);
         PolyChart.registerPeakDeleteAction(this::peakDeleteAction);
         if (runAbout.getSpinSystems().getSize() != 0) {
             clusterStatus.refresh();
@@ -2123,8 +2123,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
-    Object pickedPeakAction(Object peakObject) {
-        Peak peak = (Peak) peakObject;
+    private void pickedPeakAction(Peak peak) {
         if (useSpinSystem) {
             SpinSystems spinSystems = runAbout.getSpinSystems();
             var spinSys = currentSpinSystem;
@@ -2155,7 +2154,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 }
             }
         }
-        return null;
     }
 
     void splitSystem() {
