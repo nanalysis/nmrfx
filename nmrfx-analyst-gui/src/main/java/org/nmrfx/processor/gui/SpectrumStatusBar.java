@@ -61,9 +61,6 @@ public class SpectrumStatusBar {
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
     private final FXMLController controller;
-    private boolean arrayMode = false;
-    private DataMode currentMode = DataMode.FID;
-    private int currentModeDimensions = 0;
 
     // cursor, measure spinners, etc
     private final ToolBar primaryToolbar = new ToolBar();
@@ -86,6 +83,10 @@ public class SpectrumStatusBar {
     private final MenuButton toolButton = new MenuButton("Tools");
     private final List<ButtonBase> specialButtons = new ArrayList<>();
     private final Button peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
+
+    private boolean arrayMode = false;
+    private DataMode currentMode = DataMode.FID;
+    private int currentModeDimensions = 0;
 
     public SpectrumStatusBar(FXMLController controller) {
         this.controller = controller;
@@ -218,14 +219,6 @@ public class SpectrumStatusBar {
         cursorButtons.getButtons().get(CanvasCursor.SELECTOR.ordinal()).setSelected(true);
         cursorButtons.getToggleGroup().selectedToggleProperty()
                 .addListener((observable, oldValue, newValue) -> cursorButtonToggled(newValue));
-    }
-
-    private static ToggleButton createCursorToggleButton(CanvasCursor cursor) {
-        ToggleButton button = GlyphsDude.createIconToggleButton(cursor.getIcon(), cursor.getLabel(),
-                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.RIGHT);
-        button.setUserData(cursor);
-        button.setMinWidth(50);
-        return button;
     }
 
     private void cursorButtonToggled(Toggle toggle) {
@@ -572,15 +565,15 @@ public class SpectrumStatusBar {
         return currentMode;
     }
 
-    public int getModeDimensions() {
-        return currentModeDimensions;
-    }
-
     public void setMode(DataMode mode) {
         if (mode == DataMode.DATASET_ND_PLUS) {
             log.warn("Setting mode 3D+ without setting dimension, assuming 3D data.");
         }
         setMode(mode, mode.ordinal());
+    }
+
+    public int getModeDimensions() {
+        return currentModeDimensions;
     }
 
     public void setMode(DataMode mode, int dimensions) {
@@ -809,6 +802,14 @@ public class SpectrumStatusBar {
                 }
             }
         });
+    }
+
+    private static ToggleButton createCursorToggleButton(CanvasCursor cursor) {
+        ToggleButton button = GlyphsDude.createIconToggleButton(cursor.getIcon(), cursor.getLabel(),
+                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.RIGHT);
+        button.setUserData(cursor);
+        button.setMinWidth(50);
+        return button;
     }
 
     private static Pane createHorizontalSpacer() {
