@@ -2025,7 +2025,7 @@ public class PolyChart extends Region implements PeakListener {
                         if (iMode == 0) {
                             datasetAttributes.setDrawReal(true);
                         } else {
-                            if (!controller.getStatusBar().complexStatus.isSelected()) {
+                            if (!controller.getStatusBar().isComplex()) {
                                 break;
                             }
                             datasetAttributes.setDrawReal(false);

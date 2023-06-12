@@ -59,7 +59,8 @@ public class SpectrumStatusBar {
     private static final String[] DIM_NAMES = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
     private static final String[] ROW_NAMES = {"X", "Row", "Plane", "A", "B", "C", "D", "E"};
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
-    final CheckBox complexStatus = new CheckBox("Complex");
+
+    private final CheckBox complexStatus = new CheckBox("Complex");
     private final CustomNumberTextField[][] crossText = new CustomNumberTextField[2][2];
     private final FXMLController controller;
     private final MenuButton toolButton = new MenuButton("Tools");
@@ -642,6 +643,10 @@ public class SpectrumStatusBar {
         btoolBar2.getItems().clear();
         btoolBar2.getItems().addAll(nodes2);
         setPlaneRanges();
+    }
+
+    public boolean isComplex() {
+        return complexStatus.isSelected();
     }
 
     public void setCrossText(Orientation orientation, int index, Double value, boolean iconState) {
