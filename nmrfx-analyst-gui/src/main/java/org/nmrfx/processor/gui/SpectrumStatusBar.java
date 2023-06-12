@@ -522,9 +522,7 @@ public class SpectrumStatusBar {
     }
 
     private void updatePrimaryToolbarFor1DArray(int nDim) {
-        ObservableList<Node> nodes = primaryToolbar.getItems();
-        nodes.clear();
-
+        List<Node> nodes = new ArrayList<>();
         if (isStacked()) {
             displayModeComboBox.getSelectionModel().select(DisplayMode.STACKPLOT);
         } else {
@@ -561,6 +559,8 @@ public class SpectrumStatusBar {
             Pane nodeFiller = createHorizontalSpacer();
             nodes.add(nodeFiller);
         }
+
+        primaryToolbar.getItems().setAll(nodes);
     }
 
     private void updateSecondaryToolbarFor1DArray() {
@@ -593,9 +593,7 @@ public class SpectrumStatusBar {
     }
 
     private void setupPrimaryToolbarForSelectedMode() {
-        ObservableList<Node> nodes = primaryToolbar.getItems();
-        nodes.clear();
-
+        List<Node> nodes = new ArrayList<>();
         if (currentMode == DataMode.DATASET_1D) {
             cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(false);
         } else if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
@@ -644,11 +642,12 @@ public class SpectrumStatusBar {
             Pane nodeFiller = createHorizontalSpacer();
             nodes.add(nodeFiller);
         }
+
+        primaryToolbar.getItems().setAll(nodes);
     }
 
     private void setupSecondaryToolbarForSelectedMode() {
-        ObservableList<Node> nodes = secondaryToolbar.getItems();
-        nodes.clear();
+        List<Node> nodes = new ArrayList<>();
         if (currentMode != DataMode.FID) {
             nodes.add(toolButton);
             nodes.add(ToolBarUtils.makeFiller(10));
@@ -660,6 +659,7 @@ public class SpectrumStatusBar {
         }
 
         nodes.add(ToolBarUtils.makeFiller(10));
+        secondaryToolbar.getItems().setAll(nodes);
     }
 
     public boolean isComplex() {
