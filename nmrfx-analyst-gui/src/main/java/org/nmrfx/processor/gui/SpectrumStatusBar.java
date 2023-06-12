@@ -197,13 +197,13 @@ public class SpectrumStatusBar {
             rowMenus[i] = mButton;
             MenuItem menuItem = new MenuItem("Full");
             mButton.getItems().add(menuItem);
-            menuItem.addEventHandler(ActionEvent.ACTION, event -> rowMenuAction(event, iAxis));
+            menuItem.addEventHandler(ActionEvent.ACTION, this::rowMenuAction);
             menuItem = new MenuItem("First");
             mButton.getItems().add(menuItem);
-            menuItem.addEventHandler(ActionEvent.ACTION, event -> rowMenuAction(event, iAxis));
+            menuItem.addEventHandler(ActionEvent.ACTION, this::rowMenuAction);
             menuItem = new MenuItem("Last");
             mButton.getItems().add(menuItem);
-            menuItem.addEventHandler(ActionEvent.ACTION, event -> rowMenuAction(event, iAxis));
+            menuItem.addEventHandler(ActionEvent.ACTION, this::rowMenuAction);
 
         }
         filler = new Pane();
@@ -726,7 +726,7 @@ public class SpectrumStatusBar {
         chart.refresh();
     }
 
-    private void rowMenuAction(ActionEvent event, int iAxis) {
+    private void rowMenuAction(ActionEvent event) {
         MenuItem menuItem = (MenuItem) event.getSource();
         PolyChart chart = controller.getActiveChart();
         if (menuItem.getText().equals("Full")) {
