@@ -229,22 +229,22 @@ public class FXMLController implements Initializable, StageBasedController, Publ
      */
     public void updateSpectrumStatusBarOptions(boolean initDataset) {
         if (isFIDActive()) {
-            statusBar.setMode(0);
+            statusBar.setMode(SpectrumStatusBar.DataMode.FID);
         } else {
             ObservableList<DatasetAttributes> datasetAttrList = getActiveChart().getDatasetAttributes();
-            OptionalInt maxNDim = datasetAttrList.stream().mapToInt(d -> d.nDim).max();
-            if (maxNDim.isPresent()) {
-                if (getActiveChart().is1D() && (maxNDim.getAsInt() > 1)) {
-                    OptionalInt maxRows = datasetAttrList.stream().
-                            mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
-                    if (initDataset && maxRows.isPresent() && (maxRows.getAsInt() > MAX_INITIAL_TRACES)) {
+            datasetAttrList.stream().mapToInt(d -> d.nDim).max().ifPresent(maxNDim -> {
+                if (getActiveChart().is1D() && maxNDim > 1) {
+                    int maxRows = datasetAttrList.stream()
+                            .mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1))
+                            .max().orElse(0);
+                    if (initDataset && maxRows > MAX_INITIAL_TRACES) {
                         getActiveChart().setDrawlist(0);
                     }
-                    statusBar.set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
+                    statusBar.set1DArray(maxNDim, maxRows);
                 } else {
-                    statusBar.setMode(maxNDim.getAsInt());
+                    statusBar.setMode(SpectrumStatusBar.DataMode.fromDimensions(maxNDim), maxNDim);
                 }
-            }
+            });
         }
     }
 
@@ -511,7 +511,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             getActiveChart().clearAnnotations();
             getActiveChart().removeProjections();
             getActiveChart().layoutPlotChildren();
-            statusBar.setMode(0);
+            statusBar.setMode(SpectrumStatusBar.DataMode.FID);
         } else {
             log.warn("Unable to add FID because controller can not be created.");
         }
@@ -846,7 +846,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             chartDrawingLayers.getGrid().requestLayout();
         });
 
-        statusBar.setMode(1);
+        statusBar.setMode(SpectrumStatusBar.DataMode.DATASET_1D);
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {
                 crossHairStates[iCross][jOrient] = true;

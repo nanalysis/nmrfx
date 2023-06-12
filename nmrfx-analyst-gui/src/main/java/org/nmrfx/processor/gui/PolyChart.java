@@ -625,7 +625,7 @@ public class PolyChart extends Region implements PeakListener {
         FXMLController newController = AnalystApp.getFXMLControllerManager().newController();
         PolyChart newChart = newController.getActiveChart();
         copyTo(newChart);
-        newController.getStatusBar().setMode(controller.getStatusBar().getMode());
+        newController.getStatusBar().setMode(controller.getStatusBar().getMode(), controller.getStatusBar().getModeDimensions());
         newChart.refresh();
     }
 
@@ -3598,7 +3598,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
                 newChart.clearDataAndPeaks();
                 newChart.updateDatasets(sliceDatasets);
-                sliceController.getStatusBar().setMode(controller.getStatusBar().getMode());
+                sliceController.getStatusBar().setMode(controller.getStatusBar().getMode(), controller.getStatusBar().getModeDimensions());
                 newChart.autoScale();
                 double lvl = newChart.getDatasetAttributes().get(0).getLvl();
                 double offset = newChart.getDatasetAttributes().get(0).getOffset();

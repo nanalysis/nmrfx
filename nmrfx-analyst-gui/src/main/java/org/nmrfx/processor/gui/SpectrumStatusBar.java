@@ -62,7 +62,8 @@ public class SpectrumStatusBar {
 
     private final FXMLController controller;
     private boolean arrayMode = false;
-    private int currentMode = 0;
+    private DataMode currentMode = DataMode.FID;
+    private int currentModeDimensions = 0;
 
     // cursor, measure spinners, etc
     private final ToolBar primaryToolbar = new ToolBar();
@@ -79,8 +80,7 @@ public class SpectrumStatusBar {
     private final MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
     private ComboBox<DisplayMode> displayModeComboBox = null;
     private final ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = this::chartDisplayDimensionChanged;
-    private SegmentedButton cursorButtons = new SegmentedButton();
-
+    private final SegmentedButton cursorButtons = new SegmentedButton();
 
     // tools & additional buttons
     private final ToolBar secondaryToolbar = new ToolBar();
@@ -143,7 +143,7 @@ public class SpectrumStatusBar {
                 spinner.addEventFilter(MouseEvent.MOUSE_PRESSED,
                         e -> spinner.setUserData(e.isShiftDown()));
                 planeListeners[i][j] = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
-                    if ((newValue != null) && !newValue.equals(oldValue)) {
+                    if (newValue != null && !newValue.equals(oldValue)) {
                         Boolean shiftValue = (Boolean) spinner.getUserData();
                         updatePlane(iDim, iSpin, newValue, shiftValue);
                     }
@@ -436,7 +436,7 @@ public class SpectrumStatusBar {
             PolyChart chart = controller.getActiveChart();
             if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
                 double[] values = dataAttr.getDataset().getValues(axNum);
-                if ((values != null) && (values.length > plane)) {
+                if (values != null && values.length > plane) {
                     value = values[plane];
                 } else {
                     value = (double) (plane + 1);
@@ -572,48 +572,60 @@ public class SpectrumStatusBar {
         secondaryToolbar.getItems().addAll(secondaryNodes);
     }
 
-    public int getMode() {
+    public DataMode getMode() {
         return currentMode;
     }
 
-    //XXX what are valid mode values?
-    //TODO split primary/secondary
-    public void setMode(int mode) {
-        currentMode = mode;
-        arrayMode = false;
-        List<Node> primaryNodes = new ArrayList<>();
-        List<Node> secondaryNodes = new ArrayList<>();
-        if (mode != 0) {
-            secondaryNodes.add(toolButton);
-            secondaryNodes.add(ToolBarUtils.makeFiller(10));
+    public int getModeDimensions() {
+        return currentModeDimensions;
+    }
+
+    public void setMode(DataMode mode) {
+        if (mode == DataMode.DATASET_ND_PLUS) {
+            log.warn("Setting mode 3D+ without setting dimension, assuming 3D data.");
         }
-        if (mode == 1) {
-            secondaryNodes.addAll(specialButtons);
+        setMode(mode, mode.ordinal());
+    }
+
+    public void setMode(DataMode mode, int dimensions) {
+        currentMode = mode;
+        currentModeDimensions = dimensions;
+        arrayMode = false;
+        setupPrimaryToolbar();
+        setupSecondaryToolbar();
+        setPlaneRanges();
+    }
+
+    private void setupPrimaryToolbar() {
+        List<Node> primaryNodes = new ArrayList<>();
+
+        if (currentMode == DataMode.DATASET_1D) {
             cursorButtons.getButtons().get(3).setDisable(false);
-        } else if (mode > 1) {
-            secondaryNodes.add(peakPickButton);
+        } else if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
             cursorButtons.getButtons().get(3).setDisable(true);
         }
-        HBox.setHgrow(primaryFiller, Priority.ALWAYS);
-        HBox.setHgrow(secondaryFiller, Priority.ALWAYS);
 
-        if (mode == 2) {
+        if (currentMode == DataMode.DATASET_2D) {
             displayModeComboBox.getSelectionModel().select(DisplayMode.CONTOURS);
             primaryNodes.add(displayModeComboBox);
         }
+
+        //TODO rework fillers: do we need instance fields?
+        HBox.setHgrow(primaryFiller, Priority.ALWAYS);
         primaryNodes.add(primaryFiller);
 
         primaryNodes.add(new Label("Cursor:"));
         primaryNodes.add(cursorButtons);
 
+        //TODO unroll/rewrite this loop
         for (int j = 1; j >= 0; j--) {
-            if ((j == 1) && (mode > 1)) {
+            if (j == 1 && (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS)) {
                 primaryNodes.add(dimMenus[0]);
             }
             if (j == 0) {
-                if (mode > 2) {
+                if (currentMode == DataMode.DATASET_ND_PLUS) {
                     primaryNodes.add(dimMenus[1]);
-                } else if (mode == 2) {
+                } else if (currentMode == DataMode.DATASET_2D) {
                     primaryNodes.add(new Label("Y:"));
                 }
             }
@@ -621,8 +633,16 @@ public class SpectrumStatusBar {
                 primaryNodes.add(crossText[i][j]);
             }
         }
-        primaryNodes.add(secondaryFiller);
-        for (int i = 2; i < mode; i++) {
+
+        HBox.setHgrow(secondaryFiller, Priority.ALWAYS);
+        primaryNodes.add(secondaryFiller); // secondary filler in primary node?
+
+        if (currentMode == DataMode.FID) {
+            primaryNodes.add(complexStatus);
+        }
+
+        //TODO describe what happens for > 2D here
+        for (int i = 2; i < currentModeDimensions; i++) {
             primaryNodes.add(dimMenus[i]);
             primaryNodes.add(planeSpinner[i - 2][0]);
             primaryNodes.add(planeSpinner[i - 2][1]);
@@ -633,15 +653,26 @@ public class SpectrumStatusBar {
             HBox.setHgrow(nodeFiller, Priority.ALWAYS);
             primaryNodes.add(nodeFiller);
         }
-        if (mode == 0) {
-            primaryNodes.add(complexStatus);
-        }
-        secondaryNodes.add(ToolBarUtils.makeFiller(10));
+
         primaryToolbar.getItems().clear();
         primaryToolbar.getItems().addAll(primaryNodes);
+    }
+
+    private void setupSecondaryToolbar() {
+        List<Node> secondaryNodes = new ArrayList<>();
+        if (currentMode != DataMode.FID) {
+            secondaryNodes.add(toolButton);
+            secondaryNodes.add(ToolBarUtils.makeFiller(10));
+        }
+        if (currentMode == DataMode.DATASET_1D) {
+            secondaryNodes.addAll(specialButtons);
+        } else if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
+            secondaryNodes.add(peakPickButton);
+        }
+
+        secondaryNodes.add(ToolBarUtils.makeFiller(10));
         secondaryToolbar.getItems().clear();
         secondaryToolbar.getItems().addAll(secondaryNodes);
-        setPlaneRanges();
     }
 
     public boolean isComplex() {
@@ -672,7 +703,7 @@ public class SpectrumStatusBar {
         line = (Line) pane.getChildren().get(1);
         Color color = state ? Color.LIGHTGRAY : Color.BLACK;
         rect.setFill(color);
-        color = state && (iCross == 1) ? Color.RED : Color.BLACK;
+        color = state && iCross == 1 ? Color.RED : Color.BLACK;
         line.setStroke(color);
     }
 
@@ -718,7 +749,7 @@ public class SpectrumStatusBar {
             return;
         }
         DisplayMode selected = displayModeComboBox.getSelectionModel().getSelectedItem();
-        if ((selected == DisplayMode.TRACES) || (selected == DisplayMode.STACKPLOT)) {
+        if (selected == DisplayMode.TRACES || selected == DisplayMode.STACKPLOT) {
             OptionalInt maxRows = chart.getDatasetAttributes().stream().
                     mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
             if (maxRows.isEmpty()) {
@@ -746,7 +777,8 @@ public class SpectrumStatusBar {
             chart.getDatasetAttributes().get(0).drawList.clear();
             chart.updateProjections();
             chart.updateProjectionScale();
-            setMode(maxNDim.getAsInt());
+            int nDim = maxNDim.getAsInt();
+            setMode(DataMode.fromDimensions(nDim), nDim);
         }
         chart.updateAxisType(true);
         chart.full();
@@ -755,8 +787,8 @@ public class SpectrumStatusBar {
 
     private boolean isStacked() {
         PolyChart chart = controller.getActiveChart();
-        return (chart.getChartProperties().getStackX() > 0.01) ||
-                (chart.getChartProperties().getStackY() > 0.01);
+        return chart.getChartProperties().getStackX() > 0.01 ||
+                chart.getChartProperties().getStackY() > 0.01;
     }
 
     private void dimAction(String rowName, String dimName) {
@@ -791,6 +823,19 @@ public class SpectrumStatusBar {
                 }
             }
         });
+    }
+
+    public enum DataMode {
+        FID, DATASET_1D, DATASET_2D, DATASET_ND_PLUS;
+
+        public static DataMode fromDimensions(int nDim) {
+            return switch (nDim) {
+                case 0 -> throw new IllegalArgumentException("0 shouldn't be used as a number of dimension");
+                case 1 -> DATASET_1D;
+                case 2 -> DATASET_2D;
+                default -> DATASET_ND_PLUS;
+            };
+        }
     }
 
     private enum DisplayMode {
