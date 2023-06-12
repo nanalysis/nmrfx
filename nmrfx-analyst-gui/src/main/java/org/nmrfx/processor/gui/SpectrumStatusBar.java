@@ -24,7 +24,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
@@ -94,15 +93,7 @@ public class SpectrumStatusBar {
         this.controller = controller;
     }
 
-    @PluginAPI("parametric")
-    public FXMLController getController() {
-        return controller;
-    }
-
-    public List<Node> getToolbars() {
-        return List.of(primaryToolbar, secondaryToolbar);
-    }
-
+    // can't be called from constructor: relies on controller.getActiveChart(), which returns null at construction
     public void init() {
         peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
         peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
@@ -219,7 +210,7 @@ public class SpectrumStatusBar {
         HBox.setHgrow(filler, Priority.ALWAYS);
         primaryToolbar.getItems().add(filler);
         primaryToolbar.getItems().add(complexStatus);
-        complexStatus.setOnAction(this::complexStatus);
+        complexStatus.setOnAction(this::complexStatusChanged);
 
         controller.getActiveChart().getDisDimProperty().addListener(displayedDimensionsListener);
         PolyChartManager.getInstance().activeChartProperty().addListener(this::setChart);
@@ -252,9 +243,19 @@ public class SpectrumStatusBar {
         cursorButtons.getToggleGroup().selectedToggleProperty().addListener((ChangeListener<? super Toggle>) (a, b, c) -> toggleChanged(c));
     }
 
+    @PluginAPI("parametric")
+    public FXMLController getController() {
+        return controller;
+    }
+
+    public List<Node> getToolbars() {
+        return List.of(primaryToolbar, secondaryToolbar);
+    }
+
     public void updateCursorBox() {
         for (var button : cursorButtons.getButtons()) {
-            if (((CanvasCursor) button.getUserData()).getCursor() == controller.getCurrentCursor()) {
+            if (button.getUserData() instanceof CanvasCursor canvasCursor
+                    && canvasCursor.getCursor() == controller.getCurrentCursor()) {
                 button.setSelected(true);
                 break;
             }
@@ -287,13 +288,13 @@ public class SpectrumStatusBar {
 
     public void addToToolMenu(String menuText, MenuItem newItem) {
         for (MenuItem menuItem : toolButton.getItems()) {
-            if (menuItem.getText().equals(menuText) && (menuItem instanceof Menu menu)) {
+            if (menuItem instanceof Menu menu && menu.getText().equals(menuText)) {
                 menu.getItems().add(newItem);
             }
         }
     }
 
-    public void setupTools() {
+    private void setupTools() {
         Menu specToolMenu = new Menu("Spectrum Tools");
 
         MenuItem measureMenuItem = new MenuItem("Show Measure Bar");
@@ -353,7 +354,7 @@ public class SpectrumStatusBar {
         return stackPane;
     }
 
-    public void setChart(ObservableValue<? extends PolyChart> observable, PolyChart oldChart, PolyChart newChart) {
+    private void setChart(ObservableValue<? extends PolyChart> observable, PolyChart oldChart, PolyChart newChart) {
         if (controller.getCharts().contains(oldChart)) {
             oldChart.getDisDimProperty().removeListener(displayedDimensionsListener);
         } else if (controller.getCharts().contains(newChart)) {
@@ -385,7 +386,7 @@ public class SpectrumStatusBar {
         });
     }
 
-    public void updateSpinner(int iDim) {
+    private void updateSpinner(int iDim) {
         for (int j = 0; j < 2; j++) {
             SpinnerValueFactory<Integer> planeFactory = planeSpinner[iDim - 2][j].getValueFactory();
             int value = planeFactory.getValue();
@@ -395,12 +396,10 @@ public class SpectrumStatusBar {
     }
 
     public void updateRowSpinner(int row, int axNum) {
-        row++;
         SpinnerValueFactory<Integer> planeFactory = planeSpinner[axNum - 1][0].getValueFactory();
         planeFactory.valueProperty().removeListener(planeListeners[axNum - 1][0]);
-        planeFactory.setValue(row);
+        planeFactory.setValue(row + 1);
         planeFactory.valueProperty().addListener(planeListeners[axNum - 1][0]);
-
     }
 
     private Optional<DatasetAttributes> getDatasetAttributes() {
@@ -467,7 +466,7 @@ public class SpectrumStatusBar {
         planeFactory.valueProperty().addListener(planeListeners[axNum - 2][spinNum]);
     }
 
-    void scrollPlane(ScrollEvent e, int iDim, int iSpin) {
+    private void scrollPlane(ScrollEvent e, int iDim, int iSpin) {
         Spinner<Integer> spinner = planeSpinner[iDim][iSpin];
 
         double delta = e.getDeltaY();
@@ -480,7 +479,7 @@ public class SpectrumStatusBar {
         planeFactory.increment(nPlanes);
     }
 
-    void updatePlane(int iDim, int iSpin, int plane, boolean shiftDown) {
+    private void updatePlane(int iDim, int iSpin, int plane, boolean shiftDown) {
         plane--;
         if (arrayMode) {
             controller.getActiveChart().setDrawlist(plane);
@@ -512,8 +511,7 @@ public class SpectrumStatusBar {
         }
     }
 
-    @FXML
-    private void complexStatus(ActionEvent event) {
+    private void complexStatusChanged(ActionEvent event) {
         controller.getActiveChart().layoutPlotChildren();
     }
 
@@ -522,7 +520,7 @@ public class SpectrumStatusBar {
         crossText[index][orientation.ordinal()].setMax(max);
     }
 
-    public void setPlaneRanges(int iDim, int max) {
+    private void setPlaneRanges(int iDim, int max) {
         for (int j = 0; j < 2; j++) {
             SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][j].getValueFactory();
             planeFactory.valueProperty().removeListener(planeListeners[iDim - 2][j]);
@@ -822,7 +820,7 @@ public class SpectrumStatusBar {
         }
     }
 
-    class SpinnerConverter extends IntegerStringConverter {
+    private class SpinnerConverter extends IntegerStringConverter {
         final int axNum;
         final int spinNum;
         boolean valueMode = false;
