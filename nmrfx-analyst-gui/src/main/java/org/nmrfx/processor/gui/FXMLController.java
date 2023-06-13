@@ -885,7 +885,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
      * aligned in a separate top menu in the window, otherwise they will appear right aligned in the file menu.
      */
     private void initializeRightPaneContentControlToggleButtons() {
-        MenuBar menuBar = AnalystApp.getMenuBar();
         // Note processor button is already created, just needs to have action listener and style setup
         ToggleButton attributesButton = new ToggleButton("Attributes");
         ToggleButton contentButton = new ToggleButton("Content");
@@ -906,6 +905,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             toggleButtonToolbar.getItems().addAll(spacer, groupButton);
             topBar.getChildren().add(0, toggleButtonToolbar);
         } else {
+            MenuBar menuBar = AnalystApp.getMenuBar();
             groupButton.maxHeightProperty().bind(menuBar.heightProperty());
             StackPane sp = new StackPane(menuBar, groupButton);
             sp.setAlignment(Pos.CENTER_RIGHT);
