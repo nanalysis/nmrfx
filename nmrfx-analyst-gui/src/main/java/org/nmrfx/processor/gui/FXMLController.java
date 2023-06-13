@@ -150,10 +150,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     @FXML
     private BorderPane mainBox;
     @FXML
-    private StackPane processorPane;
+    private StackPane rightContentPane;
     private double previousStageRestoreWidth = 0;
     private double previousStageRestoreProcControllerWidth = 0;
-    private boolean previousStageRestoreProcControllerVisible = false;
+    private boolean previousStageRestoreRightPaneContentVisible = false;
     private PolyChart activeChart = null;
     private ChartDrawingLayers chartDrawingLayers;
     private final BooleanProperty minBorders = new SimpleBooleanProperty(this, "minBorders", false);
@@ -273,7 +273,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         activeChart = chart;
         PolyChartManager.getInstance().setActiveChart(chart);
         ProcessorController processorController = chart.getProcessorController(false);
-        processorPane.getChildren().clear();
         // The chart has a processor controller setup, and can be in FID or Dataset mode.
         if (processorController != null) {
             isFID = !processorController.isViewingDataset();
@@ -281,7 +280,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             if (processorController.isVisible()) {
                 processorController.show();
             }
-            // TODO NMR-6974 confirm this behaviour
             processorButton.setSelected(processorController.isVisible());
         } else {
             processorButton.setSelected(false);
@@ -307,7 +305,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public boolean isContentPaneShowing() {
-        return borderPane.getRight() == contentPane;
+        return contentPane != null && rightContentPane.getChildren().contains(contentPane);
     }
 
     public Stage getStage() {
@@ -484,7 +482,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (dataset != null) {
             ProcessorController processorController = getActiveChart().getProcessorController(false);
             if (processorController != null && (!dataset.getFile().equals(chartProcessor.getDatasetFile()))) {
-                processorPane.getChildren().clear();
+                processorController.hide();
                 getActiveChart().setProcessorController(null);
                 processorController.cleanUp();
             }
@@ -505,7 +503,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         ProcessorController processorController = getActiveChart().getProcessorController(true);
         if (processorController != null) {
             disableProcessorButton(false);
-            // TODO NMR-6974: confirm this behaviour
             processorButton.setSelected(true);
             processorController.setAutoProcess(false);
             chartProcessor.setData(nmrData, clearOps);
@@ -638,8 +635,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
-    public StackPane getProcessorPane() {
-        return processorPane;
+    public StackPane getRightContentPane() {
+        return rightContentPane;
     }
 
     public void closeFile(File target) {
@@ -671,13 +668,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void showProcessorAction() {
         ProcessorController processorController = getActiveChart().getProcessorController(true);
         processorController.show();
-    }
-
-    public void hideProcessorAction() {
-        ProcessorController processorController = getActiveChart().getProcessorController(false);
-        if (processorController != null) {
-            processorController.hide();
-        }
     }
 
     public Button getHaltButton() {
@@ -807,7 +797,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public boolean isSideBarAttributesShowing() {
-        return (attributesPane != null) && (borderPane.getRight() == attributesPane);
+        return attributesPane != null && rightContentPane.getChildren().contains(attributesPane);
     }
 
     public void updateDatasetAttributeControls() {
@@ -869,7 +859,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             }
         }
         phaser = new Phaser(this, phaserBox);
-        processorPane.getChildren().addListener(this::updateStageSize);
+        rightContentPane.getChildren().addListener(this::updateStageSize);
         cursorProperty.addListener(e -> setCursor());
         attributesPane = new AnchorPane();
         attributesController = AttributesController.create(this, attributesPane);
@@ -892,7 +882,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         groupButton.getButtons().forEach(button -> {
             // need to listen to property instead of action so toggle method is triggered when setSelected is called.
             button.selectedProperty().addListener((obs, oldValue, newValue) ->
-                    toggleSideBarAttributes(attributesButton, contentButton, processorButton));
+                    toggleRightContentPaneAttributes(attributesButton, contentButton, processorButton));
             button.getStyleClass().add("toolButton");
         });
         if (AnalystApp.isMac()) {
@@ -1574,24 +1564,33 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return fracs;
     }
 
-    private void toggleSideBarAttributes(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
+    private void toggleRightContentPaneAttributes(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
         if (attributesButton.isSelected()) {
-            borderPane.setRight(attributesPane);
+            addAttributesContentToRightContentPane(attributesPane);
             attributesController.setAttributeControls();
             attributesController.updateScrollSize(borderPane);
-            hideProcessorAction();
         } else if (contentButton.isSelected()) {
-            borderPane.setRight(contentPane);
+            addAttributesContentToRightContentPane(contentPane);
             contentController.update();
             contentController.updateScrollSize(borderPane);
-            hideProcessorAction();
         } else if (processorButton.isSelected()) {
+            // separate method for adding to rightContentPane as processor controller has additional setup
             showProcessorAction();
-            borderPane.setRight(null);
         } else {
-            borderPane.setRight(null);
-            hideProcessorAction();
+            rightContentPane.getChildren().clear();
         }
+    }
+
+    /**
+     * Add the attributes or content pane to the right side content, as well as hiding any ProcessorControllers associated
+     * with the charts so that right side pane contents will not be replaced when the active chart changes.
+     * @param pane The attributes or content pane to add.
+     */
+    private void addAttributesContentToRightContentPane(Pane pane) {
+        // Set the visibility of all processor charts to false so that content/attributes will not be closed when switching in multichart view
+        charts.stream().map(chart -> chart.getProcessorController(false)).filter(Objects::nonNull).forEach(ProcessorController::hide);
+        rightContentPane.getChildren().clear();
+        rightContentPane.getChildren().add(pane);
     }
 
     public void updatePhaser(boolean showPhaser) {
@@ -1620,11 +1619,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
      */
     private void updateStageSize(ListChangeListener.Change<? extends Node> c) {
         double paneAdj = 0;
-        if (processorPane.getChildren().isEmpty()) {
+        if (rightContentPane.getChildren().isEmpty()) {
             if (c.next()) {
                 paneAdj = -1 * ((Pane) c.getRemoved().get(0)).getMinWidth();
             }
-        } else if (processorPane.getChildren().size() == 1) {
+        } else if (rightContentPane.getChildren().size() == 1) {
             paneAdj = ((Pane) c.getList().get(0)).getMinWidth();
         }
         stage.setWidth(stage.getWidth() + paneAdj);
@@ -1796,23 +1795,18 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private void adjustSizeAfterMaximize(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
         if (Boolean.TRUE.equals(newValue)) {
             previousStageRestoreWidth = stage.getWidth();
-            ProcessorController pc = getActiveChart().getProcessorController(false);
-            if (pc != null) {
-                previousStageRestoreProcControllerVisible = pc.isVisible();
-            } else {
-                previousStageRestoreProcControllerVisible = false;
-            }
-            if (previousStageRestoreProcControllerVisible) {
-                previousStageRestoreProcControllerWidth = ((Pane) processorPane.getChildren().get(0)).getMinWidth();
+            previousStageRestoreRightPaneContentVisible = !rightContentPane.getChildren().isEmpty();
+            if (previousStageRestoreRightPaneContentVisible) {
+                previousStageRestoreProcControllerWidth = ((Pane) rightContentPane.getChildren().get(0)).getMinWidth();
             } else {
                 previousStageRestoreProcControllerWidth = 0;
             }
         } else {
-            boolean procControllerVisible = !processorPane.getChildren().isEmpty();
-            if (procControllerVisible == previousStageRestoreProcControllerVisible) {
+            boolean procControllerVisible = !rightContentPane.getChildren().isEmpty();
+            if (procControllerVisible == previousStageRestoreRightPaneContentVisible) {
                 stage.setWidth(previousStageRestoreWidth);
             } else if (procControllerVisible) {
-                Pane p = (Pane) processorPane.getChildren().get(0);
+                Pane p = (Pane) rightContentPane.getChildren().get(0);
                 stage.setWidth(previousStageRestoreWidth + p.getMinWidth());
             } else {
                 stage.setWidth(previousStageRestoreWidth - previousStageRestoreProcControllerWidth);

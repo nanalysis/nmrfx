@@ -9,6 +9,7 @@ import javafx.scene.control.Accordion;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import org.controlsfx.control.ListSelectionView;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.peaks.PeakList;
@@ -38,14 +39,16 @@ public class ContentController {
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
     MapChangeListener mapChangeListener = change -> update();
 
-    public static ContentController create(FXMLController fxmlController, Pane processorPane) {
+    public static ContentController create(FXMLController fxmlController, Pane parentPane) {
         Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml")
-                .withParent(processorPane);
+                .withParent(parentPane);
         ContentController controller = builder.getController();
         controller.fxmlController = fxmlController;
         controller.datasetViewController = new DatasetView(fxmlController, controller);
         builder.getNode().visibleProperty().addListener(e -> controller.updatePeakView());
         controller.update();
+        parentPane.setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
+        ((Region) builder.getNode()).setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
         return controller;
     }
 

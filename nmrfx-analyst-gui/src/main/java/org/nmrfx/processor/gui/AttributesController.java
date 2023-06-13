@@ -12,6 +12,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
@@ -248,11 +249,10 @@ public class AttributesController implements Initializable {
 
     FXMLController fxmlController;
 
-    public static AttributesController create(FXMLController fxmlController, Pane processorPane) {
-        AttributesController controller = Fxml.load(AttributesController.class, "AttributesController.fxml")
-                .withParent(processorPane)
-                .getController();
-
+    public static AttributesController create(FXMLController fxmlController, Pane parentPane) {
+        Fxml.Builder builder = Fxml.load(AttributesController.class, "AttributesController.fxml")
+                .withParent(parentPane);
+        AttributesController controller = builder.getController();
         controller.fxmlController = fxmlController;
         controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
         controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
@@ -264,7 +264,8 @@ public class AttributesController implements Initializable {
         controller.setChart(fxmlController.getActiveChart());
         controller.datasetChoiceBox.valueProperty().addListener(e -> controller.datasetChoiceChanged());
         controller.peakListChoiceBox.valueProperty().addListener(e -> controller.peakListChoiceChanged());
-
+        parentPane.setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
+        ((Region) builder.getNode()).setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
         return controller;
     }
 

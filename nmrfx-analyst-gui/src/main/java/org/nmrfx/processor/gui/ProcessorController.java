@@ -17,8 +17,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -54,7 +52,6 @@ import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
 import org.greenrobot.eventbus.EventBus;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.processor.datasets.Dataset;
@@ -244,23 +241,24 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         controller.chartProcessor.setFxmlController(fxmlController);
         controller.processorPane = processorPane;
         controller.pane = builder.getNode();
+        controller.pane.setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
         fxmlController.processorCreated(controller.pane);
 
         return controller;
     }
 
     public void show() {
-        if (processorPane.getChildren().isEmpty()) {
+        if (!processorPane.getChildren().contains(pane)) {
             processorPane.getChildren().add(pane);
-            pane.setVisible(true);
         }
+        pane.setVisible(true);
     }
 
     public void hide() {
-        if (!processorPane.getChildren().isEmpty()) {
+        if (processorPane.getChildren().contains(pane)) {
             processorPane.getChildren().clear();
-            pane.setVisible(false);
         }
+        pane.setVisible(false);
     }
 
     public boolean isVisible() {

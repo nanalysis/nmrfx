@@ -48,7 +48,7 @@
             </bottom>
         </BorderPane>
         <Separator orientation="VERTICAL"/>
-        <StackPane fx:id="processorPane" VBox.vgrow="ALWAYS"/>
+        <StackPane fx:id="rightContentPane" VBox.vgrow="ALWAYS"/>
     </children>
 
 </HBox>
