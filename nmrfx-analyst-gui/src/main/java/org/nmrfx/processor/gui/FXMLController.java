@@ -119,6 +119,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private final Button haltButton = GlyphsDude.createIconButton(FontAwesomeIcon.STOP, "Halt", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
     private final Button favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
     private final SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
+    private final ToggleButton processorButton = new ToggleButton("Processor");
+
     private ChartProcessor chartProcessor;
     private Stage stage = null;
     private boolean isFID = true;
@@ -279,7 +281,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             if (processorController.isVisible()) {
                 processorController.show();
             }
+            // TODO NMR-6974 confirm this behaviour
+            processorButton.setSelected(processorController.isVisible());
+        } else {
+            processorButton.setSelected(false);
         }
+        disableProcessorButton(!isProcessorControllerAvailable());
         updateSpectrumStatusBarOptions(false);
         if (attributesController != null) {
             attributesController.setChart(activeChart);
@@ -481,6 +488,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 getActiveChart().setProcessorController(null);
                 processorController.cleanUp();
             }
+            disableProcessorButton(true);
             if (addDatasetToChart) {
                 addDataset(dataset, append, false);
             }
@@ -496,6 +504,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         // Only create a new processor controller, if the active chart does not have one already created.
         ProcessorController processorController = getActiveChart().getProcessorController(true);
         if (processorController != null) {
+            disableProcessorButton(false);
+            // TODO NMR-6974: confirm this behaviour
+            processorButton.setSelected(true);
             processorController.setAutoProcess(false);
             chartProcessor.setData(nmrData, clearOps);
             processorController.viewingDataset(false);
@@ -657,9 +668,16 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         peakAttrController.initIfEmpty();
     }
 
-    public void showProcessorAction(ActionEvent event) {
+    public void showProcessorAction() {
         ProcessorController processorController = getActiveChart().getProcessorController(true);
         processorController.show();
+    }
+
+    public void hideProcessorAction() {
+        ProcessorController processorController = getActiveChart().getProcessorController(false);
+        if (processorController != null) {
+            processorController.hide();
+        }
     }
 
     public Button getHaltButton() {
@@ -863,21 +881,22 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     /**
-     * Initialize the toggle buttons Phasing, Attributes and Contents. On mac these buttons will appear right
+     * Initialize the toggle buttons Processing, Phasing, Attributes and Contents. On mac these buttons will appear right
      * aligned in a separate top menu in the window, otherwise they will appear right aligned in the file menu.
      */
     private void initializeRightPaneContentControlToggleButtons() {
         MenuBar menuBar = AnalystApp.getMenuBar();
+        // Note processor button is already created, just needs to have action listener and style setup
         ToggleButton phaserButton = new ToggleButton("Phasing");
         ToggleButton attributesButton = new ToggleButton("Attributes");
         ToggleButton contentButton = new ToggleButton("Content");
-        attributesButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
-        contentButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
-        phaserButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
-        phaserButton.getStyleClass().add("toolButton");
-        attributesButton.getStyleClass().add("toolButton");
-        contentButton.getStyleClass().add("toolButton");
-        SegmentedButton groupButton = new SegmentedButton(phaserButton, contentButton, attributesButton);
+        SegmentedButton groupButton = new SegmentedButton(processorButton, phaserButton, contentButton, attributesButton);
+        groupButton.getButtons().forEach(button -> {
+            // need to listen to property instead of action so toggle method is triggered when setSelected is called.
+            button.selectedProperty().addListener((obs, oldValue, newValue) ->
+                    toggleSideBarAttributes(phaserButton, attributesButton, contentButton, processorButton));
+            button.getStyleClass().add("toolButton");
+        });
         if (AnalystApp.isMac()) {
             ToolBar toggleButtonToolbar = new ToolBar();
             // Remove padding from top and bottom to match style of how the buttons appear on non mac os
@@ -892,6 +911,18 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             StackPane sp = new StackPane(menuBar, groupButton);
             sp.setAlignment(Pos.CENTER_RIGHT);
             topBar.getChildren().add(0, sp);
+        }
+    }
+
+    /**
+     * Set the processorButton disable property. If disabled is true, then the selectedProperty will also be set to
+     * false.
+     * @param disabled Whether to disable the button.
+     */
+    private void disableProcessorButton(boolean disabled) {
+        processorButton.setDisable(disabled);
+        if (disabled) {
+            processorButton.setSelected(false);
         }
     }
 
@@ -1544,7 +1575,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return fracs;
     }
 
-    private void toggleSideBarAttributes(ToggleButton phaserButton, ToggleButton attributesButton, ToggleButton contentButton) {
+    private void toggleSideBarAttributes(ToggleButton phaserButton, ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
         if (phaserButton.isSelected()) {
             borderPane.setRight(phaserBox);
             phaser.getPhaseOp();
@@ -1552,16 +1583,23 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 phaser.setPH1Slider(activeChart.getDataPH1());
                 phaser.setPH0Slider(activeChart.getDataPH0());
             }
+            hideProcessorAction();
         } else if (attributesButton.isSelected()) {
             borderPane.setRight(attributesPane);
             attributesController.setAttributeControls();
             attributesController.updateScrollSize(borderPane);
+            hideProcessorAction();
         } else if (contentButton.isSelected()) {
             borderPane.setRight(contentPane);
             contentController.update();
             contentController.updateScrollSize(borderPane);
+            hideProcessorAction();
+        } else if (processorButton.isSelected()) {
+            showProcessorAction();
+            borderPane.setRight(null);
         } else {
             borderPane.setRight(null);
+            hideProcessorAction();
         }
     }
 
