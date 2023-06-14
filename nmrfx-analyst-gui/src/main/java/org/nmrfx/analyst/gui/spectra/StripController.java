@@ -37,6 +37,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -661,7 +662,7 @@ public class StripController implements ControllerTool {
             currentLow = low;
             currentHigh = high;
             if (frozen >= 0) {
-                charts.get(frozen).setActiveChart();
+                PolyChartManager.getInstance().setActiveChart(charts.get(frozen));
             }
             controller.setChartDisable(false);
             controller.setCursor();

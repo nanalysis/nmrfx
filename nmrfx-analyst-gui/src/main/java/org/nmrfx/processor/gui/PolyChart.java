@@ -318,10 +318,6 @@ public class PolyChart extends Region {
         return sliceAttributes;
     }
 
-    public void setActiveChart() {
-        PolyChartManager.getInstance().setActiveChart(this);
-    }
-
     public FXMLController getFXMLController() {
         return controller;
     }

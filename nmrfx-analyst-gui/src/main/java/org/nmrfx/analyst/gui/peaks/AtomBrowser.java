@@ -27,6 +27,7 @@ import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -227,7 +228,7 @@ public class AtomBrowser {
             double rMax = rangeItem.max;
             for (int i = 0; i < items.size(); i++) {
                 PolyChart chart = controller.getCharts().get(i);
-                chart.setActiveChart();
+                PolyChartManager.getInstance().setActiveChart(chart);
                 DrawItem item = items.get(i);
                 List<String> datasetList = new ArrayList<>();
                 datasetList.add(item.dataset.getName());

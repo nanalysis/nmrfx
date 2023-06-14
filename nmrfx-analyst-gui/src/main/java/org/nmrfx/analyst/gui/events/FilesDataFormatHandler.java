@@ -8,6 +8,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,7 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
                     return false;
                 }
             }
-            chart.setActiveChart();
+            PolyChartManager.getInstance().setActiveChart(chart);
             // Only display the last added molecule if there is a dataset already displayed
             if (chart.getDataset() != null) {
                 MoleculeUtils.addActiveMoleculeToCanvas();
@@ -70,7 +71,7 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
      * @param chart The chart to display the files in.
      */
     private void openDataFiles(List<File> files, PolyChart chart) {
-        chart.setActiveChart();
+        PolyChartManager.getInstance().setActiveChart(chart);
         boolean isFID = false;
         try {
             isFID = NMRDataUtil.getFID(files.get(0).getAbsolutePath()).isFID();

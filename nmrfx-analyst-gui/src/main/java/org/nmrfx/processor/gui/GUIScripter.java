@@ -751,11 +751,21 @@ public class GUIScripter {
         });
     }
 
+    /**
+     * Execute a command for a specific chart. The chart will temporarily become the active one.
+     *
+     * @param keyStr the action key for the command to execute
+     * @param chart  the chart on which the command must be executed
+     */
     public static void chartCommand(String keyStr, PolyChart chart) {
-        PolyChart currentActive = PolyChartManager.getInstance().getActiveChart();
-        chart.setActiveChart();
-        AnalystPythonInterpreter.exec(keyActions.get(keyStr));
-        currentActive.setActiveChart();
+        PolyChartManager chartManager = PolyChartManager.getInstance();
+        PolyChart currentActive = chartManager.getActiveChart();
+        try {
+            chartManager.setActiveChart(chart);
+            AnalystPythonInterpreter.exec(keyActions.get(keyStr));
+        } finally {
+            chartManager.setActiveChart(currentActive);
+        }
     }
 
 }

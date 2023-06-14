@@ -25,6 +25,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 
 import java.util.Optional;
 
@@ -111,7 +112,7 @@ public class CanvasBindings {
         mouseNode.setOnMousePressed((MouseEvent mouseEvent) -> {
             Optional<PolyChart> oChart = controller.getChart(mouseEvent.getX(), mouseEvent.getY());
             oChart.ifPresent(chart -> {
-                chart.setActiveChart();
+                PolyChartManager.getInstance().setActiveChart(chart);
                 chart.getMouseBindings().mousePressed(mouseEvent);
             });
             mouseNode.requestFocus();
