@@ -223,10 +223,6 @@ public class PolyChart extends Region {
         });
     }
 
-    public boolean isSelectable() {
-        return false;
-    }
-
     public void selectChart(boolean value) {
         chartSelected.set(value);
     }

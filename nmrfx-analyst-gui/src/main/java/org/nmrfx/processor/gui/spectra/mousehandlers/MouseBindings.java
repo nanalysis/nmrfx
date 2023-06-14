@@ -334,17 +334,7 @@ public class MouseBindings {
                             (currentRegion.get() != previousRegion.get())) {
                         chart.refresh();
                     }
-                    if (handler instanceof BoxMouseHandlerHandler) {
-                        if (!selectedRegion && chart.isSelectable() && (clickCount == 2)) {
-                            handler = null;
-                            chart.selectChart(true);
-                            chart.refresh();
-                        } else {
-                            handler.mousePressed(mouseEvent);
-                        }
-                    } else {
-                        handler.mousePressed(mouseEvent);
-                    }
+                    handler.mousePressed(mouseEvent);
                 }
             }
         }
