@@ -34,8 +34,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import javafx.util.StringConverter;
-import javafx.util.converter.DefaultStringConverter;
 import org.controlsfx.control.tableview2.TableView2;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
@@ -223,7 +221,6 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
 
     void updateColumns() {
         tableView.getColumns().clear();
-        StringConverter sConverter = new DefaultStringConverter();
 
         TableColumn<RemoteDataset, String> pathCol = new TableColumn<>("Path");
         pathCol.setCellValueFactory(new PropertyValueFactory("Path"));

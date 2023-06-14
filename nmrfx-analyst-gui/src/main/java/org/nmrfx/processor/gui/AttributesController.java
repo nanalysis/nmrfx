@@ -241,7 +241,6 @@ public class AttributesController implements Initializable {
     PeakColorTypeListener peakColorTypeListener = new PeakColorTypeListener();
     PeakLabelTypeListener peakLabelTypeListener = new PeakLabelTypeListener();
 
-    boolean shiftState = false;
     Boolean accordionIn1D = null;
     PolyChart chart;
     PolyChart boundChart = null;
@@ -328,14 +327,12 @@ public class AttributesController implements Initializable {
         aspectSlider.setMax(3.0);
         aspectSlider.setValue(1.0);
         aspectSlider.setBlockIncrement(0.01);
-        aspectSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
         aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
 
         stackXSlider.setMin(0.0);
         stackXSlider.setMax(1.00);
         stackXSlider.setValue(0.0);
         stackXSlider.setBlockIncrement(0.01);
-        stackXSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
         stackXSlider.valueProperty().addListener(stackXListener);
         stackXSlider.setOnMouseReleased(e -> setStackXSlider());
         GUIUtils.bindSliderField(stackXSlider, stackXField);
@@ -345,7 +342,6 @@ public class AttributesController implements Initializable {
         stackYSlider.setMax(1.0);
         stackYSlider.setValue(0.0);
         stackYSlider.setBlockIncrement(0.01);
-        stackYSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
         stackYSlider.valueProperty().addListener(stackYListener);
         stackYSlider.setOnMouseReleased(e -> setStackYSlider());
         GUIUtils.bindSliderField(stackYSlider, stackYField);

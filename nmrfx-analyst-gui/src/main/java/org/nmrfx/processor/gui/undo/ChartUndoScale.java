@@ -55,7 +55,6 @@ public class ChartUndoScale extends ChartUndo {
     public void setScales(PolyChart chart) {
         List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         dataAttrs.stream().forEach(d -> {
-            double scale = d.getLvl();
             double[] scales = scaleMap.get(d.getFileName());
             if (scales != null) {
                 d.setLvl(scales[0]);

@@ -16,7 +16,6 @@ import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
 
 import java.util.*;
@@ -167,7 +166,6 @@ public class PeakAssignTool implements ControllerTool {
     }
 
     void clearValue(int iDim) {
-        String value;
         if (mode == ASSIGN_MODE.SIMPLE) {
             atomChoicesTF[iDim].setText("");
         } else {
@@ -180,7 +178,6 @@ public class PeakAssignTool implements ControllerTool {
     public void show(Peak peak) {
         removePeakOnClose = peak != null;
         double defaultTol = 0.04;
-        Molecule mol = Molecule.getActive();
         FXMLController fxmlController = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         PolyChart chart = fxmlController.getActiveChart();
         List<Peak> selected = chart.getSelectedPeaks();

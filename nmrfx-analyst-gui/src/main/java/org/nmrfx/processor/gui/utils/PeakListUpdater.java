@@ -144,12 +144,6 @@ public class PeakListUpdater implements Updater {
         }
     }
 
-    static void registerGlobalListener(PeakListener newListener) {
-        if (!globalListeners.contains(newListener)) {
-            globalListeners.add(newListener);
-        }
-    }
-
     public static void notifyGlobalListeners() {
         for (PeakListener listener : globalListeners) {
             listener.peakListChanged(new PeakEvent("*"));

@@ -203,7 +203,6 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                     peaksBorderPane.setTop(null);
                 }
                 graphBorderPane.setTop(peakNavigatorToolBar);
-            } else {
             }
         });
 

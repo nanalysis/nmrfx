@@ -161,10 +161,8 @@ public class PeakMenuActions extends MenuActions {
         }
     }
 
-    public void pickedPeakAction(Object peakObject) {
+    public void pickedPeakAction(Peak peak) {
         if (assignOnPick.isSelected()) {
-            Peak peak = (Peak) peakObject;
-            System.out.println(peak.getName());
             PolyChart chart = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart();
             double x = chart.getMouseX();
             double y = chart.getMouseY();

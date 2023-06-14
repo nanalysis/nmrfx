@@ -24,7 +24,10 @@
 package org.nmrfx.analyst.gui.peaks;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.collections.*;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Side;
@@ -242,10 +245,6 @@ public class NOETableController implements Initializable, StageBasedController {
         tableView.setEditable(true);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         updateColumns();
-        ListChangeListener listener = (ListChangeListener.Change c) -> {
-            int nSelected = tableView.getSelectionModel().getSelectedItems().size();
-        };
-        tableView.getSelectionModel().getSelectedIndices().addListener(listener);
         tableView.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
                 if (!tableView.getSelectionModel().getSelectedItems().isEmpty()) {

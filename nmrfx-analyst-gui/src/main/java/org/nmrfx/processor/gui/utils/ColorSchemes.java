@@ -62,7 +62,6 @@ public class ColorSchemes {
             System.out.println("bf null");
             return;
         }
-        String mode = "sequential";
         bf.lines().forEach(line -> {
             line = line.trim();
             if (line.length() != 0) {
@@ -83,15 +82,6 @@ public class ColorSchemes {
 
     public static Set<String> getColorClasses() {
         return maps.keySet();
-    }
-
-    public static Collection<String> getColorNames(String colorClass) {
-        if (maps.containsKey(colorClass)) {
-            return maps.get(colorClass).values();
-        } else {
-            return Collections.EMPTY_SET;
-        }
-
     }
 
     public static String getColorString(String name) {
