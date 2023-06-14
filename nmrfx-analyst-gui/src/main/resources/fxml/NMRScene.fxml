@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.net.URL?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.layout.*?>
-<?import java.net.URL?>
-<HBox prefHeight="600.0" prefWidth="900.0" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
-      xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="org.nmrfx.processor.gui.FXMLController">
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<?import org.nmrfx.processor.gui.NMRControlRightSidePane?>
+<HBox prefHeight="600.0" prefWidth="900.0" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.FXMLController">
     <children>
         <BorderPane fx:id="mainBox" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
             <stylesheets>
-                <URL value="@/styles/Styles.css"/>
+                <URL value="@/styles/Styles.css" />
             </stylesheets>
             <top>
                 <VBox fx:id="topBar" GridPane.hgrow="ALWAYS">
@@ -27,7 +32,7 @@
                     <top>
                     </top>
                     <center>
-                        <StackPane fx:id="chartPane" prefHeight="1000" VBox.vgrow="ALWAYS"/>
+                        <StackPane fx:id="chartPane" prefHeight="1000" VBox.vgrow="ALWAYS" />
                     </center>
                     <right>
                     </right>
@@ -40,15 +45,15 @@
                     <children>
                         <VBox fx:id="btoolVBox">
                             <children>
-                                <Pane HBox.hgrow="ALWAYS"/>
+                                <Pane HBox.hgrow="ALWAYS" />
                             </children>
                         </VBox>
                     </children>
                 </VBox>
             </bottom>
         </BorderPane>
-        <Separator orientation="VERTICAL"/>
-        <StackPane fx:id="rightContentPane" VBox.vgrow="ALWAYS"/>
+        <Separator orientation="VERTICAL" />
+      <NMRControlRightSidePane fx:id="nmrControlRightSidePane" />
     </children>
 
 </HBox>

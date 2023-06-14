@@ -3864,7 +3864,7 @@ public class PolyChart extends Region implements PeakListener {
 
     public ProcessorController getProcessorController(boolean createIfNull) {
         if ((processorController == null) && createIfNull) {
-            processorController = ProcessorController.create(getFXMLController(), getFXMLController().getRightContentPane(), this);
+            processorController = ProcessorController.create(getFXMLController(), getFXMLController().getNmrControlRightSidePane(), this);
         }
         return processorController;
     }

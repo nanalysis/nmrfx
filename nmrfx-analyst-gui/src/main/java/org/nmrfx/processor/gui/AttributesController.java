@@ -37,7 +37,7 @@ import java.util.ResourceBundle;
 
 import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 
-public class AttributesController implements Initializable {
+public class AttributesController implements Initializable, NMRControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(AttributesController.class);
     static final DecimalFormat FORMATTER = new DecimalFormat();
 
@@ -265,7 +265,6 @@ public class AttributesController implements Initializable {
         controller.setChart(fxmlController.getActiveChart());
         controller.datasetChoiceBox.valueProperty().addListener(e -> controller.datasetChoiceChanged());
         controller.peakListChoiceBox.valueProperty().addListener(e -> controller.peakListChoiceChanged());
-        ((Region) builder.getNode()).setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
         return controller;
     }
 
@@ -1060,10 +1059,6 @@ public class AttributesController implements Initializable {
         setAttributeControls();
     }
 
-    private boolean isShowing() {
-        return fxmlController.isSideBarAttributesShowing();
-    }
-
     private void setContourSliders() {
         setLvlSlider();
         setNlvlSlider();
@@ -1094,7 +1089,7 @@ public class AttributesController implements Initializable {
     }
 
     public void setAttributeControls() {
-        if ((chart != null) && isShowing()) {
+        if ((chart != null) && getPane().isVisible()) {
             chart = fxmlController.getActiveChart();
             chart.setChartDisabled(true);
             datasetsChanged();

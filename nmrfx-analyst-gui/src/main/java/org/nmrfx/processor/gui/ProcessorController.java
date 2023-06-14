@@ -86,7 +86,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ProcessorController implements Initializable, ProgressUpdater {
+public class ProcessorController implements Initializable, ProgressUpdater, NMRControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
     private static final String[] BASIC_OPS = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
@@ -108,9 +108,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
-    Pane processorPane;
-    Pane pane;
-
+    Pane nmrControlRightSidePane;
+    @FXML
+    private BorderPane mainBox;
     @FXML
     private ToolBar toolBar;
     @FXML
@@ -228,41 +228,48 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     private AtomicReference<Dataset> saveObject = new AtomicReference<>();
     ScheduledFuture futureUpdate = null;
+    private boolean viewIfPossible = true;
 
 
-    public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
-        Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml")
-                .withParent(processorPane);
+    public static ProcessorController create(FXMLController fxmlController, NMRControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
+        Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml");
         ProcessorController controller = builder.getController();
 
         controller.chart = chart;
         chart.setProcessorController(controller);
         controller.chartProcessor.setChart(chart);
         controller.chartProcessor.setFxmlController(fxmlController);
-        controller.processorPane = processorPane;
-        controller.pane = builder.getNode();
-        controller.pane.setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
-        fxmlController.processorCreated(controller.pane);
-
+        controller.nmrControlRightSidePane = nmrControlRightSidePane;
+        fxmlController.processorCreated(controller.mainBox);
+        controller.show();
         return controller;
     }
 
+    public Pane getPane() {
+        return mainBox;
+    }
+
     public void show() {
-        if (!processorPane.getChildren().contains(pane)) {
-            processorPane.getChildren().add(pane);
+        if (!nmrControlRightSidePane.getChildren().contains(mainBox)) {
+            nmrControlRightSidePane.getChildren().clear();
+            nmrControlRightSidePane.getChildren().add(mainBox);
         }
-        pane.setVisible(true);
+        viewIfPossible = true;
     }
 
     public void hide() {
-        if (processorPane.getChildren().contains(pane)) {
-            processorPane.getChildren().clear();
+        if (nmrControlRightSidePane.getChildren().contains(mainBox)) {
+            nmrControlRightSidePane.getChildren().clear();
         }
-        pane.setVisible(false);
+        viewIfPossible = false;
     }
 
     public boolean isVisible() {
-        return pane.isVisible();
+        return mainBox.isVisible();
+    }
+
+    public boolean isViewIfPossible() {
+        return viewIfPossible;
     }
 
     public PropertyManager getPropertyManager() {

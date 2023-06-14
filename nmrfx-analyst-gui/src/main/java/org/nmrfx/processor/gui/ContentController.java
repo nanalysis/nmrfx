@@ -9,7 +9,6 @@ import javafx.scene.control.Accordion;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.ListSelectionView;
 import org.nmrfx.fxutil.Fxml;
@@ -22,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class ContentController {
+public class ContentController implements NMRControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(ContentController.class);
     @FXML
     VBox contentVBox;
@@ -49,7 +48,6 @@ public class ContentController {
         controller.datasetViewController = new DatasetView(fxmlController, controller);
         builder.getNode().visibleProperty().addListener(e -> controller.updatePeakView());
         controller.update();
-        ((Region) builder.getNode()).setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
         return controller;
     }
 
@@ -72,10 +70,6 @@ public class ContentController {
         return contentVBox;
     }
 
-    private boolean isShowing() {
-        return fxmlController.isContentPaneShowing();
-    }
-
     public void setChart(PolyChart chart) {
         this.chart = chart;
         update();
@@ -83,7 +77,7 @@ public class ContentController {
 
 
     public void update() {
-        if (isShowing()) {
+        if (getPane().isVisible()) {
             Platform.runLater(() -> {
                 chart = fxmlController.getActiveChart();
                 chart.setChartDisabled(true);
