@@ -84,7 +84,7 @@ import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 
 @PluginAPI("parametric")
-public class PolyChart extends Region implements PeakListener {
+public class PolyChart extends Region {
     private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
     public static final int HORIZONTAL = 0;
     private static final int VERTICAL = 1;
@@ -98,6 +98,7 @@ public class PolyChart extends Region implements PeakListener {
     private final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
     private final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
     private final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
+    private final PeakListener peakListener = this::peakListChanged;
     private final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
     private final FXMLController controller;
     private final ChartDrawingLayers drawingLayers;
@@ -185,13 +186,6 @@ public class PolyChart extends Region implements PeakListener {
         return mouseBindings.getMouseY();
     }
 
-    @Override
-    public void peakListChanged(final PeakEvent peakEvent) {
-        if (listenToPeaks) {
-            Fx.runOnFxThread(() -> respondToPeakListChange(peakEvent));
-        }
-    }
-
     public void updateSelectedMultiplets() {
         selectedMultiplets.clear();
         for (PeakListAttributes peakAttr : peakListAttributesList) {
@@ -207,27 +201,33 @@ public class PolyChart extends Region implements PeakListener {
         peakStatus.set(state);
     }
 
-    private void respondToPeakListChange(PeakEvent peakEvent) {
-        // if mouse down we could be dragging peak which will itself cause redraw
-        //   no need to call this
-        if (mouseBindings.isMouseDown()) {
+    private void peakListChanged(PeakEvent peakEvent) {
+        if (!listenToPeaks) {
             return;
         }
-        Object source = peakEvent.getSource();
-        PeakListAttributes activeAttr = null;
-        if (peakStatus.get()) {
-            if (source instanceof PeakList peakList) {
-                for (PeakListAttributes peakListAttr : peakListAttributesList) {
-                    if (peakListAttr.getPeakList() == peakList) {
-                        activeAttr = peakListAttr;
+
+        Fx.runOnFxThread(() -> {
+            // if mouse down we could be dragging peak which will itself cause redraw
+            //   no need to call this
+            if (mouseBindings.isMouseDown()) {
+                return;
+            }
+            Object source = peakEvent.getSource();
+            PeakListAttributes activeAttr = null;
+            if (peakStatus.get()) {
+                if (source instanceof PeakList peakList) {
+                    for (PeakListAttributes peakListAttr : peakListAttributesList) {
+                        if (peakListAttr.getPeakList() == peakList) {
+                            activeAttr = peakListAttr;
+                        }
                     }
                 }
             }
-        }
-        if (activeAttr != null) {
-            drawPeakLists(false);
-            drawSelectedPeaks(activeAttr);
-        }
+            if (activeAttr != null) {
+                drawPeakLists(false);
+                drawSelectedPeaks(activeAttr);
+            }
+        });
     }
 
     public boolean isSelectable() {
@@ -2581,7 +2581,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
                 PeakListAttributes peakListAttr = new PeakListAttributes(this, matchData, peakList);
                 peakListAttributesList.add(peakListAttr);
-                peakList.registerPeakChangeListener(this);
+                peakList.registerPeakChangeListener(peakListener);
                 newPeakListAttr = peakListAttr;
 
             }
@@ -2603,7 +2603,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
             }
             if (!found) {
-                peakAttr.getPeakList().removePeakChangeListener(this);
+                peakAttr.getPeakList().removePeakChangeListener(peakListener);
             }
             removeSome = !found;
         }
@@ -2909,7 +2909,7 @@ public class PolyChart extends Region implements PeakListener {
             while (peakListIterator.hasNext()) {
                 PeakListAttributes peakListAttr = peakListIterator.next();
                 if (peakListAttr.getPeakList().peaks() == null) {
-                    peakListAttr.getPeakList().removePeakChangeListener(this);
+                    peakListAttr.getPeakList().removePeakChangeListener(peakListener);
                     peakListIterator.remove();
                 }
             }
@@ -3952,6 +3952,11 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
+    /**
+     * Called by PeakSlider to prevent handling peak events during peak alignment
+     *
+     * @param state true to enable peak listener, false to disable it
+     */
     public static void setPeakListenerState(boolean state) {
         listenToPeaks = state;
     }
