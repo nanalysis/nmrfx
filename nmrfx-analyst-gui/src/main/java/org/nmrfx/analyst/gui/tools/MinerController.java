@@ -31,7 +31,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ToolBar;
 import org.nmrfx.analyst.dataops.Align;
 import org.nmrfx.analyst.dataops.Normalize;
-import org.nmrfx.chart.Axis;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -104,28 +103,11 @@ public class MinerController {
         }
     }
 
-    /**
-     * Set the disabled state of the adjuster menu button.
-     *
-     * @param state If true, disable button.
-     */
-    public void disableController(boolean state) {
-        adjusterMenu.setDisable(state);
-    }
-
     @FXML
     public void undoAlign(ActionEvent event) {
         PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
-            double[] ppms = polyChart.getCrossHairs().getVerticalPositions();
-            DatasetAttributes dataAttr = polyChart.getDatasetAttributes().get(0);
-            Axis axis = polyChart.getAxes().getX();
-            AXMODE axMode = polyChart.getAxes().getMode(0);
-            int ptw1 = axMode.getIndex(dataAttr, 0, axis.getLowerBound());
-            int ptw2 = axMode.getIndex(dataAttr, 0, axis.getUpperBound());
-            int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
-            int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Align aligner = new Align();
             try {
                 List<Double> valueList;
@@ -158,10 +140,7 @@ public class MinerController {
         if (dataset != null) {
             double[] ppms = polyChart.getCrossHairs().getVerticalPositions();
             DatasetAttributes dataAttr = polyChart.getDatasetAttributes().get(0);
-            Axis axis = polyChart.getAxes().getX();
             AXMODE axMode = polyChart.getAxes().getMode(0);
-            int ptw1 = axMode.getIndex(dataAttr, 0, axis.getLowerBound());
-            int ptw2 = axMode.getIndex(dataAttr, 0, axis.getUpperBound());
             int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
             int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Align aligner = new Align();
@@ -195,10 +174,7 @@ public class MinerController {
         if (dataset != null) {
             double[] ppms = polyChart.getCrossHairs().getVerticalPositions();
             DatasetAttributes dataAttr = polyChart.getDatasetAttributes().get(0);
-            Axis axis = polyChart.getAxes().getX();
             AXMODE axMode = polyChart.getAxes().getMode(0);
-            int ptw1 = axMode.getIndex(dataAttr, 0, axis.getLowerBound());
-            int ptw2 = axMode.getIndex(dataAttr, 0, axis.getUpperBound());
             int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
             int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Align aligner = new Align();
@@ -218,10 +194,7 @@ public class MinerController {
         if (dataset != null) {
             double[] ppms = polyChart.getCrossHairs().getVerticalPositions();
             DatasetAttributes dataAttr = polyChart.getDatasetAttributes().get(0);
-            Axis axis = polyChart.getAxes().getX();
             AXMODE axMode = polyChart.getAxes().getMode(0);
-            int ptw1 = axMode.getIndex(dataAttr, 0, axis.getLowerBound());
-            int ptw2 = axMode.getIndex(dataAttr, 0, axis.getUpperBound());
             int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
             int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Align aligner = new Align();

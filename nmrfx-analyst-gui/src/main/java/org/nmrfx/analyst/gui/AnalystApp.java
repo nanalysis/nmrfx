@@ -85,8 +85,8 @@ public class AnalystApp extends Application {
     private static final List<Stage> stages = new ArrayList<>();
 
     private final PopOverTools popoverTool = new PopOverTools();
+    private DatasetBrowserController datasetBrowserController;
     private PreferencesController preferencesController;
-    private DatasetsController datasetController;
     private HostServices hostServices;
     private MenuBar mainMenuBar = null;
     private FileMenuActions fileMenuActions;
@@ -645,14 +645,11 @@ public class AnalystApp extends Application {
         popoverTool.showPopover(chart, objectBounds, hitObject);
     }
 
-    @FXML
-    void showDatasetsTable(ActionEvent event) {
-        if (datasetController == null) {
-            datasetController = DatasetsController.create();
+    public DatasetBrowserController getOrCreateDatasetBrowserController() {
+        if (datasetBrowserController == null) {
+            datasetBrowserController = DatasetBrowserController.create();
         }
-        datasetController.refresh();
-        datasetController.getStage().show();
-        datasetController.getStage().toFront();
+        return datasetBrowserController;
     }
 
     /**

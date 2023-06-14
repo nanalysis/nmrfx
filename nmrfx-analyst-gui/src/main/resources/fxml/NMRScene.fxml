@@ -11,7 +11,9 @@
 <?import javafx.scene.layout.VBox?>
 
 <?import org.nmrfx.processor.gui.NMRControlRightSidePane?>
-<HBox prefHeight="600.0" prefWidth="900.0" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.FXMLController">
+<HBox prefHeight="720.0" prefWidth="1080.0" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
+      xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.nmrfx.processor.gui.FXMLController">
     <children>
         <BorderPane fx:id="mainBox" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
             <stylesheets>
@@ -19,12 +21,6 @@
             </stylesheets>
             <top>
                 <VBox fx:id="topBar" GridPane.hgrow="ALWAYS">
-                    <children>
-                        <ToolBar fx:id="toolBar" prefWidth="200.0" BorderPane.alignment="CENTER">
-                            <items>
-                            </items>
-                        </ToolBar>
-                    </children>
                 </VBox>
             </top>
             <center>
@@ -40,6 +36,16 @@
             </center>
             <right>
             </right>
+            <left>
+                <HBox fx:id="leftBar" VBox.vgrow="ALWAYS">
+                <children>
+                    <ToolBar fx:id="toolBar" orientation="VERTICAL" BorderPane.alignment="CENTER">
+                        <items>
+                        </items>
+                    </ToolBar>
+                </children>
+                </HBox>
+            </left>
             <bottom>
                 <VBox fx:id="bottomBox">
                     <children>

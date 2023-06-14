@@ -234,6 +234,19 @@ public class GUIUtils {
         }
     }
 
+    public static void nodeAdjustWidths(List<Node> nodeList) {
+        // Set width of controls within a toolbar to be the same.
+        Optional<Double> width = nodeList.stream().map(node -> node.prefWidth(Region.USE_COMPUTED_SIZE)).max(Double::compare);
+        if (width.isEmpty()) {
+            return;
+        }
+        for (Node node : nodeList) {
+            if (node instanceof Control control) {
+                control.setPrefWidth(width.get());
+            }
+        }
+    }
+
     public static String getPassword() {
         Dialog<String> dialog = new Dialog<>();
         dialog.setTitle("Password");

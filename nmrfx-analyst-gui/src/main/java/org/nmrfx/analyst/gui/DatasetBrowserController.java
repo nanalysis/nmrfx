@@ -34,8 +34,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import javafx.util.StringConverter;
-import javafx.util.converter.DefaultStringConverter;
 import org.controlsfx.control.tableview2.TableView2;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
@@ -98,6 +96,11 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
         return stage;
     }
 
+    public void show() {
+        stage.toFront();
+        stage.show();
+    }
+
     boolean initRemoteDatasetAccess() {
         if (rdA == null) {
             String remoteHost = AnalystPrefs.getRemoteHostName();
@@ -134,11 +137,9 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
     }
 
     public static DatasetBrowserController create() {
-        DatasetBrowserController controller = Fxml.load(DatasetBrowserController.class, "DatasetBrowserScene.fxml")
+        return Fxml.load(DatasetBrowserController.class, "DatasetBrowserScene.fxml")
                 .withNewStage("Dataset Browser")
                 .getController();
-        controller.stage.show();
-        return controller;
     }
 
     void initToolBar() {
@@ -223,7 +224,6 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
 
     void updateColumns() {
         tableView.getColumns().clear();
-        StringConverter sConverter = new DefaultStringConverter();
 
         TableColumn<RemoteDataset, String> pathCol = new TableColumn<>("Path");
         pathCol.setCellValueFactory(new PropertyValueFactory("Path"));

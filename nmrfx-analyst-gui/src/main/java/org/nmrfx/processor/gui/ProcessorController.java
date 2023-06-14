@@ -581,7 +581,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NMRC
                     Processor.getProcessor().setProcessorAvailableStatus(true);
                     chartProcessor.reloadData();
                     chartProcessor.setDatasetFile(null);
-                    chartProcessor.setDatasetFileTemp(null);
                     viewingDataset(false);
                     ProjectBase.getActive().removeDataset(currentDatasetName);
                     chart.refresh();

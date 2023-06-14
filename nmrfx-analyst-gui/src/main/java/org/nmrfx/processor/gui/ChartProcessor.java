@@ -83,7 +83,6 @@ public class ChartProcessor {
     private final List<Vec> saveVectors = new ArrayList<>();
     private final List<?> pyDocs;
     private File datasetFile;
-    private File datasetFileTemp;
     /**
      * Display chart used for rendering vectors.
      */
@@ -180,10 +179,6 @@ public class ChartProcessor {
 
     public void setDatasetFile(File datasetFile) {
         this.datasetFile = datasetFile;
-    }
-
-    public void setDatasetFileTemp(File datasetFileTemp) {
-        this.datasetFileTemp = datasetFileTemp;
     }
 
     public void setFxmlController(FXMLController fxmlController) {
@@ -828,7 +823,6 @@ public class ChartProcessor {
             }
             datasetFile = file;
             String fileString = file.getAbsoluteFile().toString();
-            datasetFileTemp = new File(fileString + ".tmp");
             fileString = fileString.replace("\\", "/");
             script = script.replace("_DATASET_", "'" + fileString + "'");
         }
@@ -1031,7 +1025,6 @@ public class ChartProcessor {
         setDatasetType(data.getPreferredDatasetType());
 
         datasetFile = null;
-        datasetFileTemp = null;
         Map<String, Boolean> flags = new HashMap<>();
         flags.put("fixdsp", fixDSP);
         setFlags(flags);
