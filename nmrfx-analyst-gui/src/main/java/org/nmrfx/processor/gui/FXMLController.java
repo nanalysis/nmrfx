@@ -43,8 +43,6 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.util.Callback;
-import org.controlsfx.control.PopOver;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -77,7 +75,6 @@ import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
 import org.nmrfx.project.ProjectBase;
-import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
 import org.nmrfx.utils.properties.PublicPropertyContainer;
@@ -124,7 +121,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private ChartProcessor chartProcessor;
     private Stage stage = null;
     private boolean isFID = true;
-    private PopOver popOver = null;
     private SpectrumMeasureBar measureBar = null;
     private PeakNavigator peakNavigator;
     private SpectrumComparator spectrumComparator;
@@ -316,61 +312,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return stage;
     }
 
-    private void showDatasetsAction(ActionEvent event) {
-        if (popOver == null) {
-            popOver = new PopOver();
-        }
-        if (Dataset.datasets().isEmpty()) {
-            Label label = new Label("No open datasets\nUse File Menu Open item\nto open datasets");
-            label.setStyle("-fx-font-size:12pt;-fx-text-alignment: center; -fx-padding:10px;");
-            popOver.setContentNode(label);
-        } else {
-            datasetListView.setStyle("-fx-font-size:12pt;");
-
-            DictionarySort<DatasetBase> sorter = new DictionarySort<>();
-            datasetListView.getItems().clear();
-            Dataset.datasets().stream().sorted(sorter).forEach((DatasetBase d) -> {
-                datasetListView.getItems().add(d.getName());
-            });
-            datasetListView.setCellFactory(new Callback<>() {
-                @Override
-                public ListCell<String> call(ListView<String> p) {
-                    ListCell<String> olc = new ListCell<>() {
-                        @Override
-                        public void updateItem(String s, boolean empty) {
-                            super.updateItem(s, empty);
-                            setText(s);
-                        }
-                    };
-                    olc.setOnDragDetected(event -> {
-                        Dragboard db = olc.startDragAndDrop(TransferMode.COPY);
-
-                        /* Put a string on a dragboard */
-                        ClipboardContent content = new ClipboardContent();
-                        List<String> items = olc.getListView().getSelectionModel().getSelectedItems();
-                        StringBuilder sBuilder = new StringBuilder();
-                        for (String item : items) {
-                            sBuilder.append(item);
-                            sBuilder.append("\n");
-                        }
-                        content.putString(sBuilder.toString().trim());
-                        db.setContent(content);
-
-                        event.consume();
-                    });
-                    return olc;
-                }
-
-            });
-            datasetListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-            popOver.setContentNode(datasetListView);
-        }
-
-        popOver.setDetachable(true);
-        popOver.setTitle("Datasets");
-        popOver.setHeaderAlwaysVisible(true);
-        popOver.setArrowLocation(PopOver.ArrowLocation.TOP_CENTER);
-        popOver.show((Node) event.getSource());
+    private void showDatasetBrowser(ActionEvent event) {
+        AnalystApp.getAnalystApp().getOrCreateDatasetBrowserController().show();
     }
 
     public void openAction(ActionEvent event) {
@@ -1636,7 +1579,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         ArrayList<Node> buttons = new ArrayList<>();
         ButtonBase bButton;
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(this::showDatasetsAction);
+        bButton.setOnAction(this::showDatasetBrowser);
         buttons.add(bButton);
         favoriteButton.setOnAction(e -> saveAsFavorite());
         // Set the initial status of the favorite button
