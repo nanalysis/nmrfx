@@ -44,6 +44,8 @@ public class AttributesController implements Initializable {
     static {
         FORMATTER.setMaximumFractionDigits(3);
     }
+    @FXML
+    private VBox attributesVBox;
 
     enum SelectionChoice {
         ITEM,
@@ -249,9 +251,8 @@ public class AttributesController implements Initializable {
 
     FXMLController fxmlController;
 
-    public static AttributesController create(FXMLController fxmlController, Pane parentPane) {
-        Fxml.Builder builder = Fxml.load(AttributesController.class, "AttributesController.fxml")
-                .withParent(parentPane);
+    public static AttributesController create(FXMLController fxmlController) {
+        Fxml.Builder builder = Fxml.load(AttributesController.class, "AttributesController.fxml");
         AttributesController controller = builder.getController();
         controller.fxmlController = fxmlController;
         controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
@@ -264,7 +265,6 @@ public class AttributesController implements Initializable {
         controller.setChart(fxmlController.getActiveChart());
         controller.datasetChoiceBox.valueProperty().addListener(e -> controller.datasetChoiceChanged());
         controller.peakListChoiceBox.valueProperty().addListener(e -> controller.peakListChoiceChanged());
-        parentPane.setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
         ((Region) builder.getNode()).setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
         return controller;
     }
@@ -400,11 +400,8 @@ public class AttributesController implements Initializable {
         peakAppearancePane.expandedProperty().addListener(e -> peakPaneExpaned());
     }
 
-    public void updateScrollSize(BorderPane pane) {
-        double otherHeight = applyVBox.getHeight();
-        Node node = pane.getCenter();
-        double height = node.getLayoutBounds().getHeight();
-        attributeScrollPane.setMaxHeight(height - otherHeight - 10);
+    public Pane getPane() {
+        return attributesVBox;
     }
 
     private void unBindChart(PolyChart polyChart) {

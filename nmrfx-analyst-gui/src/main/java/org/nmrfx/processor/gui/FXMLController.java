@@ -130,8 +130,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private SpectrumComparator spectrumComparator;
     private double widthScale = 10.0;
     private Phaser phaser;
-    private Pane attributesPane;
-    private Pane contentPane;
     private AttributesController attributesController;
     private ContentController contentController;
     private AnalyzerBar analyzerBar = null;
@@ -305,7 +303,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public boolean isContentPaneShowing() {
-        return contentPane != null && rightContentPane.getChildren().contains(contentPane);
+        return contentController != null && rightContentPane.getChildren().contains(contentController.getPane());
     }
 
     public Stage getStage() {
@@ -797,7 +795,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public boolean isSideBarAttributesShowing() {
-        return attributesPane != null && rightContentPane.getChildren().contains(attributesPane);
+        return attributesController != null && rightContentPane.getChildren().contains(attributesController.getPane());
     }
 
     public void updateDatasetAttributeControls() {
@@ -861,13 +859,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         phaser = new Phaser(this, phaserBox);
         rightContentPane.getChildren().addListener(this::updateStageSize);
         cursorProperty.addListener(e -> setCursor());
-        attributesPane = new AnchorPane();
-        attributesController = AttributesController.create(this, attributesPane);
-        borderPane.heightProperty().addListener(e -> attributesController.updateScrollSize(borderPane));
+        attributesController = AttributesController.create(this);
 
-        contentPane = new AnchorPane();
-        contentController = ContentController.create(this, contentPane);
-        borderPane.heightProperty().addListener(e -> contentController.updateScrollSize(borderPane));
+        contentController = ContentController.create(this);
     }
 
     /**
@@ -1566,13 +1560,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     private void toggleRightContentPaneAttributes(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
         if (attributesButton.isSelected()) {
-            addAttributesContentToRightContentPane(attributesPane);
+            addAttributesContentToRightContentPane(attributesController.getPane());
             attributesController.setAttributeControls();
-            attributesController.updateScrollSize(borderPane);
         } else if (contentButton.isSelected()) {
-            addAttributesContentToRightContentPane(contentPane);
+            addAttributesContentToRightContentPane(contentController.getPane());
             contentController.update();
-            contentController.updateScrollSize(borderPane);
         } else if (processorButton.isSelected()) {
             // separate method for adding to rightContentPane as processor controller has additional setup
             showProcessorAction();

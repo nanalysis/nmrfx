@@ -4,7 +4,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.RangeSlider?>
-<VBox xmlns="http://javafx.com/javafx"
+<VBox fx:id="attributesVBox"
+      xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="org.nmrfx.processor.gui.AttributesController"
 >

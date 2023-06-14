@@ -10,6 +10,7 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import org.controlsfx.control.ListSelectionView;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.peaks.PeakList;
@@ -23,6 +24,8 @@ import java.util.List;
 
 public class ContentController {
     private static final Logger log = LoggerFactory.getLogger(ContentController.class);
+    @FXML
+    VBox contentVBox;
     @FXML
     ScrollPane contentScrollPane;
     @FXML
@@ -39,15 +42,13 @@ public class ContentController {
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
     MapChangeListener mapChangeListener = change -> update();
 
-    public static ContentController create(FXMLController fxmlController, Pane parentPane) {
-        Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml")
-                .withParent(parentPane);
+    public static ContentController create(FXMLController fxmlController) {
+        Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml");
         ContentController controller = builder.getController();
         controller.fxmlController = fxmlController;
         controller.datasetViewController = new DatasetView(fxmlController, controller);
         builder.getNode().visibleProperty().addListener(e -> controller.updatePeakView());
         controller.update();
-        parentPane.setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
         ((Region) builder.getNode()).setMinWidth(RightSideBarContentUtility.MINIMUM_WIDTH);
         return controller;
     }
@@ -67,8 +68,8 @@ public class ContentController {
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
     }
 
-    public void updateScrollSize(Pane pane) {
-        contentScrollPane.setMaxHeight(pane.getHeight() - 10);
+    public Pane getPane() {
+        return contentVBox;
     }
 
     private boolean isShowing() {

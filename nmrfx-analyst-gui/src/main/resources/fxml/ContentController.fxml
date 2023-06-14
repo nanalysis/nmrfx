@@ -5,7 +5,8 @@
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.VBox?>
 <?import org.controlsfx.control.ListSelectionView?>
-<VBox xmlns="http://javafx.com/javafx"
+<VBox fx:id="contentVBox"
+      xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="org.nmrfx.processor.gui.ContentController"
 >
