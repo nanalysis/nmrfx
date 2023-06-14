@@ -883,19 +883,18 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     /**
-     * Initialize the toggle buttons Processing, Phasing, Attributes and Contents. On mac these buttons will appear right
+     * Initialize the toggle buttons Processing, Attributes and Contents. On mac these buttons will appear right
      * aligned in a separate top menu in the window, otherwise they will appear right aligned in the file menu.
      */
     private void initializeRightPaneContentControlToggleButtons() {
         // Note processor button is already created, just needs to have action listener and style setup
-        ToggleButton phaserButton = new ToggleButton("Phasing");
         ToggleButton attributesButton = new ToggleButton("Attributes");
         ToggleButton contentButton = new ToggleButton("Content");
-        SegmentedButton groupButton = new SegmentedButton(processorButton, phaserButton, contentButton, attributesButton);
+        SegmentedButton groupButton = new SegmentedButton(processorButton, contentButton, attributesButton);
         groupButton.getButtons().forEach(button -> {
             // need to listen to property instead of action so toggle method is triggered when setSelected is called.
             button.selectedProperty().addListener((obs, oldValue, newValue) ->
-                    toggleSideBarAttributes(phaserButton, attributesButton, contentButton, processorButton));
+                    toggleSideBarAttributes(attributesButton, contentButton, processorButton));
             button.getStyleClass().add("toolButton");
         });
         if (AnalystApp.isMac()) {
@@ -1577,16 +1576,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return fracs;
     }
 
-    private void toggleSideBarAttributes(ToggleButton phaserButton, ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
-        if (phaserButton.isSelected()) {
-            borderPane.setRight(phaserBox);
-            phaser.getPhaseOp();
-            if (chartProcessor == null) {
-                phaser.setPH1Slider(activeChart.getDataPH1());
-                phaser.setPH0Slider(activeChart.getDataPH0());
-            }
-            hideProcessorAction();
-        } else if (attributesButton.isSelected()) {
+    private void toggleSideBarAttributes(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
+        if (attributesButton.isSelected()) {
             borderPane.setRight(attributesPane);
             attributesController.setAttributeControls();
             attributesController.updateScrollSize(borderPane);
@@ -1602,6 +1593,21 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         } else {
             borderPane.setRight(null);
             hideProcessorAction();
+        }
+    }
+
+    public void updatePhaser(boolean showPhaser) {
+        if (showPhaser) {
+            borderPane.setRight(phaserBox);
+            phaser.getPhaseOp();
+            if (chartProcessor == null) {
+                phaser.setPH1Slider(activeChart.getDataPH1());
+                phaser.setPH0Slider(activeChart.getDataPH0());
+            }
+        } else {
+            if (borderPane.getRight() == phaserBox) {
+                borderPane.setRight(null);
+            }
         }
     }
 
