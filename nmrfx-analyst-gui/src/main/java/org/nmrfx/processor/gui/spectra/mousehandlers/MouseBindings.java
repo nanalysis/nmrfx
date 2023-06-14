@@ -268,7 +268,6 @@ public class MouseBindings {
 
         boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());
         if (chart.isSelected()) {
-            Optional<Integer> hitCorner = hitChartCorner(mouseX, mouseY, 10);
             return;
         }
 
@@ -360,21 +359,4 @@ public class MouseBindings {
         }
         handler = null;
     }
-
-    Optional<Integer> hitChartCorner(double x, double y, double halfWidth) {
-        double[][] corners = chart.getCorners();
-        Optional<Integer> result = Optional.empty();
-        int iCorner = 0;
-        for (var corner : corners) {
-            double dx = Math.abs(corner[0] - x);
-            double dy = Math.abs(corner[1] - y);
-            if ((dx < halfWidth) && (dy < halfWidth)) {
-                result = Optional.of(iCorner);
-                break;
-            }
-            iCorner++;
-        }
-        return result;
-    }
-
 }

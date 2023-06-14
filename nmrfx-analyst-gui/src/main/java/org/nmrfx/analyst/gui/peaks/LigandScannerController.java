@@ -298,10 +298,6 @@ public class LigandScannerController implements Initializable, StageBasedControl
     }
 
 
-    public void updateDataFrame() {
-
-    }
-
     double[] getTableValues(String columnName) {
         double[] values = null;
         List<LigandScannerInfo> scannerRows = matrixAnalyzer.getScannerRows();

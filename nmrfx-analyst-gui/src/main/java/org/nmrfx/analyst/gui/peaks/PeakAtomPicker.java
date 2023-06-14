@@ -40,7 +40,6 @@ public class PeakAtomPicker {
     Label[] ppmLabels;
     TextField[] atomFields;
     double xOffset = 50;
-    double yOffset = 50;
     Peak selPeak = null;
     int[] peakDims;
     boolean removePeakOnClose = false;
