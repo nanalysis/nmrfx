@@ -187,11 +187,9 @@ public class KeyBindings {
                 break;
 
             case "c1":
-                chart.setHasMiddleMouseButton(false);
                 keyMonitor.clear();
                 break;
             case "c3":
-                chart.setHasMiddleMouseButton(true);
                 keyMonitor.clear();
                 break;
             case "cc":

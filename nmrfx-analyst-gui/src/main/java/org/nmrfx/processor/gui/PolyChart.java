@@ -30,7 +30,6 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ChoiceDialog;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
@@ -120,9 +119,6 @@ public class PolyChart extends Region {
     private final PolyChartAxes axes = new PolyChartAxes(datasetAttributesList);
 
     private ProcessorController processorController = null;
-    private int crossHairNumH = 0;
-    private int crossHairNumV = 0;
-    private boolean hasMiddleMouseButton = false;
     private DatasetAttributes lastDatasetAttr = null;
     private AnnoText parameterText = null;
     private double minLeftBorder = 0.0;
@@ -160,13 +156,6 @@ public class PolyChart extends Region {
 
     public ChartProperties getChartProperties() {
         return chartProps;
-    }
-
-    /**
-     * @param hasMiddleMouseButton the hasMiddleMouseButton to set
-     */
-    public void setHasMiddleMouseButton(boolean hasMiddleMouseButton) {
-        this.hasMiddleMouseButton = hasMiddleMouseButton;
     }
 
     /**
@@ -320,26 +309,6 @@ public class PolyChart extends Region {
 
     public FXMLController getFXMLController() {
         return controller;
-    }
-
-    //TODO move to CrossHairMouseHandler? CrossHairs?
-    public void handleCrossHair(MouseEvent mEvent, boolean selectCrossNum) {
-        if (selectCrossNum) {
-            if (mEvent.isMiddleButtonDown()) {
-                hasMiddleMouseButton = true;
-            }
-
-            int[] crossNums = crossHairs.findAtPosition(mEvent.getX(),
-                    mEvent.getY(), hasMiddleMouseButton, mEvent.isMiddleButtonDown());
-            crossHairNumH = crossNums[0];
-            crossHairNumV = crossNums[1];
-        }
-        if (crossHairNumH >= 0) {
-            crossHairs.move(crossHairNumH, Orientation.HORIZONTAL, mEvent.getY());
-        }
-        if (crossHairNumV >= 0) {
-            crossHairs.move(crossHairNumV, Orientation.VERTICAL, mEvent.getX());
-        }
     }
 
     public void dragBox(MOUSE_ACTION mouseAction, double[] dragStart, double x, double y) {
