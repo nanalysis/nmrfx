@@ -97,7 +97,6 @@ public class PolyChart extends Region {
     private final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
     private final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
     private final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
-    private final BooleanProperty peakStatus = new SimpleBooleanProperty(true);
     private final PeakListener peakListener = this::peakListChanged;
     private final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
     private final FXMLController controller;
@@ -197,10 +196,6 @@ public class PolyChart extends Region {
         selectedMultiplets.addListener(listener);
     }
 
-    public void setPeakStatus(boolean state) {
-        peakStatus.set(state);
-    }
-
     private void peakListChanged(PeakEvent peakEvent) {
         if (!listenToPeaks) {
             return;
@@ -214,12 +209,10 @@ public class PolyChart extends Region {
             }
             Object source = peakEvent.getSource();
             PeakListAttributes activeAttr = null;
-            if (peakStatus.get()) {
-                if (source instanceof PeakList peakList) {
-                    for (PeakListAttributes peakListAttr : peakListAttributesList) {
-                        if (peakListAttr.getPeakList() == peakList) {
-                            activeAttr = peakListAttr;
-                        }
+            if (source instanceof PeakList peakList) {
+                for (PeakListAttributes peakListAttr : peakListAttributesList) {
+                    if (peakListAttr.getPeakList() == peakList) {
+                        activeAttr = peakListAttr;
                     }
                 }
             }
@@ -2913,14 +2906,12 @@ public class PolyChart extends Region {
                     peakListIterator.remove();
                 }
             }
-            if (peakStatus.get()) {
-                for (PeakListAttributes peakListAttr : peakListAttributesList) {
-                    if (clear) {
-                        peakListAttr.clearPeaksInRegion();
-                    }
-                    if (peakListAttr.getDrawPeaks()) {
-                        drawPeakList(peakListAttr, peakGC);
-                    }
+            for (PeakListAttributes peakListAttr : peakListAttributesList) {
+                if (clear) {
+                    peakListAttr.clearPeaksInRegion();
+                }
+                if (peakListAttr.getDrawPeaks()) {
+                    drawPeakList(peakListAttr, peakGC);
                 }
             }
             if (!peakPaths.isEmpty()) {
@@ -2942,13 +2933,11 @@ public class PolyChart extends Region {
 
     public Optional<Peak> hitPeak(double pickX, double pickY) {
         Optional<Peak> hit = Optional.empty();
-        if (peakStatus.get()) {
-            for (PeakListAttributes peakListAttr : peakListAttributesList) {
-                if (peakListAttr.getDrawPeaks()) {
-                    hit = peakListAttr.hitPeak(drawPeaks, pickX, pickY);
-                    if (hit.isPresent()) {
-                        break;
-                    }
+        for (PeakListAttributes peakListAttr : peakListAttributesList) {
+            if (peakListAttr.getDrawPeaks()) {
+                hit = peakListAttr.hitPeak(drawPeaks, pickX, pickY);
+                if (hit.isPresent()) {
+                    break;
                 }
             }
         }
@@ -2957,13 +2946,11 @@ public class PolyChart extends Region {
 
     public Optional<MultipletSelection> hitMultiplet(double pickX, double pickY) {
         Optional<MultipletSelection> hit = Optional.empty();
-        if (peakStatus.get()) {
-            for (PeakListAttributes peakListAttr : peakListAttributesList) {
-                if (peakListAttr.getDrawPeaks()) {
-                    hit = peakListAttr.hitMultiplet(drawPeaks, pickX, pickY);
-                    if (hit.isPresent()) {
-                        break;
-                    }
+        for (PeakListAttributes peakListAttr : peakListAttributesList) {
+            if (peakListAttr.getDrawPeaks()) {
+                hit = peakListAttr.hitMultiplet(drawPeaks, pickX, pickY);
+                if (hit.isPresent()) {
+                    break;
                 }
             }
         }
@@ -2998,19 +2985,17 @@ public class PolyChart extends Region {
 
         drawPeakLists(false);
         boolean hitPeak = false;
-        if (peakStatus.get()) {
-            for (PeakListAttributes peakListAttr : peakListAttributesList) {
-                if (peakListAttr.getDrawPeaks()) {
-                    peakListAttr.selectPeak(drawPeaks, pickX, pickY, append);
-                    Set<Peak> peaks = peakListAttr.getSelectedPeaks();
-                    if (!peaks.isEmpty()) {
-                        hitPeak = true;
-                    }
-                    if (!selectedMultiplets.isEmpty()) {
-                        hitPeak = true;
-                    }
-                    drawSelectedPeaks(peakListAttr);
+        for (PeakListAttributes peakListAttr : peakListAttributesList) {
+            if (peakListAttr.getDrawPeaks()) {
+                peakListAttr.selectPeak(drawPeaks, pickX, pickY, append);
+                Set<Peak> peaks = peakListAttr.getSelectedPeaks();
+                if (!peaks.isEmpty()) {
+                    hitPeak = true;
                 }
+                if (!selectedMultiplets.isEmpty()) {
+                    hitPeak = true;
+                }
+                drawSelectedPeaks(peakListAttr);
             }
         }
         if (controller == AnalystApp.getFXMLControllerManager().getOrCreateActiveController()) {

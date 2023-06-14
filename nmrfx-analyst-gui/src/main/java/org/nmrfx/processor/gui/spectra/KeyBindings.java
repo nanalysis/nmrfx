@@ -178,7 +178,6 @@ public class KeyBindings {
                     double pickX = chart.getAxes().getX().getValueForDisplay(chart.getMouseX()).doubleValue();
                     double pickY = chart.getAxes().getY().getValueForDisplay(chart.getMouseY()).doubleValue();
                     PeakPicking.pickAtPosition(chart, datasetAttr, pickX, pickY, shortString.equals("as"), false);
-                    chart.setPeakStatus(true);
                     keyMonitor.clear();
                     chart.drawPeakLists(true);
                 } else {
