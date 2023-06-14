@@ -137,7 +137,7 @@ public class PolyChart extends Region {
     private double phaseFraction = 0.0;
     private boolean useImmediateMode = true;
     private Consumer<DatasetRegion> newRegionConsumer = null;
-    private ChartMenu specMenu;
+    private ChartMenu spectrumMenu;
     private ChartMenu peakMenu;
     private ChartMenu integralMenu;
     private ChartMenu regionMenu;
@@ -244,7 +244,7 @@ public class PolyChart extends Region {
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);
-        specMenu = new SpectrumMenu(this);
+        spectrumMenu = new SpectrumMenu(this);
         peakMenu = new PeakMenu(this);
         regionMenu = new RegionMenu(this);
         integralMenu = new IntegralMenu(this);
@@ -299,7 +299,7 @@ public class PolyChart extends Region {
     }
 
     public ChartMenu getSpectrumMenu() {
-        return specMenu;
+        return spectrumMenu;
     }
 
     public ChartMenu getPeakMenu() {
