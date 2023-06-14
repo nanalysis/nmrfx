@@ -1716,13 +1716,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         });
 
         buttons.add(bButton);
-        buttons.add(new Separator(Orientation.VERTICAL));
-        buttons.add(new Separator(Orientation.VERTICAL));
-
-        Pane filler = new Pane();
-        HBox.setHgrow(filler, Priority.ALWAYS);
-        filler.setMinWidth(20);
-        buttons.add(filler);
 
         for (Node node : buttons) {
             if (node instanceof Button) {
