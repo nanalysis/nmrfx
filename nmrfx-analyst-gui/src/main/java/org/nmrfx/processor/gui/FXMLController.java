@@ -220,12 +220,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         this.chartProcessor = chartProcessor;
     }
 
-    public void deselectCharts() {
-        for (var chart : charts) {
-            chart.selectChart(false);
-        }
-    }
-
     /**
      * Updates the SpectrumStatusBar menu options based on whether FID mode is on, and the dimensions
      * of the dataset.
@@ -268,7 +262,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             return;
         }
 
-        deselectCharts();
         isFID = false;
         activeChart = chart;
         PolyChartManager.getInstance().setActiveChart(chart);

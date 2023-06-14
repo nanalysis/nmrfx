@@ -101,14 +101,9 @@ public class KeyBindings {
                     chart.incrementPlane(3, -1);
                     keyEvent.consume();
                     break;
-                case ENTER:
+                case ENTER, ESCAPE:
                     keyMonitor.complete();
                     keyEvent.consume();
-                    break;
-                case ESCAPE:
-                    keyMonitor.complete();
-                    keyEvent.consume();
-                    chart.getFXMLController().deselectCharts();
                     break;
                 case DELETE, BACK_SPACE:
                     keyMonitor.complete();

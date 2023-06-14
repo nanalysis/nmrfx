@@ -267,9 +267,6 @@ public class MouseBindings {
         hidePopOver(false);
 
         boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());
-        if (chart.isSelected()) {
-            return;
-        }
 
         if (!isPopupTrigger(mouseEvent)) {
             ChartBorder border = chart.hitBorder(mouseX, mouseY);

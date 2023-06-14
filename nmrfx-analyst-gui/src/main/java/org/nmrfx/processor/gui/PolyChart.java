@@ -103,13 +103,11 @@ public class PolyChart extends Region {
     private final ChartDrawingLayers drawingLayers;
     private final Path bcPath = new Path();
     private final Rectangle highlightRect = new Rectangle();
-    private final List<Rectangle> canvasHandles = List.of(new Rectangle(), new Rectangle(), new Rectangle(), new Rectangle());
     private final DrawSpectrum drawSpectrum;
     private final DrawPeaks drawPeaks;
     private final List<CanvasAnnotation> canvasAnnotations = new ArrayList<>();
     private final String name;
     private final SimpleObjectProperty<DatasetRegion> activeRegion = new SimpleObjectProperty<>(null);
-    private final SimpleBooleanProperty chartSelected = new SimpleBooleanProperty(false);
     private final Map<String, Object> popoverMap = new HashMap<>();
     private final FileProperty datasetFileProp = new FileProperty();
     private final BooleanProperty sliceStatus = new SimpleBooleanProperty(true);
@@ -223,29 +221,8 @@ public class PolyChart extends Region {
         });
     }
 
-    public void selectChart(boolean value) {
-        chartSelected.set(value);
-    }
-
-    public boolean isSelected() {
-        return chartSelected.get();
-    }
-
     public ObjectProperty<DISDIM> getDisDimProperty() {
         return disDimProp;
-    }
-
-    public double[][] getCorners() {
-        double[][] corners = new double[4][2];
-        double xPos = getLayoutX();
-        double yPos = getLayoutY();
-        double width = getWidth();
-        double height = getHeight();
-        corners[0] = new double[]{xPos, yPos};
-        corners[1] = new double[]{xPos, yPos + height};
-        corners[2] = new double[]{xPos + width, yPos};
-        corners[3] = new double[]{xPos + width, yPos + height};
-        return corners;
     }
 
     private void initChart() {
@@ -258,11 +235,8 @@ public class PolyChart extends Region {
         highlightRect.setFill(null);
         highlightRect.visibleProperty().bind(
                 PolyChartManager.getInstance().activeChartProperty().isEqualTo(this)
-                        .and(PolyChartManager.getInstance().multipleChartsProperty())
-                        .or(chartSelected));
+                        .and(PolyChartManager.getInstance().multipleChartsProperty()));
         drawingLayers.getTopPane().getChildren().add(highlightRect);
-        canvasHandles.forEach(handle -> handle.visibleProperty().bind(chartSelected));
-        drawingLayers.getTopPane().getChildren().addAll(canvasHandles);
         axes.init(this);
         drawingLayers.setCursor(CanvasCursor.SELECTOR.getCursor());
         MapChangeListener<String, PeakList> mapChangeListener = change -> purgeInvalidPeakListAttributes();
@@ -295,10 +269,6 @@ public class PolyChart extends Region {
 
         highlightRect.visibleProperty().unbind();
         drawingLayers.getTopPane().getChildren().remove(highlightRect);
-        for (var canvasHandle : canvasHandles) {
-            drawingLayers.getTopPane().getChildren().remove(canvasHandle);
-            drawingLayers.getTopPane().visibleProperty().unbind();
-        }
 
         PolyChartManager.getInstance().unregisterChart(this);
         drawSpectrum.clearThreads();
@@ -1766,20 +1736,6 @@ public class PolyChart extends Region {
         highlightRect.setY(yPos + 1);
         highlightRect.setWidth(width - 2);
         highlightRect.setHeight(height - 2);
-        double[][] corners = getCorners();
-        double size = 10;
-        for (int i = 0; i < corners.length; i++) {
-            Rectangle rect = canvasHandles.get(i);
-            double[] corner = corners[i];
-            double dX = i < 2 ? 0 : -size;
-            double dY = i % 2 == 0 ? 0 : -size;
-            rect.setX(corner[0] + dX);
-            rect.setY(corner[1] + dY);
-            rect.setWidth(size);
-            rect.setHeight(size);
-            rect.setStroke(Color.BLUE);
-            rect.setFill(null);
-        }
     }
 
     public void useImmediateMode(boolean state) {
