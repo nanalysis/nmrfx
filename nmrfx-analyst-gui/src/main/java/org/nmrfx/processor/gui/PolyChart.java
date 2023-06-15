@@ -132,7 +132,7 @@ public class PolyChart extends Region {
     private int datasetPhaseDim = 0;
     private double phaseFraction = 0.0;
     private boolean useImmediateMode = true;
-    private Consumer<DatasetRegion> newRegionConsumer = null;
+    private Consumer<DatasetRegion> onRegionAdded = null;
     private ChartMenu spectrumMenu;
     private ChartMenu peakMenu;
     private ChartMenu integralMenu;
@@ -364,11 +364,11 @@ public class PolyChart extends Region {
         }
     }
 
-    public void setRegionConsumer(Consumer<DatasetRegion> consumer) {
-        newRegionConsumer = consumer;
+    public void setOnRegionAdded(Consumer<DatasetRegion> consumer) {
+        onRegionAdded = consumer;
     }
 
-    public void addRegion(double min, double max) {
+    private void addRegion(double min, double max) {
         DatasetBase dataset = getDataset();
         if (dataset != null) {
             DatasetRegion newRegion = dataset.addRegion(min, max);
@@ -379,8 +379,8 @@ public class PolyChart extends Region {
             }
             chartProps.setRegions(true);
             chartProps.setIntegrals(true);
-            if (newRegionConsumer != null) {
-                newRegionConsumer.accept(newRegion);
+            if (onRegionAdded != null) {
+                onRegionAdded.accept(newRegion);
             }
         }
     }
