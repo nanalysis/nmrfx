@@ -86,7 +86,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ProcessorController implements Initializable, ProgressUpdater, NMRControlRightSideContent {
+public class ProcessorController implements Initializable, ProgressUpdater, NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
     private static final String[] BASIC_OPS = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
@@ -231,7 +231,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NMRC
     private boolean viewIfPossible = true;
 
 
-    public static ProcessorController create(FXMLController fxmlController, NMRControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
+    public static ProcessorController create(FXMLController fxmlController, NmrControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
         Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml");
         ProcessorController controller = builder.getController();
 

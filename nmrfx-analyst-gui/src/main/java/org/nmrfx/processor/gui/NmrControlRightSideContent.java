@@ -2,7 +2,7 @@ package org.nmrfx.processor.gui;
 
 import javafx.scene.layout.Pane;
 
-public interface NMRControlRightSideContent {
+public interface NmrControlRightSideContent {
     /**
      * Get the top level pane.
      *

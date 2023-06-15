@@ -10,10 +10,10 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<?import org.nmrfx.processor.gui.NMRControlRightSidePane?>
 <HBox prefHeight="720.0" prefWidth="1080.0" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
       xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="org.nmrfx.processor.gui.FXMLController">
+      fx:controller="org.nmrfx.processor.gui.FXMLController"
+      fx:id="topLevelHBox">
     <children>
         <BorderPane fx:id="mainBox" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
             <stylesheets>
@@ -59,7 +59,6 @@
             </bottom>
         </BorderPane>
         <Separator orientation="VERTICAL" />
-      <NMRControlRightSidePane fx:id="nmrControlRightSidePane" />
     </children>
 
 </HBox>

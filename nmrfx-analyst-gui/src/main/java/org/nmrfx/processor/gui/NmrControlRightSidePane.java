@@ -1,31 +1,16 @@
 package org.nmrfx.processor.gui;
 
 import javafx.collections.ListChangeListener;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
-import org.nmrfx.fxutil.Fxml;
 
-import java.io.IOException;
 
-public class NMRControlRightSidePane extends StackPane {
+public class NmrControlRightSidePane extends StackPane {
     private static final double MINIMUM_WIDTH_OF_CHILDREN = 400;
-    private static final String FXML_FILENAME = "NMRControlRightSidePane.fxml";
 
-    public NMRControlRightSidePane() {
-        FXMLLoader fxmlLoader = new FXMLLoader(
-                getClass().getResource(Fxml.FXML_RESOURCES_BASE + FXML_FILENAME));
-
-        fxmlLoader.setRoot(this);
-        fxmlLoader.setController(this);
-
-        try {
-            fxmlLoader.load();
-        } catch (IOException e) {
-        throw new IllegalStateException("Unable to load fxml file: " + FXML_FILENAME, e);
-    }
-
+    public NmrControlRightSidePane() {
+        // Adjust sizing and visibility when contents of the pane change
         getChildren().addListener((ListChangeListener<Node>) c -> {
             while(c.next()) {
                 if (!c.getRemoved().isEmpty()) {
@@ -41,7 +26,7 @@ public class NMRControlRightSidePane extends StackPane {
 
     }
 
-    public boolean isContentShowing(NMRControlRightSideContent content) {
+    public boolean isContentShowing(NmrControlRightSideContent content) {
         return content != null && getChildren().contains(content.getPane());
     }
 }

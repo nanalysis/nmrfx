@@ -10,9 +10,7 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
@@ -37,7 +35,7 @@ import java.util.ResourceBundle;
 
 import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 
-public class AttributesController implements Initializable, NMRControlRightSideContent {
+public class AttributesController implements Initializable, NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(AttributesController.class);
     static final DecimalFormat FORMATTER = new DecimalFormat();
 

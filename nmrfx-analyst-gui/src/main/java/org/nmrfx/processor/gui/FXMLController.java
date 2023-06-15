@@ -117,6 +117,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private final Button favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
     private final SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     private final ToggleButton processorButton = new ToggleButton("Processor");
+    private final NmrControlRightSidePane nmrControlRightSidePane = new NmrControlRightSidePane();
 
     private ChartProcessor chartProcessor;
     private Stage stage = null;
@@ -129,6 +130,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private AttributesController attributesController;
     private ContentController contentController;
     private AnalyzerBar analyzerBar = null;
+    @FXML
+    private HBox topLevelHBox;
     @FXML
     private VBox topBar;
     @FXML
@@ -144,12 +147,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     @FXML
     private BorderPane mainBox;
     @FXML
-    private NMRControlRightSidePane nmrControlRightSidePane;
-    @FXML
     private HBox leftBar;
     private double previousStageRestoreWidth = 0;
     private double previousStageRestoreProcControllerWidth = 0;
-    private boolean previousStageRestoreRightPaneContentVisible = false;
+    private boolean previousStageRestoreNmrControlRightSideContentVisible = false;
     private PolyChart activeChart = null;
     private ChartDrawingLayers chartDrawingLayers;
     private final BooleanProperty minBorders = new SimpleBooleanProperty(this, "minBorders", false);
@@ -574,7 +575,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
-    public NMRControlRightSidePane getNmrControlRightSidePane() {
+    public NmrControlRightSidePane getNmrControlRightSidePane() {
         return nmrControlRightSidePane;
     }
 
@@ -771,8 +772,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        topLevelHBox.getChildren().add(nmrControlRightSidePane);
         borderPane.setLeft(null);
-        initializeRightPaneContentControlToggleButtons();
+        initializeNmrControlRightSideContentToggleButtons();
         chartDrawingLayers = new ChartDrawingLayers(this, chartPane);
         activeChart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
         initToolBar(toolBar);
@@ -805,7 +807,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
      * Initialize the toggle buttons Processing, Attributes and Contents. On mac these buttons will appear right
      * aligned in a separate top menu in the window, otherwise they will appear right aligned in the file menu.
      */
-    private void initializeRightPaneContentControlToggleButtons() {
+    private void initializeNmrControlRightSideContentToggleButtons() {
         // Note processor button is already created, just needs to have action listener and style setup
         ToggleButton attributesButton = new ToggleButton("Attributes");
         ToggleButton contentButton = new ToggleButton("Content");
@@ -813,7 +815,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         groupButton.getButtons().forEach(button -> {
             // need to listen to property instead of action so toggle method is triggered when setSelected is called.
             button.selectedProperty().addListener((obs, oldValue, newValue) ->
-                    toggleRightContentPaneAttributes(attributesButton, contentButton, processorButton));
+                    toggleNmrControlRightSideContent(attributesButton, contentButton, processorButton));
             button.getStyleClass().add("toolButton");
         });
         if (AnalystApp.isMac()) {
@@ -1495,12 +1497,18 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return fracs;
     }
 
-    private void toggleRightContentPaneAttributes(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
+    /**
+     * Switchs which NmrControlRightSideContent is displayed in the nmrControlRightSidePane.
+     * @param attributesButton The attributes toggle button.
+     * @param contentButton The content toggle button.
+     * @param processorButton The processor toggle button.
+     */
+    private void toggleNmrControlRightSideContent(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
         if (attributesButton.isSelected()) {
-            addAttributesContentToRightContentPane(attributesController.getPane());
+            addAttributesContentToNmrControlRightSidePane(attributesController.getPane());
             attributesController.setAttributeControls();
         } else if (contentButton.isSelected()) {
-            addAttributesContentToRightContentPane(contentController.getPane());
+            addAttributesContentToNmrControlRightSidePane(contentController.getPane());
             contentController.update();
         } else if (processorButton.isSelected()) {
             // separate method for adding to rightContentPane as processor controller has additional setup
@@ -1511,11 +1519,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     /**
-     * Add the attributes or content pane to the right side content, as well as hiding any ProcessorControllers associated
-     * with the charts so that right side pane contents will not be replaced when the active chart changes.
+     * Add the attributes or content pane to the nmrControlRightSidePane, as well as hiding any ProcessorControllers associated
+     * with the charts so that the nmrControlRightSidePane contents will not be replaced when the active chart changes.
      * @param pane The attributes or content pane to add.
      */
-    private void addAttributesContentToRightContentPane(Pane pane) {
+    private void addAttributesContentToNmrControlRightSidePane(Pane pane) {
         // Set the visibility of all processor charts to false so that content/attributes will not be closed when switching in multichart view
         charts.stream().map(chart -> chart.getProcessorController(false)).filter(Objects::nonNull).forEach(ProcessorController::hide);
         nmrControlRightSidePane.getChildren().clear();
@@ -1542,9 +1550,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     /**
-     * Listener for changes to the processorPane's children, if a pane is added or removed, the stage width is adjusted accordingly.
+     * Listener for changes to the nMRControlRightSidePane children, if a pane is added or removed, the stage width is adjusted accordingly.
      *
-     * @param c The change to processorPane's children
+     * @param c The change to nMRControlRightSidePane's children
      */
     private void updateStageSize(ListChangeListener.Change<? extends Node> c) {
         double paneAdj = 0;
@@ -1718,15 +1726,15 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private void adjustSizeAfterMaximize(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
         if (Boolean.TRUE.equals(newValue)) {
             previousStageRestoreWidth = stage.getWidth();
-            previousStageRestoreRightPaneContentVisible = !nmrControlRightSidePane.getChildren().isEmpty();
-            if (previousStageRestoreRightPaneContentVisible) {
+            previousStageRestoreNmrControlRightSideContentVisible = !nmrControlRightSidePane.getChildren().isEmpty();
+            if (previousStageRestoreNmrControlRightSideContentVisible) {
                 previousStageRestoreProcControllerWidth = ((Pane) nmrControlRightSidePane.getChildren().get(0)).getMinWidth();
             } else {
                 previousStageRestoreProcControllerWidth = 0;
             }
         } else {
             boolean procControllerVisible = !nmrControlRightSidePane.getChildren().isEmpty();
-            if (procControllerVisible == previousStageRestoreRightPaneContentVisible) {
+            if (procControllerVisible == previousStageRestoreNmrControlRightSideContentVisible) {
                 stage.setWidth(previousStageRestoreWidth);
             } else if (procControllerVisible) {
                 Pane p = (Pane) nmrControlRightSidePane.getChildren().get(0);
