@@ -107,7 +107,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         vBox.getChildren().addAll(hbox, topBar, gridPane, buttonBar1, buttonBar2);
         chart.addMultipletListener(this);
         getAnalyzer();
-        chart.setRegionConsumer(this::regionAdded);
+        chart.setOnRegionAdded(this::regionAdded);
         patternListener = (ObservableValue<? extends String> observable, String oldValue, String newValue) -> couplingChanged();
         addPatternListener();
         restraintPosCheckBox = new CheckBox("Restraint");
