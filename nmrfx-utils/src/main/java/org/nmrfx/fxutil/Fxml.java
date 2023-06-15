@@ -14,7 +14,7 @@ import java.io.IOException;
  * Simplification over javafx.fxml.FXMLLoader, avoid code duplication for loading Scenes, setting CSS or other properties.
  */
 public class Fxml {
-    public static final String FXML_RESOURCES_BASE = "/fxml/";
+    private static final String FXML_RESOURCES_BASE = "/fxml/";
     private static final String DEFAULT_CSS = "/styles/Styles.css";
 
     public static Builder load(Class<?> klass, String fileName) {
