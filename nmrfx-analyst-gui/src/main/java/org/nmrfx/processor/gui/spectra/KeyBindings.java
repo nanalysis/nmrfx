@@ -101,14 +101,9 @@ public class KeyBindings {
                     chart.incrementPlane(3, -1);
                     keyEvent.consume();
                     break;
-                case ENTER:
+                case ENTER, ESCAPE:
                     keyMonitor.complete();
                     keyEvent.consume();
-                    break;
-                case ESCAPE:
-                    keyMonitor.complete();
-                    keyEvent.consume();
-                    chart.getFXMLController().deselectCharts();
                     break;
                 case DELETE, BACK_SPACE:
                     keyMonitor.complete();
@@ -178,7 +173,6 @@ public class KeyBindings {
                     double pickX = chart.getAxes().getX().getValueForDisplay(chart.getMouseX()).doubleValue();
                     double pickY = chart.getAxes().getY().getValueForDisplay(chart.getMouseY()).doubleValue();
                     PeakPicking.pickAtPosition(chart, datasetAttr, pickX, pickY, shortString.equals("as"), false);
-                    chart.setPeakStatus(true);
                     keyMonitor.clear();
                     chart.drawPeakLists(true);
                 } else {
@@ -193,11 +187,9 @@ public class KeyBindings {
                 break;
 
             case "c1":
-                chart.setHasMiddleMouseButton(false);
                 keyMonitor.clear();
                 break;
             case "c3":
-                chart.setHasMiddleMouseButton(true);
                 keyMonitor.clear();
                 break;
             case "cc":

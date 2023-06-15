@@ -4,6 +4,7 @@ import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,7 @@ public class MoleculeDataFormatHandler implements DataFormatEventHandler {
             log.error("Unable to read molecule file. {}", e.getMessage());
             return false;
         }
-        chart.setActiveChart();
+        PolyChartManager.getInstance().setActiveChart(chart);
         MoleculeUtils.addActiveMoleculeToCanvas();
         return true;
     }

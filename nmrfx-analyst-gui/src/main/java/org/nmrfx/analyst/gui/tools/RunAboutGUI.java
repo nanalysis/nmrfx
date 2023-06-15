@@ -1868,7 +1868,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                             dataset.setTitle(typeName);
                             String dName = dataset.getName();
                             List<String> datasets = Collections.singletonList(dName);
-                            chart.setActiveChart();
+                            PolyChartManager.getInstance().setActiveChart(chart);
                             chart.updateDatasets(datasets);
                             List<String> dimNames = col.getDims();
                             DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);

@@ -25,10 +25,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetRegion;
-import org.nmrfx.processor.gui.CanvasAnnotation;
-import org.nmrfx.processor.gui.CanvasCursor;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.spectra.ChartBorder;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
@@ -257,7 +254,7 @@ public class MouseBindings {
         this.mouseEvent = mouseEvent;
         mouseX = mouseEvent.getX();
         mouseY = mouseEvent.getY();
-        chart.setActiveChart();
+        PolyChartManager.getInstance().setActiveChart(chart);
         dragStart[0] = mouseX;
         dragStart[1] = mouseY;
         moved = false;
@@ -267,9 +264,6 @@ public class MouseBindings {
         hidePopOver(false);
 
         boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());
-        if (chart.isSelected()) {
-            return;
-        }
 
         if (!isPopupTrigger(mouseEvent)) {
             ChartBorder border = chart.hitBorder(mouseX, mouseY);
@@ -280,7 +274,7 @@ public class MouseBindings {
                     if (CanvasCursor.isCrosshair(chart.getCanvasCursor()) || mouseEvent.isMetaDown()) {
                         chart.getCrossHairs().setAllStates(true);
                     }
-                    CrossHairMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
+                    setHandler(new CrossHairMouseHandler(this));
                 }
                 handler.mousePressed(mouseEvent);
             } else {
@@ -334,17 +328,7 @@ public class MouseBindings {
                             (currentRegion.get() != previousRegion.get())) {
                         chart.refresh();
                     }
-                    if (handler instanceof BoxMouseHandlerHandler) {
-                        if (!selectedRegion && chart.isSelectable() && (clickCount == 2)) {
-                            handler = null;
-                            chart.selectChart(true);
-                            chart.refresh();
-                        } else {
-                            handler.mousePressed(mouseEvent);
-                        }
-                    } else {
-                        handler.mousePressed(mouseEvent);
-                    }
+                    handler.mousePressed(mouseEvent);
                 }
             }
         }

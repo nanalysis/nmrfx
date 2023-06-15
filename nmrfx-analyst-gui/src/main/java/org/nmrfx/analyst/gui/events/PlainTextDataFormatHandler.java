@@ -6,6 +6,7 @@ import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +61,7 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
             log.error("Unable to read molecule file. {}", e.getMessage());
             return false;
         }
-        chart.setActiveChart();
+        PolyChartManager.getInstance().setActiveChart(chart);
         MoleculeUtils.addActiveMoleculeToCanvas();
         return true;
     }
@@ -77,7 +78,7 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
             Dataset dataset = Dataset.getDataset(items[0]);
             if (dataset != null) {
                 Platform.runLater(() -> {
-                    chart.setActiveChart();
+                    PolyChartManager.getInstance().setActiveChart(chart);
                     Set<Integer> dimensions = chart.getDatasetAttributes().stream().map(attr -> (Dataset) attr.getDataset()).map(Dataset::getNDim).collect(Collectors.toSet());
                     List<Dataset> datasetsToAdd = Arrays.stream(items).map(Dataset::getDataset).toList();
                     datasetsToAdd.forEach(d -> dimensions.add(d.getNDim()));

@@ -74,7 +74,6 @@ public class PeakPickHandler extends MouseHandler {
             }
         }
         if (completed) {
-            chart.setPeakStatus(true);
             chart.drawPeakLists(true);
         }
     }
@@ -100,7 +99,6 @@ public class PeakPickHandler extends MouseHandler {
             double threshold = chart.getAxes().getY().getValueForDisplay(mouseBindings.getMouseY()).doubleValue();
             PeakList peakList = pick1DRegion(chart, xLim0, xLim1, threshold, true);
             if (peakList != null) {
-                chart.setPeakStatus(true);
                 chart.drawPeakLists(true);
             }
         }
