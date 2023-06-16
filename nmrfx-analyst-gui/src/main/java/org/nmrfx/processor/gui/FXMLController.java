@@ -1555,7 +1555,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             if (c.next()) {
                 paneAdj = -1 * ((Pane) c.getRemoved().get(0)).getMinWidth();
             }
-        } else if (nmrControlRightSidePane.size() == 1) {
+        } else {
             paneAdj = ((Pane) c.getList().get(0)).getMinWidth();
         }
         stage.setWidth(stage.getWidth() + paneAdj);
