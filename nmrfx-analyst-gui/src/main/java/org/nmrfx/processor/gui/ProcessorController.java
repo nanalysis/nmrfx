@@ -108,7 +108,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         }
     }
 
-    Pane nmrControlRightSidePane;
+    NmrControlRightSidePane nmrControlRightSidePane;
     @FXML
     private BorderPane mainBox;
     @FXML
@@ -250,17 +250,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     public void show() {
-        if (!nmrControlRightSidePane.getChildren().contains(mainBox)) {
-            nmrControlRightSidePane.getChildren().clear();
-            nmrControlRightSidePane.getChildren().add(mainBox);
-        }
+        nmrControlRightSidePane.addContent(this);
         viewIfPossible = true;
     }
 
     public void hide() {
-        if (nmrControlRightSidePane.getChildren().contains(mainBox)) {
-            nmrControlRightSidePane.getChildren().clear();
-        }
+        nmrControlRightSidePane.removeContent(this);
         viewIfPossible = false;
     }
 

@@ -796,7 +796,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             }
         }
         phaser = new Phaser(this, phaserBox);
-        nmrControlRightSidePane.getChildren().addListener(this::updateStageSize);
+        nmrControlRightSidePane.addContentListener(this::updateStageSize);
         cursorProperty.addListener(e -> setCursor());
         attributesController = AttributesController.create(this);
 
@@ -1505,29 +1505,28 @@ public class FXMLController implements Initializable, StageBasedController, Publ
      */
     private void toggleNmrControlRightSideContent(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
         if (attributesButton.isSelected()) {
-            addAttributesContentToNmrControlRightSidePane(attributesController.getPane());
+            addAttributesContentToNmrControlRightSidePane(attributesController);
             attributesController.setAttributeControls();
         } else if (contentButton.isSelected()) {
-            addAttributesContentToNmrControlRightSidePane(contentController.getPane());
+            addAttributesContentToNmrControlRightSidePane(contentController);
             contentController.update();
         } else if (processorButton.isSelected()) {
             // separate method for adding to rightContentPane as processor controller has additional setup
             showProcessorAction();
         } else {
-            nmrControlRightSidePane.getChildren().clear();
+            nmrControlRightSidePane.clear();
         }
     }
 
     /**
      * Add the attributes or content pane to the nmrControlRightSidePane, as well as hiding any ProcessorControllers associated
      * with the charts so that the nmrControlRightSidePane contents will not be replaced when the active chart changes.
-     * @param pane The attributes or content pane to add.
+     * @param nmrControlRightSideContent The attributes or content to add.
      */
-    private void addAttributesContentToNmrControlRightSidePane(Pane pane) {
+    private void addAttributesContentToNmrControlRightSidePane(NmrControlRightSideContent nmrControlRightSideContent) {
         // Set the visibility of all processor charts to false so that content/attributes will not be closed when switching in multichart view
         charts.stream().map(chart -> chart.getProcessorController(false)).filter(Objects::nonNull).forEach(ProcessorController::hide);
-        nmrControlRightSidePane.getChildren().clear();
-        nmrControlRightSidePane.getChildren().add(pane);
+        nmrControlRightSidePane.addContent(nmrControlRightSideContent);
     }
 
     public void updatePhaser(boolean showPhaser) {
@@ -1556,11 +1555,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
      */
     private void updateStageSize(ListChangeListener.Change<? extends Node> c) {
         double paneAdj = 0;
-        if (nmrControlRightSidePane.getChildren().isEmpty()) {
+        if (!nmrControlRightSidePane.hasContent()) {
             if (c.next()) {
                 paneAdj = -1 * ((Pane) c.getRemoved().get(0)).getMinWidth();
             }
-        } else if (nmrControlRightSidePane.getChildren().size() == 1) {
+        } else if (nmrControlRightSidePane.size() == 1) {
             paneAdj = ((Pane) c.getList().get(0)).getMinWidth();
         }
         stage.setWidth(stage.getWidth() + paneAdj);
@@ -1726,18 +1725,18 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private void adjustSizeAfterMaximize(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
         if (Boolean.TRUE.equals(newValue)) {
             previousStageRestoreWidth = stage.getWidth();
-            previousStageRestoreNmrControlRightSideContentVisible = !nmrControlRightSidePane.getChildren().isEmpty();
+            previousStageRestoreNmrControlRightSideContentVisible = nmrControlRightSidePane.hasContent();
             if (previousStageRestoreNmrControlRightSideContentVisible) {
-                previousStageRestoreProcControllerWidth = ((Pane) nmrControlRightSidePane.getChildren().get(0)).getMinWidth();
+                previousStageRestoreProcControllerWidth = nmrControlRightSidePane.getContentPane().getMinWidth();
             } else {
                 previousStageRestoreProcControllerWidth = 0;
             }
         } else {
-            boolean procControllerVisible = !nmrControlRightSidePane.getChildren().isEmpty();
+            boolean procControllerVisible = nmrControlRightSidePane.hasContent();
             if (procControllerVisible == previousStageRestoreNmrControlRightSideContentVisible) {
                 stage.setWidth(previousStageRestoreWidth);
             } else if (procControllerVisible) {
-                Pane p = (Pane) nmrControlRightSidePane.getChildren().get(0);
+                Pane p = nmrControlRightSidePane.getContentPane();
                 stage.setWidth(previousStageRestoreWidth + p.getMinWidth());
             } else {
                 stage.setWidth(previousStageRestoreWidth - previousStageRestoreProcControllerWidth);
