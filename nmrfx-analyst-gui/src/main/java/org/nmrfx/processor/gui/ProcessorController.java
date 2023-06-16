@@ -228,7 +228,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     private AtomicReference<Dataset> saveObject = new AtomicReference<>();
     ScheduledFuture futureUpdate = null;
-    private boolean viewIfPossible = true;
 
 
     public static ProcessorController create(FXMLController fxmlController, NmrControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
@@ -241,7 +240,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         controller.chartProcessor.setFxmlController(fxmlController);
         controller.nmrControlRightSidePane = nmrControlRightSidePane;
         fxmlController.processorCreated(controller.mainBox);
-        controller.show();
+        nmrControlRightSidePane.addContent(controller);
         return controller;
     }
 
@@ -249,22 +248,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return mainBox;
     }
 
-    public void show() {
-        nmrControlRightSidePane.addContent(this);
-        viewIfPossible = true;
-    }
-
-    public void hide() {
-        nmrControlRightSidePane.removeContent(this);
-        viewIfPossible = false;
-    }
-
     public boolean isVisible() {
         return mainBox.isVisible();
-    }
-
-    public boolean isViewIfPossible() {
-        return viewIfPossible;
     }
 
     public PropertyManager getPropertyManager() {

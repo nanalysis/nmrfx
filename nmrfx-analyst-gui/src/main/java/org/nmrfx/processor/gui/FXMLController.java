@@ -156,6 +156,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private final BooleanProperty minBorders = new SimpleBooleanProperty(this, "minBorders", false);
     private final ColorProperty bgColor = new ColorProperty(this, "bgColor", null);
     private final ColorProperty axesColor = new ColorProperty(this, "axesColor", null);
+    private boolean viewProcessorControllerIfPossible = true;
 
     public Color getBgColor() {
         return bgColor.get();
@@ -269,19 +270,19 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         isFID = false;
         activeChart = chart;
         PolyChartManager.getInstance().setActiveChart(chart);
+        disableProcessorButton(!isProcessorControllerAvailable());
         ProcessorController processorController = chart.getProcessorController(false);
         // The chart has a processor controller setup, and can be in FID or Dataset mode.
         if (processorController != null) {
             isFID = !processorController.isViewingDataset();
             chartProcessor = processorController.chartProcessor;
-            if (processorController.isViewIfPossible() || processorButton.isSelected()) {
-                processorController.show();
+            if (viewProcessorControllerIfPossible || processorButton.isSelected()) {
+                nmrControlRightSidePane.addContent(processorController);
             }
-            processorButton.setSelected(processorController.isViewIfPossible());
+            processorButton.setSelected(viewProcessorControllerIfPossible);
         } else {
             processorButton.setSelected(false);
         }
-        disableProcessorButton(!isProcessorControllerAvailable());
         updateSpectrumStatusBarOptions(false);
         if (attributesController != null) {
             attributesController.setChart(activeChart);
@@ -422,7 +423,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (dataset != null) {
             ProcessorController processorController = getActiveChart().getProcessorController(false);
             if (processorController != null && (!dataset.getFile().equals(chartProcessor.getDatasetFile()))) {
-                processorController.hide();
+                nmrControlRightSidePane.removeContent(processorController);
                 getActiveChart().setProcessorController(null);
                 processorController.cleanUp();
             }
@@ -448,7 +449,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             chartProcessor.setData(nmrData, clearOps);
             processorController.viewingDataset(false);
             processorController.updateFileButton();
-            processorController.show();
+            nmrControlRightSidePane.addContent(processorController);
             processorController.clearOperationList();
             chartProcessor.clearAllOperations();
             processorController.parseScript("");
@@ -603,11 +604,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void showPeakAttrAction(ActionEvent event) {
         showPeakAttr();
         peakAttrController.initIfEmpty();
-    }
-
-    public void showProcessorAction() {
-        ProcessorController processorController = getActiveChart().getProcessorController(true);
-        processorController.show();
     }
 
     public Button getHaltButton() {
@@ -817,6 +813,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             button.selectedProperty().addListener((obs, oldValue, newValue) ->
                     toggleNmrControlRightSideContent(attributesButton, contentButton, processorButton));
             button.getStyleClass().add("toolButton");
+        });
+        processorButton.disableProperty().addListener((observable, oldValue, newValue) -> {
+            if(newValue && processorButton.isSelected()) {
+                viewProcessorControllerIfPossible = true;
+            }
         });
         if (AnalystApp.isMac()) {
             ToolBar toggleButtonToolbar = new ToolBar();
@@ -1498,35 +1499,30 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     /**
-     * Switchs which NmrControlRightSideContent is displayed in the nmrControlRightSidePane.
+     * Switches which NmrControlRightSideContent is displayed in the nmrControlRightSidePane.
      * @param attributesButton The attributes toggle button.
      * @param contentButton The content toggle button.
      * @param processorButton The processor toggle button.
      */
     private void toggleNmrControlRightSideContent(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
         if (attributesButton.isSelected()) {
-            addAttributesContentToNmrControlRightSidePane(attributesController);
+            nmrControlRightSidePane.addContent(attributesController);
             attributesController.setAttributeControls();
+            viewProcessorControllerIfPossible = false;
         } else if (contentButton.isSelected()) {
-            addAttributesContentToNmrControlRightSidePane(contentController);
+            nmrControlRightSidePane.addContent(contentController);
             contentController.update();
+            viewProcessorControllerIfPossible = false;
         } else if (processorButton.isSelected()) {
             // separate method for adding to rightContentPane as processor controller has additional setup
-            showProcessorAction();
+            nmrControlRightSidePane.addContent(getActiveChart().getProcessorController(true));
+            viewProcessorControllerIfPossible = true;
         } else {
             nmrControlRightSidePane.clear();
+            if (!processorButton.isDisabled() && getActiveChart().getProcessorController(false) != null) {
+                viewProcessorControllerIfPossible = false;
+            }
         }
-    }
-
-    /**
-     * Add the attributes or content pane to the nmrControlRightSidePane, as well as hiding any ProcessorControllers associated
-     * with the charts so that the nmrControlRightSidePane contents will not be replaced when the active chart changes.
-     * @param nmrControlRightSideContent The attributes or content to add.
-     */
-    private void addAttributesContentToNmrControlRightSidePane(NmrControlRightSideContent nmrControlRightSideContent) {
-        // Set the visibility of all processor charts to false so that content/attributes will not be closed when switching in multichart view
-        charts.stream().map(chart -> chart.getProcessorController(false)).filter(Objects::nonNull).forEach(ProcessorController::hide);
-        nmrControlRightSidePane.addContent(nmrControlRightSideContent);
     }
 
     public void updatePhaser(boolean showPhaser) {
