@@ -815,7 +815,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             button.getStyleClass().add("toolButton");
         });
         processorButton.disableProperty().addListener((observable, oldValue, newValue) -> {
-            if(newValue && processorButton.isSelected()) {
+            if(Boolean.TRUE.equals(newValue) && processorButton.isSelected()) {
                 viewProcessorControllerIfPossible = true;
             }
         });
