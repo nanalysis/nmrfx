@@ -10,7 +10,6 @@ import smile.interpolation.variogram.PowerVariogram;
 import smile.interpolation.variogram.Variogram;
 import smile.math.kernel.GaussianKernel;
 import smile.math.kernel.MercerKernel;
-import smile.math.matrix.Matrix;
 import smile.regression.GaussianProcessRegression;
 
 import java.util.*;
@@ -621,7 +620,7 @@ public class PeakPathAnalyzer {
             weightValues[i] = dTol;
         }
         MercerKernel mKernel = new GaussianKernel(2000.0);
-        var gRegr = GaussianProcessRegression.fit(xValues, yValues, mKernel, 0.001);
+        GaussianProcessRegression gaussianProcessRegression = new GaussianProcessRegression(xValues, yValues, mKernel, 0.001);
         Variogram vGram = new PowerVariogram(xValues, yValues);
         KrigingInterpolation krig = new KrigingInterpolation(xValues, yValues, vGram, weightValues);
         for (int i = 0; i < yValues.length; i++) {
@@ -630,27 +629,8 @@ public class PeakPathAnalyzer {
         for (int i = 0; i < 10; i++) {
             double x0 = i * 150.0;
             double[] xx = {i * 150.0};
-
         }
-
         return bestPath;
-    }
-
-    static double[] fitPoly(double[] x, double[] y, int order) {
-        if (x.length == 1) {
-            double[] coef = new double[1];
-            coef[0] = y[0] / x[0];
-            return coef;
-        }
-        Matrix mat = new Matrix(x.length, order);
-        for (int i = 0; i < x.length; i++) {
-            for (int j = 0; j < order; j++) {
-                mat.set(i, j, Math.pow(x[i], order + 1));
-            }
-        }
-        Matrix.SVD svd = mat.svd();
-        double[] s = svd.s;
-        return svd.solve(y);
     }
 
     static double predictWithPoly(double[] coefs, double x) {
