@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,25 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.utils.properties;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Collection;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
-import javafx.scene.control.Slider;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -48,13 +38,30 @@ import org.controlsfx.property.editor.PropertyEditor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Collection;
+
 /**
- *
  * @author brucejohnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("ring")
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
-
     private static final Logger log = LoggerFactory.getLogger(NvFxPropertyEditorFactory.class);
+
+    private static final Class<?>[] NUMERIC_TYPES = new Class[]{
+            byte.class, Byte.class,
+            short.class, Short.class,
+            int.class, Integer.class,
+            long.class, Long.class,
+            float.class, Float.class,
+            double.class, Double.class,
+            BigInteger.class, BigDecimal.class
+    };
+
     public NvFxPropertyEditorFactory() {
         super();
     }
@@ -146,55 +153,16 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
 
             ListOperationItem loi = (ListOperationItem) item;
             return Editors.createTextEditor(loi);
-//            return Editors.createCustomEditor(loi).get();
         }
         return super.call(item);
-//        if (/*type != null &&*/ type == String.class) {
-//            return Editors.createTextEditor(item);
-//        }
-//
-//        if (/*type != null &&*/ isNumber(type)) {
-//            return Editors.createNumericEditor(item);
-//        }
-//
-//        if (/*type != null &&*/(type == boolean.class || type == Boolean.class)) {
-//            return Editors.createCheckEditor(item);
-//        }
-//
-//        if (/*type != null &&*/type == LocalDate.class) {
-//            return Editors.createDateEditor(item);
-//        }
-//
-//        if (/*type != null &&*/type == Color.class) {
-//            return Editors.createColorEditor(item);
-//        }
-//
-//        if (type != null && type.isEnum()) {
-//            return Editors.createChoiceEditor(item, Arrays.<Object>asList(type.getEnumConstants()));
-//        }
-//
-//        if (/*type != null &&*/type == Font.class) {
-//            return Editors.createFontEditor(item);
-//        }
-//
-//        return null;
     }
-    private static Class<?>[] numericTypes = new Class[]{
-        byte.class, Byte.class,
-        short.class, Short.class,
-        int.class, Integer.class,
-        long.class, Long.class,
-        float.class, Float.class,
-        double.class, Double.class,
-        BigInteger.class, BigDecimal.class
-    };
 
     // there should be better ways to do this
     private static boolean isNumber(Class<?> type) {
         if (type == null) {
             return false;
         }
-        for (Class<?> cls : numericTypes) {
+        for (Class<?> cls : NUMERIC_TYPES) {
             if (type == cls) {
                 return true;
             }
@@ -217,7 +185,8 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             public Number getValue() {
                 try {
                     return sourceClass.getConstructor(String.class).newInstance(getEditor().getText());
-                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
+                         InvocationTargetException | NoSuchMethodException | SecurityException e) {
                     log.warn(e.getMessage(), e);
                     return null;
                 }

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.3.3-SNAPSHOT</version>
+        <version>11.3.4-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -354,12 +354,6 @@
                 <groupId>org.ejml</groupId>
                 <artifactId>ejml-all</artifactId>
                 <version>0.40</version>
-                <!-- license: Apache License, Version 2.0 -->
-            </dependency>
-            <dependency>
-                <groupId>commons-beanutils</groupId>
-                <artifactId>commons-beanutils</artifactId>
-                <version>1.9.4</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>

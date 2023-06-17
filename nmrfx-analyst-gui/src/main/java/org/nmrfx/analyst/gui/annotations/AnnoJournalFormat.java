@@ -7,7 +7,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.annotations.AnnoText;
 
 /**
- *
  * @author brucejohnson
  */
 public class AnnoJournalFormat extends AnnoText {
@@ -17,9 +16,9 @@ public class AnnoJournalFormat extends AnnoText {
     JournalFormat format = null;
 
     public AnnoJournalFormat(double x1, double y1, double x2, double y2,
-            POSTYPE xPosType, POSTYPE yPosType, String peakListName) {
+                             POSTYPE xPosType, POSTYPE yPosType, String peakListName) {
         super(x1, y1, x2, y2, xPosType, yPosType, "");
-        
+
         this.text = "";
         this.peakListName = peakListName;
     }

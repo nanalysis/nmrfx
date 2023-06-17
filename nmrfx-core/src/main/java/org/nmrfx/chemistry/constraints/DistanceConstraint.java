@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,15 +17,15 @@
  */
 package org.nmrfx.chemistry.constraints;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.chemistry.SpatialSetGroup;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class DistanceConstraint implements Constraint {
 
@@ -38,7 +38,7 @@ public class DistanceConstraint implements Constraint {
     protected double targetErr;
 
     public DistanceConstraint(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond,
-            final double weight, final double targetValue, final double targetErr) {
+                              final double weight, final double targetValue, final double targetErr) {
         if (atoms1.length != atoms2.length) {
             throw new IllegalArgumentException("atom arrays are not of equal length");
         }

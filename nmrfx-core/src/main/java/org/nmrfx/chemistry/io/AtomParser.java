@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,17 @@
  */
 package org.nmrfx.chemistry.io;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class AtomParser {
+    public static final Map<String, String> pdbToIUPAC = new HashMap<>();
+    private static final Map<String, String> iupacToPDB = new HashMap<>();
+    private static final Map<String, String> xplorToIUPAC = new HashMap<>();
+    private static final Map<String, String> iupacToXPLOR = new HashMap<>();
+    private static final Map<String, String> map1To3 = new HashMap<>();
+    private static final Map<String, String> map3To1 = new HashMap<>();
 
     public String resNum = "";
     public String resName = "";
@@ -36,13 +44,6 @@ public class AtomParser {
     public double bfactor = 1.0;
     public double charge = 0.0;
     public String temp = "";
-    static HashMap translationMap = new HashMap();
-    public static HashMap<String, String> pdbToIUPAC = new HashMap<>();
-    static HashMap<String, String> iupacToPDB = new HashMap<>();
-    static HashMap<String, String> xplorToIUPAC = new HashMap<>();
-    static HashMap<String, String> iupacToXPLOR = new HashMap<>();
-    static Map<String, String> map1To3 = new HashMap<>();
-    static Map<String, String> map3To1 = new HashMap<>();
 
     static {
         map1To3.put("A", "ALA");
@@ -483,28 +484,6 @@ public class AtomParser {
         iupacToXPLOR.put("X,O2", "OXT");
         iupacToXPLOR.put("TYR,HB3", "HB1");
 
-    }
-
-    public static void addTranslation(int i, String type, String aa, String aname) {
-        translationMap.put(type + "." + aa + "." + aname, Integer.valueOf(i));
-        translationMap.put(type + "." + i, aname);
-    }
-
-    public static int getTranslation(String type, String aa, String aname) {
-        Integer iValue = (Integer) translationMap.get(type + "." + aa + "." + aname);
-        int i = -1;
-        if (iValue != null) {
-            i = iValue.intValue();
-        }
-        return i;
-    }
-
-    public static String getTranslation(String type, int i) {
-        String newName = (String) translationMap.get(type + "." + i);
-        if (newName == null) {
-            newName = "";
-        }
-        return newName;
     }
 
     public static String iupacToCurrent(String resName, String atomName) {

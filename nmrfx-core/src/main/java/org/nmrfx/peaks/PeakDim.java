@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,17 +22,17 @@ import org.nmrfx.utilities.ConvUtil;
 import org.nmrfx.utilities.Format;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class PeakDim {
-
-    public static List<PeakDim> EMPTY_LIST = new ArrayList<>();
-
     private int spectralDim = 0;
     private Float chemShift = null;
     private Float chemShiftError = null;
     private Float lineWidth = null;
     private Float lineWidthError = null;
+    private Float shapeFactor = null;
+    private Float shapeFactorError = null;
     private Float bounds = null;
     private Float boundsError = null;
     private Float phase = null;
@@ -40,7 +40,6 @@ public class PeakDim {
     private Float decayRate = null;
     private Float decayRateError = null;
     private Multiplet multiplet = null;
-//    private Coupling coupling = null;
     private char[] error = {'+', '+'};
     private String user = "";
     private Peak myPeak = null;
@@ -57,7 +56,6 @@ public class PeakDim {
     public PeakDim(Peak peak, int iDim) {
         myPeak = peak;
         setSpectralDim(iDim);
-        //peakDimContribs = new ArrayList();
     }
 
     public PeakDim copy(Peak peak) {
@@ -66,6 +64,8 @@ public class PeakDim {
         newPeakDim.chemShiftError = chemShiftError;
         newPeakDim.lineWidth = lineWidth;
         newPeakDim.lineWidthError = lineWidthError;
+        newPeakDim.shapeFactor = shapeFactor;
+        newPeakDim.shapeFactorError = shapeFactorError;
         newPeakDim.bounds = bounds;
         newPeakDim.boundsError = boundsError;
         newPeakDim.phase = phase;
@@ -82,6 +82,8 @@ public class PeakDim {
         targetPeakDim.chemShiftError = chemShiftError;
         targetPeakDim.lineWidth = lineWidth;
         targetPeakDim.lineWidthError = lineWidthError;
+        targetPeakDim.shapeFactor = shapeFactor;
+        targetPeakDim.shapeFactorError = shapeFactorError;
         targetPeakDim.bounds = bounds;
         targetPeakDim.boundsError = boundsError;
         targetPeakDim.phase = phase;
@@ -97,6 +99,8 @@ public class PeakDim {
         chemShiftError = peakDim.chemShiftError;
         lineWidth = peakDim.lineWidth;
         lineWidthError = peakDim.lineWidthError;
+        shapeFactor = peakDim.shapeFactor;
+        shapeFactorError = peakDim.shapeFactorError;
         bounds = peakDim.bounds;
         boundsError = peakDim.boundsError;
         phase = peakDim.phase;
@@ -144,7 +148,7 @@ public class PeakDim {
     public List<PeakDim> getLinkedPeakDims() {
         if (resonance == null) {
             // fixme should this contain this peakdim (and in general should result contain this dim plus linked)
-            return EMPTY_LIST;
+            return Collections.emptyList();
         } else {
             return resonance.getPeakDims();
         }
@@ -232,6 +236,14 @@ public class PeakDim {
         }
         result.append(sep);
         result.append(STAR3.valueOf(getLineWidthError())).append(sep);
+        Float shapeFactor = getShapeFactor();
+        if (shapeFactor == null) {
+            result.append(".");
+        } else {
+            result.append(shapeFactor);
+        }
+        result.append(sep);
+        result.append(STAR3.valueOf(getShapeFactorError())).append(sep);
         result.append(STAR3.valueOf(getPhase())).append(sep);
         result.append(STAR3.valueOf(getPhaseError())).append(sep);
         result.append(STAR3.valueOf(getDecayRate())).append(sep);
@@ -263,19 +275,6 @@ public class PeakDim {
         return result.toString();
     }
 
-    /*
-        static String spectralTransitionCharStrings[] = {
-        "_Spectral_transition_char.Bounding_box_val",
-        "_Spectral_transition_char.Bounding_box_val_err",
-        "_Spectral_transition_char.Line_width_val",
-        "_Spectral_transition_char.Line_width_val_err",
-        "_Spectral_transition_char.Phase_val",
-        "_Spectral_transition_char.Phase_val_err",
-        "_Spectral_transition_char.Decay_rate_val",
-        "_Spectral_transition_char.Decay_rate_val_err",
-        "_Spectral_transition_char.Derivation_method_ID",};
-
-     */
     public String toSTAR3LoopSpectralTransitionCharString(AbsMultipletComponent comp, int specTransID) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
@@ -292,14 +291,6 @@ public class PeakDim {
         return result.toString();
     }
 
-    /*
-            "_Spectral_transition_char.Spectral_transition_ID",
-        "_Spectral_transition_general_char.Peak_ID",
-        "_Spectral_transition_general_char.Intensity_val",
-        "_Spectral_transition_general_char.Intensity_val_err",
-        "_Spectral_transition_general_char.Measurement_method",};
-
-     */
     public String toSTAR3LoopSpectralTransitionGeneralCharString(AbsMultipletComponent comp, int specTransID, boolean intensityMode) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
@@ -598,6 +589,34 @@ public class PeakDim {
         peakDimUpdated();
     }
 
+    public Float getShapeFactor() {
+        return shapeFactor;
+    }
+
+    public float getShapeFactorValue() {
+        float value = 0.0f;
+
+        if (shapeFactor != null) {
+            return shapeFactor;
+        } else {
+            return value;
+        }
+    }
+
+    public Float getShapeFactorError() {
+        return shapeFactorError;
+    }
+
+    public void setShapeFactorValue(float wid) {
+        this.shapeFactor = wid;
+        peakDimUpdated();
+    }
+
+    public void setShapeFactorErrorValue(float value) {
+        this.shapeFactorError = value;
+        peakDimUpdated();
+    }
+
     public double getDeltaHz(double delta) {
         delta /= getSpectralDimObj().getSf();
         return delta;
@@ -653,52 +672,6 @@ public class PeakDim {
         peakDimUpdated();
     }
 
-
-    /*
-     public void updateCouplings() {
-     if (!myPeak.getFlag(5)) {
-     Peak origPeak = getOrigin();
-
-     if (origPeak != null) {
-     adjustCouplings(origPeak);
-     }
-     }
-     }
-     */
- /*
-     * 
-     double[] fo = origPeak.peakDim[0].getFrequencyOffsets();
-     Arrays.sort(fo);
-     FreqIntensities fiValues = origPeak.peakDim[0].getFreqIntensitiesFromSplittings();
-     Arrays.sort(fiValues.freqs);
-        
-     double sf = myPeak.peakList.getSpectralDim(getSpectralDim()).getSf();
-
-     int nExtra = fiValues.freqs.length - fo.length;
-     if (nExtra < 0) {
-
-     return;
-     } else if (nExtra > 0) {
-     double[] amplitudeJunk = new double[fiValues.freqs.length];
-     PeakList.trimFreqs(fiValues.freqs, amplitudeJunk, nExtra);
-     }
-
-     double delta = (fiValues.freqs[iPos] * sf) - fo[iPos];
-
-
-     int iCoupling = 0;
-     double sign = 1.0;
-
-     if (iPos < (fo.length - iPos - 1)) {
-     iCoupling = iPos;
-     sign = -1;
-     } else {
-     iCoupling = (fo.length - iPos - 1);
-     sign = 1;
-     }
-
-     * 
-     */
     public int getThread() {
         // FIXME
         return 0;
@@ -706,7 +679,6 @@ public class PeakDim {
 
     public void setThread(int thread) {
         // FIXME
-        //this.thread = thread;
         peakDimUpdated();
     }
 
@@ -846,6 +818,16 @@ public class PeakDim {
             case "Line_width_val_err": {
                 float fvalue = ConvUtil.getFloatValue(value);
                 setLineWidthErrorValue(fvalue);
+                break;
+            }
+            case "Shape_factor_val": {
+                float fvalue = ConvUtil.getFloatValue(value);
+                setShapeFactorValue(fvalue);
+                break;
+            }
+            case "Shape_factor_val_err": {
+                float fvalue = ConvUtil.getFloatValue(value);
+                setShapeFactorErrorValue(fvalue);
                 break;
             }
             case "Phase_val": {

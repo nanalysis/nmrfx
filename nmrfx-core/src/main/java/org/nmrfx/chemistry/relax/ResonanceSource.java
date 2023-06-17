@@ -5,15 +5,17 @@
  */
 package org.nmrfx.chemistry.relax;
 
-import java.util.Arrays;
-import java.util.Objects;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.peaks.Peak;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 /**
- *
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public class ResonanceSource implements Comparable<ResonanceSource> {
 
     final Peak peak;

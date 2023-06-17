@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,19 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.peaks;
 
 import org.nmrfx.utilities.Format;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class CouplingPattern extends Coupling {
@@ -66,7 +66,7 @@ public class CouplingPattern extends Coupling {
         // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
     }
 
-    public CouplingPattern(final Multiplet multiplet, final List<Double> values, final List<String> types,  final List<Double> sin2thetas, final double intensity) {
+    public CouplingPattern(final Multiplet multiplet, final List<Double> values, final List<String> types, final List<Double> sin2thetas, final double intensity) {
         this.multiplet = multiplet;
 
         couplingItems = new CouplingItem[values.size()];
@@ -192,10 +192,6 @@ public class CouplingPattern extends Coupling {
             }
 
             sbuf.append(Format.format1(couplingItems[i].getCoupling()));
-//            sbuf.append(" ");
-//            sbuf.append(couplingItems[i].getNSplits() - 1);
-//            sbuf.append(" ");
-//            sbuf.append(Format.format2(couplingItems[i].getSin2Theta()));
         }
 
         return sbuf.toString();

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class EnergyCoords {
@@ -40,8 +39,8 @@ public class EnergyCoords {
     public static final double RSCALE = Math.pow(2.0, -1.0 / 6.0);
 
     private static final int[][] offsets = {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0}, {-1, 1, 0}, {0, 0, 1},
-    {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
-    {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
+            {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
+            {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
     };
     FastVector3D[] vecCoords = null;
     EnergyDistancePairs eDistancePairs;
@@ -206,7 +205,8 @@ public class EnergyCoords {
         String atomName = iAtomNewSub.substring(iAtomNewSub.indexOf(".") + 1);
         if (atomName.length() < 1) {
             return 'n';
-        };
+        }
+        ;
 
         if (iAtomOldSub.equals(iAtomNewSub) && jAtomNew.equals(jAtomOld)) {
             return 'i';
@@ -283,7 +283,7 @@ public class EnergyCoords {
     }
 
     public void setRadii(double hardSphere, boolean includeH,
-            double shrinkValue, double shrinkHValue, boolean useFF) {
+                         double shrinkValue, double shrinkHValue, boolean useFF) {
         try {
             AtomEnergyProp.readPropFile();
         } catch (IOException ex) {
@@ -319,14 +319,13 @@ public class EnergyCoords {
                 cValues[i] = atom1.getCharge();
                 double lambda = 3.5; // fixme should use 6.0 for ionic side chains
                 double sigma2 = rMin; // fixme use sigma
-                //  double alpha2 = iProp.getVol() * iProp.getDeltaGFree() / (2 * PI32 * lambda );
             }
         }
     }
 
     public void setCells(EnergyPairs ePairs, int deltaEnd, double limit,
-            double hardSphere, boolean includeH, double shrinkValue,
-            double shrinkHValue, boolean useFF) {
+                         double hardSphere, boolean includeH, double shrinkValue,
+                         double shrinkHValue, boolean useFF) {
         double limit2 = limit * limit;
         double[][] bounds = getBoundaries();
         int[] nCells = new int[3];
@@ -456,9 +455,7 @@ public class EnergyCoords {
                                             boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
                                             // fixme  this is fast, but could miss interactions for atoms that are not bonded
                                             // as it doesn't test for an explicit bond between the pairs
-                                            // boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
                                             if (notFixed && interactable1) {
-                                                //double rH = ePair.getRh();
                                                 double rH = contactRadii[iAtom] + contactRadii[jAtom];
                                                 if (disSq < limit2) {
                                                     if (useFF) {
@@ -548,7 +545,6 @@ public class EnergyCoords {
 
             }
         }
-        //dumpFixed();
     }
 
     public void dumpFixed() {
@@ -612,9 +608,6 @@ public class EnergyCoords {
                         close = true;
                     } else if (parent2 == testAtom1.parent) {
                         close = true;
-                    } else if (parent1 == parent2) {
-                        //  rh1 -= 0.1;
-                        //  rh2 -= 0.1;
                     }
                 }
             }

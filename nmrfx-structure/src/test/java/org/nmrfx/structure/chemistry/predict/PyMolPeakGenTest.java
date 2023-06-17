@@ -14,8 +14,8 @@ public class PyMolPeakGenTest {
         interp.exec("import sys");
         interp.exec("sys.path.append('src/test/python')");
         interp.execfile(path.toString());
-        var pyResult =  interp.eval("result.failures");
-        for (var item: pyResult.asIterable()) {
+        var pyResult = interp.eval("result.failures");
+        for (var item : pyResult.asIterable()) {
             System.out.println("item FAILURE " + item);
         }
         return pyResult.__len__();
@@ -24,7 +24,7 @@ public class PyMolPeakGenTest {
     @Test
     public void testmolpeakgen() {
         int nFailures = executeScript("testmolpeakgen.py");
-        Assert.assertEquals(0,  nFailures);
+        Assert.assertEquals(0, nFailures);
     }
 }
 

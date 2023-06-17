@@ -19,6 +19,7 @@ public class PluginLoader {
 
     /**
      * Get the single instance.
+     *
      * @return the plugin loader instance.
      */
     public static PluginLoader getInstance() {
@@ -38,6 +39,7 @@ public class PluginLoader {
 
     /**
      * Get all known plugins.
+     *
      * @return a collection of plugins.
      */
     public Collection<NMRFxPlugin> getPlugins() {
@@ -48,7 +50,7 @@ public class PluginLoader {
      * Let all plugins that support a specific entrypoint register themselves
      *
      * @param entryPoint the type of entry point
-     * @param object the actual entry point. Its type will depend, and could be a Menu, a Scene, ...
+     * @param object     the actual entry point. Its type will depend, and could be a Menu, a Scene, ...
      */
     public void registerPluginsOnEntryPoint(EntryPoint entryPoint, Object object) {
         plugins.stream()

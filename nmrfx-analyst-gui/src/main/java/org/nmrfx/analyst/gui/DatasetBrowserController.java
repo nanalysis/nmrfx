@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,66 +16,48 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.analyst.gui;
 
 import com.jcraft.jsch.JSchException;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.util.StringConverter;
-import javafx.util.converter.DefaultStringConverter;
-import org.nmrfx.utilities.RemoteDataset;
 import org.controlsfx.control.tableview2.TableView2;
+import org.nmrfx.fxutil.Fx;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.utilities.RemoteDataset;
 import org.nmrfx.utilities.RemoteDatasetAccess;
 import org.nmrfx.utilities.UnZipper;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.*;
+import java.util.List;
+import java.util.ResourceBundle;
+
 /**
- *
  * @author brucejohnson
  */
-public class DatasetBrowserController implements Initializable {
+public class DatasetBrowserController implements Initializable, StageBasedController {
 
     private static final Logger log = LoggerFactory.getLogger(DatasetBrowserController.class);
 
@@ -103,11 +85,20 @@ public class DatasetBrowserController implements Initializable {
         initToolBar();
         initTable();
         remoteDir = AnalystPrefs.getRemoteDirectory();
-        //  loadIndex();
+    }
+
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     public Stage getStage() {
         return stage;
+    }
+
+    public void show() {
+        stage.toFront();
+        stage.show();
     }
 
     boolean initRemoteDatasetAccess() {
@@ -146,24 +137,9 @@ public class DatasetBrowserController implements Initializable {
     }
 
     public static DatasetBrowserController create() {
-        FXMLLoader loader = new FXMLLoader(DatasetBrowserController.class.getResource("/fxml/DatasetBrowserScene.fxml"));
-        DatasetBrowserController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<DatasetBrowserController>getController();
-            controller.stage = stage;
-            stage.setTitle("Dataset Browser");
-            stage.show();
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
-
-        return controller;
-
+        return Fxml.load(DatasetBrowserController.class, "DatasetBrowserScene.fxml")
+                .withNewStage("Dataset Browser")
+                .getController();
     }
 
     void initToolBar() {
@@ -248,7 +224,6 @@ public class DatasetBrowserController implements Initializable {
 
     void updateColumns() {
         tableView.getColumns().clear();
-        StringConverter sConverter = new DefaultStringConverter();
 
         TableColumn<RemoteDataset, String> pathCol = new TableColumn<>("Path");
         pathCol.setCellValueFactory(new PropertyValueFactory("Path"));
@@ -343,7 +318,7 @@ public class DatasetBrowserController implements Initializable {
         Task<List<RemoteDataset>> task = new Task<List<RemoteDataset>>() {
             @Override
             protected List<RemoteDataset> call() throws Exception {
-                ConsoleUtil.runOnFxThread(() -> stage.setTitle("Dataset Browser: Scanning"));
+                Fx.runOnFxThread(() -> stage.setTitle("Dataset Browser: Scanning"));
 
                 List<RemoteDataset> results = NMRDataUtil.scanDirectory(scanDir, outPath);
                 Platform.runLater(new Runnable() {
@@ -354,7 +329,7 @@ public class DatasetBrowserController implements Initializable {
                         tableView.setItems(items);
                     }
                 });
-                ConsoleUtil.runOnFxThread(() -> stage.setTitle("Dataset Browser"));
+                Fx.runOnFxThread(() -> stage.setTitle("Dataset Browser"));
 
                 return results;
             }
@@ -457,7 +432,7 @@ public class DatasetBrowserController implements Initializable {
                 GUIUtils.warn("Fetch", "File doesn't exist: " + localFile.toString());
                 return;
             }
-            FXMLController controller = FXMLController.getActiveController();
+            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
             try {
                 if (!useFID && !rData.getProcessed().isEmpty()) {
                     File localDataset = fileSystem.getPath(getLocalDir().toString(), fileName, rData.getProcessed()).toFile();

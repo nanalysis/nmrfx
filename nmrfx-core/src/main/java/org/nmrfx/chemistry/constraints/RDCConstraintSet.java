@@ -17,40 +17,63 @@
  */
 package org.nmrfx.chemistry.constraints;
 
-import java.io.File;
-import java.io.IOException;
-
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Point3;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Stream;
-
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-import org.nmrfx.chemistry.Atom;
 
 /**
  * @author brucejohnson
  */
 public class RDCConstraintSet implements ConstraintSet, Iterable {
+    private static final String[] rdcConstraintLoopStrings = {
+            "_RDC.ID",
+            "_RDC.Entity_assembly_ID_1",
+            "_RDC.Entity_ID_1",
+            "_RDC.Comp_index_ID_1",
+            "_RDC.Seq_ID_1",
+            "_RDC.Comp_ID_1",
+            "_RDC.Atom_ID_1",
+            "_RDC.Atom_type_1",
+            "_RDC.Resonance_ID_1",
+            "_RDC.Entity_assembly_ID_2",
+            "_RDC.Entity_ID_2",
+            "_RDC.Comp_index_ID_2",
+            "_RDC.Seq_ID_2",
+            "_RDC.Comp_ID_2",
+            "_RDC.Atom_ID_2",
+            "_RDC.Atom_type_2",
+            "_RDC.Resonance_ID_2",
+            "_RDC.Val",
+            "_RDC.Val_err",
+            "_RDC.RDC_list_ID",};
+
+    public static char[] violCharArray = new char[0];
+    public static int id = 1;
 
     private final MolecularConstraints molecularConstraints;
     private final ArrayList<RDCConstraint> constraints = new ArrayList<>(64);
     int nStructures = 0;
     private final String name;
     boolean dirty = true;
-    public static char[] violCharArray = new char[0];
-    public static int ID = 1;
 
     private RDCConstraintSet(MolecularConstraints molecularConstraints,
-            String name) {
+                             String name) {
         this.name = name;
         this.molecularConstraints = molecularConstraints;
     }
 
     public static RDCConstraintSet newSet(MolecularConstraints molecularConstraints,
-            String name) {
+                                          String name) {
         RDCConstraintSet rdcSet = new RDCConstraintSet(molecularConstraints,
                 name);
         return rdcSet;
@@ -134,7 +157,7 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
     }
 
     public void updateAngleData() {
-        
+
         MoleculeBase mol = null;
         if (molecularConstraints != null) {
             mol = molecularConstraints.molecule;
@@ -169,23 +192,6 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
                 if (!okPoint) {
                     break;
                 }
-//                double angle = Atom.calcDihedral(pts[0], pts[1], pts[2], pts[3]) * 180.0 / Math.PI;
-//                double value = aConstraint.getValue();
-//                double err = aConstraint.getErr();
-//                boolean ok = false;
-//                if (upper > lower) {
-//                    if ((angle >= lower) && (angle <= upper)) {
-//                        ok = true;
-//                    }
-//                } else if ((angle >= lower) || (angle <= upper)) {
-//                    ok = true;
-//                }
-//                if (ok) {
-//                    nInBounds++;
-//                } else {
-//                    violStructures.set(iStruct);
-//                }
-//                sumStat.addValue(angle);
             }
             if (okPoint) {
 
@@ -198,28 +204,6 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
         dirty = false;
     }
 
-    private static String[] rdcConstraintLoopStrings = {
-        "_RDC.ID",
-        "_RDC.Entity_assembly_ID_1",
-        "_RDC.Entity_ID_1",
-        "_RDC.Comp_index_ID_1",
-        "_RDC.Seq_ID_1",
-        "_RDC.Comp_ID_1",
-        "_RDC.Atom_ID_1",
-        "_RDC.Atom_type_1",
-        "_RDC.Resonance_ID_1",
-        "_RDC.Entity_assembly_ID_2",
-        "_RDC.Entity_ID_2",
-        "_RDC.Comp_index_ID_2",
-        "_RDC.Seq_ID_2",
-        "_RDC.Comp_ID_2",
-        "_RDC.Atom_ID_2",
-        "_RDC.Atom_type_2",
-        "_RDC.Resonance_ID_2",
-        "_RDC.Val",
-        "_RDC.Val_err",
-        "_RDC.RDC_list_ID",};
-
     @Override
     public String[] getLoopStrings() {
         return rdcConstraintLoopStrings;
@@ -227,7 +211,7 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
 
     @Override
     public void resetWriting() {
-        ID = 1;
+        id = 1;
     }
 
     public void readInputFile(File file) throws IOException {

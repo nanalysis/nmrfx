@@ -22,13 +22,10 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -136,9 +133,9 @@ public class TablePlotGUI {
             equationChoice.getItems().addAll("ExpAB", "ExpABC", "GaussianAB", "GaussianABC", "A<->B");
             equationChoice.setValue("ExpABC");
             toolBar2.getItems().addAll(equationChoice, button);
-            toolBar.getItems().addAll(fileMenu,typelabel, chartTypeChoice,
+            toolBar.getItems().addAll(fileMenu, typelabel, chartTypeChoice,
                     xlabel, xArrayChoice, ylabel, yArrayChoice);
-            ToolBarUtils.addFiller(toolBar, 10,200);
+            ToolBarUtils.addFiller(toolBar, 10, 200);
             toolBar.getItems().add(showFitCheckBox);
 
             fitVBox = new VBox();
@@ -167,6 +164,7 @@ public class TablePlotGUI {
         }
 
     }
+
     void setupTable() {
         TableColumn<ParItem, String> columnNameColumn = new TableColumn<>("Column");
         columnNameColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().columnName()));
@@ -383,7 +381,7 @@ public class TablePlotGUI {
             if (items.contains(null)) {
                 items.remove(null);
             }
-            for (String name:columnNames) {
+            for (String name : columnNames) {
                 if (!items.contains(name)) {
                     items.add(name);
                 }
@@ -398,7 +396,7 @@ public class TablePlotGUI {
                     xArrayChoice.setValue(xArrayChoice.getItems().get(0));
                 }
             }
-            for (var item:currentChecks) {
+            for (var item : currentChecks) {
                 yArrayChoice.getCheckModel().check(item);
             }
         }
@@ -411,7 +409,7 @@ public class TablePlotGUI {
         if (selectedFile != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
             Canvas canvas = activeChart.getCanvas();
-            svgGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+            svgGC.create(canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
             exportChart(svgGC);
             svgGC.saveFile();
         }
@@ -495,8 +493,8 @@ public class TablePlotGUI {
                 nSig = 0;
             }
             double scale = Math.pow(10, nSig);
-            errValue = Math.round(errValue * scale)/ scale;
-            double value = Math.round(values[j] * scale)/ scale;
+            errValue = Math.round(errValue * scale) / scale;
+            double value = Math.round(values[j] * scale) / scale;
             ParItem parItem = new ParItem(yElems.get(0), 0, parNames[j], value, errValue);
             results.add(parItem);
         }

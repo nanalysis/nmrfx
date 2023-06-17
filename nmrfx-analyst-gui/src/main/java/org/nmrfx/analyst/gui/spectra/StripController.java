@@ -23,9 +23,11 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.tools.StripsTable;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
@@ -34,8 +36,8 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -111,7 +113,7 @@ public class StripController implements ControllerTool {
         this.setupToolBar = new ToolBar();
         this.vBox.getChildren().addAll(toolBar, setupToolBar);
 
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
         toolBar.getItems().add(closeButton);
 
@@ -236,9 +238,9 @@ public class StripController implements ControllerTool {
     }
 
     void updateDimMenus(PeakList peakList) {
-        for (var dimMenu: dimChoiceBoxes) {
+        for (var dimMenu : dimChoiceBoxes) {
             dimMenu.getItems().clear();
-            for (var sDim:peakList.getSpectralDims()) {
+            for (var sDim : peakList.getSpectralDims()) {
                 dimMenu.getItems().add(sDim.getDimName());
             }
         }
@@ -556,7 +558,7 @@ public class StripController implements ControllerTool {
             if (item.dataset != null) {
                 if (init) {
                     controller.addDataset(item.dataset, false, false);
-                    chart.getCrossHairs().setCrossHairState(0, 0, true);
+                    chart.getCrossHairs().setState(0, Orientation.HORIZONTAL, true);
                 }
                 chart.setDataset(item.dataset);
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
@@ -564,14 +566,14 @@ public class StripController implements ControllerTool {
                 for (int i = 0; i < dims.length; i++) {
                     dataAttr.setDim(i, dims[i]);
                 }
-                chart.setAxis(0, positions[0] - xWidth / 2.0, positions[0] + xWidth / 2.0);
+                chart.getAxes().setMinMax(0, positions[0] - xWidth / 2.0, positions[0] + xWidth / 2.0);
                 if (item.peakList != null) {
                     PeakListAttributes peakAttr = chart.setupPeakListAttributes(item.peakList);
                     peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.SglResidue);
                 }
                 chart.full(1);
                 for (int i = 1; i < positions.length; i++) {
-                    chart.setAxis(1 + i, positions[i], positions[i]);
+                    chart.getAxes().setMinMax(1 + i, positions[i], positions[i]);
                 }
             }
             chart.useImmediateMode(true);
@@ -660,7 +662,7 @@ public class StripController implements ControllerTool {
             currentLow = low;
             currentHigh = high;
             if (frozen >= 0) {
-                charts.get(frozen).setActiveChart();
+                PolyChartManager.getInstance().setActiveChart(charts.get(frozen));
             }
             controller.setChartDisable(false);
             controller.setCursor();
@@ -778,7 +780,7 @@ public class StripController implements ControllerTool {
                 }
                 if (!datasets.contains(dataset)) {
                     datasets.add(dataset);
-                    StripItem item = new StripItem(dataset,peakList,iCol, iRow);
+                    StripItem item = new StripItem(dataset, peakList, iCol, iRow);
                     items.add(item);
                 } else {
                     break;

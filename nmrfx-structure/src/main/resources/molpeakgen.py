@@ -571,14 +571,17 @@ class MolPeakGen:
             self.addPeaks(peakList, d1Edited, d2Edited, stringified, useN)
 
     def getPeakList(self, dataset, listName, nPeakDim=0):
-        if (dataset == None or dataset == "")  and listName != "":
+        if listName != "":
             peakList = PeakList.get(listName)
-        else:
-            if listName == "":
-                listName = self.getListName(dataset)
-            if not isinstance(dataset,DatasetBase):
-                dataset = DatasetBase.getDataset(dataset)
-            peakList = peakgen.makePeakListFromDataset(listName, dataset, nPeakDim)
+        if peakList == None:
+            if (dataset == None or dataset == "")  and listName != "":
+                peakList = PeakList.get(listName)
+            else:
+                if listName == "":
+                    listName = self.getListName(dataset)
+                if not isinstance(dataset,DatasetBase):
+                    dataset = DatasetBase.getDataset(dataset)
+                peakList = peakgen.makePeakListFromDataset(listName, dataset, nPeakDim)
         return peakList
 
     def genRNASecStrPeaks(self, dataset, listName="", condition="sim", scheme="", useN=False):

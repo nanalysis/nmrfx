@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,6 @@
  */
 package org.nmrfx.chart;
 
-import java.util.Optional;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Orientation;
 import javafx.scene.canvas.Canvas;
@@ -29,20 +28,16 @@ import org.nmrfx.graphicsio.GraphicsIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+
 /**
- *
  * @author brucejohnson
  */
+//TODO uncomment once core & utils are merged
+//@PluginAPI("ring")
 public class XYCanvasBarChart extends XYCanvasChart {
 
     private static final Logger log = LoggerFactory.getLogger(XYCanvasBarChart.class);
-
-    public static XYCanvasBarChart buildChart(Canvas canvas) {
-        Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 400, 100.0);
-        Axis yAxis = new Axis(Orientation.VERTICAL, 0, 1.0, 100, 400);
-        yAxis.setZeroIncluded(true);
-        return new XYCanvasBarChart(canvas, xAxis, yAxis);
-    }
 
     public XYCanvasBarChart(Canvas canvas, final Axis... AXIS) {
         super(canvas, AXIS);

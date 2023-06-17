@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,12 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.PPMv;
+import org.nmrfx.chemistry.Point3;
+import org.nmrfx.chemistry.Util;
 import org.nmrfx.chemistry.constraints.AtomDistancePair;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
 
@@ -48,6 +51,7 @@ public class AtomMath {
             this.n = n;
         }
     }
+
     static IrpParameter[] IrpParameters = new IrpParameter[10];
 
     static {
@@ -61,6 +65,7 @@ public class AtomMath {
         IrpParameters[8] = new IrpParameter(8, 1.90, 1.0, 3);
         IrpParameters[9] = new IrpParameter(9, 1.80, 1.0, 3);
     }
+
     static final double RADJ = 0.02;
 
     /**
@@ -333,20 +338,19 @@ public class AtomMath {
         //distance between atoms
         double r = calcDistanceSumAvg(distancePair, sumAvgN);
 
-        //distance between atoms squared
-        //double r2 = r * r;
-        /**
+
+        /*
          * the energy result returned
          */
         final AtomEnergy result;
 
-        /**
+        /*
          * upper bounds for distance between two atoms atom cannot exceed this
          * distance - provided by NMR data
          */
         double upper = distancePair.getUpper();
 
-        /**
+        /*
          * lower bounds for distance between two atoms atom cannot be lower than
          * this distance - provided by NMR data
          */
@@ -357,7 +361,7 @@ public class AtomMath {
         double rSwitch = 1.0;
         int noeClass = 1;
 
-        /**
+        /*
          * viol initially set to distance between r (current distance) and upper
          * bounds
          */
@@ -403,7 +407,7 @@ public class AtomMath {
                 } else {
                     /*if the energy is below upper (meaning also below lower)
                      * the viol is calculated to be lower - r.
-                     * 
+                     *
                      */
                     if (r < upper) {
                         viol = lower - r;
@@ -457,11 +461,6 @@ public class AtomMath {
         dihedral = Util.reduceAngle(dihedral);
 
         final AtomEnergy result;
-//        if (upper > Math.PI) {
-//            if (dihedral < 0.0) {
-//                dihedral += 2.0 * Math.PI;
-//            }
-//        }
 
         // 100  80   101 - 359 - 79
         // 80  100   
@@ -495,26 +494,12 @@ public class AtomMath {
             } else {
                 delta = deltaL;
             }
-//            if (dihedral > upper) {
-//                delta = upper - dihedral;
-//                double deltaR = 2.0 * Math.PI - (range - delta);
-//                if (Math.abs(delta) > deltaR) {
-//                    delta = deltaR;
-//                }
-//            } else {
-//                delta = lower - dihedral;
-//                double deltaR = 2.0 * Math.PI - (range + delta);
-//                if (delta > deltaR) {
-//                    delta = -deltaR;
-//                }
-//            }
+
             double delta2 = delta * delta;
             double energy = forceWeight.getDihedral() * (1.0 - 0.5 * delta2 / halfRange2) * delta2;
-            //double energy = forceWeight.getDihedral()*delta2;
             double deriv = 0.0;
             if (calcDeriv) {
                 deriv = forceWeight.getDihedral() * 2.0 * delta * (1.0 - delta2 / halfRange2);
-                //deriv = forceWeight.getDihedral()*2.0*delta;
             }
             result = new AtomEnergy(energy, deriv);
         }
@@ -545,283 +530,8 @@ public class AtomMath {
     public static AtomEnergy calcTorsionAngleEnergy(AngleProp angleProp, final ForceWeight forceWeight) {
         final AtomEnergy result;
         double energy = 0.0;
-//        if (angleProp != null) {
-//            AngleProp temp = angleProp;
-//            int indexValue = 0;
-//            double dihedral = grabDihedral(boundary);
-//            double dis = FastMath.abs(dihedral - temp.target[0]);
-//            for (int i = 1; i < temp.target.length; i++) {
-//                double newdis = FastMath.abs(dihedral - temp.target[i]);
-//                if (newdis < dis) {
-//                    dis = newdis;
-//                    indexValue = i;
-//                }
-//            }
-//            energy = 1 - temp.height[indexValue] * FastMath.exp((-dis * dis) / (2 * temp.sigma[indexValue] * temp.sigma[indexValue]));
-//        } else {
-//            energy = 0;
-//        }
         result = new AtomEnergy(energy);
         return result;
 
     }
 }
-/*
- double
- atm_irp(irp_index, angle, deriv)
- int             irp_index;
- double          angle;
- double         *deriv;
- {
- double          v, s, e;
- int             n;
- if (irp_index < 2) {
- e = 0.0;
- if (deriv != NULL)
- *deriv = 0.0;
- return (e);
- }
- v = irpdef[irp_index].v;
- s = irpdef[irp_index].s;
- n = irpdef[irp_index].n;
- e = v * (1.0 + s * cos(n * angle));
- if (deriv != NULL)
- *deriv = -v * s * n * sin(n * angle);
- return (e);
- }
-
- double
- atm_dih_delta(angle, a_exp, a_tol)
- double          a_exp, a_tol, angle;
- {
- double          delta;
- angle = reduce_angle(angle);
- delta = angle - a_exp;
- if (delta > M_PI)
- delta -= 2.0 * M_PI;
- else if (delta < -M_PI)
- delta += 2.0 * M_PI;
- delta = fabs(delta);
- if (delta > a_tol)
- return (delta - a_tol);
- else
- return (0.0);
- }
-
- double
- atm_dih_energy(angle, a_exp, a_tol, deriv)
- double          a_exp, a_tol, angle;
- double         *deriv;
- {
- double          e = 0.0;
- double          delta;
- if (deriv != NULL)
- *deriv = 0.0;
- angle = reduce_angle(angle);
- delta = angle - a_exp;
- if (delta > M_PI)
- delta -= 2.0 * M_PI;
- else if (delta < -M_PI)
- delta += 2.0 * M_PI;
- if (fabs(delta) > a_tol) {
- if (delta < 0.0)
- delta += a_tol;
- else
- delta -= a_tol;
- e = w_dih * delta * delta;
- if (deriv != NULL)
- *deriv = 2.0 * w_dih * delta;
- }
- return (e);
- }
- double
- atm_jval(angle, type)
- double          angle;
- int             type;
- {
- double          A, B, C, del, j, cosa;
- switch (type) {
- case 0:
- A = 6.4;
- B = 1.4;
- C = 1.9;
- del = 60.0 * M_PI / 180.0;
- break;
- case 1:
- A = 9.5;
- B = 1.6;
- C = 1.8;
- del = 0.0;
- break;
- }
- angle = angle - del;
- angle = reduce_angle(angle);
- cosa = cos(angle);
- j = (A * cosa - B) * cosa + C;
- return (j);
- }
- double
- atm_jphi(j, j0, angle, deriv)
- double          j, angle;
- double         *j0;
- double         *deriv;
- {
- double          a60 = 1.04719755;
- double          A = 6.4;
- double          B = 1.4;
- double          C = 1.9;
- double          cosa, sina, e, ang;
- ang = fabs(angle - a60);
- // Don't try to pull the angle above phi = -30
- if
-
- (ang < M_PI / 2.0)
- ang = M_PI / 2.0;
- cosa  = cos(ang);
- *
- j0  = (A * cosa - B) * cosa + C;
- if
-
- (fabs
- (j -  {
- *j0) < 1.0) {
- if (deriv != NULL)
- * deriv = 0.0;
- }
- e = 0.0;
- return (e);
- }
- if
-
-
- (j > *j0)
- j += -1.0;
- else
- j += 1.0 ;
- e  = w_jphi * (j - *  j0);
- if
-
-
-
-
- (deriv
- != NULL) {
- sina = sin(ang);
- * deriv = -2.0 * e * (B * sina - A * 2.0 * cosa * sina);
- if (angle < 0.0) {
- *  deriv *= -1.0;
- }
- }
- e  = e * (j - *  j0);
- return
-
-
-
- (e);
- }
-
-
-
-
- double
- atm_repel(atma, atmb, i, j, deriv)
- POINT3          atma, atmb;
-
-
- int             i, j;
-
-
- double         *deriv;
-
-
- {
- double          r2, r20;
-
-
- double          dif;
-
-
- double          e = 0.0;
- r2
-
- = atm_sqdis(atma, atmb);
- r20
-
- = zeromin[i][j].r2;
-
-
- if (r2 < r20) {
- dif = r20 - r2;
- e
-
- = w_repel * dif * dif;
-
-
- if (deriv != NULL)
-
- // what is needed is actually the derivitive/r, therefore the r that
- // would be in following drops out
-
- *deriv = -4.0 * w_repel * dif;
-
-
- } else if (deriv != NULL)
- *deriv = 0.0;
-
-
- return (e);
-
-
- }
- double
- reduce_angle(x)
- double          x;
-
-
- {
- while (x > 2.0 * M_PI)
- x = x - 2.0 * M_PI;
-
-
- while (x < -2.0 * M_PI)
- x = x + 2.0 * M_PI;
-
-
- if (x > M_PI)
- x = x - 2.0 * M_PI;
-
-
- if (x < -M_PI)
- x = x + 2.0 * M_PI;
-
-
- return (x);
-
-
- }
- double
- reduce_angle2(x)
- double          x;
-
-
- {
- while (x > 360.0)
- x = x - 360.0;
-
-
- while (x < -360.0)
- x = x + 360.0;
-
-
- if (x > 180.0)
- x = x - 360;
-
-
- if (x < -180.0)
- x = x + 360.0;
-
-
- return (x);
-
- }
- */

@@ -6,13 +6,11 @@
 package org.nmrfx.utilities;
 
 /**
- *
  * @author brucejohnson
  */
 public class NMRFxColor {
+    public static final NMRFxColor BLACK = new NMRFxColor(0, 0, 0);
 
-    public static NMRFxColor BLACK = new NMRFxColor(0, 0, 0);
-    public static NMRFxColor RED = new NMRFxColor(255, 0, 0);
     final int r;
     final int g;
     final int b;

@@ -1,8 +1,5 @@
 package org.nmrfx.analyst.gui.peaks;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
@@ -14,7 +11,7 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import org.nmrfx.analyst.gui.peaks.AtomBrowser;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.peaks.AtomBrowser.AtomDelta;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
@@ -26,8 +23,11 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Molecule;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class PeakAtomPicker {
@@ -40,7 +40,6 @@ public class PeakAtomPicker {
     Label[] ppmLabels;
     TextField[] atomFields;
     double xOffset = 50;
-    double yOffset = 50;
     Peak selPeak = null;
     int[] peakDims;
     boolean removePeakOnClose = false;
@@ -114,7 +113,7 @@ public class PeakAtomPicker {
                 choiceBox.getItems().setAll(mol.entities.keySet());
             }
         }
-        FXMLController fxmlController = FXMLController.getActiveController();
+        FXMLController fxmlController = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         PolyChart chart = fxmlController.getActiveChart();
         List<Peak> selected = chart.getSelectedPeaks();
         selPeak = null;
@@ -168,7 +167,7 @@ public class PeakAtomPicker {
             if (selPeak != null) {
                 PeakList peakList = selPeak.getPeakList();
                 peakList.removePeak(selPeak);
-                FXMLController.getActiveController().getActiveChart().drawPeakLists(true);
+                AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart().drawPeakLists(true);
             }
         }
         stage.close();

@@ -1,6 +1,5 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import java.util.ArrayList;
 import javafx.scene.paint.Color;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Bond;
@@ -8,13 +7,13 @@ import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.structure.chemistry.Molecule;
 
+import java.util.ArrayList;
+
 /**
- *
  * @author brucejohnson
  */
 public class MolCoords {
-
-    static float bondSpace = 12.0f;
+    private static final float BOND_SPACE = 12.0f;
 
     public static ArrayList<AtomSphere> createAtomList(ArrayList<Atom> atoms, int iStructure) {
         ArrayList<AtomSphere> atomList = new ArrayList<>();
@@ -236,9 +235,9 @@ public class MolCoords {
                         double dx = ptE.getX() - ptB.getX();
                         double dy = ptE.getY() - ptB.getY();
                         double dz = ptE.getZ() - ptB.getZ();
-                        double x3 = -dy / bondSpace;
-                        double y3 = dx / bondSpace;
-                        double z3 = dz / bondSpace;
+                        double x3 = -dy / BOND_SPACE;
+                        double y3 = dx / BOND_SPACE;
+                        double z3 = dz / BOND_SPACE;
                         Point3 deltaP = new Point3(x3, y3, z3);
                         Color colorB = Color.color(atomB.getRed(), atomB.getGreen(), atomB.getBlue());
                         Color colorE = Color.color(atomE.getRed(), atomE.getGreen(), atomE.getBlue());

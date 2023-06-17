@@ -5,18 +5,6 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.chemistry.InvalidMoleculeException;
@@ -25,8 +13,15 @@ import org.nmrfx.chemistry.io.NMRNEFWriter;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.Map.Entry;
+
 /**
- *
  * @author Martha
  */
 public class NEFFileTest {
@@ -38,7 +33,7 @@ public class NEFFileTest {
     // Asp HD2 2kzn   should have residue modifier +HD2
     // ILE CGx CGy  (these are not stereo equiv  2png
     // has ligand 6nbn
-    
+
     // new files:
     // OK 1pqx 2jr2 2juw 2k2e 2kcu 2kko 2ko1 2kpu 2kw5 2kzn 2loy 2luz
 
@@ -56,7 +51,8 @@ public class NEFFileTest {
         loadData("2ko1");
         testAll();
     }
-//    @Test
+
+    //    @Test
 //    public void testFile2PNG() throws IOException { //fails b/c distances % collapsing mismatches
 //        loadData("2png");
 //        testAll();
@@ -66,11 +62,13 @@ public class NEFFileTest {
         loadData("2kzn");
         testAll();
     }
+
     @Test
     public void testFile2KKO() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kko");
         testAll();
     }
+
     @Test
     public void testFile2JUW() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2juw");
@@ -88,7 +86,7 @@ public class NEFFileTest {
         loadData("1pqx");
         testAll();
     }
-    
+
     @Test
     public void testFile1PQX2() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("1pqx_2");
@@ -118,12 +116,13 @@ public class NEFFileTest {
         loadData("2loy");
         testAll();
     }
+
     @Test
     public void testFile2LUZ() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2luz");
         testAll();
     }
-    
+
 //    @Test
 //    public void testFile2K07() throws IOException { //fails b/c chem shift and distance % collapsing mismatches
 //        loadData("2k07");
@@ -135,13 +134,13 @@ public class NEFFileTest {
         loadData("2kcu");
         testAll();
     }
-    
+
 //    @Test
 //    public void testFile6NBN() throws IOException { //fails b/c ACD chain code should be A, not B
 //        loadData("6nbn");
 //        testAll();
 //    }
-    
+
     private List<List<Object>> convertFileLines(String filePath) throws IOException {
         List<List<Object>> convertedLines = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
@@ -335,10 +334,10 @@ public class NEFFileTest {
                 allValues.add(origValues);
                 allValues.add(writtenValues);
                 if (mode.equals("dihedral")) {
-                    for (int v=0; v<origValues.size(); v++) {
+                    for (int v = 0; v < origValues.size(); v++) {
                         if ((v == 1 || v == 3 || v == 4) &&
                                 !origValues.get(v).equals(writtenValues.get(v))) {
-                            for (int l=0; l<allValues.size(); l++) {
+                            for (int l = 0; l < allValues.size(); l++) {
                                 List<Object> valList = allValues.get(l);
                                 double val = (double) valList.get(v);
                                 if (val >= 180.0 && val < 360.0) {

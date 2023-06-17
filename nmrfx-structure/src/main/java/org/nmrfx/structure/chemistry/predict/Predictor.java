@@ -24,7 +24,6 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class Predictor {

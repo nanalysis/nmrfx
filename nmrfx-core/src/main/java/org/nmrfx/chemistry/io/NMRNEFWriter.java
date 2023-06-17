@@ -17,39 +17,19 @@
  */
 package org.nmrfx.chemistry.io;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.constraints.*;
+import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Compound;
-import org.nmrfx.chemistry.Entity;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.constraints.AngleConstraint;
-import org.nmrfx.chemistry.constraints.AtomDistancePair;
-import org.nmrfx.chemistry.constraints.DistanceConstraint;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.utilities.NvUtil;
-import org.nmrfx.chemistry.Util;
-import org.nmrfx.chemistry.constraints.AngleConstraintSet;
-import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
 
 /**
- *
  * @author brucejohnson, Martha
  */
 public class NMRNEFWriter {
@@ -218,7 +198,6 @@ public class NMRNEFWriter {
                         continue;
                     }
                 }
-                //collapse = atom.getStereo() == -1 ? 2 : atom.getStereo() == 0 ? 1 : 0;
             } else if (atom.isMethylene()) {
                 List<List<Atom>> partners = atom.getPartners(1);
                 sameShift = checkPartnerShifts(atom, partners);
@@ -227,7 +206,6 @@ public class NMRNEFWriter {
                         continue;
                     }
                 }
-                //partnerOpt = atom.getMethylenePartner();
             } else if (atom.isAromaticFlippable()) {
                 List<List<Atom>> partners = atom.getPartners(-1);
                 sameShift = checkPartnerShifts(atom, partners);
@@ -236,7 +214,6 @@ public class NMRNEFWriter {
                         continue;
                     }
                 }
-                //partnerOpt = atom.getMethylenePartner();
             } else {
                 // check for aromatic atoms
                 List<Object> equiv = atom.getEquivalency();
@@ -507,7 +484,7 @@ public class NMRNEFWriter {
      * @throws InvalidMoleculeException
      */
     public static void writeAll(File file) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
-        try ( FileWriter writer = new FileWriter(file)) {
+        try (FileWriter writer = new FileWriter(file)) {
             String name = file.getName();
             if (name.endsWith(".nef")) {
                 name = name.substring(0, name.length() - 4);

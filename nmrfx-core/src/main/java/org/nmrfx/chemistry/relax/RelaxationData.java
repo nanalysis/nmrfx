@@ -1,5 +1,5 @@
 /*
- * NMRFx Analyst : 
+ * NMRFx Analyst :
  * Copyright (C) 2004-2021 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry.relax;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -28,9 +29,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author mbeckwith
  */
+@PluginAPI("ring")
 public class RelaxationData implements RelaxationValues {
 
     public enum relaxTypes {
@@ -60,7 +61,7 @@ public class RelaxationData implements RelaxationValues {
     private final String key;
 
     public RelaxationData(String id, relaxTypes expType, ResonanceSource resSource, double field, double temperature,
-            Double value, Double error, Map<String, String> extras) {
+                          Double value, Double error, Map<String, String> extras) {
 
         this.id = id;
         this.expType = expType;
@@ -198,14 +199,14 @@ public class RelaxationData implements RelaxationValues {
 
     private static String toFileString(Map<relaxTypes, RelaxationData> values, List<relaxTypes> types) {
         StringBuilder sBuilder = new StringBuilder();
-        for (var  type: types) {
+        for (var type : types) {
             var data = values.get(type);
             if ((sBuilder.length() == 0) && (data != null)) {
                 sBuilder.append(String.format("%.2f", data.getField()));
             }
             Double value = data != null ? data.getValue() : null;
             Double error = data != null ? data.getError() : null;
-            RelaxationValues.appendValueError(sBuilder, value, error,"%.3f");
+            RelaxationValues.appendValueError(sBuilder, value, error, "%.3f");
         }
         return sBuilder.toString();
     }
@@ -220,8 +221,8 @@ public class RelaxationData implements RelaxationValues {
         // figure out what relaxtypes are used so header can be setup
         for (Atom atom : atoms) {
             var dataMap = assembleAtomData(atom);
-            for (var relaxData:dataMap.values()) {
-                for (var relaxType:relaxData.values()) {
+            for (var relaxData : dataMap.values()) {
+                for (var relaxType : relaxData.values()) {
                     typesUsed.add(relaxType.getExpType());
                 }
             }
@@ -231,8 +232,8 @@ public class RelaxationData implements RelaxationValues {
 
         try (FileWriter fileWriter = new FileWriter(file)) {
             fileWriter.write("Chain\tResidue\tAtom\tfield");
-            for (var type:typeList) {
-                fileWriter.write("\t" + type.getName() + "\t" + type.getName()+"_err");
+            for (var type : typeList) {
+                fileWriter.write("\t" + type.getName() + "\t" + type.getName() + "_err");
             }
             fileWriter.write("\n");
             for (Atom atom : atoms) {
@@ -242,7 +243,7 @@ public class RelaxationData implements RelaxationValues {
                         String polymer = atom.getTopEntity().getName();
                         polymer = polymer == null ? "A" : polymer;
                         String resNum = String.valueOf(atom.getResidueNumber());
-                        fileWriter.write(polymer + "\t" + resNum+"\t" + atom.getName() + "\t");
+                        fileWriter.write(polymer + "\t" + resNum + "\t" + atom.getName() + "\t");
                         fileWriter.write(toFileString(r1R1NOE, typeList));
                         fileWriter.write("\n");
                     }

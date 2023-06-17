@@ -7,22 +7,8 @@ package org.nmrfx.analyst.gui.tools;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
 import javafx.geometry.Orientation;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
@@ -35,18 +21,24 @@ import org.nmrfx.analyst.compounds.CompoundMatch;
 import org.nmrfx.analyst.compounds.FitResult;
 import org.nmrfx.analyst.dataops.SimData;
 import org.nmrfx.analyst.dataops.SimDataVecPars;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.SpectrumStatusBar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
+
 /**
- *
  * @author brucejohnson
  */
 public class SimFitMolController extends SimMolController {
@@ -79,7 +71,7 @@ public class SimFitMolController extends SimMolController {
         this.browserToolBar = toolBar;
         toolBar.setPrefWidth(900.0);
 
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
         toolBar.getItems().add(closeButton);
@@ -248,7 +240,7 @@ public class SimFitMolController extends SimMolController {
             sumDataset = datasets[names.indexOf("sum")];
             currentDataset = datasets[names.indexOf("current")];
 
-            controller.getStatusBar().setMode(1);
+            controller.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
             for (Dataset dataset : datasets) {
                 if (!chart.containsDataset(dataset)) {
                     chart.setDataset(dataset, true, false);

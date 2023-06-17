@@ -26,7 +26,6 @@ import java.io.*;
 import java.util.ArrayList;
 
 /**
- *
  * @author brucejohnson
  */
 public class PSFFile {
@@ -73,7 +72,7 @@ public class PSFFile {
                 }
             }
             i = 0;
-            while (i < natoms && (string = bufReader.readLine()) != null){
+            while (i < natoms && (string = bufReader.readLine()) != null) {
                 PSFAtomParser atomParse = new PSFAtomParser(string);
                 if (!lastRes.equals(atomParse.resNum)) {
                     lastRes = atomParse.resNum;

@@ -7,24 +7,20 @@ import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class RemoteDataset {
 
     private static final Logger log = LoggerFactory.getLogger(RemoteDataset.class);
-    static List<RemoteDataset> datasets = new ArrayList<>();
+    private static List<RemoteDataset> datasets = new ArrayList<>();
 
     @Expose
     private String path;
@@ -337,50 +333,14 @@ public class RemoteDataset {
         return list;
     }
 
-    public static RemoteDataset datasetFromJson(String hashKey, String jsonString) {
-        Gson gson = new Gson();
-        return datasetFromJson(hashKey, jsonString, gson);
-    }
-
-    public static RemoteDataset datasetFromJson(String hashKey, String jsonString, Gson gson) {
-        RemoteDataset dataset = gson.fromJson(jsonString, RemoteDataset.class);
-        dataset.hashKey = hashKey;
-        return dataset;
-    }
-
-    public String toJson() {
-        Gson gson = new GsonBuilder().
-                excludeFieldsWithoutExposeAnnotation().create();
-        return gson.toJson(this);
-    }
-
     public static String toJson(List<RemoteDataset> items) {
         Gson gson = new GsonBuilder().
                 excludeFieldsWithoutExposeAnnotation().setPrettyPrinting().create();
         return gson.toJson(items);
     }
 
-    public static void loadFromFile(File file) {
-        datasets.clear();
-        Gson gson = new Gson();
-        Charset charset = Charset.forName("US-ASCII");
-        try (var reader = Files.newBufferedReader(file.toPath(), charset)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                int equalsIndex = line.indexOf("= ");
-                String key = line.substring(0, equalsIndex);
-                String jsonStr = line.substring(equalsIndex + 2);
-                RemoteDataset dataset = datasetFromJson(key, jsonStr, gson);
-                datasets.add(dataset);
-            }
-        } catch (IOException x) {
-           log.warn(x.getMessage(), x);
-        }
-    }
-
     public static void loadListFromFile(File file) throws IOException {
         datasets.clear();
-        Gson gson = new Gson();
         String jsonStr = Files.readString(file.toPath());
         datasets = datasetsFromJson(jsonStr);
     }

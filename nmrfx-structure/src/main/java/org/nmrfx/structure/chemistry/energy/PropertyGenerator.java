@@ -1,14 +1,16 @@
 package org.nmrfx.structure.chemistry.energy;
 
-import java.util.*;
-import java.io.*;
-import java.text.NumberFormat;
-import java.text.DecimalFormat;
-
 import org.nmrfx.chemistry.*;
-import org.nmrfx.structure.chemistry.*;
+import org.nmrfx.structure.chemistry.HydrogenBond;
+import org.nmrfx.structure.chemistry.MissingCoordinatesException;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.*;
 
 public class PropertyGenerator {
 
@@ -27,8 +29,8 @@ public class PropertyGenerator {
     Map<String, Double> valueMap = new HashMap<>();
     private Molecule molecule;
     String[] residueNames = {"ALA", "ARG", "ASN", "ASP", "CYS", "GLU", "GLN",
-        "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR",
-        "TRP", "TYR", "VAL"};
+            "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR",
+            "TRP", "TYR", "VAL"};
 
     static {
         formatter.setMinimumFractionDigits(4);
@@ -475,7 +477,7 @@ public class PropertyGenerator {
     }
 
     public boolean getResidueProperties(Polymer polymer, Residue residue,
-            int structureNum) {
+                                        int structureNum) {
         valueMap.clear();
         Residue prevResidue = residue.previous;
         Residue nextResidue = residue.next;
@@ -573,7 +575,7 @@ public class PropertyGenerator {
     }
 
     public boolean getAtomProperties(Polymer polymer, int res, String resName,
-            String atomName, int structureNum) {
+                                     String atomName, int structureNum) {
         atomName = atomName.toUpperCase();
         String atomSpec = polymer.getName() + ":" + Integer.toString(res) + "." + atomName;
         Atom atom = molecule.findAtom(atomSpec);
@@ -726,7 +728,7 @@ public class PropertyGenerator {
              * so chemical_shift must come last in the list.
              */
 
- /*
+            /*
              * Warning: cludge ahead.
              * Because we have to define attributes now but don't see them until the third level of maps,
              * We have a flag to indicate whether or not we've defined the attributes. This should only happen once otherwise we're screwed.
@@ -821,7 +823,7 @@ public class PropertyGenerator {
         InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/predict/protein/resprops.txt");
         HashMap<String, HashMap<String, Double>> properties = new HashMap<String, HashMap<String, Double>>();
 
-        try ( BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
             String[] keys = null;
             while (true) {
                 String line = reader.readLine();
@@ -847,7 +849,7 @@ public class PropertyGenerator {
         InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/predict/protein/resfactors.txt");
         HashMap<String, double[]> map = new HashMap<>();
 
-        try ( var reader = new BufferedReader(new InputStreamReader(iStream))) {
+        try (var reader = new BufferedReader(new InputStreamReader(iStream))) {
             while (true) {
                 var line = reader.readLine();
                 if (line == null) {
@@ -952,7 +954,7 @@ public class PropertyGenerator {
     }
 
     public double[] getResidueShiftProps(Residue residue, int nNeighbors, int nFactors,
-            int iPPM, int iRef) throws IOException {
+                                         int iPPM, int iRef) throws IOException {
         String[] aNames = {"C", "CA", "CB", "N", "H", "HA", "HB"};
 
         Residue[] residues = new Residue[2 * nNeighbors + 1];

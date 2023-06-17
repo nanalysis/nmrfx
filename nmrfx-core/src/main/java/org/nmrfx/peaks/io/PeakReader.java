@@ -17,29 +17,23 @@
  */
 package org.nmrfx.peaks.io;
 
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.peaks.*;
+import org.python.util.PythonInterpreter;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.Measures;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.SpectralDim;
-import org.python.util.PythonInterpreter;
 
 /**
- *
  * @author Bruce Johnson
  */
+@PythonAPI("pscript")
 public class PeakReader {
 
     Map<Long, List<PeakDim>> resMap = null;
@@ -580,6 +574,7 @@ public class PeakReader {
      * and {123.h5''} -> 123.h5''
      * In this method, quote characters are any of the following four characters: ", ', {, }, Empty quotes are returned
      * as an empty string in the list.
+     *
      * @param line The String to parse.
      * @return The parsed String as a list.
      */
@@ -633,7 +628,7 @@ public class PeakReader {
 
     public static boolean hasSparkyDataHeight(String[] fields) {
         int nFields = fields.length;
-        return (nFields > 2) && fields[nFields - 2].equals("Data") && fields[nFields-1].equals("Height");
+        return (nFields > 2) && fields[nFields - 2].equals("Data") && fields[nFields - 1].equals("Height");
     }
 
     public static int countSparkyDims(String[] fields) {

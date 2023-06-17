@@ -6,7 +6,6 @@
 package org.nmrfx.structure.chemistry.energy;
 
 /**
- *
  * @author brucejohnson
  */
 public class ViolationStats {

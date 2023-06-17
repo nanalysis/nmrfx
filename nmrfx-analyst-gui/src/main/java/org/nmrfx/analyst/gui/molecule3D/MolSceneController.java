@@ -1,6 +1,5 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.concurrent.Service;
@@ -9,10 +8,8 @@ import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
-import javafx.scene.Scene;
 import javafx.scene.SubScene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -23,13 +20,14 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.molecule.AtomController;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.analyst.gui.molecule.SSViewer;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.fxutil.Fx;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
@@ -48,12 +46,14 @@ import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
-public class MolSceneController implements Initializable, MolSelectionListener, FreezeListener, ProgressUpdater {
+import static org.nmrfx.analyst.gui.molecule3D.MolSceneController.StructureCalculator.StructureMode.*;
+
+public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
+    private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
     private Stage stage;
     SSViewer ssViewer;
@@ -97,14 +97,13 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
 
     List<CheckMenuItem> atomCheckItems = new ArrayList<>();
 
-    static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     StackPane stackPane = new StackPane();
     Pane twoDPane = new Pane();
     Pane ligandCanvasPane;
     PeakList peakList = null;
     int itemIndex = 0;
-    private StructureCalculator calcStructure = new StructureCalculator();
+    private StructureCalculator structureCalculator = new StructureCalculator();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -184,7 +183,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             atomCheckItems.add(menuItem);
             atomMenu.getItems().add(menuItem);
             menuItem.selectedProperty().addListener(
-                    (ChangeListener<Boolean>) (a,b,c) -> updateAtoms(name, c.booleanValue()));
+                    (ChangeListener<Boolean>) (a, b, c) -> updateAtoms(name, c.booleanValue()));
         }
         Menu riboseMenu = new Menu("Ribose Atoms");
         atomMenu.getItems().add(riboseMenu);
@@ -193,7 +192,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             atomCheckItems.add(menuItem);
             riboseMenu.getItems().add(menuItem);
             menuItem.selectedProperty().addListener(
-                    (ChangeListener<Boolean>) (a,b,c) -> updateAtoms());
+                    (ChangeListener<Boolean>) (a, b, c) -> updateAtoms());
         }
     }
 
@@ -211,7 +210,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
 
     private void updateAtoms() {
         List<String> atomNames = new ArrayList<>();
-        for (var menuItem: atomCheckItems) {
+        for (var menuItem : atomCheckItems) {
             if (menuItem.isSelected()) {
                 atomNames.add(menuItem.getText());
             }
@@ -219,29 +218,21 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         ssViewer.updateAtoms(atomNames);
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
 
     public static MolSceneController create() {
-        FXMLLoader loader = new FXMLLoader(AtomController.class.getResource("/fxml/MolScene.fxml"));
-        MolSceneController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<MolSceneController>getController();
-            controller.stage = stage;
-            stage.setTitle("Molecular Viewer");
-            stage.show();
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
-
+        MolSceneController controller = Fxml.load(MolSceneController.class, "MolScene.fxml")
+                .withNewStage("Molecular Viewer")
+                .getController();
+        controller.stage.show();
         return controller;
-
     }
 
     @FXML
@@ -395,7 +386,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             if ((dotBracket.length() == nChars) && (nLeft == nRight)) {
                 dotBracketPane.setBackground(defaultBackground);
             } else {
-                dotBracketPane.setBackground(errorBackground);
+                dotBracketPane.setBackground(ERROR_BACKGROUND);
             }
 
         }
@@ -413,7 +404,6 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                         mol.setDotBracket(dotBracket);
                         layoutSS();
                     }
-                    //dotBracketField.clear();
                 }
             }
         } catch (InvalidMoleculeException ex) {
@@ -799,6 +789,19 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
 
     @FXML
     private void calcStructureAction() {
+        structureCalculator.setMode(ANNEAL);
+        calcStructure();
+    }
+
+    @FXML
+    private void refineStructureAction() {
+        structureCalculator.setMode(REFINE);
+        calcStructure();
+    }
+
+    @FXML
+    private void ssTo3D() {
+        structureCalculator.setMode(INIT);
         calcStructure();
     }
     @FXML
@@ -861,10 +864,10 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         GradientRefinement.setUpdater(this);
         setProcessingOn();
         statusBar.setProgress(0.0);
-        ((Service) calcStructure.worker).restart();
+        ((Service) structureCalculator.worker).restart();
     }
 
-    String getScript() {
+    String getScript(StructureCalculator.StructureMode mode) {
         StringBuilder scriptB = new StringBuilder();
         scriptB.append("homeDir = os.getcwd()\n");
         scriptB.append("print yamlString\n");
@@ -875,17 +878,21 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         scriptB.append("osfiles.setOutFiles(refiner,dataDir,0)\n");
         scriptB.append("refiner.rootName = 'temp'\n");
         scriptB.append("refiner.loadFromYaml(data,0)\n");
-        scriptB.append("refiner.anneal(refiner.dOpt)\n");
-//        scriptB.append("refiner.output()\n");
-
+        if (mode == INIT) {
+            scriptB.append("refiner.init(save=False)\n");
+        } else if (mode == REFINE) {
+            scriptB.append("refiner.refine(refiner.dOpt)\n");
+        } else if (mode == ANNEAL) {
+            scriptB.append("refiner.anneal(refiner.dOpt)\n");
+        }
         return scriptB.toString();
     }
 
-    String genYaml() {
+    String genYaml(StructureCalculator.StructureMode mode) {
         Molecule molecule = Molecule.getActive();
         boolean isRNA = molecule.getPolymers().get(0).isRNA();
         StringBuilder scriptB = new StringBuilder();
-        if (isRNA) {
+        if (isRNA & (mode == INIT || mode == ANNEAL)) {
             scriptB.append("rna:\n");
             scriptB.append("    ribose : Constrain\n");
             String dotBracket = molecule.getDotBracket();
@@ -893,33 +900,53 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                 scriptB.append("    vienna : ");
                 scriptB.append("'" + dotBracket + "'\n");
             }
+            scriptB.append("""
+                        planarity : 1
+                        autolink : True
+                    tree:
+                    initialize:
+                        vienna :
+                            restrain : True
+                            lockfirst: False
+                            locklast: False
+                            lockloop: False
+                            lockbulge: False
+                    """);
         }
-        scriptB.append("anneal:\n"
-                + "    dynOptions :\n"
-                + "        steps : 15000\n"
-                + "        highTemp : 5000.0\n"
-                + "        dfreeSteps : 0\n"
-                + "    force :\n"
-                + "        tors : 0.1\n"
-                + "        irp : 0.0\n"
-                + "    stage4.1 :\n"
-                + "        nStepVal : 5000\n"
-                + "        tempVal : [100.0]\n"
-                + "        param:\n"
-                + "            dislim : 6.0\n"
-                + "        force :\n"
-                + "            cffnb : 1\n"
-                + "            repel : -1\n"
+        scriptB.append("""
+                anneal:
+                    dynOptions :
+                        steps : 15000
+                        highTemp : 5000.0
+                        dfreeSteps : 0
+                    force :
+                        tors : 0.1
+                        irp : 0.0
+                    stage4.1 :
+                        nStepVal : 5000
+                        tempVal : [100.0]
+                        param:
+                            dislim : 6.0
+                        force :
+                            cffnb : 1
+                            repel : -1"""
         );
 
         return scriptB.toString();
 
     }
 
-    private class StructureCalculator {
+    class StructureCalculator {
+        enum StructureMode {INIT, REFINE, ANNEAL}
 
+        ;
         String script;
         public Worker<Integer> worker;
+        StructureMode mode;
+
+        public void setMode(StructureMode mode) {
+            this.mode = mode;
+        }
 
         private StructureCalculator() {
             worker = new Service<Integer>() {
@@ -927,12 +954,12 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                 protected Task createTask() {
                     return new Task() {
                         protected Object call() {
-                            script = getScript();
+                            script = getScript(mode);
                             try (PythonInterpreter processInterp = new PythonInterpreter()) {
                                 updateStatus("Start calculating");
                                 updateTitle("Start calculating");
                                 processInterp.exec("import os\nfrom refine import *\nfrom molio import readYamlString\nimport osfiles");
-                                processInterp.set("yamlString", genYaml());
+                                processInterp.set("yamlString", genYaml(mode));
                                 processInterp.exec(script);
                             }
                             return 0;
@@ -964,15 +991,10 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
 
     @Override
     public void updateStatus(String s) {
-        if (Platform.isFxApplicationThread()) {
+        Fx.runOnFxThread(() -> {
             setProcessingStatus(s, true);
             updateView();
-        } else {
-            Platform.runLater(() -> {
-                setProcessingStatus(s, true);
-                updateView();
-            });
-        }
+        });
     }
 
     void updateView() {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,11 @@
 
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@PluginAPI("ring")
 public class PDBAtomParser extends AtomParser {
 
     private static final Logger log = LoggerFactory.getLogger(PDBAtomParser.class);
@@ -54,19 +56,19 @@ public class PDBAtomParser extends AtomParser {
 // ATOM    638  CB ASER A  80      -0.514   7.537  -7.632  0.65 14.13           C
 // ATOM      0 1HG1AILE A  73       5.060   0.096  -2.792  0.65 13.79           H   new
 
-// 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+    // 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
     public PDBAtomParser(String string, boolean swapToIUPAC) {
         resNum = string.substring(22, 26).trim();
         insertCode = string.substring(26, 27);
 // resName should only be in columns 17-19, but cyana uses four characters for rna/dna
         resName = string.substring(17, 21).trim();
         atomName = string.substring(12, 17);  // CYANA sticks ' char for atoms like HO2' in pos 16
-        elemName = atomName.substring(0,2).trim();
+        elemName = atomName.substring(0, 2).trim();
         if (Character.isDigit(elemName.charAt(0)) || ((elemName.charAt(0) == 'H') && (atomName.trim().length() == 4))) {
             elemName = "H";
         }
-        
-        
+
+
         atomNum = string.substring(7, 11).trim();
         if (atomName.charAt(4) != '\'') {     // kluge for cyana
             atomName = atomName.substring(0, 4);

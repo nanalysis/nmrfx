@@ -4,7 +4,7 @@
 
     <groupId>org.nmrfx</groupId>
     <artifactId>nmrfx</artifactId>
-    <version>11.3.3-SNAPSHOT</version>
+    <version>11.3.4-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -21,8 +21,6 @@
         <module>nmrfx-utils</module>
         <module>nmrfx-core</module>
         <module>nmrfx-plugin-api</module>
-        <module>nmrfx-processor</module>
-        <module>nmrfx-processor-gui</module>
         <module>nmrfx-structure</module>
         <module>nmrfx-analyst</module>
         <module>nmrfx-analyst-gui</module>
