@@ -1514,7 +1514,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             contentController.update();
             viewProcessorControllerIfPossible = false;
         } else if (processorButton.isSelected()) {
-            // separate method for adding to rightContentPane as processor controller has additional setup
             nmrControlRightSidePane.addContent(getActiveChart().getProcessorController(true));
             viewProcessorControllerIfPossible = true;
         } else {
