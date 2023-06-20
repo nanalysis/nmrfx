@@ -406,11 +406,11 @@ public final class NMRDataUtil {
                     if (data != null) {
                         Path path2 = Paths.get(fileName);
                         Path path3 = path1.relativize(path2);
-                        DatasetSummary rData = data.getDatasetSummary();
-                        rData.setPath(path3.toString());
-                        rData.setPresent(true);
-                        rData.setProcessed(getProcessedDataset(path2.toFile()));
-                        items.add(rData);
+                        DatasetSummary datasetSummary = data.getDatasetSummary();
+                        datasetSummary.setPath(path3.toString());
+                        datasetSummary.setPresent(true);
+                        datasetSummary.setProcessed(getProcessedDataset(path2.toFile()));
+                        items.add(datasetSummary);
                     }
                 } catch (IOException | IllegalArgumentException ex) {
                     log.warn(ex.getMessage(), ex);

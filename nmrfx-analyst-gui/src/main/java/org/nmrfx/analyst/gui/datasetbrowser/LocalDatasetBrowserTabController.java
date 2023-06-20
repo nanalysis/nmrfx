@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class LocalDatasetBrowserTabController extends DatasetBrowserTabController {
-    private static final Logger log = LoggerFactory.getLogger(LocalDatasetBrowserTabController.class);
     private static final String TAB_NAME = "Local";
     private final Consumer<String> taskStatusUpdater;
     private final FileSystem fileSystem = FileSystems.getDefault();

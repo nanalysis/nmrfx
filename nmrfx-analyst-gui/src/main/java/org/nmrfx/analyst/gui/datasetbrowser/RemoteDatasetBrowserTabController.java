@@ -60,6 +60,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
                 remoteDatasetAccess.connect();
             } catch (JSchException ex) {
                 GUIUtils.warn("Remote Access", "Can't open session " + ex.getMessage());
+                log.error(ex.getMessage(), ex);
                 return false;
             }
         }
@@ -78,6 +79,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
                 Files.createDirectories(pathToLocalCache);
             } catch (IOException ex) {
                 GUIUtils.warn("Fetch", "Can't create directory");
+                log.error(ex.getMessage(), ex);
                 return;
             }
         }
@@ -151,6 +153,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
                 } catch (IOException ex) {
                     var title = "Retrieve Selected Data";
                     GUIUtils.warn(title, "Error: " + ex.getMessage());
+                    log.error(ex.getMessage(), ex);
                     break;
                 }
             }
@@ -164,30 +167,32 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
     @Override
     protected void openFile(boolean useFID) {
         DatasetSummary datasetSummary = tableView.getSelectionModel().getSelectedItem();
-        if (datasetSummary != null) {
-            String fileName = datasetSummary.getPath();
-            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-            try {
-                if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
-                    File localDataset = fileSystem.getPath(pathToLocalCache.toString(), fileName, datasetSummary.getProcessed()).toFile();
-                    if (localDataset.exists()) {
-                        controller.openDataset(localDataset, false, true);
-                    }
-                } else {
-                    if (!datasetSummary.isPresent()) {
-                        if (initRemoteDatasetAccess()) {
-                            fetchDatasetFromServer(datasetSummary);
-                        } else {
-                            return;
-                        }
-                    }
-                    File localFile = fileSystem.getPath(pathToLocalCache.toString(), fileName).toFile();
-                    controller.openFile(localFile.toString(), true, false);
+        if (datasetSummary == null) {
+            return;
+        }
+        String fileName = datasetSummary.getPath();
+        FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+        try {
+            if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
+                File localDataset = fileSystem.getPath(pathToLocalCache.toString(), fileName, datasetSummary.getProcessed()).toFile();
+                if (localDataset.exists()) {
+                    controller.openDataset(localDataset, false, true);
                 }
-            } catch (IOException ex) {
-                String mode = useFID ? "FID" : "Dataset";
-                GUIUtils.warn("Open " + mode, "Error opening: " + ex.getMessage());
+            } else {
+                if (!datasetSummary.isPresent()) {
+                    if (initRemoteDatasetAccess()) {
+                        fetchDatasetFromServer(datasetSummary);
+                    } else {
+                        return;
+                    }
+                }
+                File localFile = fileSystem.getPath(pathToLocalCache.toString(), fileName).toFile();
+                controller.openFile(localFile.toString(), true, false);
             }
+        } catch (IOException ex) {
+            String mode = useFID ? "FID" : "Dataset";
+            GUIUtils.warn("Open " + mode, "Error opening: " + ex.getMessage());
+            log.error(ex.getMessage(), ex);
         }
     }
 

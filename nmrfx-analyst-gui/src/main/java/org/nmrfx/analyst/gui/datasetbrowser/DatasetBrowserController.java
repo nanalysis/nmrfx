@@ -18,7 +18,6 @@
 
 package org.nmrfx.analyst.gui.datasetbrowser;
 
-import javafx.beans.Observable;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;

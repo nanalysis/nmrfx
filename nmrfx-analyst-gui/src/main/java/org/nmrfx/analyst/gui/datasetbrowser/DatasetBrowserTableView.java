@@ -17,7 +17,7 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
         TableColumn<DatasetSummary, String> userCol = new TableColumn<>("User");
         userCol.setCellValueFactory(new PropertyValueFactory<>("User"));
 
-        TableColumn<DatasetSummary, Boolean> presentCol = new TableColumn<>("Cached");
+        TableColumn<DatasetSummary, Boolean> presentCol = new TableColumn<>("InCache");
         presentCol.setCellValueFactory(new PropertyValueFactory<>("Present"));
 
         TableColumn<DatasetSummary, String> processedCol = new TableColumn<>("Dataset");
