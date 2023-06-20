@@ -26,8 +26,6 @@ import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 import java.net.URL;
@@ -43,25 +41,25 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
     private Stage stage;
     @FXML
     private TabPane datasetBrowserTabPane;
-    private RemoteDatasetBrowserTab remoteDatasetBrowserTab;
-    private LocalDatasetBrowserTab localDatasetBrowserTab;
+    private RemoteDatasetBrowserTabController remoteDatasetBrowserTab;
+    private LocalDatasetBrowserTabController localDatasetBrowserTab;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        localDatasetBrowserTab = new LocalDatasetBrowserTab(stageTitle -> stage.setTitle(stageTitle));
-        datasetBrowserTabPane.getTabs().add(localDatasetBrowserTab);
-        remoteDatasetBrowserTab = new RemoteDatasetBrowserTab();
-        datasetBrowserTabPane.getTabs().add(remoteDatasetBrowserTab);
-        remoteDatasetBrowserTab.setDisable(remotePreferencesUnavailable());
-        AnalystPrefs.getRemoteHostNameProperty().addListener(this::remotePreferencesListener);
-        AnalystPrefs.getRemoteUserNameProperty().addListener(this::remotePreferencesListener);
+        localDatasetBrowserTab = new LocalDatasetBrowserTabController(stageTitle -> stage.setTitle(stageTitle));
+        datasetBrowserTabPane.getTabs().add(localDatasetBrowserTab.getTab());
+        remoteDatasetBrowserTab = new RemoteDatasetBrowserTabController();
+        datasetBrowserTabPane.getTabs().add(remoteDatasetBrowserTab.getTab());
+        remoteDatasetBrowserTab.getTab().setDisable(remotePreferencesUnavailable());
+        AnalystPrefs.getRemoteHostNameProperty().addListener(e -> remotePreferencesListener());
+        AnalystPrefs.getRemoteUserNameProperty().addListener(e -> remotePreferencesListener());
     }
 
-    private void remotePreferencesListener(Observable observable) {
+    private void remotePreferencesListener() {
         boolean remoteUnavailable = remotePreferencesUnavailable();
-        remoteDatasetBrowserTab.setDisable(remoteUnavailable);
-        if (remoteUnavailable && datasetBrowserTabPane.getSelectionModel().getSelectedItem() == remoteDatasetBrowserTab) {
-            datasetBrowserTabPane.getSelectionModel().select(localDatasetBrowserTab);
+        remoteDatasetBrowserTab.getTab().setDisable(remoteUnavailable);
+        if (remoteUnavailable && datasetBrowserTabPane.getSelectionModel().getSelectedItem() == remoteDatasetBrowserTab.getTab()) {
+            datasetBrowserTabPane.getSelectionModel().select(localDatasetBrowserTab.getTab());
         }
     }
 

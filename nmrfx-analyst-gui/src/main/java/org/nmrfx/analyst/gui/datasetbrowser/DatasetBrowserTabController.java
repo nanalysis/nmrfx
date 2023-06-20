@@ -11,7 +11,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 
-public abstract class DatasetBrowserTab extends Tab {
+public abstract class DatasetBrowserTabController {
+    private final Tab tab;
     protected final BorderPane borderPane = new BorderPane();
     protected final VBox vBox = new VBox();
     protected final ToolBar toolBar = new ToolBar();
@@ -21,9 +22,8 @@ public abstract class DatasetBrowserTab extends Tab {
     protected Button datasetButton;
     protected Button fetchButton;
 
-    public DatasetBrowserTab (String tabName) {
-        super(tabName);
-        setContent(borderPane);
+    protected DatasetBrowserTabController(String tabName) {
+        tab = new Tab(tabName, borderPane);
         hBox.getChildren().add(directoryTextField);
         vBox.getChildren().addAll(toolBar, hBox);
         borderPane.setTop(vBox);
@@ -61,7 +61,7 @@ public abstract class DatasetBrowserTab extends Tab {
 
     /**
      * Opens the selected file.
-     * @param isFid
+     * @param isFid Whether to open as FID or not
      */
     protected void openFile(boolean isFid) {}
 
@@ -71,4 +71,8 @@ public abstract class DatasetBrowserTab extends Tab {
 
 
     protected void updatePreferences() {}
+
+    public Tab getTab() {
+        return tab;
+    }
 }

@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -27,14 +26,14 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class LocalDatasetBrowserTab extends DatasetBrowserTab {
-    private static final Logger log = LoggerFactory.getLogger(LocalDatasetBrowserTab.class);
+public class LocalDatasetBrowserTabController extends DatasetBrowserTabController {
+    private static final Logger log = LoggerFactory.getLogger(LocalDatasetBrowserTabController.class);
     private static final String TAB_NAME = "Local";
     private final Consumer<String> taskStatusUpdater;
     private final FileSystem fileSystem = FileSystems.getDefault();
 
 
-    public LocalDatasetBrowserTab(Consumer<String> taskStatusUpdater) {
+    public LocalDatasetBrowserTabController(Consumer<String> taskStatusUpdater) {
         super(TAB_NAME);
         tableView = new DatasetBrowserTableView(false);
         borderPane.setCenter(tableView);

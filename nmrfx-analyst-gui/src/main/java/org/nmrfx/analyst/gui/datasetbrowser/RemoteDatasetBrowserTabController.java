@@ -22,14 +22,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-public class RemoteDatasetBrowserTab extends DatasetBrowserTab {
-    private static final Logger log = LoggerFactory.getLogger(RemoteDatasetBrowserTab.class);
+public class RemoteDatasetBrowserTabController extends DatasetBrowserTabController {
+    private static final Logger log = LoggerFactory.getLogger(RemoteDatasetBrowserTabController.class);
     private static final String TAB_NAME = "Remote";
     private final FileSystem fileSystem = FileSystems.getDefault();
     private final Path pathToLocalCache = fileSystem.getPath(System.getProperty("user.home"), "NMRFx_Remote_Datasets", "data");
     private RemoteDatasetAccess remoteDatasetAccess;
 
-    public RemoteDatasetBrowserTab() {
+    public RemoteDatasetBrowserTabController() {
         super(TAB_NAME);
         tableView = new DatasetBrowserTableView(true);
         borderPane.setCenter(tableView);
@@ -55,8 +55,6 @@ public class RemoteDatasetBrowserTab extends DatasetBrowserTab {
                 }
             }
         }
-        // TODO this seems like a bug, remoteDatasetAccess is still set but was unable to connect, the next time this method
-        //   is called it will return true without, options recreate the whole object again..or just use existing object and attempt to connect again, not sure which one is best
         if (!remoteDatasetAccess.isConnected()) {
             try {
                 remoteDatasetAccess.connect();
@@ -143,21 +141,18 @@ public class RemoteDatasetBrowserTab extends DatasetBrowserTab {
     protected void cacheDatasets() {
         var datasetSummaries = tableView.getSelectionModel().getSelectedItems();
         for (var datasetSummary : datasetSummaries) {
-            if (datasetSummary != null) {
-                if (!datasetSummary.isPresent()) {
-                    try {
-                        if (initRemoteDatasetAccess()) {
-                           fetchDatasetFromServer(datasetSummary);
-                        } else {
-                            return;
-                        }
-                    } catch (IOException ex) {
-                        var title = "Retrieve Selected Data";
-                        GUIUtils.warn(title, "Error: " + ex.getMessage());
-                        break;
+            if (datasetSummary != null && !datasetSummary.isPresent()) {
+                try {
+                    if (initRemoteDatasetAccess()) {
+                       fetchDatasetFromServer(datasetSummary);
+                    } else {
+                        return;
                     }
+                } catch (IOException ex) {
+                    var title = "Retrieve Selected Data";
+                    GUIUtils.warn(title, "Error: " + ex.getMessage());
+                    break;
                 }
-
             }
         }
     }
