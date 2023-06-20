@@ -1,10 +1,7 @@
 package org.nmrfx.processor.gui;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -12,43 +9,53 @@ import javafx.scene.layout.StackPane;
 /**
  * Pane to appear on right side of NMRScene that is only meant to contain a single child at a time.
  */
-public class NmrControlRightSidePane extends BorderPane {
+public class NmrControlRightSidePane extends StackPane {
     private static final double MINIMUM_WIDTH_OF_CHILDREN = 400;
 
     public NmrControlRightSidePane() {
-        centerProperty().addListener((observable, oldValue, newValue) -> {
-            if (oldValue != null) {
-               oldValue.setVisible(false);
-            }
-            if (newValue instanceof Region addedRegion) {
-                addedRegion.setMinWidth(MINIMUM_WIDTH_OF_CHILDREN);
-                addedRegion.setVisible(true);
+        // Adjust sizing and visibility when contents of the pane change
+        getChildren().addListener((ListChangeListener<Node>) c -> {
+            while(c.next()) {
+                if (!c.getRemoved().isEmpty()) {
+                    c.getRemoved().get(0).setVisible(false);
+                }
+                if (!c.getAddedSubList().isEmpty()) {
+                    Region addedRegion = (Region) c.getAddedSubList().get(0);
+                    addedRegion.setMinWidth(MINIMUM_WIDTH_OF_CHILDREN);
+                    addedRegion.setVisible(true);
+                }
             }
         });
+
     }
 
     public boolean isContentShowing(NmrControlRightSideContent content) {
-        return content != null && getCenter() == content.getPane();
+        return content != null && getChildren().contains(content.getPane());
     }
 
     public void clear() {
-        setCenter(null);
+        getChildren().clear();
     }
 
     public void addContent(NmrControlRightSideContent content) {
-        setCenter(content.getPane());
+        clear();
+        getChildren().add(content.getPane());
     }
 
     public void removeContent(NmrControlRightSideContent content) {
         getChildren().remove(content.getPane());
     }
 
+    public int size() {
+        return getChildren().size();
+    }
+
     public boolean hasContent() {
-        return getCenter() != null;
+        return !getChildren().isEmpty();
     }
 
     public Pane getContentPane() {
-        return hasContent() ? (Pane) getCenter() : null;
+        return hasContent() ? (Pane) getChildren().get(0) : null;
     }
 
     public void addContentListener(ListChangeListener<Node> contentListener) {
