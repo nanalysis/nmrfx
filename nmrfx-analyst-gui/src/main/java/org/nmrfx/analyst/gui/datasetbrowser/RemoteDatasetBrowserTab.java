@@ -83,7 +83,7 @@ public class RemoteDatasetBrowserTab extends DatasetBrowserTab {
                 return;
             }
         }
-        File localFile = fileSystem.getPath(pathToLocalCache.getParent().toString(), "nmrfx_index.json").toFile();
+        File localFile = fileSystem.getPath(pathToLocalCache.getParent().toString(), DatasetSummary.DATASET_SUMMARY_INDEX_FILENAME).toFile();
         String remoteFile = directoryTextField.getText() + "/scripts/test.json";
         if (initRemoteDatasetAccess()) {
             boolean ok = remoteDatasetAccess.fetchFile(remoteFile, localFile);
@@ -104,11 +104,11 @@ public class RemoteDatasetBrowserTab extends DatasetBrowserTab {
         if (localFile.exists()) {
             try {
                 DatasetSummary.loadListFromFile(localFile);
-                items.addAll(DatasetSummary.getDatasets());
+                items.addAll(DatasetSummary.loadListFromFile(localFile));
             } catch (IOException ex) {
                 log.warn(ex.getMessage(), ex);
             }
-            scanDirectory(DatasetSummary.getDatasets());
+            scanDirectory(items);
         }
         tableView.setItems(items);
     }
@@ -118,7 +118,7 @@ public class RemoteDatasetBrowserTab extends DatasetBrowserTab {
      * @return The local index File
      */
     private File getLocalIndexFile() {
-        return fileSystem.getPath(pathToLocalCache.getParent().toString(), "nmrfx_index.json").toFile();
+        return fileSystem.getPath(pathToLocalCache.getParent().toString(), DatasetSummary.DATASET_SUMMARY_INDEX_FILENAME).toFile();
     }
 
     /**

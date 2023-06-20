@@ -61,11 +61,11 @@ public class LocalDatasetBrowserTab extends DatasetBrowserTab {
 
     /**
      * Scans the directory provided in directoryTextField for datasets and creates a list of DatasetSummary objects
-     * which is used to update the nmrfx_index.json and the tableview.
+     * which is used to update the index file and the tableview.
      */
     private void scanTask() {
         final String scanDir = directoryTextField.getText();
-        final Path outPath = Paths.get(scanDir, "nmrfx_index.json");
+        final Path outPath = Paths.get(scanDir, DatasetSummary.DATASET_SUMMARY_INDEX_FILENAME);
         
         Task<List<DatasetSummary>> task = new Task<>() {
             @Override

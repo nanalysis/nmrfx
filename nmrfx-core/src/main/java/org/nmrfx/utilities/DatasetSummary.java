@@ -20,7 +20,7 @@ import java.util.List;
 public class DatasetSummary {
 
     private static final Logger log = LoggerFactory.getLogger(DatasetSummary.class);
-    private static List<DatasetSummary> datasets = new ArrayList<>();
+    public static final String DATASET_SUMMARY_INDEX_FILENAME = "nmrfx_index.json";
 
     @Expose
     private String path;
@@ -331,9 +331,8 @@ public class DatasetSummary {
 
     public static List<DatasetSummary> datasetsFromJson(String jsonString) {
         Gson gson = new Gson();
-        List<DatasetSummary> list = gson.fromJson(jsonString, new TypeToken<List<DatasetSummary>>() {
+        return gson.fromJson(jsonString, new TypeToken<List<DatasetSummary>>() {
         }.getType());
-        return list;
     }
 
     public static String toJson(List<DatasetSummary> items) {
@@ -342,10 +341,9 @@ public class DatasetSummary {
         return gson.toJson(items);
     }
 
-    public static void loadListFromFile(File file) throws IOException {
-        datasets.clear();
+    public static List<DatasetSummary> loadListFromFile(File file) throws IOException {
         String jsonStr = Files.readString(file.toPath());
-        datasets = datasetsFromJson(jsonStr);
+        return datasetsFromJson(jsonStr);
     }
 
     public static void saveItems(Path outPath, List<DatasetSummary> items) {
@@ -356,10 +354,6 @@ public class DatasetSummary {
             log.warn(ex.getMessage(), ex);
         }
 
-    }
-
-    public static List<DatasetSummary> getDatasets() {
-        return datasets;
     }
 
 }
