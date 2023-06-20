@@ -4,7 +4,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.RangeSlider?>
-<VBox xmlns="http://javafx.com/javafx"
+<VBox fx:id="attributesVBox"
+      xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="org.nmrfx.processor.gui.AttributesController"
 >
@@ -19,7 +20,7 @@
             <ChoiceBox fx:id="datasetChoiceBox" maxWidth="225"/>
             <ChoiceBox fx:id="peakListChoiceBox" maxWidth="225"/>
         </VBox>
-        <ScrollPane fx:id="attributeScrollPane" fitToHeight="true" fitToWidth="true" maxWidth="245">
+        <ScrollPane fx:id="attributeScrollPane" fitToHeight="true" fitToWidth="true">
             <Accordion fx:id="attributesAccordion">
                 <panes>
                     <TitledPane text="View">

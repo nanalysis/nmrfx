@@ -17,8 +17,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -54,7 +52,6 @@ import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
 import org.greenrobot.eventbus.EventBus;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.processor.datasets.Dataset;
@@ -89,7 +86,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ProcessorController implements Initializable, ProgressUpdater {
+public class ProcessorController implements Initializable, ProgressUpdater, NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
     private static final String[] BASIC_OPS = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
@@ -111,9 +108,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
-    Pane processorPane;
-    Pane pane;
-
+    NmrControlRightSidePane nmrControlRightSidePane;
+    @FXML
+    private BorderPane mainBox;
     @FXML
     private ToolBar toolBar;
     @FXML
@@ -233,38 +230,26 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     ScheduledFuture futureUpdate = null;
 
 
-    public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
-        Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml")
-                .withParent(processorPane);
+    public static ProcessorController create(FXMLController fxmlController, NmrControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
+        Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml");
         ProcessorController controller = builder.getController();
 
         controller.chart = chart;
         chart.setProcessorController(controller);
         controller.chartProcessor.setChart(chart);
         controller.chartProcessor.setFxmlController(fxmlController);
-        controller.processorPane = processorPane;
-        controller.pane = builder.getNode();
-        fxmlController.processorCreated(controller.pane);
-
+        controller.nmrControlRightSidePane = nmrControlRightSidePane;
+        fxmlController.processorCreated(controller.mainBox);
+        nmrControlRightSidePane.addContent(controller);
         return controller;
     }
 
-    public void show() {
-        if (processorPane.getChildren().isEmpty()) {
-            processorPane.getChildren().add(pane);
-            pane.setVisible(true);
-        }
-    }
-
-    public void hide() {
-        if (!processorPane.getChildren().isEmpty()) {
-            processorPane.getChildren().clear();
-            pane.setVisible(false);
-        }
+    public Pane getPane() {
+        return mainBox;
     }
 
     public boolean isVisible() {
-        return pane.isVisible();
+        return mainBox.isVisible();
     }
 
     public PropertyManager getPropertyManager() {
