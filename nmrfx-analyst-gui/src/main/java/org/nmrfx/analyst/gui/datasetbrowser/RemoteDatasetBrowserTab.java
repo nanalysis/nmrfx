@@ -1,0 +1,227 @@
+package org.nmrfx.analyst.gui.datasetbrowser;
+
+import com.jcraft.jsch.JSchException;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.AnalystPrefs;
+import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.utilities.DatasetSummary;
+import org.nmrfx.utilities.RemoteDatasetAccess;
+import org.nmrfx.utilities.UnZipper;
+import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+public class RemoteDatasetBrowserTab extends DatasetBrowserTab {
+    private static final Logger log = LoggerFactory.getLogger(RemoteDatasetBrowserTab.class);
+    private static final String TAB_NAME = "Remote";
+    private final FileSystem fileSystem = FileSystems.getDefault();
+    private final Path pathToLocalCache = fileSystem.getPath(System.getProperty("user.home"), "NMRFx_Remote_Datasets", "data");
+    private RemoteDatasetAccess remoteDatasetAccess;
+
+    public RemoteDatasetBrowserTab() {
+        super(TAB_NAME);
+        tableView = new DatasetBrowserTableView(true);
+        borderPane.setCenter(tableView);
+        initToolbar(true);
+        directoryTextField.setText(AnalystPrefs.getRemoteDirectory());
+    }
+
+    /**
+     * Create a RemoteDatasetAccess object and try to connect.
+     * @return True if remoteDatasetAccess is connected, otherwise false.
+     */
+    private boolean initRemoteDatasetAccess() {
+        if (remoteDatasetAccess == null) {
+            String remoteHost = AnalystPrefs.getRemoteHostName();
+            String remoteUser = AnalystPrefs.getRemoteUserName();
+
+            remoteDatasetAccess = new RemoteDatasetAccess(remoteUser, remoteHost);
+            boolean usePassword = AnalystPrefs.getUseRemotePassword();
+            if (usePassword && !remoteDatasetAccess.passwordValid()) {
+                String pw = GUIUtils.getPassword();
+                if (pw != null) {
+                    remoteDatasetAccess.setPassword(pw);
+                }
+            }
+        }
+        // TODO this seems like a bug, remoteDatasetAccess is still set but was unable to connect, the next time this method
+        //   is called it will return true without, options recreate the whole object again..or just use existing object and attempt to connect again, not sure which one is best
+        if (!remoteDatasetAccess.isConnected()) {
+            try {
+                remoteDatasetAccess.connect();
+            } catch (JSchException ex) {
+                GUIUtils.warn("Remote Access", "Can't open session " + ex.getMessage());
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Retrieve the index file from the remote directory and copy it to the local directory. Populate the tableview
+     * with the contents of the index file.
+     */
+    @Override
+    protected void retrieveIndex() {
+        File dir = pathToLocalCache.toFile();
+        if (!dir.exists()) {
+            try {
+                Files.createDirectories(pathToLocalCache);
+            } catch (IOException ex) {
+                GUIUtils.warn("Fetch", "Can't create directory");
+                return;
+            }
+        }
+        File localFile = fileSystem.getPath(pathToLocalCache.getParent().toString(), "nmrfx_index.json").toFile();
+        String remoteFile = directoryTextField.getText() + "/scripts/test.json";
+        if (initRemoteDatasetAccess()) {
+            boolean ok = remoteDatasetAccess.fetchFile(remoteFile, localFile);
+            if (ok) {
+                loadIndex();
+            }
+        }
+    }
+
+    /**
+     * Update the preferences and populate the tableview with the contents of the index file.
+     */
+    @Override
+    protected void loadIndex() {
+        updatePreferences();
+        File localFile = getLocalIndexFile();
+        ObservableList<DatasetSummary> items = FXCollections.observableArrayList();
+        if (localFile.exists()) {
+            try {
+                DatasetSummary.loadListFromFile(localFile);
+                items.addAll(DatasetSummary.getDatasets());
+            } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
+            }
+            scanDirectory(DatasetSummary.getDatasets());
+        }
+        tableView.setItems(items);
+    }
+
+    /**
+     * Create the localIndexFile based on the fileName and the local cache directory.
+     * @return The local index File
+     */
+    private File getLocalIndexFile() {
+        return fileSystem.getPath(pathToLocalCache.getParent().toString(), "nmrfx_index.json").toFile();
+    }
+
+    /**
+     * Iterate over a list of DatasetSummary and set the processed and present values for each summary based on the contents
+     * of the datasets in the local cache directory.
+     * @param items The DatasetSummary objects to set.
+     */
+    void scanDirectory(List<DatasetSummary> items) {
+        String localPathString = pathToLocalCache.toString();
+        for (DatasetSummary datasetSummary : items) {
+            String fileName = datasetSummary.getPath();
+            File localFile = fileSystem.getPath(localPathString, fileName).toFile();
+            datasetSummary.setProcessed(NMRDataUtil.getProcessedDataset(localFile));
+            datasetSummary.setPresent(localFile.exists());
+        }
+    }
+
+    /**
+     * Fetch datasets for any of the selected items in the tableview that do not have a local copy.
+     */
+    @Override
+    protected void cacheDatasets() {
+        var datasetSummaries = tableView.getSelectionModel().getSelectedItems();
+        for (var datasetSummary : datasetSummaries) {
+            if (datasetSummary != null) {
+                if (!datasetSummary.isPresent()) {
+                    try {
+                        if (initRemoteDatasetAccess()) {
+                           fetchDatasetFromServer(datasetSummary);
+                        } else {
+                            return;
+                        }
+                    } catch (IOException ex) {
+                        var title = "Retrieve Selected Data";
+                        GUIUtils.warn(title, "Error: " + ex.getMessage());
+                        break;
+                    }
+                }
+
+            }
+        }
+    }
+
+    /**
+     * Opens the dataset or fid file. If the file is not present locally, it is fetched from the server before opening.
+     * @param useFID Whether to open the fid of the file or the dataset.
+     */
+    @Override
+    protected void openFile(boolean useFID) {
+        DatasetSummary datasetSummary = tableView.getSelectionModel().getSelectedItem();
+        if (datasetSummary != null) {
+            String fileName = datasetSummary.getPath();
+            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+            try {
+                if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
+                    File localDataset = fileSystem.getPath(pathToLocalCache.toString(), fileName, datasetSummary.getProcessed()).toFile();
+                    if (localDataset.exists()) {
+                        controller.openDataset(localDataset, false, true);
+                    }
+                } else {
+                    if (!datasetSummary.isPresent()) {
+                        if (initRemoteDatasetAccess()) {
+                            fetchDatasetFromServer(datasetSummary);
+                        } else {
+                            return;
+                        }
+                    }
+                    File localFile = fileSystem.getPath(pathToLocalCache.toString(), fileName).toFile();
+                    controller.openFile(localFile.toString(), true, false);
+                }
+            } catch (IOException ex) {
+                String mode = useFID ? "FID" : "Dataset";
+                GUIUtils.warn("Open " + mode, "Error opening: " + ex.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Fetch a dataset from the remote server and set the present value in the provided DatasetSummary;
+     * @param datasetSummary The DatasetSummary of the dataset being fetched.
+     * @throws IOException If unable to unzip the file.
+     */
+    private void fetchDatasetFromServer (DatasetSummary datasetSummary) throws IOException {
+        String fileName = datasetSummary.getPath();
+        File file = new File(fileName);
+        String fileRoot = file.getParent();
+        String remoteFile = directoryTextField.getText() + "/data/" + fileRoot + ".zip";
+        File localZipFile = fileSystem.getPath(pathToLocalCache.toString(), fileRoot + ".zip").toFile();
+        remoteDatasetAccess.fetchFile(remoteFile, localZipFile);
+        File localFileDir = fileSystem.getPath(pathToLocalCache.toString(), fileRoot).toFile();
+        UnZipper unZipper = new UnZipper(localFileDir, localZipFile.toString());
+        unZipper.unzip();
+        Files.delete(localZipFile.toPath());
+        datasetSummary.setPresent(true);
+        tableView.refresh();
+    }
+
+    /**
+     * Update the remote directory in preferences with the value from the directoryTextField.
+     */
+    @Override
+    protected void updatePreferences() {
+        AnalystPrefs.setRemoteDirectory(directoryTextField.getText());
+    }
+    
+}

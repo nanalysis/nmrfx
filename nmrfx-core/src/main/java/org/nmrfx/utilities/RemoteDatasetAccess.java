@@ -10,13 +10,13 @@ import java.nio.file.FileSystems;
  * @author brucejohnson
  */
 public class RemoteDatasetAccess {
-    private static final int REMOTE_PORT = 22;
+    private static final int REMOTE_PORT = 5679;
     private static final int SESSION_TIMEOUT = 10000;
     private static final int CHANNEL_TIMEOUT = 5000;
 
     public String userName = "";
     public String remoteHost = "";
-    JSch jsch = new JSch();
+    JSch jsch;
     String userdir = System.getProperty("user.home");
     FileSystem fileSystem = FileSystems.getDefault();
     Session jschSession = null;
@@ -27,6 +27,8 @@ public class RemoteDatasetAccess {
     public RemoteDatasetAccess(String userName, String remoteHost) {
         this.userName = userName;
         this.remoteHost = remoteHost;
+        JSch.setConfig("StrictHostKeyChecking", "no");
+        jsch = new JSch();
     }
 
     public void connect() throws JSchException {
@@ -96,6 +98,10 @@ public class RemoteDatasetAccess {
             }
         }
         return true;
+    }
+
+    public boolean isConnected() {
+        return jschSession != null && jschSession.isConnected();
     }
 
 }

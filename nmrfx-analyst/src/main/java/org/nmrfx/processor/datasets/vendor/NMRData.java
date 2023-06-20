@@ -30,7 +30,7 @@ import org.nmrfx.processor.datasets.vendor.varian.VarianData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
-import org.nmrfx.utilities.RemoteDataset;
+import org.nmrfx.utilities.DatasetSummary;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -855,26 +855,26 @@ public interface NMRData {
     }
 
     /**
-     * Get a RemoteDataset object with parameters from this dataset. Used when
+     * Get a DatasetSummary object with parameters from this dataset. Used when
      * indexing remote or local data repositories.
      *
-     * @return the RemoteData object constructed from this datasets parameters.
+     * @return the DatasetSummary object constructed from this dataset parameters.
      */
-    default RemoteDataset getRemoteData() {
-        RemoteDataset rData = new RemoteDataset();
-        rData.setUser(getUser());
-        rData.setText(getText());
-        rData.setSol(getSolvent());
-        rData.setPos(getSamplePosition());
-        rData.setSeq(getSequence());
-        rData.setSf(getSF(0));
-        rData.setTe(getTempK());
-        rData.setNd(getNDim());
-        rData.setTn(getTN(0));
-        rData.setVnd(getVendor());
-        rData.setNv(getNVectors());
-        rData.setTime(getZonedDate().format(DateTimeFormatter.ISO_DATE_TIME));
-        return rData;
+    default DatasetSummary getDatasetSummary() {
+        DatasetSummary datasetSummary = new DatasetSummary();
+        datasetSummary.setUser(getUser());
+        datasetSummary.setText(getText());
+        datasetSummary.setSol(getSolvent());
+        datasetSummary.setPos(getSamplePosition());
+        datasetSummary.setSeq(getSequence());
+        datasetSummary.setSf(getSF(0));
+        datasetSummary.setTe(getTempK());
+        datasetSummary.setNd(getNDim());
+        datasetSummary.setTn(getTN(0));
+        datasetSummary.setVnd(getVendor());
+        datasetSummary.setNv(getNVectors());
+        datasetSummary.setTime(getZonedDate().format(DateTimeFormatter.ISO_DATE_TIME));
+        return datasetSummary;
     }
 
     DatasetType getPreferredDatasetType();

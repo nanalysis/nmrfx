@@ -27,7 +27,7 @@ import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.datasets.vendor.varian.VarianData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.Expd;
-import org.nmrfx.utilities.RemoteDataset;
+import org.nmrfx.utilities.DatasetSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -395,8 +395,8 @@ public final class NMRDataUtil {
 
     }
 
-    public static List<RemoteDataset> scanDirectory(String scanDir, Path savePath) {
-        List<RemoteDataset> items = new ArrayList<>();
+    public static List<DatasetSummary> scanDirectory(String scanDir, Path savePath) {
+        List<DatasetSummary> items = new ArrayList<>();
         Path path1 = Paths.get(scanDir);
         if (path1.toFile().exists()) {
             var files = NMRDataUtil.findNMRDirectories(scanDir);
@@ -406,7 +406,7 @@ public final class NMRDataUtil {
                     if (data != null) {
                         Path path2 = Paths.get(fileName);
                         Path path3 = path1.relativize(path2);
-                        RemoteDataset rData = data.getRemoteData();
+                        DatasetSummary rData = data.getDatasetSummary();
                         rData.setPath(path3.toString());
                         rData.setPresent(true);
                         rData.setProcessed(getProcessedDataset(path2.toFile()));
@@ -417,7 +417,7 @@ public final class NMRDataUtil {
                 }
             }
             if (savePath != null) {
-                RemoteDataset.saveItems(savePath, items);
+                DatasetSummary.saveItems(savePath, items);
             }
         }
         return items;

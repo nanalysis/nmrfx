@@ -73,6 +73,11 @@ public class AnalystPrefs {
         return remoteUserName.getValue();
     }
 
+    public static StringProperty getRemoteUserNameProperty() {
+        remoteUserName = PreferencesController.getString(remoteUserName, "REMOTE_USER_NAME", "");
+        return remoteUserName;
+    }
+
     public static void setRemoteUserName(String name) {
         remoteUserName.setValue(name);
         PreferencesController.setString("REMOTE_USER_NAME", name);
@@ -81,6 +86,11 @@ public class AnalystPrefs {
     public static String getRemoteHostName() {
         remoteHostName = PreferencesController.getString(remoteHostName, "REMOTE_HOST", "");
         return remoteHostName.getValue();
+    }
+
+    public static StringProperty getRemoteHostNameProperty() {
+        remoteHostName = PreferencesController.getString(remoteHostName, "REMOTE_HOST", "");
+        return remoteHostName;
     }
 
     public static void setRemoteHostName(String name) {
