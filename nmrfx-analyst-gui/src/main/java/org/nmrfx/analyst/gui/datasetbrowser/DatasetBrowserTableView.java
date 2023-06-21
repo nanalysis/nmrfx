@@ -14,8 +14,6 @@ import java.util.List;
 public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
     /* Keeps track of the summaries, new summaries are added to this list. */
     private final ObservableList<DatasetSummary> unfilteredDatasetSummaries = FXCollections.observableArrayList();
-    /* Keeps track of the filtered view of unfilteredDatasetSummaries, new filters should be added to this list. */
-    private final FilteredList<DatasetSummary> filteredDatasetSummaries = new FilteredList<>(unfilteredDatasetSummaries);
 
     public DatasetBrowserTableView(boolean addCacheColumn) {
         TableColumn<DatasetSummary, String> pathCol = new TableColumn<>("Path");
@@ -48,7 +46,7 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
         }
         getColumns().addAll(processedCol, sequenceCol, ndCol, sfCol);
         setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        setItems(filteredDatasetSummaries);
+        setItems(new FilteredList<>(unfilteredDatasetSummaries));
     }
 
     public void setDatasetSummaries(List<DatasetSummary> summaries) {
@@ -63,7 +61,7 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
      */
     public void setFilter(String filter) {
         String textFormatted = filter.trim().toLowerCase();
-        filteredDatasetSummaries.setPredicate(datasetSummary -> textFormatted.isEmpty()
+        ((FilteredList<DatasetSummary>) getItems()).setPredicate(datasetSummary -> textFormatted.isEmpty()
                 || datasetSummary.getPath().toLowerCase().contains(textFormatted)
                 || datasetSummary.getTime().toLowerCase().contains(textFormatted)
                 || datasetSummary.getUser().toLowerCase().contains(textFormatted)
