@@ -1,14 +1,17 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
+import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import org.nmrfx.utilities.DatasetSummary;
 
 
 public abstract class DatasetBrowserTabController {
@@ -44,6 +47,19 @@ public abstract class DatasetBrowserTabController {
         datasetButton.setOnAction(e -> openFile(false));
 
         toolBar.getItems().addAll(retrieveIndexButton, fidButton, datasetButton);
+    }
+
+    protected void setTableView(DatasetBrowserTableView tableView) {
+        this.tableView = tableView;
+        borderPane.setCenter(tableView);
+        tableView.setOnMousePressed(event -> {
+            if (event.isPrimaryButtonDown() && event.getClickCount() == 2) {
+                DatasetSummary datasetSummary = tableView.getSelectionModel().getSelectedItem();
+                if (datasetSummary != null) {
+                    openFile(datasetSummary.getProcessed().isEmpty());
+                }
+            }
+        });
     }
 
     /**

@@ -31,8 +31,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
 
     public RemoteDatasetBrowserTabController() {
         super(TAB_NAME);
-        tableView = new DatasetBrowserTableView(true);
-        borderPane.setCenter(tableView);
+        setTableView(new DatasetBrowserTableView(true));
 
         // Add fetch button to toolbar
         Button fetchButton = new Button("Fetch");

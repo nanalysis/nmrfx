@@ -30,8 +30,7 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
 
     public LocalDatasetBrowserTabController(Consumer<String> taskStatusUpdater) {
         super(TAB_NAME);
-        tableView = new DatasetBrowserTableView(false);
-        borderPane.setCenter(tableView);
+        setTableView(new DatasetBrowserTableView(false));
         this.taskStatusUpdater = taskStatusUpdater;
         directoryTextField.setText(AnalystPrefs.getLocalDirectory());
 
