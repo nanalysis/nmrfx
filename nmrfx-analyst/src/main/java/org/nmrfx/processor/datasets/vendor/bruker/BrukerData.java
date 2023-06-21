@@ -1093,15 +1093,15 @@ public class BrukerData implements NMRData {
                         break;
                     case 0:
                     case 5:
-                        f1coef[i - 1] = AcquisitionType.HYPER_R.getCoefficients();
+                        f1coef[i - 1] = AcquisitionType.HYPER.getCoefficients();
+                        f1coefS[i - 1] = AcquisitionType.HYPER.getLabel();
                         complexDim[i - 1] = true;
                         fttype[i - 1] = "negate";
-                        f1coefS[i - 1] = AcquisitionType.HYPER.getLabel();
                         break;
                     case 6:
-                        f1coef[i - 1] = AcquisitionType.ECHO_ANTIECHO.getCoefficients();
-                        deltaPh0_2 = 90.0;
+                        f1coef[i - 1] = AcquisitionType.ECHO_ANTI_ECHO_R.getCoefficients();
                         f1coefS[i - 1] = AcquisitionType.ECHO_ANTI_ECHO_R.getLabel();
+                        deltaPh0_2 = 90.0;
                         break;
                     case 1:
                         f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
