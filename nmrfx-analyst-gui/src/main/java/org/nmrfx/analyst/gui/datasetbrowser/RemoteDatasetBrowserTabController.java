@@ -1,8 +1,6 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
 import com.jcraft.jsch.JSchException;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
@@ -21,6 +19,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 public class RemoteDatasetBrowserTabController extends DatasetBrowserTabController {
@@ -106,7 +105,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
     protected void loadIndex() {
         updatePreferences();
         File localFile = getLocalIndexFile();
-        ObservableList<DatasetSummary> items = FXCollections.observableArrayList();
+        List<DatasetSummary> items = new ArrayList<>();
         if (localFile.exists()) {
             try {
                 DatasetSummary.loadListFromFile(localFile);
@@ -116,7 +115,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
             }
             scanDirectory(items);
         }
-        tableView.setItems(items);
+        tableView.setDatasetSummaries(items);
     }
 
     /**

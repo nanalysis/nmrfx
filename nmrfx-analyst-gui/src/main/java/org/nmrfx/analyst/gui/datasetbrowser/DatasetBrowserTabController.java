@@ -65,4 +65,10 @@ public abstract class DatasetBrowserTabController {
     public Tab getTab() {
         return tab;
     }
+
+    public void setTableFilter(String filterText) {
+        if (tableView != null) {
+            tableView.setFilter(filterText);
+        }
+    }
 }
