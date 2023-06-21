@@ -22,6 +22,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.FileChooser;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
@@ -56,12 +57,6 @@ public class ChartProcessor {
     private static final Logger log = LoggerFactory.getLogger(ChartProcessor.class);
 
     public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
-
-    //These should not be modifiable, but there is no technical guarantee.
-    private static final double[] ECHO_ANTI_ECHO_COEFS = {1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0};
-    private static final double[] ECHO_ANTI_ECHO_R_COEFS = {1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, -1.0};
-    private static final double[] HYPER_COEFS = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0};
-    private static final double[] HYPER_R_COEFS = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
     private final ProcessorController processorController;
     private final SimpleBooleanProperty areOperationListsValid = new SimpleBooleanProperty(false);
@@ -441,18 +436,11 @@ public class ChartProcessor {
                 fileIndices[j] = index + j;
                 nmrData.readVector(vecDim, index + j, newVec);
                 if (nmrData.getGroupSize(vecDim) > 1) {
-                    //XXX use constants here: find all usages of these strings and put them in a static class
-                    // reused at least in vendor data classes
-                    if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho")) {
-                        newVec.eaCombine(ECHO_ANTI_ECHO_COEFS);
-                    } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho-r")) {
-                        newVec.eaCombine(ECHO_ANTI_ECHO_R_COEFS);
-                    } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper")) {
-                        newVec.eaCombine(HYPER_COEFS);
-                    } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("hyper-r")) {
-                        newVec.eaCombine(HYPER_R_COEFS);
-                    } else {
+                    AcquisitionType type = AcquisitionType.fromLabel(acqMode[vecDim]);
+                    if(type == null) {
                         newVec.hcCombine();
+                    } else {
+                        newVec.eaCombine(type.getCoefficients());
                     }
                 }
             }
@@ -891,7 +879,7 @@ public class ChartProcessor {
 
         int nDim = getNMRData().getNDim();
         for (int i = 1; i < nDim; i++) {
-            acqMode[i] = "hyper";
+            acqMode[i] = AcquisitionType.HYPER.getLabel();
         }
 
         for (Map.Entry<String, List<String>> entry : mapOpLists.entrySet()) {
