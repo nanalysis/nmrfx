@@ -60,7 +60,7 @@ public class JCAMPData implements NMRData {
         TPPI(AcquisitionType.REAL),
         STATES(AcquisitionType.HYPER_R),
         STATES_TPPI(AcquisitionType.HYPER),
-        ECHO_ANTIECHO(AcquisitionType.ECHO_ANTI_ECHO_R),
+        ECHO_ANTIECHO(AcquisitionType.ECHO_ANTIECHO_R),
         QSEQ(AcquisitionType.REAL);
 
         private final AcquisitionType acquisitionType;

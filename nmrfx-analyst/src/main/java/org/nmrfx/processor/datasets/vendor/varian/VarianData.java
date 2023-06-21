@@ -286,7 +286,7 @@ public class VarianData implements NMRData {
             case "1 0 0 0 0 0 -1 0" -> AcquisitionType.HYPER.getLabel();
             case "1 0 0 0 0 0 1 0" -> AcquisitionType.HYPER_R.getLabel();
             case "1 0 -1 0 0 1 0 1" -> AcquisitionType.ECHO_ANTIECHO.getLabel();
-            case "1 0 1 0 0 1 0 -1" -> AcquisitionType.ECHO_ANTI_ECHO_R.getLabel();
+            case "1 0 1 0 0 1 0 -1" -> AcquisitionType.ECHO_ANTIECHO_R.getLabel();
             case "1 0 1 0 1 0 1 0" -> AcquisitionType.GE.getLabel();
             case "1 0 0 1" -> AcquisitionType.SEP.getLabel();
             default -> s;

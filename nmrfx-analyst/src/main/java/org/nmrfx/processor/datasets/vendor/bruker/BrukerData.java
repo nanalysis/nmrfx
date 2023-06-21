@@ -1099,8 +1099,8 @@ public class BrukerData implements NMRData {
                         fttype[i - 1] = "negate";
                         break;
                     case 6:
-                        f1coef[i - 1] = AcquisitionType.ECHO_ANTI_ECHO_R.getCoefficients();
-                        f1coefS[i - 1] = AcquisitionType.ECHO_ANTI_ECHO_R.getLabel();
+                        f1coef[i - 1] = AcquisitionType.ECHO_ANTIECHO_R.getCoefficients();
+                        f1coefS[i - 1] = AcquisitionType.ECHO_ANTIECHO_R.getLabel();
                         deltaPh0_2 = 90.0;
                         break;
                     case 1:
