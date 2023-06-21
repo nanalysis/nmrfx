@@ -15,8 +15,6 @@ import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.utilities.DatasetSummary;
 import org.nmrfx.utils.GUIUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.FileSystem;

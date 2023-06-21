@@ -28,6 +28,7 @@ import org.nmrfx.fxutil.StageBasedController;
 
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -40,25 +41,26 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
     private Stage stage;
     @FXML
     private TabPane datasetBrowserTabPane;
-    private RemoteDatasetBrowserTabController remoteDatasetBrowserTab;
-    private LocalDatasetBrowserTabController localDatasetBrowserTab;
+    private RemoteDatasetBrowserTabController remoteDatasetBrowserTabController;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        localDatasetBrowserTab = new LocalDatasetBrowserTabController(stageTitle -> stage.setTitle(stageTitle));
-        datasetBrowserTabPane.getTabs().add(localDatasetBrowserTab.getTab());
-        remoteDatasetBrowserTab = new RemoteDatasetBrowserTabController();
-        datasetBrowserTabPane.getTabs().add(remoteDatasetBrowserTab.getTab());
-        remoteDatasetBrowserTab.getTab().setDisable(remotePreferencesUnavailable());
+        LocalDatasetBrowserTabController localDatasetBrowserTabController = new LocalDatasetBrowserTabController(stageTitle -> stage.setTitle(stageTitle));
+        getTabs().add(localDatasetBrowserTabController.getTab());
+        remoteDatasetBrowserTabController = new RemoteDatasetBrowserTabController();
+        getTabs().add(remoteDatasetBrowserTabController.getTab());
+        remoteDatasetBrowserTabController.getTab().setDisable(remotePreferencesUnavailable());
         AnalystPrefs.getRemoteHostNameProperty().addListener(e -> remotePreferencesListener());
         AnalystPrefs.getRemoteUserNameProperty().addListener(e -> remotePreferencesListener());
     }
 
     private void remotePreferencesListener() {
         boolean remoteUnavailable = remotePreferencesUnavailable();
-        remoteDatasetBrowserTab.getTab().setDisable(remoteUnavailable);
-        if (remoteUnavailable && datasetBrowserTabPane.getSelectionModel().getSelectedItem() == remoteDatasetBrowserTab.getTab()) {
-            datasetBrowserTabPane.getSelectionModel().select(localDatasetBrowserTab.getTab());
+        List<Tab> browserTabs = getTabs();
+        if (remoteUnavailable) {
+            browserTabs.remove(remoteDatasetBrowserTabController.getTab());
+        } else if (!browserTabs.contains(remoteDatasetBrowserTabController.getTab())) {
+            browserTabs.add(remoteDatasetBrowserTabController.getTab());
         }
     }
 
@@ -86,5 +88,9 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
         return Fxml.load(DatasetBrowserController.class, "DatasetBrowserScene.fxml")
                 .withNewStage("Dataset Browser")
                 .getController();
+    }
+
+    private List<Tab> getTabs() {
+        return datasetBrowserTabPane.getTabs();
     }
 }
