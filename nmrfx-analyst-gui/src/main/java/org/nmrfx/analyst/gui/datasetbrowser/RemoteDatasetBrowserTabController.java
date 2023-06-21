@@ -3,6 +3,7 @@ package org.nmrfx.analyst.gui.datasetbrowser;
 import com.jcraft.jsch.JSchException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.Button;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
@@ -33,7 +34,12 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         super(TAB_NAME);
         tableView = new DatasetBrowserTableView(true);
         borderPane.setCenter(tableView);
-        initToolbar(true);
+
+        // Add fetch button to toolbar
+        Button fetchButton = new Button("Fetch");
+        fetchButton.setOnAction(e -> cacheDatasets());
+        toolBar.getItems().add(fetchButton);
+
         directoryTextField.setText(AnalystPrefs.getRemoteDirectory());
     }
 
@@ -139,8 +145,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
     /**
      * Fetch datasets for any of the selected items in the tableview that do not have a local copy.
      */
-    @Override
-    protected void cacheDatasets() {
+    private void cacheDatasets() {
         var datasetSummaries = tableView.getSelectionModel().getSelectedItems();
         for (var datasetSummary : datasetSummaries) {
             if (datasetSummary != null && !datasetSummary.isPresent()) {

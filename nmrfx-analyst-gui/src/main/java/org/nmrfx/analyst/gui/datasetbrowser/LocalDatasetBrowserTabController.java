@@ -36,7 +36,6 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
         super(TAB_NAME);
         tableView = new DatasetBrowserTableView(false);
         borderPane.setCenter(tableView);
-        initToolbar(false);
         this.taskStatusUpdater = taskStatusUpdater;
         directoryTextField.setText(AnalystPrefs.getLocalDirectory());
 

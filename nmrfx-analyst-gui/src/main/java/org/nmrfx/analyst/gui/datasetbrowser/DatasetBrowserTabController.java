@@ -19,8 +19,6 @@ public abstract class DatasetBrowserTabController {
     protected final HBox hBox = new HBox();
     protected final TextField directoryTextField = new TextField();
     protected DatasetBrowserTableView tableView;
-    protected Button datasetButton;
-    protected Button fetchButton;
 
     protected DatasetBrowserTabController(String tabName) {
         tab = new Tab(tabName, borderPane);
@@ -34,43 +32,35 @@ public abstract class DatasetBrowserTabController {
                 updatePreferences();
             }
         });
-
+        initToolbar();
     }
 
-    protected void initToolbar(boolean includeFetch) {
+    private void initToolbar() {
         Button retrieveIndexButton = new Button("Index");
         retrieveIndexButton.setOnAction(e -> retrieveIndex());
         Button fidButton = new Button("FID");
         fidButton.setOnAction(e -> openFile(true));
-        datasetButton = new Button("Dataset");
+        Button datasetButton = new Button("Dataset");
         datasetButton.setOnAction(e -> openFile(false));
 
         toolBar.getItems().addAll(retrieveIndexButton, fidButton, datasetButton);
-        if (includeFetch) {
-            fetchButton = new Button("Fetch");
-            fetchButton.setOnAction(e -> cacheDatasets());
-            toolBar.getItems().add(fetchButton);
-        }
     }
 
     /**
      * Retrieves a list of the data files present in the directory specified by the directoryTextField and displays
      * the list in the tableview.
      */
-    protected void retrieveIndex() {}
+    protected abstract void retrieveIndex();
 
     /**
      * Opens the selected file.
      * @param isFid Whether to open as FID or not
      */
-    protected void openFile(boolean isFid) {}
+    protected abstract void openFile(boolean isFid);
 
-    protected void cacheDatasets() {}
+    protected abstract void loadIndex();
 
-    protected void loadIndex() {}
-
-
-    protected void updatePreferences() {}
+    protected abstract void updatePreferences();
 
     public Tab getTab() {
         return tab;
