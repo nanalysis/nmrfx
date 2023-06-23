@@ -18,7 +18,6 @@
 
 package org.nmrfx.analyst.gui;
 
-import com.jcraft.jsch.JSchException;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
@@ -128,7 +127,8 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
             }
             try {
                 rdA.connect();
-            } catch (JSchException ex) {
+            } catch (IOException ex) {
+                rdA = null;
                 GUIUtils.warn("Remote Access", "Can't open session " + ex.getMessage());
                 return false;
             }
@@ -339,7 +339,7 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
         th.start();
     }
 
-    void retrieveIndex() {
+    void retrieveIndex()  {
         if (localMode()) {
             scanAndLoad();
             return;
@@ -357,10 +357,14 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
             }
         }
         File localFile = fileSystem.getPath(path.getParent().toString(), "nmrfx_index.json").toFile();
-        System.out.println("local " + localFile);
-        String remoteFile = remoteDir + "/scripts/test.json";
+        File remoteFile = Path.of(remoteDir,"nmrfx_index.json").toFile();
         if (initRemoteDatasetAccess()) {
-            boolean ok = rdA.fetchFile(remoteFile, localFile);
+            boolean ok = false;
+            try {
+                ok = rdA.fetchFile(remoteFile, localFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             if (ok) {
                 loadIndex();
             }
@@ -395,18 +399,12 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
         for (var rData : rDataSets) {
             if (rData != null) {
                 String fileName = rData.getPath();
-                File file = new File(fileName);
-                String fileRoot = file.getParent();
-                File localFileDir = fileSystem.getPath(getLocalDir().toString(), fileRoot).toFile();
+                File localFile = fileSystem.getPath(getLocalDir().toString(), fileName).toFile();
                 if (!rData.isPresent()) {
                     try {
                         if (initRemoteDatasetAccess()) {
-                            String remoteFile = remoteDir + "/data/" + fileRoot + ".zip";
-                            File localZipFile = fileSystem.getPath(getLocalDir().toString(), fileRoot + ".zip").toFile();
-                            rdA.fetchFile(remoteFile, localZipFile);
-                            UnZipper unZipper = new UnZipper(localFileDir, localZipFile.toString());
-                            unZipper.unzip();
-                            Files.delete(localZipFile.toPath());
+                            File remoteFile = Path.of(remoteDir, fileName).toFile();
+                            rdA.fetchFile(remoteFile, localFile);
                             rData.setPresent(true);
                             tableView.refresh();
                         } else {
@@ -442,15 +440,8 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
                 } else {
                     if (!rData.isPresent()) {
                         if (initRemoteDatasetAccess()) {
-                            File file = new File(fileName);
-                            String fileRoot = file.getParent();
-                            String remoteFile = remoteDir + "/data/" + fileRoot + ".zip";
-                            File localZipFile = fileSystem.getPath(getLocalDir().toString(), fileRoot + ".zip").toFile();
-                            rdA.fetchFile(remoteFile, localZipFile);
-                            File localFileDir = fileSystem.getPath(getLocalDir().toString(), fileRoot).toFile();
-                            UnZipper unZipper = new UnZipper(localFileDir, localZipFile.toString());
-                            unZipper.unzip();
-                            localZipFile.delete();
+                            File remoteFile = Path.of(remoteDir, fileName).toFile();
+                            rdA.fetchFile(remoteFile, localFile);
                             rData.setPresent(true);
                             tableView.refresh();
                         } else {
@@ -466,12 +457,10 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
         }
     }
 
-    void scanDirectory(List<RemoteDataset> items
-    ) {
-        String localPathString = getLocalDir().toString();
+    void scanDirectory(List<RemoteDataset> items) {
         for (RemoteDataset rData : items) {
             String fileName = rData.getPath();
-            File localFile = fileSystem.getPath(localPathString, fileName).toFile();
+            File localFile = fileSystem.getPath(getLocalDir().toString(), fileName).toFile();
             rData.setProcessed(NMRDataUtil.getProcessedDataset(localFile));
             rData.setPresent(localFile.exists());
         }

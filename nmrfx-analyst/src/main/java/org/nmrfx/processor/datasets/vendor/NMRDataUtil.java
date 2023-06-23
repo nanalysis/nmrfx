@@ -374,22 +374,25 @@ public final class NMRDataUtil {
     public static String getProcessedDataset(File localFile) {
         String datasetName = "";
         try {
-            List<Path> processed = findProcessedFiles(localFile.toPath());
-            if (!processed.isEmpty()) {
-                processed.sort((o1, o2) -> {
-                            try {
-                                FileTime time1 = Files.getLastModifiedTime(o1);
-                                FileTime time2 = Files.getLastModifiedTime(o2);
-                                return time1.compareTo(time2);
-                            } catch (IOException ex) {
-                                return 0;
+            if (localFile.exists()) {
+                List<Path> processed = findProcessedFiles(localFile.toPath());
+                if (!processed.isEmpty()) {
+                    processed.sort((o1, o2) -> {
+                                try {
+                                    FileTime time1 = Files.getLastModifiedTime(o1);
+                                    FileTime time2 = Files.getLastModifiedTime(o2);
+                                    return time1.compareTo(time2);
+                                } catch (IOException ex) {
+                                    return 0;
+                                }
                             }
-                        }
-                );
-                datasetName = processed.get(0).getFileName().toString();
+                    );
+                    datasetName = processed.get(0).getFileName().toString();
+                }
             }
         } catch (IOException ex) {
             log.warn(ex.getMessage(), ex);
+
         }
         return datasetName;
 
