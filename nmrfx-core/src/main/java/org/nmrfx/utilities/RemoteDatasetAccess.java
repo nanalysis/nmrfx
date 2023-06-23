@@ -4,6 +4,8 @@ import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.xfer.FileSystemFile;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,8 +14,8 @@ import java.io.IOException;
  * @author brucejohnson
  */
 public class RemoteDatasetAccess {
+    private static final Logger log = LoggerFactory.getLogger(RemoteDatasetAccess.class);
     private static final int CHANNEL_TIMEOUT = 5000;
-
     public final String userName;
     public final String remoteHost;
     private SSHClient ssh = null;
@@ -75,6 +77,7 @@ public class RemoteDatasetAccess {
                 }
                 ssh.newSCPFileTransfer().download(formattedFilename, new FileSystemFile(localFile.getAbsolutePath()));
             } catch (IOException ex) {
+                log.error(ex.getMessage(), ex);
                 return false;
             }
         }

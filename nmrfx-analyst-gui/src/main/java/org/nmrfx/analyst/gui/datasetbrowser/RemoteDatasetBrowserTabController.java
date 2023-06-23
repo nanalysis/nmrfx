@@ -19,6 +19,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 public class RemoteDatasetBrowserTabController extends DatasetBrowserTabController {
@@ -147,21 +148,21 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
      */
     private void cacheDatasets() {
         var datasetSummaries = tableView.getSelectionModel().getSelectedItems();
+        List<String> failedDatasets = new ArrayList<>();
         for (var datasetSummary : datasetSummaries) {
             if (datasetSummary != null && !datasetSummary.isPresent()) {
-                try {
-                    if (initRemoteDatasetAccess()) {
-                       fetchDatasetFromServer(datasetSummary);
-                    } else {
-                        return;
-                    }
-                } catch (IOException ex) {
-                    var title = "Retrieve Selected Data";
-                    GUIUtils.warn(title, "Error: " + ex.getMessage());
-                    log.error(ex.getMessage(), ex);
-                    break;
+                if (initRemoteDatasetAccess()) {
+                   if (!fetchDatasetFromServer(datasetSummary)) {
+                        failedDatasets.add(datasetSummary.getPath());
+                   }
+                } else {
+                    return;
                 }
             }
+        }
+        if (!failedDatasets.isEmpty()) {
+            var title = "Retrieve Selected Data";
+            GUIUtils.warn(title, "Unable to fetch the following datasets: \n" + String.join("\n",failedDatasets));
         }
     }
 
@@ -177,41 +178,41 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         }
         String fileName = datasetSummary.getPath();
         FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-        try {
-            if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
-                File localDataset = fileSystem.getPath(pathToLocalCache.toString(), fileName, datasetSummary.getProcessed()).toFile();
-                if (localDataset.exists()) {
-                    controller.openDataset(localDataset, false, true);
-                }
-            } else {
-                if (!datasetSummary.isPresent()) {
-                    if (initRemoteDatasetAccess()) {
-                        fetchDatasetFromServer(datasetSummary);
-                    } else {
+        if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
+            File localDataset = fileSystem.getPath(pathToLocalCache.toString(), fileName, datasetSummary.getProcessed()).toFile();
+            if (localDataset.exists()) {
+                controller.openDataset(localDataset, false, true);
+            }
+        } else {
+            if (!datasetSummary.isPresent()) {
+                if (initRemoteDatasetAccess()) {
+                    if (!fetchDatasetFromServer(datasetSummary)) {
+                        GUIUtils.warn("Fetching File ", "Unable to fetch " + datasetSummary.getPath() + " from remote server.");
                         return;
                     }
+                } else {
+                    return;
                 }
-                File localFile = fileSystem.getPath(pathToLocalCache.toString(), fileName).toFile();
-                controller.openFile(localFile.toString(), true, false);
             }
-        } catch (IOException ex) {
-            String mode = useFID ? "FID" : "Dataset";
-            GUIUtils.warn("Open " + mode, "Error opening: " + ex.getMessage());
-            log.error(ex.getMessage(), ex);
+
+            File localFile = fileSystem.getPath(pathToLocalCache.toString(), fileName).toFile();
+            controller.openFile(localFile.toString(), true, false);
         }
     }
 
     /**
      * Fetch a dataset from the remote server and set the present value in the provided DatasetSummary;
      * @param datasetSummary The DatasetSummary of the dataset being fetched.
-     * @throws IOException If unable to unzip the file.
+     * @return True if file is successfully fetched from server
      */
-    private void fetchDatasetFromServer (DatasetSummary datasetSummary) throws IOException {
+    private boolean fetchDatasetFromServer (DatasetSummary datasetSummary) {
         String fileName = datasetSummary.getPath();
         String remoteFile = Path.of(directoryTextField.getText(), fileName).toString();
         File localFile = fileSystem.getPath(pathToLocalCache.toString(), fileName).toFile();
-        datasetSummary.setPresent(remoteDatasetAccess.fetchFile(remoteFile, localFile));
+        boolean fetchedFile = remoteDatasetAccess.fetchFile(remoteFile, localFile);
+        datasetSummary.setPresent(fetchedFile);
         tableView.refresh();
+        return fetchedFile;
     }
 
     /**
