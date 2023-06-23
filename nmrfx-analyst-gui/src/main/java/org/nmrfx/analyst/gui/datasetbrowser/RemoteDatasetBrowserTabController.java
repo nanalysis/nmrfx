@@ -211,6 +211,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         File localFile = fileSystem.getPath(pathToLocalCache.toString(), fileName).toFile();
         boolean fetchedFile = remoteDatasetAccess.fetchFile(remoteFile, localFile);
         datasetSummary.setPresent(fetchedFile);
+        datasetSummary.setProcessed(NMRDataUtil.getProcessedDataset(localFile));
         tableView.refresh();
         return fetchedFile;
     }
