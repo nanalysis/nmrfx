@@ -21,8 +21,6 @@ package org.nmrfx.analyst.gui.datasetbrowser;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.fxutil.Fxml;
@@ -44,10 +42,6 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
     private Stage stage;
     @FXML
     private TabPane datasetBrowserTabPane;
-    @FXML
-    private StackPane stackPane;
-    @FXML
-    TextField filterTextField;
     List<DatasetBrowserTabController> tabControllers = new ArrayList<>();
     private RemoteDatasetBrowserTabController remoteDatasetBrowserTabController;
 
@@ -62,7 +56,6 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
         remoteDatasetBrowserTabController.getTab().setDisable(remotePreferencesUnavailable());
         AnalystPrefs.getRemoteHostNameProperty().addListener(e -> remotePreferencesListener());
         AnalystPrefs.getRemoteUserNameProperty().addListener(e -> remotePreferencesListener());
-        filterTextField.textProperty().addListener((observable, oldValue, newValue) -> filterChanged());
 
     }
 
@@ -94,20 +87,6 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
     public void show() {
         stage.toFront();
         stage.show();
-        layoutStackPane();
-    }
-
-    /**
-     * Bind the height property of the datasetBrowserTabPane to the minHeightProperty of the StackPane. This will
-     * ensure the filterTextField can be centred within the tab pane header area.
-     */
-    private void layoutStackPane() {
-        if (!stackPane.minHeightProperty().isBound()) {
-            Region headerArea = (Region) datasetBrowserTabPane.lookup(".tab-header-area");
-            if (headerArea != null) {
-                stackPane.minHeightProperty().bind(headerArea.heightProperty());
-            }
-        }
     }
 
     public static DatasetBrowserController create() {
@@ -120,7 +99,4 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
         return datasetBrowserTabPane.getTabs();
     }
 
-    private void filterChanged() {
-        tabControllers.forEach(tabController -> tabController.setTableFilter(filterTextField.getText()));
-    }
 }

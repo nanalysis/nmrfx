@@ -38,7 +38,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         // Add fetch button to toolbar
         Button fetchButton = new Button("Fetch");
         fetchButton.setOnAction(e -> cacheDatasets());
-        toolBar.getItems().add(fetchButton);
+        addToolbarButton(fetchButton);
 
         directoryTextField.setText(AnalystPrefs.getRemoteDirectory());
     }
