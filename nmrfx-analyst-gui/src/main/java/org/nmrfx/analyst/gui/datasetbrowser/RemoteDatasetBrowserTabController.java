@@ -138,7 +138,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         for (DatasetSummary datasetSummary : items) {
             String fileName = datasetSummary.getPath();
             File localFile = fileSystem.getPath(localPathString, fileName).toFile();
-            datasetSummary.setProcessed(NMRDataUtil.getProcessedDataset(localFile));
+            datasetSummary.setProcessed(NMRDataUtil.getProcessedDataset(localFile).stream().map(Path::toString).toList());
             datasetSummary.setPresent(localFile.exists());
         }
     }
@@ -179,7 +179,8 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         String fileName = datasetSummary.getPath();
         FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
-            File localDataset = fileSystem.getPath(pathToLocalCache.toString(), fileName, datasetSummary.getProcessed()).toFile();
+            // TODO NMR-6980 don't use first element of list, use selected one instead
+            File localDataset = fileSystem.getPath(pathToLocalCache.toString(), fileName, datasetSummary.getProcessed().get(0)).toFile();
             if (localDataset.exists()) {
                 controller.openDataset(localDataset, false, true);
             }
@@ -211,7 +212,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         File localFile = fileSystem.getPath(pathToLocalCache.toString(), fileName).toFile();
         boolean fetchedFile = remoteDatasetAccess.fetchFile(remoteFile, localFile);
         datasetSummary.setPresent(fetchedFile);
-        datasetSummary.setProcessed(NMRDataUtil.getProcessedDataset(localFile));
+        datasetSummary.setProcessed(NMRDataUtil.getProcessedDataset(localFile).stream().map(localFile.toPath()::relativize).map(Path::toString).toList());
         tableView.refresh();
         return fetchedFile;
     }

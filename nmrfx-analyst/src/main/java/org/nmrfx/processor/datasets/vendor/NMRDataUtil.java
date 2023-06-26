@@ -18,12 +18,14 @@
 package org.nmrfx.processor.datasets.vendor;
 
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
 import org.nmrfx.processor.datasets.vendor.jeol.JeolDelta;
 import org.nmrfx.processor.datasets.vendor.nmrpipe.NMRPipeData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.datasets.vendor.varian.VarianData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.Expd;
@@ -40,6 +42,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.Base64.Encoder;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -172,7 +175,7 @@ public final class NMRDataUtil {
         try {
             if (NMRViewData.findFID(bpath)) {
                 return new NMRViewData(bpath.toString());
-            } else if (RS2DData.findFID(bpath)) {
+            } else if (RS2DData.findFID(bpath) || RS2DData.findData(bpath)) {
                 return new RS2DData(bpath.toString(), nusFile);
                 // Most processed Bruker files would also have the fid present and pass the findFID check,
                 // so must check if it's a dataset before checking for FID
@@ -344,12 +347,27 @@ public final class NMRDataUtil {
                         -> {
                     String name = p.getFileName().toString();
                     return name.endsWith(".nv") || name.endsWith(".ucsf")
-                            || BrukerData.isProcessedFile(name);
+                            || BrukerData.isProcessedFile(name) || name.endsWith(RS2DData.PROC_DIR);
                 }
         )) {
             result = pathStream.collect(Collectors.toList());
         }
-        return result;
+        // Need to convert any RS2D Proc folders into list of files
+        List<Path> modifiedResult = new ArrayList<>();
+        result.forEach(p -> {
+            if (p.endsWith(RS2DData.PROC_DIR)) {
+                RS2DProcUtil.listProcIds(p.getParent()).forEach(id -> {
+                    Path datafile = Paths.get(p.toString(), id.toString(), RS2DData.DATA_FILE_NAME);
+                    if (datafile.toFile().exists()) {
+                        modifiedResult.add(datafile);
+                    }
+                }
+                );
+            } else {
+                modifiedResult.add(p);
+            }
+        });
+        return modifiedResult;
     }
 
     public static File findNewestFile(Path dirPath) {
@@ -371,11 +389,11 @@ public final class NMRDataUtil {
         return lastFile;
     }
 
-    public static String getProcessedDataset(File localFile) {
-        String datasetName = "";
+    public static List<Path> getProcessedDataset(File localFile) {
+        List<Path> processed = new ArrayList<>();
         try {
             if (localFile.exists()) {
-                List<Path> processed = findProcessedFiles(localFile.toPath());
+                processed = findProcessedFiles(localFile.toPath());
                 if (!processed.isEmpty()) {
                     processed.sort((o1, o2) -> {
                                 try {
@@ -387,42 +405,129 @@ public final class NMRDataUtil {
                                 }
                             }
                     );
-                    datasetName = processed.get(0).getFileName().toString();
                 }
             }
         } catch (IOException ex) {
             log.warn(ex.getMessage(), ex);
         }
-        return datasetName;
-
+        return processed;
     }
 
     public static List<DatasetSummary> scanDirectory(String scanDir, Path savePath) {
         List<DatasetSummary> items = new ArrayList<>();
         Path path1 = Paths.get(scanDir);
-        if (path1.toFile().exists()) {
-            var files = NMRDataUtil.findNMRDirectories(scanDir);
-            for (String fileName : files) {
-                try {
-                    NMRData data = NMRDataUtil.getFID(fileName);
-                    if (data != null) {
-                        Path path2 = Paths.get(fileName);
-                        Path path3 = path1.relativize(path2);
-                        DatasetSummary datasetSummary = data.getDatasetSummary();
-                        datasetSummary.setPath(path3.toString());
-                        datasetSummary.setPresent(true);
-                        datasetSummary.setProcessed(getProcessedDataset(path2.toFile()));
-                        items.add(datasetSummary);
-                    }
-                } catch (IOException | IllegalArgumentException ex) {
-                    log.warn(ex.getMessage(), ex);
-                }
-            }
-            if (savePath != null) {
-                DatasetSummary.saveItems(savePath, items);
+        if (!path1.toFile().exists()) {
+            return items;
+        }
+        var files = NMRDataUtil.findNMRDirectories(scanDir);
+        if (files == null) {
+            return items;
+        }
+        // Need to handle the JCAMP files differently
+        Map<Boolean, List<String>> partitionedFiles = files.stream().collect(Collectors.partitioningBy(f -> JCAMPData.findFID(new StringBuilder(f))));
+        items.addAll(handleJcampFiles(path1, partitionedFiles.get(Boolean.TRUE)));
+        for (String fileName : partitionedFiles.get(Boolean.FALSE)) {
+            try {
+                NMRData data = NMRDataUtil.getFID(fileName);
+                DatasetSummary datasetSummary = createDatasetSummary(path1, data, getProcessedDataset(Paths.get(fileName).toFile()));
+                items.add(datasetSummary);
+            } catch (IOException | IllegalArgumentException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
+        if (savePath != null) {
+            DatasetSummary.saveItems(savePath, items);
+        }
         return items;
+    }
+
+    /**
+     * Create a DatasetSummary from a FID NMRData and a list of processed paths associated with the NMRData.
+     * @param relativeDirectory The relative parent directory of the location of the NMRData file.
+     * @param nmrData The NMRData to create a summary for.
+     * @param paths A list of paths of processed data for the provided fid nmrData.
+     * @return A DatasetSummary object.
+     */
+    private static DatasetSummary createDatasetSummary(Path relativeDirectory, NMRData nmrData, List<Path> paths) {
+        DatasetSummary datasetSummary = nmrData.getDatasetSummary();
+        Path nmrDataPath = Paths.get(nmrData.getFilePath());
+        datasetSummary.setPath(relativeDirectory.relativize(nmrDataPath).toString());
+        datasetSummary.setPresent(true);
+        datasetSummary.setProcessed(paths.stream().map(nmrDataPath::relativize).map(Path::toString).toList());
+        return datasetSummary;
+    }
+
+    /**
+     * Get a list of DatasetSummary for each fid JCAMP file in the list of jcampFilepathStrings. This filepath list may
+     * contain processed JCAMP files as well which will be assigned to their associated fid DatasetSummary. Also checks
+     * scanning directory for any processed datasets in .nv format and tries to match them with their fid.
+     * @param relativeDirectory The relative parent directory of the location of the jcampFilepathStrings.
+     * @param jcampFilepathStrings A list of filepath strings for jcamp files in the relativeDirectory.
+     * @return A list of DatasetSummary objects.
+     */
+    private static List<DatasetSummary> handleJcampFiles(Path relativeDirectory, List<String> jcampFilepathStrings) {
+        // load all files
+        // add all fid files as keys in map
+        // add all dx spectrum files as entries, get all nv files and try to add them to the list otherwise keep them separate
+        List<JCAMPData> nmrData = new ArrayList<>(jcampFilepathStrings.stream().map(filepath -> {
+            try {
+                return NMRDataUtil.getNMRData(filepath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }).filter(JCAMPData.class::isInstance).map(JCAMPData.class::cast).toList());
+
+        // Add all fid files as keys in map
+        Map<JCAMPData, List<Path>> fidDatasetMap = nmrData.stream().filter(NMRData::isFID).collect(Collectors.toMap(Function.identity(), u -> new ArrayList<>()));
+        nmrData.removeAll(fidDatasetMap.keySet());
+        Map<Path, DatasetBase> pathDatasetBaseCache = new HashMap<>();
+        for (Map.Entry<JCAMPData, List<Path>> fidData: fidDatasetMap.entrySet()) {
+            // Get matching JCAMP datasets
+            List<JCAMPData> datasets = nmrData.stream().filter(jcampData -> jcampData.getTitle().equals(fidData.getKey().getTitle())).toList();
+            if (!datasets.isEmpty()) {
+                fidData.getValue().addAll(datasets.stream().map(dataset -> Path.of(dataset.getFilePath())).toList());
+            }
+            // Get Matching .nv datasets
+            File fidFile = new File(fidData.getKey().getFilePath());
+            fidData.getValue().addAll(getProcessedNMRViewDatasetsAndUpdateDatasetMap(fidFile, pathDatasetBaseCache));
+        }
+
+        List<DatasetSummary> summaries = new ArrayList<>();
+        for (Map.Entry<JCAMPData, List<Path>> fidData: fidDatasetMap.entrySet()) {
+            DatasetSummary summary = createDatasetSummary(relativeDirectory, fidData.getKey(), fidData.getValue());
+            summaries.add(summary);
+        }
+        return summaries;
+    }
+
+    /**
+     * Search for any processed NMRViewData associated with a jcamp fid file, update the provided pathDatasetBaseMap
+     * with any newly loaded dataset base objects and return the list of paths.
+     * @param fidFile The jcamp fid file.
+     * @param pathDatasetBaseCache A map of Path, DatasetBase to avoid loading datasets more than once.
+     * @return A list of processed paths associated with the fidFile.
+     */
+    private static List<Path> getProcessedNMRViewDatasetsAndUpdateDatasetMap(File fidFile, Map<Path, DatasetBase> pathDatasetBaseCache) {
+        List<Path> paths = getProcessedDataset(fidFile.getParentFile());
+        paths.forEach(p -> {
+            if (!pathDatasetBaseCache.containsKey(p)) {
+                try {
+                    NMRData data = NMRDataUtil.loadNMRData(p.toString(), null);
+                    if (data instanceof NMRViewData nmrViewData) {
+                        pathDatasetBaseCache.put(p, nmrViewData.getDataset());
+                    }
+                } catch (IOException e) {
+                    log.warn(e.getMessage(), e);
+                }
+            }
+        });
+
+        return pathDatasetBaseCache.values().stream().filter(datasetBase -> {
+            if (datasetBase.sourceFID().isEmpty()) {
+                return false;
+            }
+            return fidFile.getName().equals(datasetBase.sourceFID().get().getName());
+        }).map(datasetBase -> datasetBase.getFile().toPath()).toList();
     }
 
     public static String calculateHash(String input) throws NoSuchAlgorithmException {

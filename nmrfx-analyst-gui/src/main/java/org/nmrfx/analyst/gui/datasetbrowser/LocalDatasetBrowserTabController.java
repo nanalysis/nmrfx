@@ -95,8 +95,13 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
             }
             FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
             if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
-                File localDataset = fileSystem.getPath(directoryTextField.getText(), fileName, datasetSummary.getProcessed()).toFile();
-                if (localDataset.exists()) {
+                // TODO NMR-6980 don't use first element of list (get selected one)
+                File baseFile = fileSystem.getPath(directoryTextField.getText(), fileName).toFile();
+                if (baseFile.isFile()) {
+                    baseFile = baseFile.getParentFile();
+                }
+                File localDataset = fileSystem.getPath(baseFile.toString(), datasetSummary.getProcessed().get(0)).toFile();
+                 if (localDataset.exists()) {
                     controller.openDataset(localDataset, false, true);
                 }
             } else {
