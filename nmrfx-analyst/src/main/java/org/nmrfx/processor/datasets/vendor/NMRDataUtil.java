@@ -27,7 +27,7 @@ import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.datasets.vendor.varian.VarianData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.Expd;
-import org.nmrfx.utilities.RemoteDataset;
+import org.nmrfx.utilities.DatasetSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -374,19 +374,21 @@ public final class NMRDataUtil {
     public static String getProcessedDataset(File localFile) {
         String datasetName = "";
         try {
-            List<Path> processed = findProcessedFiles(localFile.toPath());
-            if (!processed.isEmpty()) {
-                processed.sort((o1, o2) -> {
-                            try {
-                                FileTime time1 = Files.getLastModifiedTime(o1);
-                                FileTime time2 = Files.getLastModifiedTime(o2);
-                                return time1.compareTo(time2);
-                            } catch (IOException ex) {
-                                return 0;
+            if (localFile.exists()) {
+                List<Path> processed = findProcessedFiles(localFile.toPath());
+                if (!processed.isEmpty()) {
+                    processed.sort((o1, o2) -> {
+                                try {
+                                    FileTime time1 = Files.getLastModifiedTime(o1);
+                                    FileTime time2 = Files.getLastModifiedTime(o2);
+                                    return time1.compareTo(time2);
+                                } catch (IOException ex) {
+                                    return 0;
+                                }
                             }
-                        }
-                );
-                datasetName = processed.get(0).getFileName().toString();
+                    );
+                    datasetName = processed.get(0).getFileName().toString();
+                }
             }
         } catch (IOException ex) {
             log.warn(ex.getMessage(), ex);
@@ -395,8 +397,8 @@ public final class NMRDataUtil {
 
     }
 
-    public static List<RemoteDataset> scanDirectory(String scanDir, Path savePath) {
-        List<RemoteDataset> items = new ArrayList<>();
+    public static List<DatasetSummary> scanDirectory(String scanDir, Path savePath) {
+        List<DatasetSummary> items = new ArrayList<>();
         Path path1 = Paths.get(scanDir);
         if (path1.toFile().exists()) {
             var files = NMRDataUtil.findNMRDirectories(scanDir);
@@ -406,18 +408,18 @@ public final class NMRDataUtil {
                     if (data != null) {
                         Path path2 = Paths.get(fileName);
                         Path path3 = path1.relativize(path2);
-                        RemoteDataset rData = data.getRemoteData();
-                        rData.setPath(path3.toString());
-                        rData.setPresent(true);
-                        rData.setProcessed(getProcessedDataset(path2.toFile()));
-                        items.add(rData);
+                        DatasetSummary datasetSummary = data.getDatasetSummary();
+                        datasetSummary.setPath(path3.toString());
+                        datasetSummary.setPresent(true);
+                        datasetSummary.setProcessed(getProcessedDataset(path2.toFile()));
+                        items.add(datasetSummary);
                     }
                 } catch (IOException | IllegalArgumentException ex) {
                     log.warn(ex.getMessage(), ex);
                 }
             }
             if (savePath != null) {
-                RemoteDataset.saveItems(savePath, items);
+                DatasetSummary.saveItems(savePath, items);
             }
         }
         return items;

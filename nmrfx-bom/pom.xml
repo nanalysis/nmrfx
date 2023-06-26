@@ -87,10 +87,10 @@
                 <!-- license: EPL2.0 / GPL2.0 / LGPL 2.1 -->
             </dependency>
             <dependency>
-                <groupId>com.jcraft</groupId>
-                <artifactId>jsch</artifactId>
-                <version>0.1.55</version>
-                <!-- license: BSD -->
+                <groupId>com.hierynomus</groupId>
+                <artifactId>sshj</artifactId>
+                <version>0.32.0</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
