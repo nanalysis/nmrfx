@@ -1,8 +1,6 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
