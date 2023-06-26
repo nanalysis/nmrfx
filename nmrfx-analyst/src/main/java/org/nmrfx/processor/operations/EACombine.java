@@ -18,6 +18,7 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -28,22 +29,9 @@ import org.nmrfx.processor.processing.ProcessingException;
  */
 @PythonAPI("pyproc")
 public class EACombine extends Operation {
-    private final static double[] ECHO_ANTI_ECHO_COEFS = {1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0};
-
     @Override
     public EACombine eval(Vec vector) throws ProcessingException {
-        eaCombine(vector);
+        vector.eaCombine(AcquisitionType.ECHO_ANTIECHO.getCoefficients());
         return this;
-    }
-
-    public EACombine() {
-    }
-
-    /**
-     * @param vector
-     * @throws ProcessingException
-     */
-    private void eaCombine(Vec vector) throws ProcessingException {
-        vector.eaCombine(ECHO_ANTI_ECHO_COEFS);
     }
 }

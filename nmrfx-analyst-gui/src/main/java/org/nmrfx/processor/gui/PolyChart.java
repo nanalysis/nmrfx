@@ -3715,7 +3715,7 @@ public class PolyChart extends Region {
 
     public ProcessorController getProcessorController(boolean createIfNull) {
         if ((processorController == null) && createIfNull) {
-            processorController = ProcessorController.create(getFXMLController(), getFXMLController().getProcessorPane(), this);
+            processorController = ProcessorController.create(getFXMLController(), getFXMLController().getNmrControlRightSidePane(), this);
         }
         return processorController;
     }

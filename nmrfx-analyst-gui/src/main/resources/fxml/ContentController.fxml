@@ -5,12 +5,13 @@
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.VBox?>
 <?import org.controlsfx.control.ListSelectionView?>
-<VBox xmlns="http://javafx.com/javafx"
+<VBox fx:id="contentVBox"
+      xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="org.nmrfx.processor.gui.ContentController"
 >
     <children>
-        <ScrollPane fx:id="contentScrollPane" fitToHeight="true" fitToWidth="true" maxWidth="245">
+        <ScrollPane fx:id="contentScrollPane" fitToHeight="true" fitToWidth="true">
             <Accordion fx:id="contentAccordion">
                 <panes>
                     <TitledPane text="Datasets">

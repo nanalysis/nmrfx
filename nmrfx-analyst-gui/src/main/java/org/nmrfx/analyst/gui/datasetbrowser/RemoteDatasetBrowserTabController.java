@@ -1,6 +1,8 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
-import com.jcraft.jsch.JSchException;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
@@ -8,7 +10,6 @@ import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.utilities.DatasetSummary;
 import org.nmrfx.utilities.RemoteDatasetAccess;
-import org.nmrfx.utilities.UnZipper;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
     private static final Logger log = LoggerFactory.getLogger(RemoteDatasetBrowserTabController.class);
     private static final String TAB_NAME = "Remote";
     private final FileSystem fileSystem = FileSystems.getDefault();
-    private final Path pathToLocalCache = fileSystem.getPath(System.getProperty("user.home"), "NMRFx_Remote_Datasets", "data");
+    private final Path pathToLocalCache = fileSystem.getPath(System.getProperty("user.home"), "NMRFx_Remote_Datasets");
     private RemoteDatasetAccess remoteDatasetAccess;
 
     public RemoteDatasetBrowserTabController() {
@@ -63,7 +64,8 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         if (!remoteDatasetAccess.isConnected()) {
             try {
                 remoteDatasetAccess.connect();
-            } catch (JSchException ex) {
+            } catch (IOException ex) {
+                remoteDatasetAccess = null;
                 GUIUtils.warn("Remote Access", "Can't open session " + ex.getMessage());
                 log.error(ex.getMessage(), ex);
                 return false;
@@ -88,8 +90,9 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
                 return;
             }
         }
-        File localFile = fileSystem.getPath(pathToLocalCache.getParent().toString(), DatasetSummary.DATASET_SUMMARY_INDEX_FILENAME).toFile();
-        String remoteFile = directoryTextField.getText() + "/scripts/test.json";
+        File localFile = getLocalIndexFile();
+        String remoteFile = Path.of(directoryTextField.getText(), DatasetSummary.DATASET_SUMMARY_INDEX_FILENAME).toString();
+
         if (initRemoteDatasetAccess()) {
             boolean ok = remoteDatasetAccess.fetchFile(remoteFile, localFile);
             if (ok) {
@@ -123,7 +126,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
      * @return The local index File
      */
     private File getLocalIndexFile() {
-        return fileSystem.getPath(pathToLocalCache.getParent().toString(), DatasetSummary.DATASET_SUMMARY_INDEX_FILENAME).toFile();
+        return fileSystem.getPath(pathToLocalCache.toString(), DatasetSummary.DATASET_SUMMARY_INDEX_FILENAME).toFile();
     }
 
     /**
@@ -146,21 +149,21 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
      */
     private void cacheDatasets() {
         var datasetSummaries = tableView.getSelectionModel().getSelectedItems();
+        List<String> failedDatasets = new ArrayList<>();
         for (var datasetSummary : datasetSummaries) {
             if (datasetSummary != null && !datasetSummary.isPresent()) {
-                try {
-                    if (initRemoteDatasetAccess()) {
-                       fetchDatasetFromServer(datasetSummary);
-                    } else {
-                        return;
-                    }
-                } catch (IOException ex) {
-                    var title = "Retrieve Selected Data";
-                    GUIUtils.warn(title, "Error: " + ex.getMessage());
-                    log.error(ex.getMessage(), ex);
-                    break;
+                if (initRemoteDatasetAccess()) {
+                   if (!fetchDatasetFromServer(datasetSummary)) {
+                        failedDatasets.add(datasetSummary.getPath());
+                   }
+                } else {
+                    return;
                 }
             }
+        }
+        if (!failedDatasets.isEmpty()) {
+            var title = "Retrieve Selected Data";
+            GUIUtils.warn(title, "Unable to fetch the following datasets: \n" + String.join("\n",failedDatasets));
         }
     }
 
@@ -176,48 +179,42 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         }
         String fileName = datasetSummary.getPath();
         FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-        try {
-            if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
-                File localDataset = fileSystem.getPath(pathToLocalCache.toString(), fileName, datasetSummary.getProcessed()).toFile();
-                if (localDataset.exists()) {
-                    controller.openDataset(localDataset, false, true);
-                }
-            } else {
-                if (!datasetSummary.isPresent()) {
-                    if (initRemoteDatasetAccess()) {
-                        fetchDatasetFromServer(datasetSummary);
-                    } else {
+        if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
+            File localDataset = fileSystem.getPath(pathToLocalCache.toString(), fileName, datasetSummary.getProcessed()).toFile();
+            if (localDataset.exists()) {
+                controller.openDataset(localDataset, false, true);
+            }
+        } else {
+            if (!datasetSummary.isPresent()) {
+                if (initRemoteDatasetAccess()) {
+                    if (!fetchDatasetFromServer(datasetSummary)) {
+                        GUIUtils.warn("Fetching File ", "Unable to fetch " + datasetSummary.getPath() + " from remote server.");
                         return;
                     }
+                } else {
+                    return;
                 }
-                File localFile = fileSystem.getPath(pathToLocalCache.toString(), fileName).toFile();
-                controller.openFile(localFile.toString(), true, false);
             }
-        } catch (IOException ex) {
-            String mode = useFID ? "FID" : "Dataset";
-            GUIUtils.warn("Open " + mode, "Error opening: " + ex.getMessage());
-            log.error(ex.getMessage(), ex);
+
+            File localFile = fileSystem.getPath(pathToLocalCache.toString(), fileName).toFile();
+            controller.openFile(localFile.toString(), true, false);
         }
     }
 
     /**
      * Fetch a dataset from the remote server and set the present value in the provided DatasetSummary;
      * @param datasetSummary The DatasetSummary of the dataset being fetched.
-     * @throws IOException If unable to unzip the file.
+     * @return True if file is successfully fetched from server
      */
-    private void fetchDatasetFromServer (DatasetSummary datasetSummary) throws IOException {
+    private boolean fetchDatasetFromServer (DatasetSummary datasetSummary) {
         String fileName = datasetSummary.getPath();
-        File file = new File(fileName);
-        String fileRoot = file.getParent();
-        String remoteFile = directoryTextField.getText() + "/data/" + fileRoot + ".zip";
-        File localZipFile = fileSystem.getPath(pathToLocalCache.toString(), fileRoot + ".zip").toFile();
-        remoteDatasetAccess.fetchFile(remoteFile, localZipFile);
-        File localFileDir = fileSystem.getPath(pathToLocalCache.toString(), fileRoot).toFile();
-        UnZipper unZipper = new UnZipper(localFileDir, localZipFile.toString());
-        unZipper.unzip();
-        Files.delete(localZipFile.toPath());
-        datasetSummary.setPresent(true);
+        String remoteFile = Path.of(directoryTextField.getText(), fileName).toString();
+        File localFile = fileSystem.getPath(pathToLocalCache.toString(), fileName).toFile();
+        boolean fetchedFile = remoteDatasetAccess.fetchFile(remoteFile, localFile);
+        datasetSummary.setPresent(fetchedFile);
+        datasetSummary.setProcessed(NMRDataUtil.getProcessedDataset(localFile));
         tableView.refresh();
+        return fetchedFile;
     }
 
     /**
