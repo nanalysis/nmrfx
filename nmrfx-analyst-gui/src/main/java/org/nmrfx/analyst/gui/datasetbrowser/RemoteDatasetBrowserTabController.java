@@ -1,7 +1,6 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+
 import javafx.scene.control.Button;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
@@ -37,7 +36,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         // Add fetch button to toolbar
         Button fetchButton = new Button("Fetch");
         fetchButton.setOnAction(e -> cacheDatasets());
-        toolBar.getItems().add(fetchButton);
+        addToolbarButton(fetchButton);
 
         directoryTextField.setText(AnalystPrefs.getRemoteDirectory());
     }
@@ -107,7 +106,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
     protected void loadIndex() {
         updatePreferences();
         File localFile = getLocalIndexFile();
-        ObservableList<DatasetSummary> items = FXCollections.observableArrayList();
+        List<DatasetSummary> items = new ArrayList<>();
         if (localFile.exists()) {
             try {
                 DatasetSummary.loadListFromFile(localFile);
@@ -117,7 +116,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
             }
             scanDirectory(items);
         }
-        tableView.setItems(items);
+        tableView.setDatasetSummaries(items);
     }
 
     /**

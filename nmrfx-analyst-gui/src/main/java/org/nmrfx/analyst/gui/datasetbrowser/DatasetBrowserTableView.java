@@ -1,12 +1,20 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import org.controlsfx.control.tableview2.TableView2;
 import org.nmrfx.utilities.DatasetSummary;
 
+import java.util.List;
+
 public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
+    /* Keeps track of the summaries, new summaries are added to this list. */
+    private final ObservableList<DatasetSummary> unfilteredDatasetSummaries = FXCollections.observableArrayList();
+
     public DatasetBrowserTableView(boolean addCacheColumn) {
         TableColumn<DatasetSummary, String> pathCol = new TableColumn<>("Path");
         pathCol.setCellValueFactory(new PropertyValueFactory<>("Path"));
@@ -38,6 +46,25 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
         }
         getColumns().addAll(processedCol, sequenceCol, ndCol, sfCol);
         setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        setItems(new FilteredList<>(unfilteredDatasetSummaries));
+    }
 
+    public void setDatasetSummaries(List<DatasetSummary> summaries) {
+        unfilteredDatasetSummaries.clear();
+        unfilteredDatasetSummaries.addAll(summaries);
+    }
+
+    /**
+     * Creates a predicate from the string filter by comparing to path, time, user and seq columns and sets the
+     * predicate of the filter.
+     * @param filter The string filter
+     */
+    public void setFilter(String filter) {
+        String textFormatted = filter.trim().toLowerCase();
+        ((FilteredList<DatasetSummary>) getItems()).setPredicate(datasetSummary -> textFormatted.isEmpty()
+                || datasetSummary.getPath().toLowerCase().contains(textFormatted)
+                || datasetSummary.getTime().toLowerCase().contains(textFormatted)
+                || datasetSummary.getUser().toLowerCase().contains(textFormatted)
+                || datasetSummary.getSeq().toLowerCase().contains(textFormatted));
     }
 }

@@ -28,6 +28,7 @@ import org.nmrfx.fxutil.StageBasedController;
 
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -41,17 +42,21 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
     private Stage stage;
     @FXML
     private TabPane datasetBrowserTabPane;
+    List<DatasetBrowserTabController> tabControllers = new ArrayList<>();
     private RemoteDatasetBrowserTabController remoteDatasetBrowserTabController;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         LocalDatasetBrowserTabController localDatasetBrowserTabController = new LocalDatasetBrowserTabController(stageTitle -> stage.setTitle(stageTitle));
         getTabs().add(localDatasetBrowserTabController.getTab());
+        tabControllers.add(localDatasetBrowserTabController);
         remoteDatasetBrowserTabController = new RemoteDatasetBrowserTabController();
         getTabs().add(remoteDatasetBrowserTabController.getTab());
+        tabControllers.add(remoteDatasetBrowserTabController);
         remoteDatasetBrowserTabController.getTab().setDisable(remotePreferencesUnavailable());
         AnalystPrefs.getRemoteHostNameProperty().addListener(e -> remotePreferencesListener());
         AnalystPrefs.getRemoteUserNameProperty().addListener(e -> remotePreferencesListener());
+
     }
 
     private void remotePreferencesListener() {
@@ -93,4 +98,5 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
     private List<Tab> getTabs() {
         return datasetBrowserTabPane.getTabs();
     }
+
 }

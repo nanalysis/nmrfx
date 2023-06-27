@@ -3,8 +3,6 @@ package org.nmrfx.analyst.gui.datasetbrowser;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.scene.control.Button;
 import javafx.stage.DirectoryChooser;
@@ -68,11 +66,7 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
                 Fx.runOnFxThread(() -> taskStatusUpdater.accept("Dataset Browser: Scanning"));
 
                 List<DatasetSummary> results = NMRDataUtil.scanDirectory(scanDir, outPath);
-                Platform.runLater(() -> {
-                    ObservableList<DatasetSummary> items = FXCollections.observableArrayList();
-                    items.addAll(results);
-                    tableView.setItems(items);
-                });
+                Platform.runLater(() -> tableView.setDatasetSummaries(results));
                 Fx.runOnFxThread(() -> taskStatusUpdater.accept("Dataset Browser"));
 
                 return results;

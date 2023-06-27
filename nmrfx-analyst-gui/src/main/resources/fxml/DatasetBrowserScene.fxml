@@ -2,7 +2,6 @@
 
 <?import javafx.scene.control.TabPane?>
 
-
 <TabPane fx:id="datasetBrowserTabPane"
          tabClosingPolicy="UNAVAILABLE"
          prefHeight="350.0" prefWidth="600" styleClass="mainFxmlClass"
