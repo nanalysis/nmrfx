@@ -63,7 +63,8 @@ public abstract class DatasetBrowserTabController {
             if (event.isPrimaryButtonDown() && event.getClickCount() == 2) {
                 DatasetSummary datasetSummary = tableView.getSelectionModel().getSelectedItem();
                 if (datasetSummary != null) {
-                    openFile(datasetSummary.getProcessed().isEmpty());
+                    // always try to open fid if control is down
+                    openFile(event.isControlDown() || datasetSummary.getProcessed().isEmpty());
                 }
             }
         });
