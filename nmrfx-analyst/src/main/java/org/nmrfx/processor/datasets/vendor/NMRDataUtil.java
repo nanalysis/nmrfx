@@ -25,7 +25,6 @@ import org.nmrfx.processor.datasets.vendor.jeol.JeolDelta;
 import org.nmrfx.processor.datasets.vendor.nmrpipe.NMRPipeData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
-import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.datasets.vendor.varian.VarianData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.Expd;
@@ -43,8 +42,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.Base64.Encoder;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Utility helper class for NMRData interface.
@@ -288,20 +288,16 @@ public final class NMRDataUtil {
     /**
      *
      */
-    public static class PeekFiles extends SimpleFileVisitor<Path> {
-
+    private abstract static class PeekFiles extends SimpleFileVisitor<Path> {
         ArrayList<String> fileList = new ArrayList<>();
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
-            if (attr.isRegularFile() && (file.endsWith("fid") || (file.endsWith("ser")) || file.toString().endsWith(".jdx") || file.toString().endsWith(".dx") || file.toString().endsWith(RS2DData.DATA_FILE_NAME))) {
-                String fidPath = NMRDataUtil.isFIDDir(file.toString());
-                if (fidPath != null) {
-                    fileList.add(fidPath);
-                }
-            }
+            handleVisit(file, attr);
             return FileVisitResult.CONTINUE;
         }
+
+        protected abstract void handleVisit(Path file, BasicFileAttributes attr);
 
         @Override
         public FileVisitResult visitFileFailed(Path file, IOException e) {
@@ -314,10 +310,36 @@ public final class NMRDataUtil {
          *
          * @return a list of file names
          */
-        public ArrayList<String> getFiles() {
+        public List<String> getFiles() {
             return fileList;
         }
     } // end class PeekFiles
+
+    public static class PeekFidFiles extends PeekFiles {
+
+        @Override
+        protected void handleVisit(Path file, BasicFileAttributes attr) {
+            if (attr.isRegularFile() && (file.endsWith("fid") || (file.endsWith("ser")) || file.toString().toLowerCase().endsWith(".jdx") || file.toString().toLowerCase().endsWith(".dx") || file.toString().endsWith(RS2DData.DATA_FILE_NAME))) {
+                String fidPath = NMRDataUtil.isFIDDir(file.toString());
+                if (fidPath != null) {
+                    fileList.add(fidPath);
+                }
+            }
+        }
+    }
+
+    public static class PeekProcessedFiles extends PeekFiles {
+        Pattern pattern = Pattern.compile(".*\\.nv|.*\\.ucsf|.*Proc.*data\\.dat");
+
+        @Override
+        protected void handleVisit(Path file, BasicFileAttributes attr) {
+            String name = file.getFileName().toString();
+            Matcher m = pattern.matcher(file.toString());
+            if (m.find() || BrukerData.isProcessedFile(name) ) {
+                fileList.add(file.toString());
+            }
+        }
+    }
 
     /**
      * Scan the specified directory to find sub-directories that are NMR data
@@ -326,48 +348,28 @@ public final class NMRDataUtil {
      * @param path the path of the directory to scan
      * @return An ArrayList containing a list of NMR dataset paths.
      */
-    public static ArrayList<String> findNMRDirectories(String path) {
-        ArrayList<String> fileList = null;
+    public static List<String> findNMRDirectories(String path) {
+        List<String> fileList = null;
         Path autodir = Paths.get(path);
         try {
-            PeekFiles filePeeker = new PeekFiles();
+            PeekFiles filePeeker = new PeekFidFiles();
             Files.walkFileTree(autodir, filePeeker);
             fileList = filePeeker.getFiles();
-
         } catch (IOException ex) {
             log.warn(ex.getMessage(), ex);
         }
         return fileList;
-
     }
 
     public static List<Path> findProcessedFiles(Path path) throws IOException {
-        List<Path> result;
-        try (Stream<Path> pathStream = Files.find(path, 1, (p, basicFileAttributes)
-                        -> {
-                    String name = p.getFileName().toString();
-                    return name.endsWith(".nv") || name.endsWith(".ucsf")
-                            || BrukerData.isProcessedFile(name) || name.endsWith(RS2DData.PROC_DIR);
-                }
-        )) {
-            result = pathStream.collect(Collectors.toList());
+        try {
+            PeekFiles filePeeker = new PeekProcessedFiles();
+            Files.walkFileTree(path, filePeeker);
+            return filePeeker.getFiles().stream().map(Path::of).collect(Collectors.toCollection(ArrayList::new));
+        } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
-        // Need to convert any RS2D Proc folders into list of files
-        List<Path> modifiedResult = new ArrayList<>();
-        result.forEach(p -> {
-            if (p.endsWith(RS2DData.PROC_DIR)) {
-                RS2DProcUtil.listProcIds(p.getParent()).forEach(id -> {
-                    Path datafile = Paths.get(p.toString(), id.toString(), RS2DData.DATA_FILE_NAME);
-                    if (datafile.toFile().exists()) {
-                        modifiedResult.add(datafile);
-                    }
-                }
-                );
-            } else {
-                modifiedResult.add(p);
-            }
-        });
-        return modifiedResult;
+        return new ArrayList<>();
     }
 
     public static File findNewestFile(Path dirPath) {

@@ -335,7 +335,7 @@ public class ScanTable {
             if (file.isDirectory()) {
                 scanDir = file;
                 Platform.runLater(() -> {
-                    ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
+                    List<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
                     initTable();
                     loadScanFiles(nmrFiles);
                 });
@@ -374,7 +374,7 @@ public class ScanTable {
             return;
         }
         scanDir = scanDirFile;
-        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
+        List<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
         processingTable = true;
         try {
             initTable();
@@ -518,7 +518,7 @@ public class ScanTable {
         }
     }
 
-    private void loadScanFiles(ArrayList<String> nmrFiles) {
+    private void loadScanFiles(List<String> nmrFiles) {
         fileListItems.clear();
         long firstDate = Long.MAX_VALUE;
         List<FileTableItem> items = new ArrayList<>();
