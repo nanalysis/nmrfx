@@ -90,7 +90,8 @@ public class DatasetBrowserUtil {
             try {
                 return NMRDataUtil.getNMRData(filepath);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                log.warn(e.getMessage(), e);
+                return null;
             }
         }).filter(JCAMPData.class::isInstance).map(JCAMPData.class::cast).toList());
 
@@ -163,6 +164,7 @@ public class DatasetBrowserUtil {
                                     FileTime time2 = Files.getLastModifiedTime(o2);
                                     return time1.compareTo(time2);
                                 } catch (IOException ex) {
+                                    log.warn(ex.getMessage(), ex);
                                     return 0;
                                 }
                             }

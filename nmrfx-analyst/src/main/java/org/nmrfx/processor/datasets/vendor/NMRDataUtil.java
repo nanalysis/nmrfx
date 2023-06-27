@@ -325,7 +325,7 @@ public final class NMRDataUtil {
     }
 
     public static class PeekProcessedFiles extends PeekFiles {
-        Pattern pattern = Pattern.compile(".*\\.nv|.*\\.ucsf|.*Proc.*data\\.dat");
+        Pattern pattern = Pattern.compile("\\.nv$|\\.ucsf$|Proc.*data\\.dat$");
 
         @Override
         protected void handleVisit(Path file, BasicFileAttributes attr) {
