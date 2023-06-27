@@ -1,4 +1,4 @@
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.analyst.gui.datasetbrowser;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
@@ -18,7 +18,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 
-public class NMRDataUtilTest {
+public class DatasetBrowserUtilTest {
     private static Path tmpPath;
     private static Path scanDirectory;
     private static Path fidPath;
@@ -49,7 +49,7 @@ public class NMRDataUtilTest {
         FileUtils.copyFile(Path.of(validPath.toString(), "gb1_tract1d.nv").toFile(), Path.of(scanDirectory.toString(), "gb1_tract1d/6/gb1_tract1d.nv").toFile());
         // Make a second copy of gb1_tract1d.nv with different filename to mimic multiple processed files
         FileUtils.copyFile(Path.of(validPath.toString(), "gb1_tract1d.nv").toFile(), Path.of(scanDirectory.toString(), "gb1_tract1d/6/gb1_tract1d_copy.nv").toFile());
-        List<DatasetSummary> summaries = NMRDataUtil.scanDirectory(multipleDatasetsPath.toString(), tmpPath.resolve("nmrfx_index.json"));
+        List<DatasetSummary> summaries = DatasetBrowserUtil.scanDirectory(multipleDatasetsPath.toString(), tmpPath.resolve("nmrfx_index.json"));
         assertEquals(1, summaries.size());
         assertEquals(2, summaries.get(0).getProcessed().size());
     }
@@ -58,7 +58,7 @@ public class NMRDataUtilTest {
     public void testScanDirectoryWithRS2DProccessedFiles() throws IOException {
         Path rs2dDirectoryPath = Path.of(scanDirectory.toString(), "680");
         FileUtils.copyDirectory(Path.of(fidPath.toString(), "rs2d/1Dproton/680").toFile(), rs2dDirectoryPath.toFile());
-        List<DatasetSummary> summaries = NMRDataUtil.scanDirectory(rs2dDirectoryPath.toString(), tmpPath.resolve("nmrfx_index.json"));
+        List<DatasetSummary> summaries = DatasetBrowserUtil.scanDirectory(rs2dDirectoryPath.toString(), tmpPath.resolve("nmrfx_index.json"));
         assertEquals(1, summaries.size());
         assertEquals(1, summaries.get(0).getProcessed().size());
     }
@@ -74,7 +74,7 @@ public class NMRDataUtilTest {
         validDataset.sourceFID(testFidPath);
         validDataset.writeParFile();
         validDataset.close();
-        List<DatasetSummary> summaries = NMRDataUtil.scanDirectory(testFidPath.getParent(), tmpPath.resolve("nmrfx_index.json"));
+        List<DatasetSummary> summaries = DatasetBrowserUtil.scanDirectory(testFidPath.getParent(), tmpPath.resolve("nmrfx_index.json"));
         assertEquals(1, summaries.size());
         assertEquals(1, summaries.get(0).getProcessed().size());
 
