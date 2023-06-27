@@ -38,14 +38,10 @@ public abstract class DatasetBrowserTabController {
     private void initToolbar() {
         Button retrieveIndexButton = new Button("Index");
         retrieveIndexButton.setOnAction(e -> retrieveIndex());
-        Button fidButton = new Button("FID");
-        fidButton.setOnAction(e -> openFile(true));
-        Button datasetButton = new Button("Dataset");
-        datasetButton.setOnAction(e -> openFile(false));
         HBox.setHgrow(toolbarSpacer, Priority.ALWAYS);
         filterTextField.textProperty().addListener((observable, oldValue, newValue) -> filterChanged());
         filterTextField.setPrefWidth(200);
-        toolBar.getItems().addAll(retrieveIndexButton, fidButton, datasetButton, toolbarSpacer, filterTextField);
+        toolBar.getItems().addAll(retrieveIndexButton, toolbarSpacer, filterTextField);
     }
 
     /**
