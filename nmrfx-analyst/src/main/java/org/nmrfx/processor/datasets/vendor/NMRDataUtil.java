@@ -492,6 +492,9 @@ public final class NMRDataUtil {
             fidData.getValue().addAll(getProcessedNMRViewDatasetsAndUpdateDatasetMap(fidFile, pathDatasetBaseCache));
         }
 
+        // Close all the datasets datafiles
+        pathDatasetBaseCache.values().forEach(DatasetBase::close);
+
         List<DatasetSummary> summaries = new ArrayList<>();
         for (Map.Entry<JCAMPData, List<Path>> fidData: fidDatasetMap.entrySet()) {
             DatasetSummary summary = createDatasetSummary(relativeDirectory, fidData.getKey(), fidData.getValue());
