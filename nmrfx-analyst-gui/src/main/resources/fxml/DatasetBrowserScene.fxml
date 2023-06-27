@@ -1,17 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.StackPane?>
 
-<AnchorPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.analyst.gui.datasetbrowser.DatasetBrowserController">
-   <children>
-      <TabPane fx:id="datasetBrowserTabPane" prefHeight="350.0" prefWidth="600" styleClass="mainFxmlClass" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-      <StackPane fx:id="stackPane" prefHeight="0.0" prefWidth="200.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <children>
-            <TextField fx:id="filterTextField" StackPane.alignment="CENTER" />
-         </children>
-      </StackPane>
-   </children>
-</AnchorPane>
+<TabPane fx:id="datasetBrowserTabPane"
+         tabClosingPolicy="UNAVAILABLE"
+         prefHeight="350.0" prefWidth="600" styleClass="mainFxmlClass"
+         xmlns="http://javafx.com/javafx/17"
+         xmlns:fx="http://javafx.com/fxml/1"
+         fx:controller="org.nmrfx.analyst.gui.datasetbrowser.DatasetBrowserController" />

@@ -22,10 +22,7 @@ import com.nanalysis.jcamp.parser.JCampParser;
 import com.nanalysis.jcamp.util.JCampUtil;
 import org.apache.commons.math3.complex.Complex;
 import org.codehaus.commons.nullanalysis.Nullable;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetException;
-import org.nmrfx.processor.datasets.DatasetGroupIndex;
-import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.datasets.*;
 import org.nmrfx.processor.datasets.parameters.*;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
@@ -58,20 +55,26 @@ public class JCAMPData implements NMRData {
      * JCamp-defined acquisition scheme.
      */
     enum AcquisitionScheme {
-        UNDEFINED("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        NOT_PHASE_SENSITIVE("sep", new double[0]),
-        TPPI("real", new double[0]),
-        STATES("hyper-r", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        STATES_TPPI("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        ECHO_ANTIECHO("echo-antiecho-r", new double[]{1, 0, -1, 0, 0, 1, 0, 1}),
-        QSEQ("real", new double[0]);
+        UNDEFINED(AcquisitionType.HYPER),
+        NOT_PHASE_SENSITIVE(AcquisitionType.SEP),
+        TPPI(AcquisitionType.REAL),
+        STATES(AcquisitionType.HYPER_R),
+        STATES_TPPI(AcquisitionType.HYPER),
+        ECHO_ANTIECHO(AcquisitionType.ECHO_ANTIECHO_R),
+        QSEQ(AcquisitionType.REAL);
 
-        public final String symbolicCoefs;
-        public final double[] coefs;
+        private final AcquisitionType acquisitionType;
 
-        AcquisitionScheme(String symbolicCoefs, double[] coefs) {
-            this.symbolicCoefs = symbolicCoefs;
-            this.coefs = coefs;
+        AcquisitionScheme(AcquisitionType acquisitionType) {
+            this.acquisitionType = acquisitionType;
+        }
+
+        public String getSymbolicCoefs() {
+            return acquisitionType.getLabel();
+        }
+
+        public double[] getCoefs() {
+            return acquisitionType.getCoefficients();
         }
     }
 
@@ -155,6 +158,10 @@ public class JCAMPData implements NMRData {
             matrix[i] = pages.get(i).toArray();
         }
         return matrix;
+    }
+
+    public String getTitle() {
+        return document.getTitle();
     }
 
     @Override
@@ -481,7 +488,7 @@ public class JCAMPData implements NMRData {
         }
 
         AcquisitionScheme scheme = getAcquisitionScheme();
-        return scheme == null ? new double[0] : scheme.coefs;
+        return scheme == null ? new double[0] : scheme.getCoefs();
     }
 
     @Override
@@ -491,7 +498,7 @@ public class JCAMPData implements NMRData {
         }
 
         AcquisitionScheme scheme = getAcquisitionScheme();
-        return scheme == null ? null : scheme.symbolicCoefs;
+        return scheme == null ? null : scheme.getSymbolicCoefs();
     }
 
     @Override
@@ -770,7 +777,7 @@ public class JCAMPData implements NMRData {
             return false;
         }
 
-        if ("sep".equals(getSymbolicCoefs(dim))) {
+        if (AcquisitionType.SEP.getLabel().equals(getSymbolicCoefs(dim))) {
             return false;
         }
         boolean reverse = block.optional($REVERSE, dim).map(JCampRecord::getString)

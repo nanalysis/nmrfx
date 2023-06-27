@@ -9,7 +9,6 @@ import javafx.stage.DirectoryChooser;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.fxutil.Fx;
-import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.utilities.DatasetSummary;
 import org.nmrfx.utils.GUIUtils;
@@ -64,7 +63,7 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
             protected List<DatasetSummary> call() {
                 Fx.runOnFxThread(() -> taskStatusUpdater.accept("Dataset Browser: Scanning"));
 
-                List<DatasetSummary> results = NMRDataUtil.scanDirectory(scanDir, outPath);
+                List<DatasetSummary> results = DatasetBrowserUtil.scanDirectory(scanDir, outPath);
                 Platform.runLater(() -> tableView.setDatasetSummaries(results));
                 Fx.runOnFxThread(() -> taskStatusUpdater.accept("Dataset Browser"));
 
@@ -88,8 +87,13 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
             }
             FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
             if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
-                File localDataset = fileSystem.getPath(directoryTextField.getText(), fileName, datasetSummary.getProcessed()).toFile();
-                if (localDataset.exists()) {
+                // TODO NMR-6980 don't use first element of list (get selected one)
+                File baseFile = fileSystem.getPath(directoryTextField.getText(), fileName).toFile();
+                if (baseFile.isFile()) {
+                    baseFile = baseFile.getParentFile();
+                }
+                File localDataset = fileSystem.getPath(baseFile.toString(), datasetSummary.getProcessed().get(0)).toFile();
+                 if (localDataset.exists()) {
                     controller.openDataset(localDataset, false, true);
                 }
             } else {

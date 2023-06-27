@@ -1,25 +1,22 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
-import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
 import org.nmrfx.utilities.DatasetSummary;
+import javafx.scene.layout.*;
 
 
 public abstract class DatasetBrowserTabController {
     private final Tab tab;
     protected final BorderPane borderPane = new BorderPane();
     protected final VBox vBox = new VBox();
-    protected final ToolBar toolBar = new ToolBar();
+    private final ToolBar toolBar = new ToolBar();
     protected final HBox hBox = new HBox();
+    protected final Region toolbarSpacer = new Region();
+    protected final TextField filterTextField = new TextField();
     protected final TextField directoryTextField = new TextField();
     protected DatasetBrowserTableView tableView;
 
@@ -45,8 +42,18 @@ public abstract class DatasetBrowserTabController {
         fidButton.setOnAction(e -> openFile(true));
         Button datasetButton = new Button("Dataset");
         datasetButton.setOnAction(e -> openFile(false));
+        HBox.setHgrow(toolbarSpacer, Priority.ALWAYS);
+        filterTextField.textProperty().addListener((observable, oldValue, newValue) -> filterChanged());
+        filterTextField.setPrefWidth(200);
+        toolBar.getItems().addAll(retrieveIndexButton, fidButton, datasetButton, toolbarSpacer, filterTextField);
+    }
 
-        toolBar.getItems().addAll(retrieveIndexButton, fidButton, datasetButton);
+    /**
+     * Add button to toolbar in the left grouping of buttons.
+     */
+    protected void addToolbarButton(Button button) {
+        int spacerIndex = toolBar.getItems().indexOf(toolbarSpacer);
+        toolBar.getItems().add(spacerIndex, button);
     }
 
     protected void setTableView(DatasetBrowserTableView tableView) {
@@ -82,9 +89,9 @@ public abstract class DatasetBrowserTabController {
         return tab;
     }
 
-    public void setTableFilter(String filterText) {
+    protected void filterChanged() {
         if (tableView != null) {
-            tableView.setFilter(filterText);
+            tableView.setFilter(filterTextField.getText());
         }
     }
 }

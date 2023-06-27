@@ -117,6 +117,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private final Button favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
     private final SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     private final ToggleButton processorButton = new ToggleButton("Processor");
+    private final NmrControlRightSidePane nmrControlRightSidePane = new NmrControlRightSidePane();
 
     private ChartProcessor chartProcessor;
     private Stage stage = null;
@@ -126,11 +127,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private SpectrumComparator spectrumComparator;
     private double widthScale = 10.0;
     private Phaser phaser;
-    private Pane attributesPane;
-    private Pane contentPane;
     private AttributesController attributesController;
     private ContentController contentController;
     private AnalyzerBar analyzerBar = null;
+    @FXML
+    private HBox topLevelHBox;
     @FXML
     private VBox topBar;
     @FXML
@@ -146,17 +147,16 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     @FXML
     private BorderPane mainBox;
     @FXML
-    private StackPane processorPane;
-    @FXML
     private HBox leftBar;
     private double previousStageRestoreWidth = 0;
     private double previousStageRestoreProcControllerWidth = 0;
-    private boolean previousStageRestoreProcControllerVisible = false;
+    private boolean previousStageRestoreNmrControlRightSideContentVisible = false;
     private PolyChart activeChart = null;
     private ChartDrawingLayers chartDrawingLayers;
     private final BooleanProperty minBorders = new SimpleBooleanProperty(this, "minBorders", false);
     private final ColorProperty bgColor = new ColorProperty(this, "bgColor", null);
     private final ColorProperty axesColor = new ColorProperty(this, "axesColor", null);
+    private boolean viewProcessorControllerIfPossible = true;
 
     public Color getBgColor() {
         return bgColor.get();
@@ -263,21 +263,19 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         isFID = false;
         activeChart = chart;
         PolyChartManager.getInstance().setActiveChart(chart);
+        disableProcessorButton(!isProcessorControllerAvailable());
         ProcessorController processorController = chart.getProcessorController(false);
-        processorPane.getChildren().clear();
         // The chart has a processor controller setup, and can be in FID or Dataset mode.
         if (processorController != null) {
             isFID = !processorController.isViewingDataset();
             chartProcessor = processorController.chartProcessor;
-            if (processorController.isVisible()) {
-                processorController.show();
+            if (viewProcessorControllerIfPossible || processorButton.isSelected()) {
+                nmrControlRightSidePane.addContent(processorController);
             }
-            // TODO NMR-6974 confirm this behaviour
-            processorButton.setSelected(processorController.isVisible());
+            processorButton.setSelected(viewProcessorControllerIfPossible);
         } else {
             processorButton.setSelected(false);
         }
-        disableProcessorButton(!isProcessorControllerAvailable());
         updateSpectrumStatusBarOptions(false);
         if (attributesController != null) {
             attributesController.setChart(activeChart);
@@ -295,10 +293,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public boolean isPhaseSliderVisible() {
         return borderPane.getRight() == phaserBox;
-    }
-
-    public boolean isContentPaneShowing() {
-        return borderPane.getRight() == contentPane;
     }
 
     public Stage getStage() {
@@ -422,7 +416,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (dataset != null) {
             ProcessorController processorController = getActiveChart().getProcessorController(false);
             if (processorController != null && (!dataset.getFile().equals(chartProcessor.getDatasetFile()))) {
-                processorPane.getChildren().clear();
+                nmrControlRightSidePane.removeContent(processorController);
                 getActiveChart().setProcessorController(null);
                 processorController.cleanUp();
             }
@@ -443,13 +437,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         ProcessorController processorController = getActiveChart().getProcessorController(true);
         if (processorController != null) {
             disableProcessorButton(false);
-            // TODO NMR-6974: confirm this behaviour
             processorButton.setSelected(true);
             processorController.setAutoProcess(false);
             chartProcessor.setData(nmrData, clearOps);
             processorController.viewingDataset(false);
             processorController.updateFileButton();
-            processorController.show();
+            nmrControlRightSidePane.addContent(processorController);
             processorController.clearOperationList();
             chartProcessor.clearAllOperations();
             processorController.parseScript("");
@@ -576,8 +569,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
-    public StackPane getProcessorPane() {
-        return processorPane;
+    public NmrControlRightSidePane getNmrControlRightSidePane() {
+        return nmrControlRightSidePane;
     }
 
     public void closeFile(File target) {
@@ -604,18 +597,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void showPeakAttrAction(ActionEvent event) {
         showPeakAttr();
         peakAttrController.initIfEmpty();
-    }
-
-    public void showProcessorAction() {
-        ProcessorController processorController = getActiveChart().getProcessorController(true);
-        processorController.show();
-    }
-
-    public void hideProcessorAction() {
-        ProcessorController processorController = getActiveChart().getProcessorController(false);
-        if (processorController != null) {
-            processorController.hide();
-        }
     }
 
     public Button getHaltButton() {
@@ -739,17 +720,13 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void updateAttrDims() {
-        if (isSideBarAttributesShowing()) {
+        if (nmrControlRightSidePane.isContentShowing(attributesController)) {
             attributesController.setChart(getActiveChart());
         }
     }
 
-    public boolean isSideBarAttributesShowing() {
-        return (attributesPane != null) && (borderPane.getRight() == attributesPane);
-    }
-
     public void updateDatasetAttributeControls() {
-        if (isSideBarAttributesShowing()) {
+        if (nmrControlRightSidePane.isContentShowing(attributesController)) {
             attributesController.updateDatasetAttributeControls();
         }
     }
@@ -784,8 +761,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        topLevelHBox.getChildren().add(nmrControlRightSidePane);
         borderPane.setLeft(null);
-        initializeRightPaneContentControlToggleButtons();
+        initializeNmrControlRightSideContentToggleButtons();
         chartDrawingLayers = new ChartDrawingLayers(this, chartPane);
         activeChart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
         initToolBar(toolBar);
@@ -807,22 +785,18 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             }
         }
         phaser = new Phaser(this, phaserBox);
-        processorPane.getChildren().addListener(this::updateStageSize);
+        nmrControlRightSidePane.addContentListener(this::updateStageSize);
         cursorProperty.addListener(e -> setCursor());
-        attributesPane = new AnchorPane();
-        attributesController = AttributesController.create(this, attributesPane);
-        borderPane.heightProperty().addListener(e -> attributesController.updateScrollSize(borderPane));
+        attributesController = AttributesController.create(this);
 
-        contentPane = new AnchorPane();
-        contentController = ContentController.create(this, contentPane);
-        borderPane.heightProperty().addListener(e -> contentController.updateScrollSize(borderPane));
+        contentController = ContentController.create(this);
     }
 
     /**
      * Initialize the toggle buttons Processing, Attributes and Contents. On mac these buttons will appear right
      * aligned in a separate top menu in the window, otherwise they will appear right aligned in the file menu.
      */
-    private void initializeRightPaneContentControlToggleButtons() {
+    private void initializeNmrControlRightSideContentToggleButtons() {
         // Note processor button is already created, just needs to have action listener and style setup
         ToggleButton attributesButton = new ToggleButton("Attributes");
         ToggleButton contentButton = new ToggleButton("Content");
@@ -830,8 +804,13 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         groupButton.getButtons().forEach(button -> {
             // need to listen to property instead of action so toggle method is triggered when setSelected is called.
             button.selectedProperty().addListener((obs, oldValue, newValue) ->
-                    toggleSideBarAttributes(attributesButton, contentButton, processorButton));
+                    toggleNmrControlRightSideContent(attributesButton, contentButton, processorButton));
             button.getStyleClass().add("toolButton");
+        });
+        processorButton.disableProperty().addListener((observable, oldValue, newValue) -> {
+            if(Boolean.TRUE.equals(newValue) && processorButton.isSelected()) {
+                viewProcessorControllerIfPossible = true;
+            }
         });
         if (AnalystApp.isMac()) {
             ToolBar toggleButtonToolbar = new ToolBar();
@@ -1512,23 +1491,29 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return fracs;
     }
 
-    private void toggleSideBarAttributes(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
+    /**
+     * Switches which NmrControlRightSideContent is displayed in the nmrControlRightSidePane.
+     * @param attributesButton The attributes toggle button.
+     * @param contentButton The content toggle button.
+     * @param processorButton The processor toggle button.
+     */
+    private void toggleNmrControlRightSideContent(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
         if (attributesButton.isSelected()) {
-            borderPane.setRight(attributesPane);
+            nmrControlRightSidePane.addContent(attributesController);
             attributesController.setAttributeControls();
-            attributesController.updateScrollSize(borderPane);
-            hideProcessorAction();
+            viewProcessorControllerIfPossible = false;
         } else if (contentButton.isSelected()) {
-            borderPane.setRight(contentPane);
+            nmrControlRightSidePane.addContent(contentController);
             contentController.update();
-            contentController.updateScrollSize(borderPane);
-            hideProcessorAction();
+            viewProcessorControllerIfPossible = false;
         } else if (processorButton.isSelected()) {
-            showProcessorAction();
-            borderPane.setRight(null);
+            nmrControlRightSidePane.addContent(getActiveChart().getProcessorController(true));
+            viewProcessorControllerIfPossible = true;
         } else {
-            borderPane.setRight(null);
-            hideProcessorAction();
+            nmrControlRightSidePane.clear();
+            if (!processorButton.isDisabled() && getActiveChart().getProcessorController(false) != null) {
+                viewProcessorControllerIfPossible = false;
+            }
         }
     }
 
@@ -1552,17 +1537,17 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     /**
-     * Listener for changes to the processorPane's children, if a pane is added or removed, the stage width is adjusted accordingly.
+     * Listener for changes to the nMRControlRightSidePane children, if a pane is added or removed, the stage width is adjusted accordingly.
      *
-     * @param c The change to processorPane's children
+     * @param c The change to nMRControlRightSidePane's children
      */
     private void updateStageSize(ListChangeListener.Change<? extends Node> c) {
         double paneAdj = 0;
-        if (processorPane.getChildren().isEmpty()) {
+        if (!nmrControlRightSidePane.hasContent()) {
             if (c.next()) {
                 paneAdj = -1 * ((Pane) c.getRemoved().get(0)).getMinWidth();
             }
-        } else if (processorPane.getChildren().size() == 1) {
+        } else if (nmrControlRightSidePane.size() == 1) {
             paneAdj = ((Pane) c.getList().get(0)).getMinWidth();
         }
         stage.setWidth(stage.getWidth() + paneAdj);
@@ -1728,23 +1713,18 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private void adjustSizeAfterMaximize(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
         if (Boolean.TRUE.equals(newValue)) {
             previousStageRestoreWidth = stage.getWidth();
-            ProcessorController pc = getActiveChart().getProcessorController(false);
-            if (pc != null) {
-                previousStageRestoreProcControllerVisible = pc.isVisible();
-            } else {
-                previousStageRestoreProcControllerVisible = false;
-            }
-            if (previousStageRestoreProcControllerVisible) {
-                previousStageRestoreProcControllerWidth = ((Pane) processorPane.getChildren().get(0)).getMinWidth();
+            previousStageRestoreNmrControlRightSideContentVisible = nmrControlRightSidePane.hasContent();
+            if (previousStageRestoreNmrControlRightSideContentVisible) {
+                previousStageRestoreProcControllerWidth = nmrControlRightSidePane.getContentPane().getMinWidth();
             } else {
                 previousStageRestoreProcControllerWidth = 0;
             }
         } else {
-            boolean procControllerVisible = !processorPane.getChildren().isEmpty();
-            if (procControllerVisible == previousStageRestoreProcControllerVisible) {
+            boolean procControllerVisible = nmrControlRightSidePane.hasContent();
+            if (procControllerVisible == previousStageRestoreNmrControlRightSideContentVisible) {
                 stage.setWidth(previousStageRestoreWidth);
             } else if (procControllerVisible) {
-                Pane p = (Pane) processorPane.getChildren().get(0);
+                Pane p = nmrControlRightSidePane.getContentPane();
                 stage.setWidth(previousStageRestoreWidth + p.getMinWidth());
             } else {
                 stage.setWidth(previousStageRestoreWidth - previousStageRestoreProcControllerWidth);

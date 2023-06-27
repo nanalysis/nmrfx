@@ -59,8 +59,8 @@
             <artifactId>jnr-posix</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.jcraft</groupId>
-            <artifactId>jsch</artifactId>
+            <groupId>com.hierynomus</groupId>
+            <artifactId>sshj</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
