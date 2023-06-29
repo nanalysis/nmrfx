@@ -3,8 +3,7 @@ package org.nmrfx.analyst.gui.datasetbrowser;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import org.controlsfx.control.tableview2.TableView2;
 import org.nmrfx.utilities.DatasetSummary;
@@ -28,8 +27,9 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
         TableColumn<DatasetSummary, Boolean> presentCol = new TableColumn<>("InCache");
         presentCol.setCellValueFactory(new PropertyValueFactory<>("Present"));
 
-        TableColumn<DatasetSummary, String> processedCol = new TableColumn<>("Dataset");
+        TableColumn<DatasetSummary, List<String>> processedCol = new TableColumn<>("Dataset");
         processedCol.setCellValueFactory(new PropertyValueFactory<>("Processed"));
+        processedCol.setCellFactory(column -> new ProcessedDatasetComboBoxTableCell());
 
         TableColumn<DatasetSummary, String> sequenceCol = new TableColumn<>("Sequence");
         sequenceCol.setCellValueFactory(new PropertyValueFactory<>("Seq"));
@@ -66,5 +66,34 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
                 || datasetSummary.getTime().toLowerCase().contains(textFormatted)
                 || datasetSummary.getUser().toLowerCase().contains(textFormatted)
                 || datasetSummary.getSeq().toLowerCase().contains(textFormatted));
+    }
+
+    private static class ProcessedDatasetComboBoxTableCell extends TableCell<DatasetSummary, List<String>> {
+        private final ComboBox<String> combo = new ComboBox<>();
+
+        ProcessedDatasetComboBoxTableCell() {
+            combo.prefWidthProperty().bind(this.widthProperty());
+            combo.valueProperty().addListener((obs, oldValue, newValue) -> {
+                DatasetSummary datasetSummary = getTableRow().getItem();
+                if (datasetSummary == null) {
+                    return;
+                }
+                datasetSummary.setSelectedProcessedDataIndex(datasetSummary.getProcessed().indexOf(newValue));
+            });
+            setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+        }
+
+        @Override
+        protected void updateItem(List<String> items, boolean empty) {
+            super.updateItem(items, empty);
+            if (empty || items.isEmpty()) {
+                setGraphic(null);
+            } else {
+                combo.getItems().setAll(items);
+                // When list is updated, set initial combo box selection to first item of list
+                combo.setValue(items.get(0));
+                setGraphic(combo);
+            }
+        }
     }
 }

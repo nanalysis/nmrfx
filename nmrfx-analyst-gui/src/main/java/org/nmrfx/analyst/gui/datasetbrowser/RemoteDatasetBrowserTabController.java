@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class RemoteDatasetBrowserTabController extends DatasetBrowserTabController {
     private static final Logger log = LoggerFactory.getLogger(RemoteDatasetBrowserTabController.class);
@@ -175,9 +176,9 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         }
         String fileName = datasetSummary.getPath();
         FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-        if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
-            // TODO NMR-6980 don't use first element of list, use selected one instead
-            File localDataset = fileSystem.getPath(pathToLocalCache.toString(), fileName, datasetSummary.getProcessed().get(0)).toFile();
+        Optional<String> selectedProcessedDataset = datasetSummary.getSelectedProcessedData();
+        if (!useFID && selectedProcessedDataset.isPresent()) {
+            File localDataset = fileSystem.getPath(pathToLocalCache.toString(), fileName, selectedProcessedDataset.get()).toFile();
             if (localDataset.exists()) {
                 controller.openDataset(localDataset, false, true);
             }

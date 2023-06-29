@@ -19,6 +19,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class LocalDatasetBrowserTabController extends DatasetBrowserTabController {
@@ -86,13 +87,13 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
                 return;
             }
             FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-            if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
-                // TODO NMR-6980 don't use first element of list (get selected one)
+            Optional<String> selectedProcessedDataset = datasetSummary.getSelectedProcessedData();
+            if (!useFID && selectedProcessedDataset.isPresent()) {
                 File baseFile = fileSystem.getPath(directoryTextField.getText(), fileName).toFile();
                 if (baseFile.isFile()) {
                     baseFile = baseFile.getParentFile();
                 }
-                File localDataset = fileSystem.getPath(baseFile.toString(), datasetSummary.getProcessed().get(0)).toFile();
+                File localDataset = fileSystem.getPath(baseFile.toString(), selectedProcessedDataset.get()).toFile();
                  if (localDataset.exists()) {
                     controller.openDataset(localDataset, false, true);
                 }

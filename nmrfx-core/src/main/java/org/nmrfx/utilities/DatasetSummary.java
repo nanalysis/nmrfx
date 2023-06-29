@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author brucejohnson
@@ -62,6 +63,7 @@ public class DatasetSummary {
      */
     private boolean present;
     private List<String> processed;
+    private int selectedProcessedDataIndex = -1;
 
     /**
      * @return the path
@@ -194,8 +196,29 @@ public class DatasetSummary {
         return processed == null ? new ArrayList<>() : processed;
     }
 
-    public void setProcessed(List<String> fileName) {
-        processed = fileName;
+    public void setProcessed(List<String> fileNames) {
+        processed = fileNames;
+        if (processed == null || fileNames.isEmpty()) {
+            selectedProcessedDataIndex = -1;
+        } else {
+            selectedProcessedDataIndex = 0;
+        }
+
+    }
+
+    public void setSelectedProcessedDataIndex(int index) {
+        if (index < 0 || index >= processed.size()) {
+            log.warn("Invalid index: {}", index);
+            return;
+        }
+        selectedProcessedDataIndex = index;
+    }
+
+    public Optional<String> getSelectedProcessedData() {
+        if (processed == null || processed.isEmpty() || selectedProcessedDataIndex < 0) {
+            return Optional.empty();
+        }
+        return Optional.of(processed.get(selectedProcessedDataIndex));
     }
 
     /**
