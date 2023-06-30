@@ -88,7 +88,7 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
                 }
                 datasetSummary.setSelectedProcessedDataIndex(datasetSummary.getProcessed().indexOf(newValue));
                 // Open the dataset if it isn't the first time the value is set (during table population)
-                if (oldValue != null && datasetSelectionListener != null) {
+                if (oldValue != null && newValue != null && datasetSelectionListener != null) {
                     getTableView().getSelectionModel().select(getIndex());
                     datasetSelectionListener.run();
                 }

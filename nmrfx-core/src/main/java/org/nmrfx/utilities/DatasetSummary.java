@@ -207,9 +207,9 @@ public class DatasetSummary {
     }
 
     public void setSelectedProcessedDataIndex(int index) {
-        if (index < 0 || index >= processed.size()) {
+        if (index < -1 || index >= processed.size()) {
             log.warn("Invalid index: {}", index);
-            return;
+            index = -1;
         }
         selectedProcessedDataIndex = index;
     }
