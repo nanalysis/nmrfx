@@ -21,6 +21,8 @@ import java.nio.file.Paths;
  * @author brucejohnson
  */
 public class AnalystPrefs {
+    private static final String REMOTE_HOST_STR = "REMOTE_HOST";
+    private static final String REMOTE_USER_STR = "REMOTE_USER_NAME";
     private static IntegerProperty libraryVectorSize = null;
     private static DoubleProperty libraryVectorSF = null;
     private static DoubleProperty libraryVectorSW = null;
@@ -32,6 +34,10 @@ public class AnalystPrefs {
     private static StringProperty remoteDirectory = null;
     private static StringProperty localDirectory = null;
     private static StringProperty localResidueDirectory = null;
+
+    private AnalystPrefs() {
+        throw new IllegalAccessError("Utility class shouldn't be instantiated!");
+    }
 
     public static Integer getLibraryVectorSize() {
         libraryVectorSize = PreferencesController.getInteger(libraryVectorSize, "LIBRARY_VECTOR_SIZE", 14);
@@ -69,23 +75,33 @@ public class AnalystPrefs {
     }
 
     public static String getRemoteUserName() {
-        remoteUserName = PreferencesController.getString(remoteUserName, "REMOTE_USER_NAME", "");
+        remoteUserName = PreferencesController.getString(remoteUserName, REMOTE_USER_STR, "");
         return remoteUserName.getValue();
+    }
+
+    public static StringProperty getRemoteUserNameProperty() {
+        remoteUserName = PreferencesController.getString(remoteUserName, REMOTE_USER_STR, "");
+        return remoteUserName;
     }
 
     public static void setRemoteUserName(String name) {
         remoteUserName.setValue(name);
-        PreferencesController.setString("REMOTE_USER_NAME", name);
+        PreferencesController.setString(REMOTE_USER_STR, name);
     }
 
     public static String getRemoteHostName() {
-        remoteHostName = PreferencesController.getString(remoteHostName, "REMOTE_HOST", "");
+        remoteHostName = PreferencesController.getString(remoteHostName, REMOTE_HOST_STR, "");
         return remoteHostName.getValue();
+    }
+
+    public static StringProperty getRemoteHostNameProperty() {
+        remoteHostName = PreferencesController.getString(remoteHostName, REMOTE_HOST_STR, "");
+        return remoteHostName;
     }
 
     public static void setRemoteHostName(String name) {
         remoteHostName.setValue(name);
-        PreferencesController.setString("REMOTE_HOST", name);
+        PreferencesController.setString(REMOTE_HOST_STR, name);
     }
 
     public static String getRemoteDirectory() {
