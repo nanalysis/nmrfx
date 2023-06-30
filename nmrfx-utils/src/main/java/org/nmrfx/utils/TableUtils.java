@@ -2,10 +2,12 @@ package org.nmrfx.utils;
 
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
 import javafx.scene.paint.Color;
+import javafx.util.converter.DoubleStringConverter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +21,7 @@ public class TableUtils {
 
     /**
      * Copies the contents of a table, including the headers, to the clipboard as a tab separated string.
-     * If no rows are selected or copyAll is true, then all rows will be copied. Otherwise only the
+     * If no rows are selected or copyAll is true, then all rows will be copied. Otherwise, only the
      * selected rows will be copied.
      *
      * @param tableView    The TableView to copy.
@@ -48,6 +50,20 @@ public class TableUtils {
         ClipboardContent content = new ClipboardContent();
         content.put(DataFormat.PLAIN_TEXT, tabSeparatedString.toString());
         clipBoard.setContent(content);
+    }
+
+    public static <T> void addDatasetTextEditor(TableColumn<T, Double> doubleColumn, DoubleStringConverter dsConverter,
+                                                 BiConsumer<T, Double> applyValue) {
+        doubleColumn.setCellFactory(tc -> new TextFieldTableCell<>(dsConverter));
+        doubleColumn.setOnEditCommit(
+                (TableColumn.CellEditEvent<T, Double> t) -> {
+                    Double value = t.getNewValue();
+                    if (value != null) {
+                        T item = t.getRowValue();
+                        applyValue.accept(item, value);
+                    }
+                });
+        doubleColumn.setEditable(true);
     }
 
     public static <T> void addColorColumnEditor(TableColumn<T, Color> posColorCol, BiConsumer<T, Color> applyColor) {
@@ -108,4 +124,34 @@ public class TableUtils {
             }
         });
     }
+
+    /**
+     * Formatter to change between Double and Strings in editable columns of Doubles
+     */
+    private static class DoubleColumnFormatter extends javafx.util.converter.DoubleStringConverter {
+        String formatString;
+
+        public DoubleColumnFormatter(int decimalPlaces) {
+            formatString = "%." + decimalPlaces + "f";
+        }
+
+        @Override
+        public String toString(Double object) {
+            return String.format(formatString, object);
+        }
+
+        @Override
+        public Double fromString(String string) {
+            try {
+                return Double.parseDouble(string);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+    }
+
+    public static DoubleColumnFormatter getDoubleColumnFormatter(int decimalPlaces) {
+        return new DoubleColumnFormatter(decimalPlaces);
+    }
+
 }
