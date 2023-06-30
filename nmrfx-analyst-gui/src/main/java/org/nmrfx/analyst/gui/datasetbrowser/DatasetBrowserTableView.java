@@ -14,6 +14,7 @@ import java.util.List;
 public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
     /* Keeps track of the summaries, new summaries are added to this list. */
     private final ObservableList<DatasetSummary> unfilteredDatasetSummaries = FXCollections.observableArrayList();
+    private Runnable datasetSelectionListener = null;
 
     public DatasetBrowserTableView(boolean addCacheColumn) {
         TableColumn<DatasetSummary, String> pathCol = new TableColumn<>("Path");
@@ -71,7 +72,11 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
                 || datasetSummary.getSeq().toLowerCase().contains(textFormatted));
     }
 
-    private static class ProcessedDatasetComboBoxTableCell extends TableCell<DatasetSummary, List<String>> {
+    public void setDatasetSelectionListener(Runnable runnable) {
+        this.datasetSelectionListener = runnable;
+    }
+
+    private class ProcessedDatasetComboBoxTableCell extends TableCell<DatasetSummary, List<String>> {
         private final ComboBox<String> combo = new ComboBox<>();
 
         ProcessedDatasetComboBoxTableCell() {
@@ -82,6 +87,11 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
                     return;
                 }
                 datasetSummary.setSelectedProcessedDataIndex(datasetSummary.getProcessed().indexOf(newValue));
+                // Open the dataset if it isn't the first time the value is set (during table population)
+                if (oldValue != null && datasetSelectionListener != null) {
+                    getTableView().getSelectionModel().select(getIndex());
+                    datasetSelectionListener.run();
+                }
             });
             setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         }

@@ -64,6 +64,7 @@ public abstract class DatasetBrowserTabController {
                 }
             }
         });
+        tableView.setDatasetSelectionListener(() -> openFile(false));
     }
 
     /**
