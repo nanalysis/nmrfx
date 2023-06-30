@@ -55,7 +55,7 @@ jobs:
 
       # Ignore test failures so that all tests are run
       # The publish report step will take care of failing the build if needed
-      # Use jacoco to prepare test coverage report for sonar
+      #  Use jacoco to prepare test coverage report for sonar
 #      - name: Execute tests
 #        run: mvn org.jacoco:jacoco-maven-plugin:prepare-agent test -Dmaven.test.failure.ignore=true
 #
