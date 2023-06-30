@@ -6,6 +6,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import org.controlsfx.control.tableview2.TableView2;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.utilities.DatasetSummary;
 
 import java.util.List;
@@ -50,8 +51,10 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
     }
 
     public void setDatasetSummaries(List<DatasetSummary> summaries) {
-        unfilteredDatasetSummaries.clear();
-        unfilteredDatasetSummaries.addAll(summaries);
+        unfilteredDatasetSummaries.setAll(summaries);
+        // This is required as a fix for header columns misalignment when tableview has a scrollbar, is in a tab
+        // and uses TableView.CONSTRAINED_RESIZE_POLICY
+        Fx.runOnFxThread(() -> scrollTo(0));
     }
 
     /**

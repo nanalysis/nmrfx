@@ -65,9 +65,8 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
                 Fx.runOnFxThread(() -> taskStatusUpdater.accept("Dataset Browser: Scanning"));
 
                 List<DatasetSummary> results = DatasetBrowserUtil.scanDirectory(scanDir, outPath);
-                Platform.runLater(() -> tableView.setDatasetSummaries(results));
+                Fx.runOnFxThread(() -> tableView.setDatasetSummaries(results));
                 Fx.runOnFxThread(() -> taskStatusUpdater.accept("Dataset Browser"));
-
                 return results;
             }
         };
