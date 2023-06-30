@@ -77,6 +77,9 @@ public class SpectrumStatusBar {
     private final ComboBox<DisplayMode> displayModeComboBox = new ComboBox<>();
     private final ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = this::chartDisplayDimensionChanged;
     private final SegmentedButton cursorButtons = new SegmentedButton();
+    private final ToggleButton tableButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.TABLE, "Table",
+            AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
+
 
     // tools & additional buttons
     private final ToolBar secondaryToolbar = new ToolBar();
@@ -96,6 +99,7 @@ public class SpectrumStatusBar {
     // can't be called from constructor: relies on controller.getActiveChart(), which returns null at construction
     public void init() {
         peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
+        tableButton.setOnAction(e -> controller.updateScannerTool(tableButton));
         initCursorButtonGroup();
         setupTools();
 
@@ -118,7 +122,6 @@ public class SpectrumStatusBar {
                 } else {
                     crossText[index][orientationIndex].setStyle("-fx-text-inner-color: black;");
                 }
-
             }
         }
 
@@ -520,6 +523,7 @@ public class SpectrumStatusBar {
 
     private void updatePrimaryToolbarFor1DArray(int nDim) {
         List<Node> nodes = new ArrayList<>();
+        nodes.add(tableButton);
         if (isStacked()) {
             displayModeComboBox.getSelectionModel().select(DisplayMode.STACKPLOT);
         } else {
@@ -591,6 +595,7 @@ public class SpectrumStatusBar {
 
     private void setupPrimaryToolbarForSelectedMode() {
         List<Node> nodes = new ArrayList<>();
+        nodes.add(tableButton);
         if (currentMode == DataMode.DATASET_1D) {
             cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(false);
         } else if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {

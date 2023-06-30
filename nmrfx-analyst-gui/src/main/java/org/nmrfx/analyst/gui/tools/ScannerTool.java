@@ -62,12 +62,14 @@ import java.util.regex.Pattern;
  */
 public class ScannerTool implements ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(ScannerTool.class);
+    private static final String BIN_MEASURE_NAME = "binValues";
 
     BorderPane borderPane;
 
     ToolBar scannerBar;
     private TableView<FileTableItem> tableView;
     Consumer<ScannerTool> closeAction;
+    double splitPanePosition = 0.8;
 
     FXMLController controller;
     PolyChart chart;
@@ -83,23 +85,20 @@ public class ScannerTool implements ControllerTool {
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
 
-    public ScannerTool(FXMLController controller, Consumer<ScannerTool> closeAction) {
+    public ScannerTool(FXMLController controller) {
         this.controller = controller;
-        this.closeAction = closeAction;
         chart = controller.getActiveChart();
     }
 
     public void initialize(BorderPane borderPane) {
         this.borderPane = borderPane;
         scannerBar = new ToolBar();
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
-        closeButton.setOnAction(e -> close());
-        scannerBar.getItems().add(closeButton);
-        borderPane.setTop(scannerBar);
-
         tableView = new TableView<>();
         tableView.setPrefHeight(250.0);
         borderPane.setCenter(tableView);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        closeButton.setOnAction(e -> controller.hideScannerMenus());
+        scannerBar.getItems().add(closeButton);
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeProcessMenu());
         scannerBar.getItems().add(makeRegionMenu());
@@ -107,6 +106,15 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
+        loadFromDataset();
+    }
+
+    public void showMenus() {
+        borderPane.setTop(scannerBar);
+    }
+
+    public void hideMenus() {
+        borderPane.setTop(null);
     }
 
     @Override
@@ -116,6 +124,14 @@ public class ScannerTool implements ControllerTool {
 
     public BorderPane getBox() {
         return borderPane;
+    }
+
+    public void setSplitPanePosition(double value) {
+        splitPanePosition = value;
+    }
+
+    public double getSplitPanePosition() {
+        return splitPanePosition;
     }
 
     private MenuButton makeFileMenu() {
@@ -243,6 +259,7 @@ public class ScannerTool implements ControllerTool {
 
     private void loadFromDataset() {
         scanTable.loadFromDataset();
+        scanTable.setChart();
     }
 
     private void openSelectedListFile() {
@@ -255,6 +272,11 @@ public class ScannerTool implements ControllerTool {
 
     public ToolBar getToolBar() {
         return scannerBar;
+    }
+
+    public void setChart(PolyChart chart) {
+        this.chart = chart;
+        scanTable.setChart();
     }
 
     public PolyChart getChart() {
@@ -270,11 +292,9 @@ public class ScannerTool implements ControllerTool {
         boolean result = false;
         for (String header : headers) {
             int colon = header.indexOf(":");
-            if (colon != -1) {
-                if (header.substring(0, colon).equals(columnName)) {
-                    result = true;
-                    break;
-                }
+            if ((colon != -1) && header.substring(0, colon).equals(columnName)) {
+                result = true;
+                break;
             }
         }
         return result;
@@ -287,12 +307,10 @@ public class ScannerTool implements ControllerTool {
         if (columNameOpt.isPresent()) {
             String columnName = columNameOpt.get();
             columnName = columnName.replace(':', '_').replace(' ', '_');
-            if (!columnName.equals("")) {
-                if (hasColumnName(columnName)) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Column exists");
-                    alert.showAndWait();
-                    return;
-                }
+            if (!columnName.equals("") && hasColumnName(columnName)) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Column exists");
+                alert.showAndWait();
+                return;
             }
             double[] ppms = chart.getCrossHairs().getVerticalPositions();
             double[] wppms = new double[2];
@@ -353,8 +371,7 @@ public class ScannerTool implements ControllerTool {
         wppms[0] = chart.getAxes().get(0).getLowerBound();
         wppms[1] = chart.getAxes().get(0).getUpperBound();
         int extra = 1;
-
-        Measure measure = new Measure("binValues", 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
+        Measure measure = new Measure(BIN_MEASURE_NAME, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
         measure.setName("bins");
         List<double[]> allValues = new ArrayList<>();
         List<FileTableItem> items = scanTable.getItems();
@@ -372,7 +389,6 @@ public class ScannerTool implements ControllerTool {
                     return;
                 }
             }
-            System.out.println("measure " + itemDataset.getName());
 
             List<double[]> values = measureBins(itemDataset, measure, nBins);
             if (values == null) {
@@ -385,14 +401,14 @@ public class ScannerTool implements ControllerTool {
         }
         int iItem = 0;
         for (FileTableItem item : items) {
-            item.setObjectExtra("binValues", allValues.get(iItem++));
+            item.setObjectExtra(BIN_MEASURE_NAME, allValues.get(iItem++));
         }
     }
 
     void scoreSimilarity() {
         FileTableItem refItem = tableView.getSelectionModel().getSelectedItem();
         if (refItem != null) {
-            double[] refValues = (double[]) refItem.getObjectExtra("binValues");
+            double[] refValues = (double[]) refItem.getObjectExtra(BIN_MEASURE_NAME);
             if (refValues == null) {
                 measureSearchBins();
             }
@@ -403,10 +419,10 @@ public class ScannerTool implements ControllerTool {
     void scoreSimilarity(FileTableItem refItem) {
         String newColumnName = "score";
         List<FileTableItem> items = scanTable.getItems();
-        double[] refValues = (double[]) refItem.getObjectExtra("binValues");
+        double[] refValues = (double[]) refItem.getObjectExtra(BIN_MEASURE_NAME);
         RealVector refVec = new ArrayRealVector(refValues);
         for (FileTableItem item : items) {
-            double[] itemValues = (double[]) item.getObjectExtra("binValues");
+            double[] itemValues = (double[]) item.getObjectExtra(BIN_MEASURE_NAME);
             RealVector itemVec = new ArrayRealVector(itemValues);
             double score = refVec.cosine(itemVec);
             item.setExtra(newColumnName, score);

@@ -46,6 +46,7 @@ import javafx.stage.Stage;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.fxutil.StageBasedController;
@@ -91,6 +92,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.*;
 
+import static org.nmrfx.analyst.gui.AnalystApp.getFXMLControllerManager;
 import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionInput;
 
 @PluginAPI("parametric")
@@ -148,6 +150,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private BorderPane mainBox;
     @FXML
     private HBox leftBar;
+    @FXML SplitPane splitPane;
+    ScannerTool scannerTool;
+
     private double previousStageRestoreWidth = 0;
     private double previousStageRestoreProcControllerWidth = 0;
     private boolean previousStageRestoreNmrControlRightSideContentVisible = false;
@@ -279,6 +284,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         updateSpectrumStatusBarOptions(false);
         if (attributesController != null) {
             attributesController.setChart(activeChart);
+        }
+        if (scannerTool != null) {
+            scannerTool.setChart(activeChart);
         }
         if (contentController != null) {
             contentController.setChart(activeChart);
@@ -477,7 +485,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             processorController.viewingDataset(true);
         }
         borderPane.setLeft(null);
-        borderPane.setBottom(null);
         updateSpectrumStatusBarOptions(true);
 
         phaser.getPhaseOp();
@@ -1785,4 +1792,58 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         return docString;
     }
+
+    public void updateScannerTool(ToggleButton button) {
+        if (button.isSelected()) {
+            showScannerTool();
+        } else {
+            hideScannerTool();
+        }
+    }
+
+    public void showScannerMenus() {
+        showScannerTool();
+        scannerTool.showMenus();
+    }
+
+    public void hideScannerMenus() {
+        if (scannerTool != null) {
+            scannerTool.hideMenus();
+        }
+    }
+
+    public void showScannerTool() {
+        if (getBottomBox().getChildren().isEmpty()) {
+            BorderPane vBox;
+            if (scannerTool != null) {
+                vBox = scannerTool.getBox();
+            } else {
+                vBox = new BorderPane();
+                scannerTool = new ScannerTool(this);
+                scannerTool.initialize(vBox);
+            }
+            splitPane.setDividerPosition(0, scannerTool.getSplitPanePosition());
+            getBottomBox().getChildren().add(vBox);
+            addTool(scannerTool);
+        }
+    }
+
+    public void hideScannerTool() {
+        if (scannerTool != null) {
+            removeScannerTool();
+            splitPane.setDividerPosition(0, 1.0);
+        }
+    }
+
+
+    public void removeScannerTool() {
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
+        controller.removeTool(ScannerTool.class);
+        double[] dividerPositions = controller.splitPane.getDividerPositions();
+        if (scannerTool != null) {
+            scannerTool.setSplitPanePosition(dividerPositions[0]);
+            controller.getBottomBox().getChildren().remove(scannerTool.getBox());
+        }
+    }
+
 }
