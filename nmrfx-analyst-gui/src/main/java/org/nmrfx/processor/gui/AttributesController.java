@@ -10,7 +10,6 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -36,13 +35,15 @@ import java.util.ResourceBundle;
 
 import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 
-public class AttributesController implements Initializable {
+public class AttributesController implements Initializable, NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(AttributesController.class);
     static final DecimalFormat FORMATTER = new DecimalFormat();
 
     static {
         FORMATTER.setMaximumFractionDigits(3);
     }
+    @FXML
+    private VBox attributesVBox;
 
     enum SelectionChoice {
         ITEM,
@@ -247,11 +248,9 @@ public class AttributesController implements Initializable {
 
     FXMLController fxmlController;
 
-    public static AttributesController create(FXMLController fxmlController, Pane processorPane) {
-        AttributesController controller = Fxml.load(AttributesController.class, "AttributesController.fxml")
-                .withParent(processorPane)
-                .getController();
-
+    public static AttributesController create(FXMLController fxmlController) {
+        Fxml.Builder builder = Fxml.load(AttributesController.class, "AttributesController.fxml");
+        AttributesController controller = builder.getController();
         controller.fxmlController = fxmlController;
         controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
         controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
@@ -263,7 +262,6 @@ public class AttributesController implements Initializable {
         controller.setChart(fxmlController.getActiveChart());
         controller.datasetChoiceBox.valueProperty().addListener(e -> controller.datasetChoiceChanged());
         controller.peakListChoiceBox.valueProperty().addListener(e -> controller.peakListChoiceChanged());
-
         return controller;
     }
 
@@ -395,11 +393,8 @@ public class AttributesController implements Initializable {
         peakAppearancePane.expandedProperty().addListener(e -> peakPaneExpaned());
     }
 
-    public void updateScrollSize(BorderPane pane) {
-        double otherHeight = applyVBox.getHeight();
-        Node node = pane.getCenter();
-        double height = node.getLayoutBounds().getHeight();
-        attributeScrollPane.setMaxHeight(height - otherHeight - 10);
+    public Pane getPane() {
+        return attributesVBox;
     }
 
     private void unBindChart(PolyChart polyChart) {
@@ -1058,10 +1053,6 @@ public class AttributesController implements Initializable {
         setAttributeControls();
     }
 
-    private boolean isShowing() {
-        return fxmlController.isSideBarAttributesShowing();
-    }
-
     private void setContourSliders() {
         setLvlSlider();
         setNlvlSlider();
@@ -1092,7 +1083,7 @@ public class AttributesController implements Initializable {
     }
 
     public void setAttributeControls() {
-        if ((chart != null) && isShowing()) {
+        if ((chart != null) && getPane().isVisible()) {
             chart = fxmlController.getActiveChart();
             chart.setChartDisabled(true);
             datasetsChanged();
