@@ -17,7 +17,7 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
     private Runnable datasetSelectionListener = null;
 
     public DatasetBrowserTableView(boolean addCacheColumn) {
-        TableColumn<DatasetSummary, String> pathCol = new TableColumn<>("Path");
+        TableColumn<DatasetSummary, String> pathCol = new TableColumn<>("FID");
         pathCol.setCellValueFactory(new PropertyValueFactory<>("Path"));
 
         TableColumn<DatasetSummary, String> dateCol = new TableColumn<>("Date");
