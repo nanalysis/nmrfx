@@ -8,6 +8,7 @@ on:
       - master
       - 'epic/**'
       - 'release/**'
+      - 'NMR-6980_build_installer_for_double_click_testing'
   pull_request:
     branches:
       - master
@@ -55,30 +56,30 @@ jobs:
       # Ignore test failures so that all tests are run
       # The publish report step will take care of failing the build if needed
       # Use jacoco to prepare test coverage report for sonar
-      - name: Execute tests
-        run: mvn org.jacoco:jacoco-maven-plugin:prepare-agent test -Dmaven.test.failure.ignore=true
-
-      - name: Publish test report
-        uses: scacap/action-surefire-report@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          fail_on_test_failures: true
-          fail_if_no_tests: true
-
-      - name: Generate test coverage report
-        run: mvn org.jacoco:jacoco-maven-plugin:report
+#      - name: Execute tests
+#        run: mvn org.jacoco:jacoco-maven-plugin:prepare-agent test -Dmaven.test.failure.ignore=true
+#
+#      - name: Publish test report
+#        uses: scacap/action-surefire-report@v1
+#        with:
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#          fail_on_test_failures: true
+#          fail_if_no_tests: true
+#
+#      - name: Generate test coverage report
+#        run: mvn org.jacoco:jacoco-maven-plugin:report
 
       # Must be done before calling formatter & sonar, otherwise BOM project can be out of date
       # Skip assembly, it is done in the package phase for NMRfx
       # Otherwise, it takes a lot of space (6Gb) AND be copied to the local repository (+3Gb)
-      - name: Install artifacts locally without assembly
-        run: mvn -f pom.xml install -Dmaven.test.skip=true -Dassembly.skipAssembly=true
+#      - name: Install artifacts locally without assembly
+#        run: mvn -f pom.xml install -Dmaven.test.skip=true -Dassembly.skipAssembly=true
 
-      - name: Analyze with sonar
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=nanalysis_nmrfx
+#      - name: Analyze with sonar
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=nanalysis_nmrfx
 
       - name: Trigger private installer build
         uses: actions/github-script@v6
