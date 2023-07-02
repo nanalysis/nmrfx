@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,15 +18,21 @@
 
 package org.nmrfx.chemistry.utilities;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.*;
+import org.nmrfx.annotations.PluginAPI;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /* Simple demo of CSV matching using Regular Expressions.
  * Does NOT use the "CSV" class defined in the Java CookBook.
  * RE Pattern from Chapter 7, Mastering Regular Expressions (p. 205, first edn.)
  */
+@PluginAPI("ring")
 public class CSVRE {
 
     /**
@@ -61,13 +67,7 @@ public class CSVRE {
     }
 
     static Pattern makePattern(String sepStr) {
-        //       return Pattern.compile(
-
-        //    "\"(([^\"])|(\"\"))+\""+sepStr+"?|([^"+sepStr+"]+)"+sepStr+"?|"+sepStr);
         return Pattern.compile("\"(([^\"])|(\"\"))+\"(" + sepStr + "|$)|([^" + sepStr + "]+)" + sepStr + "?|" + sepStr);
-
-        // return Pattern.compile(
-        // "\"(([^\"])|(\"\"))+\""+sepStr+"|([^"+sepStr2+"]+)"+sepStr);
     }
 
     static Pattern makePatternMulti(String sepStr) {
@@ -77,10 +77,7 @@ public class CSVRE {
 
     static Pattern makePattern2(String sepStr) {
         // remove extra quotes and sepStr at end of field
-        //return Pattern.compile("(^\")|(\"" + sepStr + "$)|(\"$)|(" + sepStr + "$)");
         return Pattern.compile("(" + sepStr + "$)");
-
-        //   return Pattern.compile("(^\")|(\""+sepStr+"$)|(\"$)|("+sepStr+"$)");
     }
 
     public static void main(String[] argv) throws IOException {

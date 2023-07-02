@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,21 +17,23 @@
  */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.chemistry.relax.OrderPar;
-import org.nmrfx.chemistry.relax.RelaxationData;
-import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
 import org.nmrfx.chemistry.io.AtomParser;
-
-import javax.vecmath.Point2d;
-import java.util.*;
-import java.util.stream.Collectors;
+import org.nmrfx.chemistry.relax.OrderPar;
+import org.nmrfx.chemistry.relax.RelaxationData;
 import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
 import org.nmrfx.chemistry.relax.SpectralDensity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.vecmath.Point2d;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@PluginAPI({"residuegen", "ring"})
 public class Atom implements IAtom, Comparable<Atom> {
 
     private static final Logger log = LoggerFactory.getLogger(Atom.class);
@@ -297,15 +299,6 @@ public class Atom implements IAtom, Comparable<Atom> {
         return Atom.compare(this, atom);
     }
 
-    public static class AtomComparator implements Comparator<Atom> {
-
-        @Override
-        public int compare(Atom atom1, Atom atom2) {
-            return Atom.compare(atom1, atom2);
-        }
-
-    }
-
     public static int compare(Atom atom1, Atom atom2) {
         if (atom1 == atom2) {
             return 0;
@@ -380,6 +373,7 @@ public class Atom implements IAtom, Comparable<Atom> {
         }
         bonds = newBonds;
     }
+
     public void addSpectralDensity(String name, SpectralDensity data) {
         spectralDensities.put(name, data);
     }
@@ -648,7 +642,7 @@ public class Atom implements IAtom, Comparable<Atom> {
     }
 
     public void addCoords(double x, double y, double z,
-            double occupancy, double bFactor) throws InvalidMoleculeException {
+                          double occupancy, double bFactor) throws InvalidMoleculeException {
         spatialSet.addCoords(x, y, z, occupancy, bFactor);
     }
 
@@ -1193,7 +1187,7 @@ public class Atom implements IAtom, Comparable<Atom> {
     }
 
     public String xyzToString(SpatialSet spatialSet,
-            int iStruct, int iAtom) {
+                              int iStruct, int iAtom) {
         Point3 pt;
         pt = spatialSet.getPoint(iStruct);
 
@@ -1223,7 +1217,7 @@ public class Atom implements IAtom, Comparable<Atom> {
     }
 
     public String ppmToString(SpatialSet spatialSet,
-            int iStruct, int iAtom) {
+                              int iStruct, int iAtom) {
         PPMv ppmv = spatialSet.getPPM(iStruct);
 
         if (ppmv == null) {
@@ -1316,16 +1310,16 @@ public class Atom implements IAtom, Comparable<Atom> {
     /**
      * Converts chemical shift information to a String in NEF format.
      *
-     * @param iStruct int. Index of molecular structure.
-     * @param iAtom int. Index of atom.
-     * @param collapse boolean. Whether to collapse methyl/methylene atoms into
-     * a single entry with a % in the atom name.
+     * @param iStruct   int. Index of molecular structure.
+     * @param iAtom     int. Index of atom.
+     * @param collapse  boolean. Whether to collapse methyl/methylene atoms into
+     *                  a single entry with a % in the atom name.
      * @param sameShift boolean indicating whether this has same shift as
-     * partner
+     *                  partner
      * @return ppmToNEFString(spSet, iStruct, iAtom, collapse).
      */
     public String ppmToNEFString(int iStruct, int iAtom, int collapse,
-            int sameShift) {
+                                 int sameShift) {
         return ppmToNEFString(spatialSet, iStruct, iAtom, collapse, sameShift);
     }
 
@@ -1333,15 +1327,15 @@ public class Atom implements IAtom, Comparable<Atom> {
      * Converts chemical shift information to a String in NEF format.
      *
      * @param spatialSet SpatialSet of the molecule.
-     * @param iStruct int. Index of molecular structure.
-     * @param iAtom int. Index of atom.
-     * @param collapse boolean. Whether to collapse methyl/methylene atoms into
-     * @param sameShift boolean indicating whether this has same shift as
-     * partner a single entry with a % in the atom name.
+     * @param iStruct    int. Index of molecular structure.
+     * @param iAtom      int. Index of atom.
+     * @param collapse   boolean. Whether to collapse methyl/methylene atoms into
+     * @param sameShift  boolean indicating whether this has same shift as
+     *                   partner a single entry with a % in the atom name.
      * @return String in NEF format.
      */
     public String ppmToNEFString(SpatialSet spatialSet,
-            int iStruct, int iAtom, int collapse, int sameShift) {
+                                 int iStruct, int iAtom, int collapse, int sameShift) {
         //chemical shift
         PPMv ppmv = spatialSet.getPPM(iStruct);
         if (ppmv == null) {
@@ -1411,15 +1405,15 @@ public class Atom implements IAtom, Comparable<Atom> {
     /**
      * Converts distance information to a String in NEF format.
      *
-     * @param index int. Index of the line in the file.
-     * @param aCollapse boolean[]. Whether to collapse methyl/methylene atoms in
-     * the distance pair into a single entry with a % in the atom name.
-     * @param restraintID int. Restraint ID number.
+     * @param index            int. Index of the line in the file.
+     * @param aCollapse        boolean[]. Whether to collapse methyl/methylene atoms in
+     *                         the distance pair into a single entry with a % in the atom name.
+     * @param restraintID      int. Restraint ID number.
      * @param restraintComboID String. Restraint combination ID. Default is ".".
-     * @param distPair DistancePair. The DistancePair object for the
-     * restraintID.
-     * @param atom1 Atom. First atom in the AtomDistancePair object.
-     * @param atom2 Atom. Second atom in the AtomDistancePair object.
+     * @param distPair         DistancePair. The DistancePair object for the
+     *                         restraintID.
+     * @param atom1            Atom. First atom in the AtomDistancePair object.
+     * @param atom2            Atom. Second atom in the AtomDistancePair object.
      * @return String in NEF format.
      */
     public static String toNEFDistanceString(int index, int[] aCollapse, int restraintID, String restraintComboID, DistanceConstraint distPair, Atom atom1, Atom atom2) {
@@ -1519,12 +1513,12 @@ public class Atom implements IAtom, Comparable<Atom> {
     /**
      * Converts dihedral angle information into a String in NEF format.
      *
-     * @param bound AngleBoundary. The dihedral angle object.
-     * @param atoms Atom[]. List of atoms that form the dihedral angle.
-     * @param iBound int. Index of the dihedral angle.
-     * @param restraintID int. The restraint ID.
+     * @param bound            AngleBoundary. The dihedral angle object.
+     * @param atoms            Atom[]. List of atoms that form the dihedral angle.
+     * @param iBound           int. Index of the dihedral angle.
+     * @param restraintID      int. The restraint ID.
      * @param restraintComboID String. The restraint combination ID. Default is
-     * ".".
+     *                         ".".
      * @return String in NEF format.
      */
     public static String toNEFDihedralString(AngleConstraint bound, Atom[] atoms, int iBound, int restraintID, String restraintComboID) {
@@ -1612,7 +1606,7 @@ public class Atom implements IAtom, Comparable<Atom> {
     }
 
     public String xyzToXMLString(SpatialSet spatialSet,
-            int iStruct, int iAtom) {
+                                 int iStruct, int iAtom) {
         StringBuilder result = new StringBuilder();
         Point3 pt;
         pt = spatialSet.getPoint(iStruct);
@@ -1652,7 +1646,7 @@ public class Atom implements IAtom, Comparable<Atom> {
     }
 
     public String ppmToXMLString(SpatialSet spatialSet,
-            int iPPM, int iAtom) {
+                                 int iPPM, int iAtom) {
         StringBuilder result = new StringBuilder();
 
         PPMv ppmv = spatialSet.getPPM(iPPM);
@@ -2246,7 +2240,7 @@ public class Atom implements IAtom, Comparable<Atom> {
         return result;
     }
 
-//###################################################################
+    //###################################################################
 //#       Chemical Shift Ambiguity Index Value Definitions          #
 //#                                                                 #
 //#   Index Value            Definition                             #

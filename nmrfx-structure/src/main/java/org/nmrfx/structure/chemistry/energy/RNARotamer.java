@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,21 +17,17 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.constraints.AngleConstraint;
-import org.nmrfx.chemistry.*;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class RNARotamer {
 
@@ -53,7 +49,6 @@ public class RNARotamer {
     public static double HPOWER = 3.0;
     static final int[] subsetIndices = {1, 2, 3, 4};
     static final int[] indices = {0, 1, 2, 3, 4, 5, 6};
-    // static final String[] atomNames = {"O3'", "P", "O5'", "C5'", "C4'", "C3'", "O3'"};
     static Atom[] atoms = {null, null, null, null, null, null, null};
     static final int NPREVIOUS = 1;
 
@@ -122,6 +117,7 @@ public class RNARotamer {
         ROTAMERS.put("2o", new RNARotamer("2o", 12, 147, 6, -104, 15, -64, 16, -73, 4, -165, 26, -66, 7, 150, 3));
         countSamples();
     }
+
     static RNARotamer OUTLIER = new RNARotamer("--");
 
     public static class RotamerScore {
@@ -155,7 +151,6 @@ public class RNARotamer {
             if (angles != null) {
                 for (int i = 0; i < 7; i++) {
                     double delta = angles[i] - rotamer.angles[i];
-//                double delta = Math.abs(angles[i] - rotamer.angles[i]);
 
                     if (delta > Math.PI) {
                         delta = -(2.0 * Math.PI - delta);
@@ -375,10 +370,10 @@ public class RNARotamer {
         int result = -1;
         // epsilon
         double[][] ranges = {
-            {-50.0, 155.0}, // epsilon
-            {-25.0, 25.0}, // zeta
-            {-25.0, 25.0}, //alpha
-            {-70.0, 50.0} // beta
+                {-50.0, 155.0}, // epsilon
+                {-25.0, 25.0}, // zeta
+                {-25.0, 25.0}, //alpha
+                {-70.0, 50.0} // beta
         };
         for (int i = 1; i < 5; i++) {
             double testAngle = angles[i] * toDEG;
@@ -419,7 +414,7 @@ public class RNARotamer {
     public static void add(String name, int n, double... angles) {
         ROTAMERS.put(name, new RNARotamer(name, n, angles));
     }
-    
+
     public static RotamerScore[] getNBest(Polymer polymer, int residueNum, int n) {
         return getNBest(polymer, residueNum, n, null);
     }
@@ -698,7 +693,7 @@ public class RNARotamer {
                     }
                     Atom atom = delta == -1 ? residue.previous.getAtom(aName)
                             : residue.getAtom(aName);
-                    if (atom == null) { 
+                    if (atom == null) {
                         return null;
                     }
                     angleAtoms[j] = atom;
@@ -739,7 +734,7 @@ public class RNARotamer {
      * Set the dihedral angles for the specified residue based on angles for the
      * specified suite.
      *
-     * @param residue Set angles in this residue
+     * @param residue   Set angles in this residue
      * @param suiteName Get the angles from the suite with this name
      */
     public static void setDihedrals(Residue residue, String suiteName) {
@@ -750,12 +745,12 @@ public class RNARotamer {
      * Set the dihedral angles for the specified residue based on angles for the
      * specified suite.
      *
-     * @param residue Set angles in this residue
+     * @param residue   Set angles in this residue
      * @param suiteName Get the angles from the suite with this name
-     * @param sdev Vary the angle from the suite value by a random number chosen
-     * from a Gaussian distribution with a standard deviation of sdev
-     * @param doFreeze If true, freeze the angle so it is not adjusted during
-     * refinement
+     * @param sdev      Vary the angle from the suite value by a random number chosen
+     *                  from a Gaussian distribution with a standard deviation of sdev
+     * @param doFreeze  If true, freeze the angle so it is not adjusted during
+     *                  refinement
      */
     public static void setDihedrals(Residue residue, String suiteName, double sdev, boolean doFreeze) {
         if (residue == null) {
@@ -798,37 +793,35 @@ public class RNARotamer {
     }
 
     /**
-     *
      * Set the dihedral angles for the specified residue based on angles for the
      * specified suite.
      *
-     * @param residue Set angles in this residue
-     * @param angles Am array of angle values to set. The angles are set on the
-     * atoms named in the PRESET_ATOMS array.
-     * @param sdev Vary the angle from the suite value by a random number chosen
-     * from a Gaussian distribution with a standard deviation of sdev
+     * @param residue  Set angles in this residue
+     * @param angles   Am array of angle values to set. The angles are set on the
+     *                 atoms named in the PRESET_ATOMS array.
+     * @param sdev     Vary the angle from the suite value by a random number chosen
+     *                 from a Gaussian distribution with a standard deviation of sdev
      * @param doFreeze If true, freeze the angle so it is not adjusted during
-     * refinement
+     *                 refinement
      */
     public static void setDihedrals(Residue residue, double[] angles, double sdev, boolean doFreeze) {
         setDihedrals(residue, PRESET_ATOMS, angles, sdev, doFreeze);
     }
 
     /**
-     *
      * Set the dihedral angles for the specified residue based on angles for the
      * specified suite.
      *
-     * @param residue Set angles in this residue
+     * @param residue   Set angles in this residue
      * @param atomNames The atoms whose angles are set. This specifies the name
-     * of the daughter atom of the rotatable bond. That is, the atom name here
-     * is atom D, for the torsion A-B-C-D (rotation around bond B-C)
-     * @param angles Am array of angle values to set. The angles are set on the
-     * atoms named in atomNames.
-     * @param sdev Vary the angle from the suite value by a random number chosen
-     * from a Gaussian distribution with a standard deviation of sdev
-     * @param doFreeze If true, freeze the angle so it is not adjusted during
-     * refinement
+     *                  of the daughter atom of the rotatable bond. That is, the atom name here
+     *                  is atom D, for the torsion A-B-C-D (rotation around bond B-C)
+     * @param angles    Am array of angle values to set. The angles are set on the
+     *                  atoms named in atomNames.
+     * @param sdev      Vary the angle from the suite value by a random number chosen
+     *                  from a Gaussian distribution with a standard deviation of sdev
+     * @param doFreeze  If true, freeze the angle so it is not adjusted during
+     *                  refinement
      */
     public static void setDihedrals(Residue residue, String[] atomNames, double[] angles, double sdev, boolean doFreeze) {
         int j = 0;
@@ -861,18 +854,17 @@ public class RNARotamer {
     }
 
     /**
-     *
      * Set the dihedral angles for the specified residue based on angles for the
      * specified suite.
      *
-     * @param residue Set angles in this residue
+     * @param residue  Set angles in this residue
      * @param angleMap A map with atomNames as key and angles (in degrees) as
-     * values. The atomNames (unlike the other setDihedrals methods) specify
-     * atom C, for the torsion A-B-C-D (rotation around bond B-C).
-     * @param sdev Vary the angle from the suite value by a random number chosen
-     * from a Gaussian distribution with a standard deviation of sdev
+     *                 values. The atomNames (unlike the other setDihedrals methods) specify
+     *                 atom C, for the torsion A-B-C-D (rotation around bond B-C).
+     * @param sdev     Vary the angle from the suite value by a random number chosen
+     *                 from a Gaussian distribution with a standard deviation of sdev
      * @param doFreeze If true, freeze the angle so it is not adjusted during
-     * refinement
+     *                 refinement
      */
     public static void setDihedrals(Residue residue, Map<String, Double> angleMap, double sdev, boolean doFreeze) {
         int j = 0;
@@ -916,7 +908,7 @@ public class RNARotamer {
         residue.molecule.genCoords(false);
     }
 
-//O3'     P       O5'     C5'     C4'     C3'     O3'
+    //O3'     P       O5'     C5'     C4'     C3'     O3'
 // d-1     e-1     z-1     a       b       g       d
     public static RotamerScore scoreResidue(Polymer polymer, int residueNum) {
         Residue residue = polymer.getResidue(residueNum);

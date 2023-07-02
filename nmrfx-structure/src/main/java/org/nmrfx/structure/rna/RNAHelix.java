@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,12 +18,12 @@
 package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Residue;
-
-import java.util.*;
 import org.nmrfx.chemistry.SecondaryStructure;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- *
  * @author bajlabuser
  */
 public class RNAHelix extends SecondaryStructure {
@@ -58,7 +58,7 @@ public class RNAHelix extends SecondaryStructure {
         while (i < secResidues.size()) {
             Residue res1 = secResidues.get(i);
             Residue res2 = secResidues.get(i + 1);
-            BasePair bp = new BasePair(res1, i, res2, i+1, 1);
+            BasePair bp = new BasePair(res1, i, res2, i + 1, 1);
             basePairs.add(bp);
             i += 2;
         }

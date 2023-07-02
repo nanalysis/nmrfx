@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.net.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.*?>
-
+<?import java.net.URL?>
 <BorderPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0"
             styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="org.nmrfx.analyst.gui.molecule.RNAPeakGeneratorSceneController">
@@ -36,37 +31,37 @@
     </top>
     <center>
         <GridPane>
-            <TitledPane  text="Adenosine" collapsible="false"
-                         GridPane.columnIndex="0" GridPane.rowIndex="0">
+            <TitledPane text="Adenosine" collapsible="false"
+                        GridPane.columnIndex="0" GridPane.rowIndex="0">
                 <content>
                     <GridPane fx:id="adenosinePane">
-                    
+
                     </GridPane>
                 </content>
             </TitledPane>
-            <TitledPane  text="Guanosine" collapsible="false"
-                         GridPane.columnIndex="1" GridPane.rowIndex="0">
+            <TitledPane text="Guanosine" collapsible="false"
+                        GridPane.columnIndex="1" GridPane.rowIndex="0">
                 <content>
                     <GridPane fx:id="guanosinePane">
-                    
+
                     </GridPane>
                 </content>
 
             </TitledPane>
-            <TitledPane  text="Uridine" collapsible="false"
-                         GridPane.columnIndex="0" GridPane.rowIndex="1">
+            <TitledPane text="Uridine" collapsible="false"
+                        GridPane.columnIndex="0" GridPane.rowIndex="1">
                 <content>
                     <GridPane fx:id="uridinePane">
-                    
+
                     </GridPane>
                 </content>
 
             </TitledPane>
-            <TitledPane text="Cytidine" collapsible="false" 
+            <TitledPane text="Cytidine" collapsible="false"
                         GridPane.columnIndex="1" GridPane.rowIndex="1">
                 <content>
                     <GridPane fx:id="cytidinePane">
-                    
+
                     </GridPane>
                 </content>
 
@@ -79,7 +74,7 @@
                 <HBox>
                     <children>
                         <Label text="Entities"/>
-                        <ChoiceBox  fx:id="entityChoiceBox"/>
+                        <ChoiceBox fx:id="entityChoiceBox"/>
                         <Pane minWidth="50"/>
                         <Label text="Residues Start:"/>
                         <TextField fx:id="firstResidueField" maxWidth="60"/>

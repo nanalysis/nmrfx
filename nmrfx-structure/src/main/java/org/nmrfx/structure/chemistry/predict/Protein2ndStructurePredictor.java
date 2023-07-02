@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,18 +17,19 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
-import java.io.IOException;
-import java.io.InputStream;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
-import org.nd4j.linalg.factory.Nd4j;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 /*
-         *
-         * @author brucejohnson
+ *
+ * @author brucejohnson
  */
 public class Protein2ndStructurePredictor {
 

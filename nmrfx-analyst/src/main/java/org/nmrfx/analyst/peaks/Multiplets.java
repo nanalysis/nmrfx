@@ -1,31 +1,8 @@
 package org.nmrfx.analyst.peaks;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import static java.util.Comparator.comparing;
-import static java.util.Comparator.reverseOrder;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.math.VecBase.IndexValue;
-import org.nmrfx.peaks.AbsMultipletComponent;
-import org.nmrfx.peaks.ComplexCoupling;
-import org.nmrfx.peaks.Coupling;
-import org.nmrfx.peaks.CouplingItem;
-import org.nmrfx.peaks.CouplingPattern;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.RelMultipletComponent;
-import org.nmrfx.peaks.Singlet;
+import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
 import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
@@ -33,13 +10,19 @@ import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.reverseOrder;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class Multiplets {
     private static final Logger log = LoggerFactory.getLogger(Multiplets.class);
-    public static double DOUBLETRATIO = 3.0;
+    public static final double DOUBLETRATIO = 3.0;
 
     public static PeakDim getMultipletRoot(Multiplet multiplet) throws IllegalArgumentException {
         return multiplet == null ? null : multiplet.getPeakDim();
@@ -61,7 +44,6 @@ public class Multiplets {
     }
 
     public static String getCouplingPattern(Multiplet multiplet) {
-//        return multiplet.getMultiplicity();
         Coupling coupling = multiplet.getCoupling();
         String pattern = "";
         if (coupling instanceof Singlet) {
@@ -80,32 +62,6 @@ public class Multiplets {
         return pattern;
     }
 
-    /*
-    proc ::dcs::multiplets::getCouplingPattern {couplings} {
-    set patterns "s d t q p"
-    set pattern {}
-    if {[llength $couplings] == 0} {
-        set pattern ""
-    } elseif {[llength $couplings] == 1} {
-        set pattern s
-    } else {
-        foreach "j n" $couplings {
-            set symbol [lindex $patterns $n]
-            append pattern $symbol
-        }
-        if {$pattern == ""} {
-            set pattern m
-        }
-    }
-    return $pattern
-}
-
-     */
-//    public static void removeWeakPeaksInMultiplet(String mSpec, int nRemove) {
-//        List<PeakDim> weakPeaks = getWeakestPeaksInMultiplet(mSpec, nRemove);
-//        removePeaks(getPeaks(weakPeaks));
-//        updateAfterMultipletConversion(getMultiplet(mSpec));
-//    }
     public static void removeWeakPeaksInMultiplet(Multiplet multiplet, int nRemove) {
         List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
         if (comps.size() > 1) {
@@ -116,9 +72,6 @@ public class Multiplets {
             comps.subList(0, nRemove).clear();
             multiplet.updateCoupling(comps);
             fitComponents(multiplet);
-
-            // updateAfterMultipletConversion(multiplet);
-            //analyzeMultiplet(multiplet.getOrigin());
         }
     }
 
@@ -264,7 +217,7 @@ public class Multiplets {
                     minDelta = delta;
                 }
             }
-            if (iMin < comps.size() -1 ) {
+            if (iMin < comps.size() - 1) {
                 offset = (comps.get(iMin).getOffset() + comps.get(iMin + 1).getOffset()) / 2.0;
             }
         }
@@ -302,10 +255,8 @@ public class Multiplets {
         float dSign = -1;
         if (addNumber == 1) {
             double lastIntensity = lastComp.getIntensity();
-            // double lastVolume = lastComp.myPeak.getVolume1();
             if (lastIntensity < intensity) {
                 intensity = lastIntensity;
-                //volume = lastVolume;
                 addWhich = 0;
                 dSign = -1f;
             } else {
@@ -352,10 +303,6 @@ public class Multiplets {
         multiplet.expandCoupling(limit);
     }
 
-//    public static void convertMultiplicity(String mSpec, String multOrig, String multNew) {
-//        Multiplet multiplet = getMultiplet(mSpec);
-//        convertMultiplicity(multiplet, multOrig, multNew);
-//    }
     public static void splitToMultiplicity(Multiplet multiplet, String fullCouplingType) {
         for (int i = 0; i < fullCouplingType.length(); i++) {
             String couplingType = fullCouplingType.substring(i, i + 1);
@@ -448,7 +395,6 @@ public class Multiplets {
             expandCoupling(multiplet, 3);
         } else if (multNew.equals("dddd")) {
             expandCoupling(multiplet, 3);
-            //guessMultiplicityFromGeneric(multiplet);
         } else if (multOrig.equals("dd") && multNew.equals("q")) {
             defineMultiplicity(multiplet, multNew);
             setCouplingPattern(multiplet, multNew);
@@ -526,7 +472,7 @@ public class Multiplets {
             double[] bounds = Analyzer.getRegionBounds(dataset.getReadOnlyRegions(), 0, refPeak.peakDims[0].getChemShift());
             PeakFitting peakFitting = new PeakFitting(dataset);
             try {
-                double rms = peakFitting.fitPeakDims(peakDims,  bounds, fitParameters);
+                double rms = peakFitting.fitPeakDims(peakDims, bounds, fitParameters);
                 result = Optional.of(rms);
             } catch (IllegalArgumentException | PeakFitException | IOException ex) {
                 System.out.println("error in fit " + ex.getMessage());
@@ -563,7 +509,7 @@ public class Multiplets {
             PeakFitParameters fitParameters = new PeakFitParameters();
             fitParameters.fitJMode(PeakFitParameters.FITJ_MODE.JFIT);
             try {
-                double rms = peakFitting.fitPeakDims(peakDims,  bounds, fitParameters);
+                double rms = peakFitting.fitPeakDims(peakDims, bounds, fitParameters);
                 result = Optional.of(rms);
 
             } catch (IllegalArgumentException | PeakFitException | IOException ex) {
@@ -628,14 +574,7 @@ public class Multiplets {
     public static void analyzeMultiplet(Peak peak) {
         PeakDim peakDim = peak.getPeakDim(0);
         CouplingData couplingData = determineMultiplicity(peakDim, true);
-        // dumpPeakDims(peakSet);
         Multiplet multiplet = peakDim.getMultiplet();
-        // dumpPeakDims(peakSet);
-//        if (peakSet.size() == 1) {
-//            multiplet.setSinglet();
-//        }
-//        multiplet.setCenter(couplingData.centerPPM);
-        //dumpPeakDims(peakSet);
         double[] values = new double[couplingData.couplingItems.size()];
         if (values.length > 0) {
             int[] nValues = new int[couplingData.couplingItems.size()];
@@ -648,9 +587,6 @@ public class Multiplets {
             double[] sin2thetas = new double[values.length];
             multiplet.setCouplingValues(values, nValues, multiplet.getIntensity(), sin2thetas);
         }
-        //peakSet = peak.peakDims[0].getCoupledPeakDims();
-        //dumpPeakDims(peakSet);
-
     }
 
     public static CouplingData determineMultiplicity(PeakDim peakDim, boolean pow2Mode) {
@@ -1232,12 +1168,10 @@ public class Multiplets {
             return;
         }
         splitRegionsByPeakSep(regions, peakList, vec);
-        //splitRegionsByPeakCount(regions, peakList, vec, 24);
         peakList.unLinkPeaks();
         peakList.sortPeaks(0, false);
         peakList.reNumber();
         linkPeaksInRegions(peakList, regions);
-
     }
 
     public static List<Peak> getLinkRoots(PeakList peakList) {

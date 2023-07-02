@@ -1,29 +1,20 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.analyst.peaks;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import org.apache.commons.text.TextStringBuilder;
+import org.yaml.snakeyaml.Yaml;
+
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.text.TextStringBuilder;
-import org.yaml.snakeyaml.Yaml;
-
 /**
- *
  * @author brucejohnson
  */
 public class JournalFormatPeaks {
 
-    static Map<String, JournalFormat> journalFormats = new HashMap<>();
+    private static final Map<String, JournalFormat> journalFormats = new HashMap<>();
 
     static JournalFormat parseYamlMap(Map<String, Object> map) {
         JournalFormat jformat = new JournalFormat();
@@ -36,20 +27,9 @@ public class JournalFormatPeaks {
         jformat.o = (String) map.get("o");
         jformat.sep = (String) map.get("sep");
         jformat.jPrec = (Integer) map.get("jprec");
-        jformat.ppmPrec = (Integer) map.get("ppmprec");;
+        jformat.ppmPrec = (Integer) map.get("ppmprec");
         jformat.broad = (Double) map.get("broad");
         return jformat;
-    }
-
-    public void loadFormats() {
-
-    }
-
-    public static void loadYaml(String fileName) throws FileNotFoundException, IOException {
-        try (InputStream input = new FileInputStream(fileName)) {
-            loadYaml(input);
-
-        }
     }
 
     public static void loadYaml() {
@@ -60,7 +40,6 @@ public class JournalFormatPeaks {
     }
 
     public static void loadYaml(InputStream istream) {
-
         Yaml yaml = new Yaml();
         List<Map<String, Object>> yamlData = (List<Map<String, Object>>) yaml.load(istream);
         for (Map<String, Object> map : yamlData) {

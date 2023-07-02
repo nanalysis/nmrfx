@@ -1,5 +1,8 @@
 package org.nmrfx.chemistry.relax;
 
+import org.nmrfx.annotations.PluginAPI;
+
+@PluginAPI("ring")
 public class SpectralDensity {
     String name;
     // two dimensional array, first row is frequency, 2nd row is J value, third row is J error

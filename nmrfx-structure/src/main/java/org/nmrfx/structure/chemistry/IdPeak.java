@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,11 +17,13 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.chemistry.CoordSet;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.utilities.NvUtil;
-import org.nmrfx.chemistry.Util;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 public class IdPeak {
 
@@ -816,7 +818,6 @@ public class IdPeak {
             idx[i] = 0;
         }
 
-        //Vector resultsVec = new Vector(32);
         SpatialSet[] spatialSets = new SpatialSet[nDim];
 
         while (true) {

@@ -1,33 +1,22 @@
 package org.nmrfx.structure.noe;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.Constraint;
 import org.nmrfx.chemistry.constraints.Noe;
 import org.nmrfx.chemistry.constraints.NoeSet;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.SpectralDim;
-import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.chemistry.Atom;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.structure.chemistry.IdPeak;
 import org.nmrfx.structure.chemistry.IdResult;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.MatchCriteria;
-import org.nmrfx.chemistry.SpatialSet;
-import org.nmrfx.chemistry.Util;
-import org.nmrfx.peaks.PeakList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.*;
+
 /**
- *
  * @author brucejohnson
  */
 public class NOEAssign {
@@ -257,7 +246,6 @@ public class NOEAssign {
                     continue;
                 }
                 matchCriteria[0].setPPM(ppm);
-                //                ArrayList res1s = peakDim.getResonances();
                 ArrayList res1s = new ArrayList();
                 peakDim = peak.getPeakDim(matchCriteria[1].getDim());
                 ppm = peakDim.getChemShift();
@@ -265,7 +253,6 @@ public class NOEAssign {
                     continue; // diagonal fixme
                 }
                 matchCriteria[1].setPPM(ppm);
-                //                ArrayList res2s = peakDim.getResonances();
                 ArrayList res2s = new ArrayList();
                 int nRes1 = res1s.size();
                 int nRes2 = res2s.size();
@@ -419,9 +406,6 @@ public class NOEAssign {
             }
             if (matchCriteria != null) {
                 List<Noe> noeList = entry.getValue();
-                for (Noe noe : noeList) {
-                    //                    noe.updateGenType(map, matchCriteria);
-                }
             }
         }
     }
@@ -463,7 +447,7 @@ public class NOEAssign {
                 } else {
                     spSets[i] = spSets[i - 2].atom.getParent().spatialSet;
                 }
-                PPMv ppmv = spSets[i].getPPM(Noe.ppmSet);
+                PPMv ppmv = spSets[i].getPPM(Noe.PPM_SET);
                 double dp;
                 if (ppmv != null) {
                     double delta = IdPeak.getPPMDelta(ppmv.getValue(), matchCriteria[i]);

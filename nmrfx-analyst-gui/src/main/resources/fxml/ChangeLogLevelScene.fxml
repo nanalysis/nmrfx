@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.VBox?>
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0"
+      prefWidth="400.0" xmlns="http://javafx.com/javafx/17.0.2" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.nmrfx.processor.gui.log.ChangeLogLevelController">
+    <children>
+        <TableView fx:id="changeLogLevelTable" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS"/>
+        <ButtonBar prefHeight="40.0" prefWidth="200.0">
+            <buttons>
+                <Button fx:id="addButton" mnemonicParsing="false" onAction="#addButtonClicked" text="Add..."
+                        ButtonBar.buttonData="LEFT"/>
+                <Button fx:id="closeButton" mnemonicParsing="false" onAction="#closeButtonClicked" text="Close"
+                        ButtonBar.buttonData="RIGHT"/>
+            </buttons>
+            <VBox.margin>
+                <Insets left="5.0" right="5.0"/>
+            </VBox.margin>
+        </ButtonBar>
+    </children>
+</VBox>

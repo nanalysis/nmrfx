@@ -5,18 +5,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.PopOver;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
-import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 
 public class JournalTool {
-    static String formatName = "JMedCh";
-    VBox vBox;
-    AnnoJournalFormat annoJournalFormat;
-
-    public JournalTool() {
-    }
+    private String formatName = "JMedCh";
+    private VBox vBox;
+    private AnnoJournalFormat annoJournalFormat;
 
     public VBox getBox() {
         return vBox;
@@ -60,6 +57,6 @@ public class JournalTool {
         if (annoJournalFormat != null) {
             annoJournalFormat.setJournalName(journalName);
         }
-        FXMLController.getActiveController().getActiveChart().refresh();
+        AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart().refresh();
     }
 }

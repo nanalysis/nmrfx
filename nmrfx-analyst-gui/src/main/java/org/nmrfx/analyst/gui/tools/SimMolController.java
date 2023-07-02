@@ -3,23 +3,12 @@ package org.nmrfx.analyst.gui.tools;
 /*
  * @author Bruce Johnson
  */
+
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
@@ -27,14 +16,19 @@ import org.controlsfx.control.textfield.TextFields;
 import org.nmrfx.analyst.compounds.CompoundMatcher;
 import org.nmrfx.analyst.dataops.SimData;
 import org.nmrfx.analyst.dataops.SimDataVecPars;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.SpectrumStatusBar;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
 
 public class SimMolController implements ControllerTool {
 
@@ -77,7 +71,7 @@ public class SimMolController implements ControllerTool {
         this.browserToolBar = toolBar;
         toolBar.setPrefWidth(900.0);
 
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
         toolBar.getItems().add(closeButton);
@@ -141,7 +135,7 @@ public class SimMolController implements ControllerTool {
                 newDataset = SimData.genDataset(name, pars, lb);
                 newDataset.addProperty("SIM", name);
             }
-            controller.getStatusBar().setMode(1);
+            controller.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
             chart.setDataset(newDataset, true, false);
 
             updateColors(chart);
@@ -163,7 +157,7 @@ public class SimMolController implements ControllerTool {
 
     void updateColors(PolyChart chart) {
         if (chart.getDatasetAttributes().size() > 1) {
-            chart.chartProps.setTitles(true);
+            chart.getChartProperties().setTitles(true);
             int nData = chart.getDatasetAttributes().size() - 1;
             String colScheme = (nData <= 10) ? "category10" : "category20";
             List<Color> colors = ColorSchemes.getColors(colScheme, nData);

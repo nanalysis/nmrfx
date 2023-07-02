@@ -25,6 +25,7 @@ public class RunAboutArrangement {
     public void setColumns(List<String> columns) {
         this.columns = columns;
     }
+
     public List<List<String>> getXdims() {
         return xdims;
     }
@@ -49,10 +50,10 @@ public class RunAboutArrangement {
         this.dims = dims;
     }
 
-    public List<RunAboutDim>  getColumnArrangement() {
+    public List<RunAboutDim> getColumnArrangement() {
         System.out.println("getxdims " + xdims);
         List<RunAboutDim> result = new ArrayList<>();
-        for (String column:columns) {
+        for (String column : columns) {
             int iColumn = result.size();
             RunAboutDim runAboutDim = new RunAboutDim();
             runAboutDim.setDir(column);

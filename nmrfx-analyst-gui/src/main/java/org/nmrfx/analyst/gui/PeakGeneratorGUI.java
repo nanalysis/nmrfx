@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
 import org.nmrfx.analyst.peaks.PeakGenerator;
+import org.nmrfx.analyst.peaks.PeakGenerator.PeakGeneratorTypes;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
@@ -24,8 +25,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.nmrfx.analyst.peaks.PeakGenerator.PeakGeneratorTypes;
 
 import static org.nmrfx.analyst.peaks.PeakGenerator.PeakGeneratorTypes.*;
 
@@ -51,7 +50,6 @@ public class PeakGeneratorGUI {
     private final Slider distanceSlider = new Slider(2, 7.0, 5.0);
     private final ChoiceBox<Integer> transferLimitChoice = new ChoiceBox<>();
     private final CheckBox useNCheckBox = new CheckBox("UseN");
-    String experimentClass = "";
     PeakGeneratorTypes peakGeneratorType = null;
     double sfH = 700.0;
 
@@ -225,7 +223,6 @@ public class PeakGeneratorGUI {
     }
 
     void setType(String type, PeakGeneratorTypes subType) {
-        this.experimentClass = type;
         this.peakGeneratorType = subType;
         typeLabel.setText(type);
         subTypeLabel.setText(subType.name());
@@ -400,7 +397,8 @@ public class PeakGeneratorGUI {
             }
             peakListProperty.set(newPeakList);
             switch (peakGeneratorType) {
-                case HNCO, HNCOCA, HNCOCACB, HNCACO, HNCA, HNCACB -> makeProteinPeakList(dataset, newPeakList, peakGeneratorType);
+                case HNCO, HNCOCA, HNCOCACB, HNCACO, HNCA, HNCACB ->
+                        makeProteinPeakList(dataset, newPeakList, peakGeneratorType);
                 case NOESY -> {
                     double range = distanceSlider.getValue();
                     try {
@@ -471,7 +469,8 @@ public class PeakGeneratorGUI {
     }
 
     void showPeakInspector() {
-        FXMLController.getActiveController().showPeakAttr();
-        FXMLController.getActiveController().getPeakAttrController().setPeakList(peakListProperty.get());
+        FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+        controller.showPeakAttr();
+        controller.getPeakAttrController().setPeakList(peakListProperty.get());
     }
 }

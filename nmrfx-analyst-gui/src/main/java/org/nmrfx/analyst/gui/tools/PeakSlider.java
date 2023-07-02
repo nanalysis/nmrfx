@@ -18,6 +18,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.peaks.Peak;
@@ -27,7 +28,6 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -46,7 +46,6 @@ import java.util.*;
 import java.util.function.Consumer;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class PeakSlider implements ControllerTool {
@@ -96,7 +95,7 @@ public class PeakSlider implements ControllerTool {
         vBox.getChildren().add(sliderToolBar);
 
         ArrayList<Button> buttons = new ArrayList<>();
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
         shiftFreezeButton = new Button("Shift+Freeze");
@@ -186,21 +185,22 @@ public class PeakSlider implements ControllerTool {
         sliderToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(sliderToolBar)));
 
         // Setup listeners
-        selectedPeaksListener = event -> setActivePeaks(controller.selPeaks.get());
-        controller.selPeaks.addListener(selectedPeaksListener);
+        selectedPeaksListener = event -> setActivePeaks(controller.getSelectedPeaks());
+        controller.selectedPeaksProperty().addListener(selectedPeaksListener);
         for (PolyChart chart : controller.getCharts()) {
             addKeyBindingsToChart(chart);
         }
         ((ObservableList<PolyChart>) controller.getCharts()).addListener(chartsListener);
-   }
+    }
 
     /**
      * Add key bindings to newly added charts.
+     *
      * @param change The change to the FXMLController charts list.
      */
     private void updateKeyBindings(ListChangeListener.Change<? extends PolyChart> change) {
         if (change.next()) {
-            for (PolyChart chart: change.getAddedSubList()) {
+            for (PolyChart chart : change.getAddedSubList()) {
                 addKeyBindingsToChart(chart);
             }
         }
@@ -209,6 +209,7 @@ public class PeakSlider implements ControllerTool {
     /**
      * Adds keybindings for df, dt and ds to the provided chart as well as adding the slider
      * to the chart's peak menu.
+     *
      * @param chart The PolyChart to modify.
      */
     private void addKeyBindingsToChart(PolyChart chart) {
@@ -220,7 +221,7 @@ public class PeakSlider implements ControllerTool {
     }
 
     public void removeListeners() {
-        controller.selPeaks.removeListener(selectedPeaksListener);
+        controller.selectedPeaksProperty().removeListener(selectedPeaksListener);
         ((ObservableList<PolyChart>) controller.getCharts()).removeListener(chartsListener);
         for (PolyChart chart : controller.getCharts()) {
             KeyBindings keyBindings = chart.getKeyBindings();
@@ -719,7 +720,6 @@ public class PeakSlider implements ControllerTool {
      * and column peak matches for the given peak must be the same, e.g:
      * simulated peak must match the same experimental peak in both row and
      * column peak matches
-     *
      */
     boolean satisfyCriteria1(Peak peak) {
         boolean criteria1Met = false;
@@ -822,10 +822,8 @@ public class PeakSlider implements ControllerTool {
      * Given a peak, calculate scores between clusters and retrieve the cluster
      * with best score.
      *
-     *
      * @param assocPeak (simulated peak)
-     * @param iDim (Dimension [0 (column) or 1 (row)])
-     *
+     * @param iDim      (Dimension [0 (column) or 1 (row)])
      * @return bestPairedPeakClus (Cluster with best score, or null)
      */
     PeakCluster calcClusterScores(Peak assocPeak, Peak clickedPeak, int iDim) {
@@ -884,10 +882,10 @@ public class PeakSlider implements ControllerTool {
         List<PeakList> expLists = new ArrayList<>();
         controller.getCharts().forEach(chart -> {
                     for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
-                        double xMin = chart.getXAxis().getLowerBound();
-                        double xMax = chart.getXAxis().getUpperBound();
-                        double yMin = chart.getYAxis().getLowerBound();
-                        double yMax = chart.getYAxis().getUpperBound();
+                        double xMin = chart.getAxes().getX().getLowerBound();
+                        double xMax = chart.getAxes().getX().getUpperBound();
+                        double yMin = chart.getAxes().getY().getLowerBound();
+                        double yMax = chart.getAxes().getY().getUpperBound();
                         double[][] limits = {{xMin, xMax}, {yMin, yMax}};
                         Optional<PeakList> expListOpt = Optional.empty();
                         Optional<PeakList> predListOpt = Optional.empty();
@@ -966,7 +964,8 @@ public class PeakSlider implements ControllerTool {
         return isNull;
     }
 
-    record MatchListPair(PeakList refList, PeakList movingList) {}
+    record MatchListPair(PeakList refList, PeakList movingList) {
+    }
 
     Optional<MatchListPair> createNDMatcher() {
         PolyChart chart = controller.getActiveChart();
@@ -1279,7 +1278,7 @@ public class PeakSlider implements ControllerTool {
             }
         } finally {
             PolyChart.setPeakListenerState(true);
-            for (FXMLController fxmlController : FXMLController.getControllers()) {
+            for (FXMLController fxmlController : AnalystApp.getFXMLControllerManager().getControllers()) {
                 fxmlController.redrawChildren();
             }
         }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,51 +16,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.analyst.gui.peaks;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ResourceBundle;
 import javafx.beans.Observable;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import org.controlsfx.control.PopOver;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.chart.Axis;
-import org.nmrfx.chart.DataSeries;
-import org.nmrfx.chart.XYCanvasChart;
-import org.nmrfx.chart.XYChartPane;
-import org.nmrfx.chart.XYValue;
+import org.nmrfx.chart.*;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.tools.LigandScannerInfo;
 import org.nmrfx.processor.tools.MatrixAnalyzer;
@@ -69,11 +49,16 @@ import org.nmrfx.structure.tools.MCSAnalysis.Hit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.ResourceBundle;
+
 /**
- *
  * @author Bruce Johnson
  */
-public class LigandScannerController implements Initializable {
+public class LigandScannerController implements Initializable, StageBasedController {
     private static final Logger log = LoggerFactory.getLogger(LigandScannerController.class);
 
     private Stage stage;
@@ -84,17 +69,14 @@ public class LigandScannerController implements Initializable {
     XYChartPane chartPane;
     @FXML
     private ToolBar menuBar;
-    PopOver popOver = new PopOver();
     ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
-    HashMap<String, String> columnTypes = new HashMap<>();
-    HashMap<String, String> columnDescriptors = new HashMap<>();
     MatrixAnalyzer matrixAnalyzer = new MatrixAnalyzer();
     String[] dimNames = null;
     double[] mcsTols = null;
     double[] mcsAlphas = null;
     double mcsTol = 0.0;
     int refIndex = 0;
-    PolyChart chart = PolyChart.getActiveChart();
+    PolyChart chart = PolyChartManager.getInstance().getActiveChart();
     XYCanvasChart activeChart = null;
     ChoiceBox<String> xArrayChoice;
     ChoiceBox<String> yArrayChoice;
@@ -123,29 +105,21 @@ public class LigandScannerController implements Initializable {
         }
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
 
     public static LigandScannerController create() {
-        FXMLLoader loader = new FXMLLoader(LigandScannerController.class.getResource("/fxml/LigandScannerScene.fxml"));
-        LigandScannerController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<LigandScannerController>getController();
-            controller.stage = stage;
-            stage.setTitle("Ligand Scanner");
-            stage.show();
-        } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
-        }
-
+        LigandScannerController controller = Fxml.load(LigandScannerController.class, "LigandScannerScene.fxml")
+                .withNewStage("Ligand Scanner")
+                .getController();
+        controller.stage.show();
         return controller;
-
     }
 
     void initMenuBar() {
@@ -229,15 +203,12 @@ public class LigandScannerController implements Initializable {
     public void setupBucket() {
         List<String> chartDimNames = chart.getDimNames();
         int nDim = chartDimNames.size();
-//        if (chart.getDatasetAttributes().size() == 1) {
-//            nDim--;
-//        }
         dimNames = new String[nDim];
         mcsTols = new double[nDim];
         mcsAlphas = new double[nDim];
         double[][] ppms = new double[nDim][2];
         int[] deltas = new int[nDim];
-        if (!chart.getCrossHairs().hasCrosshairRegion()) {
+        if (!chart.getCrossHairs().hasRegion()) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("No crosshair region");
             alert.showAndWait();
@@ -247,8 +218,8 @@ public class LigandScannerController implements Initializable {
         for (int i = 0; i < nDim; i++) {
             dimNames[i] = chartDimNames.get(i);
             deltas[i] = 10;
-            Double[] positions0 = chart.getCrossHairs().getCrossHairPositions(0);
-            Double[] positions1 = chart.getCrossHairs().getCrossHairPositions(1);
+            Double[] positions0 = chart.getCrossHairs().getPositions(0);
+            Double[] positions1 = chart.getCrossHairs().getPositions(1);
             ppms[i][0] = positions0[i];
             ppms[i][1] = positions1[i];
             // fixm need to set based on nucleus and/or in gui
@@ -326,10 +297,6 @@ public class LigandScannerController implements Initializable {
         return fileListItems;
     }
 
-  
-    public void updateDataFrame() {
-      
-    }
 
     double[] getTableValues(String columnName) {
         double[] values = null;

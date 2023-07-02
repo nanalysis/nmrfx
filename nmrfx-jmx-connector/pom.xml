@@ -24,6 +24,6 @@
             <artifactId>nmrfx-plugin-api</artifactId>
             <version>11.3.4-SNAPSHOT</version>
         </dependency>
-	</dependencies>
+    </dependencies>
 
 </project>

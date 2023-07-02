@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -110,12 +110,12 @@ public class OverlappingLines {
     /**
      * Check if line segment first touches or crosses the line that is defined by line segment second.
      *
-     * @param first line segment interpreted as line
+     * @param first  line segment interpreted as line
      * @param second line segment
      * @return <code>true</code> if line segment first touches or crosses line second, <code>false</code> otherwise.
      */
     public static boolean lineSegmentTouchesOrCrossesLine(LineSegment a,
-            LineSegment b) {
+                                                          LineSegment b) {
         return isPointOnLine(a, b.p1)
                 || isPointOnLine(a, b.p2)
                 || (isPointRightOfLine(a, b.p1) ^ isPointRightOfLine(a,

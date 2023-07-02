@@ -1,21 +1,12 @@
 package org.nmrfx.analyst.gui.molecule;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Side;
 import javafx.geometry.VPos;
-import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
@@ -27,40 +18,40 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.controlsfx.control.MasterDetailPane;
 import org.controlsfx.control.PropertySheet;
-import org.nmrfx.analyst.gui.tools.MinerController;
 import org.nmrfx.chart.Symbol;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
-import org.nmrfx.graphicsio.GraphicsContextInterface;
-import org.nmrfx.graphicsio.GraphicsContextProxy;
-import org.nmrfx.graphicsio.GraphicsIOException;
-import org.nmrfx.graphicsio.PDFGraphicsContext;
-import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
+import org.nmrfx.graphicsio.*;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.Protein2ndStructurePredictor;
 import org.nmrfx.structure.chemistry.predict.ProteinResidueAnalysis;
 import org.nmrfx.structure.chemistry.predict.ResidueProperties;
 import org.nmrfx.utils.GUIUtils;
-import org.nmrfx.utils.properties.BooleanOperationItem;
-import org.nmrfx.utils.properties.CheckComboOperationItem;
-import org.nmrfx.utils.properties.ChoiceOperationItem;
-import org.nmrfx.utils.properties.DoubleRangeOperationItem;
-import org.nmrfx.utils.properties.NvFxPropertyEditorFactory;
+import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.ResourceBundle;
 
 /**
  * FXML Controller class
  *
  * @author brucejohnson
  */
-public class SeqDisplayController implements Initializable {
+public class SeqDisplayController implements Initializable, StageBasedController {
     private static final Logger log = LoggerFactory.getLogger(SeqDisplayController.class);
 
     Color[] colors = {Color.BLUE, Color.RED, Color.BLACK, Color.GREEN, Color.CYAN, Color.MAGENTA, Color.YELLOW};
@@ -69,7 +60,7 @@ public class SeqDisplayController implements Initializable {
     // red green gray blue
 
     static final String[] RNA_ATOMS = {"H5,H8", "H6,H2", "H1'", "H2'", "H3'", "H4'", "H5'",
-        "C5,C8", "C6,C2", "C1'", "C2'", "C3'", "C4'", "C5'"
+            "C5,C8", "C6,C2", "C1'", "C2'", "C3'", "C4'", "C5'"
     };
 
     static final String[] PROTEIN_ATOMS = {"H", "N", "HA", "C", "CA", "CB"};
@@ -247,25 +238,17 @@ public class SeqDisplayController implements Initializable {
     }
 
     public static SeqDisplayController create() {
-        FXMLLoader loader = new FXMLLoader(MinerController.class.getResource("/fxml/SeqDisplayScene.fxml"));
-        SeqDisplayController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((BorderPane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<SeqDisplayController>getController();
-            controller.stage = stage;
-            stage.setTitle("Sequence Display");
-            stage.setScene(scene);
-            stage.show();
-            stage.toFront();
-
-        } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
-        }
+        SeqDisplayController controller = Fxml.load(SeqDisplayController.class, "SeqDisplayScene.fxml")
+                .withNewStage("Sequence Display")
+                .getController();
+        controller.stage.show();
+        controller.stage.toFront();
         return controller;
+    }
+
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     public Stage getStage() {
@@ -377,7 +360,7 @@ public class SeqDisplayController implements Initializable {
     }
 
     void drawAtomScores(GraphicsContextInterface gC, Residue residue,
-            List<String> aNames, double x, double y, double atomBarWidth, double height) {
+                        List<String> aNames, double x, double y, double atomBarWidth, double height) {
         y = y + height / 2.0 + smallGap;
         for (String aName : aNames) {
             String[] splitAtoms = aName.split(",");
@@ -415,8 +398,8 @@ public class SeqDisplayController implements Initializable {
     }
 
     void drawDotScores(GraphicsContextInterface gC, Residue residue,
-            List<String> aNames, double x, double y,
-            double atomBarWidth, double height, boolean combineMode) {
+                       List<String> aNames, double x, double y,
+                       double atomBarWidth, double height, boolean combineMode) {
         y = y + height / 2.0;
         int iAtom = 0;
         double deltaMax = 1.05;
@@ -504,9 +487,9 @@ public class SeqDisplayController implements Initializable {
     }
 
     void drawSymbol(GraphicsContextInterface gC, Residue residue,
-            double x, double y,
-            double atomBarWidth, double height,
-            double value, double lower, double upper) {
+                    double x, double y,
+                    double atomBarWidth, double height,
+                    double value, double lower, double upper) {
         y = y + height + smallGap;
 
         double delta = (value - lower) / (upper - lower);
@@ -522,9 +505,9 @@ public class SeqDisplayController implements Initializable {
     }
 
     void drawBar(GraphicsContextInterface gC, Residue residue,
-            double x, double y,
-            double atomBarWidth, double height,
-            double value, double lower, double upper) {
+                 double x, double y,
+                 double atomBarWidth, double height,
+                 double value, double lower, double upper) {
 
         y = y + height + smallGap;
         double x1 = x - atomBarWidth / 2.0;
@@ -539,9 +522,9 @@ public class SeqDisplayController implements Initializable {
     }
 
     void drawFractionalBar(GraphicsContextInterface gC, Residue residue,
-            double x, double y,
-            double atomBarWidth, double height,
-            double[] values) {
+                           double x, double y,
+                           double atomBarWidth, double height,
+                           double[] values) {
 
         y = y + height + smallGap;
         double x1 = x - atomBarWidth / 2.0;
@@ -634,7 +617,9 @@ public class SeqDisplayController implements Initializable {
         DRAW,
         SIZE,
         PICK;
-    };
+    }
+
+    ;
 
     private void get2ndStrPredictor(Molecule mol) {
         if (show2ndStrDItem.getValue()) {
@@ -956,7 +941,7 @@ public class SeqDisplayController implements Initializable {
     public void exportSVG(String fileName) {
         if (fileName != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
-            svgGC.create(true, seqCanvas.getWidth(), seqCanvas.getHeight(), fileName);
+            svgGC.create(seqCanvas.getWidth(), seqCanvas.getHeight(), fileName);
             drawCanvas(svgGC, CANVAS_MODE.DRAW);
             svgGC.saveFile();
         }

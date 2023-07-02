@@ -1,18 +1,16 @@
 package org.nmrfx.analyst.gui.peaks;
 
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -20,7 +18,7 @@ import java.util.ResourceBundle;
 /**
  * Controller for the PeakLists Table
  */
-public class PeakListsTableController implements Initializable {
+public class PeakListsTableController implements Initializable, StageBasedController {
     private static PeakListsTableController peakListsTableController = null;
     private PeakListsTable peakListsTable;
     private Stage stage;
@@ -35,26 +33,12 @@ public class PeakListsTableController implements Initializable {
     @FXML
     private Button tableButton;
 
-    private PeakListsTableController() {}
-
     public static PeakListsTableController create() {
-        FXMLLoader loader = new FXMLLoader(PeakListsTableController.class.getResource("/fxml/PeakListsScene.fxml"));
-        loader.setControllerFactory(controller -> new PeakListsTableController());
+        PeakListsTableController controller = Fxml.load(PeakListsTableController.class, "PeakListsScene.fxml")
+                .withNewStage("PeakLists")
+                .getController();
 
-        PeakListsTableController controller;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene(loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.getController();
-            controller.stage = stage;
-            PeakListsTableController.peakListsTableController = controller;
-            stage.setTitle("PeakLists");
-        } catch (IOException ioE) {
-            throw new IllegalStateException("Unable to create the PeakListsTable.", ioE);
-        }
+        PeakListsTableController.peakListsTableController = controller;
         return controller;
     }
 
@@ -95,11 +79,17 @@ public class PeakListsTableController implements Initializable {
         editMenuButton.getItems().add(duplicateMenuItem);
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     void showPeakInspector() {
         PeakList peakList = peakListsTable.getSelectionModel().getSelectedItem();
         if (peakList != null) {
-            FXMLController.getActiveController().showPeakAttr();
-            FXMLController.getActiveController().getPeakAttrController().setPeakList(peakList);
+            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+            controller.showPeakAttr();
+            controller.getPeakAttrController().setPeakList(peakList);
         }
     }
 
@@ -116,6 +106,7 @@ public class PeakListsTableController implements Initializable {
 
     /**
      * Gets the PeakListsTableController. A new controller is created if one has not already been made.
+     *
      * @return The PeakListsTableController instance.
      */
     public static PeakListsTableController getPeakListsTableController() {

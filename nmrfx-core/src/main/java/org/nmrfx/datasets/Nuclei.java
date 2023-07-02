@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,11 +17,14 @@
  */
 package org.nmrfx.datasets;
 
+import org.nmrfx.annotations.PluginAPI;
+
 /**
  * Representation of different NMR active nuclei.
  *
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public enum Nuclei {
 
     H1("H", 1, "1/2", 99.98, 1.00000) {

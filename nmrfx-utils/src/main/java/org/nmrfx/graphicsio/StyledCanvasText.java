@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,6 @@ import javafx.scene.text.TextAlignment;
 import org.nmrfx.utils.GUIUtils;
 
 /**
- *
  * @author brucejohnson
  */
 public class StyledCanvasText {
@@ -39,11 +38,8 @@ public class StyledCanvasText {
 
     static double drawSuper(GraphicsContextInterface gC, StringBuilder sBuilder, double x, double y, boolean measure) {
         Font defFont = gC.getFont();
-        Font scriptFont = null;
         double fontSize = defFont.getSize();
-        if (scriptFont == null) {
-            scriptFont = new Font(fontSize * 0.75);
-        }
+        Font scriptFont = new Font(fontSize * 0.75);
         gC.setFont(scriptFont);
         x = drawCurrent(gC, sBuilder, x, y, measure);
         x += fontSize * 0.75 * 0.25;

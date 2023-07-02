@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,6 @@
  */
 package org.nmrfx.chart;
 
-import java.io.File;
-import java.util.List;
-import java.util.Optional;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
@@ -38,24 +35,29 @@ import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.util.List;
+import java.util.Optional;
+
 /**
- *
  * @author brucejohnson
  */
+//TODO uncomment once core & utils are merged
+//@PluginAPI("ring")
 public class XYCanvasChart {
 
     private static final Logger log = LoggerFactory.getLogger(XYCanvasChart.class);
     public static final Color[] colors = {
-        Color.web("#1b9e77"),
-        Color.web("#d95f02"),
-        Color.web("#7570b3"),
-        Color.web("#e7298a"),
-        Color.web("#66a61e"),
-        Color.web("#e6ab02"),
-        Color.web("#a6761d"),
-        Color.web("#666666"),
-        Color.web("#ff7f00"),
-        Color.web("#6a3d9a"),};
+            Color.web("#1b9e77"),
+            Color.web("#d95f02"),
+            Color.web("#7570b3"),
+            Color.web("#e7298a"),
+            Color.web("#66a61e"),
+            Color.web("#e6ab02"),
+            Color.web("#a6761d"),
+            Color.web("#666666"),
+            Color.web("#ff7f00"),
+            Color.web("#6a3d9a"),};
 
     public final Canvas canvas;
     String title = "";
@@ -181,7 +183,7 @@ public class XYCanvasChart {
                 if (!dataSeries.isEmpty()) {
                     ok = true;
                     xMin = Math.min(xMin, dataSeries.getMinX());
-                    xMax = Math.max(xMax,dataSeries.getMaxX());
+                    xMax = Math.max(xMax, dataSeries.getMaxX());
                     yMin = Math.min(yMin, dataSeries.getMinY());
                     yMax = Math.max(yMax, dataSeries.getMaxY());
                 }
@@ -250,15 +252,11 @@ public class XYCanvasChart {
     }
 
     public double[] getMinBorders() {
-        // fixme
-//        xAxis.setTickFontSize(PreferencesController.getTickFontSize());
-//        xAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
+        // fixme use preferences for tick & label sizes
         xAxis.setTickFontSize(10);
         xAxis.setLabelFontSize(12);
         double[] borders = new double[4];
 
-//        yAxis.setTickFontSize(PreferencesController.getTickFontSize());
-//        yAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
         yAxis.setTickFontSize(10);
         yAxis.setLabelFontSize(12);
         borders[0] = yAxis.getBorderSize();
@@ -450,10 +448,6 @@ public class XYCanvasChart {
         return hitOpt;
     }
 
-    public void addLines(double[] x, double[] y, boolean symbol) {
-        addLines(x, y, symbol, null);
-    }
-
     public void addLines(double[] x, double[] y, boolean symbol, Color color) {
         DataSeries series = new DataSeries();
         for (int j = 0; j < x.length; j++) {
@@ -479,13 +473,12 @@ public class XYCanvasChart {
     public void exportSVG() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to SVG");
-        //fileChooser.setInitialDirectory(pyController.getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
             try {
                 Canvas canvas = getCanvas();
-                svgGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                svgGC.create(canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
                 exportChart(svgGC);
                 svgGC.saveFile();
             } catch (GraphicsIOException ex) {

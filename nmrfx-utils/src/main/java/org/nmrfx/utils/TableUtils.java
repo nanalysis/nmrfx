@@ -14,13 +14,15 @@ import java.util.stream.IntStream;
 
 public class TableUtils {
 
-    private TableUtils() {}
+    private TableUtils() {
+    }
 
     /**
      * Copies the contents of a table, including the headers, to the clipboard as a tab separated string.
      * If no rows are selected or copyAll is true, then all rows will be copied. Otherwise only the
      * selected rows will be copied.
-     * @param tableView The TableView to copy.
+     *
+     * @param tableView    The TableView to copy.
      * @param forceCopyAll If true, all rows will be copied regardless of selections
      */
     public static void copyTableToClipboard(TableView<?> tableView, boolean forceCopyAll) {
@@ -33,7 +35,7 @@ public class TableUtils {
         StringBuilder tabSeparatedString = new StringBuilder();
         tabSeparatedString.append(String.join("\t", headerColumns)).append(System.lineSeparator());
         int lastColumnIndex = headerColumns.size() - 1;
-        for(Integer rowIndex: rowsToCopy) {
+        for (Integer rowIndex : rowsToCopy) {
             for (int colIndex = 0; colIndex < headerColumns.size(); colIndex++) {
                 tabSeparatedString.append(tableView.getColumns().get(colIndex).getCellData(rowIndex));
                 if (colIndex != lastColumnIndex) {
@@ -77,6 +79,7 @@ public class TableUtils {
             }
         });
     }
+
     public static <T> void addCheckBoxEditor(TableColumn<T, Boolean> posColorCol, BiConsumer<T, Boolean> applyValue) {
         posColorCol.setCellFactory(column -> new CheckBoxTableCell<>() {
             @Override

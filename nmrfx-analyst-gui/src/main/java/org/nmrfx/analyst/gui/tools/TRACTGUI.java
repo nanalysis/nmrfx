@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,24 +17,13 @@
  */
 package org.nmrfx.analyst.gui.tools;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.List;
 import javafx.beans.Observable;
 import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -44,21 +33,22 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.chart.Axis;
-import org.nmrfx.chart.DataSeries;
-import org.nmrfx.chart.XYCanvasChart;
-import org.nmrfx.chart.XYChartPane;
-import org.nmrfx.chart.XYValue;
+import org.nmrfx.chart.*;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.math.TRACTSimFit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+
 /**
- *
  * @author brucejohnson
  */
 public class TRACTGUI {
@@ -80,7 +70,7 @@ public class TRACTGUI {
 
     public TRACTGUI(ScannerTool scannerTool) {
         this.scannerTool = scannerTool;
-        chart = PolyChart.getActiveChart();
+        chart = PolyChartManager.getInstance().getActiveChart();
     }
 
     public void showMCplot() {
@@ -265,15 +255,7 @@ public class TRACTGUI {
                 errValues[i] = 1.0;
                 i++;
             }
-//            for (FileTableItem item : items) {
-//                double xValue = getXValue(item, xElem);
-//                xValues[0][i] = xValue;
-//                maxX = Math.max(xValues[0][i], maxX);
-//                xValues[1][i] = i % 2;
-//                yValues[i] = item.getDoubleExtra(yElem);
-//                errValues[i] = 1.0;
-//                i++;
-//            }
+
             tractFit.setXYE(xValues, yValues, errValues);
             PointValuePair result = tractFit.fit(); // fixme
             double[] errs = tractFit.getParErrs();
@@ -310,13 +292,12 @@ public class TRACTGUI {
     void exportBarPlotSVGAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to SVG");
-        //fileChooser.setInitialDirectory(pyController.getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
             try {
                 Canvas canvas = activeChart.getCanvas();
-                svgGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                svgGC.create(canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
                 exportChart(svgGC);
                 svgGC.saveFile();
             } catch (GraphicsIOException ex) {
@@ -334,7 +315,6 @@ public class TRACTGUI {
     void exportData() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export data values");
-        //fileChooser.setInitialDirectory(pyController.getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try (FileWriter writer = new FileWriter(selectedFile)) {

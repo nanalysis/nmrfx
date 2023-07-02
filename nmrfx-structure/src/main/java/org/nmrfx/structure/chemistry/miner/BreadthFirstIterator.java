@@ -1,11 +1,11 @@
 package org.nmrfx.structure.chemistry.miner;
 
-import java.util.*;
-
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomContainer;
 import org.nmrfx.chemistry.IAtom;
 import org.nmrfx.chemistry.IBond;
-import org.nmrfx.chemistry.Atom;
+
+import java.util.*;
 
 public class BreadthFirstIterator implements Iterator {
 

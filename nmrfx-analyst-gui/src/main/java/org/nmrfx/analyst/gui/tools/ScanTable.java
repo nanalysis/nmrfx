@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -43,6 +43,7 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
@@ -50,7 +51,6 @@ import org.nmrfx.processor.datasets.DatasetMerger;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.ChartProcessor;
-import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.controls.FileTableItem;
@@ -76,7 +76,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class ScanTable {
@@ -97,6 +96,7 @@ public class ScanTable {
     static final List<String> standardHeaders = List.of(PATH_COLUMN_NAME, SEQUENCE_COLUMN_NAME, ROW_COLUMN_NAME, ETIME_COLUMN_NAME, NDIM_COLUMN_NAME);
     static final Color[] COLORS = new Color[17];
     static final double[] hues = {0.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875, 0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375};
+
     static {
         COLORS[0] = Color.BLACK;
         int i = 1;
@@ -192,7 +192,7 @@ public class ScanTable {
                 Dataset dataset = Dataset.getDataset(datasetName);
                 if (dataset == null) {
                     File datasetFile = new File(scanDir, datasetPath);
-                    FXMLController.getActiveController().openDataset(datasetFile, false, true);
+                    AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(datasetFile, false, true);
                 }
             }
         }
@@ -290,7 +290,7 @@ public class ScanTable {
         chart.refresh();
     }
 
-     protected final void selectionChanged() {
+    protected final void selectionChanged() {
         if (processingTable) {
             return;
         }
@@ -467,7 +467,7 @@ public class ScanTable {
                     // After merging, remove the 1D files
                     for (String fileName : fileNames) {
                         File file = new File(fileName);
-                        FXMLController.getActiveController().closeFile(file);
+                        AnalystApp.getFXMLControllerManager().getOrCreateActiveController().closeFile(file);
                         Files.deleteIfExists(file.toPath());
                         String parFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".par";
                         File parFile = new File(parFileName);
@@ -475,7 +475,7 @@ public class ScanTable {
                     }
 
                     // load merged dataset
-                    FXMLController.getActiveController().openDataset(mergedFile, false, true);
+                    AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(mergedFile, false, true);
                     List<Integer> rows = new ArrayList<>();
                     rows.add(0);
                     chart.setDrawlist(rows);
@@ -486,7 +486,7 @@ public class ScanTable {
             } else {
                 // load first output dataset
                 File datasetFile = new File(scanOutputDir, fileRoot + 1 + ".nv");
-                FXMLController.getActiveController().openDataset(datasetFile, false, true);
+                AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(datasetFile, false, true);
             }
             chart.full();
             chart.autoScale();
@@ -648,11 +648,11 @@ public class ScanTable {
                         for (int iField = 0; iField < fields.length; iField++) {
                             fields[iField] = fields[iField].trim();
                             try {
-                                 Integer.parseInt(fields[iField]);
+                                Integer.parseInt(fields[iField]);
                             } catch (NumberFormatException nfE) {
                                 notInteger[iField] = true;
                                 try {
-                                     Double.parseDouble(fields[iField]);
+                                    Double.parseDouble(fields[iField]);
                                 } catch (NumberFormatException nfE2) {
                                     notDouble[iField] = true;
                                 }
@@ -719,7 +719,7 @@ public class ScanTable {
                         if (eTime < firstDate) {
                             firstDate = eTime;
                         }
-                       var item = new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap);
+                        var item = new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap);
                         fileListItems.add(item);
                     }
 
@@ -755,7 +755,7 @@ public class ScanTable {
                 File parentDir = file.getParentFile();
                 Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
                 if (path.toFile().exists()) {
-                    Dataset firstDataset = FXMLController.getActiveController().openDataset(path.toFile(), false, true);
+                    Dataset firstDataset = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(path.toFile(), false, true);
                     // If there is only one unique dataset name, assume an arrayed experiment
                     List<String> uniqueDatasetNames = new ArrayList<>(fileListItems.stream().map(FileTableItem::getDatasetName).collect(Collectors.toSet()));
                     if (uniqueDatasetNames.size() == 1 && uniqueDatasetNames.get(0) != null && !uniqueDatasetNames.get(0).equals("")) {
@@ -863,7 +863,7 @@ public class ScanTable {
 
     private List<String> headersMissing(String[] headerNames) {
         List<String> missing = new ArrayList<>();
-        for (var headerName:headerNames) {
+        for (var headerName : headerNames) {
             if (headerAbsent(headerName)) {
                 missing.add(headerName);
             }
@@ -988,7 +988,7 @@ public class ScanTable {
 
     private void addHeaders(String[] headers) {
         var missingHeaders = headersMissing(headers);
-        for (var header:missingHeaders) {
+        for (var header : missingHeaders) {
             addColumn(header);
         }
     }

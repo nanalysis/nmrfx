@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,7 +39,6 @@ import java.util.Random;
 import static java.util.Objects.requireNonNull;
 
 /**
- *
  * @author brucejohnson
  */
 public class RotationalDynamics {
@@ -255,8 +254,6 @@ public class RotationalDynamics {
                 maxBranch = branch;
             }
         }
-//        double accel = maxBranch.epsk / maxBranch.dk - maxBranch.gkVec.dotProduct(maxBranch.alphaVec);
-
     }
 
     double calcKineticEnergy() {
@@ -320,7 +317,6 @@ public class RotationalDynamics {
     }
 
     void updateBathTemp(int iStep) {
-        //bathTemp = (iBathTemp - fBathTemp) * Math.pow((1.0 - 1.0 * iStep / nSteps), timePower) + fBathTemp;
         bathTemp = getPyTemp(1.0 * iStep / nSteps);
     }
 
@@ -432,9 +428,6 @@ public class RotationalDynamics {
                 iBranch.phiMatF.operate(gKepKF, tempVec1F);
                 prevBranch.zVecF.add(tempVec1F, prevBranch.zVecF);
                 prevBranch.zVecF.add(tempVec2F, prevBranch.zVecF);
-//                prevBranch.zVecF.check("zvec", prevBranch.zVec);
-//                prevBranch.pMatF.check("pmat", prevBranch.pMat);
-//                prevBranch.phiMatF.check("phiMatF", prevBranch.phiMat);
             }
         }
         FastVector alphaPreF = new FastVector(6);
@@ -495,28 +488,10 @@ public class RotationalDynamics {
         } else {
             calcAcceleration2(0);
         }
-//        String nameRoot = String.format("_%d_%.0f_.",iStep,timeStep);
-//        if ((iStep > 5022) && (iStep < 5027)) {
-//            dihedrals.writeDihedrals("dihedralsPre" + nameRoot + "txt", false);
-//            try {
-//                molecule.updateFromVecCoords();
-//                molecule.writeXYZToPDB("pre" + nameRoot + "pdb", 0);
-//            } catch (IOException ex) {
-//                Logger.getLogger(RotationalDynamics.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        }
+
         advanceVelocities2(timeStep);
         advanceDihedrals2(timeStep);
         molecule.genCoordsFastVec3D(null);
-//        if ((iStep > 5022) && (iStep < 5027)) {
-//            dihedrals.writeDihedrals("dihedralsPost" + nameRoot + "txt", false);
-//            try {
-//                molecule.updateFromVecCoords();
-//                molecule.writeXYZToPDB("post" + nameRoot + "pdb", 0);
-//            } catch (IOException ex) {
-//                Logger.getLogger(RotationalDynamics.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        }
         updateVelocitiesRecursive();
 
         double newKineticEnergy = calcKineticEnergy();
@@ -524,16 +499,6 @@ public class RotationalDynamics {
         EnergyDeriv eDeriv = dihedrals.eDeriv();
         double potentialEnergy = eDeriv.getEnergy();
         double total = potentialEnergy + kineticEnergy;
-//        Atom a1 = molecule.getAtom("1:88.HB3");
-//        Atom a2 = molecule.getAtom("2:1.H191");
-//        FastVector3D[] vecCoords = molecule.getEnergyCoords().vecCoords;
-//        FastVector3D v1 = vecCoords[a1.eAtom];
-//        FastVector3D v2 = vecCoords[a2.eAtom];
-//        double dis = v1.dis(v2);
-//
-//        if ((total / lastTotalEnergy) > 10.0) {
-//            dihedrals.energyList.dump(0.2, 0.2, "energy"+iStep+".txt");
-//        }
 
         deltaEnergy = Math.abs((total - lastTotalEnergy) / total);
         lastKineticEnergy = newKineticEnergy;
@@ -566,7 +531,6 @@ public class RotationalDynamics {
         }
 
         void restore() {
-            //timeStep = lastTimeStep;
             deltaEnergy = lastDelta;
             lastTotalEnergy = lastLastTotalEnergy;
             totalTime = lastTotalTime;
@@ -603,8 +567,6 @@ public class RotationalDynamics {
         double lastTime = totalTime;
         int lastSteps = 0;
         int reportAt = nSteps / 20;
-//        reportAt = nSteps / 100;
-////        reportAt = 1;
         double eScale = 1.0;
         int stepsToRun = (int) (runFraction * nSteps);
         if ((currentStep + stepsToRun) > nSteps) {

@@ -1,23 +1,19 @@
 package org.nmrfx.analyst.dataops;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import org.nmrfx.analyst.compounds.CompoundData;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.InputStream;
+import java.util.*;
+
 /**
- *
  * @author brucejohnson
  */
 public class SimData {
 
-    static Map<String, SimData> simDataMap = new TreeMap<>();
+    private static final Map<String, SimData> simDataMap = new TreeMap<>();
 
     double ppmScale = 20.0;
     double jScale = 250.0;
@@ -138,7 +134,7 @@ public class SimData {
 //    public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, double refNProtons) {
 
     public static CompoundData genCompoundData(String cmpdID, String name, SimDataVecPars pars, double lb,
-            double refConc, double cmpdConc) {
+                                               double refConc, double cmpdConc) {
         Vec vec = prepareVec(name, pars);
         List<Region> regions = genVec(name, vec, lb);
         CompoundData cData = genRegions(cmpdID, name, pars, refConc, cmpdConc, vec, regions);

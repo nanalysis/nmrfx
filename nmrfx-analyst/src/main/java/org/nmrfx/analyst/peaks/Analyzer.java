@@ -2,6 +2,7 @@ package org.nmrfx.analyst.peaks;
 
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.Precision;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.*;
@@ -28,6 +29,7 @@ import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FIT_MODE.RMS;
 /**
  * @author Bruce Johnson
  */
+@PluginAPI("parametric")
 public class Analyzer {
     private static final Logger log = LoggerFactory.getLogger(Analyzer.class);
 
@@ -346,6 +348,7 @@ public class Analyzer {
 
     /**
      * Locates any peaks within region and deletes them/
+     *
      * @param region The DatasetRegion to search
      */
     public void removePeaksFromRegion(DatasetRegion region) {
@@ -369,10 +372,11 @@ public class Analyzer {
     /**
      * Deletes from peakList any peaks in peaksToDelete that have status of 0. The peak list will be compressed
      * and renumbered.
+     *
      * @param peaks List of peaks to check deletion status for.
      */
     private void deletePeaks(List<Peak> peaks) {
-        for (Peak peak: peaks) {
+        for (Peak peak : peaks) {
             if (peak.getStatus() == 0) {
                 List<Peak> lPeaks = PeakList.getLinks(peak);
                 for (Peak lPeak : lPeaks) {
@@ -1222,7 +1226,7 @@ public class Analyzer {
         if (regionFile.canRead()) {
             List<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
             if (!DatasetRegion.isLongRegionFile(regionFile)) {
-                for (DatasetRegion region: regions) {
+                for (DatasetRegion region : regions) {
                     region.measure(getDataset());
                 }
             }

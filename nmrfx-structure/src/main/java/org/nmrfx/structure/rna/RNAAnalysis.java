@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,15 +19,14 @@ package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.structure.chemistry.Molecule;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.nmrfx.structure.chemistry.Molecule;
 
 /**
- *
  * @author bajlabuser
  */
 public class RNAAnalysis {
@@ -64,7 +63,7 @@ public class RNAAnalysis {
     /**
      * Generates a list of RNA basepairs for the given molecule
      *
-     * @param molecule The molecule to analyze for base pairing
+     * @param molecule   The molecule to analyze for base pairing
      * @param typeTarget The type of basepair to return in list
      * @return A list of BasePairs found in the molecule
      */

@@ -10,8 +10,9 @@ import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
-import javax.vecmath.*;
 import org.nmrfx.chemistry.Point3;
+
+import javax.vecmath.Vector3d;
 
 public class MolCylinder extends Group implements MolItem {
 
@@ -51,7 +52,6 @@ public class MolCylinder extends Group implements MolItem {
     }
 
     /**
-     *
      * @param radius
      */
     public void setRadius(double radius) {
@@ -98,7 +98,7 @@ public class MolCylinder extends Group implements MolItem {
 
         // calculate height of object and unit vector along cylinder axis
         Vector3d unit = new Vector3d();
-        unit.sub(apex, base); // unit = apex - base;
+        unit.sub(apex, base);
 
         unit.normalize();
 
@@ -158,8 +158,6 @@ public class MolCylinder extends Group implements MolItem {
         // rotate the cylinder into correct orientation
         Transform transform = rotateMatrix.createConcatenation(rotateFix);
         return transform;
-//        Translate translate = new Translate(center.x, center.y, center.z);
-//        return transform.createConcatenation(translate);
     }
 
 }

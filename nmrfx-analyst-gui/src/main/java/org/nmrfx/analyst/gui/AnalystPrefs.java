@@ -5,64 +5,64 @@
  */
 package org.nmrfx.analyst.gui;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.StringProperty;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.chemistry.io.PDBFile;
-import static org.nmrfx.processor.gui.MainApp.preferencesController;
 import org.nmrfx.processor.gui.PreferencesController;
-import org.nmrfx.utils.properties.BooleanOperationItem;
-import org.nmrfx.utils.properties.DirectoryOperationItem;
-import org.nmrfx.utils.properties.DoubleRangeOperationItem;
-import org.nmrfx.utils.properties.IntRangeOperationItem;
-import org.nmrfx.utils.properties.TextOperationItem;
+import org.nmrfx.utils.properties.*;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
- *
  * @author brucejohnson
  */
 public class AnalystPrefs {
+    private static final String REMOTE_HOST_STR = "REMOTE_HOST";
+    private static final String REMOTE_USER_STR = "REMOTE_USER_NAME";
+    private static IntegerProperty libraryVectorSize = null;
+    private static DoubleProperty libraryVectorSF = null;
+    private static DoubleProperty libraryVectorSW = null;
+    private static DoubleProperty libraryVectorLB = null;
+    private static DoubleProperty libraryVectorREF = null;
+    private static BooleanProperty useRemotePassword = null;
+    private static StringProperty remoteUserName = null;
+    private static StringProperty remoteHostName = null;
+    private static StringProperty remoteDirectory = null;
+    private static StringProperty localDirectory = null;
+    private static StringProperty localResidueDirectory = null;
 
-    static IntegerProperty libraryVectorSize = null;
+    private AnalystPrefs() {
+        throw new IllegalAccessError("Utility class shouldn't be instantiated!");
+    }
 
     public static Integer getLibraryVectorSize() {
         libraryVectorSize = PreferencesController.getInteger(libraryVectorSize, "LIBRARY_VECTOR_SIZE", 14);
         return libraryVectorSize.getValue();
     }
 
-    static DoubleProperty libraryVectorSF = null;
-
     public static Double getLibraryVectorSF() {
         libraryVectorSF = PreferencesController.getDouble(libraryVectorSF, "LIBRARY_VECTOR_SF", 600.0);
         return libraryVectorSF.getValue();
     }
-
-    static DoubleProperty libraryVectorSW = null;
 
     public static Double getLibraryVectorSW() {
         libraryVectorSW = PreferencesController.getDouble(libraryVectorSW, "LIBRARY_VECTOR_SW", 10000.0);
         return libraryVectorSW.getValue();
     }
 
-    static DoubleProperty libraryVectorLB = null;
-
     public static Double getLibraryVectorLB() {
         libraryVectorLB = PreferencesController.getDouble(libraryVectorLB, "LIBRARY_VECTOR_LB", 0.5);
         return libraryVectorLB.getValue();
     }
 
-    static DoubleProperty libraryVectorREF = null;
-
     public static Double getLibraryVectorREF() {
         libraryVectorREF = PreferencesController.getDouble(libraryVectorREF, "LIBRARY_VECTOR_REF", 4.73);
         return libraryVectorREF.getValue();
     }
-
-    static BooleanProperty useRemotePassword = null;
 
     public static Boolean getUseRemotePassword() {
         useRemotePassword = PreferencesController.getBoolean(useRemotePassword, "REMOTE_USE_PASSWORD", false);
@@ -74,31 +74,35 @@ public class AnalystPrefs {
         PreferencesController.setBoolean("REMOTE_USE_PASSWORD", value);
     }
 
-    static StringProperty remoteUserName = null;
-
     public static String getRemoteUserName() {
-        remoteUserName = PreferencesController.getString(remoteUserName, "REMOTE_USER_NAME", "");
+        remoteUserName = PreferencesController.getString(remoteUserName, REMOTE_USER_STR, "");
         return remoteUserName.getValue();
+    }
+
+    public static StringProperty getRemoteUserNameProperty() {
+        remoteUserName = PreferencesController.getString(remoteUserName, REMOTE_USER_STR, "");
+        return remoteUserName;
     }
 
     public static void setRemoteUserName(String name) {
         remoteUserName.setValue(name);
-        PreferencesController.setString("REMOTE_USER_NAME", name);
+        PreferencesController.setString(REMOTE_USER_STR, name);
     }
 
-    static StringProperty remoteHostName = null;
-
     public static String getRemoteHostName() {
-        remoteHostName = PreferencesController.getString(remoteHostName, "REMOTE_HOST", "");
+        remoteHostName = PreferencesController.getString(remoteHostName, REMOTE_HOST_STR, "");
         return remoteHostName.getValue();
+    }
+
+    public static StringProperty getRemoteHostNameProperty() {
+        remoteHostName = PreferencesController.getString(remoteHostName, REMOTE_HOST_STR, "");
+        return remoteHostName;
     }
 
     public static void setRemoteHostName(String name) {
         remoteHostName.setValue(name);
-        PreferencesController.setString("REMOTE_HOST", name);
+        PreferencesController.setString(REMOTE_HOST_STR, name);
     }
-
-    static StringProperty remoteDirectory = null;
 
     public static String getRemoteDirectory() {
         remoteDirectory = PreferencesController.getString(remoteDirectory, "REMOTE_DIRECTORY", "");
@@ -110,8 +114,6 @@ public class AnalystPrefs {
         PreferencesController.setString("REMOTE_DIRECTORY", name);
     }
 
-    static StringProperty localDirectory = null;
-
     public static String getLocalDirectory() {
         Path defaultDir = Paths.get(System.getProperty("user.home"), "nmrdata");
         localDirectory = PreferencesController.getString(localDirectory, "LOCAL_DIRECTORY", defaultDir.toString());
@@ -122,8 +124,6 @@ public class AnalystPrefs {
         localDirectory.setValue(name);
         PreferencesController.setString("LOCAL_DIRECTORY", name);
     }
-
-    static StringProperty localResidueDirectory = null;
 
     public static String getLocalResidueDirectory() {
         Path defaultDir = Paths.get(System.getProperty("user.home"), "nmrfx_residues");
@@ -137,7 +137,7 @@ public class AnalystPrefs {
         PreferencesController.setString("LOCAL_RESIDUE_DIRECTORY", name);
     }
 
-    public static void addPrefs() {
+    public static void addPrefs(PreferencesController preferencesController) {
         PropertySheet prefSheet = preferencesController.getPrefSheet();
         IntRangeOperationItem libraryVectorSizeItem = new IntRangeOperationItem(
                 (a, b, c) -> {

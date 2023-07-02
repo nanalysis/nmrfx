@@ -6,7 +6,6 @@
 package org.nmrfx.structure.seqassign;
 
 /**
- *
  * @author brucejohnson
  */
 public class SpinSystemMatch implements Comparable<SpinSystemMatch> {

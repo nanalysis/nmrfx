@@ -4,17 +4,14 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
-import javafx.scene.control.Label;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import org.nmrfx.analyst.gui.tools.IntegralTool;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.DatasetRegionListener;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,13 +94,13 @@ public class RegionsTable extends TableView<DatasetRegion> {
         this.datasetRegions = FXCollections.observableList(new ArrayList<>());
         SortedList<DatasetRegion> sortedRegions = new SortedList<>(this.datasetRegions);
         sortedRegions.comparatorProperty().bind(comparatorProperty());
-        regionListener  = updateRegion -> {
+        regionListener = updateRegion -> {
             datasetRegions.sort(Comparator.comparing(dr -> dr.getRegionStart(0)));
             refresh();
         };
 
         setEditable(true);
-        TableColumn<DatasetRegion, String>  regionsLabelCol = new TableColumn<>("Region");
+        TableColumn<DatasetRegion, String> regionsLabelCol = new TableColumn<>("Region");
         regionsLabelCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>("Region " + (datasetRegions.indexOf(cellData.getValue()) + 1)));
         getColumns().add(regionsLabelCol);
 
@@ -149,12 +146,13 @@ public class RegionsTable extends TableView<DatasetRegion> {
         getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         setItems(sortedRegions);
 
-        chart = PolyChart.getActiveChart();
-        PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> chart = newValue);
+        chart = PolyChartManager.getInstance().getActiveChart();
+        PolyChartManager.getInstance().activeChartProperty().addListener((observable, oldValue, newValue) -> chart = newValue);
     }
 
     /**
      * Listener for edits of the normalized integral column that updates the norm in the dataset.
+     *
      * @param event The normalized integral column cell edit event
      */
     private void normalizedIntegralChanged(TableColumn.CellEditEvent<DatasetRegion, Double> event) {
@@ -166,6 +164,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
     /**
      * Listener for edits of the start or ending region bounds. The value is updated in the DatasetRegion for that
      * row and the new integral is measured.
+     *
      * @param event Edit event for the start or ending region bounds
      */
     private void regionBoundChanged(TableColumn.CellEditEvent<DatasetRegion, Double> event) {
@@ -188,6 +187,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
 
     /**
      * Clears the current regions and updates the list with the new values.
+     *
      * @param regions The new regions to set
      */
     public void setRegions(List<DatasetRegion> regions) {
@@ -208,6 +208,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
 
     /**
      * Selects the row of the provided region in the table.
+     *
      * @param regionToSelect The region to select.
      */
     public void selectRegion(DatasetRegion regionToSelect) {

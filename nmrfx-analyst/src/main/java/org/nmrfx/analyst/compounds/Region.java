@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
  */
 public class Region {
@@ -113,7 +112,7 @@ public class Region {
 
     }
 
-//               foreach ppmCenter $ppms tol $tols {
+    //               foreach ppmCenter $ppms tol $tols {
 //                 set match 0
 //                 set score 0.0
 //                 set max 0.0
@@ -244,7 +243,6 @@ public class Region {
 
     public int ppmToPt(double ppm) {
         int pt = (int) ((cData.getRef() - ppm) * cData.getSF() / cData.getSW() * cData.getN() + 0.5);
-        //int pt = cData.getRef() - ((1.0 * pt / cData.getN())) * cData.getSW() / cData.getSF();
         return pt;
     }
 

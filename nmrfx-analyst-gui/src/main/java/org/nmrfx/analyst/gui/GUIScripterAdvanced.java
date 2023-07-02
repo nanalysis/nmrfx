@@ -1,12 +1,14 @@
 package org.nmrfx.analyst.gui;
 
 import org.nmrfx.analyst.gui.spectra.StripController;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.GUIScripter;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@PythonAPI("gscript_adv")
 public class GUIScripterAdvanced extends GUIScripter {
     public Map<String, String> strips() {
         AnalystApp app = AnalystApp.getAnalystApp();
@@ -26,10 +28,10 @@ public class GUIScripterAdvanced extends GUIScripter {
         return result;
     }
 
-   public void strips(String peakListName, String xDim, String zDim) {
-       AnalystApp app = AnalystApp.getAnalystApp();
-       StripController stripController = app.showStripsBar();
-       PeakList peakList = PeakList.get(peakListName);
-       stripController.loadFromCharts(peakList, xDim, zDim);
-   }
+    public void strips(String peakListName, String xDim, String zDim) {
+        AnalystApp app = AnalystApp.getAnalystApp();
+        StripController stripController = app.showStripsBar();
+        PeakList peakList = PeakList.get(peakListName);
+        stripController.loadFromCharts(peakList, xDim, zDim);
+    }
 }

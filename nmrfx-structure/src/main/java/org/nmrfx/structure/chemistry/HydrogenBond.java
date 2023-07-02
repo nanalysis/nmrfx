@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,6 @@ import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.SpatialSet;
 
 /**
- *
  * @author brucejohnson
  */
 public class HydrogenBond {
@@ -46,9 +45,9 @@ public class HydrogenBond {
     /**
      * Test if two atoms have the correct geometry to be in a hydrogen bond
      *
-     * @param hydrogen SpatialSet for the hydrogen
-     * @param acceptor SpatialSet for the hydrogen bond acceptor (typically O or
-     * N)
+     * @param hydrogen     SpatialSet for the hydrogen
+     * @param acceptor     SpatialSet for the hydrogen bond acceptor (typically O or
+     *                     N)
      * @param structureNum
      * @return boolean depending on whether the geometry is correct
      */
@@ -228,27 +227,11 @@ public class HydrogenBond {
             if (distance < minDistance) {
                 distance = minDistance;
             }
-            /*
-             double dis3 = distance * distance * distance;
-             double max3 = maxDistance * maxDistance * maxDistance;
-             shift = 1.0/dis3 - 1.0/max3;
-             */
 
             double disP = Math.pow(distance, power);
             double maxP = Math.pow(maxDistance, power);
             shift = 1.0 / disP - 1.0 / maxP;
-            /*
-             double rI = 1.5;
-             double shiftI = 1.0/(rI*rI*rI) - 1.0/max3;
-
-             if (distance < rI) {
-             shift = 1.0+0.5*(rI-distance)/(rI-distance+1.9);
-             } else {
-             shift = shift/shiftI;
-             }
-             */
             double cos = Math.abs(Math.cos(angle));
-            //shift = shift*(1.0-1.0*(1.0+cos));
             shift = shift * (1.0 + 1.0 * (cos * cos - 1.0));
         }
         return shift;
