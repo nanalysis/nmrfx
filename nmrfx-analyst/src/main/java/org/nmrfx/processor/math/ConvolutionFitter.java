@@ -1,6 +1,5 @@
 package org.nmrfx.processor.math;
 
-import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.Peak;
@@ -96,10 +95,8 @@ public class ConvolutionFitter {
         int size = values.length;
         int end = size - psfSize;
         if ((sim == null) || (sim.length != size)) {
-            System.out.println("rwsiz " + signal.length + " " + size + " " + sim);
              sim = new double[size];
         }
-        System.out.println(psfSize + " " + nh + " " + end + " " + size + " " + signal.length);
         for (int i = nh; i < end; i++) {
             double sum = 0.0;
             for (int k = 0; k < psfSize; k++) {
@@ -240,7 +237,6 @@ public class ConvolutionFitter {
                     double dx = Math.abs(x2 - x1);
                     double intensity = result[i] / psfMax;
                     double volume = intensity * dx * (Math.PI / 2.0) / 1.05;
-                    System.out.println("add peak " + start + " " + i + " " + (start+i) + " " + result[i] + " " + intensity + " " + volume + " " + dx + " " + psfMax);
                     if (Double.isFinite(result[i])) {
                         Peak peak = peakList.getNewPeak();
                         PeakDim peakDim = peak.getPeakDim(0);
