@@ -14,7 +14,7 @@ import java.util.Random;
 public class ConvolutionFitter {
     static Random rand = new Random();
     static final int SQUASH_AT = 20;
-    final double[] psf;
+    final double[][] psf;
     double psfMax;
     double[] widths;
     double[] sim;
@@ -23,29 +23,39 @@ public class ConvolutionFitter {
     double squash = 0.625;
     double threshold = 0.0;
 
-    double[] makePSF(int n, double width, double shapeFactor) {
-        double[] yValues = new double[n];
-        double sum = 0.0;
+    public ConvolutionFitter(int n0, int width, double shapeFactor) {
+        int[] n = {n0};
+        widths = new double[1];
+        widths[0] = width;
+        psf = makePSF(n, widths, shapeFactor);
+    }
+
+    public ConvolutionFitter(int[] n, double[] widths, double shapeFactor) {
+        psf = makePSF(n, widths, shapeFactor);
+        this.widths = widths.clone();
+    }
+
+    double[][] makePSF(int[] n, double[] width, double shapeFactor) {
+        int nDim = n.length;
+        double[][] yValues = new double[nDim][];
         double max = 0.0;
-        for (int i = 0; i < n; i++) {
-            double x = -(n - 1) / 2.0 + i;
-            yValues[i] = LineShapes.G_LORENTZIAN.calculate(x, 1.0, 0.0, width, shapeFactor);
-            sum += yValues[i];
-        }
-        for (int i = 0; i < n; i++) {
-            yValues[i] /= sum;
-            if (yValues[i] > max) {
-                max = yValues[i];
+        for (int iDim=0;iDim<nDim;iDim++) {
+            yValues[iDim] = new double[n[iDim]];
+            double sum = 0.0;
+            for (int i = 0; i < n[iDim]; i++) {
+                double x = -(n[iDim] - 1) / 2.0 + i;
+                yValues[iDim][i] = LineShapes.G_LORENTZIAN.calculate(x, 1.0, 0.0, width[iDim], shapeFactor);
+                sum += yValues[iDim][i];
+            }
+            for (int i = 0; i < n[iDim]; i++) {
+                yValues[iDim][i] /= sum;
+                if (yValues[iDim][i] > max) {
+                    max = yValues[iDim][i];
+                }
             }
         }
         psfMax = max;
         return yValues;
-    }
-
-    public ConvolutionFitter(int n, int width, double shapeFactor) {
-        psf = makePSF(n, width, shapeFactor);
-        widths = new double[1];
-        widths[0] = width;
     }
 
     // used from Python for testing
@@ -69,7 +79,7 @@ public class ConvolutionFitter {
     }
 
     // used from Python for testing
-    public double[] psf() {
+    public double[][] psf() {
         return psf;
     }
 
@@ -90,7 +100,7 @@ public class ConvolutionFitter {
     }
 
     public void convolve(double[] values, boolean[] skip) {
-        int psfSize = psf.length;
+        int psfSize = psf[0].length;
         int nh = psfSize / 2;
         int size = values.length;
         int end = size - psfSize;
@@ -102,7 +112,7 @@ public class ConvolutionFitter {
             for (int k = 0; k < psfSize; k++) {
                 int index = i - nh + k;
                 if (!skip[index]) {
-                    sum += values[index] * psf[k];
+                    sum += values[index] * psf[0][k];
                 }
             }
             sim[i] = sum ;
@@ -110,7 +120,7 @@ public class ConvolutionFitter {
     }
 
     public double lrIteration(double[] values) {
-        int psfSize = psf.length;
+        int psfSize = psf[0].length;
         int nh = psfSize / 2;
         int size = values.length;
         int end = size - nh;
@@ -123,7 +133,7 @@ public class ConvolutionFitter {
             for (int k = 0; k < psfSize; k++) {
                 int index = j - nh + k;
                 if ((signal[index] > threshold) && (sim[index] > 1.0e-6)) {
-                    sum += signal[index] / sim[index] * psf[k];
+                    sum += signal[index] / sim[index] * psf[0][k];
                 }
             }
             if (!skip[j]) {
@@ -221,7 +231,7 @@ public class ConvolutionFitter {
             }
             int size = pt2 - pt1 + 1;
 
-            int psfSize = psf.length;
+            int psfSize = psf[0].length;
             signal = new double[size + 2 * psfSize];
             skip = new boolean[signal.length];
             for (int i = 0; i < size; i++) {
