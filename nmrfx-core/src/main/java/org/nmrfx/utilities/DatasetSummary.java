@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -60,7 +61,7 @@ public class DatasetSummary {
      * present on the local file system
      */
     private boolean present;
-    private String processed;
+    private List<String> processed;
 
     /**
      * @return the path
@@ -189,11 +190,11 @@ public class DatasetSummary {
         present = state;
     }
 
-    public String getProcessed() {
-        return processed == null ? "" : processed;
+    public List<String> getProcessed() {
+        return processed == null ? new ArrayList<>() : processed;
     }
 
-    public void setProcessed(String fileName) {
+    public void setProcessed(List<String> fileName) {
         processed = fileName;
     }
 
@@ -325,7 +326,7 @@ public class DatasetSummary {
 
     @Override
     public String toString() {
-        return "RemoteDataset{" + "path=" + path + ", type=" + type + ", user=" + user + ", seq=" + seq + ", sf=" + sf + ", time=" + time + ", tn=" + tn + ", sol=" + sol + ", te=" + te + ", pos=" + pos + ", nd=" + nd + ", nv=" + nv + ", text=" + text + ", vnd=" + vnd + ", nb=" + nb + ", sample=" + sample + ", iso=" + iso + '}';
+        return "DatasetSummary{" + "path=" + path + ", type=" + type + ", user=" + user + ", seq=" + seq + ", sf=" + sf + ", time=" + time + ", tn=" + tn + ", sol=" + sol + ", te=" + te + ", pos=" + pos + ", nd=" + nd + ", nv=" + nv + ", text=" + text + ", vnd=" + vnd + ", nb=" + nb + ", sample=" + sample + ", iso=" + iso + '}';
     }
 
     public static List<DatasetSummary> datasetsFromJson(String jsonString) {

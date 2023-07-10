@@ -160,6 +160,10 @@ public class JCAMPData implements NMRData {
         return matrix;
     }
 
+    public String getTitle() {
+        return document.getTitle();
+    }
+
     @Override
     public void close() {
         // Nothing to close
