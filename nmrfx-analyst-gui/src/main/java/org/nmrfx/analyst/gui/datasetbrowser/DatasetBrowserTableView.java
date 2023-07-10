@@ -1,12 +1,12 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import org.controlsfx.control.tableview2.TableView2;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.analyst.gui.utitlity.DoubleTableCell;
 import org.nmrfx.utilities.DatasetSummary;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 
-public class DatasetBrowserTableView extends TableView<DatasetSummary> {
+public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
     private static final int NUMBER_DECIMAL_PLACES_FREQUENCY = 1;
     /* Keeps track of the summaries, new summaries are added to this list. */
     private final ObservableList<DatasetSummary> unfilteredDatasetSummaries = FXCollections.observableArrayList();
@@ -75,16 +75,14 @@ public class DatasetBrowserTableView extends TableView<DatasetSummary> {
                 || datasetSummary.getProcessed().stream().anyMatch(datasetPath -> datasetPath.toLowerCase().contains(textFormatted)));
     }
 
-    public void setDatasetSelectionListener(Runnable runnable) {
-        this.datasetSelectionListener = runnable;
-    }
-
     private class ProcessedDatasetComboBoxTableCell extends TableCell<DatasetSummary, List<String>> {
         private final ComboBox<String> combo = new ComboBox<>();
-        private final ChangeListener<String> comboValueChangeListener = this::comboValueChangeListener;
 
         ProcessedDatasetComboBoxTableCell() {
             combo.prefWidthProperty().bind(this.widthProperty());
+            // Select the row when the combo box is clicked so it has same behaviour as just clicking elsewhere along the row
+            combo.setOnMouseClicked(event -> getTableView().getSelectionModel().select(getIndex()));
+            combo.valueProperty().addListener(this::comboValueChangeListener);
             setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         }
 
@@ -94,10 +92,6 @@ public class DatasetBrowserTableView extends TableView<DatasetSummary> {
                 return;
             }
             datasetSummary.setSelectedProcessedDataIndex(datasetSummary.getProcessed().indexOf(newValue));
-            if (datasetSelectionListener != null) {
-                getTableView().getSelectionModel().select(getIndex());
-                datasetSelectionListener.run();
-            }
         }
 
         @Override
@@ -106,8 +100,6 @@ public class DatasetBrowserTableView extends TableView<DatasetSummary> {
             if (empty || items.isEmpty()) {
                 setGraphic(null);
             } else {
-                // Don't call the change listener when programmatically updating the combo box values
-                combo.valueProperty().removeListener(comboValueChangeListener);
                 combo.getItems().setAll(items);
                 DatasetSummary summary = getTableRow().getItem();
                 if (summary != null) {
@@ -115,7 +107,6 @@ public class DatasetBrowserTableView extends TableView<DatasetSummary> {
                     selectedProcessedData.ifPresent(combo::setValue);
                 }
                 setGraphic(combo);
-                combo.valueProperty().addListener(comboValueChangeListener);
             }
         }
     }
