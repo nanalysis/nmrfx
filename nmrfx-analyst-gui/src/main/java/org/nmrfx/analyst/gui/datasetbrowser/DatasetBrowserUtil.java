@@ -83,9 +83,10 @@ public class DatasetBrowserUtil {
      * @return A list of DatasetSummary objects.
      */
     private static List<DatasetSummary> handleJcampFiles(Path relativeDirectory, List<String> jcampFilepathStrings) {
-        // load all files
-        // add all fid files as keys in map
-        // add all dx spectrum files as entries, get all nv files and try to add them to the list otherwise keep them separate
+        if (jcampFilepathStrings.isEmpty()) {
+            return new ArrayList<>();
+        }
+        // Convert the filepath strings to JCAMPData
         List<JCAMPData> nmrData = new ArrayList<>(jcampFilepathStrings.stream().map(filepath -> {
             try {
                 return NMRDataUtil.getNMRData(filepath);
@@ -113,6 +114,7 @@ public class DatasetBrowserUtil {
         // Close all the datasets datafiles
         pathDatasetBaseCache.values().forEach(DatasetBase::close);
 
+        // Create the dataset summaries
         List<DatasetSummary> summaries = new ArrayList<>();
         for (Map.Entry<JCAMPData, List<Path>> fidData: fidDatasetMap.entrySet()) {
             DatasetSummary summary = createDatasetSummary(relativeDirectory, fidData.getKey(), fidData.getValue());
