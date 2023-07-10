@@ -2,7 +2,6 @@ package org.nmrfx.analyst.gui.datasetbrowser;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.Button;
 import javafx.stage.DirectoryChooser;
