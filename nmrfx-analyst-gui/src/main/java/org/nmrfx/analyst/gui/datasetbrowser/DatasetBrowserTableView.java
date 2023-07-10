@@ -70,8 +70,8 @@ public class DatasetBrowserTableView extends TableView<DatasetSummary> {
         ((FilteredList<DatasetSummary>) getItems()).setPredicate(datasetSummary -> textFormatted.isEmpty()
                 || datasetSummary.getPath().toLowerCase().contains(textFormatted)
                 || datasetSummary.getTime().toLowerCase().contains(textFormatted)
-                || datasetSummary.getUser().toLowerCase().contains(textFormatted)
-                || datasetSummary.getSeq().toLowerCase().contains(textFormatted));
+                || datasetSummary.getSeq().toLowerCase().contains(textFormatted)
+                || datasetSummary.getProcessed().stream().anyMatch(datasetPath -> datasetPath.toLowerCase().contains(textFormatted)));
     }
 
     public void setDatasetSelectionListener(Runnable runnable) {
