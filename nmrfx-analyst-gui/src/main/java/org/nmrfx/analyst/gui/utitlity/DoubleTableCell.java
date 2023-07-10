@@ -6,7 +6,7 @@ import javafx.scene.control.TableCell;
  * Table cell formatter to format non-editable columns of doubles
  */
 public class DoubleTableCell<S> extends TableCell<S, Double> {
-    String formatString;
+    private final String formatString;
 
     public DoubleTableCell(int decimalPlaces) {
         formatString = "%." + decimalPlaces + "f";
