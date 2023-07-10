@@ -8,12 +8,15 @@ import javafx.collections.transformation.FilteredList;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import org.nmrfx.fxutil.Fx;
+import org.nmrfx.analyst.gui.utitlity.DoubleTableCell;
 import org.nmrfx.utilities.DatasetSummary;
 
 import java.util.List;
 import java.util.Optional;
 
+
 public class DatasetBrowserTableView extends TableView<DatasetSummary> {
+    private static final int NUMBER_DECIMAL_PLACES_FREQUENCY = 1;
     /* Keeps track of the summaries, new summaries are added to this list. */
     private final ObservableList<DatasetSummary> unfilteredDatasetSummaries = FXCollections.observableArrayList();
     private Runnable datasetSelectionListener = null;
@@ -24,9 +27,6 @@ public class DatasetBrowserTableView extends TableView<DatasetSummary> {
 
         TableColumn<DatasetSummary, String> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(new PropertyValueFactory<>("Time"));
-
-        TableColumn<DatasetSummary, String> userCol = new TableColumn<>("User");
-        userCol.setCellValueFactory(new PropertyValueFactory<>("User"));
 
         TableColumn<DatasetSummary, Boolean> presentCol = new TableColumn<>("InCache");
         presentCol.setCellValueFactory(new PropertyValueFactory<>("Present"));
@@ -41,10 +41,11 @@ public class DatasetBrowserTableView extends TableView<DatasetSummary> {
         TableColumn<DatasetSummary, Integer> ndCol = new TableColumn<>("NDim");
         ndCol.setCellValueFactory(new PropertyValueFactory<>("nd"));
 
-        TableColumn<DatasetSummary, Double> sfCol = new TableColumn<>("SF");
+        TableColumn<DatasetSummary, Double> sfCol = new TableColumn<>("Frequency");
         sfCol.setCellValueFactory(new PropertyValueFactory<>("sf"));
+        sfCol.setCellFactory(column -> new DoubleTableCell<>(NUMBER_DECIMAL_PLACES_FREQUENCY));
 
-        getColumns().addAll(pathCol, userCol, dateCol);
+        getColumns().addAll(pathCol, dateCol);
         if (addCacheColumn) {
             getColumns().add(presentCol);
         }
