@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -36,17 +36,16 @@ import org.nmrfx.processor.gui.spectra.SpecRegion;
 import org.nmrfx.utils.properties.*;
 import org.python.core.PyComplex;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
  * @author brucejohnson
  */
 public class PropertyManager {
-
-    private static String patternString = "(\\w+)=((\\[[^\\[]*\\])|(\"[^\"]*\")|('[^']*')|([^,]+))";
+    private static final String PATTERN_STRING = "(\\w+)=((\\[[^\\[]*\\])|(\"[^\"]*\")|('[^']*')|([^,]+))";
 
     ChangeListener<Number> doubleListener;
     ChangeListener<Number> doubleSliderListener;
@@ -221,13 +220,13 @@ public class PropertyManager {
     }
 
     void updatePhases(PropertySheet.Item item, Number oldValue, Number newValue) {
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         if (chart != null) {
             if (item.getName().equals("ph1")) {
                 adjustPhasePivot(propertySheet.getItems(), oldValue, newValue);
             } else if (item.getName().equals("ph0")) {
-                if (chart.getController().isPhaseSliderVisible()) {
-                    chart.getController().getPhaser().handlePh0Reset(newValue.doubleValue(), false);
+                if (chart.getFXMLController().isPhaseSliderVisible()) {
+                    chart.getFXMLController().getPhaser().handlePh0Reset(newValue.doubleValue(), false);
                 }
             }
         }
@@ -238,15 +237,15 @@ public class PropertyManager {
                 filter(e -> e.getName().equals("ph0")).findFirst().get();
         double deltaPH1 = newValue.doubleValue() - oldValue.doubleValue();
         double oldPH0 = ph0Item.doubleValue();
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         if (chart != null) {
             double pivotFraction = chart.getPivotFraction();
             if (pivotFraction != 0.0) {
                 Double newPH0 = oldPH0 - deltaPH1 * pivotFraction;
                 ph0Item.setValue(newPH0);
-                if (chart.getController().isPhaseSliderVisible()) {
-                    chart.getController().getPhaser().handlePh0Reset(newPH0, false);
-                    chart.getController().getPhaser().handlePh1Reset(newValue.doubleValue(), false);
+                if (chart.getFXMLController().isPhaseSliderVisible()) {
+                    chart.getFXMLController().getPhaser().handlePh0Reset(newPH0, false);
+                    chart.getFXMLController().getPhaser().handlePh1Reset(newValue.doubleValue(), false);
                 }
             }
         }
@@ -366,7 +365,7 @@ public class PropertyManager {
         String opPars = "";
         if (!op.equals("")) {
             opPars = op.substring(op.indexOf('(') + 1, op.length() - 1);
-            pattern = Pattern.compile(patternString);
+            pattern = Pattern.compile(PATTERN_STRING);
         }
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         for (PropertySheet.Item item : propItems) {
@@ -397,13 +396,14 @@ public class PropertyManager {
 
     }
 
+    @Nonnull
     public static Map<String, String> parseOpString(String op) {
         Map<String, String> values = new HashMap<>();
         Pattern pattern = null;
         String opPars = "";
         if (!op.equals("")) {
             opPars = op.substring(op.indexOf('(') + 1, op.length() - 1);
-            pattern = Pattern.compile(patternString);
+            pattern = Pattern.compile(PATTERN_STRING);
             Matcher matcher = pattern.matcher(opPars);
             while (matcher.find()) {
                 if (matcher.groupCount() > 1) {

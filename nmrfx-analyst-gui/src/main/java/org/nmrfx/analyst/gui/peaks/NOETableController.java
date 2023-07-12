@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -24,7 +24,10 @@
 package org.nmrfx.analyst.gui.peaks;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.collections.*;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Side;
@@ -130,7 +133,7 @@ public class NOETableController implements Initializable, StageBasedController {
         updatePeakListMenu();
         masterDetailPane.showDetailNodeProperty().bindBidirectional(detailsCheckBox.selectedProperty());
         List<String> intVolChoice = List.of("Intensity", "Volume");
-        modeItem = new ChoiceOperationItem((a, b, c) -> refresh(), "intensity", intVolChoice,"Exp Calibrate", "Mode", "Reference Distance");
+        modeItem = new ChoiceOperationItem((a, b, c) -> refresh(), "intensity", intVolChoice, "Exp Calibrate", "Mode", "Reference Distance");
         refDistanceItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
                 3.0, 1.0, 6.0, false, "Exp Calibrate", "Ref Distance", "Reference Distance");
         expItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
@@ -180,7 +183,7 @@ public class NOETableController implements Initializable, StageBasedController {
         noeSetMenuItem = new MenuButton("NoeSets");
         peakListMenuButton = new MenuButton("PeakLists");
         detailsCheckBox = new CheckBox("Details");
-        toolBar.getItems().addAll(exportButton, clearButton,  noeSetMenuItem, peakListMenuButton, calibrateButton, detailsCheckBox);
+        toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton, calibrateButton, detailsCheckBox);
         updateNoeSetMenu();
     }
 
@@ -242,10 +245,6 @@ public class NOETableController implements Initializable, StageBasedController {
         tableView.setEditable(true);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         updateColumns();
-        ListChangeListener listener = (ListChangeListener.Change c) -> {
-            int nSelected = tableView.getSelectionModel().getSelectedItems().size();
-        };
-        tableView.getSelectionModel().getSelectedIndices().addListener(listener);
         tableView.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
                 if (!tableView.getSelectionModel().getSelectedItems().isEmpty()) {
@@ -360,7 +359,7 @@ public class NOETableController implements Initializable, StageBasedController {
             }
         }
         if (noeSet != null) {
-            log.info("Calibrate {} {}", noeSet.getName() , noeSet);
+            log.info("Calibrate {} {}", noeSet.getName(), noeSet);
             String intVolChoice = modeItem.getValue().toLowerCase();
             double referenceDistance = refDistanceItem.doubleValue();
             double expValue = expItem.doubleValue();

@@ -28,10 +28,10 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.IconUtilities;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +71,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     private MultipletTool(PolyChart chart) {
         this.chart = chart;
-        this.controller = chart.getController();
+        this.controller = chart.getFXMLController();
     }
 
     public VBox getBox() {
@@ -107,7 +107,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         vBox.getChildren().addAll(hbox, topBar, gridPane, buttonBar1, buttonBar2);
         chart.addMultipletListener(this);
         getAnalyzer();
-        chart.setRegionConsumer(this::regionAdded);
+        chart.setOnRegionAdded(this::regionAdded);
         patternListener = (ObservableValue<? extends String> observable, String oldValue, String newValue) -> couplingChanged();
         addPatternListener();
         restraintPosCheckBox = new CheckBox("Restraint");
@@ -417,7 +417,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     public void split() {
         CrossHairs crossHairs = chart.getCrossHairs();
-        if (crossHairs.hasCrosshairState("v0")) {
+        if (crossHairs.hasState("v0")) {
             splitMultipletRegion();
         } else {
             if (getAnalyzer().getPeakList() != null) {
@@ -431,7 +431,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     }
 
     public void splitMultipletRegion() {
-        double ppm = chart.getVerticalCrosshairPositions()[0];
+        double ppm = chart.getCrossHairs().getVerticalPositions()[0];
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             try {
@@ -478,9 +478,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         if (analyzer != null) {
             double ppm0;
             double ppm1;
-            if (chart.getCrossHairs().hasCrosshairState("||")) {
-                ppm0 = chart.getVerticalCrosshairPositions()[0];
-                ppm1 = chart.getVerticalCrosshairPositions()[1];
+            if (chart.getCrossHairs().hasState("||")) {
+                ppm0 = chart.getCrossHairs().getVerticalPositions()[0];
+                ppm1 = chart.getCrossHairs().getVerticalPositions()[1];
             } else {
                 if (activeMultiplet.isPresent()) {
                     Multiplet multiplet = activeMultiplet.get();
@@ -544,8 +544,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             double ppm0;
             double ppm1;
             if (region == null) {
-                ppm0 = chart.getVerticalCrosshairPositions()[0];
-                ppm1 = chart.getVerticalCrosshairPositions()[1];
+                ppm0 = chart.getCrossHairs().getVerticalPositions()[0];
+                ppm1 = chart.getCrossHairs().getVerticalPositions()[1];
                 analyzer.addRegion(ppm0, ppm1, true);
             } else {
                 ppm0 = region.getRegionStart(0);
@@ -619,8 +619,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             activeMultiplet.ifPresent(m -> {
-                double ppm1 = chart.getVerticalCrosshairPositions()[0];
-                double ppm2 = chart.getVerticalCrosshairPositions()[1];
+                double ppm1 = chart.getCrossHairs().getVerticalPositions()[0];
+                double ppm2 = chart.getCrossHairs().getVerticalPositions()[1];
                 if (both) {
                     Multiplets.addPeaksToMultiplet(m, ppm1, ppm2);
                 } else {

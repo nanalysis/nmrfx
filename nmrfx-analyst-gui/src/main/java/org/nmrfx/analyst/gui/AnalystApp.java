@@ -35,6 +35,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
+import org.nmrfx.analyst.gui.datasetbrowser.DatasetBrowserController;
 import org.nmrfx.analyst.gui.events.DataFormatHandlerUtil;
 import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
 import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
@@ -49,6 +50,7 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.console.ConsoleController;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.plugin.api.EntryPoint;
@@ -77,25 +79,26 @@ public class AnalystApp extends Application {
     public static final String ICON_FONT_SIZE_STR = "7pt";
     // The default font size
     public static final String REG_FONT_SIZE_STR = "9pt";
-    private static final PopOverTools popoverTool = new PopOverTools();
-    private static final List<Stage> stages = new ArrayList<>();
-    private static final String appName = "NMRFx Analyst";
+    private static final String APP_NAME = "NMRFx Analyst";
 
-    private static FXMLControllerManager fxmlControllerManager;
-    private static PreferencesController preferencesController;
-    private static DatasetsController datasetController;
-    private static HostServices hostServices;
-    private static AnalystApp analystApp = null;
-    private static MenuBar mainMenuBar = null;
-    private static FileMenuActions fileMenuActions;
-    private static MoleculeMenuActions molMenuActions;
-    private static PeakMenuActions peakMenuActions;
-    private static SpectrumMenuActions spectrumMenuActions;
-    private static ProjectMenuActions projectMenuActions;
-    private static ViewMenuItems viewMenuActions;
-    private static boolean startInAdvanced = true;
-    private static boolean advancedIsActive = false;
-    private static ObservableMap<String, MoleculeBase> moleculeMap;
+    private static AnalystApp analystApp;
+    private static final FXMLControllerManager fxmlControllerManager = new FXMLControllerManager();
+    private static final List<Stage> stages = new ArrayList<>();
+
+    private final PopOverTools popoverTool = new PopOverTools();
+    private DatasetBrowserController datasetBrowserController;
+    private PreferencesController preferencesController;
+    private HostServices hostServices;
+    private MenuBar mainMenuBar = null;
+    private FileMenuActions fileMenuActions;
+    private MoleculeMenuActions molMenuActions;
+    private PeakMenuActions peakMenuActions;
+    private SpectrumMenuActions spectrumMenuActions;
+    private ProjectMenuActions projectMenuActions;
+    private ViewMenuItems viewMenuActions;
+    private boolean startInAdvanced = true;
+    private boolean advancedIsActive = false;
+    private ObservableMap<String, MoleculeBase> moleculeMap;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -116,16 +119,16 @@ public class AnalystApp extends Application {
 
         Platform.setImplicitExit(true);
         hostServices = getHostServices();
-        stage.setTitle(appName + " " + getVersion());
+        stage.setTitle(APP_NAME + " " + getVersion());
 
         if (mainMenuBar == null) {
-            mainMenuBar = makeMenuBar(appName);
+            mainMenuBar = makeMenuBar(APP_NAME);
         }
 
         AnalystPythonInterpreter.initialize(getParameters());
         ConsoleController.create(AnalystPythonInterpreter.getInterpreter(), "NMRFx Console");
         LogConsoleController.create();
-        PeakPicking.registerSinglePickAction(this::pickedPeakAction);
+        PeakPicking.registerSinglePickSelectionAction(this::pickedPeakAction);
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
@@ -229,7 +232,7 @@ public class AnalystApp extends Application {
         mailingListItem.setOnAction(this::showMailingListAction);
 
         MenuItem refMenuItem = new MenuItem("NMRFx Publication");
-        refMenuItem.setOnAction(e -> AnalystApp.hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6"));
+        refMenuItem.setOnAction(e -> hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6"));
 
         MenuItem openSourceItem = new MenuItem("Open Source Libraries");
         openSourceItem.setOnAction(this::showOpenSourceAction);
@@ -261,9 +264,9 @@ public class AnalystApp extends Application {
         return menuBar;
     }
 
-    void pickedPeakAction(Object peakObject) {
+    void pickedPeakAction(Peak peak) {
         if (peakMenuActions != null) {
-            peakMenuActions.pickedPeakAction(peakObject);
+            peakMenuActions.pickedPeakAction(peak);
         }
     }
 
@@ -627,7 +630,7 @@ public class AnalystApp extends Application {
 
     public ScannerTool getScannerTool() {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        return  (ScannerTool) controller.getTool(ScannerTool.class);
+        return (ScannerTool) controller.getTool(ScannerTool.class);
     }
 
     public StripController getStripsTool() {
@@ -643,24 +646,18 @@ public class AnalystApp extends Application {
         popoverTool.showPopover(chart, objectBounds, hitObject);
     }
 
-    @FXML
-    void showDatasetsTable(ActionEvent event) {
-        if (datasetController == null) {
-            datasetController = DatasetsController.create();
+    public DatasetBrowserController getOrCreateDatasetBrowserController() {
+        if (datasetBrowserController == null) {
+            datasetBrowserController = DatasetBrowserController.create();
         }
-        datasetController.refresh();
-        datasetController.getStage().show();
-        datasetController.getStage().toFront();
+        return datasetBrowserController;
     }
 
     /**
      * Closes all stages and controllers except the main stage/first controller.
      */
     public static void closeAll() {
-        for (PolyChart chart : PolyChart.CHARTS) {
-            chart.clearDataAndPeaks();
-            chart.clearAnnotations();
-        }
+        PolyChartManager.getInstance().closeAll();
         List<FXMLController> controllers = new ArrayList<>(getFXMLControllerManager().getControllers());
         // Don't close the first controller that matches with the main stage, Note this first controller is not
         // necessarily the active controller
@@ -713,7 +710,8 @@ public class AnalystApp extends Application {
     /**
      * Set the default font size of the provided stage with the provided
      * font size string.
-     * @param stage The stage to set the font for
+     *
+     * @param stage       The stage to set the font for
      * @param fontSizeStr A string font size ex. '9pt'
      */
     public static void setStageFontSize(Stage stage, String fontSizeStr) {
@@ -725,10 +723,6 @@ public class AnalystApp extends Application {
     }
 
     public static FXMLControllerManager getFXMLControllerManager() {
-        if (fxmlControllerManager == null) {
-            fxmlControllerManager = new FXMLControllerManager();
-        }
-
         return fxmlControllerManager;
     }
 
@@ -748,11 +742,11 @@ public class AnalystApp extends Application {
     }
 
     public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
-        moleculeMap.addListener(listener);
+        AnalystApp.getAnalystApp().moleculeMap.addListener(listener);
     }
 
     public static MenuBar getMenuBar() {
-        return analystApp.makeMenuBar(appName);
+        return analystApp.makeMenuBar(APP_NAME);
     }
 
     public static AnalystApp getAnalystApp() {
@@ -760,7 +754,7 @@ public class AnalystApp extends Application {
     }
 
     public static String getAppName() {
-        return appName;
+        return APP_NAME;
     }
 
     public static ProjectBase getActive() {

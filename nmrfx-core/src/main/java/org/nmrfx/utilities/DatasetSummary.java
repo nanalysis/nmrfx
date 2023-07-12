@@ -7,24 +7,21 @@ import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
- *
  * @author brucejohnson
  */
-public class RemoteDataset {
+public class DatasetSummary {
 
-    private static final Logger log = LoggerFactory.getLogger(RemoteDataset.class);
-    static List<RemoteDataset> datasets = new ArrayList<>();
+    private static final Logger log = LoggerFactory.getLogger(DatasetSummary.class);
+    public static final String DATASET_SUMMARY_INDEX_FILENAME = "nmrfx_index.json";
 
     @Expose
     private String path;
@@ -61,8 +58,12 @@ public class RemoteDataset {
     private String iso;
     @Expose
     private String hashKey;
+    /**
+     * present on the local file system
+     */
     private boolean present;
-    private String processed;
+    private List<String> processed;
+    private int selectedProcessedDataIndex = -1;
 
     /**
      * @return the path
@@ -191,12 +192,33 @@ public class RemoteDataset {
         present = state;
     }
 
-    public String getProcessed() {
-        return processed == null ? "" : processed;
+    public List<String> getProcessed() {
+        return processed == null ? new ArrayList<>() : processed;
     }
 
-    public void setProcessed(String fileName) {
-        processed = fileName;
+    public void setProcessed(List<String> fileNames) {
+        processed = fileNames;
+        if (processed == null || fileNames.isEmpty()) {
+            selectedProcessedDataIndex = -1;
+        } else {
+            selectedProcessedDataIndex = 0;
+        }
+
+    }
+
+    public void setSelectedProcessedDataIndex(int index) {
+        if (index < -1 || index >= processed.size()) {
+            log.warn("Invalid index: {}", index);
+            index = -1;
+        }
+        selectedProcessedDataIndex = index;
+    }
+
+    public Optional<String> getSelectedProcessedData() {
+        if (processed == null || processed.isEmpty() || selectedProcessedDataIndex < 0) {
+            return Optional.empty();
+        }
+        return Optional.of(processed.get(selectedProcessedDataIndex));
     }
 
     /**
@@ -327,65 +349,27 @@ public class RemoteDataset {
 
     @Override
     public String toString() {
-        return "RemoteDataset{" + "path=" + path + ", type=" + type + ", user=" + user + ", seq=" + seq + ", sf=" + sf + ", time=" + time + ", tn=" + tn + ", sol=" + sol + ", te=" + te + ", pos=" + pos + ", nd=" + nd + ", nv=" + nv + ", text=" + text + ", vnd=" + vnd + ", nb=" + nb + ", sample=" + sample + ", iso=" + iso + '}';
+        return "DatasetSummary{" + "path=" + path + ", type=" + type + ", user=" + user + ", seq=" + seq + ", sf=" + sf + ", time=" + time + ", tn=" + tn + ", sol=" + sol + ", te=" + te + ", pos=" + pos + ", nd=" + nd + ", nv=" + nv + ", text=" + text + ", vnd=" + vnd + ", nb=" + nb + ", sample=" + sample + ", iso=" + iso + '}';
     }
 
-    public static List<RemoteDataset> datasetsFromJson(String jsonString) {
+    public static List<DatasetSummary> datasetsFromJson(String jsonString) {
         Gson gson = new Gson();
-        List<RemoteDataset> list = gson.fromJson(jsonString, new TypeToken<List<RemoteDataset>>() {
+        return gson.fromJson(jsonString, new TypeToken<List<DatasetSummary>>() {
         }.getType());
-        return list;
     }
 
-    public static RemoteDataset datasetFromJson(String hashKey, String jsonString) {
-        Gson gson = new Gson();
-        return datasetFromJson(hashKey, jsonString, gson);
-    }
-
-    public static RemoteDataset datasetFromJson(String hashKey, String jsonString, Gson gson) {
-        RemoteDataset dataset = gson.fromJson(jsonString, RemoteDataset.class);
-        dataset.hashKey = hashKey;
-        return dataset;
-    }
-
-    public String toJson() {
-        Gson gson = new GsonBuilder().
-                excludeFieldsWithoutExposeAnnotation().create();
-        return gson.toJson(this);
-    }
-
-    public static String toJson(List<RemoteDataset> items) {
+    public static String toJson(List<DatasetSummary> items) {
         Gson gson = new GsonBuilder().
                 excludeFieldsWithoutExposeAnnotation().setPrettyPrinting().create();
         return gson.toJson(items);
     }
 
-    public static void loadFromFile(File file) {
-        datasets.clear();
-        Gson gson = new Gson();
-        Charset charset = Charset.forName("US-ASCII");
-        try (var reader = Files.newBufferedReader(file.toPath(), charset)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                int equalsIndex = line.indexOf("= ");
-                String key = line.substring(0, equalsIndex);
-                String jsonStr = line.substring(equalsIndex + 2);
-                RemoteDataset dataset = datasetFromJson(key, jsonStr, gson);
-                datasets.add(dataset);
-            }
-        } catch (IOException x) {
-           log.warn(x.getMessage(), x);
-        }
-    }
-
-    public static void loadListFromFile(File file) throws IOException {
-        datasets.clear();
-        Gson gson = new Gson();
+    public static List<DatasetSummary> loadListFromFile(File file) throws IOException {
         String jsonStr = Files.readString(file.toPath());
-        datasets = datasetsFromJson(jsonStr);
+        return datasetsFromJson(jsonStr);
     }
 
-    public static void saveItems(Path outPath, List<RemoteDataset> items) {
+    public static void saveItems(Path outPath, List<DatasetSummary> items) {
         String jsonStr = toJson(items);
         try {
             Files.writeString(outPath, jsonStr);
@@ -393,10 +377,6 @@ public class RemoteDataset {
             log.warn(ex.getMessage(), ex);
         }
 
-    }
-
-    public static List<RemoteDataset> getDatasets() {
-        return datasets;
     }
 
 }

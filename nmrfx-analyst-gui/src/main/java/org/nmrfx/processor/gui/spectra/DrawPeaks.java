@@ -26,18 +26,17 @@ package org.nmrfx.processor.gui.spectra;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
-import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Path;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
 import org.apache.commons.collections4.list.TreeList;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
-import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.Peak.Corner;
@@ -61,58 +60,43 @@ import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.P
  * @author brucejohnson
  */
 public class DrawPeaks {
-
     private static final Logger log = LoggerFactory.getLogger(DrawPeaks.class);
-    static int nRegions = 32;
-    static int minHitSize = 5;
-    static double widthLimit = 0.0001;
-    char[] anchorS = {'s', ' '};
-    char[] anchorW = {' ', 'w'};
+
+    public static final int MIN_HIT_SIZE = 5;
+    private static final int N_REGIONS = 32;
+    private static final double WIDTH_LIMIT = 0.0001;
+    private static final double PEAK_2_D_STROKE = 1.0;
+
     double frOffset = 0.05;
 
-    /**
-     * Creates a new instance of PeakRenderer
-     */
-    static Path g1DPath = new Path();
-    static Path g2DPath = new Path();
-
-    NMRAxis xAxis;
-    NMRAxis yAxis;
+    Axis xAxis;
+    Axis yAxis;
 
     int jmode = 0;
     int disDim = 0;
-    PolyChart chart = null;
     int peakDisType = 0;
-    int peakLabelType = 0;
     int multipletLabelType = PeakDisplayParameters.MULTIPLET_LABEL_SUMMARY;
     boolean treeOn = false;
     boolean peakDisOn = true;
     boolean peakDisOff = true;
-    static double peak2DStroke = 1.0;
-    double peak1DStroke = peak2DStroke;
-    static double peakOvalStroke = 2.0;
-    int iPeakList = 0;
-    float dY = 0;
-    float dXRegion = 0.0f;
+    double peak1DStroke = PEAK_2_D_STROKE;
     double deltaY = 12.0;
 
     HashSet[] regions = null;
     Color selectFill = new Color(1.0f, 1.0f, 0.0f, 0.4f);
     private boolean multipletMode = false;
     List<PeakBox> lastTextBoxes = new TreeList<>();
-    GraphicsContextInterface g2;
+    GraphicsContext g2;
 
-    public DrawPeaks(PolyChart chart, Canvas peakCanvas) {
-        this.chart = chart;
-        this.g2 = new GraphicsContextProxy(peakCanvas.getGraphicsContext2D());
-        //   setParameters();
-        regions = new HashSet[nRegions];
+    public DrawPeaks(PolyChart chart, GraphicsContext graphics) {
+        this.g2 = graphics;
+        regions = new HashSet[N_REGIONS];
 
         for (int i = 0; i < regions.length; i++) {
             regions[i] = new HashSet();
         }
-        xAxis = (NMRAxis) chart.getXAxis();
-        yAxis = (NMRAxis) chart.getYAxis();
+        xAxis = chart.getAxes().getX();
+        yAxis = chart.getAxes().getY();
     }
 
     class PeakBox {
@@ -463,7 +447,6 @@ public class DrawPeaks {
         StringBuilder labels = new StringBuilder("");
         String label = null;
         Peak peak = multiplet.getPeakDim().getPeak();
-        float xM = (float) multiplet.getCenter();
 
         int nPeakDim = peak.peakList.nDim;
         String plab = null;
@@ -703,12 +686,12 @@ public class DrawPeaks {
             int growWidth = 0;
             int growHeight = 0;
             int width = (int) box.getWidth();
-            if (width < minHitSize) {
-                growWidth = minHitSize - width;
+            if (width < MIN_HIT_SIZE) {
+                growWidth = MIN_HIT_SIZE - width;
             }
             int height = (int) box.getHeight();
-            if (height < minHitSize) {
-                growHeight = minHitSize - height;
+            if (height < MIN_HIT_SIZE) {
+                growHeight = MIN_HIT_SIZE - height;
             }
             // fixme why are we doing this (from old code) and should it grow symmetrically
             // gues we try to hit small rect for selectivity, then expand if no hit
@@ -738,9 +721,9 @@ public class DrawPeaks {
 
         //         addTo1DRegionHash(x,peakRep);
         if (selected) {
-            peakRep.renderSelection(g2, false);
+            peakRep.renderSelection(g2);
         } else {
-            peakRep.render(g2, false);
+            peakRep.render(g2);
         }
     }
 
@@ -749,7 +732,7 @@ public class DrawPeaks {
         if (!multiplet.isValid()) {
             return;
         }
-        Peak peak = (Peak) multiplet.getOrigin();
+        Peak peak = multiplet.getOrigin();
         if ((peak.getStatus() < 0) || !peak.isValid()) {
             return;
         }
@@ -1001,7 +984,6 @@ public class DrawPeaks {
         int jy = 1;
         float j0 = 0.0f;
         float j1 = 0.0f;
-        int ax = 0;
         double[] ctr = {0.0, 0.0};
         double[] bou = {0.0, 0.0};
         double[] wid = {0.0, 0.0};
@@ -1030,7 +1012,7 @@ public class DrawPeaks {
                 ctr[0] = ctr0 + ((j0 * ((jx * (kx - 1)) + 1)) / 2.0);
                 ctr[1] = ctr1 + ((j1 * ((jy * (ky - 1)) + 1)) / 2.0);
 
-                g2.setLineWidth(peak2DStroke);
+                g2.setLineWidth(PEAK_2_D_STROKE);
 
                 if (erase) {
                     // FIXME
@@ -1361,6 +1343,7 @@ public class DrawPeaks {
         }
         return coords;
     }
+
     class Peak1DRep {
 
         double x = 0;
@@ -1371,7 +1354,6 @@ public class DrawPeaks {
         Peak peak = null;
         List<Peak> peaks = null;
         int colorMode = 0;
-        Path gDerived1DPath = null;
         PeakListAttributes peakAttr;
 
         Peak1DRep(PeakListAttributes peakAttr, int dim, double x, double height, double textY,
@@ -1406,8 +1388,8 @@ public class DrawPeaks {
                 List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
                 for (AbsMultipletComponent comp : comps) {
                     double wid = comp.getLineWidth();
-                    if (wid < widthLimit) {
-                        wid = widthLimit;
+                    if (wid < WIDTH_LIMIT) {
+                        wid = WIDTH_LIMIT;
                     }
 
                     if (wid < minWid) {
@@ -1431,7 +1413,6 @@ public class DrawPeaks {
             double delta = minWid / 11;
             min -= delta;
             max += delta;
-            gDerived1DPath = new Path();
             int m = (int) Math.round((max - min) / delta);
             if (m > maxSize) {
                 m = maxSize;
@@ -1452,8 +1433,8 @@ public class DrawPeaks {
                     for (AbsMultipletComponent comp : comps) {
                         double c = comp.getOffset();
                         double w = comp.getLineWidth();
-                        if (w < widthLimit) {
-                            w = widthLimit;
+                        if (w < WIDTH_LIMIT) {
+                            w = WIDTH_LIMIT;
                         }
                         double shapeFactor = peakDim.getShapeFactorValue();
                         double a = comp.getIntensity();
@@ -1470,35 +1451,7 @@ public class DrawPeaks {
             g2.stroke();
         }
 
-        void renderToMulti(GraphicsContextInterface g2, boolean eraseFirst, float mX) throws GraphicsIOException {
-            if ((peak.getStatus() < 0) || !peak.isValid()) {
-                return;
-            }
-
-            if (colorMode == 0) {
-                g2.setStroke(peakAttr.getOnColor());
-            } else {
-                g2.setStroke(peakAttr.getOffColor());
-            }
-            double x1 = xAxis.getDisplayPosition(x);
-            double y1 = yAxis.getDisplayPosition(height);
-            double x2 = xAxis.getDisplayPosition(mX);
-            double y2 = y1 + 25;
-
-            g2.setLineWidth(peak1DStroke);
-            g2.beginPath();
-            g2.moveTo(x1, y1);
-            g2.lineTo(x2, y2);
-            g2.lineTo(x2, y2 - (y1 - y2));
-            g2.stroke();
-
-        }
-
-        void render(GraphicsContextInterface g2, boolean eraseFirst) throws GraphicsIOException {
-            if (eraseFirst) {
-//                erase(g2);
-            }
-
+        void render(GraphicsContextInterface g2) throws GraphicsIOException {
             if ((peak.getStatus() < 0) || !peak.isValid()) {
                 return;
             }
@@ -1546,7 +1499,6 @@ public class DrawPeaks {
                 }
                 if (peakDisType <= PeakDisplayParameters.DISPLAY_SIMULATED) {
                     g2.beginPath();
-                    double yLine = bounds.getMinY();
                     g2.moveTo(x1, textY);
                     g2.lineTo(x1, textY - 20);
                     g2.stroke();
@@ -1555,19 +1507,19 @@ public class DrawPeaks {
             g2.setTextAlign(TextAlignment.LEFT);
 
             if (peakAttr.getSimPeaks()) {
-                renderSimulated(g2, eraseFirst);
+                renderSimulated(g2);
             }
         }
 //
 
-        void renderSimulated(GraphicsContextInterface g2, boolean eraseFirst) throws GraphicsIOException {
+        void renderSimulated(GraphicsContextInterface g2) throws GraphicsIOException {
             Multiplet multiplet = peak.peakDims[dim].getMultiplet();
             if (multiplet.isCoupled() || multiplet.isGenericMultiplet()) {
-                renderSimulatedMultiplet(g2, eraseFirst);
+                renderSimulatedMultiplet(g2);
             } else {
                 double w = peak.peakDims[dim].getLineWidthValue();
-                if (w < widthLimit) {
-                    w = widthLimit;
+                if (w < WIDTH_LIMIT) {
+                    w = WIDTH_LIMIT;
                 }
                 double shapeFactor = peak.peakDims[dim].getShapeFactorValue();
                 double[] coords = genPeakShape(1.0, shapeFactor);
@@ -1583,15 +1535,15 @@ public class DrawPeaks {
 
         }
 
-        void renderSimulatedMultiplet(GraphicsContextInterface g2, boolean eraseFirst) throws GraphicsIOException {
+        void renderSimulatedMultiplet(GraphicsContextInterface g2) throws GraphicsIOException {
             double shapeFactor = peak.peakDims[dim].getShapeFactorValue();
             g2.setStroke(peakAttr.getOnColor());
             g2.setLineWidth(peak1DStroke);
             List<AbsMultipletComponent> comps = peak.peakDims[dim].getMultiplet().getAbsComponentList();
             for (AbsMultipletComponent comp : comps) {
                 double w = comp.getLineWidth();
-                if (w < widthLimit) {
-                    w = widthLimit;
+                if (w < WIDTH_LIMIT) {
+                    w = WIDTH_LIMIT;
                 }
 
                 double intensity = comp.getIntensity();
@@ -1605,24 +1557,20 @@ public class DrawPeaks {
 
         }
 
-        void renderSelection(GraphicsContextInterface g2, boolean erase) throws GraphicsIOException {
+        void renderSelection(GraphicsContextInterface g2) throws GraphicsIOException {
             double x1 = xAxis.getDisplayPosition(x);
             double y1 = yAxis.getDisplayPosition(height);
-            if (erase) {
-                //erase(g2);
+            if (colorMode == 0) {
+                g2.setStroke(peakAttr.getOnColor());
             } else {
-                if (colorMode == 0) {
-                    g2.setStroke(peakAttr.getOnColor());
-                } else {
-                    g2.setStroke(peakAttr.getOffColor());
-                }
+                g2.setStroke(peakAttr.getOffColor());
+            }
 
-                g2.setLineWidth(peak1DStroke);
-                if (peakAttr.getLabelType() == PPM) {
-                    drawSelectionIndicator(g2, label, -90, x1, y1 - 35);
-                } else {
-                    drawSelectionIndicator(g2, label, 0, x1, textY);
-                }
+            g2.setLineWidth(peak1DStroke);
+            if (peakAttr.getLabelType() == PPM) {
+                drawSelectionIndicator(g2, label, -90, x1, y1 - 35);
+            } else {
+                drawSelectionIndicator(g2, label, 0, x1, textY);
             }
         }
     }

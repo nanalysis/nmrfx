@@ -22,30 +22,29 @@
  */
 package org.nmrfx.peaks;
 
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Residue;
+
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author brucejohnson
  */
 public class PeakLabeller {
-
-    static Pattern rPat = Pattern.compile("^(.+:)?(([a-zA-Z]+)([0-9\\-]+))\\.(['a-zA-Z0-9u]+)$");
-    static Pattern rPat2 = Pattern.compile("^(.+:)?([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
-    static Pattern rPat3 = Pattern.compile("^(.+:)?([a-zA-Z]+)([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
-    static Pattern rPat4 = Pattern.compile("^(.+:)?([a-zA-Z]+)?([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
+    private static final Pattern R_PAT = Pattern.compile("^(.+:)?(([a-zA-Z]+)([0-9\\-]+))\\.(['a-zA-Z0-9u]+)$");
+    private static final Pattern R_PAT_2 = Pattern.compile("^(.+:)?([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
+    private static final Pattern R_PAT_3 = Pattern.compile("^(.+:)?([a-zA-Z]+)([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
+    private static final Pattern R_PAT_4 = Pattern.compile("^(.+:)?([a-zA-Z]+)?([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
 
     public record ChainResAtomSpecifier(String chain, String resName, int resNum, String atomName) {
     }
 
 
     public static Optional<ChainResAtomSpecifier> parse(String specifier) {
-        Matcher matcher = rPat4.matcher(specifier);
+        Matcher matcher = R_PAT_4.matcher(specifier);
         ChainResAtomSpecifier chainResAtomSpecifier = null;
         if (matcher.matches()) {
             String chain = matcher.group(1);
@@ -61,9 +60,9 @@ public class PeakLabeller {
         peakList.peaks().stream().forEach(pk -> {
             for (PeakDim peakDim : pk.getPeakDims()) {
                 String label = peakDim.getLabel();
-                Matcher matcher1 = rPat.matcher(label);
+                Matcher matcher1 = R_PAT.matcher(label);
                 if (!matcher1.matches()) {
-                    Matcher matcher2 = rPat2.matcher(label);
+                    Matcher matcher2 = R_PAT_2.matcher(label);
                     if (matcher2.matches()) {
                         String chain = matcher2.group(1);
                         String resNum = matcher2.group(2);
@@ -92,7 +91,7 @@ public class PeakLabeller {
         peakList.peaks().stream().forEach(pk -> {
                     for (PeakDim peakDim : pk.getPeakDims()) {
                         String label = peakDim.getLabel();
-                        Matcher matcher1 = rPat3.matcher(label);
+                        Matcher matcher1 = R_PAT_3.matcher(label);
                         if (matcher1.matches()) {
                             String chain = matcher1.group(1);
                             String resNum = matcher1.group(3);

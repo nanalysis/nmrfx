@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,25 +17,28 @@
  */
 package org.nmrfx.processor.math;
 
-import org.nmrfx.processor.processing.ProcessingException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.nmrfx.processor.processing.ProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class GRINS {
-
     private static final Logger log = LoggerFactory.getLogger(GRINS.class);
+
+    private static final double THRESHOLD_SCALE = 0.8;
+    private static final double NOISE_SCALE = 5.0;
+
     final MatrixND matrix;
     final double noise;
     final boolean preserve;
@@ -46,8 +49,6 @@ public class GRINS {
     final double[] phase;
     final String logFileName;
 
-    public static double thresholdScale = 0.8;
-    public static double noiseScale = 5.0;
     boolean calcLorentz = true;
     boolean calcGauss = false;
     double fracLorentz = 1.0;
@@ -118,12 +119,12 @@ public class GRINS {
                 double[] measure = matrix.measure(false, 0.0, Double.MAX_VALUE);
                 double max = Math.max(FastMath.abs(measure[0]), FastMath.abs(measure[1]));
                 // fixme threshold based on abs value
-                double globalThreshold = max * thresholdScale;
-                if (globalThreshold > lastThreshold * thresholdScale) {
-                    globalThreshold = lastThreshold * thresholdScale;
+                double globalThreshold = max * THRESHOLD_SCALE;
+                if (globalThreshold > lastThreshold * THRESHOLD_SCALE) {
+                    globalThreshold = lastThreshold * THRESHOLD_SCALE;
                 }
                 lastThreshold = globalThreshold;
-                double noiseThreshold = noiseValue * noiseScale;
+                double noiseThreshold = noiseValue * NOISE_SCALE;
                 if (globalThreshold < noiseThreshold) {
                     break;
                 }
@@ -222,12 +223,12 @@ public class GRINS {
     /**
      * Generate damped sinusoidal signal, and add to Vec instance.
      *
-     * @param vec array of double in which to put signal with real and imaginary
-     * in alternate positions
-     * @param freq frequency in degrees per point
+     * @param vec   array of double in which to put signal with real and imaginary
+     *              in alternate positions
+     * @param freq  frequency in degrees per point
      * @param decay exponential decay per point
-     * @param amp amplitude
-     * @param ph phase in degrees
+     * @param amp   amplitude
+     * @param ph    phase in degrees
      */
     public void genSignal(double[] vec, double freq, double decay, double amp, double ph) {
         Complex w = ComplexUtils.polar2Complex(decay, freq * Math.PI);

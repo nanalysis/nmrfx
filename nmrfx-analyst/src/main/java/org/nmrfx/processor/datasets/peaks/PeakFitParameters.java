@@ -2,7 +2,7 @@ package org.nmrfx.processor.datasets.peaks;
 
 import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.ARRAYED_FIT_MODE.SINGLE;
 import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FITJ_MODE.FIT;
-import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FIT_MODE.*;
+import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FIT_MODE.ALL;
 
 public class PeakFitParameters {
     public enum ARRAYED_FIT_MODE {
@@ -26,7 +26,7 @@ public class PeakFitParameters {
     }
 
     public record ShapeParameters(boolean fitShape, boolean constrainShape,
-                           double directShapeFactor, double indirectShapeFactor) {
+                                  double directShapeFactor, double indirectShapeFactor) {
 
     }
 
@@ -100,6 +100,7 @@ public class PeakFitParameters {
         this.fitMode = fitMode;
         return this;
     }
+
     public FITJ_MODE fitJMode() {
         return fitJMode;
     }

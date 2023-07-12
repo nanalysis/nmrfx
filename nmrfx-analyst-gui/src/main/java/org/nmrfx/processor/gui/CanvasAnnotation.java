@@ -28,6 +28,7 @@ import org.nmrfx.processor.gui.spectra.ChartMenu;
  */
 public interface CanvasAnnotation {
     double HANDLE_WIDTH = 10;
+
     enum POSTYPE {
         PIXEL {
             @Override
@@ -104,6 +105,7 @@ public interface CanvasAnnotation {
             case CENTER -> HANDLE_WIDTH / 2;
         };
     }
+
     private static double getVOffset(Pos pos) {
         return switch (pos.getVpos()) {
             case TOP -> HANDLE_WIDTH;
@@ -116,7 +118,7 @@ public interface CanvasAnnotation {
         gC.setStroke(Color.ORANGE);
         double hOffset = getHOffset(pos);
         double vOffset = getVOffset(pos);
-        gC.strokeRect(x  + hOffset, y + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
+        gC.strokeRect(x + hOffset, y + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
     }
 
     public POSTYPE getXPosType();
@@ -125,8 +127,9 @@ public interface CanvasAnnotation {
 
     /**
      * Get the separation limit between two handles converted to POSTYPE.
+     *
      * @param bounds The bounds.
-     * @param world The bounds in world units.
+     * @param world  The bounds in world units.
      * @return The converted handle width value.
      */
     default double getHandleSeparationLimit(double[][] bounds, double[][] world) {

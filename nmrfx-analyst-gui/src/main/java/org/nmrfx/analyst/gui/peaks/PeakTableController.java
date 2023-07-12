@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -25,7 +25,6 @@ package org.nmrfx.analyst.gui.peaks;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -150,7 +149,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     @Override
     public void restorePeaks() {
         List<Peak> selectedPeaks = tableView.getSelectionModel().getSelectedItems();
-        for(Peak peak: selectedPeaks) {
+        for (Peak peak : selectedPeaks) {
             peak.setStatus(0);
         }
         tableView.getSelectionModel().clearSelection();
@@ -229,11 +228,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         tableView.setEditable(true);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         updateColumns(0);
-        ListChangeListener listener = (ListChangeListener) (ListChangeListener.Change c) -> {
-            int nSelected = tableView.getSelectionModel().getSelectedItems().size();
-            boolean state = nSelected == 1;
-        };
-        tableView.getSelectionModel().getSelectedIndices().addListener(listener);
         tableView.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
                 if (!tableView.getSelectionModel().getSelectedItems().isEmpty()) {
@@ -247,7 +241,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         tableView.setRowFactory(tv -> new TableRow<Peak>() {
             @Override
             public void updateItem(Peak item, boolean empty) {
-                super.updateItem(item, empty) ;
+                super.updateItem(item, empty);
                 if (item == null || !item.isDeleted()) {
                     setStyle("");
                 } else {
@@ -276,7 +270,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
     private void deleteSelectedPeaks() {
         List<Peak> selectedPeaks = new ArrayList<>(tableView.getSelectionModel().getSelectedItems());
-        for (Peak peak: selectedPeaks) {
+        for (Peak peak : selectedPeaks) {
             peak.delete();
         }
         tableView.getSelectionModel().clearSelection();
@@ -350,7 +344,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                     Peak peak = getTableRow().getItem();
                     if (peak != null) {
                         int iDim = labelCol.peakDim;
-                        if (iDim < peak.getPeakDims().length){
+                        if (iDim < peak.getPeakDims().length) {
                             PeakDim peakDim = peak.getPeakDim(iDim);
                             if (!peakDim.isLabelValid()) {
                                 setBackground(ERROR_BACKGROUND);
@@ -369,8 +363,8 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             tableView.getColumns().add(labelCol);
         }
         for (int i = 0;
-                i < nDim;
-                i++) {
+             i < nDim;
+             i++) {
             DimTableColumn<Peak, Float> shiftCol = new DimTableColumn<>("shift", i);
             shiftCol.setCellValueFactory((CellDataFeatures<Peak, Float> p) -> {
                 Peak peak = p.getValue();
@@ -438,10 +432,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         controller.showPeakAttr();
         controller.getPeakAttrController().gotoPeak(peak);
         controller.getPeakAttrController().getStage().toFront();
-
-    }
-
-    void closePeak() {
 
     }
 }

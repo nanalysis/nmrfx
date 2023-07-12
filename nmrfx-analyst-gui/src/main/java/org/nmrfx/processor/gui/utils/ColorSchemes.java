@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,58 +17,36 @@
  */
 package org.nmrfx.processor.gui.utils;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.controlsfx.control.RangeSlider;
 
+import java.io.*;
+import java.util.*;
+import java.util.function.Consumer;
+
 /**
- *
  * @author brucejohnson
  */
 public class ColorSchemes {
+    private static final Map<String, Map<String, String>> maps = new HashMap<>();
+    private static final DoubleProperty lowValue = new SimpleDoubleProperty(0);
+    private static final DoubleProperty highValue = new SimpleDoubleProperty(100);
+    private static final BooleanProperty reverse = new SimpleBooleanProperty(false);
+    private static final StringProperty selectedColorClass = new SimpleStringProperty();
+    private static Stage stage = null;
+    private static GridPane gridPane = null;
+    private static Consumer<String> consumer = null;
 
-    static Stage stage = null;
-    static GridPane gridPane = null;
-    static Consumer<String> consumer = null;
-    static Map<String, Map<String, String>> maps = new HashMap<>();
-    static DoubleProperty lowValue = new SimpleDoubleProperty(0);
-    static DoubleProperty highValue = new SimpleDoubleProperty(100);
-    static BooleanProperty reverse = new SimpleBooleanProperty(false);
-    static StringProperty selectedColorClass = new SimpleStringProperty();
-
-    public static void loadColors(String fileName) throws FileNotFoundException, IOException {
+    public static void loadColors(String fileName) throws IOException {
         BufferedReader bf = null;
         if (fileName.startsWith("resource:")) {
             InputStream inputStream = ColorSchemes.class.getResourceAsStream(fileName.substring(9));
@@ -84,7 +62,6 @@ public class ColorSchemes {
             System.out.println("bf null");
             return;
         }
-        String mode = "sequential";
         bf.lines().forEach(line -> {
             line = line.trim();
             if (line.length() != 0) {
@@ -105,15 +82,6 @@ public class ColorSchemes {
 
     public static Set<String> getColorClasses() {
         return maps.keySet();
-    }
-
-    public static Collection<String> getColorNames(String colorClass) {
-        if (maps.containsKey(colorClass)) {
-            return maps.get(colorClass).values();
-        } else {
-            return Collections.EMPTY_SET;
-        }
-
     }
 
     public static String getColorString(String name) {

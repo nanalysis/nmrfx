@@ -9,7 +9,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 
 /**
- *
  * @author brucejohnson
  */
 public class LigandScannerInfo {

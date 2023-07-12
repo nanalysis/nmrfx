@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,12 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.PPMv;
+import org.nmrfx.chemistry.Point3;
+import org.nmrfx.chemistry.Util;
 import org.nmrfx.chemistry.constraints.AtomDistancePair;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
 
@@ -48,6 +51,7 @@ public class AtomMath {
             this.n = n;
         }
     }
+
     static IrpParameter[] IrpParameters = new IrpParameter[10];
 
     static {
@@ -61,6 +65,7 @@ public class AtomMath {
         IrpParameters[8] = new IrpParameter(8, 1.90, 1.0, 3);
         IrpParameters[9] = new IrpParameter(9, 1.80, 1.0, 3);
     }
+
     static final double RADJ = 0.02;
 
     /**
@@ -402,7 +407,7 @@ public class AtomMath {
                 } else {
                     /*if the energy is below upper (meaning also below lower)
                      * the viol is calculated to be lower - r.
-                     * 
+                     *
                      */
                     if (r < upper) {
                         viol = lower - r;

@@ -360,7 +360,7 @@ public class SeqDisplayController implements Initializable, StageBasedController
     }
 
     void drawAtomScores(GraphicsContextInterface gC, Residue residue,
-            List<String> aNames, double x, double y, double atomBarWidth, double height) {
+                        List<String> aNames, double x, double y, double atomBarWidth, double height) {
         y = y + height / 2.0 + smallGap;
         for (String aName : aNames) {
             String[] splitAtoms = aName.split(",");
@@ -398,8 +398,8 @@ public class SeqDisplayController implements Initializable, StageBasedController
     }
 
     void drawDotScores(GraphicsContextInterface gC, Residue residue,
-            List<String> aNames, double x, double y,
-            double atomBarWidth, double height, boolean combineMode) {
+                       List<String> aNames, double x, double y,
+                       double atomBarWidth, double height, boolean combineMode) {
         y = y + height / 2.0;
         int iAtom = 0;
         double deltaMax = 1.05;
@@ -487,9 +487,9 @@ public class SeqDisplayController implements Initializable, StageBasedController
     }
 
     void drawSymbol(GraphicsContextInterface gC, Residue residue,
-            double x, double y,
-            double atomBarWidth, double height,
-            double value, double lower, double upper) {
+                    double x, double y,
+                    double atomBarWidth, double height,
+                    double value, double lower, double upper) {
         y = y + height + smallGap;
 
         double delta = (value - lower) / (upper - lower);
@@ -505,9 +505,9 @@ public class SeqDisplayController implements Initializable, StageBasedController
     }
 
     void drawBar(GraphicsContextInterface gC, Residue residue,
-            double x, double y,
-            double atomBarWidth, double height,
-            double value, double lower, double upper) {
+                 double x, double y,
+                 double atomBarWidth, double height,
+                 double value, double lower, double upper) {
 
         y = y + height + smallGap;
         double x1 = x - atomBarWidth / 2.0;
@@ -522,9 +522,9 @@ public class SeqDisplayController implements Initializable, StageBasedController
     }
 
     void drawFractionalBar(GraphicsContextInterface gC, Residue residue,
-            double x, double y,
-            double atomBarWidth, double height,
-            double[] values) {
+                           double x, double y,
+                           double atomBarWidth, double height,
+                           double[] values) {
 
         y = y + height + smallGap;
         double x1 = x - atomBarWidth / 2.0;
@@ -617,7 +617,9 @@ public class SeqDisplayController implements Initializable, StageBasedController
         DRAW,
         SIZE,
         PICK;
-    };
+    }
+
+    ;
 
     private void get2ndStrPredictor(Molecule mol) {
         if (show2ndStrDItem.getValue()) {

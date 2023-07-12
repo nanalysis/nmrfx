@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,9 @@
  */
 package org.nmrfx.processor.optimization.equations;
 
-import org.nmrfx.processor.optimization.*;
+import org.nmrfx.processor.optimization.Equation;
+import org.nmrfx.processor.optimization.EstParam;
+import org.nmrfx.processor.optimization.VecID;
 
 /**
  * Author: graham Class: ExpDecayA Desc: -
@@ -29,85 +31,85 @@ public class UnderDampedHarmonicA extends OptFunction {
         setParams(VecID.A, VecID.B, VecID.W, VecID.S);
 
         setPartialDerivatives(new Equation[]{
-            // dY/dA
-            new Equation() {
-                public VecID name() {
-                    return VecID.A;
-                }
+                // dY/dA
+                new Equation() {
+                    public VecID name() {
+                        return VecID.A;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    double b = getParamVal(VecID.B, pts);
-                    double w = getParamVal(VecID.W, pts);
-                    double s = getParamVal(VecID.S, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
+                    public double value(double[] pts, double[] ival) {
+                        double b = getParamVal(VecID.B, pts);
+                        double w = getParamVal(VecID.W, pts);
+                        double s = getParamVal(VecID.S, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
 
-                    return Math.exp(-b * x) * Math.cos(w * x - s);
-                }
-            },
-            // dY/dB
-            new Equation() {
-                public VecID name() {
-                    return VecID.B;
-                }
+                        return Math.exp(-b * x) * Math.cos(w * x - s);
+                    }
+                },
+                // dY/dB
+                new Equation() {
+                    public VecID name() {
+                        return VecID.B;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    double a = getParamVal(VecID.A, pts);
-                    double b = getParamVal(VecID.B, pts);
-                    double w = getParamVal(VecID.W, pts);
-                    double s = getParamVal(VecID.S, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
+                    public double value(double[] pts, double[] ival) {
+                        double a = getParamVal(VecID.A, pts);
+                        double b = getParamVal(VecID.B, pts);
+                        double w = getParamVal(VecID.W, pts);
+                        double s = getParamVal(VecID.S, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
 
-                    return -a * x * Math.exp(-b * x) * Math.cos(w * x - s);
-                }
-            },
-            // dY/dW
-            new Equation() {
-                public VecID name() {
-                    return VecID.W;
-                }
+                        return -a * x * Math.exp(-b * x) * Math.cos(w * x - s);
+                    }
+                },
+                // dY/dW
+                new Equation() {
+                    public VecID name() {
+                        return VecID.W;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    double a = getParamVal(VecID.A, pts);
-                    double b = getParamVal(VecID.B, pts);
-                    double w = getParamVal(VecID.W, pts);
-                    double s = getParamVal(VecID.S, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
+                    public double value(double[] pts, double[] ival) {
+                        double a = getParamVal(VecID.A, pts);
+                        double b = getParamVal(VecID.B, pts);
+                        double w = getParamVal(VecID.W, pts);
+                        double s = getParamVal(VecID.S, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
 
-                    return -a * x * Math.exp(-b * x) * Math.sin(w * x - s);
-                }
-            },
-            // dY/dS
-            new Equation() {
-                public VecID name() {
-                    return VecID.S;
-                }
+                        return -a * x * Math.exp(-b * x) * Math.sin(w * x - s);
+                    }
+                },
+                // dY/dS
+                new Equation() {
+                    public VecID name() {
+                        return VecID.S;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    double a = getParamVal(VecID.A, pts);
-                    double b = getParamVal(VecID.B, pts);
-                    double w = getParamVal(VecID.W, pts);
-                    double s = getParamVal(VecID.S, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
+                    public double value(double[] pts, double[] ival) {
+                        double a = getParamVal(VecID.A, pts);
+                        double b = getParamVal(VecID.B, pts);
+                        double w = getParamVal(VecID.W, pts);
+                        double s = getParamVal(VecID.S, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
 
-                    return a * Math.exp(-b * x) * Math.sin(w * x - s);
+                        return a * Math.exp(-b * x) * Math.sin(w * x - s);
+                    }
                 }
-            }
         });
 
         // ID#0009

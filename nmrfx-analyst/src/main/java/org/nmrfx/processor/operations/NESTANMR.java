@@ -100,14 +100,16 @@ public class NESTANMR extends MatrixOperation {
         this.extendMode = extendMode;
         this.extendFactor = extendFactor;
     }
+
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal, SampleSchedule schedule,
                     List phaseList, boolean zeroAtStart, double threshold,
                     String logHomeName) throws ProcessingException {
-        this(outerIterations, innerIterations, tolFinal, muFinal, schedule,phaseList,zeroAtStart,threshold,logHomeName, false,0);
+        this(outerIterations, innerIterations, tolFinal, muFinal, schedule, phaseList, zeroAtStart, threshold, logHomeName, false, 0);
     }
+
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal,
                     List phaseList, boolean zeroAtStart, double threshold, int extendFactor, List<int[]> skipList) throws ProcessingException {
-        this(outerIterations, innerIterations, tolFinal, muFinal, null,phaseList,zeroAtStart,threshold,null,true, extendFactor);
+        this(outerIterations, innerIterations, tolFinal, muFinal, null, phaseList, zeroAtStart, threshold, null, true, extendFactor);
         this.skipList = skipList;
     }
 

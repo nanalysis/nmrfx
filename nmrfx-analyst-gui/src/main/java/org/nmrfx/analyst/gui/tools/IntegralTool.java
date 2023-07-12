@@ -2,11 +2,7 @@ package org.nmrfx.analyst.gui.tools;
 
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
-import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -18,8 +14,8 @@ import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.IconUtilities;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
+import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.IOException;
@@ -130,8 +126,8 @@ public class IntegralTool {
     public void splitRegion() {
         CrossHairs crossHairs = chart.getCrossHairs();
 
-        if (crossHairs.hasCrosshairState("v0")) {
-            double ppm = chart.getVerticalCrosshairPositions()[0];
+        if (crossHairs.hasState("v0")) {
+            double ppm = chart.getCrossHairs().getVerticalPositions()[0];
             try {
                 Analyzer.getAnalyzer((Dataset) chart.getDataset()).splitRegion(ppm);
             } catch (IOException e) {

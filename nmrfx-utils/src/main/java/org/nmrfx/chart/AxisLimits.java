@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,31 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package org.nmrfx.processor.gui.spectra;
+package org.nmrfx.chart;
 
-/**
- *
- * @author brucejohnson
- */
-public interface NMRAxisLimits {
+public interface AxisLimits {
+    double getLowerBound();
 
-    public double getLowerBound();
+    double getUpperBound();
 
-    public double getUpperBound();
+    boolean isReversed();
 
-    public boolean getReverse();
+    void setReverse(boolean state);
 
-    public void setReverse(boolean state);
+    void setLabel(String label);
 
-    public void setLabel(String label);
+    String getLabel();
 
-    public String getLabel();
-
-    public double getDisplayPosition(Number value);
-
+    double getDisplayPosition(Number value);
 }

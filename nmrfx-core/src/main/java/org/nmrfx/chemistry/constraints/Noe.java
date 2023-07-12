@@ -19,8 +19,11 @@ package org.nmrfx.chemistry.constraints;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.peaks.Peak;
+
 import java.io.Serializable;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 
 enum DisTypes {
 
@@ -52,11 +55,11 @@ enum DisTypes {
 }
 
 public class Noe extends DistanceConstraint implements Serializable {
-
-    private static boolean useDistances = false;
-    private static int nStructures = 0;
+    public static final int PPM_SET = 0;
+    private static final DistanceStat DEFAULT_STAT = new DistanceStat();
+    private static final DisTypes DISTANCE_TYPE = DisTypes.MINIMUM;
     private static double tolerance = 0.2;
-    private static DistanceStat defaultStat = new DistanceStat();
+
     private int idNum = 0;
     public SpatialSetGroup spg1;
     public SpatialSetGroup spg2;
@@ -65,9 +68,8 @@ public class Noe extends DistanceConstraint implements Serializable {
     private double volume = 0.0;
     private double scale = 1.0;
     public double atomScale = 1.0;
-    public DistanceStat disStat = defaultStat;
-    private DistanceStat disStatAvg = defaultStat;
-    public int dcClass = 0;
+    public DistanceStat disStat = DEFAULT_STAT;
+    private DistanceStat disStatAvg = DEFAULT_STAT;
     private double ppmError = 0.0;
     private short active = 1;
     public boolean symmetrical = false;
@@ -79,9 +81,7 @@ public class Noe extends DistanceConstraint implements Serializable {
     private boolean filterSwapped = false;
     public Map resMap = null;
     public EnumSet<Flags> activeFlags = null;
-    private static DisTypes distanceType = DisTypes.MINIMUM;
     private GenTypes genType = GenTypes.MANUAL;
-    public static int ppmSet = 0;
 
     public Noe(Peak p, SpatialSet sp1, SpatialSet sp2, double newScale) {
         super(sp1, sp2);
@@ -160,10 +160,6 @@ public class Noe extends DistanceConstraint implements Serializable {
         } else {
             return spg2;
         }
-    }
-
-    public static int getNStructures() {
-        return nStructures;
     }
 
     @Override
@@ -297,7 +293,7 @@ public class Noe extends DistanceConstraint implements Serializable {
      */
     public double getDistance() {
 
-        return distanceType.getDistance(this);
+        return DISTANCE_TYPE.getDistance(this);
     }
 
     @Override
@@ -308,11 +304,11 @@ public class Noe extends DistanceConstraint implements Serializable {
     @Override
     public String toSTARString() {
         if (peak != NoeSet.lastPeakWritten) {
-            NoeSet.ID++;
+            NoeSet.id++;
             NoeSet.lastPeakWritten = peak;
-            NoeSet.memberID = 1;
+            NoeSet.memberId = 1;
         } else {
-            NoeSet.memberID++;
+            NoeSet.memberId++;
         }
         String logic = ".";
         if (nPossible > 1) {
@@ -324,10 +320,10 @@ public class Noe extends DistanceConstraint implements Serializable {
         char stringQuote = '"';
 
         //        Gen_dist_constraint.ID
-        result.append(NoeSet.ID);
+        result.append(NoeSet.id);
         result.append(sep);
         //_Gen_dist_constraint.Member_ID
-        result.append(NoeSet.memberID);
+        result.append(NoeSet.memberId);
         result.append(sep);
         //_Gen_dist_constraint.Member_logic_code
         result.append(logic);

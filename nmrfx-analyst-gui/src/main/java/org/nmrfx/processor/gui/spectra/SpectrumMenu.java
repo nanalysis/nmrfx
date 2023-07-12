@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,11 +24,9 @@ import javafx.scene.control.MenuItem;
 import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.tools.PeakLinker;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class SpectrumMenu extends ChartMenu {
@@ -139,7 +137,7 @@ public class SpectrumMenu extends ChartMenu {
 
         MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
         fitLSItem.setOnAction((ActionEvent e) -> {
-            PeakPicking.peakPickActive(chart.getController(), true, null);
+            PeakPicking.peakPickActive(chart.getFXMLController(), true, null);
         });
         peakFitMenu.getItems().add(fitLSItem);
 

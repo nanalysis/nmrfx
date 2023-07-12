@@ -20,6 +20,7 @@ package org.nmrfx.processor.datasets.vendor.bruker;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.nmrfx.datasets.DatasetLayout;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -104,7 +105,7 @@ public class BrukerData implements NMRData {
     /**
      * Open Bruker parameter and data files.
      *
-     * @param path full path to the fid directory or file
+     * @param path    full path to the fid directory or file
      * @param nusFile The name of a NUS file to load
      * @throws java.io.IOException
      */
@@ -483,7 +484,7 @@ public class BrukerData implements NMRData {
     @Override
     public boolean getNegateImag(int iDim) {
         if (iDim > 0) {
-            return !f1coefS[iDim].equals("sep");
+            return !f1coefS[iDim].equals(AcquisitionType.SEP.getLabel());
         } else {
             return false;
         }
@@ -817,13 +818,13 @@ public class BrukerData implements NMRData {
             if (optLine.isPresent()) {
                 String[] aqSeqParts = optLine.get().split("=");
                 if ((aqSeqParts.length == 2) && (aqSeqParts[1].endsWith("D") && Character.isDigit(aqSeqParts[1].charAt(0)))) {
-                    dimPar = aqSeqParts[1].substring(0,1);
+                    dimPar = aqSeqParts[1].substring(0, 1);
                 }
             }
         }
         int maxDim = dimPar != null ? Integer.parseInt(dimPar) : MAXDIM;
 
-            // process proc files if they exist
+        // process proc files if they exist
         File pdataFile = parDirFile.toPath().resolve("pdata").toFile();
         if (pdataFile.exists()) {
             Path bdir = pdataFile.toPath();
@@ -1084,36 +1085,31 @@ public class BrukerData implements NMRData {
                     case 3:
                         complexDim[i - 1] = false;
                         fttype[i - 1] = "rft";
-                        f1coefS[i - 1] = "real";
+                        f1coefS[i - 1] = AcquisitionType.REAL.getLabel();
                         break;
                     case 4:
-                        f1coef[i - 1] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
-                        f1coefS[i - 1] = "hyper-r";
+                        f1coef[i - 1] = AcquisitionType.HYPER_R.getCoefficients();
+                        f1coefS[i - 1] = AcquisitionType.HYPER_R.getLabel();
                         break;
                     case 0:
                     case 5:
-                        f1coef[i - 1] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
+                        f1coef[i - 1] = AcquisitionType.HYPER.getCoefficients();
+                        f1coefS[i - 1] = AcquisitionType.HYPER.getLabel();
                         complexDim[i - 1] = true;
                         fttype[i - 1] = "negate";
-                        f1coefS[i - 1] = "hyper";
                         break;
                     case 6:
-                        f1coef[i - 1] = new double[]{1, 0, -1, 0, 0, 1, 0, 1};
+                        f1coef[i - 1] = AcquisitionType.ECHO_ANTIECHO_R.getCoefficients();
+                        f1coefS[i - 1] = AcquisitionType.ECHO_ANTIECHO_R.getLabel();
                         deltaPh0_2 = 90.0;
-                        f1coefS[i - 1] = "echo-antiecho-r";
                         break;
                     case 1:
-                        f1coefS[i - 1] = "sep";
-                        if (getValues(i - 1).size() > 0) {
-                            complexDim[i - 1] = false;
-                        } else {
-                            complexDim[i - 1] = true;
-                        }
-
+                        f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
+                        complexDim[i - 1] = getValues(i - 1).isEmpty();
                         break;
                     default:
                         f1coef[i - 1] = new double[]{1, 0, 0, 1};
-                        f1coefS[i - 1] = "sep";
+                        f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
                         break;
                 }
             }

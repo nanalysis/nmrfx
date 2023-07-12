@@ -2,7 +2,7 @@
  * Copyright (c) 2007, Massachusetts Institute of Technology
  * Copyright (c) 2005-2006, Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -13,11 +13,11 @@
  * * Redistributions in binary form must reproduce the above copyright
  *   notice, this list of conditions and the following disclaimer in
  *   the documentation and/or other materials provided with the
- *   distribution.  
+ *   distribution.
  *
  * * Neither the name of the University of California, Berkeley nor
  *   the names of its contributors may be used to endorse or promote
- *   products derived from this software without specific prior 
+ *   products derived from this software without specific prior
  *   written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -35,8 +35,13 @@
  */
 package org.nmrfx.processor.optimization;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * An engine for finding the maximum-weight matching in a complete bipartite
@@ -53,7 +58,7 @@ import java.util.*;
  * <i>w<sub>ij</sub></i>. A BipartiteMatcher takes the number
  * <i>n</i> and the weights <i>w<sub>ij</sub></i>, and finds a perfect matching
  * of maximum weight.
- *
+ * <p>
  * It uses the Hungarian algorithm of Kuhn (1955), as improved and presented by
  * E. L. Lawler in his book
  * <cite>Combinatorial Optimization: Networks and Matroids</cite> (Holt,
@@ -63,7 +68,7 @@ import java.util.*;
  * <i>c</i> to all the weights before running the algorithm. This increases the
  * weight of every perfect matching by <i>nc</i>, which doesn't change which
  * perfect matchings have maximum weight.
- *
+ * <p>
  * If a weight is set to Double.NEGATIVE_INFINITY, then the algorithm will
  * behave as if that edge were not in the graph. If all the edges incident on a
  * given node have weight Double.NEGATIVE_INFINITY, then the final result will
@@ -97,7 +102,7 @@ public class BipartiteMatcher {
      * Resets the BipartiteMatcher to run on an n x n graph. The weights are all
      * reset to 1.
      *
-     * @param n Size of graph
+     * @param n          Size of graph
      * @param useHashMap Use HashMap for internal storage
      */
     public final void reset(int n, boolean useHashMap) {
@@ -183,7 +188,7 @@ public class BipartiteMatcher {
         return weight;
 
     }
-    
+
     public double getMinWeight() {
         return minWeight;
     }
@@ -416,6 +421,7 @@ public class BipartiteMatcher {
             System.out.println("");
         }
     }
+
     /**
      * Tolerance for comparisons to zero, to account for floating-point
      * imprecision. We consider a positive number to be essentially zero if it

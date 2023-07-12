@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,18 +17,14 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.Vec;
+import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.util.MathArrays;
 import org.nmrfx.math.VecException;
+import org.nmrfx.processor.math.Vec;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.DecompositionSolver;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.apache.commons.math3.util.MathArrays;
 
 /**
  * Utility functions involving Vectors, mostly pulled from VecMat and the Math
@@ -258,7 +254,7 @@ public class Util {
     }
 
     /* Program 3. Smoothing and interpolation with any difference equation. */
- /* Contribution to Graphic Gems IV */
+    /* Contribution to Graphic Gems IV */
  /* Paul H. C. Eilers, DCMR Milieudienst Rijnmond, 's-Gravelandseweg 565,
      3119 XT Schiedam, The Netherlands, E-Mail: paul@dcmr.nl */
     public static void asmooth(double[] w, double[] y, double[] z, double[] a, double lambda, int m, int n) /* Smoothing and interpolation with any difference equation of order <=5.
@@ -550,7 +546,7 @@ public class Util {
     }
 
     public static RealVector fitPoly(Vec vector, int order,
-            RealMatrix xyVals) {
+                                     RealMatrix xyVals) {
         int nRows = xyVals.getRowDimension();
         RealMatrix A = new Array2DRowRealMatrix(nRows, order);
         RealVector B = new ArrayRealVector(nRows);
@@ -576,7 +572,7 @@ public class Util {
     }
 
     public static RealVector fitSine(Vec vector, int order,
-            RealMatrix xyVals) throws VecException {
+                                     RealMatrix xyVals) throws VecException {
         int nRows = xyVals.getRowDimension();
         RealMatrix A = new Array2DRowRealMatrix(nRows, order);
         RealVector B = new ArrayRealVector(nRows);

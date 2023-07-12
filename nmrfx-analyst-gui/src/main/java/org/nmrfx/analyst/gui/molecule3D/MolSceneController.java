@@ -52,6 +52,7 @@ import static org.nmrfx.analyst.gui.molecule3D.MolSceneController.StructureCalcu
 
 public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
+    private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
     private Stage stage;
     SSViewer ssViewer;
@@ -95,7 +96,6 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     List<CheckMenuItem> atomCheckItems = new ArrayList<>();
 
-    static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     StackPane stackPane = new StackPane();
     Pane twoDPane = new Pane();
@@ -182,7 +182,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             atomCheckItems.add(menuItem);
             atomMenu.getItems().add(menuItem);
             menuItem.selectedProperty().addListener(
-                    (ChangeListener<Boolean>) (a,b,c) -> updateAtoms(name, c.booleanValue()));
+                    (ChangeListener<Boolean>) (a, b, c) -> updateAtoms(name, c.booleanValue()));
         }
         Menu riboseMenu = new Menu("Ribose Atoms");
         atomMenu.getItems().add(riboseMenu);
@@ -191,7 +191,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             atomCheckItems.add(menuItem);
             riboseMenu.getItems().add(menuItem);
             menuItem.selectedProperty().addListener(
-                    (ChangeListener<Boolean>) (a,b,c) -> updateAtoms());
+                    (ChangeListener<Boolean>) (a, b, c) -> updateAtoms());
         }
     }
 
@@ -385,7 +385,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             if ((dotBracket.length() == nChars) && (nLeft == nRight)) {
                 dotBracketPane.setBackground(defaultBackground);
             } else {
-                dotBracketPane.setBackground(errorBackground);
+                dotBracketPane.setBackground(ERROR_BACKGROUND);
             }
 
         }
@@ -882,17 +882,17 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 scriptB.append("'" + dotBracket + "'\n");
             }
             scriptB.append("""
-                               planarity : 1
-                               autolink : True
-                           tree:
-                           initialize:
-                               vienna :
-                                   restrain : True
-                                   lockfirst: False
-                                   locklast: False
-                                   lockloop: False
-                                   lockbulge: False
-                           """);
+                        planarity : 1
+                        autolink : True
+                    tree:
+                    initialize:
+                        vienna :
+                            restrain : True
+                            lockfirst: False
+                            locklast: False
+                            lockloop: False
+                            lockbulge: False
+                    """);
         }
         scriptB.append("""
                 anneal:
@@ -918,7 +918,9 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     class StructureCalculator {
-        enum StructureMode {INIT, REFINE, ANNEAL};
+        enum StructureMode {INIT, REFINE, ANNEAL}
+
+        ;
         String script;
         public Worker<Integer> worker;
         StructureMode mode;

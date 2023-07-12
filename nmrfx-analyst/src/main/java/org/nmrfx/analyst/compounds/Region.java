@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
  */
 public class Region {
@@ -113,7 +112,7 @@ public class Region {
 
     }
 
-//               foreach ppmCenter $ppms tol $tols {
+    //               foreach ppmCenter $ppms tol $tols {
 //                 set match 0
 //                 set score 0.0
 //                 set max 0.0

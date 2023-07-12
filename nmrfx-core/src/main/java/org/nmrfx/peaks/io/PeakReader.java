@@ -31,7 +31,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
  * @author Bruce Johnson
  */
 @PythonAPI("pscript")
@@ -575,6 +574,7 @@ public class PeakReader {
      * and {123.h5''} -> 123.h5''
      * In this method, quote characters are any of the following four characters: ", ', {, }, Empty quotes are returned
      * as an empty string in the list.
+     *
      * @param line The String to parse.
      * @return The parsed String as a list.
      */
@@ -628,7 +628,7 @@ public class PeakReader {
 
     public static boolean hasSparkyDataHeight(String[] fields) {
         int nFields = fields.length;
-        return (nFields > 2) && fields[nFields - 2].equals("Data") && fields[nFields-1].equals("Height");
+        return (nFields > 2) && fields[nFields - 2].equals("Data") && fields[nFields - 1].equals("Height");
     }
 
     public static int countSparkyDims(String[] fields) {

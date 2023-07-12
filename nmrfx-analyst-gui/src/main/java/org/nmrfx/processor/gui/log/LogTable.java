@@ -65,7 +65,7 @@ public class LogTable extends TableView<LogRecord> {
         TableColumn<LogRecord, String> logMessageCol = new TableColumn<>(MESSAGE);
         logMessageCol.setCellValueFactory(new PropertyValueFactory<>("message"));
         setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        logMessageCol.prefWidthProperty().bind(this.widthProperty().subtract( logLevelCol.widthProperty().get() +
+        logMessageCol.prefWidthProperty().bind(this.widthProperty().subtract(logLevelCol.widthProperty().get() +
                 logTimeCol.widthProperty().get() + logSectionCol.widthProperty().get()));
         getColumns().add(logMessageCol);
 
@@ -74,6 +74,7 @@ public class LogTable extends TableView<LogRecord> {
 
     /**
      * Replaces the current list of records with the provided list.
+     *
      * @param logRecords The new LogRecords
      */
     public void setLogRecords(List<LogRecord> logRecords) {
@@ -85,7 +86,8 @@ public class LogTable extends TableView<LogRecord> {
      * Adds a new LogRecord to the table. If the current list of records in the table is larger than the
      * provided length, the starting records are removed until the records list + 1 (for the new record) is the size
      * of the provided length.
-     * @param logRecord The new LogRecord to add
+     *
+     * @param logRecord     The new LogRecord to add
      * @param recordsLength The max length of records to display
      */
     public void addLogRecord(LogRecord logRecord, int recordsLength) {

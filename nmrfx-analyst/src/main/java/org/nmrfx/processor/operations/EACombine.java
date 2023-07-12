@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -28,24 +29,9 @@ import org.nmrfx.processor.processing.ProcessingException;
  */
 @PythonAPI("pyproc")
 public class EACombine extends Operation {
-
-    static private final double[] echoAntiEchoCoefs = {1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0};
-
     @Override
     public EACombine eval(Vec vector) throws ProcessingException {
-        eaCombine(vector);
+        vector.eaCombine(AcquisitionType.ECHO_ANTIECHO.getCoefficients());
         return this;
-    }
-
-    public EACombine() {
-    }
-
-    /**
-     *
-     * @param vector
-     * @throws ProcessingException
-     */
-    private void eaCombine(Vec vector) throws ProcessingException {
-        vector.eaCombine(echoAntiEchoCoefs);
     }
 }

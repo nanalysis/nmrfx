@@ -54,7 +54,7 @@ public class PeakPathAnalyzer {
     }
 
     public static PeakPath checkForUnambigous(PeakPaths peakPath, List<List<PeakDistance>> filteredLists,
-            boolean useLast) {
+                                              boolean useLast) {
         // find largest first distance
         double maxDis = Double.NEGATIVE_INFINITY;
         double lastDis = 0.0;

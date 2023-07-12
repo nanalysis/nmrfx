@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -90,6 +90,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         filterMap.put("HCN", "*.H*,C*,N*");
         filterMap.put("HC", "*.H*,C*");
     }
+
     private Stage stage;
     @FXML
     private ToolBar menuBar;
@@ -155,7 +156,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         return controller;
     }
 
-    private void moleculeMapChanged(MapChangeListener.Change<? extends String,? extends MoleculeBase> change) {
+    private void moleculeMapChanged(MapChangeListener.Change<? extends String, ? extends MoleculeBase> change) {
         if (MoleculeFactory.getMolecules().isEmpty()) {
             setFilterString("");
             refreshAtomTable();
@@ -186,27 +187,27 @@ public class AtomController implements Initializable, StageBasedController, Free
         MenuButton editMenu = new MenuButton("Edit");
         MenuItem clearPPMItem = new MenuItem("Clear Assigned Shifts");
         clearPPMItem.setOnAction(e -> {
-            clearPPMs();
-            atomTableView.refresh();
-        }
+                    clearPPMs();
+                    atomTableView.refresh();
+                }
         );
         MenuItem clearRefItem = new MenuItem("Clear Ref Shifts");
         clearRefItem.setOnAction(e -> {
-            clearRefPPMs();
-            atomTableView.refresh();
-        }
+                    clearRefPPMs();
+                    atomTableView.refresh();
+                }
         );
         MenuItem getPPMItem = new MenuItem("Get Frozen PPM");
         getPPMItem.setOnAction(e -> {
-            PeakList.resFactory().assignFrozenAtoms("sim");
-            atomTableView.refresh();
-        }
+                    PeakList.resFactory().assignFrozenAtoms("sim");
+                    atomTableView.refresh();
+                }
         );
         MenuItem getAllPPMItem = new MenuItem("Get PPM");
         getAllPPMItem.setOnAction(e -> {
-            PeakList.resFactory().assignFromPeaks(null);
-            atomTableView.refresh();
-        }
+                    PeakList.resFactory().assignFromPeaks(null);
+                    atomTableView.refresh();
+                }
         );
         editMenu.getItems().addAll(clearPPMItem, clearRefItem, getPPMItem, getAllPPMItem);
 
@@ -295,7 +296,9 @@ public class AtomController implements Initializable, StageBasedController, Free
             } else {
             }
         }
-    };
+    }
+
+    ;
 
     class TextFieldTableCellNumber extends TextFieldTableCell<Atom, Number> {
 

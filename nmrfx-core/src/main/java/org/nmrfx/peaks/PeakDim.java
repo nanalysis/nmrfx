@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,12 +22,10 @@ import org.nmrfx.utilities.ConvUtil;
 import org.nmrfx.utilities.Format;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class PeakDim {
-
-    public static List<PeakDim> EMPTY_LIST = new ArrayList<>();
-
     private int spectralDim = 0;
     private Float chemShift = null;
     private Float chemShiftError = null;
@@ -150,7 +148,7 @@ public class PeakDim {
     public List<PeakDim> getLinkedPeakDims() {
         if (resonance == null) {
             // fixme should this contain this peakdim (and in general should result contain this dim plus linked)
-            return EMPTY_LIST;
+            return Collections.emptyList();
         } else {
             return resonance.getPeakDims();
         }

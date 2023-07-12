@@ -40,8 +40,8 @@ import org.nmrfx.processor.optimization.SineSignal;
 import java.util.*;
 
 public class PeakFit implements MultivariateFunction {
-
-    static RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
+    private static final RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
+    
     final PeakFitParameters fitParameters;
     final boolean fitShape;
     final boolean constrainShape;
@@ -133,7 +133,8 @@ public class PeakFit implements MultivariateFunction {
                     new ObjectiveFunction(this), org.apache.commons.math3.optim.nonlinear.scalar.GoalType.MINIMIZE,
                     new SimpleBounds(uniformBoundaries[0], uniformBoundaries[1]),
                     new InitialGuess(newStart));
-        } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
+        } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException |
+                 TooManyEvaluationsException e) {
             throw new Exception("failure to fit data " + e.getMessage());
         }
         return result.getValue();
@@ -476,7 +477,7 @@ public class PeakFit implements MultivariateFunction {
 
         for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
             double yTemp;
-            yTemp = lineShape(x,  freqs[iSig][iLine], sigLw, shapeFactor);
+            yTemp = lineShape(x, freqs[iSig][iLine], sigLw, shapeFactor);
             if (amplitudes[iSig][iLine] < 0) {
                 yTemp = -yTemp;
             }

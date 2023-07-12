@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,6 @@ package org.nmrfx.processor.gui.utils;
 import javafx.scene.paint.Color;
 
 /**
- *
  * @author brucejohnson
  */
 public class GUIColorUtils {
@@ -31,4 +30,13 @@ public class GUIColorUtils {
         return color;
     }
 
+    /**
+     * Select black or white equivalent for a color, based on its brightness
+     *
+     * @param color any color
+     * @return BLACK or WHITE
+     */
+    public static Color toBlackOrWhite(Color color) {
+        return color.getBrightness() > 0.5 ? Color.BLACK : Color.WHITE;
+    }
 }

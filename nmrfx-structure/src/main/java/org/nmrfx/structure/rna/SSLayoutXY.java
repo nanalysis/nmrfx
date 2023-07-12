@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,19 +18,15 @@
 
 package org.nmrfx.structure.rna;
 
-import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
-import org.apache.commons.math3.optim.SimpleValueChecker;
-import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.MersenneTwister;
-import org.apache.commons.math3.util.Precision;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.SimpleBounds;
-import org.apache.commons.math3.optim.InitialGuess;
-import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
-import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+import org.apache.commons.math3.optim.*;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
+import org.apache.commons.math3.random.MersenneTwister;
+import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.util.Precision;
 import org.nmrfx.structure.chemistry.OverlappingLines;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -246,7 +242,7 @@ public class SSLayoutXY implements MultivariateFunction {
         if (log.isDebugEnabled()) {
             StringBuilder strBuilder = new StringBuilder();
             for (int i = 0; i < nNuc; i++) {
-               strBuilder.append(i).append(" ").append(vienna.charAt(i)).append(" ").append(basePairs[i]);
+                strBuilder.append(i).append(" ").append(vienna.charAt(i)).append(" ").append(basePairs[i]);
                 if (i > 1) {
                     strBuilder.append(" fix ").append(disFixed[i - 2]);
                     if ((i - 2) < angleFixed.length) {
@@ -461,7 +457,7 @@ public class SSLayoutXY implements MultivariateFunction {
         }
 
         double value = sumPairAbsError * 50.0 + sumNBError + sumAngle * 0.3 + nIntersections * 100.0 + sumDis * 1.0;
-        String logMsg = String.format("lim %3d nNuc %3d nFree %3d pairs %7.3f nb %7.3f ang %7.3f nint %2d ndis %7.3f tot %7.3f",  limit, nNuc, nFreeAnglesTot, sumPairError, sumNBError, sumAngle, nIntersections, sumDis, value);
+        String logMsg = String.format("lim %3d nNuc %3d nFree %3d pairs %7.3f nb %7.3f ang %7.3f nint %2d ndis %7.3f tot %7.3f", limit, nNuc, nFreeAnglesTot, sumPairError, sumNBError, sumAngle, nIntersections, sumDis, value);
         log.info(logMsg);
         return value;
     }
@@ -470,7 +466,7 @@ public class SSLayoutXY implements MultivariateFunction {
         setBoundaries(0.1);
         double[] guess = new double[boundaries[0].length];
         for (int i = 0; i < boundaries[0].length; i++) {
-            guess[i] = i+1;
+            guess[i] = i + 1;
         }
         double value = value(guess);
         log.info("start value {} free angles {} freedis {}", value, nFreeAngles, nFreeDis);
@@ -511,7 +507,7 @@ public class SSLayoutXY implements MultivariateFunction {
 
     public void dumpPars(double[] pars) {
         if (log.isDebugEnabled()) {
-           StringBuilder parsString = new StringBuilder();
+            StringBuilder parsString = new StringBuilder();
             for (int i = 0; i < nAnglePars; i++) {
                 parsString.append(String.format("angle %2d %7.3f%n", i, pars[i] * 180.0 / Math.PI));
             }

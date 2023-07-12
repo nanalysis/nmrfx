@@ -23,14 +23,13 @@ import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author Bruce Johnson
  */
 @PythonAPI("gscript")
 public class GUIScripter {
-    final PolyChart useChart;
-    static FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-    static Map<String, String> keyActions = new HashMap<>();
+    private static final Map<String, String> keyActions = new HashMap<>();
+    private static FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+    private final PolyChart useChart;
 
     public GUIScripter() {
         useChart = null;
@@ -71,7 +70,7 @@ public class GUIScripter {
     }
 
     public String active() {
-        PolyChart chart = useChart != null ? useChart : PolyChart.getActiveChart();
+        PolyChart chart = useChart != null ? useChart : PolyChartManager.getInstance().getActiveChart();
         return chart.getName();
     }
 
@@ -136,7 +135,7 @@ public class GUIScripter {
     public void center(Double[] positions) {
         Fx.runOnFxThread(() -> {
             if ((positions == null) || (positions.length == 0)) {
-                Double[] crossPositions = getChart().getCrossHairs().getCrossHairPositions();
+                Double[] crossPositions = getChart().getCrossHairs().getPositions();
                 getChart().moveTo(crossPositions);
             } else {
                 getChart().moveTo(positions);
@@ -149,8 +148,8 @@ public class GUIScripter {
         double[] result = new double[2];
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            result[0] = chart.xAxis.getLowerBound();
-            result[1] = chart.xAxis.getUpperBound();
+            result[0] = chart.getAxes().getX().getLowerBound();
+            result[1] = chart.getAxes().getX().getUpperBound();
         });
         return result;
     }
@@ -158,8 +157,8 @@ public class GUIScripter {
     public void ppm(String axis, double ppm1, double ppm2) {
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            chart.xAxis.setLowerBound(ppm1);
-            chart.xAxis.setUpperBound(ppm2);
+            chart.getAxes().getX().setLowerBound(ppm1);
+            chart.getAxes().getX().setUpperBound(ppm2);
             chart.refresh();
         });
     }
@@ -169,9 +168,9 @@ public class GUIScripter {
             PolyChart chart = getChart();
             int axNum = chart.getAxisNum(dimName);
             if (v1 < v2) {
-                chart.setAxis(axNum, v1, v2);
+                chart.getAxes().setMinMax(axNum, v1, v2);
             } else {
-                chart.setAxis(axNum, v2, v1);
+                chart.getAxes().setMinMax(axNum, v2, v1);
             }
         });
     }
@@ -180,9 +179,9 @@ public class GUIScripter {
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             if (v1 < v2) {
-                chart.setAxis(axNum, v1, v2);
+                chart.getAxes().setMinMax(axNum, v1, v2);
             } else {
-                chart.setAxis(axNum, v2, v1);
+                chart.getAxes().setMinMax(axNum, v2, v1);
             }
         });
     }
@@ -192,10 +191,10 @@ public class GUIScripter {
         String dimChars = "xyzabcdefghijk";
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            int nAxes = chart.axes.length;
+            int nAxes = chart.getAxes().count();
             for (int i = 0; i < nAxes; i++) {
-                double v1 = chart.getAxis(i).getLowerBound();
-                double v2 = chart.getAxis(i).getUpperBound();
+                double v1 = chart.getAxes().get(i).getLowerBound();
+                double v2 = chart.getAxes().get(i).getUpperBound();
                 String axName = dimChars.substring(i, i + 1);
                 List<Double> limits = new ArrayList<>();
                 limits.add(v1);
@@ -281,7 +280,7 @@ public class GUIScripter {
                 }
             }
             if (!indices.isEmpty()) {
-                chart.getController().getStatusBar().updateRowSpinner(indices.get(0), 1);
+                chart.getFXMLController().getStatusBar().updateRowSpinner(indices.get(0), 1);
             }
             chart.refresh();
         });
@@ -470,8 +469,8 @@ public class GUIScripter {
     public List<Integer> grid() throws InterruptedException, ExecutionException {
         FutureTask<List<Integer>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
-            int nRows = chart.getController().arrangeGetRows();
-            int nColumns = chart.getController().arrangeGetColumns();
+            int nRows = chart.getFXMLController().arrangeGetRows();
+            int nColumns = chart.getFXMLController().arrangeGetColumns();
             List<Integer> result = new ArrayList<>();
             result.add(nRows);
             result.add(nColumns);
@@ -636,7 +635,7 @@ public class GUIScripter {
     public List<Double> geometry() throws InterruptedException, ExecutionException {
         FutureTask<List<Double>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
-            Stage stage = chart.getController().getStage();
+            Stage stage = chart.getFXMLController().getStage();
             double x = stage.getX();
             double y = stage.getY();
             double width = stage.getWidth();
@@ -655,7 +654,7 @@ public class GUIScripter {
     public void geometry(Double x, Double y, Double width, Double height) throws InterruptedException, ExecutionException {
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            Stage stage = chart.getController().getStage();
+            Stage stage = chart.getFXMLController().getStage();
             if (x != null) {
                 stage.setX(x);
             }
@@ -752,11 +751,21 @@ public class GUIScripter {
         });
     }
 
+    /**
+     * Execute a command for a specific chart. The chart will temporarily become the active one.
+     *
+     * @param keyStr the action key for the command to execute
+     * @param chart  the chart on which the command must be executed
+     */
     public static void chartCommand(String keyStr, PolyChart chart) {
-        PolyChart currentActive = PolyChart.getActiveChart();
-        chart.setActiveChart();
-        AnalystPythonInterpreter.exec(keyActions.get(keyStr));
-        currentActive.setActiveChart();
+        PolyChartManager chartManager = PolyChartManager.getInstance();
+        PolyChart currentActive = chartManager.getActiveChart();
+        try {
+            chartManager.setActiveChart(chart);
+            AnalystPythonInterpreter.exec(keyActions.get(keyStr));
+        } finally {
+            chartManager.setActiveChart(currentActive);
+        }
     }
 
 }

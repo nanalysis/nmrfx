@@ -49,7 +49,7 @@ public class AnnoLine extends AnnoShape {
     }
 
     @Override
-    public boolean hit( double x, double y, boolean selectMode) {
+    public boolean hit(double x, double y, boolean selectMode) {
         return false;
     }
 
@@ -79,9 +79,9 @@ public class AnnoLine extends AnnoShape {
 
     @Override
     public int hitHandle(double x, double y) {
-        if (hitHandle(x,y, Pos.CENTER, xp1, yp1)) {
+        if (hitHandle(x, y, Pos.CENTER, xp1, yp1)) {
             activeHandle = 0;
-        } else if (hitHandle(x,y, Pos.CENTER, xp2, yp2)) {
+        } else if (hitHandle(x, y, Pos.CENTER, xp2, yp2)) {
             activeHandle = 1;
         } else {
             activeHandle = -1;

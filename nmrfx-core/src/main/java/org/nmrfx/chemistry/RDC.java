@@ -5,26 +5,27 @@
  */
 package org.nmrfx.chemistry;
 
-import java.util.HashMap;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- *
  * @author brucejohnson
  */
 public class RDC {
+    private static final boolean CALC_MAX_RDC = true;
+    private static final double HBAR = 1.054E-34;
+    private static final double MU0 = 4.0E-7 * Math.PI;
+    private static final double PREFACTOR = -(MU0 * HBAR) / (4 * (Math.PI * Math.PI));
+    private static final double GAMMA_N = -2.71E7;
+    private static final double GAMMA_H = 2.68e8;
+    private static final double SCALE_HN = (GAMMA_H * GAMMA_N) / ((1.0E-10) * (1.0E-10) * (1.0E-10));
 
-    public static boolean CALC_MAX_RDC = true;
-    static final double HBAR = 1.054E-34;
-    static final double MU0 = 4.0E-7 * Math.PI;
-    static final double PREFACTOR = -(MU0 * HBAR) / (4 * (Math.PI * Math.PI));
-    static final HashMap<String, Double> disDict = new HashMap<>();
-    static final HashMap<String, Double> gammaIDict = new HashMap();
-    static double gammaN = -2.71E7;
-    static double gammaH = 2.68e8;
-    static final HashMap<String, Double> gammaSDict = new HashMap();
-    static final HashMap<String, Double> maxRDCDict = new HashMap<>();
-    static double scaleHN = (gammaH * gammaN) / ((1.0E-10) * (1.0E-10) * (1.0E-10));
+    private static final Map<String, Double> disDict = new HashMap<>();
+    private static final Map<String, Double> maxRDCDict = new HashMap<>();
+    private static final Map<String, Double> gammaIDict = new HashMap<>();
+    private static final Map<String, Double> gammaSDict = new HashMap<>();
 
     static {
         disDict.put("HN", 1.04);
@@ -49,14 +50,14 @@ public class RDC {
      * Calculates the maximum RDCConstraint value associated with two atoms in a
      * Molecule object.
      *
-     * @param vector Vector3D object that represents the vector associated with
-     * the two atoms.
-     * @param aType1 String of the type of the first atom of the vector.
-     * @param aType2 String of the type of the second atom of the vector.
+     * @param vector     Vector3D object that represents the vector associated with
+     *                   the two atoms.
+     * @param aType1     String of the type of the first atom of the vector.
+     * @param aType2     String of the type of the second atom of the vector.
      * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint
-     * value based on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDCConstraint value
-     * with the scaling method used in CYANA.
+     *                   value based on the vector distance.
+     * @param scale      Boolean of whether to calculate the max RDCConstraint value
+     *                   with the scaling method used in CYANA.
      * @return double parameter that is the maxRDC value.
      */
     public static double calcMaxRDC(Vector3D vector, String aType1, String aType2, boolean calcMaxRDC, boolean scale) {
@@ -77,7 +78,7 @@ public class RDC {
                 if (calcMaxRDC) {
                     maxRDC = PREFACTOR * ((gammaI * gammaS) / (r * r * r));
                 } else if (scale) {
-                    maxRDC = 24350.0 * (gammaI * gammaS) / ((r * r * r) * scaleHN);
+                    maxRDC = 24350.0 * (gammaI * gammaS) / ((r * r * r) * SCALE_HN);
                 }
             } else {
                 if (maxRDCDict.containsKey(type)) {

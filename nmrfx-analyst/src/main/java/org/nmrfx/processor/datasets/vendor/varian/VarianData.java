@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.vendor.varian;
 
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
@@ -49,7 +50,7 @@ import java.util.*;
 
 /**
  * @author bfetler
- *
+ * <p>
  * access through NMRDataUtil
  */
 public class VarianData implements NMRData {
@@ -230,10 +231,11 @@ public class VarianData implements NMRData {
     public boolean isSpectrum() {
         return isSpectrum;
     }
-  @Override
+
+    @Override
     public String getFTType(int iDim) {
         // fixme
-        return  "ft";
+        return "ft";
     }
 
     @Override
@@ -275,36 +277,20 @@ public class VarianData implements NMRData {
     @Override
     public String getSymbolicCoefs(int iDim) {
         String name = "f" + iDim + "coef";
-        String coefs = "hyper";
-        String s;
-        if ((s = getPar(name)) == null) {
-            s = "";
+        String s = getPar(name);
+        if (s == null || s.isEmpty()) {
+            return AcquisitionType.HYPER.getLabel();
         }
-        if (!s.equals("")) {
-            switch (s) {
-                case "1 0 0 0 0 0 -1 0":
-                    coefs = "hyper";
-                    break;
-                case "1 0 0 0 0 0 1 0":
-                    coefs = "hyper-r";
-                    break;
-                case "1 0 -1 0 0 1 0 1":
-                    coefs = "echo-antiecho";
-                    break;
-                case "1 0 1 0 0 1 0 -1":
-                    coefs = "echo-antiecho-r";
-                    break;
-                case "1 0 1 0 1 0 1 0":
-                    coefs = "ge";
-                    break;
-                case "1 0 0 1":
-                    coefs = "sep";
-                    break;
-                default:
-                    coefs = s;
-            }
-        }
-        return coefs;
+
+        return switch (s) {
+            case "1 0 0 0 0 0 -1 0" -> AcquisitionType.HYPER.getLabel();
+            case "1 0 0 0 0 0 1 0" -> AcquisitionType.HYPER_R.getLabel();
+            case "1 0 -1 0 0 1 0 1" -> AcquisitionType.ECHO_ANTIECHO.getLabel();
+            case "1 0 1 0 0 1 0 -1" -> AcquisitionType.ECHO_ANTIECHO_R.getLabel();
+            case "1 0 1 0 1 0 1 0" -> AcquisitionType.GE.getLabel();
+            case "1 0 0 1" -> AcquisitionType.SEP.getLabel();
+            default -> s;
+        };
     }
 
     @Override
@@ -661,6 +647,7 @@ public class VarianData implements NMRData {
 
     /**
      * Get the number of increments in the specified dimension
+     *
      * @param iDim the dimension (1 is the first indirect dimension)
      * @return the number of increments
      */
@@ -739,7 +726,7 @@ public class VarianData implements NMRData {
         } else {
             String ext = String.valueOf(iDim);
             String s = getPar("proc" + ext);
-            boolean notRFT =  !"rft".equals(s);
+            boolean notRFT = !"rft".equals(s);
 
             if (iDim == 1) {
                 s = getPar("phase");

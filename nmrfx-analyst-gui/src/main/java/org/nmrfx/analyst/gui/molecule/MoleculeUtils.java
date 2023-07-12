@@ -10,7 +10,8 @@ import java.util.Optional;
 
 public class MoleculeUtils {
 
-    private MoleculeUtils() {}
+    private MoleculeUtils() {
+    }
 
     /**
      * Adds the active molecule to the active chart and refreshes the chart.
@@ -49,6 +50,7 @@ public class MoleculeUtils {
 
     /**
      * Displays a text input dialog to the user to get a name for a molecule.
+     *
      * @return The provided name or an empty string.
      */
     public static String moleculeNamePrompt() {

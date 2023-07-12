@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,11 +17,14 @@
  */
 package org.nmrfx.processor.optimization.equations;
 
-import org.nmrfx.processor.optimization.*;
+import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.nmrfx.processor.optimization.NNLSMat;
+import org.nmrfx.processor.optimization.SineSignal;
+
 import java.util.ArrayList;
 import java.util.Collections;
-import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.linear.*;
 
 public class LorentzIWJ implements MultivariateFunction {
 
@@ -311,7 +314,8 @@ public class LorentzIWJ implements MultivariateFunction {
 
     public double value(double[] a) {
         int m = xv.length;
-        int n = a.length;;
+        int n = a.length;
+        ;
         double[] fvec = new double[m];
         fcn(m, n, a, fvec);
         double sumsq = 0.0;

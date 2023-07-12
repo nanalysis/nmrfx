@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,8 +17,8 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.Vec;
 import org.nmrfx.math.VecException;
+import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +62,6 @@ public abstract class Operation implements Cloneable {//extends ForkJoinTask<Arr
     }
 
     /**
-     *
      * @return Name of the derived class.
      */
     public String getName() {

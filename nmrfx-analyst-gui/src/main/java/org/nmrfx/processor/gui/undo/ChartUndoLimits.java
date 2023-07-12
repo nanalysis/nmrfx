@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,11 +17,13 @@
  */
 package org.nmrfx.processor.gui.undo;
 
-import java.util.Optional;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
+
+import java.util.Optional;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class ChartUndoLimits extends ChartUndo {
@@ -33,14 +35,15 @@ public class ChartUndoLimits extends ChartUndo {
         int nDim = chart.getNDim();
         limits = new double[nDim][2];
         for (int i = 0; i < nDim; i++) {
-            limits[i][0] = chart.getAxis(i) != null ? chart.getAxis(i).getLowerBound() : Double.NaN;
-            limits[i][1] = chart.getAxis(i) != null ? chart.getAxis(i).getUpperBound() : Double.NaN;
+            Axis axis = chart.getAxes().get(i);
+            limits[i][0] = axis != null ? axis.getLowerBound() : Double.NaN;
+            limits[i][1] = axis != null ? axis.getUpperBound() : Double.NaN;
         }
     }
 
     @Override
     public boolean execute() {
-        Optional<PolyChart> optChart = PolyChart.getChart(name);
+        Optional<PolyChart> optChart = PolyChartManager.getInstance().findChartByName(name);
         optChart.ifPresent(c -> {
             setLimits(c);
         });
@@ -51,8 +54,8 @@ public class ChartUndoLimits extends ChartUndo {
         int nDim = chart.getNDim();
         for (int i = 0; i < nDim; i++) {
             if (!Double.isNaN(limits[i][0])) {
-                chart.getAxis(i).setLowerBound(limits[i][0]);
-                chart.getAxis(i).setUpperBound(limits[i][1]);
+                chart.getAxes().get(i).setLowerBound(limits[i][0]);
+                chart.getAxes().get(i).setUpperBound(limits[i][1]);
             }
         }
         chart.refresh();

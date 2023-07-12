@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,37 +17,37 @@
  */
 package org.nmrfx.chemistry.io;
 
-import java.io.*;
-import java.util.*;
-
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.protein.ProteinHelix;
+import org.nmrfx.chemistry.protein.Sheet;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.MMCIF;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
-import org.nmrfx.chemistry.protein.ProteinHelix;
-import org.nmrfx.chemistry.protein.Sheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.*;
+
 @PluginAPI("ring")
 public class MMcifReader {
-
     private static final Logger log = LoggerFactory.getLogger(MMcifReader.class);
-    static boolean DEBUG = false;
+    private static final String INVALID_ATOM_WARN_MSG_TEMPLATE = "invalid atom in chem comp atom saveframe \"{}.{}\"";
 
     final MMCIF mmcif;
     final File cifFile;
 
     Map entities = new HashMap();
     boolean hasResonances = false;
-    Map<Long, List<PeakDim>> resMap = new HashMap<>();
     Map<String, Character> chainCodeMap = new HashMap<>();
     Map<Integer, MMCIFEntity> entityMap = new HashMap<>();
 
-    private static final String INVALID_ATOM_WARN_MSG_TEMPLATE = "invalid atom in chem comp atom saveframe \"{}.{}\"";
 
     public MMcifReader(final File cifFile, final MMCIF star3) {
         this.mmcif = star3;

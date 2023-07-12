@@ -65,7 +65,7 @@ public class ChartProperties implements PublicPropertyContainer {
         rightBorderSize = add(new SimpleIntegerProperty(polyChart, "rightBorderSize", EMPTY_BORDER_DEFAULT_SIZE));
         topBorderSize = add(new SimpleIntegerProperty(polyChart, "topBorderSize", EMPTY_BORDER_DEFAULT_SIZE));
         bottomBorderSize = add(new SimpleIntegerProperty(polyChart, "bottomBorderSize", 0));
-        intensityAxis = add(new SimpleBooleanProperty(polyChart, "onedAxis", false));
+        intensityAxis = add(new SimpleBooleanProperty(polyChart, "intensityAxis", false));
         labelFontSize = add(new SimpleIntegerProperty(polyChart, "labelFontSize", PreferencesController.getLabelFontSize()));
         ticFontSize = add(new SimpleIntegerProperty(polyChart, "ticFontSize", PreferencesController.getTickFontSize()));
         cross1Color = add(new ColorProperty(polyChart, "cross1Color", null));
@@ -103,7 +103,7 @@ public class ChartProperties implements PublicPropertyContainer {
     }
 
     public void copyTo(PolyChart destChart) {
-        ChartProperties destProps = destChart.chartProps;
+        ChartProperties destProps = destChart.getChartProperties();
         destProps.setLeftBorderSize(getLeftBorderSize());
         destProps.setRightBorderSize(getRightBorderSize());
         destProps.setTopBorderSize(getTopBorderSize());

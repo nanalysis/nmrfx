@@ -5,8 +5,6 @@
  */
 package org.nmrfx.analyst.dataops;
 
-import java.io.IOException;
-import java.util.List;
 import org.apache.commons.math3.stat.descriptive.rank.Max;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
@@ -17,8 +15,10 @@ import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.List;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class Normalize {

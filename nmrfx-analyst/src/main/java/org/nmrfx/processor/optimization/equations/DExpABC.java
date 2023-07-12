@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,10 @@
  */
 package org.nmrfx.processor.optimization.equations;
 
-import org.nmrfx.processor.optimization.*;
+import org.nmrfx.processor.optimization.DataUtil;
+import org.nmrfx.processor.optimization.Equation;
+import org.nmrfx.processor.optimization.EstParam;
+import org.nmrfx.processor.optimization.VecID;
 
 /**
  * Author: graham Class: Gaussian Desc: -
@@ -29,64 +32,64 @@ public class DExpABC extends OptFunction {
         setParams(VecID.A, VecID.B, VecID.C);
 
         setPartialDerivatives(new Equation[]{
-            // dY/dA
-            new Equation() {
-                public VecID name() {
-                    return VecID.A;
+                // dY/dA
+                new Equation() {
+                    public VecID name() {
+                        return VecID.A;
+                    }
+
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
+
+                    public double value(double[] pts, double[] ival) {
+                        double b = getParamVal(VecID.B, pts);
+                        double c = getParamVal(VecID.C, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
+
+                        return Math.exp(-x / b) + Math.exp(-x / c);
+                    }
+                },
+                // dY/dB
+                new Equation() {
+                    public VecID name() {
+                        return VecID.B;
+                    }
+
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
+
+                    public double value(double[] pts, double[] ival) {
+                        double a = getParamVal(VecID.A, pts);
+                        double b = getParamVal(VecID.B, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
+
+                        double xdb = x / b;
+
+                        return a * xdb / b * Math.exp(-xdb);
+                    }
+                },
+                // dY/dC
+                new Equation() {
+                    public VecID name() {
+                        return VecID.C;
+                    }
+
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
+
+                    public double value(double[] pts, double[] ival) {
+                        double a = getParamVal(VecID.A, pts);
+                        double c = getParamVal(VecID.C, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
+
+                        double xdc = x / c;
+
+                        return a * xdc / c * Math.exp(-xdc);
+                    }
                 }
-
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
-
-                public double value(double[] pts, double[] ival) {
-                    double b = getParamVal(VecID.B, pts);
-                    double c = getParamVal(VecID.C, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
-
-                    return Math.exp(-x / b) + Math.exp(-x / c);
-                }
-            },
-            // dY/dB
-            new Equation() {
-                public VecID name() {
-                    return VecID.B;
-                }
-
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
-
-                public double value(double[] pts, double[] ival) {
-                    double a = getParamVal(VecID.A, pts);
-                    double b = getParamVal(VecID.B, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
-
-                    double xdb = x / b;
-
-                    return a * xdb / b * Math.exp(-xdb);
-                }
-            },
-            // dY/dC
-            new Equation() {
-                public VecID name() {
-                    return VecID.C;
-                }
-
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
-
-                public double value(double[] pts, double[] ival) {
-                    double a = getParamVal(VecID.A, pts);
-                    double c = getParamVal(VecID.C, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
-
-                    double xdc = x / c;
-
-                    return a * xdc / c * Math.exp(-xdc);
-                }
-            }
         });
 
         // y = a * (exp(-x / b) + exp(-x / C))

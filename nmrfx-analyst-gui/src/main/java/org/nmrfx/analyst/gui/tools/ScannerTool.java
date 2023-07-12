@@ -76,7 +76,6 @@ public class ScannerTool implements ControllerTool {
     ToggleGroup measureTypeGroup = new ToggleGroup();
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
-    static Consumer createControllerAction = null;
     TRACTGUI tractGUI = null;
     TablePlotGUI plotGUI = null;
     MinerController miner;
@@ -108,10 +107,6 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
-    }
-
-    public static void addCreateAction(Consumer<ScannerTool> action) {
-        createControllerAction = action;
     }
 
     @Override
@@ -266,10 +261,6 @@ public class ScannerTool implements ControllerTool {
         return chart;
     }
 
-    public FXMLController getFXMLController() {
-        return controller;
-    }
-
     public ScanTable getScanTable() {
         return scanTable;
     }
@@ -303,10 +294,10 @@ public class ScannerTool implements ControllerTool {
                     return;
                 }
             }
-            double[] ppms = chart.getVerticalCrosshairPositions();
+            double[] ppms = chart.getCrossHairs().getVerticalPositions();
             double[] wppms = new double[2];
-            wppms[0] = chart.getAxis(0).getLowerBound();
-            wppms[1] = chart.getAxis(0).getUpperBound();
+            wppms[0] = chart.getAxes().get(0).getLowerBound();
+            wppms[1] = chart.getAxes().get(0).getUpperBound();
             int extra = 1;
 
             Measure measure = new Measure(columnName, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
@@ -357,10 +348,10 @@ public class ScannerTool implements ControllerTool {
 
     private void measureSearchBins() {
         int nBins = 100;
-        double[] ppms = chart.getVerticalCrosshairPositions();
+        double[] ppms = chart.getCrossHairs().getVerticalPositions();
         double[] wppms = new double[2];
-        wppms[0] = chart.getAxis(0).getLowerBound();
-        wppms[1] = chart.getAxis(0).getUpperBound();
+        wppms[0] = chart.getAxes().get(0).getLowerBound();
+        wppms[1] = chart.getAxes().get(0).getUpperBound();
         int extra = 1;
 
         Measure measure = new Measure("binValues", 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
@@ -503,8 +494,8 @@ public class ScannerTool implements ControllerTool {
             }
         }
         dataset.setRegions(regions);
-        chart.chartProps.setRegions(true);
-        chart.chartProps.setIntegrals(false);
+        chart.getChartProperties().setRegions(true);
+        chart.getChartProperties().setIntegrals(false);
         chart.refresh();
     }
 
@@ -513,7 +504,7 @@ public class ScannerTool implements ControllerTool {
         List<DatasetRegion> regions = new ArrayList<>();
 
         dataset.setRegions(regions);
-        chart.chartProps.setRegions(false);
+        chart.getChartProperties().setRegions(false);
         chart.refresh();
     }
 
@@ -541,40 +532,42 @@ public class ScannerTool implements ControllerTool {
 
     /**
      * Loads the short version of the regions file into the scanner table.
+     *
      * @param file The file to load
      * @throws IOException
      */
     private void loadRegionsShort(File file) throws IOException {
-            try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
-                String s;
-                while ((s = reader.readLine()) != null) {
-                    String[] fields = s.split("\\s+");
-                    if (fields.length > 2) {
-                        String name = fields[0];
-                        StringBuilder sBuilder = new StringBuilder();
-                        for (int i = 1; i < fields.length; i++) {
-                            sBuilder.append(fields[i]);
-                            if (i != fields.length - 1) {
-                                sBuilder.append("_");
-                            }
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+            String s;
+            while ((s = reader.readLine()) != null) {
+                String[] fields = s.split("\\s+");
+                if (fields.length > 2) {
+                    String name = fields[0];
+                    StringBuilder sBuilder = new StringBuilder();
+                    for (int i = 1; i < fields.length; i++) {
+                        sBuilder.append(fields[i]);
+                        if (i != fields.length - 1) {
+                            sBuilder.append("_");
                         }
-                        String columnPrefix;
-                        if (name.startsWith("V.")) {
-                            columnPrefix = scanTable.getNextColumnName("", sBuilder.toString());
-                        } else {
-                            columnPrefix = name;
-                        }
-                        sBuilder.insert(0, ':');
-                        sBuilder.insert(0, columnPrefix);
-                        scanTable.addTableColumn(sBuilder.toString(), "D");
                     }
+                    String columnPrefix;
+                    if (name.startsWith("V.")) {
+                        columnPrefix = scanTable.getNextColumnName("", sBuilder.toString());
+                    } else {
+                        columnPrefix = name;
+                    }
+                    sBuilder.insert(0, ':');
+                    sBuilder.insert(0, columnPrefix);
+                    scanTable.addTableColumn(sBuilder.toString(), "D");
                 }
             }
+        }
     }
 
     /**
      * Loads the long version of the regions file into the Scanner table. The long version regions are assumed to
      * have a Measure Type of volume and an Offset Type of none.
+     *
      * @param file The file to load
      * @throws IOException
      */
@@ -623,7 +616,7 @@ public class ScannerTool implements ControllerTool {
 
     List<Double> toDoubleList(List<String> values) {
         List<Double> doubleValues = new ArrayList<>();
-        for (var s:values) {
+        for (var s : values) {
             try {
                 double dValue = Double.parseDouble(s);
                 doubleValues.add(dValue);
@@ -637,7 +630,7 @@ public class ScannerTool implements ControllerTool {
 
     List<Integer> toIntegerList(List<String> values) {
         List<Integer> intValues = new ArrayList<>();
-        for (var s:values) {
+        for (var s : values) {
             try {
                 int iValue = Integer.parseInt(s);
                 intValues.add(iValue);

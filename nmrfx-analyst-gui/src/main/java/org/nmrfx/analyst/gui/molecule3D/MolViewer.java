@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- *
  * @author Dub
  */
 public class MolViewer extends Pane {
@@ -470,8 +469,8 @@ public class MolViewer extends Pane {
      * Adds a box around the molecule.
      *
      * @param iStructure int Structure number
-     * @param radius double Radius of cylinder in plot
-     * @param tag String Tag applied to every associated object
+     * @param radius     double Radius of cylinder in plot
+     * @param tag        String Tag applied to every associated object
      * @throws InvalidMoleculeException
      */
     public void addBox(int iStructure, double radius, String tag) throws InvalidMoleculeException {
@@ -527,9 +526,9 @@ public class MolViewer extends Pane {
      * SVD or RDC calculations.
      *
      * @param iStructure int Structure number
-     * @param radius double Radius of cylinder in plot
-     * @param tag String Tag applied to every associated object
-     * @param type String Axis type (rdc, svd, original).
+     * @param radius     double Radius of cylinder in plot
+     * @param tag        String Tag applied to every associated object
+     * @param type       String Axis type (rdc, svd, original).
      * @throws InvalidMoleculeException
      */
     public void addAxes(int iStructure, double radius, String tag, String type) throws InvalidMoleculeException {
@@ -684,7 +683,7 @@ public class MolViewer extends Pane {
     }
 
     public void createItems(String mode, String[] args, ArrayList<Bond> bonds,
-            List<BondLine> bondLines, List<Atom> atoms, List<AtomSphere> atomSpheres) {
+                            List<BondLine> bondLines, List<Atom> atoms, List<AtomSphere> atomSpheres) {
         String type = "";
         String text = "";
         double sphereRadius = 0.3;

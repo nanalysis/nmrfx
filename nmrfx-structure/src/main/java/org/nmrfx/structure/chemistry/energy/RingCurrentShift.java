@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,22 +17,14 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Compound;
-import org.nmrfx.chemistry.CoordSet;
-import org.nmrfx.chemistry.Entity;
-import org.nmrfx.chemistry.PPMv;
-import org.nmrfx.chemistry.Point3;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.SpatialSet;
+import org.apache.commons.math3.geometry.euclidean.threed.Line;
+import org.apache.commons.math3.geometry.euclidean.threed.Plane;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.nmrfx.chemistry.*;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.geometry.euclidean.threed.Plane;
-import org.apache.commons.math3.geometry.euclidean.threed.Line;
-import org.nmrfx.chemistry.MoleculeBase;
 
 public class RingCurrentShift {
 
@@ -148,7 +140,8 @@ public class RingCurrentShift {
             return sameRing;
         }
     }
-//￼1.05 0.92 1.04 0.90 0.43
+
+    //￼1.05 0.92 1.04 0.90 0.43
     static final String[] pheAtoms0 = {"CG", "CD2", "CE2", "CZ", "CE1", "CD1"};
     static final String[] tyrAtoms0 = {"CG", "CD2", "CE2", "CZ", "CE1", "CD1"};
     static final String[] trpAtoms0 = {"CD2", "CE3", "CZ3", "CH2", "CZ2", "CE2"};
@@ -309,12 +302,12 @@ public class RingCurrentShift {
      * calling this method the list of aromatic rings in the molecule needs to
      * me set up.
      *
-     * @see makeRingList
      * @param targetSpatialSet The spatial set for the target atom
-     * @param iStruct The structure set to get coordinates from
-     * @param ringRatio An empirically calibrated ratio from our fitting
-     * algorithm
+     * @param iStruct          The structure set to get coordinates from
+     * @param ringRatio        An empirically calibrated ratio from our fitting
+     *                         algorithm
      * @return
+     * @see makeRingList
      */
     public double calcRingContributions(SpatialSet targetSpatialSet, int iStruct, final double ringRatio) {
         double targetFactor = 5.45 * ringRatio;  // 5.45 from Osapay & Case JACS 1991

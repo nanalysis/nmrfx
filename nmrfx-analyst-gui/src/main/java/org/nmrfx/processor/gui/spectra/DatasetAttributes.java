@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ import org.nmrfx.processor.datasets.DataCoordTransformer;
 import org.nmrfx.processor.datasets.DataGenerator;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
+import org.nmrfx.processor.gui.PolyChartAxes;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.utils.properties.ColorProperty;
 import org.nmrfx.utils.properties.PublicPropertyContainer;
@@ -667,7 +668,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         }
         rearrangeDim(dimC, ptC);
         int size = ptC[0][1] - ptC[0][0] + 1;
-        if ((iDim  == 0) && theFile.getComplex(0)) {
+        if ((iDim == 0) && theFile.getComplex(0)) {
             ptC[0][0] *= 2;
             ptC[0][1] *= 2;
         }
@@ -722,7 +723,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return rowIndex;
     }
 
-    public void updateBounds(AXMODE[] axModes, NMRAxis[] axes, DISDIM disDim) {
+    public void updateBounds(PolyChartAxes axes, DISDIM disDim) {
         int[][] localPt;
         double[][] limits;
         localPt = new int[nDim][2];
@@ -730,23 +731,23 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         limits = new double[nDim][2];
         for (int i = 0; i < nDim; i++) {
             if (i == 0) {
-                localPtD[i][0] = axModes[i].getIndexD(this, i, axes[0].getLowerBound());
-                localPtD[i][1] = axModes[i].getIndexD(this, i, axes[0].getUpperBound());
+                localPtD[i][0] = axes.getMode(i).getIndexD(this, i, axes.get(0).getLowerBound());
+                localPtD[i][1] = axes.getMode(i).getIndexD(this, i, axes.get(0).getUpperBound());
             } else if (i == 1) {
                 if (disDim == DISDIM.TwoD) {
-                    localPtD[i][0] = axModes[i].getIndexD(this, i, axes[1].getLowerBound());
-                    localPtD[i][1] = axModes[i].getIndexD(this, i, axes[1].getUpperBound());
+                    localPtD[i][0] = axes.getMode(i).getIndexD(this, i, axes.get(1).getLowerBound());
+                    localPtD[i][1] = axes.getMode(i).getIndexD(this, i, axes.get(1).getUpperBound());
                 } else {
                     localPtD[i][0] = 0;
                     localPtD[i][1] = theFile.getSizeReal(dim[i]) - 1.0;
                 }
-            } else if (axModes.length <= i) {
+            } else if (axes.count() <= i) {
                 localPtD[i][0] = theFile.getSizeReal(dim[i]) / 2.0;
                 localPtD[i][1] = theFile.getSizeReal(dim[i]) / 2.0;
             } else {
-                if (Objects.nonNull(axModes[i]) && Objects.nonNull(axes[i])) {
-                    localPtD[i][0] = axModes[i].getIndexD(this, i, axes[i].getLowerBound());
-                    localPtD[i][1] = axModes[i].getIndexD(this, i, axes[i].getUpperBound());
+                if (Objects.nonNull(axes.getMode(i)) && Objects.nonNull(axes.get(i))) {
+                    localPtD[i][0] = axes.getMode(i).getIndexD(this, i, axes.get(i).getLowerBound());
+                    localPtD[i][1] = axes.getMode(i).getIndexD(this, i, axes.get(i).getUpperBound());
                 }
             }
             if (localPtD[i][0] > localPtD[i][1]) {
@@ -1226,7 +1227,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
 
     public void setDims(int[] newDims) {
         for (int i = 0; i < newDims.length; i++) {
-            setDim(newDims[i],i);
+            setDim(newDims[i], i);
         }
     }
 
@@ -1463,7 +1464,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
             limit[1] = (theFile.getSizeReal(dim[i]) - 1) / theFile.getSw(dim[i]);
         } else if (mode == AXMODE.PPM) {
             limit[1] = theFile.pointToPPM(dim[i], 0.0);
-            limit[0] =  theFile.pointToPPM(dim[i],
+            limit[0] = theFile.pointToPPM(dim[i],
                     (theFile.getSizeReal(dim[i]) - 1));
         }
 
@@ -1631,11 +1632,11 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return offsets;
     }
 
-    public void moveRegion(IntegralHit iHit, NMRAxis[] axes, double[] newValue) {
+    public void moveRegion(IntegralHit iHit, PolyChartAxes axes, double[] newValue) {
         int handle = iHit.handle;
         DatasetRegion r = iHit.getDatasetRegion();
-        double newX = axes[0].getValueForDisplay(newValue[0]).doubleValue();
-        double newY = axes[1].getValueForDisplay(newValue[1]).doubleValue();
+        double newX = axes.getX().getValueForDisplay(newValue[0]).doubleValue();
+        double newY = axes.getY().getValueForDisplay(newValue[1]).doubleValue();
         switch (handle) {
             case 1:
                 double oldEnd = r.getRegionEndIntensity(0);

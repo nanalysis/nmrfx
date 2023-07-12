@@ -3,7 +3,6 @@ package org.nmrfx.processor.gui.spectra.mousehandlers;
 import javafx.scene.input.MouseEvent;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
-import org.nmrfx.processor.gui.spectra.MultipletSelection;
 
 import java.util.Optional;
 
@@ -37,8 +36,8 @@ public class IntegralMouseHandlerHandler extends MouseHandler {
     @Override
     public void mousePressed(MouseEvent mouseEvent) {
         PolyChart chart = mouseBindings.getChart();
-        startingLowPosition = chart.chartProps.getIntegralLowPos();
-        startingHighPosition = chart.chartProps.getIntegralHighPos();
+        startingLowPosition = chart.getChartProperties().getIntegralLowPos();
+        startingHighPosition = chart.getChartProperties().getIntegralHighPos();
     }
 
     @Override
@@ -83,8 +82,8 @@ public class IntegralMouseHandlerHandler extends MouseHandler {
         if (lowpos < 0.0) {
             lowpos = 0.0;
         }
-        chart.chartProps.setIntegralLowPos(lowpos);
-        chart.chartProps.setIntegralHighPos(highpos);
+        chart.getChartProperties().setIntegralLowPos(lowpos);
+        chart.getChartProperties().setIntegralHighPos(highpos);
         chart.refresh();
     }
 }

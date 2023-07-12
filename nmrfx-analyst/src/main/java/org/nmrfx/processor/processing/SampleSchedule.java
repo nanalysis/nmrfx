@@ -17,6 +17,11 @@
  */
 package org.nmrfx.processor.processing;
 
+import org.apache.commons.math3.random.Well19937c;
+import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -28,10 +33,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
-import org.apache.commons.math3.random.Well19937c;
-import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A SampleSchedule specifies the sequence of increments or array elements used
@@ -50,10 +51,10 @@ import org.slf4j.LoggerFactory;
  * IST : in python script <i>pyproc</i> - read a schedule from a file, and
  * perform IST processing.
  *
+ * @author bfetler
  * @see #v_samples
  * @see Ist
  * @since NMRViewJ 9.0
- * @author bfetler
  */
 public class SampleSchedule {
 
@@ -155,10 +156,9 @@ public class SampleSchedule {
      * Used by SAMPLE_SCHEDULE(mode='create') in python script <i>pyproc</i>.
      *
      * @param nSamples number of sampled points (must be less than total)
-     * @param nPoints total number of points
-     * @param path full path file name
-     * @param demo set true if nmr dataset not NUS acquisition
-     *
+     * @param nPoints  total number of points
+     * @param path     full path file name
+     * @param demo     set true if nmr dataset not NUS acquisition
      * @see Ist
      * @see #nSamples
      * @see #nPoints
@@ -187,7 +187,6 @@ public class SampleSchedule {
      *
      * @param path full path file name
      * @param demo set true if nmr dataset not NUS acquisition
-     *
      * @see Ist
      * @see #fpath
      */
@@ -202,6 +201,7 @@ public class SampleSchedule {
     }
 
     /**
+     *
      */
     public SampleSchedule(int p, int z) {
         this.nSamples = p;
@@ -212,6 +212,7 @@ public class SampleSchedule {
     }
 
     /**
+     *
      */
     public SampleSchedule(int p, int z, boolean endOnly) {
         this.nSamples = p;
@@ -486,8 +487,7 @@ public class SampleSchedule {
      *
      * @param lambda average gap length, calculated from p_sampled and z_total
      * @return gap size increment, zero or random positive integer
-     * @see
-     * <a href='http://www.itl.nist.gov/div898/handbook/eda/section3/eda366j.htm'>Poisson
+     * @see <a href='http://www.itl.nist.gov/div898/handbook/eda/section3/eda366j.htm'>Poisson
      * Distribution from NIST</a>
      */
     private int poisson(double lambda) {

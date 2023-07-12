@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- *
  * @author brucejohnson
  */
 @PythonAPI("dscript")
@@ -83,7 +82,7 @@ public class PeakPicker {
     }
 
     public boolean checkForPeak(double centerValue, int[] pt,
-            int[] dim, boolean findMax, boolean fixedPick, double regionSizeHz, int nPeakDim, int sign) {
+                                int[] dim, boolean findMax, boolean fixedPick, double regionSizeHz, int nPeakDim, int sign) {
         int[] checkPoint = new int[nDim];
         int[] deltaPoint = new int[nDim];
         int[] testPoint = new int[nDim];
@@ -186,8 +185,8 @@ public class PeakPicker {
     }
 
     public boolean measurePeak(double threshold, int[] pt, double[] cpt,
-            int[] dim, int[] pldim, boolean fixedPick, Peak peak, int nPeakDim,
-            double sDevN, int sign, boolean measurePeak) throws IOException {
+                               int[] dim, int[] pldim, boolean fixedPick, Peak peak, int nPeakDim,
+                               double sDevN, int sign, boolean measurePeak) throws IOException {
         double testValue = 0.0;
         int[] checkPoint = new int[nDim];
         int[] maxWidth = new int[nDim];
@@ -513,7 +512,7 @@ public class PeakPicker {
                 double mean = stats.getMean();
                 double stdDev = stats.getStandardDeviation();
                 double tol = mean - 3.0 * stdDev;
-                if(log.isInfoEnabled()) {
+                if (log.isInfoEnabled()) {
                     DecimalFormat decimalFormatter = new DecimalFormat("#######.###");
                     log.info("purge {} {} {}", decimalFormatter.format(mean), decimalFormatter.format(stdDev), decimalFormatter.format(tol));
                 }

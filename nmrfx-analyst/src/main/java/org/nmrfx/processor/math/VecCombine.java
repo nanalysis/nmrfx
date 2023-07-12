@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,14 +20,13 @@ package org.nmrfx.processor.math;
 import org.nmrfx.math.VecBase;
 
 /**
- *
  * @author brucejohnson
  */
 // redundant with Combine.java,  kept for use from VecCmd
 public class VecCombine {
 
     public static void comb2(double[] coef, Vec[] inVec,
-            boolean inComplex, Vec[] outVec) throws IllegalArgumentException {
+                             boolean inComplex, Vec[] outVec) throws IllegalArgumentException {
         int nIn = inVec.length;
         int nOut = outVec.length;
 

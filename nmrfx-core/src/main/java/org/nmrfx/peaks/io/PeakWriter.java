@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,67 +27,66 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * @author Bruce Johnson
  */
 @PythonAPI("pscript")
 public class PeakWriter {
 
-    static final String[] XPKDIMSTRINGS = {
-        "label",
-        "code",
-        "units",
-        "sf",
-        "sw",
-        "fp",
-        "idtol",
-        "pattern",
-        "bonded",
-        "spatial",
-        "folding",
-        "abspos",
-        "acqdim"};
-    static final String[] NEF_PEAK_DIM_STRINGS = {"_nef_spectrum_dimension.dimension_id",
-        "_nef_spectrum_dimension.axis_unit",
-        "_nef_spectrum_dimension.axis_code",
-        "_nef_spectrum_dimension.spectrometer_frequency",
-        "_nef_spectrum_dimension.spectral_width",
-        "_nef_spectrum_dimension.value_first_point",
-        "_nef_spectrum_dimension.folding",
-        "_nef_spectrum_dimension.absolute_peak_positions",
-        "_nef_spectrum_dimension.is_acquisition"};
+    private static final String[] XPKDIMSTRINGS = {
+            "label",
+            "code",
+            "units",
+            "sf",
+            "sw",
+            "fp",
+            "idtol",
+            "pattern",
+            "bonded",
+            "spatial",
+            "folding",
+            "abspos",
+            "acqdim"};
+    private static final String[] NEF_PEAK_DIM_STRINGS = {"_nef_spectrum_dimension.dimension_id",
+            "_nef_spectrum_dimension.axis_unit",
+            "_nef_spectrum_dimension.axis_code",
+            "_nef_spectrum_dimension.spectrometer_frequency",
+            "_nef_spectrum_dimension.spectral_width",
+            "_nef_spectrum_dimension.value_first_point",
+            "_nef_spectrum_dimension.folding",
+            "_nef_spectrum_dimension.absolute_peak_positions",
+            "_nef_spectrum_dimension.is_acquisition"};
 
     // //     1   ppm   1H    500.13   4.998700337912143    9.898700337912143    circular   true   true
-    static final String[] NEF_PEAK_ROW_STRINGS = {"_nef_peak.ordinal",
-        "_nef_peak.peak_id",
-        "_nef_peak.volume",
-        "_nef_peak.volume_uncertainty",
-        "_nef_peak.height",
-        "_nef_peak.height_uncertainty",
-        "_nef_peak.position_1",
-        "_nef_peak.position_uncertainty_1",
-        "_nef_peak.position_2",
-        "_nef_peak.position_uncertainty_2",
-        "_nef_peak.position_3",
-        "_nef_peak.position_uncertainty_3",
-        "_nef_peak.chain_code_1",
-        "_nef_peak.sequence_code_1",
-        "_nef_peak.residue_type_1",
-        "_nef_peak.atom_name_1",
-        "_nef_peak.chain_code_2",
-        "_nef_peak.sequence_code_2",
-        "_nef_peak.residue_type_2",
-        "_nef_peak.atom_name_2",
-        "_nef_peak.chain_code_3",
-        "_nef_peak.sequence_code_3",
-        "_nef_peak.residue_type_3",
-        "_nef_peak.atom_name_3"};
-    static String[] ASSIGNED_PEAK_CHEMSHIFT_STRINGS = {
-        "_Assigned_peak_chem_shift.Peak_ID",
-        "_Assigned_peak_chem_shift.Spectral_dim_ID",
-        "_Assigned_peak_chem_shift.Val",
-        "_Assigned_peak_chem_shift.Resonance_ID",
-        "_Assigned_peak_chem_shift.Spectral_peak_list_ID",};
+    private static final String[] NEF_PEAK_ROW_STRINGS = {"_nef_peak.ordinal",
+            "_nef_peak.peak_id",
+            "_nef_peak.volume",
+            "_nef_peak.volume_uncertainty",
+            "_nef_peak.height",
+            "_nef_peak.height_uncertainty",
+            "_nef_peak.position_1",
+            "_nef_peak.position_uncertainty_1",
+            "_nef_peak.position_2",
+            "_nef_peak.position_uncertainty_2",
+            "_nef_peak.position_3",
+            "_nef_peak.position_uncertainty_3",
+            "_nef_peak.chain_code_1",
+            "_nef_peak.sequence_code_1",
+            "_nef_peak.residue_type_1",
+            "_nef_peak.atom_name_1",
+            "_nef_peak.chain_code_2",
+            "_nef_peak.sequence_code_2",
+            "_nef_peak.residue_type_2",
+            "_nef_peak.atom_name_2",
+            "_nef_peak.chain_code_3",
+            "_nef_peak.sequence_code_3",
+            "_nef_peak.residue_type_3",
+            "_nef_peak.atom_name_3"};
+    private static final String[] ASSIGNED_PEAK_CHEMSHIFT_STRINGS = {
+            "_Assigned_peak_chem_shift.Peak_ID",
+            "_Assigned_peak_chem_shift.Spectral_dim_ID",
+            "_Assigned_peak_chem_shift.Val",
+            "_Assigned_peak_chem_shift.Resonance_ID",
+            "_Assigned_peak_chem_shift.Spectral_peak_list_ID",};
 
     public static void writePeaksXPK2(String fileName, PeakList peakList) throws IOException, InvalidPeakException {
         try (FileWriter writer = new FileWriter(fileName)) {

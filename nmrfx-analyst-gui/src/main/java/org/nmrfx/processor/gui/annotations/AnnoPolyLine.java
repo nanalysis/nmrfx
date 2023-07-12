@@ -52,7 +52,7 @@ public class AnnoPolyLine extends AnnoShape {
     }
 
     @Override
-    public boolean hit( double x, double y, boolean selectMode) {
+    public boolean hit(double x, double y, boolean selectMode) {
         return false;
     }
 

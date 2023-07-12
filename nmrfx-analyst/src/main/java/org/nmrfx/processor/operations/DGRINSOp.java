@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,6 @@ import java.io.IOException;
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 
 /**
- *
  * @author Bruce Johnson
  */
 @PythonAPI("pyproc")
@@ -69,7 +68,7 @@ public class DGRINSOp extends DatasetOperation {
             MatrixND matrix = getMatrixNDFromFile(dataset, dim, i);
             int[] zeroList = IstMatrix.genZeroList(schedule, matrix);
             int[] srcTargetMap = genSrcTargetMap(schedule, matrix);
-            GRINS smile = new GRINS(matrix, noise, scale, phase,  true, false, zeroList, srcTargetMap, null);
+            GRINS smile = new GRINS(matrix, noise, scale, phase, true, false, zeroList, srcTargetMap, null);
             smile.exec();
             try {
                 dataset.writeMatrixNDToDatasetFile(dim, matrix);

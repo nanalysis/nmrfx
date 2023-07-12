@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public class RegionMouseHandlerHandler extends MouseHandler {
     final IntegralHit integralHit;
+
     public RegionMouseHandlerHandler(MouseBindings mouseBindings, IntegralHit integralHit) {
         super(mouseBindings);
         this.integralHit = integralHit;

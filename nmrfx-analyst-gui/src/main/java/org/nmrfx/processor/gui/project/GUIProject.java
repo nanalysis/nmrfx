@@ -45,17 +45,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class GUIProject extends ProjectBase {
     private static final Logger log = LoggerFactory.getLogger(GUIProject.class);
-
-    static String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
-
-    Git git;
-
+    private static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     private static boolean commitActive = false;
+
+    private Git git;
+
 
     public GUIProject(String name) {
         super(name);
@@ -88,7 +86,7 @@ public class GUIProject extends ProjectBase {
         return null;
     }
 
-    public void createProject(Path projectDir) throws IOException{
+    public void createProject(Path projectDir) throws IOException {
         if (Files.exists(projectDir)) {
             throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
         }
@@ -127,7 +125,7 @@ public class GUIProject extends ProjectBase {
             String homePath = getEnvironmentVariable("HOMEPATH");
             if (homeDrive != null && homePath != null) {
                 setUserHome = isFileWritable(new File(homeDrive, homePath));
-            }  else {
+            } else {
                 String homeShare = getEnvironmentVariable("HOMESHARE");
                 if (homeShare != null) {
                     setUserHome = isFileWritable(new File(homeShare));
@@ -182,7 +180,7 @@ public class GUIProject extends ProjectBase {
     public static boolean checkProjectActive() {
         ProjectBase project = ProjectBase.getActive();
         boolean hasMolecules = !MoleculeFactory.getMolecules().isEmpty();
-        boolean hasDatasets =  project != null && !project.getDatasets().isEmpty();
+        boolean hasDatasets = project != null && !project.getDatasets().isEmpty();
         boolean hasPeakLists = project != null && !project.getPeakLists().isEmpty();
         return hasMolecules || hasDatasets || hasPeakLists;
     }

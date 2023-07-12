@@ -18,7 +18,6 @@
 package org.nmrfx.jmx.mbeans;
 
 import org.nmrfx.console.ConsoleController;
-import org.nmrfx.jmx.mbeans.ConsoleMBean;
 
 /**
  * Use NMRfx's console from JMX.

@@ -27,7 +27,7 @@ import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.spectra.CrossHairs;
+import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
@@ -119,6 +119,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     /**
      * Adds/Populates the changeMoleculeMenu to the "Molecule" SplitMenuButton if atleast one
      * molecule is loaded into memory, otherwise the menu is removed.
+     *
      * @param event The on showing event.
      */
     private void adjustMenuOptions(Event event) {
@@ -141,7 +142,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         changeMoleculeMenu.getItems().clear();
         Set<String> moleculeNames = (Set<String>) MoleculeFactory.getMoleculeNames();
         MenuItem moleculeMenuItem;
-        for (String moleculeName: moleculeNames) {
+        for (String moleculeName : moleculeNames) {
             moleculeMenuItem = new MenuItem(moleculeName);
             moleculeMenuItem.setOnAction(this::moleculeSelected);
             changeMoleculeMenu.getItems().add(moleculeMenuItem);
@@ -150,6 +151,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
     /**
      * Sets the selected molecule as the active molecule and updates it on the active chart.
+     *
      * @param actionEvent
      */
     private void moleculeSelected(ActionEvent actionEvent) {
@@ -188,8 +190,8 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             if (analyzer != null) {
                 analyzer.clearAnalysis();
             }
-            chart.chartProps.setRegions(false);
-            chart.chartProps.setIntegrals(false);
+            chart.getChartProperties().setRegions(false);
+            chart.getChartProperties().setIntegrals(false);
             AnalystApp.getAnalystApp().hidePopover(true);
             chart.refresh();
             return true;
@@ -239,8 +241,8 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 dataset.setNormFromRegions(regions);
             }
             chart.refresh();
-            chart.chartProps.setRegions(true);
-            chart.chartProps.setIntegrals(true);
+            chart.getChartProperties().setRegions(true);
+            chart.getChartProperties().setIntegrals(true);
             chart.setActiveRegion(null);
             chart.refresh();
         }
@@ -251,11 +253,11 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         if (analyzer != null) {
             PolyChart chart = getChart();
             CrossHairs crossHairs = chart.getCrossHairs();
-            if (!crossHairs.hasCrosshairState("h0")) {
+            if (!crossHairs.hasState("h0")) {
                 warn("Threshold", "Must have horizontal crosshair");
                 return;
             }
-            Double[] pos = crossHairs.getCrossHairPositions(0);
+            Double[] pos = crossHairs.getPositions(0);
             analyzer.setThreshold(pos[1]);
         }
     }
@@ -293,8 +295,8 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             if (regionFile != null) {
                 try {
                     analyzer.loadRegions(regionFile);
-                    getChart().chartProps.setIntegrals(true);
-                    getChart().chartProps.setRegions(true);
+                    getChart().getChartProperties().setIntegrals(true);
+                    getChart().getChartProperties().setRegions(true);
                     getChart().refresh();
                 } catch (IOException ioE) {
                     GUIUtils.warn("Error reading regions file", ioE.getMessage());
@@ -319,8 +321,8 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             PeakList peakList = analyzer.getPeakList();
             List<String> peakListNames = new ArrayList<>();
             peakListNames.add(peakList.getName());
-            chart.chartProps.setRegions(false);
-            chart.chartProps.setIntegrals(true);
+            chart.getChartProperties().setRegions(false);
+            chart.getChartProperties().setIntegrals(true);
             chart.updatePeakLists(peakListNames);
             var dStat = peakList.widthDStats(0);
             double minWidth = dStat.getPercentile(10);
@@ -366,8 +368,8 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 List<String> peakListNames = new ArrayList<>();
                 peakListNames.add(peakList.getName());
                 PolyChart chart = getChart();
-                chart.chartProps.setRegions(false);
-                chart.chartProps.setIntegrals(true);
+                chart.getChartProperties().setRegions(false);
+                chart.getChartProperties().setIntegrals(true);
                 chart.updatePeakLists(peakListNames);
                 chart.refresh();
             } catch (IOException ex) {
@@ -406,7 +408,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                         CanvasAnnotation.POSTYPE.PIXEL,
                         peakList.getName());
                 PolyChart chart = getChart();
-                chart.chartProps.setTopBorderSize(50);
+                chart.getChartProperties().setTopBorderSize(50);
 
                 chart.clearAnnoType(AnnoJournalFormat.class);
                 chart.addAnnotation(annoText);
@@ -424,7 +426,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             }
 
             PolyChart chart = getChart();
-            chart.chartProps.setTopBorderSize(7);
+            chart.getChartProperties().setTopBorderSize(7);
             chart.clearAnnoType(AnnoJournalFormat.class);
             chart.refresh();
         }

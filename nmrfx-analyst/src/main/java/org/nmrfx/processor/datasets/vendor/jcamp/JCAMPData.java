@@ -22,10 +22,7 @@ import com.nanalysis.jcamp.parser.JCampParser;
 import com.nanalysis.jcamp.util.JCampUtil;
 import org.apache.commons.math3.complex.Complex;
 import org.codehaus.commons.nullanalysis.Nullable;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetException;
-import org.nmrfx.processor.datasets.DatasetGroupIndex;
-import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.datasets.*;
 import org.nmrfx.processor.datasets.parameters.*;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
@@ -58,20 +55,26 @@ public class JCAMPData implements NMRData {
      * JCamp-defined acquisition scheme.
      */
     enum AcquisitionScheme {
-        UNDEFINED("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        NOT_PHASE_SENSITIVE("sep", new double[0]),
-        TPPI("real", new double[0]),
-        STATES("hyper-r", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        STATES_TPPI("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        ECHO_ANTIECHO("echo-antiecho-r", new double[]{1, 0, -1, 0, 0, 1, 0, 1}),
-        QSEQ("real", new double[0]);
+        UNDEFINED(AcquisitionType.HYPER),
+        NOT_PHASE_SENSITIVE(AcquisitionType.SEP),
+        TPPI(AcquisitionType.REAL),
+        STATES(AcquisitionType.HYPER_R),
+        STATES_TPPI(AcquisitionType.HYPER),
+        ECHO_ANTIECHO(AcquisitionType.ECHO_ANTIECHO_R),
+        QSEQ(AcquisitionType.REAL);
 
-        public final String symbolicCoefs;
-        public final double[] coefs;
+        private final AcquisitionType acquisitionType;
 
-        AcquisitionScheme(String symbolicCoefs, double[] coefs) {
-            this.symbolicCoefs = symbolicCoefs;
-            this.coefs = coefs;
+        AcquisitionScheme(AcquisitionType acquisitionType) {
+            this.acquisitionType = acquisitionType;
+        }
+
+        public String getSymbolicCoefs() {
+            return acquisitionType.getLabel();
+        }
+
+        public double[] getCoefs() {
+            return acquisitionType.getCoefficients();
         }
     }
 
@@ -155,6 +158,10 @@ public class JCAMPData implements NMRData {
             matrix[i] = pages.get(i).toArray();
         }
         return matrix;
+    }
+
+    public String getTitle() {
+        return document.getTitle();
     }
 
     @Override
@@ -339,9 +346,9 @@ public class JCAMPData implements NMRData {
         // if none is present, then try to guess from first/last timestamps
 
         Optional<Label> label = getSWLabel(dim);
-        if(label.isPresent()) {
+        if (label.isPresent()) {
             return block.get(label.get(), dim).getDouble();
-        } else if(dim == 0 && block.contains(FIRST) && block.contains(LAST)) {
+        } else if (dim == 0 && block.contains(FIRST) && block.contains(LAST)) {
             log.debug("Trying to guess SW from FIRST and LAST records for dimension {}", dim);
             double first = block.get(FIRST).getDoubles()[0];
             double last = block.get(LAST).getDoubles()[0];
@@ -481,7 +488,7 @@ public class JCAMPData implements NMRData {
         }
 
         AcquisitionScheme scheme = getAcquisitionScheme();
-        return scheme == null ? new double[0] : scheme.coefs;
+        return scheme == null ? new double[0] : scheme.getCoefs();
     }
 
     @Override
@@ -491,7 +498,7 @@ public class JCAMPData implements NMRData {
         }
 
         AcquisitionScheme scheme = getAcquisitionScheme();
-        return scheme == null ? null : scheme.symbolicCoefs;
+        return scheme == null ? null : scheme.getSymbolicCoefs();
     }
 
     @Override
@@ -766,11 +773,11 @@ public class JCAMPData implements NMRData {
 
     @Override
     public boolean getNegateImag(int dim) {
-        if(dim == 0) {
+        if (dim == 0) {
             return false;
         }
 
-        if("sep".equals(getSymbolicCoefs(dim))) {
+        if (AcquisitionType.SEP.getLabel().equals(getSymbolicCoefs(dim))) {
             return false;
         }
         boolean reverse = block.optional($REVERSE, dim).map(JCampRecord::getString)
@@ -857,16 +864,18 @@ public class JCAMPData implements NMRData {
 
     /**
      * Get the total size of a dimension including both real and imaginary.
+     *
      * @param dim The dimension to use.
      * @return The total size.
      */
     private int getTotalSize(int dim) {
-        int factor = isComplex(dim) ? 2: 1;
+        int factor = isComplex(dim) ? 2 : 1;
         return getSize(dim) * factor;
     }
 
     /**
      * Get a name to use for a dataset based on the provided filename.
+     *
      * @param file The File object to parse the dataset name from.
      * @return A String dataset name.
      */
@@ -882,6 +891,7 @@ public class JCAMPData implements NMRData {
     /**
      * Create a Dataset from the JCAMP data. This method assumes the JCAMP data has already
      * been processed.
+     *
      * @param datasetName The String name to use for the new Dataset.
      * @return The newly created Dataset.
      * @throws IOException
@@ -892,7 +902,7 @@ public class JCAMPData implements NMRData {
         Path fpath = file.toPath();
 
         int[] dimSizes = new int[getNDim()];
-        for(int i = 0; i < getNDim(); i++) {
+        for (int i = 0; i < getNDim(); i++) {
             dimSizes[i] = getTotalSize(i);
         }
 
@@ -905,7 +915,7 @@ public class JCAMPData implements NMRData {
         // Set the processed data into the dataset
         boolean hasImaginaryData = this.imaginary.length != 0;
         Vec complex;
-        for (int index = 0; index < this.real.length; index++){
+        for (int index = 0; index < this.real.length; index++) {
             if (hasImaginaryData) {
                 complex = new Vec(this.real[index], this.imaginary[index]);
             } else {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * Contour.java
  *
  * Created on December 15, 2002, 6:13 PM
@@ -29,7 +29,6 @@ import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsIOException;
 
 /**
- *
  * @author johnbruc
  */
 public class Contour extends java.lang.Object {
@@ -54,7 +53,7 @@ public class Contour extends java.lang.Object {
     float rampEnd = 4;
     float plateauEnd = 8;
     int[] offsets = {
-        0, 1, 6, 2, 11, 5, 7, 3, 12, 13, 10, 14, 8, 9, 4, 15
+            0, 1, 6, 2, 11, 5, 7, 3, 12, 13, 10, 14, 8, 9, 4, 15
     };
     int[][] cells;
 

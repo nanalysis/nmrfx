@@ -1,19 +1,11 @@
 package org.nmrfx.processor.optimization;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.function.BiFunction;
-import java.util.stream.IntStream;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.NotPositiveException;
 import org.apache.commons.math3.exception.NotStrictlyPositiveException;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
-import org.apache.commons.math3.optim.InitialGuess;
-import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.PointValuePair;
-import org.apache.commons.math3.optim.SimpleBounds;
-import org.apache.commons.math3.optim.SimpleValueChecker;
+import org.apache.commons.math3.optim.*;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
@@ -27,10 +19,15 @@ import org.codehaus.janino.ExpressionEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.function.BiFunction;
+import java.util.stream.IntStream;
+
 public class Fitter {
 
     private static final Logger log = LoggerFactory.getLogger(Fitter.class);
-    static RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
+    private static final RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
 
     boolean reportFitness = false;
     int reportAt = 10;
@@ -320,7 +317,8 @@ public class Fitter {
                         new ObjectiveFunction(this), GoalType.MINIMIZE,
                         new SimpleBounds(normLower, normUpper),
                         new InitialGuess(normGuess));
-            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
+            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException |
+                     TooManyEvaluationsException e) {
                 throw new Exception("failure to fit data " + e.getMessage());
             }
             endTime = System.currentTimeMillis();

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@ import org.nmrfx.processor.datasets.vendor.varian.VarianData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
-import org.nmrfx.utilities.RemoteDataset;
+import org.nmrfx.utilities.DatasetSummary;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -58,6 +58,7 @@ import java.util.Map;
  * values are returned for a dimension
  * <i>dim</i>, which is 0-based, e.g. 0, 1, 2, 3, 4. </p>
  *
+ * @author bfetler
  * @see NMRDataUtil
  * @see BrukerData
  * @see VarianData
@@ -65,14 +66,12 @@ import java.util.Map;
  * @see GaussianWt
  * @see FPMult
  * @see LPParams
- * @author bfetler
  */
 @PythonAPI("pyproc")
 public interface NMRData {
 
     /**
      * Return the size of a dimension in a data set.
-     *
      */
     void close();
 
@@ -159,7 +158,7 @@ public interface NMRData {
      * before completetion of experiment so the actual size is less than that
      * indicated by parameters.
      *
-     * @param dim dimension
+     * @param dim  dimension
      * @param size the acquisition size of data
      */
     void setSize(int dim, int size);
@@ -177,7 +176,7 @@ public interface NMRData {
     /**
      * Set the acquisition array size of a dimension.
      *
-     * @param dim dimension
+     * @param dim  dimension
      * @param size the acquisition size of data
      */
     default void setArraySize(int dim, int size) {
@@ -217,7 +216,7 @@ public interface NMRData {
      * Set the spectrometer frequency for the specified dimension. Used to
      * overwrite a value loaded by analysis of parameter files.
      *
-     * @param dim data dimension index
+     * @param dim   data dimension index
      * @param value new value for spectrometer frequency in MHz
      */
     void setSF(int dim, double value);
@@ -242,7 +241,7 @@ public interface NMRData {
      * Set the sweep width for the specified dimension. Used to overwrite a
      * value loaded by analysis of parameter files.
      *
-     * @param dim data dimension index
+     * @param dim   data dimension index
      * @param value new value for sweep width
      */
     void setSW(int dim, double value);
@@ -326,7 +325,7 @@ public interface NMRData {
     /**
      * Set whether the specified dimension has complex data
      *
-     * @param dim data dimension index
+     * @param dim   data dimension index
      * @param value if data is complex
      */
     default void setComplex(int dim, boolean value) {
@@ -364,6 +363,7 @@ public interface NMRData {
      * @return type of
      */
     String getFTType(int dim);
+
     /**
      * Return whether imaginary values should be negated. Negating the imaginary
      * value reverses the spectrum.
@@ -574,7 +574,7 @@ public interface NMRData {
     /**
      * Read i'th vector from an <i>NMRData</i> file and store in Complex array.
      *
-     * @param iVec integer index of vector to read
+     * @param iVec  integer index of vector to read
      * @param cdata complex array to store values in
      */
     void readVector(int iVec, Complex[] cdata);
@@ -583,7 +583,7 @@ public interface NMRData {
      * Read i'th vector from an <i>NMRData</i> file and store in two double
      * arrays.
      *
-     * @param iVec integer index of vector to read
+     * @param iVec  integer index of vector to read
      * @param idata array of double to put real values in
      * @param rdata array of double to put imaginary values in
      */
@@ -627,7 +627,6 @@ public interface NMRData {
 
     /**
      * reset acquisition order to default value
-     *
      */
     void resetAcqOrder();
 
@@ -722,9 +721,9 @@ public interface NMRData {
      *
      * @param path The path to the file containing the sampling schedule
      * @param demo set to true to indicate that dataset actually has full
-     * sampling. We just want to simulate NUS.
+     *             sampling. We just want to simulate NUS.
      * @return the SampleSchedule object
-     * @throws IOException if an I/O error occurs
+     * @throws IOException         if an I/O error occurs
      * @throws ProcessingException if a processing error occurs
      */
     default SampleSchedule readSampleSchedule(String path, boolean demo)
@@ -776,13 +775,13 @@ public interface NMRData {
     /**
      * Create a sample schedule (with Poisson - Gap sampling)
      *
-     * @param z Full size of acquistion
+     * @param z        Full size of acquistion
      * @param fraction fraction of total points actually sampled
-     * @param path Path to a sample file to create
-     * @param demo set to true to indicate that dataset actually has full
-     * sampling. We just want to simulate NUS.
-     * @param nmrdata The NMRData object that this schedule will be associated
-     * with
+     * @param path     Path to a sample file to create
+     * @param demo     set to true to indicate that dataset actually has full
+     *                 sampling. We just want to simulate NUS.
+     * @param nmrdata  The NMRData object that this schedule will be associated
+     *                 with
      * @return the SampleSchedule object
      * @throws ProcessingException if a processing error occurs
      */
@@ -803,7 +802,7 @@ public interface NMRData {
      * names.
      *
      * @param parNames List of parameter names to get values for.
-     * @param values Map in which to put parameter name and parameter value
+     * @param values   Map in which to put parameter name and parameter value
      */
     default void getPars(ArrayList<String> parNames, LinkedHashMap<String, Object> values) {
         for (String parName : parNames) {
@@ -856,26 +855,26 @@ public interface NMRData {
     }
 
     /**
-     * Get a RemoteDataset object with parameters from this dataset. Used when
+     * Get a DatasetSummary object with parameters from this dataset. Used when
      * indexing remote or local data repositories.
      *
-     * @return the RemoteData object constructed from this datasets parameters.
+     * @return the DatasetSummary object constructed from this dataset parameters.
      */
-    default RemoteDataset getRemoteData() {
-        RemoteDataset rData = new RemoteDataset();
-        rData.setUser(getUser());
-        rData.setText(getText());
-        rData.setSol(getSolvent());
-        rData.setPos(getSamplePosition());
-        rData.setSeq(getSequence());
-        rData.setSf(getSF(0));
-        rData.setTe(getTempK());
-        rData.setNd(getNDim());
-        rData.setTn(getTN(0));
-        rData.setVnd(getVendor());
-        rData.setNv(getNVectors());
-        rData.setTime(getZonedDate().format(DateTimeFormatter.ISO_DATE_TIME));
-        return rData;
+    default DatasetSummary getDatasetSummary() {
+        DatasetSummary datasetSummary = new DatasetSummary();
+        datasetSummary.setUser(getUser());
+        datasetSummary.setText(getText());
+        datasetSummary.setSol(getSolvent());
+        datasetSummary.setPos(getSamplePosition());
+        datasetSummary.setSeq(getSequence());
+        datasetSummary.setSf(getSF(0));
+        datasetSummary.setTe(getTempK());
+        datasetSummary.setNd(getNDim());
+        datasetSummary.setTn(getTN(0));
+        datasetSummary.setVnd(getVendor());
+        datasetSummary.setNv(getNVectors());
+        datasetSummary.setTime(getZonedDate().format(DateTimeFormatter.ISO_DATE_TIME));
+        return datasetSummary;
     }
 
     DatasetType getPreferredDatasetType();
@@ -884,10 +883,10 @@ public interface NMRData {
 
     List<DatasetGroupIndex> getSkipGroups();
 
-    default  List<int[]> getSkipIndices() {
+    default List<int[]> getSkipIndices() {
         List<int[]> result = new ArrayList<>();
         List<DatasetGroupIndex> groups = getSkipGroups();
-        for(var group:groups) {
+        for (var group : groups) {
             result.addAll(group.groupToIndices());
         }
         return result;

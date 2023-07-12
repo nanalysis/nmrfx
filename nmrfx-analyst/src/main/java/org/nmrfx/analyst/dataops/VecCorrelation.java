@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
  */
 public class VecCorrelation {
@@ -20,7 +19,7 @@ public class VecCorrelation {
 
     /**
      * ****************************************************************************
-     *                                                                            *
+     * *
      * Aligns chromatographic profiles P and T using correlation optimized *
      * warping (COW) * *
      * ****************************************************************************
@@ -484,7 +483,7 @@ public class VecCorrelation {
      * rather than time-serial data, the resolution of spectrum will becomes an
      * important issue. Just in case of information lose, it will be nice if the
      * sampling rate meets Nyquist-Shannon sampling theorem.
-     *
+     * <p>
      * FFT(Corr_r,s_(u)-> R*(w)S(w) (a.k.a Discrete Correlation Theorem), after
      * performing reverse Fourier transform, the maximal correlation will appear
      * at the the optimal shift

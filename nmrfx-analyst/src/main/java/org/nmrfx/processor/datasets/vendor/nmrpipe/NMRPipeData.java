@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@ package org.nmrfx.processor.datasets.vendor.nmrpipe;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -446,14 +447,12 @@ public class NMRPipeData implements NMRData {
 
     @Override
     public double[] getCoefs(int dim) {
-        double dcoefs[] = {1, 0, 0, 0, 0, 0, -1, 0}; // fixme
-        return dcoefs;
-
+        return AcquisitionType.HYPER.getCoefficients();
     }
 
     @Override
     public String getSymbolicCoefs(int dim) {
-        return "hyper";
+        return AcquisitionType.HYPER.getLabel();
     }
 
     @Override

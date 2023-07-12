@@ -50,7 +50,6 @@ public class PeakGeneratorGUI {
     private final Slider distanceSlider = new Slider(2, 7.0, 5.0);
     private final ChoiceBox<Integer> transferLimitChoice = new ChoiceBox<>();
     private final CheckBox useNCheckBox = new CheckBox("UseN");
-    String experimentClass = "";
     PeakGeneratorTypes peakGeneratorType = null;
     double sfH = 700.0;
 
@@ -224,7 +223,6 @@ public class PeakGeneratorGUI {
     }
 
     void setType(String type, PeakGeneratorTypes subType) {
-        this.experimentClass = type;
         this.peakGeneratorType = subType;
         typeLabel.setText(type);
         subTypeLabel.setText(subType.name());
@@ -399,7 +397,8 @@ public class PeakGeneratorGUI {
             }
             peakListProperty.set(newPeakList);
             switch (peakGeneratorType) {
-                case HNCO, HNCOCA, HNCOCACB, HNCACO, HNCA, HNCACB -> makeProteinPeakList(dataset, newPeakList, peakGeneratorType);
+                case HNCO, HNCOCA, HNCOCACB, HNCACO, HNCA, HNCACB ->
+                        makeProteinPeakList(dataset, newPeakList, peakGeneratorType);
                 case NOESY -> {
                     double range = distanceSlider.getValue();
                     try {

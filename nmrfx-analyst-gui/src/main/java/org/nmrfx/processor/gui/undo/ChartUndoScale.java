@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,15 +17,16 @@
  */
 package org.nmrfx.processor.gui.undo;
 
+import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class ChartUndoScale extends ChartUndo {
@@ -44,7 +45,7 @@ public class ChartUndoScale extends ChartUndo {
 
     @Override
     public boolean execute() {
-        Optional<PolyChart> optChart = PolyChart.getChart(name);
+        Optional<PolyChart> optChart = PolyChartManager.getInstance().findChartByName(name);
         optChart.ifPresent(c -> {
             setScales(c);
         });
@@ -54,7 +55,6 @@ public class ChartUndoScale extends ChartUndo {
     public void setScales(PolyChart chart) {
         List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         dataAttrs.stream().forEach(d -> {
-            double scale = d.getLvl();
             double[] scales = scaleMap.get(d.getFileName());
             if (scales != null) {
                 d.setLvl(scales[0]);

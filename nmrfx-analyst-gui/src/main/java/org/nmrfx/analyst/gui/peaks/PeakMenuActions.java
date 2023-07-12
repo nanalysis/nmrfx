@@ -23,12 +23,12 @@ import java.util.List;
 
 public class PeakMenuActions extends MenuActions {
     private static PeakTableController peakTableController;
+    private static PeakGeneratorGUI peakGeneratorGUI;
     private LigandScannerController scannerController;
     private NOETableController noeTableController;
     private AtomBrowser atomBrowser;
     private CheckMenuItem assignOnPick;
     private PeakAtomPicker peakAtomPicker;
-    private static PeakGeneratorGUI peakGeneratorGUI;
 
     public PeakMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);
@@ -160,10 +160,9 @@ public class PeakMenuActions extends MenuActions {
             atomBrowser = null;
         }
     }
-    public void pickedPeakAction(Object peakObject) {
+
+    public void pickedPeakAction(Peak peak) {
         if (assignOnPick.isSelected()) {
-            Peak peak = (Peak) peakObject;
-            System.out.println(peak.getName());
             PolyChart chart = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart();
             double x = chart.getMouseX();
             double y = chart.getMouseY();
@@ -176,6 +175,7 @@ public class PeakMenuActions extends MenuActions {
             peakAtomPicker.show(sXY.getX(), sXY.getY(), peak);
         }
     }
+
     public void assignPeak() {
         if (peakAtomPicker == null) {
             peakAtomPicker = new PeakAtomPicker();

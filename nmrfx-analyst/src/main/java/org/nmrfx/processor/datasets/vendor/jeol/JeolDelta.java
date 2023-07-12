@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.vendor.jeol;
 
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
@@ -137,10 +138,12 @@ public class JeolDelta implements NMRData {
             return null;
         }
     }
-  @Override
+
+    @Override
     public String getFTType(int iDim) {
         return "ft";
     }
+
     @Override
     public int getNVectors() {
         return nVectors;
@@ -265,14 +268,12 @@ public class JeolDelta implements NMRData {
 
     @Override
     public double[] getCoefs(int dim) {
-        double dcoefs[] = {1, 0, 0, 0, 0, 0, -1, 0}; // fixme
-        return dcoefs;
-
+        return AcquisitionType.HYPER.getCoefficients();
     }
 
     @Override
     public String getSymbolicCoefs(int dim) {
-        return "hyper";
+        return AcquisitionType.HYPER.getLabel();
     }
 
     @Override
@@ -692,6 +693,7 @@ public class JeolDelta implements NMRData {
         Strip() {
         }
     }
+
     static final private int[] subMatrixEdges = {8, 32, 8, 8, 4, 4, 2, 2};
     static final String[] axisNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"}; // are these right (after Z)
 

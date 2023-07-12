@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  *--------------------------------------------------------------
  *
  * TkMakeBezierCurve --
@@ -46,6 +46,7 @@ package org.nmrfx.processor.gui.spectra;
 import javafx.scene.shape.CubicCurveTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsIOException;
 
@@ -53,7 +54,7 @@ import org.nmrfx.graphicsio.GraphicsIOException;
 class BezierPath {
 
     public static void makeBezierCurve(double[] coords, int numSteps,
-            Path gPath, double smoothValue) {
+                                       Path gPath, double smoothValue) {
         // Assume we need to calculate the control
         // points between (x1,y1) and (x2,y2).
         // Then x0,y0 - the previous vertex,
@@ -149,7 +150,7 @@ class BezierPath {
     }
 
     public static void makeBezierCurve(double[] ncoords, int numSteps,
-            GraphicsContextInterface gC, double smoothValue, double xOffset, double yOffset, double width, double height, NMRAxis xAxis, NMRAxis yAxis) throws GraphicsIOException {
+                                       GraphicsContextInterface gC, double smoothValue, double xOffset, double yOffset, double width, double height, Axis xAxis, Axis yAxis) throws GraphicsIOException {
         // Assume we need to calculate the control
         // points between (x1,y1) and (x2,y2).
         // Then x0,y0 - the previous vertex,

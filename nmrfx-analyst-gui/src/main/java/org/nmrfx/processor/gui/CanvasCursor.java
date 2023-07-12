@@ -2,22 +2,21 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.scene.Cursor;
-import javafx.scene.ImageCursor;
-import javafx.scene.image.Image;
 import org.apache.commons.lang3.SystemUtils;
 
 public enum CanvasCursor {
-    CROSSHAIR(Cursor.CROSSHAIR, FontAwesomeIcon.PLUS),
-    SELECTOR(SystemUtils.IS_OS_LINUX ? Cursor.HAND : Cursor.MOVE, FontAwesomeIcon.MOUSE_POINTER),
-   // PEAK(IconUtilities.getCursor("fxgl_cross32", 16, 16), FontAwesomeIcon.CROSSHAIRS),
-    PEAK(Cursor.N_RESIZE, FontAwesomeIcon.ARROWS_V),
-    REGION(Cursor.E_RESIZE, FontAwesomeIcon.ARROWS_H);
+    SELECTOR(SystemUtils.IS_OS_LINUX ? Cursor.HAND : Cursor.MOVE, "Selector", FontAwesomeIcon.MOUSE_POINTER),
+    CROSSHAIR(Cursor.CROSSHAIR, "Crosshair", FontAwesomeIcon.PLUS),
+    PEAK(Cursor.N_RESIZE, "Peak", FontAwesomeIcon.ARROWS_V),
+    REGION(Cursor.E_RESIZE, "Region", FontAwesomeIcon.ARROWS_H);
 
-    final Cursor cursor;
-    final FontAwesomeIcon icon;
+    private final Cursor cursor;
+    private final String label;
+    private final FontAwesomeIcon icon;
 
-    CanvasCursor(Cursor cursor, FontAwesomeIcon icon) {
+    CanvasCursor(Cursor cursor, String label, FontAwesomeIcon icon) {
         this.cursor = cursor;
+        this.label = label;
         this.icon = icon;
     }
 
@@ -27,6 +26,10 @@ public enum CanvasCursor {
 
     public FontAwesomeIcon getIcon() {
         return icon;
+    }
+
+    public String getLabel() {
+        return label;
     }
 
     public static boolean isSelector(Cursor cursor) {

@@ -13,7 +13,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author brucejohnson
  */
 public class FragmentScoring {
@@ -83,6 +82,7 @@ public class FragmentScoring {
             aaDistMap.put(aaName, dist);
         }
     }
+
     static void initAADistMap() {
         BMRBStats.loadAllIfEmpty();
         for (String aaName : AtomParser.getAANames()) {
@@ -153,7 +153,7 @@ public class FragmentScoring {
     }
 
     public static Double scoreAtomPPM(final Residue residue, final String atomName,
-            final double ppm, final double sdevMul) {
+                                      final double ppm, final double sdevMul) {
         Double result = null;
         String resName = residue.getName();
         resName = resName.toLowerCase();

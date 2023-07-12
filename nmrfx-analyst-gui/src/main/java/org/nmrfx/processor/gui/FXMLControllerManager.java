@@ -134,7 +134,10 @@ public class FXMLControllerManager {
         AnalystApp.registerStage(stage);
 
         stage.focusedProperty().addListener(observable -> focusChanged(controller));
-        stage.setOnCloseRequest(e -> closeController(controller));
+        stage.setOnCloseRequest(e -> {
+            closeController(controller);
+            AnalystApp.removeStage(stage);
+        });
         stage.show();
 
         return controller;
@@ -152,16 +155,16 @@ public class FXMLControllerManager {
     }
 
     private void setActiveControllerFromChart() {
-        PolyChart activeChart = PolyChart.getActiveChart();
-        if (activeChart == null && !PolyChart.CHARTS.isEmpty()) {
-            activeChart = PolyChart.CHARTS.get(0);
+        PolyChart activeChart = PolyChartManager.getInstance().getActiveChart();
+        if (activeChart == null) {
+            activeChart = PolyChartManager.getInstance().getFirstChart();
         }
 
-        if (activeChart == null || activeChart.getController() == null) {
+        if (activeChart == null || activeChart.getFXMLController() == null) {
             setActiveController(null);
         } else {
-            setActiveController(activeChart.getController());
-            activeChart.getController().setActiveChart(activeChart);
+            setActiveController(activeChart.getFXMLController());
+            activeChart.getFXMLController().setActiveChart(activeChart);
         }
     }
 

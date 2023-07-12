@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,14 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.math;
-
-import org.nmrfx.math.VecException;
 
 /**
  * Thrown when a Vec should be real / complex or use the Apache formatting.
@@ -33,14 +31,13 @@ import org.nmrfx.math.VecException;
 public class IllegalVecState extends VecException {
 
     /**
-     *
-     * @param isComplex The Vec is complex
-     * @param isApache The Vec is using Apache formatting.
+     * @param isComplex       The Vec is complex
+     * @param isApache        The Vec is using Apache formatting.
      * @param shouldBeComplex The Vec should be Complex
-     * @param shouldBeApache The Vec should be using the Apache formatting.
+     * @param shouldBeApache  The Vec should be using the Apache formatting.
      */
     public IllegalVecState(boolean isComplex, boolean isApache,
-            boolean shouldBeComplex, boolean shouldBeApache) {
+                           boolean shouldBeComplex, boolean shouldBeApache) {
         super("Illegal Vec State: complex: " + isComplex + ", apache: " + isApache + ". Required: " + "complex: " + shouldBeComplex + ", apache: " + shouldBeApache + ".");
     }
 
@@ -48,7 +45,7 @@ public class IllegalVecState extends VecException {
      * Constructor where the Vec could either be Apache or not (this is when the Vec is real -- only the rvec can be
      * accessed).
      *
-     * @param isComplex The Vec is complex
+     * @param isComplex       The Vec is complex
      * @param shouldBeComplex The Vec should be Complex
      */
     public IllegalVecState(boolean isComplex, boolean shouldBeComplex) {

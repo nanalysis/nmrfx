@@ -1,23 +1,23 @@
-sequences :
-  - name : AC_hsqct1etf3gpsi3d
-    aliases :
-      -  .*hsqct1etf3gpsi3d.*
-      -  .*hsqct1.*
-    ndim : 3
-    vendor : bruker
-    vars :
-      ph0.1 : 0.0
-      ph1.1 : 0.0
-      ph0.2 : 0.0
-      ph1.2 : 0.0
-      ref.1 : "'H2O'"
-      fstart.1 : 15.0
-      fend.1 : 5.0
-      autoPh.1 : 1
-      autoPh.2 : 1
-      tdcomb.2 : "'echo-antiecho-r'"
+sequences:
+  - name: AC_hsqct1etf3gpsi3d
+    aliases:
+      - .*hsqct1etf3gpsi3d.*
+      - .*hsqct1.*
+    ndim: 3
+    vendor: bruker
+    vars:
+      ph0.1: 0.0
+      ph1.1: 0.0
+      ph0.2: 0.0
+      ph1.2: 0.0
+      ref.1: "'H2O'"
+      fstart.1: 15.0
+      fend.1: 5.0
+      autoPh.1: 1
+      autoPh.2: 1
+      tdcomb.2: "'echo-antiecho-r'"
 
-    script : |
+    script: |
       acqOrder('312')
       acqarray(0,0,0)
       fixdsp(True)
@@ -46,24 +46,24 @@ sequences :
       DPHASE(dim=2, disabled=(not $autoPh.2))
       run()
 
-  - name : AC_hsqct2etf3gpsi3d
-    aliases :
-      -  .*AC_hsqct2etf3gpsi3d.*
-      -  .*hsqct2.*
-    ndim : 3
-    vendor : bruker
-    vars :
-      ph0.1 : 0.0
-      ph1.1 : 0.0
-      ph0.2 : 0.0
-      ph1.2 : 0.0
-      ref.1 : "'H2O'"
-      fstart.1 : 15.0
-      fend.1 : 5.0
-      autoPh.1 : 1
-      autoPh.2 : 1
-      tdcomb.2 : "'echo-antiecho-r'"
-    script : |
+  - name: AC_hsqct2etf3gpsi3d
+    aliases:
+      - .*AC_hsqct2etf3gpsi3d.*
+      - .*hsqct2.*
+    ndim: 3
+    vendor: bruker
+    vars:
+      ph0.1: 0.0
+      ph1.1: 0.0
+      ph0.2: 0.0
+      ph1.2: 0.0
+      ref.1: "'H2O'"
+      fstart.1: 15.0
+      fend.1: 5.0
+      autoPh.1: 1
+      autoPh.2: 1
+      tdcomb.2: "'echo-antiecho-r'"
+    script: |
       acqOrder('312')
       acqarray(0,0,0)
       fixdsp(True)
@@ -92,25 +92,25 @@ sequences :
       DPHASE(dim=2, disabled=(not $autoPh.2))
       run()
 
-  - name : AR_hsqcnoef3gpsi
-    aliases :
-      -  .*hsqcnoef3gpsi.*
-      -  .*hsqcnoe.*
-    ndim : 2
-    vendor : bruker
-    vars :
-      ph0.1 : 0.0
-      ph1.1 : 0.0
-      ph0.2 : 0.0
-      ph1.2 : 0.0
-      ref.1 : "'H2O'"
-      fstart.1 : 15.0
-      fend.1 : 5.0
-      autoPh.1 : 1
-      autoPh.2 : 1
-      tdcomb.2 : "'echo-antiecho-r'"
+  - name: AR_hsqcnoef3gpsi
+    aliases:
+      - .*hsqcnoef3gpsi.*
+      - .*hsqcnoe.*
+    ndim: 2
+    vendor: bruker
+    vars:
+      ph0.1: 0.0
+      ph1.1: 0.0
+      ph0.2: 0.0
+      ph1.2: 0.0
+      ref.1: "'H2O'"
+      fstart.1: 15.0
+      fend.1: 5.0
+      autoPh.1: 1
+      autoPh.2: 1
+      tdcomb.2: "'echo-antiecho-r'"
 
-    script : |
+    script: |
       acqOrder('a2','p1','d1')
       acqarray(0,2)
       fixdsp(True)

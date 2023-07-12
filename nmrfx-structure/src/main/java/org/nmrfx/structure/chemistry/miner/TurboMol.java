@@ -1,14 +1,15 @@
 package org.nmrfx.structure.chemistry.miner;
 
-import java.io.*;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
 
 public class TurboMol {
 
@@ -44,7 +45,7 @@ public class TurboMol {
             });
         });
     }
-    
+
     public void getNeighborCount() {
         int i = 0;
         inMolecule.entities.values().forEach((entity) -> {
@@ -102,7 +103,7 @@ public class TurboMol {
         StringBuffer sBuf = new StringBuffer();
         String s = null;
 
-        try (BufferedReader bfReader = fileName.equals("-") ? new BufferedReader(new InputStreamReader(System.in)) : new BufferedReader(new FileReader(fileName))){
+        try (BufferedReader bfReader = fileName.equals("-") ? new BufferedReader(new InputStreamReader(System.in)) : new BufferedReader(new FileReader(fileName))) {
             while ((s = bfReader.readLine()) != null) {
                 sBuf.append(s);
                 sBuf.append('\n');

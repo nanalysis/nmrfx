@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,20 +17,16 @@
  */
 package org.nmrfx.chemistry.constraints;
 
+import org.nmrfx.chemistry.*;
+
 import java.util.List;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.SpatialSet;
-import org.nmrfx.chemistry.Util;
 
 /**
  * This class determines if the angle boundary is valid - angle boundary for
  * each bond. The angle must be between -180 degrees and 360 degrees
  */
 public class AngleConstraint implements Constraint {
-
-    private static DistanceStat defaultStat = new DistanceStat();
+    private static final DistanceStat DEFAULT_STAT = new DistanceStat();
 
     protected int idNum = 0;
 
@@ -69,11 +65,11 @@ public class AngleConstraint implements Constraint {
      */
     private int active = 1;
     private int index = -1;
-    private DistanceStat disStat = defaultStat;
+    private DistanceStat disStat = DEFAULT_STAT;
     final static double toRad = Math.PI / 180.0;
 
     public AngleConstraint(Atom[] atoms, double lower, double upper, final double scale,
-            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
+                           Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
         if (atoms.length != 4) {
             throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
         }
@@ -107,7 +103,7 @@ public class AngleConstraint implements Constraint {
     }
 
     public AngleConstraint(List<Atom> atoms, double lower, double upper, final double scale,
-            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
+                           Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
         for (Atom atom : atoms) {
             if (atom == null) {
                 throw new InvalidMoleculeException("null atom");
@@ -303,7 +299,7 @@ public class AngleConstraint implements Constraint {
         StringBuilder result = new StringBuilder();
         char sep = ' ';
 //     _Torsion_angle_constraint.ID
-        result.append(AngleConstraintSet.ID++);
+        result.append(AngleConstraintSet.id++);
         result.append(sep);
         //      _Torsion_angle_constraint.Torsion_angle_name
         result.append(getName());

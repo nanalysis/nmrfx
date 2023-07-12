@@ -35,7 +35,7 @@ public class RS2DDataTest {
 
     @BeforeClass
     public static void setup() {
-        fidHome =  FileSystems.getDefault()
+        fidHome = FileSystems.getDefault()
                 .getPath("")
                 .toAbsolutePath()
                 .getParent()
@@ -46,7 +46,8 @@ public class RS2DDataTest {
 
     boolean testFilesMissing(File testFile) throws FileNotFoundException {
         if (!testFile.exists()) {
-            boolean isBuildEnv = Boolean.parseBoolean(System.getenv("BUILD_ENV"));;
+            boolean isBuildEnv = Boolean.parseBoolean(System.getenv("BUILD_ENV"));
+            ;
             if (isBuildEnv) {
                 throw new FileNotFoundException("Missing build environment requirement. " + ERR_MSG + testFile);
             }

@@ -95,11 +95,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ProcessorController implements Initializable, ProgressUpdater {
-
+public class ProcessorController implements Initializable, ProgressUpdater, NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
-    private static final String[] basicOps = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
-    private static final String[] commonOps = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
+
     private static String patternString = "(\\w+)=((\\[[^\\[]*\\])|(\"[^\"]*\")|('[^']*')|([^,]+))";
 
     static Map<String, String> longNameMap = Map.of(
@@ -112,6 +110,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             "SUPPRESS", "Signal Suppression",
             "EXTRACT", "Extract Region"
             );
+    private static final String[] BASIC_OPS = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
+    private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
+    private static final AtomicBoolean aListUpdated = new AtomicBoolean(false);
 
     private enum DisplayMode {
         FID("FID"),
@@ -129,9 +130,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
-    Pane processorPane;
-    Pane pane;
-
+    NmrControlRightSidePane nmrControlRightSidePane;
+    @FXML
+    private BorderPane mainBox;
     @FXML
     private ToolBar toolBar;
     @FXML
@@ -251,47 +252,31 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     ProcessingCodeAreaUtil codeAreaUtil;
     private ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
-    static AtomicBoolean aListUpdated = new AtomicBoolean(false);
     private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     private AtomicReference<Dataset> saveObject = new AtomicReference<>();
     ScheduledFuture futureUpdate = null;
 
 
-    public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
-        Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml")
-                .withParent(processorPane);
+    public static ProcessorController create(FXMLController fxmlController, NmrControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
+        Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml");
         ProcessorController controller = builder.getController();
 
         controller.chart = chart;
         chart.setProcessorController(controller);
         controller.chartProcessor.setChart(chart);
-        controller.chartProcessor.fxmlController = fxmlController;
-        controller.processorPane = processorPane;
-        controller.pane = builder.getNode();
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
-        closeButton.setOnAction(e -> controller.hide());
-        controller.toolBar.getItems().add(closeButton);
-        fxmlController.processorCreated(controller.pane);
-
+        controller.chartProcessor.setFxmlController(fxmlController);
+        controller.nmrControlRightSidePane = nmrControlRightSidePane;
+        fxmlController.processorCreated(controller.mainBox);
+        nmrControlRightSidePane.addContent(controller);
         return controller;
     }
 
-    public void show() {
-        if (processorPane.getChildren().isEmpty()) {
-            processorPane.getChildren().add(pane);
-            pane.setVisible(true);
-        }
-    }
-
-    public void hide() {
-        if (!processorPane.getChildren().isEmpty()) {
-            processorPane.getChildren().clear();
-            pane.setVisible(false);
-        }
+    public Pane getPane() {
+        return mainBox;
     }
 
     public boolean isVisible() {
-        return pane.isVisible();
+        return mainBox.isVisible();
     }
 
     public PropertyManager getPropertyManager() {
@@ -478,7 +463,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     void viewMode() {
         if (viewMode.getValue() == DisplayMode.SPECTRUM) {
-            if (chart.controller.isFIDActive()) {
+            if (chart.getFXMLController().isFIDActive()) {
                 viewDatasetInApp(null);
             }
         } else if (viewMode.getValue() == DisplayMode.FID_OPS) {
@@ -492,17 +477,17 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public void viewDatasetInApp(Dataset dataset) {
         Dataset currentDataset = (Dataset) chart.getDataset();
         if (dataset != null) {
-            chart.controller.addDataset(dataset, false, false);
+            chart.getFXMLController().addDataset(dataset, false, false);
             if ((currentDataset != null) && (currentDataset != dataset)) {
                 currentDataset.close();
             }
         } else {
-            if (chartProcessor.datasetFile != null) {
+            if (chartProcessor.getDatasetFile() != null) {
                 if (currentDataset != null) {
                     currentDataset.close();
                 }
                 boolean viewingDataset = isViewingDataset();
-                chart.controller.openDataset(chartProcessor.datasetFile, false, true);
+                chart.getFXMLController().openDataset(chartProcessor.getDatasetFile(), false, true);
                 viewMode.setValue(DisplayMode.SPECTRUM);
                 if (!viewingDataset) {
                     chart.full();
@@ -533,8 +518,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         dimChoice.getSelectionModel().select(0);
         chartProcessor.setVecDim("D1");
         viewMode.setValue(DisplayMode.FID_OPS);
-        chart.controller.getUndoManager().clear();
-        chart.controller.updateSpectrumStatusBarOptions(false);
+        chart.getFXMLController().getUndoManager().clear();
+        chart.getFXMLController().updateSpectrumStatusBarOptions(false);
     }
 
     @FXML
@@ -542,8 +527,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         dimChoice.getSelectionModel().select(0);
         chartProcessor.setVecDim("D1");
         viewMode.setValue(DisplayMode.FID);
-        chart.controller.getUndoManager().clear();
-        chart.controller.updateSpectrumStatusBarOptions(false);
+        chart.getFXMLController().getUndoManager().clear();
+        chart.getFXMLController().updateSpectrumStatusBarOptions(false);
     }
 
     public String getScript() {
@@ -597,14 +582,13 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             updateAccordionList();
             if (operationList.isEmpty()) {
                 propertyManager.clearPropSheet();
-                if (!chartProcessor.getAreOperationListsValidProperty().get()) {
+                if (!chartProcessor.areOperationListsValidProperty().get()) {
                     String currentDatasetName = chart.getDataset().getName();
                     haltProcessAction();
                     // Set available as halt may happen before code flow reaches the Processor
                     Processor.getProcessor().setProcessorAvailableStatus(true);
                     chartProcessor.reloadData();
-                    chartProcessor.datasetFile = null;
-                    chartProcessor.datasetFileTemp = null;
+                    chartProcessor.setDatasetFile(null);
                     viewingDataset(false);
                     ProjectBase.getActive().removeDataset(currentDatasetName);
                     chart.refresh();
@@ -941,7 +925,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             String scriptString = new String(encoded);
             parseScript(scriptString);
             chartProcessor.execScriptList(true);
-            PolyChart.getActiveChart().refresh();
+            PolyChartManager.getInstance().getActiveChart().refresh();
         } catch (IOException ioe) {
             log.warn("Can't read script {}", ioe.getMessage(), ioe);
         }
@@ -1130,7 +1114,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void processDataset(boolean idleModeValue) {
-        if (!Processor.getProcessor().isProcessorAvailable() || !chartProcessor.getAreOperationListsValidProperty().get()){
+        if (!Processor.getProcessor().isProcessorAvailable() || !chartProcessor.areOperationListsValidProperty().get()) {
             return;
         }
         Processor.getProcessor().setProcessorAvailableStatus(false);
@@ -1193,7 +1177,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                                 processor.setTempFileMode(idleMode.get());
                                 processor.clearDataset();
                                 processInterp.exec("useProcessor(inNMRFx=True)");
-                                processInterp.exec(FormatUtils.formatStringForPythonInterpreter(script));                            }
+                                processInterp.exec(FormatUtils.formatStringForPythonInterpreter(script));
+                            }
                             return 0;
                         }
                     };
@@ -1374,7 +1359,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         processDatasetButton.disableProperty()
                 .bind(stateProperty.isEqualTo(Worker.State.RUNNING)
                         .or(chartProcessor.nmrDataProperty().isNull())
-                        .or(chartProcessor.getAreOperationListsValidProperty().not())
+                        .or(chartProcessor.areOperationListsValidProperty().not())
                         .or(processorAvailable.isEqualTo(false)));
         haltProcessButton.disableProperty().bind(stateProperty.isNotEqualTo(Worker.State.RUNNING));
 
@@ -1404,7 +1389,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         Menu menu = new Menu("Commonly Grouped Operations");
         menuItems.add(menu);
         List<MenuItem> subMenuItems = new ArrayList<>();
-        for (String op : basicOps) {
+        for (String op : BASIC_OPS) {
             MenuItem menuItem = new MenuItem(op);
             menuItem.addEventHandler(ActionEvent.ACTION, this::opSequenceMenuAction);
             subMenuItems.add(menuItem);
@@ -1414,7 +1399,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         Menu commonOpMenu = new Menu("Common Operations");
         menuItems.add(commonOpMenu);
         List<MenuItem> commonOpMenuItems = new ArrayList<>();
-        for (String op : commonOps) {
+        for (String op : COMMON_OPS) {
             MenuItem menuItem = new MenuItem(op);
             menuItem.addEventHandler(ActionEvent.ACTION, this::opMenuAction);
             commonOpMenuItems.add(menuItem);
@@ -1572,7 +1557,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     protected void setRowLabel(int row, int size) {
-        for (int i = 0;i< vectorDimButtons.size();i++) {
+        for (int i = 0; i < vectorDimButtons.size(); i++) {
             if (vectorDimButtons.get(i).isSelected()) {
                 rowTextBoxes[i].setText(row + " / " + size);
             }

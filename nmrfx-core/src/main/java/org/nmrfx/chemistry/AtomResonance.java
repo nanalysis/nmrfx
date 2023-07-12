@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,20 +19,19 @@ package org.nmrfx.chemistry;
 
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.utilities.NvUtil;
-import java.util.List;
-import java.util.Map;
-
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.peaks.SimpleResonance;
 import org.nmrfx.star.Loop;
-import org.nmrfx.star.Saveframe;
 import org.nmrfx.star.ParseException;
+import org.nmrfx.star.Saveframe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Map;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class AtomResonance extends SimpleResonance {
@@ -41,14 +40,14 @@ public class AtomResonance extends SimpleResonance {
 
     Atom atom = null;
     public final static String[] resonanceLoopStrings = {
-        "_Resonance.ID",
-        "_Resonance.Name",
-        "_Resonance.Resonance_set_ID",
-        "_Resonance.Spin_system_ID ",
-        "_Resonance.Resonance_linker_list_ID ",};
+            "_Resonance.ID",
+            "_Resonance.Name",
+            "_Resonance.Resonance_set_ID",
+            "_Resonance.Spin_system_ID ",
+            "_Resonance.Resonance_linker_list_ID ",};
     public final static String[] resonanceCovalentLinkStrings = {
-        "_Resonance_covalent_link.Resonance_ID_1",
-        "_Resonance_covalent_link.Resonance_ID_2",};
+            "_Resonance_covalent_link.Resonance_ID_1",
+            "_Resonance_covalent_link.Resonance_ID_2",};
 
     Object resonanceSet = null;
     Object ssID = null;
@@ -118,7 +117,7 @@ public class AtomResonance extends SimpleResonance {
     }
 
     public static void processSTAR3ResonanceList(final NMRStarReader nmrStar,
-            Saveframe saveframe, Map<String, Compound> compoundMap) throws ParseException {
+                                                 Saveframe saveframe, Map<String, Compound> compoundMap) throws ParseException {
         // fixme unused String listName = saveframe.getValue(interp,"_Resonance_linker_list","Sf_framecode");
         // FIXME String details = saveframe.getValue(interp,"_Resonance_linker_list","Details");
 

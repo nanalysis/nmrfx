@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,16 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * Specific equation class derived from EstFunction
  * and open the template in the editor.
  */
 package org.nmrfx.processor.optimization.equations;
 
-import org.nmrfx.processor.optimization.*;
+import org.nmrfx.processor.optimization.DataUtil;
+import org.nmrfx.processor.optimization.Equation;
+import org.nmrfx.processor.optimization.EstParam;
+import org.nmrfx.processor.optimization.VecID;
 
 /**
- *
  * @author graham stewart
  */
 public class InvHyperbolic extends OptFunction {
@@ -40,40 +42,40 @@ public class InvHyperbolic extends OptFunction {
         setParams(VecID.A, VecID.B);
 
         setPartialDerivatives(new Equation[]{
-            // dY/dA
-            new Equation() {
-                public VecID name() {
-                    return VecID.A;
-                }
+                // dY/dA
+                new Equation() {
+                    public VecID name() {
+                        return VecID.A;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    double bParam = getParamVal(VecID.B, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
-                    return bParam / (bParam + x);
-                }
-            },
-            // dY/dB
-            new Equation() {
-                public VecID name() {
-                    return VecID.B;
-                }
+                    public double value(double[] pts, double[] ival) {
+                        double bParam = getParamVal(VecID.B, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
+                        return bParam / (bParam + x);
+                    }
+                },
+                // dY/dB
+                new Equation() {
+                    public VecID name() {
+                        return VecID.B;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    double aParam = getParamVal(VecID.A, pts);
-                    double bParam = getParamVal(VecID.B, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
-                    double sum = x + bParam;
-                    return aParam * x / (sum * sum);
+                    public double value(double[] pts, double[] ival) {
+                        double aParam = getParamVal(VecID.A, pts);
+                        double bParam = getParamVal(VecID.B, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
+                        double sum = x + bParam;
+                        return aParam * x / (sum * sum);
+                    }
                 }
-            }
         });
 
         // y = a * b / (b + x)

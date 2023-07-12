@@ -1,14 +1,12 @@
-
 package org.nmrfx.processor.datasets;
 
 import java.io.IOException;
 
 /**
- *
  * @author brucejohnson
  */
 class PositionException extends IOException {
-    
+
     String message;
     long limit;
     int position;
@@ -31,5 +29,5 @@ class PositionException extends IOException {
         this.position = position;
         this.offsets = offsets;
     }
-    
+
 }

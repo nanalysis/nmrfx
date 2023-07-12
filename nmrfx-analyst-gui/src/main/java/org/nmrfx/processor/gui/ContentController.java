@@ -9,6 +9,7 @@ import javafx.scene.control.Accordion;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import org.controlsfx.control.ListSelectionView;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.peaks.PeakList;
@@ -20,8 +21,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class ContentController {
+public class ContentController implements NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(ContentController.class);
+    @FXML
+    VBox contentVBox;
     @FXML
     ScrollPane contentScrollPane;
     @FXML
@@ -38,9 +41,8 @@ public class ContentController {
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
     MapChangeListener mapChangeListener = change -> update();
 
-    public static ContentController create(FXMLController fxmlController, Pane processorPane) {
-        Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml")
-                .withParent(processorPane);
+    public static ContentController create(FXMLController fxmlController) {
+        Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml");
         ContentController controller = builder.getController();
         controller.fxmlController = fxmlController;
         controller.datasetViewController = new DatasetView(fxmlController, controller);
@@ -64,12 +66,8 @@ public class ContentController {
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
     }
 
-    public void updateScrollSize(Pane pane) {
-        contentScrollPane.setMaxHeight(pane.getHeight() - 10);
-    }
-
-    private boolean isShowing() {
-        return fxmlController.isContentPaneShowing();
+    public Pane getPane() {
+        return contentVBox;
     }
 
     public void setChart(PolyChart chart) {
@@ -79,13 +77,13 @@ public class ContentController {
 
 
     public void update() {
-        if (isShowing()) {
+        if (getPane().isVisible()) {
             Platform.runLater(() -> {
-                        chart = fxmlController.getActiveChart();
-                        chart.setChartDisabled(true);
-                        datasetViewController.updateDatasetView();
-                        updatePeakView();
-                        chart.setChartDisabled(false);
+                chart = fxmlController.getActiveChart();
+                chart.setChartDisabled(true);
+                datasetViewController.updateDatasetView();
+                updatePeakView();
+                chart.setChartDisabled(false);
             });
         }
     }

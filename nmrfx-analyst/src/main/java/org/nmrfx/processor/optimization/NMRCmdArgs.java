@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,18 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*UPDATES
+/*UPDATES
  *
  * TODO 03/03/09
  * -Add enumerated switches, all except list and vect?
  * -Extend from Command for Tcl compatibility
  */
- /* 
+/*
  * Adding feature for bound parameters (04/23/09)
  *
  */
 
- /*
+/*
  * Creating command arg class to not only make
  * the code a bit more modular but also so that
  * we can easily implement the variable number of
@@ -260,7 +260,7 @@ public class NMRCmdArgs {
      */
     //TODO 002 - 041609 - Implement new EstParam and exploit it internal pending state
     public boolean verifyParamList(VecID[] paramList,
-            EstParamSet estParams) {
+                                   EstParamSet estParams) {
         boolean ret = true;
         Enumeration e = cmdArgs.keys();
 
@@ -329,6 +329,7 @@ public class NMRCmdArgs {
         DataType(String typeStr) {
             this.type = typeStr;
         }
+
         private final String type;
 
         @Override
