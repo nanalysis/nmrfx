@@ -66,6 +66,7 @@ import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
+import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.processing.Processor;
@@ -157,7 +158,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     @FXML
     private MenuItem saveOperations;
     @FXML
-    private Accordion accordion;
+    private ModifiableAccordionScrollPane accordion;
     @FXML
     ToolBar opBox;
     @FXML
@@ -643,15 +644,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         String title = detailButton.isSelected() ? op : longNameMap.getOrDefault(trimOp, trimOp);
         titledPane.setText(title);
         PropertySheet opPropertySheet = (PropertySheet) titledPane.getProperties().get("PropSheet");
-        CheckBox activeBox = (CheckBox) titledPane.getProperties().get("CheckBox");
         opPropertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory(this));
         opPropertySheet.setMode(PropertySheet.Mode.NAME);
         opPropertySheet.setModeSwitcherVisible(false);
         opPropertySheet.setSearchBoxVisible(false);
-       BooleanOperationItem boolItem = setPropSheet(opPropertySheet, activeBox, 0, op);
-//        if (boolItem != null) {
-//            titledPane.textFillProperty().bind(Bindings.when(boolItem).then(Color.GRAY).otherwise(Color.BLUE));
-//        }
+        BooleanOperationItem boolItem = setPropSheet(opPropertySheet, 0, op);
     }
 
     private void newTitledPane(String op) {
@@ -660,19 +657,14 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         PropertySheet opPropertySheet = new PropertySheet();
         VBox vBox = new VBox();
         HBox hBox = new HBox();
-        CheckBox activeBox = new CheckBox("Active");
-        activeBox.setSelected(true);
-        hBox.getChildren().add(activeBox);
-        titledPane.textFillProperty().bind(Bindings.when(activeBox.selectedProperty()).then(Color.BLUE).otherwise(Color.GRAY));
         vBox.getChildren().addAll(hBox, opPropertySheet);
         titledPane.setContent(vBox);
         titledPane.getProperties().put("PropSheet", opPropertySheet);
-        titledPane.getProperties().put("CheckBox", activeBox);
         updateTitledPane(titledPane, op);
-        accordion.getPanes().add(titledPane);
+        accordion.add(titledPane);
     }
 
-    BooleanOperationItem  setPropSheet(PropertySheet opPropertySheet, CheckBox activeBox, int scriptIndex, String op) {
+    BooleanOperationItem  setPropSheet(PropertySheet opPropertySheet, int scriptIndex, String op) {
         String trimOp = OperationInfo.trimOp(op);
         Pattern pattern = null;
         String opPars = "";
@@ -727,20 +719,20 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     private void updateAccordionList() {
-        var panes = accordion.getPanes();
         int nOps = operationList.size();
-        int nDiff = nOps - panes.size();
+        int origSize = accordion.size();
+        int nDiff = nOps - origSize;
         int nTest = nOps;
         if (nDiff > 0) {
-            nTest = panes.size();
+            nTest = origSize;
             for (int i = 0; i < nDiff; i++) {
                 newTitledPane(operationList.get(i + nTest));
             }
         } else if (nDiff < 0) {
-            panes.remove(nOps, panes.size());
+            accordion.remove(nOps, accordion.size());
         }
         for (int i = 0;i<nTest;i++) {
-            TitledPane pane = panes.get(i);
+            TitledPane pane = accordion.get(i);
             updateTitledPane(pane, operationList.get(i));
         }
     }
