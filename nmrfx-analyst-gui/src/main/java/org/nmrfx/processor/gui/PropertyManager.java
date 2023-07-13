@@ -55,9 +55,9 @@ public class PropertyManager {
     ChangeListener<String> complexListener;
     ChangeListener<String> listListener;
     PropertySheet propertySheet;
-    ListView scriptView;
+    ListView<ProcessingOperation> scriptView;
     ProcessorController processorController;
-    ObservableList<String> listItems;
+    ObservableList<ProcessingOperation> listItems;
     private int currentIndex = -1;
     private String currentOp = "";
     private TextField opTextField;
@@ -65,7 +65,7 @@ public class PropertyManager {
     ObservableList<PropertySheet.Item> propItems = FXCollections.observableArrayList();
     ChangeListener<Number> scriptOpListener = null;
 
-    PropertyManager(ProcessorController processorController, final ListView scriptView, PropertySheet propertySheet, ObservableList<String> listItems, TextField opTextField, PopOver popOver) {
+    PropertyManager(ProcessorController processorController, final ListView<ProcessingOperation> scriptView, PropertySheet propertySheet, ObservableList<ProcessingOperation> listItems, TextField opTextField, PopOver popOver) {
         this.processorController = processorController;
         this.scriptView = scriptView;
         this.listItems = listItems;
@@ -131,8 +131,8 @@ public class PropertyManager {
                         //there is a single item in the Cells -- Don't unselect
                         scriptIndex = 0;
                     } else if (scriptIndex != -1) {
-                        String selOp = (String) scriptView.getItems().get(scriptIndex);
-                        setPropSheet(scriptIndex, selOp);
+                        ProcessingOperation selOp = scriptView.getItems().get(scriptIndex);
+                        setPropSheet(scriptIndex, selOp.toString());
                     } else {
                         setPropSheet(scriptIndex, "");
                     }
@@ -187,14 +187,14 @@ public class PropertyManager {
             if (opIndex < 0) {
                 System.out.println("bad op");
             } else if (opIndex >= listItems.size()) {
-                listItems.add(op);
+                listItems.add(new ProcessingOperation(op));
                 scriptView.getSelectionModel().select(opIndex);
                 opIndex = listItems.size() - 1;
             } else {
-                String curOp = OperationInfo.trimOp(listItems.get(opIndex));
+                String curOp = listItems.get(opIndex).opName;
                 String trimOp = OperationInfo.trimOp(op);
                 if (!appendOp && trimOp.equals(curOp)) {
-                    listItems.set(opIndex, op);
+                    listItems.set(opIndex, new ProcessingOperation(op));
                     /**
                      * If the selected index isn't equal to the op index, or if
                      * we are not at the case where there's a single op, then
@@ -205,7 +205,7 @@ public class PropertyManager {
                         scriptView.getSelectionModel().select(opIndex);
                     }
                 } else {
-                    listItems.add(opIndex, op);
+                    listItems.add(opIndex, new ProcessingOperation(op));
                     scriptView.getSelectionModel().select(opIndex);
                 }
             }

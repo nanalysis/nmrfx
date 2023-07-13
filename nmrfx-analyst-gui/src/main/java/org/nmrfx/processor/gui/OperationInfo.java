@@ -166,13 +166,20 @@ public class OperationInfo {
         return result;
     }
 
-    public static int getCurrentPosition(List<String> current, String newOp) {
+    public static int getCurrentPosition(List<ProcessingOperation> current, ProcessingOperation newOp) {
+        String newOpName = newOp.opName;
+        return getCurrentPosition(current, newOpName);
+    }
+
+    public static int getCurrentPosition(List<ProcessingOperation> current, String newOpName) {
+        if (newOpName.indexOf("(") != -1) {
+            newOpName = newOpName.substring(0, newOpName.indexOf("("));
+        }
         int index = -1;
-        newOp = trimOp(newOp);
         int iPos = 0;
-        for (String currentOp : current) {
-            currentOp = trimOp(currentOp);
-            if (newOp.equals(currentOp)) {
+        for (ProcessingOperation currentOp : current) {
+            String currentOpName = currentOp.opName;
+            if (newOpName.equalsIgnoreCase(currentOpName)) {
                 index = iPos;
                 break;
             }
@@ -181,25 +188,32 @@ public class OperationInfo {
         return index;
     }
 
-    public static int getPosition(List<String> current, String newOp) {
+    public static int getPosition(List<ProcessingOperation> current, ProcessingOperation newOp) {
+        String newOpName = newOp.opName;
+        return getPosition(current, newOpName);
+    }
+
+    public static int getPosition(List<ProcessingOperation> current, String newOpName) {
+        if (newOpName.indexOf("(") != -1) {
+            newOpName = newOpName.substring(0, newOpName.indexOf("("));
+        }
         int index = -1;
-        newOp = trimOp(newOp);
         int iPos = 0;
-        for (String currentOp : current) {
-            currentOp = trimOp(currentOp);
-            if (newOp.equals(currentOp)) {
+        for (ProcessingOperation currentOp : current) {
+            String currentOpName = currentOp.opName;
+            if (newOpName.equalsIgnoreCase(currentOpName)) {
                 index = iPos;
                 break;
             }
             iPos++;
         }
         if (index == -1) {
-            int orderIndex = opOrderList.indexOf(newOp);
+            int orderIndex = opOrderList.indexOf(newOpName);
             if (orderIndex != -1) {
                 int i = 0;
-                for (String curOp : current) {
-                    curOp = trimOp(curOp);
-                    int curIndex = opOrderList.indexOf(curOp);
+                for (ProcessingOperation currentOp : current) {
+                    String currentOpName = currentOp.opName;
+                    int curIndex = opOrderList.indexOf(currentOpName);
                     if (curIndex >= orderIndex) {
                         index = i;
                         break;

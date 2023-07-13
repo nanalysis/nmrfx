@@ -135,14 +135,14 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     @FXML
     private MenuItem saveOperations;
     @FXML
-    private ListView<String> scriptView;
+    private ListView<ProcessingOperation> scriptView;
     @FXML
     private StatusBar statusBar;
     private final Circle statusCircle = new Circle(10.0, Color.GREEN);
 
     @FXML
     private MenuButton opMenuButton;
-    final ObservableList<String> operationList = FXCollections.observableArrayList();
+    final ObservableList<ProcessingOperation> operationList = FXCollections.observableArrayList();
     EventHandler<ActionEvent> menuHandler;
     PopOver popOver = new PopOver();
 
@@ -215,7 +215,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private AtomicBoolean isProcessing = new AtomicBoolean(false);
     private AtomicBoolean doProcessWhenDone = new AtomicBoolean(false);
     private final ProcessDataset processDataset = new ProcessDataset();
-    ListChangeListener<String> opListListener = null;
+    ListChangeListener<ProcessingOperation> opListListener = null;
 
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
     private final ObjectProperty<Boolean> processorAvailable = new SimpleObjectProperty<>();
@@ -260,11 +260,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         operationList.clear();
     }
 
-    protected void setOperationList(ArrayList<String> scriptList) {
+    protected void setOperationList(List<ProcessingOperation> scriptList) {
         operationList.setAll(scriptList);
     }
 
-    protected List<String> getOperationList() {
+    protected List<ProcessingOperation> getOperationList() {
         return operationList;
     }
 
@@ -568,7 +568,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             } else {
                 int currentIndex = scriptView.getSelectionModel().getSelectedIndex();
                 if (currentIndex != -1) {
-                    String selOp = scriptView.getItems().get(currentIndex);
+                    String selOp = scriptView.getItems().get(currentIndex).toString();
                     propertyManager.setPropSheet(currentIndex, selOp);
                 } else {
                     propertyManager.clearPropSheet();
@@ -820,8 +820,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         }
         String[] lines = scriptString.split("\n");
         List<String> headerList = new ArrayList<>();
-        List<String> dimList = null;
-        Map<String, List<String>> mapOpLists = new TreeMap<>();
+        List<ProcessingOperation> dimList = null;
+        Map<String, List<ProcessingOperation>> mapOpLists = new TreeMap<>();
 
         String dimNum = "";
         for (String line : lines) {
@@ -855,7 +855,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                         dimNum = newDim;
                     }
                 } else if (dimList != null) {
-                    dimList.add(line);
+                    dimList.add(new ProcessingOperation(line));
                 } else if (refOps.contains(opName)) {
                     headerList.add(line);
                 } else if (opName.equals("markrows")) {
@@ -1174,11 +1174,14 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
         scriptView.setCellFactory(new Callback<>() {
             @Override
-            public ListCell<String> call(ListView<String> p) {
+            public ListCell<ProcessingOperation> call(ListView<ProcessingOperation> p) {
                 return new OperationListCell<>(scriptView) {
                     @Override
-                    public void updateItem(String s, boolean empty) {
-                        super.updateItem(s, empty);
+                    public void updateItem(ProcessingOperation processingOperation, boolean empty) {
+                        if (processingOperation != null) {
+                           super.updateItem(processingOperation, empty);
+                        }
+                        String s = processingOperation == null ? "" : processingOperation.toString();
                         setText(s);
                     }
                 };
