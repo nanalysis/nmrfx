@@ -19,7 +19,6 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -45,7 +44,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
-import javafx.util.Callback;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.math3.util.MultidimensionalCounter;
@@ -66,8 +64,8 @@ import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
-import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
+import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
@@ -162,14 +160,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     @FXML
     ToolBar opBox;
     @FXML
-    private ListView<String> scriptView;
-    @FXML
     private StatusBar statusBar;
     private final Circle statusCircle = new Circle(10.0, Color.GREEN);
 
     @FXML
     private MenuButton opMenuButton;
-    final ObservableList<String> operationList = FXCollections.observableArrayList();
+    final ObservableList<ProcessingOperation> operationList = FXCollections.observableArrayList();
     EventHandler<ActionEvent> menuHandler;
     PopOver popOver = new PopOver();
 
@@ -178,9 +174,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     PropertyManager propertyManager;
     RefManager refManager;
-
-    @FXML
-    PropertySheet propertySheet;
 
     @FXML
     PropertySheet refSheet;
@@ -243,7 +236,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private AtomicBoolean isProcessing = new AtomicBoolean(false);
     private AtomicBoolean doProcessWhenDone = new AtomicBoolean(false);
     private final ProcessDataset processDataset = new ProcessDataset();
-    ListChangeListener<String> opListListener = null;
+    ListChangeListener<ProcessingOperation> opListListener = null;
 
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
     private final ObjectProperty<Boolean> processorAvailable = new SimpleObjectProperty<>();
@@ -288,11 +281,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         operationList.clear();
     }
 
-    protected void setOperationList(ArrayList<String> scriptList) {
+    protected void setOperationList(List<ProcessingOperation> scriptList) {
         operationList.setAll(scriptList);
     }
 
-    protected List<String> getOperationList() {
+    protected List<ProcessingOperation> getOperationList() {
         return operationList;
     }
 
@@ -541,21 +534,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return script.toString();
     }
 
-    @FXML
-    void handleScriptKey(KeyEvent event) {
-        if ((event.getCode() == KeyCode.DELETE) || (event.getCode() == KeyCode.BACK_SPACE)) {
-            deleteItem();
-        }
-    }
-
-
-    public void deleteOp() {
-        deleteItem();
-    }
-
-    void deleteItem() {
+    void deleteItem(int index) {
         if (!operationList.isEmpty()) {
-            int index = scriptView.getSelectionModel().getSelectedIndex();
 
             /*
               If we are deleting the last element, select the previous,
@@ -575,14 +555,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 OperationListCell.updateCells();
                 chartProcessor.updateOpList();
             }
-            if (index == operationList.size()) {
-                scriptView.getSelectionModel().select(index - 1);
-            } else {
-                scriptView.getSelectionModel().select(index);
-            }
             updateAccordionList();
             if (operationList.isEmpty()) {
-                propertyManager.clearPropSheet();
                 if (!chartProcessor.areOperationListsValidProperty().get()) {
                     String currentDatasetName = chart.getDataset().getName();
                     haltProcessAction();
@@ -593,14 +567,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     viewingDataset(false);
                     ProjectBase.getActive().removeDataset(currentDatasetName);
                     chart.refresh();
-                }
-            } else {
-                int currentIndex = scriptView.getSelectionModel().getSelectedIndex();
-                if (currentIndex != -1) {
-                    String selOp = scriptView.getItems().get(currentIndex);
-                    propertyManager.setPropSheet(currentIndex, selOp);
-                } else {
-                    propertyManager.clearPropSheet();
                 }
             }
 
@@ -639,20 +605,19 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
 
-    private void updateTitledPane(TitledPane titledPane, String op) {
-        String trimOp = OperationInfo.trimOp(op);
-        String title = detailButton.isSelected() ? op : longNameMap.getOrDefault(trimOp, trimOp);
+    private void updateTitledPane(TitledPane titledPane, ProcessingOperation op) {
+        String title = detailButton.isSelected() ? op.toString() : longNameMap.getOrDefault(op.opName, op.opName);
         titledPane.setText(title);
         PropertySheet opPropertySheet = (PropertySheet) titledPane.getProperties().get("PropSheet");
+        System.out.println("Update titled pane " + opPropertySheet);
         opPropertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory(this));
         opPropertySheet.setMode(PropertySheet.Mode.NAME);
         opPropertySheet.setModeSwitcherVisible(false);
         opPropertySheet.setSearchBoxVisible(false);
-        BooleanOperationItem boolItem = setPropSheet(opPropertySheet, 0, op);
+        BooleanOperationItem boolItem = setPropSheet(titledPane, opPropertySheet, 0, op);
     }
 
-    private void newTitledPane(String op) {
-        String trimOp = OperationInfo.trimOp(op);
+    private void newTitledPane(ProcessingOperation op) {
         TitledPane titledPane = new TitledPane();
         PropertySheet opPropertySheet = new PropertySheet();
         VBox vBox = new VBox();
@@ -664,21 +629,37 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         accordion.add(titledPane);
     }
 
-    BooleanOperationItem  setPropSheet(PropertySheet opPropertySheet, int scriptIndex, String op) {
-        String trimOp = OperationInfo.trimOp(op);
+    public int getExpandedTitlePane() {
+        int index = -1;
+        TitledPane activePane = null;
+        int i = 0;
+        for (var pane:accordion.getPanes()) {
+            if (pane.isExpanded()) {
+                index = i;
+                activePane = pane;
+            }
+            i++;
+        }
+        System.out.println("get expanded " + index +  "" + activePane);
+        return index;
+    }
+
+    BooleanOperationItem  setPropSheet(TitledPane titledPane, PropertySheet opPropertySheet, int scriptIndex, ProcessingOperation op) {
         Pattern pattern = null;
         String opPars = "";
         if (!op.equals("")) {
-            opPars = op.substring(op.indexOf('(') + 1, op.length() - 1);
+            opPars = op.opArgs;
             pattern = Pattern.compile(patternString);
         }
+        opPropertySheet.getItems().clear();
         BooleanOperationItem boolItem = null;
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
+        propertyManager.setupItem(opPropertySheet, op.opName);
         ObservableList<PropertySheet.Item> propItems = propertyManager.getItems();
         for (PropertySheet.Item item : propItems) {
             if (item == null) {
                 System.out.println("item null");
-            } else if (item.getCategory().equals(trimOp) && (pattern != null)) {
+            } else if (item.getCategory().equals(op.opName) && (pattern != null)) {
                 boolean foundIt = false;
                 Matcher matcher = pattern.matcher(opPars);
                 while (matcher.find()) {
@@ -694,31 +675,31 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 if (!foundIt) {
                     ((OperationItem) item).setToDefault();
                 }
+                System.out.println("add item " + item);
                 if (item.getName().equals("disabled")) {
                     boolItem = (BooleanOperationItem) item;
-                    System.out.println("disabl " + boolItem.getValue());
+                    if (boolItem.getValue()) {
+
+
+                    }
+                } else {
+                    newItems.add(item);
                 }
-                newItems.add(item);
             }
         }
+        opPropertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory(this));
+        opPropertySheet.setMode(PropertySheet.Mode.NAME);
+        opPropertySheet.setModeSwitcherVisible(false);
+        opPropertySheet.setSearchBoxVisible(false);
+
         opPropertySheet.getItems().setAll(newItems);
         return boolItem;
     }
 
-    private boolean paneUsed(TitledPane pane) {
-        String title = pane.getText();
-        boolean found = false;
-        for (String op : operationList) {
-            String trimOp = OperationInfo.trimOp(op);
-            if (title.equals(trimOp)) {
-                found = true;
-                break;
-            }
-        }
-        return found;
-    }
-
     private void updateAccordionList() {
+        if (accordion.getPanes().size() != operationList.size()) {
+            accordion.getPanes().clear();
+        }
         int nOps = operationList.size();
         int origSize = accordion.size();
         int nDiff = nOps - origSize;
@@ -738,29 +719,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     @FXML
-    private void handleNewOp(ActionEvent event) {
-        TextField textField = (TextField) event.getSource();
-        String op = textField.getText();
-        boolean appendOp = false;
-        if (op.charAt(0) == '+') {
-            appendOp = true;
-            op = op.substring(1);
-        }
-        if (OperationInfo.isOp(op)) {
-            int index = -1;
-            if (appendOp) {
-                index = scriptView.getSelectionModel().getSelectedIndex() + 1;
-            }
-            propertyManager.setOp(op, appendOp, index);
-        } else {
-            List<String> opCandidates = OperationInfo.getOps(op);
-            if (opCandidates.size() == 1) {
-                propertyManager.setOp(opCandidates.get(0));
-            }
-        }
-    }
-
-    @FXML
     private void showOpDoc() {
         if (dwc == null) {
             dwc = new DocWindowController();
@@ -773,7 +731,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         String op = menuItem.getText();
         int index = propertyManager.getCurrentPosition(op);
         if (index != -1) {
-            index = scriptView.getSelectionModel().getSelectedIndex() + 1;
             propertyManager.setOp(menuItem.getText(), true, index);
         } else {
             propertyManager.setOp(menuItem.getText(), false, -1);
@@ -953,8 +910,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         }
         String[] lines = scriptString.split("\n");
         List<String> headerList = new ArrayList<>();
-        List<String> dimList = null;
-        Map<String, List<String>> mapOpLists = new TreeMap<>();
+        List<ProcessingOperation> dimList = null;
+        Map<String, List<ProcessingOperation>> mapOpLists = new TreeMap<>();
 
         String dimNum = "";
         for (String line : lines) {
@@ -988,7 +945,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                         dimNum = newDim;
                     }
                 } else if (dimList != null) {
-                    dimList.add(line);
+                    dimList.add(new ProcessingOperation(line));
                 } else if (refOps.contains(opName)) {
                     headerList.add(line);
                 } else if (opName.equals("markrows")) {
@@ -1264,14 +1221,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         enableRealFeatures(null);
         chartProcessor = new ChartProcessor(this);
         navHBox.getChildren().clear();
-        scriptView.setItems(operationList);
         List<MenuItem> menuItems = getMenuItems();
 
         opMenuButton.getItems().addAll(menuItems);
         popOver.setContentNode(new Text("hello"));
 
-        propertyManager = new PropertyManager(this, scriptView, propertySheet, operationList, opTextField, popOver);
-        propertyManager.setupItems();
+        propertyManager = new PropertyManager(this, operationList, opTextField, popOver);
         refManager = new RefManager(this, refSheet);
         refManager.setupItems(0);
         statusBar.setProgress(0.0);
@@ -1312,20 +1267,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             updateAccordionList();
         };
         operationList.addListener(opListListener);
-
-        scriptView.setCellFactory(new Callback<>() {
-            @Override
-            public ListCell<String> call(ListView<String> p) {
-                return new OperationListCell<>(scriptView) {
-                    @Override
-                    public void updateItem(String s, boolean empty) {
-                        super.updateItem(s, empty);
-                        setText(s);
-                    }
-                };
-            }
-
-        });
 
         dimListener = (observableValue, dimName, dimName2) -> {
             chartProcessor.setVecDim(dimName2);

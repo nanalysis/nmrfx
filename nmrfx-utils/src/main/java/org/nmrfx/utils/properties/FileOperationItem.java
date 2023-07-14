@@ -19,14 +19,15 @@ package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
+import org.controlsfx.control.PropertySheet;
 
 /**
  * @author Bruce Johnson
  */
 public class FileOperationItem extends TextOperationItem implements ObservableStringValue {
 
-    public FileOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
-        super(listener, defaultValue, category, name, description);
+    public FileOperationItem(PropertySheet propertySheet, ChangeListener listener, String defaultValue, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, category, name, description);
     }
 
     @Override

@@ -26,6 +26,7 @@ package org.nmrfx.utils.properties;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
+import org.controlsfx.control.PropertySheet;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,8 +43,8 @@ public class ChoiceOperationItem extends OperationItem implements ObservableStri
     ChangeListener<? super String> listener;
     private final Collection<?> choices;
 
-    public ChoiceOperationItem(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
-        super(category, name, description);
+    public ChoiceOperationItem(PropertySheet propertySheet, ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;

@@ -300,7 +300,7 @@ public class RefManager {
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         String dimName = "" + (dim + 1);
         if (dim == 0) {
-            newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getDatasetType().toString(),
+            newItems.add(new ChoiceOperationItem(refSheet, stringListener, chartProcessor.getDatasetType().toString(),
                     DatasetType.names(), dimName, "datatype", "Dataset type"));
             if (nmrData != null) {
                 ArrayList<String> choices = new ArrayList<>();
@@ -322,13 +322,13 @@ public class RefManager {
                         }
                         choices.add(sBuilder.toString());
                     }
-                    newItems.add(new EditableChoiceOperationItem(stringListener, chartProcessor.getAcqOrder(), choices, dimName, "acqOrder", "Enter the acquisition order of the dataset"));
+                    newItems.add(new EditableChoiceOperationItem(refSheet, stringListener, chartProcessor.getAcqOrder(), choices, dimName, "acqOrder", "Enter the acquisition order of the dataset"));
                 }
             } else {
-                newItems.add(new TextOperationItem(stringListener, chartProcessor.getAcqOrder(), dimName, "acqOrder", "Enter the acquisition order of the dataset"));
+                newItems.add(new TextOperationItem(refSheet, stringListener, chartProcessor.getAcqOrder(), dimName, "acqOrder", "Enter the acquisition order of the dataset"));
             }
             if ((nmrData != null) && nmrData.getVendor().equals("bruker")) {
-                newItems.add(new BooleanOperationItem(boolListener, chartProcessor.getFixDSP(), dimName, "fixdsp", "Fix DSP buildup before FT"));
+                newItems.add(new BooleanOperationItem(refSheet, boolListener, chartProcessor.getFixDSP(), dimName, "fixdsp", "Fix DSP buildup before FT"));
             }
         }
 
@@ -340,7 +340,7 @@ public class RefManager {
                     if (value.equals("1")) {
                         boolValue = true;
                     }
-                    newItems.add(new BooleanOperationItem(boolListener, boolValue, dimName, propName, "Skip this dimension?"));
+                    newItems.add(new BooleanOperationItem(refSheet, boolListener, boolValue, dimName, propName, "Skip this dimension?"));
                 }
             } else if (propName.equals("ref")) {
                 String value = getPropValue(dim, propName, false);
@@ -351,7 +351,7 @@ public class RefManager {
                     }
                 }
                 String comment = " (default is " + defaultValue + ")";
-                newItems.add(new MenuTextOperationItem(stringListener, value, dimName, propName, "Select the " + propName + comment));
+                newItems.add(new MenuTextOperationItem(refSheet, stringListener, value, dimName, propName, "Select the " + propName + comment));
             } else if (propName.contains("size")) {
                 String value = getPropValue(dim, propName, false);
                 int iValue = 0;
@@ -365,19 +365,19 @@ public class RefManager {
                 }
                 String defaultValue = getPropValue(dim, propName, true);
                 String comment = " (default is " + defaultValue + ")";
-                newItems.add(new IntOperationItem(intListener, iValue, 0, 1000000, dimName, propName, "Enter the " + propName + comment));
+                newItems.add(new IntOperationItem(refSheet, intListener, iValue, 0, 1000000, dimName, propName, "Enter the " + propName + comment));
             } else if (propName.equals("acqarray")) {
                 int arraySize = 0;
                 if (nmrData != null) {
                     arraySize = nmrData.getArraySize(dim);
                 }
                 String comment = " (default is " + 0 + ")";
-                newItems.add(new IntOperationItem(intListener, arraySize, 0, 1000000, dimName, propName, "Enter the " + propName + comment));
+                newItems.add(new IntOperationItem(refSheet, intListener, arraySize, 0, 1000000, dimName, propName, "Enter the " + propName + comment));
             } else {
                 String value = getPropValue(dim, propName, false);
                 String defaultValue = getPropValue(dim, propName, true);
                 String comment = " (default is " + defaultValue + ")";
-                newItems.add(new TextOperationItem(stringListener, value, dimName, propName, "Enter the " + propName + comment));
+                newItems.add(new TextOperationItem(refSheet, stringListener, value, dimName, propName, "Enter the " + propName + comment));
             }
         }
         refSheet.getItems().setAll(newItems);

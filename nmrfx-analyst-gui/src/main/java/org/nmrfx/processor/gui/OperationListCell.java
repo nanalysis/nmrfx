@@ -47,10 +47,10 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
     private static OperationListCell source;
     private static OperationListCell target;
 
-    private ListView scriptView;
+    private ListView<ProcessingOperation> scriptView;
     private OperationListCell temp;
 
-    public OperationListCell(ListView scriptView) {
+    public OperationListCell(ListView<ProcessingOperation> scriptView) {
         cells.add(this);
         this.scriptView = scriptView;
 
@@ -149,7 +149,7 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
 
         this.setOnDragDone(new EventHandler<DragEvent>() {
             public void handle(DragEvent event) {
-                ObservableList<String> listItems = scriptView.getItems();
+                ObservableList<ProcessingOperation> listItems = scriptView.getItems();
 
                 /* the drag and drop gesture ended */
                 /* if the data was successfully moved, clear it */
@@ -157,8 +157,7 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
                     if (event.getTransferMode() == TransferMode.COPY) {
                         int sourceIndex = Math.max(0, source.getIndex());
                         int targetIndex = Math.min(target.getIndex(), listItems.size() - 1);
-                        String swap;
-                        swap = listItems.remove(sourceIndex);
+                        ProcessingOperation swap = listItems.remove(sourceIndex);
                         listItems.add(targetIndex, swap);
                         scriptView.getSelectionModel().select(targetIndex);
                     }
@@ -182,24 +181,24 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
         setOnDragEntered(new EventHandler<DragEvent>() {
             @Override
             public void handle(DragEvent t) {
-                ObservableList<String> listItems = scriptView.getItems();
+                ObservableList<ProcessingOperation> listItems = scriptView.getItems();
                 if (t.getTransferMode() == TransferMode.MOVE) {
                     String selected = (String) t.getDragboard()
                             .getContent(DataFormat.PLAIN_TEXT);
                     Object obj = t.getDragboard().getContent(DataFormat.PLAIN_TEXT);
 
                     listItems.remove(getIndex());
-                    listItems.add(getIndex() + 1, selected);
+                    listItems.add(getIndex() + 1, new ProcessingOperation(selected));
                 }
             }
         });
     }
 
     private void updateCell() {
-        ObservableList<String> listItems = scriptView.getItems();
+        ObservableList<ProcessingOperation> listItems = scriptView.getItems();
 
         if (this.getIndex() != -1 && this.getIndex() < listItems.size()) {
-            this.setText(listItems.get(this.getIndex()));
+            this.setText(listItems.get(this.getIndex()).toString());
             if (this.getIndex() == OperationListCell.failedIndex) {
                 setOperationFailed();
             } else {

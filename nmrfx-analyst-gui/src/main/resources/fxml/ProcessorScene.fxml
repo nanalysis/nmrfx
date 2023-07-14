@@ -60,27 +60,11 @@
                             <items>
                                 <Label text="Operations:"/>
                                 <MenuButton fx:id="opMenuButton" mnemonicParsing="false" text="Add"/>
-                                <Button fx:id="opDeleteButton" onAction="#deleteOp" text="Delete"/>
                                 <Button fx:id="opDocButton" onAction="#showOpDoc" text="Docs"/>
                             </items>
                         </ToolBar>
 
                         <ModifiableAccordionScrollPane fx:id="accordion"/>
-                    </children>
-                </VBox>
-            </Tab>
-            <Tab closable="true" text="Old">
-                <VBox>
-                    <children>
-                        <HBox VBox.vgrow="NEVER">
-                            <children>
-                            </children>
-                        </HBox>
-                        <ListView fx:id="scriptView" minHeight="0.0" onKeyReleased="#handleScriptKey"
-                                  prefHeight="0.0"
-                                  VBox.vgrow="ALWAYS"/>
-                        <PropertySheet fx:id="propertySheet" minHeight="0.0" minWidth="300.0" prefHeight="0.0"
-                                       VBox.vgrow="ALWAYS"/>
                     </children>
                 </VBox>
             </Tab>

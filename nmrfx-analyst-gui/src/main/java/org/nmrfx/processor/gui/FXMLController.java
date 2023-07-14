@@ -1411,12 +1411,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         int start = 0;
         int end = size - 1;
         if (chartProcessor != null) {
-            List<String> listItems = chartProcessor.getOperations(vecDimName);
+            List<ProcessingOperation> listItems = chartProcessor.getOperations(vecDimName);
             if (listItems != null) {
                 Map<String, String> values = null;
-                for (String s : listItems) {
-                    if (s.contains("EXTRACT")) {
-                        values = PropertyManager.parseOpString(s);
+                for (ProcessingOperation processingOperation : listItems) {
+                    if (processingOperation.opName.equals("EXTRACT")) {
+                        values = PropertyManager.parseOpString(processingOperation.toString());
                     }
                 }
                 if (values != null) {
@@ -1442,24 +1442,23 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         ArrayList<Double> fracs = new ArrayList<>();
         if (chartProcessor != null) {
             int currentIndex = chartProcessor.getProcessorController().getPropertyManager().getCurrentIndex();
-            List<String> listItems = chartProcessor.getOperations(vecDimName);
+            List<ProcessingOperation> listItems = chartProcessor.getOperations(vecDimName);
             if (listItems != null) {
                 log.info("curr ind {}", currentIndex);
                 Map<String, String> values = null;
                 if (currentIndex != -1) {
-                    String s = listItems.get(currentIndex);
-                    log.info(s);
-                    if (s.contains("REGIONS")) {
-                        values = PropertyManager.parseOpString(s);
+                    ProcessingOperation processingOperation = listItems.get(currentIndex);
+                    if (processingOperation.opName.equals("REGIONS")) {
+                        values = PropertyManager.parseOpString(processingOperation.toString());
                         if (log.isInfoEnabled()) {
                             log.info(values.toString());
                         }
                     }
                 }
                 if (values == null) {
-                    for (String s : listItems) {
-                        if (s.contains("REGIONS")) {
-                            values = PropertyManager.parseOpString(s);
+                    for (ProcessingOperation processingOperation : listItems) {
+                        if (processingOperation.opName.equals("REGIONS")) {
+                            values = PropertyManager.parseOpString(processingOperation.toString());
                         }
                     }
                 }

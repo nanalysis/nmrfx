@@ -333,10 +333,10 @@ public class Phaser {
         String phaseDim = String.valueOf(chart.getPhaseDim() + 1);
         if (chart.hasData() && (controller.getChartProcessor() != null)) {
             if (chart.is1D()) {
-                List<String> listItems = controller.getChartProcessor().getOperations("D" + phaseDim);
+                List<ProcessingOperation> listItems = controller.getChartProcessor().getOperations("D" + phaseDim);
                 if (listItems != null) {
-                    for (String s : listItems) {
-                        if (s.contains("AUTOPHASE")) {
+                    for (ProcessingOperation processingOperation : listItems) {
+                        if (processingOperation.opName.equals("AUTOPHASE")) {
                             double aph0 = AutoPhase.lastPh0.get();
                             double aph1 = AutoPhase.lastPh1.get();
                             ph0 -= aph0;
@@ -379,14 +379,15 @@ public class Phaser {
         }
         String phaseDim = "D" + (chart.getPhaseDim() + 1);
         if (controller.getChartProcessor() != null) {
-            List<String> listItems = controller.getChartProcessor().getOperations(phaseDim);
+            List<ProcessingOperation> listItems = controller.getChartProcessor().getOperations(phaseDim);
             if (listItems != null) {
                 Map<String, String> values = null;
-                for (String s : listItems) {
-                    if (s.contains("PHASE")) {
-                        values = PropertyManager.parseOpString(s);
+                for (ProcessingOperation processingOperation : listItems) {
+                    String opName = processingOperation.opName;
+                    if (opName.equals("PHASE")) {
+                        values = PropertyManager.parseOpString(processingOperation.toString());
                     }
-                    if (s.contains("AUTOPHASE")) {
+                    if (opName.equals("AUTOPHASE")) {
                         aph0 = AutoPhase.lastPh0.get();
                         aph1 = AutoPhase.lastPh1.get();
                     }

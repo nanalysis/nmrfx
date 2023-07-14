@@ -54,29 +54,28 @@ public class PropertyManager {
     ChangeListener<Boolean> boolListener;
     ChangeListener<String> complexListener;
     ChangeListener<String> listListener;
-    PropertySheet propertySheet;
-    ListView scriptView;
     ProcessorController processorController;
-    ObservableList<String> listItems;
+    ObservableList<ProcessingOperation> listItems;
     private int currentIndex = -1;
     private String currentOp = "";
     private TextField opTextField;
     PopOver popOver;
-    ObservableList<PropertySheet.Item> propItems = FXCollections.observableArrayList();
+    static ObservableList<PropertySheet.Item> propItems = FXCollections.observableArrayList();
     ChangeListener<Number> scriptOpListener = null;
+    Map<String, ParInfo> parInfoMap = new HashMap<>();
 
-    PropertyManager(ProcessorController processorController, final ListView scriptView, PropertySheet propertySheet, ObservableList<String> listItems, TextField opTextField, PopOver popOver) {
+    PropertyManager(ProcessorController processorController, ObservableList<ProcessingOperation> listItems, TextField opTextField, PopOver popOver) {
         this.processorController = processorController;
-        this.scriptView = scriptView;
         this.listItems = listItems;
         this.opTextField = opTextField;
-        this.propertySheet = propertySheet;
         this.popOver = popOver;
         doubleSliderListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
+                System.out.println("double slider " + number + " " + number2);
                 PropertySheet.Item item = (PropertySheet.Item) observableValue;
-                updateOp((PropertySheet.Item) observableValue);
+                System.out.println("update double");
+                updateOp((OperationItem) observableValue);
             }
         };
         doubleListener = new ChangeListener<Number>() {
@@ -88,37 +87,38 @@ public class PropertyManager {
                         updatePhases(item, number, number2);
                     }
                 }
-                updateOp((PropertySheet.Item) observableValue);
+                System.out.println("double");
+                updateOp((OperationItem) observableValue);
             }
         };
         intListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
-                updateOp((PropertySheet.Item) observableValue);
+                updateOp((OperationItem) observableValue);
             }
         };
         boolListener = new ChangeListener<Boolean>() {
             @Override
             public void changed(ObservableValue<? extends Boolean> observableValue, Boolean bool, Boolean bool2) {
-                updateOp((PropertySheet.Item) observableValue);
+                updateOp((OperationItem) observableValue);
             }
         };
         stringListener = new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observableValue, String string, String string2) {
-                updateOp((PropertySheet.Item) observableValue);
+                updateOp((OperationItem) observableValue);
             }
         };
         complexListener = new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observableValue, String c1, String c2) {
-                updateOp((PropertySheet.Item) observableValue);
+                updateOp((OperationItem) observableValue);
             }
         };
         listListener = new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observableValue, String c1, String c2) {
-                updateOp((PropertySheet.Item) observableValue);
+                updateOp((OperationItem) observableValue);
             }
         };
 
@@ -131,8 +131,8 @@ public class PropertyManager {
                         //there is a single item in the Cells -- Don't unselect
                         scriptIndex = 0;
                     } else if (scriptIndex != -1) {
-                        String selOp = (String) scriptView.getItems().get(scriptIndex);
-                        setPropSheet(scriptIndex, selOp);
+//                        ProcessingOperation selOp = scriptView.getItems().get(scriptIndex);
+//                        setPropSheet(scriptIndex, selOp.toString());
                     } else {
                         setPropSheet(scriptIndex, "");
                     }
@@ -143,12 +143,7 @@ public class PropertyManager {
                 }
             }
         };
-        scriptView.getSelectionModel().selectedIndexProperty().addListener(scriptOpListener);
-
-        propertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory(processorController));
-        propertySheet.setMode(PropertySheet.Mode.NAME);
-        propertySheet.setModeSwitcherVisible(false);
-        propertySheet.setSearchBoxVisible(false);
+        // scriptView.getSelectionModel().selectedIndexProperty().addListener(scriptOpListener);
 
     }
 
@@ -157,11 +152,11 @@ public class PropertyManager {
     }
 
     public void removeScriptListener() {
-        scriptView.getSelectionModel().selectedIndexProperty().removeListener(scriptOpListener);
+        // scriptView.getSelectionModel().selectedIndexProperty().removeListener(scriptOpListener);
     }
 
     public void addScriptListener() {
-        scriptView.getSelectionModel().selectedIndexProperty().addListener(scriptOpListener);
+        // scriptView.getSelectionModel().selectedIndexProperty().addListener(scriptOpListener);
     }
 
     public int getCurrentIndex() {
@@ -191,29 +186,30 @@ public class PropertyManager {
             if (opIndex < 0) {
                 System.out.println("bad op");
             } else if (opIndex >= listItems.size()) {
-                listItems.add(op);
-                scriptView.getSelectionModel().select(opIndex);
+                listItems.add(new ProcessingOperation(op));
+                // scriptView.getSelectionModel().select(opIndex);
                 opIndex = listItems.size() - 1;
             } else {
-                String curOp = OperationInfo.trimOp(listItems.get(opIndex));
+                String curOp = listItems.get(opIndex).opName;
                 String trimOp = OperationInfo.trimOp(op);
                 if (!appendOp && trimOp.equals(curOp)) {
-                    listItems.set(opIndex, op);
+                    ProcessingOperation procOp = listItems.get(opIndex);
+                    procOp.update(op);
+                    processorController.chartProcessor.updateOpList();
                     /**
                      * If the selected index isn't equal to the op index, or if
                      * we are not at the case where there's a single op, then
                      * change the selected cell.
                      */
-                    if (!(scriptView.getSelectionModel().getSelectedIndex() == opIndex)
-                            && !(scriptView.getSelectionModel().getSelectedIndex() == -1 && listItems.size() == 1)) {
-                        scriptView.getSelectionModel().select(opIndex);
-                    }
+//                    if (!(scriptView.getSelectionModel().getSelectedIndex() == opIndex)
+//                            && !(scriptView.getSelectionModel().getSelectedIndex() == -1 && listItems.size() == 1)) {
+//                        scriptView.getSelectionModel().select(opIndex);
+//                    }
                 } else {
-                    listItems.add(opIndex, op);
-                    scriptView.getSelectionModel().select(opIndex);
+                    listItems.add(opIndex, new ProcessingOperation(op));
+                    //   scriptView.getSelectionModel().select(opIndex);
                 }
             }
-            opTextField.setText("");
             popOver.hide();
         }
         return opIndex;
@@ -223,7 +219,7 @@ public class PropertyManager {
         PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         if (chart != null) {
             if (item.getName().equals("ph1")) {
-                adjustPhasePivot(propertySheet.getItems(), oldValue, newValue);
+                //   adjustPhasePivot(propertySheet.getItems(), oldValue, newValue);
             } else if (item.getName().equals("ph0")) {
                 if (chart.getFXMLController().isPhaseSliderVisible()) {
                     chart.getFXMLController().getPhaser().handlePh0Reset(newValue.doubleValue(), false);
@@ -256,16 +252,18 @@ public class PropertyManager {
         return setOp(op, false, -1);
     }
 
-    private void updateOp(PropertySheet.Item updateItem) {
+    private void updateOp(OperationItem updateItem) {
+        currentIndex = processorController.getExpandedTitlePane();
         if (currentIndex == -1) {
             return;
         }
         int index = currentIndex;
         String opName = updateItem.getCategory();
-        if (!opName.equals(currentOp)) {
-            return;
-        }
-        List<PropertySheet.Item> items = propertySheet.getItems();
+//        if (!opName.equals(currentOp)) {
+//            return;
+//        }
+        List<PropertySheet.Item> items = updateItem.getPropertySheet().getItems();
+        System.out.println("update " + items.size());
         if (items.size() == 0) {
             return;
         }
@@ -354,10 +352,6 @@ public class PropertyManager {
 
     }
 
-    void clearPropSheet() {
-        propertySheet.getItems().clear();
-    }
-
     void setPropSheet(int scriptIndex, String op) {
         currentIndex = -1;
         String trimOp = OperationInfo.trimOp(op);
@@ -392,7 +386,7 @@ public class PropertyManager {
         }
         currentIndex = scriptIndex;
         currentOp = trimOp;
-        propertySheet.getItems().setAll(newItems);
+        // propertySheet.getItems().setAll(newItems);
 
     }
 
@@ -418,7 +412,7 @@ public class PropertyManager {
         return values;
     }
 
-
+    record ParInfo(ArrayList parList, String description) {}
 
     void setupItems() {
         List<?> pyDocs = processorController.chartProcessor.getDocs();
@@ -426,285 +420,294 @@ public class PropertyManager {
             String op = (String) pyDocs.get(i);
             ArrayList parList = (ArrayList) pyDocs.get(i + 2);
             String description = (String) pyDocs.get(i + 3);
+            ParInfo parInfo = new ParInfo(parList, description);
+            parInfoMap.put(op, parInfo);
+        }
+    }
 
-            for (Object parObj : parList) {
-                HashMap parMap = (HashMap) parObj;
-                String name = (String) parMap.get("name");
-                String parDesc = (String) parMap.get("desc");
-                Boolean optional = (Boolean) parMap.get("optional");
-                ArrayList types = (ArrayList) parMap.get("type");
-
-                if (types.size() == 1) {
-                    String type = (String) types.get(0);
-                    switch (type) {
-                        case "string": {
-                            String defaultString;
-                            Object defObj = parMap.get("default");
-                            if (defObj instanceof String) {
-                                defaultString = (String) defObj;
-                            } else if (defObj == null) {
-                                defaultString = ""; // fixme  what to do when no default
-                            } else {
-                                defaultString = defObj.toString();
-                            }
-                            propItems.add(new TextOperationItem(stringListener, defaultString, op, name, parDesc));
-
-                            break;
+    void setupItem(PropertySheet propertySheet, String op) {
+        if (parInfoMap.isEmpty()) {
+            setupItems();
+        }
+        ParInfo parInfo = parInfoMap.get(op);
+        propItems.clear();
+        System.out.println("now op " + op + " " + propertySheet);
+        for (Object parObj : parInfo.parList) {
+            HashMap parMap = (HashMap) parObj;
+            String name = (String) parMap.get("name");
+            String parDesc = (String) parMap.get("desc");
+            Boolean optional = (Boolean) parMap.get("optional");
+            ArrayList types = (ArrayList) parMap.get("type");
+            if (types.size() == 1) {
+                String type = (String) types.get(0);
+                switch (type) {
+                    case "string": {
+                        String defaultString;
+                        Object defObj = parMap.get("default");
+                        if (defObj instanceof String) {
+                            defaultString = (String) defObj;
+                        } else if (defObj == null) {
+                            defaultString = ""; // fixme  what to do when no default
+                        } else {
+                            defaultString = defObj.toString();
                         }
-                        case "wstring": {
-                            String defaultString;
-                            Object defObj = parMap.get("default");
-                            if (defObj instanceof String) {
-                                defaultString = (String) defObj;
-                            } else if (defObj == null) {
-                                defaultString = ""; // fixme  what to do when no default
-                            } else {
-                                defaultString = defObj.toString();
-                            }
-                            propItems.add(new TextWaitingOperationItem(null, this::updateOp, defaultString, op, name, parDesc));
-                            break;
+                        propItems.add(new TextOperationItem(propertySheet, stringListener, defaultString, op, name, parDesc));
+
+                        break;
+                    }
+                    case "wstring": {
+                        String defaultString;
+                        Object defObj = parMap.get("default");
+                        if (defObj instanceof String) {
+                            defaultString = (String) defObj;
+                        } else if (defObj == null) {
+                            defaultString = ""; // fixme  what to do when no default
+                        } else {
+                            defaultString = defObj.toString();
                         }
-                        case "file":
-                            String defaultString;
-                            Object defObj = parMap.get("default");
-                            if (defObj instanceof String) {
-                                defaultString = (String) defObj;
-                            } else if (defObj == null) {
-                                defaultString = ""; // fixme  what to do when no default
+                        propItems.add(new TextWaitingOperationItem(propertySheet, null, this::updateOp, defaultString, op, name, parDesc));
+                        break;
+                    }
+                    case "file":
+                        String defaultString;
+                        Object defObj = parMap.get("default");
+                        if (defObj instanceof String) {
+                            defaultString = (String) defObj;
+                        } else if (defObj == null) {
+                            defaultString = ""; // fixme  what to do when no default
+                        } else {
+                            defaultString = defObj.toString();
+                        }
+                        propItems.add(new FileOperationItem(propertySheet, stringListener, defaultString, op, name, parDesc));
+                        break;
+                    case "bool":
+                        boolean defaultBool;
+                        defObj = parMap.get("default");
+                        if (defObj instanceof Boolean) {
+                            defaultBool = ((Boolean) defObj);
+                        } else if (defObj == null) {
+                            defaultBool = false; // fixme  what to do when no default
+                        } else {
+                            String defStr = (String) defObj;
+                            defaultBool = Boolean.parseBoolean(defStr);
+                        }
+                        propItems.add(new BooleanOperationItem(propertySheet, boolListener, defaultBool, op, name, parDesc));
+                        break;
+                    case "int":
+                        int minInt = -16384;
+                        int maxInt = 16384;
+                        if (parMap.containsKey("min")) {
+                            Object minObj = parMap.get("min");
+                            if (minObj instanceof Integer) {
+                                minInt = ((Integer) minObj).intValue();
                             } else {
-                                defaultString = defObj.toString();
+                                String minStr = (String) minObj;
+                                if (minStr.startsWith("size")) {
+                                    minInt = 0;
+                                } else {
+                                    minInt = Integer.parseInt(minStr);
+                                }
                             }
-                            propItems.add(new FileOperationItem(stringListener, defaultString, op, name, parDesc));
-                            break;
-                        case "bool":
-                            boolean defaultBool;
-                            defObj = parMap.get("default");
-                            if (defObj instanceof Boolean) {
-                                defaultBool = ((Boolean) defObj);
-                            } else if (defObj == null) {
-                                defaultBool = false; // fixme  what to do when no default
+                        }
+                        if (parMap.containsKey("max")) {
+                            Object maxObj = parMap.get("max");
+                            if (maxObj instanceof Integer) {
+                                maxInt = ((Integer) maxObj).intValue();
                             } else {
-                                String defStr = (String) defObj;
-                                defaultBool = Boolean.parseBoolean(defStr);
-                            }
-                            propItems.add(new BooleanOperationItem(boolListener, defaultBool, op, name, parDesc));
-                            break;
-                        case "int":
-                            int minInt = -16384;
-                            int maxInt = 16384;
-                            if (parMap.containsKey("min")) {
-                                Object minObj = parMap.get("min");
-                                if (minObj instanceof Integer) {
-                                    minInt = ((Integer) minObj).intValue();
-                                } else {
-                                    String minStr = (String) minObj;
-                                    if (minStr.startsWith("size")) {
-                                        minInt = 0;
-                                    } else {
-                                        minInt = Integer.parseInt(minStr);
-                                    }
-                                }
-                            }
-                            if (parMap.containsKey("max")) {
-                                Object maxObj = parMap.get("max");
-                                if (maxObj instanceof Integer) {
-                                    maxInt = ((Integer) maxObj).intValue();
-                                } else {
 
-                                    String maxStr = (String) maxObj;
-                                    if (maxStr.startsWith("size")) {
-                                        maxInt = 16384;
-                                    } else {
-                                        maxInt = Integer.parseInt(maxStr);
-                                    }
+                                String maxStr = (String) maxObj;
+                                if (maxStr.startsWith("size")) {
+                                    maxInt = 16384;
+                                } else {
+                                    maxInt = Integer.parseInt(maxStr);
                                 }
                             }
-                            int defaultInt;
-                            defObj = parMap.get("default");
-                            if (defObj instanceof Integer) {
-                                defaultInt = ((Integer) defObj).intValue();
-                            } else if (defObj == null) {
-                                defaultInt = 0; // fixme  what to do when no default
+                        }
+                        int defaultInt;
+                        defObj = parMap.get("default");
+                        if (defObj instanceof Integer) {
+                            defaultInt = ((Integer) defObj).intValue();
+                        } else if (defObj == null) {
+                            defaultInt = 0; // fixme  what to do when no default
+                        } else {
+                            String defStr = (String) defObj;
+                            defaultInt = Integer.parseInt(defStr);
+                        }
+                        if ((maxInt - minInt) < 2048) {
+                            propItems.add(new IntRangeOperationItem(propertySheet, intListener, defaultInt, minInt, maxInt, op, name, parDesc));
+                        } else {
+                            propItems.add(new IntOperationItem(propertySheet, intListener, defaultInt, minInt, maxInt, op, name, parDesc));
+
+                        }
+
+                        break;
+                    case "complex":
+                        Object defComplexObj = parMap.get("default");
+                        if (defComplexObj instanceof PyComplex) {
+                            PyComplex defPyComplex = (PyComplex) defComplexObj;
+                            Complex defComplex = new Complex(
+                                    defPyComplex.real, defPyComplex.imag);
+                            ComplexOperationItem crItem = new ComplexOperationItem(propertySheet, complexListener, defComplex, op, name, parDesc);
+                            propItems.add(crItem);
+                        } else if (defComplexObj instanceof Number) {
+                            PyComplex defPyComplex = (PyComplex) defComplexObj;
+                            Complex defComplex = new Complex(
+                                    defPyComplex.real, defPyComplex.imag);
+                            ComplexOperationItem crItem = new ComplexOperationItem(propertySheet, complexListener, defComplex, op, name, parDesc);
+                            propItems.add(crItem);
+                        }
+                        break;
+
+                    case "real":
+                    case "double":
+                    case "position":
+                        boolean useSlider = true;
+                        if (parMap.containsKey("slider")) {
+                            Object sliderObj = parMap.get("slider");
+                            if (sliderObj instanceof Boolean) {
+                                useSlider = ((Boolean) sliderObj).booleanValue();
                             } else {
-                                String defStr = (String) defObj;
-                                defaultInt = Integer.parseInt(defStr);
+                                useSlider = sliderObj.toString().equals("1");
                             }
-                            if ((maxInt - minInt) < 2048) {
-                                propItems.add(new IntRangeOperationItem(intListener, defaultInt, minInt, maxInt, op, name, parDesc));
+                        }
+                        double minDouble = -100000.0;
+                        double maxDouble = 100000.0;
+                        if (parMap.containsKey("min")) {
+                            Object minObj = parMap.get("min");
+                            if (minObj instanceof Double) {
+                                minDouble = ((Double) minObj).doubleValue();
                             } else {
-                                propItems.add(new IntOperationItem(intListener, defaultInt, minInt, maxInt, op, name, parDesc));
-
-                            }
-
-                            break;
-                        case "complex":
-                            Object defComplexObj = parMap.get("default");
-                            if (defComplexObj instanceof PyComplex) {
-                                PyComplex defPyComplex = (PyComplex) defComplexObj;
-                                Complex defComplex = new Complex(
-                                        defPyComplex.real, defPyComplex.imag);
-                                ComplexOperationItem crItem = new ComplexOperationItem(complexListener, defComplex, op, name, parDesc);
-                                propItems.add(crItem);
-                            } else if (defComplexObj instanceof Number) {
-                                PyComplex defPyComplex = (PyComplex) defComplexObj;
-                                Complex defComplex = new Complex(
-                                        defPyComplex.real, defPyComplex.imag);
-                                ComplexOperationItem crItem = new ComplexOperationItem(complexListener, defComplex, op, name, parDesc);
-                                propItems.add(crItem);
-                            }
-                            break;
-
-                        case "real":
-                        case "double":
-                        case "position":
-                            boolean useSlider = true;
-                            if (parMap.containsKey("slider")) {
-                                Object sliderObj = parMap.get("slider");
-                                if (sliderObj instanceof Boolean) {
-                                    useSlider = ((Boolean) sliderObj).booleanValue();
+                                String minStr = (String) minObj;
+                                if (minStr.startsWith("size")) {
+                                    minDouble = 0;
+                                } else if (minStr.startsWith("Double.MIN")) {
+                                    minDouble = Double.MIN_VALUE;
                                 } else {
-                                    useSlider = sliderObj.toString().equals("1");
+                                    minDouble = Double.parseDouble(minStr);
                                 }
                             }
-                            double minDouble = -100000.0;
-                            double maxDouble = 100000.0;
-                            if (parMap.containsKey("min")) {
-                                Object minObj = parMap.get("min");
-                                if (minObj instanceof Double) {
-                                    minDouble = ((Double) minObj).doubleValue();
-                                } else {
-                                    String minStr = (String) minObj;
-                                    if (minStr.startsWith("size")) {
-                                        minDouble = 0;
-                                    } else if (minStr.startsWith("Double.MIN")) {
-                                        minDouble = Double.MIN_VALUE;
-                                    } else {
-                                        minDouble = Double.parseDouble(minStr);
-                                    }
-                                }
-                            }
-                            if (parMap.containsKey("max")) {
-                                Object maxObj = parMap.get("max");
-                                if (maxObj instanceof Double) {
-                                    maxDouble = ((Double) maxObj).doubleValue();
-                                } else {
-
-                                    String maxStr = (String) maxObj;
-                                    if (maxStr.startsWith("size")) {
-                                        maxDouble = 1;
-                                    } else if (maxStr.startsWith("Double.MAX")) {
-                                        maxDouble = 100000.0;
-                                    } else {
-                                        maxDouble = Double.parseDouble(maxStr);
-                                    }
-                                }
-                            }
-                            double aminDouble = Double.NEGATIVE_INFINITY;
-                            double amaxDouble = Double.MAX_VALUE;
-                            if (parMap.containsKey("amin")) {
-                                Object minObj = parMap.get("amin");
-                                if (minObj instanceof Double) {
-                                    aminDouble = ((Double) minObj).doubleValue();
-                                } else {
-                                    String minStr = (String) minObj;
-                                    if (minStr.startsWith("size")) {
-                                        aminDouble = 0;
-                                    } else if (minStr.startsWith("Double.MIN")) {
-                                        aminDouble = Double.MIN_VALUE;
-                                    } else {
-                                        aminDouble = Double.parseDouble(minStr);
-                                    }
-                                }
-
-                            }
-                            if (parMap.containsKey("amax")) {
-                                Object maxObj = parMap.get("amax");
-                                if (maxObj instanceof Double) {
-                                    amaxDouble = ((Double) maxObj).doubleValue();
-                                } else {
-
-                                    String maxStr = (String) maxObj;
-                                    if (maxStr.startsWith("size")) {
-                                        amaxDouble = 1;
-                                    } else if (maxStr.startsWith("Double.MAX")) {
-                                        amaxDouble = 100000.0;
-                                    } else {
-                                        amaxDouble = Double.parseDouble(maxStr);
-                                    }
-                                }
-
-                            }
-                            double defaultDouble;
-                            char lastChar = (char) -1;
-                            Object defDoubleObj = parMap.get("default");
-                            if (defDoubleObj instanceof Double) {
-                                defaultDouble = ((Double) defDoubleObj).doubleValue();
-                            } else if (defDoubleObj instanceof Integer) {
-                                defaultDouble = ((Integer) defDoubleObj).doubleValue();
-                            } else if (defDoubleObj == null) {
-                                defaultDouble = 0.0; // fixme  what to do when no default
+                        }
+                        if (parMap.containsKey("max")) {
+                            Object maxObj = parMap.get("max");
+                            if (maxObj instanceof Double) {
+                                maxDouble = ((Double) maxObj).doubleValue();
                             } else {
-                                String defStr = (String) defDoubleObj;
-                                if (type.equals("position")) {
-                                    lastChar = defStr.charAt(defStr.length() - 1);
-                                    if (!Character.isLetter(lastChar)) {
-                                        lastChar = (char) -1;
-                                    }
+
+                                String maxStr = (String) maxObj;
+                                if (maxStr.startsWith("size")) {
+                                    maxDouble = 1;
+                                } else if (maxStr.startsWith("Double.MAX")) {
+                                    maxDouble = 100000.0;
+                                } else {
+                                    maxDouble = Double.parseDouble(maxStr);
                                 }
-                                defaultDouble = Double.parseDouble(defStr);
                             }
+                        }
+                        double aminDouble = Double.NEGATIVE_INFINITY;
+                        double amaxDouble = Double.MAX_VALUE;
+                        if (parMap.containsKey("amin")) {
+                            Object minObj = parMap.get("amin");
+                            if (minObj instanceof Double) {
+                                aminDouble = ((Double) minObj).doubleValue();
+                            } else {
+                                String minStr = (String) minObj;
+                                if (minStr.startsWith("size")) {
+                                    aminDouble = 0;
+                                } else if (minStr.startsWith("Double.MIN")) {
+                                    aminDouble = Double.MIN_VALUE;
+                                } else {
+                                    aminDouble = Double.parseDouble(minStr);
+                                }
+                            }
+
+                        }
+                        if (parMap.containsKey("amax")) {
+                            Object maxObj = parMap.get("amax");
+                            if (maxObj instanceof Double) {
+                                amaxDouble = ((Double) maxObj).doubleValue();
+                            } else {
+
+                                String maxStr = (String) maxObj;
+                                if (maxStr.startsWith("size")) {
+                                    amaxDouble = 1;
+                                } else if (maxStr.startsWith("Double.MAX")) {
+                                    amaxDouble = 100000.0;
+                                } else {
+                                    amaxDouble = Double.parseDouble(maxStr);
+                                }
+                            }
+
+                        }
+                        double defaultDouble;
+                        char lastChar = (char) -1;
+                        Object defDoubleObj = parMap.get("default");
+                        if (defDoubleObj instanceof Double) {
+                            defaultDouble = ((Double) defDoubleObj).doubleValue();
+                        } else if (defDoubleObj instanceof Integer) {
+                            defaultDouble = ((Integer) defDoubleObj).doubleValue();
+                        } else if (defDoubleObj == null) {
+                            defaultDouble = 0.0; // fixme  what to do when no default
+                        } else {
+                            String defStr = (String) defDoubleObj;
                             if (type.equals("position")) {
-                                DoubleUnitsRangeOperationItem drItem = new DoubleUnitsRangeOperationItem(doubleSliderListener, defaultDouble, minDouble, maxDouble,
+                                lastChar = defStr.charAt(defStr.length() - 1);
+                                if (!Character.isLetter(lastChar)) {
+                                    lastChar = (char) -1;
+                                }
+                            }
+                            defaultDouble = Double.parseDouble(defStr);
+                        }
+                        if (type.equals("position")) {
+                            DoubleUnitsRangeOperationItem drItem = new DoubleUnitsRangeOperationItem(propertySheet, doubleSliderListener, defaultDouble, minDouble, maxDouble,
+                                    aminDouble, amaxDouble, op, name, parDesc);
+                            drItem.setLastChar(lastChar);
+                            propItems.add(drItem);
+
+                        } else {
+                            if (useSlider) {
+                                DoubleRangeOperationItem drItem = new DoubleRangeOperationItem(propertySheet, doubleSliderListener, defaultDouble, minDouble, maxDouble,
                                         aminDouble, amaxDouble, op, name, parDesc);
                                 drItem.setLastChar(lastChar);
                                 propItems.add(drItem);
-
                             } else {
-                                if (useSlider) {
-                                    DoubleRangeOperationItem drItem = new DoubleRangeOperationItem(doubleSliderListener, defaultDouble, minDouble, maxDouble,
-                                            aminDouble, amaxDouble, op, name, parDesc);
-                                    drItem.setLastChar(lastChar);
-                                    propItems.add(drItem);
-                                } else {
-                                    DoubleOperationItem dItem = new DoubleOperationItem(doubleListener, defaultDouble, minDouble, maxDouble,
-                                            op, name, parDesc);
-                                    dItem.setLastChar(lastChar);
-                                    propItems.add(dItem);
-                                }
+                                DoubleOperationItem dItem = new DoubleOperationItem(propertySheet, doubleListener, defaultDouble, minDouble, maxDouble,
+                                        op, name, parDesc);
+                                dItem.setLastChar(lastChar);
+                                propItems.add(dItem);
                             }
-
-                            break;
-                        case "list":
-                            ListOperationItem lstItem;
-                            ArrayList defaultList = (ArrayList) parMap.get("default");
-                            ListOperationItemTypeSelector typeSelector = null;
-                            lstItem = new ListOperationItem(listListener, defaultList, op, name, parDesc, typeSelector);
-                            propItems.add(lstItem);
-                            break;
-                        default:
-                            break;
-                    }
-                } else {
-                    boolean isInt = true;
-                    for (Object type : types) {
-                        if (!(type instanceof Integer)) {
-                            isInt = false;
-                            break;
-
                         }
-                    }
-                    if (isInt) {
-                        propItems.add(new IntChoiceOperationItem(intListener, (Integer) types.get(0), types, op, name, parDesc));
-                    } else {
-                        propItems.add(new ChoiceOperationItem(stringListener, (String) types.get(0), types, op, name, parDesc));
+
+                        break;
+                    case "list":
+                        ListOperationItem lstItem;
+                        ArrayList defaultList = (ArrayList) parMap.get("default");
+                        ListOperationItemTypeSelector typeSelector = null;
+                        lstItem = new ListOperationItem(propertySheet, listListener, defaultList, op, name, parDesc, typeSelector);
+                        propItems.add(lstItem);
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                boolean isInt = true;
+                for (Object type : types) {
+                    if (!(type instanceof Integer)) {
+                        isInt = false;
+                        break;
 
                     }
                 }
+                if (isInt) {
+                    propItems.add(new IntChoiceOperationItem(propertySheet, intListener, (Integer) types.get(0), types, op, name, parDesc));
+                } else {
+                    propItems.add(new ChoiceOperationItem(propertySheet, stringListener, (String) types.get(0), types, op, name, parDesc));
 
+                }
             }
-            propItems.add(new BooleanOperationItem(boolListener, false, op, "disabled", "Disable this operation"));
-        }
 
+        }
+        propItems.add(new BooleanOperationItem(propertySheet, boolListener, false, op, "disabled", "Disable this operation"));
     }
 
 }
+
