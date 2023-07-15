@@ -64,7 +64,7 @@
                             </items>
                         </ToolBar>
 
-                        <ModifiableAccordionScrollPane fx:id="accordion"/>
+                        <ModifiableAccordionScrollPane fx:id="accordion" VBox.vgrow="ALWAYS"/>
                     </children>
                 </VBox>
             </Tab>

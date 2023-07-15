@@ -19,6 +19,8 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import javafx.beans.Observable;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -99,16 +101,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     private static String patternString = "(\\w+)=((\\[[^\\[]*\\])|(\"[^\"]*\")|('[^']*')|([^,]+))";
 
-    static Map<String, String> longNameMap = Map.of(
-            "TDCOMB", "Phase Sensitive Mode",
-            "APODIZE", "Apodization",
-            "ZF", "Zero Fill",
-            "FT", "Fourier Transform",
-            "PHASE", "Phasing",
-            "BC", "Baseline Correction",
-            "SUPPRESS", "Signal Suppression",
-            "EXTRACT", "Extract Region"
-            );
     private static final String[] BASIC_OPS = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
     private static final AtomicBoolean aListUpdated = new AtomicBoolean(false);
@@ -227,7 +219,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     TextField nLSCatFracField;
     TextField[][] lsTextFields;
     List<RadioButton> vectorDimButtons = new ArrayList<>();
-    ToggleButton sortButton;
     ToggleButton detailButton;
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
@@ -534,7 +525,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return script.toString();
     }
 
-    void deleteItem(int index) {
+    public void deleteItem(int index) {
         if (!operationList.isEmpty()) {
 
             /*
@@ -605,11 +596,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
 
-    private void updateTitledPane(TitledPane titledPane, ProcessingOperation op) {
-        String title = detailButton.isSelected() ? op.toString() : longNameMap.getOrDefault(op.opName, op.opName);
-        titledPane.setText(title);
+    private void updateTitledPane(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, ProcessingOperation op) {
+        titledPane.setProcessingOperation(op);
+        titledPane.setDetailedTitle(detailButton.isSelected());
         PropertySheet opPropertySheet = (PropertySheet) titledPane.getProperties().get("PropSheet");
-        System.out.println("Update titled pane " + opPropertySheet);
         opPropertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory(this));
         opPropertySheet.setMode(PropertySheet.Mode.NAME);
         opPropertySheet.setModeSwitcherVisible(false);
@@ -618,7 +608,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     private void newTitledPane(ProcessingOperation op) {
-        TitledPane titledPane = new TitledPane();
+        ModifiableAccordionScrollPane.ModifiableTitlePane titledPane = new ModifiableAccordionScrollPane.ModifiableTitlePane(this, op);
         PropertySheet opPropertySheet = new PropertySheet();
         VBox vBox = new VBox();
         HBox hBox = new HBox();
@@ -640,11 +630,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             }
             i++;
         }
-        System.out.println("get expanded " + index +  "" + activePane);
         return index;
     }
 
-    BooleanOperationItem  setPropSheet(TitledPane titledPane, PropertySheet opPropertySheet, int scriptIndex, ProcessingOperation op) {
+    BooleanOperationItem  setPropSheet(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, PropertySheet opPropertySheet, int scriptIndex, ProcessingOperation op) {
         Pattern pattern = null;
         String opPars = "";
         if (!op.equals("")) {
@@ -678,10 +667,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 System.out.println("add item " + item);
                 if (item.getName().equals("disabled")) {
                     boolItem = (BooleanOperationItem) item;
-                    if (boolItem.getValue()) {
-
-
-                    }
+                    titledPane.setActive(!boolItem.getValue());
                 } else {
                     newItems.add(item);
                 }
@@ -691,15 +677,28 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         opPropertySheet.setMode(PropertySheet.Mode.NAME);
         opPropertySheet.setModeSwitcherVisible(false);
         opPropertySheet.setSearchBoxVisible(false);
-
+        titledPane.getCheckBoxSelectedProperty().addListener(e -> {
+             updateActiveState(e, opPropertySheet, titledPane, op);
+        });
         opPropertySheet.getItems().setAll(newItems);
         return boolItem;
     }
 
-    private void updateAccordionList() {
-        if (accordion.getPanes().size() != operationList.size()) {
-            accordion.getPanes().clear();
+    private void updateActiveState(Observable e, PropertySheet propertySheet, ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, ProcessingOperation op) {
+        BooleanProperty b = (BooleanProperty) e;
+        op.disabled = !b.get();
+        propertyManager.updatePropertySheet(propertySheet, op.opName, titledPane.getIndex());
+    }
+
+    private void updateAccordionTitles() {
+        for (var pane: accordion.getPanes()) {
+            ModifiableAccordionScrollPane.ModifiableTitlePane mPane = (ModifiableAccordionScrollPane.ModifiableTitlePane) pane;
+            mPane.setDetailedTitle(detailButton.isSelected());
         }
+    }
+
+    private void updateAccordionList() {
+        accordion.getPanes().clear();
         int nOps = operationList.size();
         int origSize = accordion.size();
         int nDiff = nOps - origSize;
@@ -713,8 +712,13 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             accordion.remove(nOps, accordion.size());
         }
         for (int i = 0;i<nTest;i++) {
-            TitledPane pane = accordion.get(i);
+            ModifiableAccordionScrollPane.ModifiableTitlePane pane = accordion.get(i);
             updateTitledPane(pane, operationList.get(i));
+        }
+        int i = 0;
+        for (var pane: accordion.getPanes()) {
+            ModifiableAccordionScrollPane.ModifiableTitlePane mPane = (ModifiableAccordionScrollPane.ModifiableTitlePane) pane;
+            mPane.setIndex(i++);
         }
     }
 
@@ -1244,13 +1248,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         scanMaxN.getItems().addAll(5, 10, 20, 50, 100, 200);
         scanMaxN.setValue(50);
         viewMode.getItems().addAll(DisplayMode.values());
-        sortButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.SORT, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         detailButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.INFO, "",
                 AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         opBox.getItems().add(ToolBarUtils.makeFiller(20));
-        opBox.getItems().addAll(sortButton, detailButton);
-        sortButton.setOnAction(e -> updateAccordionList());
-        detailButton.setOnAction(e -> updateAccordionList());
+        opBox.getItems().addAll(detailButton);
+        detailButton.setOnAction(e -> updateAccordionTitles());
 
         initTable();
         setupListeners();

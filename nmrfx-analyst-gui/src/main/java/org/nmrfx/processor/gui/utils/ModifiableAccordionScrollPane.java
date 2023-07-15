@@ -3,16 +3,20 @@ package org.nmrfx.processor.gui.utils;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.skin.TitledPaneSkin;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import org.nmrfx.processor.gui.ProcessingOperation;
+import org.nmrfx.processor.gui.ProcessorController;
 
 import java.util.List;
 
@@ -42,30 +46,68 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
         accordion.getPanes().remove(i1, i2);
     }
 
-    public TitledPane get(int i) {
-        return accordion.getPanes().get(i);
+    public ModifiableAccordionScrollPane.ModifiableTitlePane get(int i) {
+       return  (ModifiableAccordionScrollPane.ModifiableTitlePane)  accordion.getPanes().get(i);
     }
 
-    public void add(TitledPane titledPane) {
+    public void add(ModifiableTitlePane titledPane) {
         accordion.add(titledPane);
     }
 
-
-    private static class ModifiableAccordion extends Accordion {
-
-        public void add(TitledPane titledPane) {
-            // Create Container with title + buttons
-            HBox titleBox = createContents(titledPane);
+    public static class ModifiableTitlePane extends TitledPane {
+        ContextMenu contextMenu = new ContextMenu();
+        ProcessingOperation processingOperation;
+        ProcessorController processorController;
+        CheckBox checkBox;
+        int index = -1;
+        public ModifiableTitlePane(ProcessorController processorController, ProcessingOperation processingOperation) {
+            this.processorController = processorController;
+            this.processingOperation = processingOperation;
 
             // Formatting for titledPane
-            titledPane.setGraphicTextGap(0);
+            // Create Container with title + buttons
+            HBox titleBox = createContents(this);
+            setGraphicTextGap(0);
             // It is easier to align the buttons if the title is a label within the graphic instead of showing the
             // title in the default way
-            titledPane.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-            titledPane.setGraphic(titleBox);
-            titledPane.setSkin(new ButtonTitlePaneSkin(titledPane));
+            setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            setGraphic(titleBox);
+            setSkin(new ButtonTitlePaneSkin(this));
+            MenuItem deleteItem = new MenuItem("Delete");
+            deleteItem.setOnAction(e -> deleteItem());
+            contextMenu.getItems().add(deleteItem);
+        }
 
-            this.getPanes().add(titledPane);
+        public void setProcessingOperation(ProcessingOperation op) {
+            this.processingOperation = op;
+        }
+
+        public BooleanProperty getCheckBoxSelectedProperty() {
+            return checkBox.selectedProperty();
+        }
+
+        public void setDetailedTitle(boolean state) {
+            setText(processingOperation.getTitle(state));
+        }
+
+        public boolean isActive() {
+            return checkBox.isSelected();
+        }
+
+        public void setActive(boolean state) {
+            checkBox.setSelected(state);
+        }
+
+        public void setIndex(int i) {
+            index = i;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        private void deleteItem() {
+            processorController.deleteItem(index);
         }
 
         /**
@@ -76,6 +118,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
          */
         private HBox createContents(TitledPane titledPane) {
             HBox titleBox = new HBox();
+            titledPane.setOnContextMenuRequested(e -> showContextMenu(e, titledPane));
             titleBox.setSpacing(5);
             titleBox.setPadding(new Insets(0, 5, 0, 5));
             titleBox.setAlignment(Pos.CENTER);
@@ -91,13 +134,26 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             HBox.setHgrow(spacer, Priority.ALWAYS);
             titleBox.getChildren().add(spacer);
             // Create Right Aligned Buttons
-            CheckBox checkBox = new CheckBox();
-            Text moveIcon = GlyphsDude.createIcon(FontAwesomeIcon.ARROWS_V,"10");
+            checkBox = new CheckBox();
+            Text moveIcon = GlyphsDude.createIcon(FontAwesomeIcon.ARROWS_V, "14");
             moveIcon.setOnMouseReleased(Event::consume);
-            titleBox.getChildren().addAll(checkBox,moveIcon);
+            titleBox.getChildren().addAll(checkBox, moveIcon);
             titledPane.textFillProperty().bind(Bindings.when(checkBox.selectedProperty()).then(Color.BLUE).otherwise(Color.GRAY));
             return titleBox;
         }
+
+        private void showContextMenu(ContextMenuEvent e, TitledPane titledPane) {
+            contextMenu.show(titledPane, e.getScreenX(), e.getScreenY());
+        }
+
+    }
+
+    private static class ModifiableAccordion extends Accordion {
+
+        public void add(ModifiableTitlePane titledPane) {
+            this.getPanes().add(titledPane);
+        }
+
     }
 
     private static class ButtonTitlePaneSkin extends TitledPaneSkin {

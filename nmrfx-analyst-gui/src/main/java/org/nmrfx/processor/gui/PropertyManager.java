@@ -72,9 +72,6 @@ public class PropertyManager {
         doubleSliderListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
-                System.out.println("double slider " + number + " " + number2);
-                PropertySheet.Item item = (PropertySheet.Item) observableValue;
-                System.out.println("update double");
                 updateOp((OperationItem) observableValue);
             }
         };
@@ -87,7 +84,6 @@ public class PropertyManager {
                         updatePhases(item, number, number2);
                     }
                 }
-                System.out.println("double");
                 updateOp((OperationItem) observableValue);
             }
         };
@@ -258,12 +254,16 @@ public class PropertyManager {
             return;
         }
         int index = currentIndex;
+        PropertySheet propertySheet = updateItem.getPropertySheet();
         String opName = updateItem.getCategory();
+        updatePropertySheet(propertySheet, opName, index);
 //        if (!opName.equals(currentOp)) {
 //            return;
 //        }
-        List<PropertySheet.Item> items = updateItem.getPropertySheet().getItems();
-        System.out.println("update " + items.size());
+    }
+
+    public void updatePropertySheet(PropertySheet propertySheet, String opName, int index) {
+        List<PropertySheet.Item> items = propertySheet.getItems();
         if (items.size() == 0) {
             return;
         }
@@ -291,7 +291,6 @@ public class PropertyManager {
         }
         opString.append(')');
         setOp(opString.toString(), false, index);
-
     }
 
     void addExtractRegion(double min, double max, double f1, double f2) {
@@ -431,7 +430,6 @@ public class PropertyManager {
         }
         ParInfo parInfo = parInfoMap.get(op);
         propItems.clear();
-        System.out.println("now op " + op + " " + propertySheet);
         for (Object parObj : parInfo.parList) {
             HashMap parMap = (HashMap) parObj;
             String name = (String) parMap.get("name");
