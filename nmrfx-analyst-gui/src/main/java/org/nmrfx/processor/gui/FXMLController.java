@@ -74,6 +74,7 @@ import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
+import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
@@ -1415,7 +1416,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             if (listItems != null) {
                 Map<String, String> values = null;
                 for (ProcessingOperation processingOperation : listItems) {
-                    if (processingOperation.opName.equals("EXTRACT")) {
+                    if (processingOperation.getName().equals("EXTRACT")) {
                         values = PropertyManager.parseOpString(processingOperation.toString());
                     }
                 }
@@ -1448,7 +1449,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 Map<String, String> values = null;
                 if (currentIndex != -1) {
                     ProcessingOperation processingOperation = listItems.get(currentIndex);
-                    if (processingOperation.opName.equals("REGIONS")) {
+                    if (processingOperation.getName().equals("REGIONS")) {
                         values = PropertyManager.parseOpString(processingOperation.toString());
                         if (log.isInfoEnabled()) {
                             log.info(values.toString());
@@ -1457,7 +1458,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 }
                 if (values == null) {
                     for (ProcessingOperation processingOperation : listItems) {
-                        if (processingOperation.opName.equals("REGIONS")) {
+                        if (processingOperation.getName().equals("REGIONS")) {
                             values = PropertyManager.parseOpString(processingOperation.toString());
                         }
                     }

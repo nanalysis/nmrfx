@@ -31,6 +31,7 @@ import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.MultiVecCounter;
+import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.VecIndex;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;

@@ -21,7 +21,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-import org.nmrfx.processor.gui.ProcessingOperation;
+import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.gui.ProcessorController;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.processing;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ public class ProcessingOperation {
     private static final String PATTERN_STRING = "(\\w+)=((\\[[^\\[]*])|(\"[^\"]*\")|('[^']*')|([^,]+))";
     static final Pattern opPattern = Pattern.compile(PATTERN_STRING);
 
-    record OperationParameter(String name, String value) {
+    public record OperationParameter(String name, String value) {
     }
 
 
@@ -31,6 +31,14 @@ public class ProcessingOperation {
 
     public ProcessingOperation(String string) {
         update(string);
+    }
+
+    public List<OperationParameter> getParameters() {
+        return parameters;
+    }
+
+    public String getName() {
+        return opName;
     }
 
     public String getTitle(boolean detailed) {
@@ -64,6 +72,10 @@ public class ProcessingOperation {
                 }
             }
         }
+    }
+
+    public void disabled(boolean state) {
+        disabled = state;
     }
 
     public boolean isDisabled() {

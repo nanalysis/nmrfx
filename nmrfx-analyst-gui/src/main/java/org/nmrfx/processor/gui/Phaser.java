@@ -28,6 +28,7 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.operations.AutoPhase;
 import org.nmrfx.processor.operations.IDBaseline2;
+import org.nmrfx.processor.processing.ProcessingOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -336,7 +337,7 @@ public class Phaser {
                 List<ProcessingOperation> listItems = controller.getChartProcessor().getOperations("D" + phaseDim);
                 if (listItems != null) {
                     for (ProcessingOperation processingOperation : listItems) {
-                        if (processingOperation.opName.equals("AUTOPHASE")) {
+                        if (processingOperation.getName().equals("AUTOPHASE")) {
                             double aph0 = AutoPhase.lastPh0.get();
                             double aph1 = AutoPhase.lastPh1.get();
                             ph0 -= aph0;
@@ -383,7 +384,7 @@ public class Phaser {
             if (listItems != null) {
                 Map<String, String> values = null;
                 for (ProcessingOperation processingOperation : listItems) {
-                    String opName = processingOperation.opName;
+                    String opName = processingOperation.getName();
                     if (opName.equals("PHASE")) {
                         values = PropertyManager.parseOpString(processingOperation.toString());
                     }

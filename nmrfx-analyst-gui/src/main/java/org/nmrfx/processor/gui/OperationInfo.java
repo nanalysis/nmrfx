@@ -23,6 +23,8 @@
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.processor.processing.ProcessingOperation;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -167,7 +169,7 @@ public class OperationInfo {
     }
 
     public static int getCurrentPosition(List<ProcessingOperation> current, ProcessingOperation newOp) {
-        String newOpName = newOp.opName;
+        String newOpName = newOp.getName();
         return getCurrentPosition(current, newOpName);
     }
 
@@ -178,7 +180,7 @@ public class OperationInfo {
         int index = -1;
         int iPos = 0;
         for (ProcessingOperation currentOp : current) {
-            String currentOpName = currentOp.opName;
+            String currentOpName = currentOp.getName();
             if (newOpName.equalsIgnoreCase(currentOpName)) {
                 index = iPos;
                 break;
@@ -189,7 +191,7 @@ public class OperationInfo {
     }
 
     public static int getPosition(List<ProcessingOperation> current, ProcessingOperation newOp) {
-        String newOpName = newOp.opName;
+        String newOpName = newOp.getName();
         return getPosition(current, newOpName);
     }
 
@@ -200,7 +202,7 @@ public class OperationInfo {
         int index = -1;
         int iPos = 0;
         for (ProcessingOperation currentOp : current) {
-            String currentOpName = currentOp.opName;
+            String currentOpName = currentOp.getName();
             if (newOpName.equalsIgnoreCase(currentOpName)) {
                 index = iPos;
                 break;
@@ -212,7 +214,7 @@ public class OperationInfo {
             if (orderIndex != -1) {
                 int i = 0;
                 for (ProcessingOperation currentOp : current) {
-                    String currentOpName = currentOp.opName;
+                    String currentOpName = currentOp.getName();
                     int curIndex = opOrderList.indexOf(currentOpName);
                     if (curIndex >= orderIndex) {
                         index = i;

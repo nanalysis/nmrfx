@@ -69,6 +69,7 @@ import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
+import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
 import org.nmrfx.project.ProjectBase;
@@ -630,14 +631,14 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     void setPropSheet(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, PropertySheet opPropertySheet, ProcessingOperation op) {
         opPropertySheet.getItems().clear();
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
-        propertyManager.setupItem(opPropertySheet, op.opName);
+        propertyManager.setupItem(opPropertySheet, op.getName());
         ObservableList<PropertySheet.Item> propItems = propertyManager.getItems();
         for (PropertySheet.Item item : propItems) {
             if (item == null) {
                 System.out.println("item null");
             } else if (!item.getName().equals("disabled")) {
                 boolean foundIt = false;
-                for (ProcessingOperation.OperationParameter parameter : op.parameters) {
+                for (ProcessingOperation.OperationParameter parameter : op.getParameters()) {
                     if (item.getName().equals(parameter.name())) {
                         foundIt = true;
                         ((OperationItem) item).setFromString(parameter.value());
@@ -660,8 +661,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     private void updateActiveState(Observable e, PropertySheet propertySheet, ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, ProcessingOperation op) {
         BooleanProperty b = (BooleanProperty) e;
-        op.disabled = !b.get();
-        propertyManager.updatePropertySheet(propertySheet, op.opName, titledPane.getIndex());
+        op.disabled(!b.get());
+        propertyManager.updatePropertySheet(propertySheet, op.getName(), titledPane.getIndex());
     }
 
     private void updateAccordionTitles() {

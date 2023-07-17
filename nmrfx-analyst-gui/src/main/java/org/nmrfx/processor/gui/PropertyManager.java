@@ -32,6 +32,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.processor.gui.spectra.SpecRegion;
+import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.utils.properties.*;
 import org.python.core.PyComplex;
 
@@ -185,7 +186,7 @@ public class PropertyManager {
                 // scriptView.getSelectionModel().select(opIndex);
                 opIndex = listItems.size() - 1;
             } else {
-                String curOp = listItems.get(opIndex).opName;
+                String curOp = listItems.get(opIndex).getName();
                 String trimOp = OperationInfo.trimOp(op);
                 if (!appendOp && trimOp.equals(curOp)) {
                     ProcessingOperation procOp = listItems.get(opIndex);
