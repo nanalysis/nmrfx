@@ -27,7 +27,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import org.apache.commons.math3.complex.Complex;
 import org.controlsfx.control.PopOver;

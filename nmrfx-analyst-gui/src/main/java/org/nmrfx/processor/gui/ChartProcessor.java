@@ -1140,7 +1140,6 @@ public class ChartProcessor {
             }
         } catch (Exception pE) {
             if (pE instanceof IncompleteProcessException) {
-                OperationListCell.failedOperation(((IncompleteProcessException) pE).index);
                 processorController.setProcessingStatus(pE.getMessage(), false, pE);
             } else if (pE instanceof PyException pyE) {
                 if (pyE.getCause() == null) {
@@ -1177,10 +1176,8 @@ public class ChartProcessor {
                 }
                 try {
                     processorController.clearProcessingTextLabel();
-                    OperationListCell.resetCells();
                     process.exec();
                 } catch (IncompleteProcessException e) {
-                    OperationListCell.failedOperation(e.index);
                     log.warn("error message: {}", e.getMessage(), e);
                     processorController.setProcessingStatus(e.op + " " + e.index + ": " + e.getMessage(), false, e);
                     log.warn(e.getMessage(), e);

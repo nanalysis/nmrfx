@@ -75,7 +75,6 @@ import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.FormatUtils;
 import org.nmrfx.utils.GUIUtils;
-import org.nmrfx.utils.properties.BooleanOperationItem;
 import org.nmrfx.utils.properties.OperationItem;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
@@ -93,14 +92,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ProcessorController implements Initializable, ProgressUpdater, NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
-
-    private static String patternString = "(\\w+)=((\\[[^\\[]*\\])|(\"[^\"]*\")|('[^']*')|([^,]+))";
-
     private static final String[] BASIC_OPS = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
     private static final AtomicBoolean aListUpdated = new AtomicBoolean(false);
@@ -276,7 +270,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         operationList.setAll(scriptList);
     }
 
-    protected List<ProcessingOperation> getOperationList() {
+    public ObservableList<ProcessingOperation> getOperationList() {
         return operationList;
     }
 
@@ -543,7 +537,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             } finally {
                 propertyManager.addScriptListener();
                 operationList.addListener(opListListener);
-                OperationListCell.updateCells();
                 chartProcessor.updateOpList();
             }
             updateAccordionList();
@@ -604,11 +597,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         opPropertySheet.setMode(PropertySheet.Mode.NAME);
         opPropertySheet.setModeSwitcherVisible(false);
         opPropertySheet.setSearchBoxVisible(false);
-        BooleanOperationItem boolItem = setPropSheet(titledPane, opPropertySheet, 0, op);
+        setPropSheet(titledPane, opPropertySheet,  op);
     }
 
     private void newTitledPane(ProcessingOperation op) {
-        ModifiableAccordionScrollPane.ModifiableTitlePane titledPane = new ModifiableAccordionScrollPane.ModifiableTitlePane(this, op);
+        ModifiableAccordionScrollPane.ModifiableTitlePane titledPane = accordion.makeNewTitlePane(this, op);
         PropertySheet opPropertySheet = new PropertySheet();
         VBox vBox = new VBox();
         HBox hBox = new HBox();
@@ -633,55 +626,35 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return index;
     }
 
-    BooleanOperationItem  setPropSheet(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, PropertySheet opPropertySheet, int scriptIndex, ProcessingOperation op) {
-        Pattern pattern = null;
-        String opPars = "";
-        if (!op.equals("")) {
-            opPars = op.opArgs;
-            pattern = Pattern.compile(patternString);
-        }
+    void setPropSheet(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, PropertySheet opPropertySheet, ProcessingOperation op) {
         opPropertySheet.getItems().clear();
-        BooleanOperationItem boolItem = null;
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         propertyManager.setupItem(opPropertySheet, op.opName);
         ObservableList<PropertySheet.Item> propItems = propertyManager.getItems();
         for (PropertySheet.Item item : propItems) {
             if (item == null) {
                 System.out.println("item null");
-            } else if (item.getCategory().equals(op.opName) && (pattern != null)) {
+            } else if (!item.getName().equals("disabled")) {
                 boolean foundIt = false;
-                Matcher matcher = pattern.matcher(opPars);
-                while (matcher.find()) {
-                    if (matcher.groupCount() > 1) {
-                        String parName = matcher.group(1);
-                        if (item.getName().equals(parName)) {
-                            String parValue = matcher.group(2);
-                            foundIt = true;
-                            ((OperationItem) item).setFromString(parValue);
-                        }
+                for (ProcessingOperation.OperationParameter parameter : op.parameters) {
+                    if (item.getName().equals(parameter.name())) {
+                        foundIt = true;
+                        ((OperationItem) item).setFromString(parameter.value());
                     }
                 }
                 if (!foundIt) {
                     ((OperationItem) item).setToDefault();
                 }
-                System.out.println("add item " + item);
-                if (item.getName().equals("disabled")) {
-                    boolItem = (BooleanOperationItem) item;
-                    titledPane.setActive(!boolItem.getValue());
-                } else {
-                    newItems.add(item);
-                }
+                newItems.add(item);
             }
         }
+        titledPane.setActive(!op.isDisabled());
         opPropertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory(this));
         opPropertySheet.setMode(PropertySheet.Mode.NAME);
         opPropertySheet.setModeSwitcherVisible(false);
         opPropertySheet.setSearchBoxVisible(false);
-        titledPane.getCheckBoxSelectedProperty().addListener(e -> {
-             updateActiveState(e, opPropertySheet, titledPane, op);
-        });
+        titledPane.getCheckBoxSelectedProperty().addListener(e -> updateActiveState(e, opPropertySheet, titledPane, op));
         opPropertySheet.getItems().setAll(newItems);
-        return boolItem;
     }
 
     private void updateActiveState(Observable e, PropertySheet propertySheet, ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, ProcessingOperation op) {
@@ -1264,7 +1237,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         chartProcessor.nmrDataProperty().addListener((observable, oldValue, newValue) -> enableRealFeatures(newValue));
 
         opListListener = change -> {
-            OperationListCell.updateCells();
             chartProcessor.updateOpList();
             updateAccordionList();
         };

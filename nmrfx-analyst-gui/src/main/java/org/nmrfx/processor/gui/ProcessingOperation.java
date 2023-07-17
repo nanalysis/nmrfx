@@ -1,12 +1,18 @@
 package org.nmrfx.processor.gui;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ProcessingOperation {
-    static final String DISABLE_PATTERN = "disabled *= *(True|False)";
-    static final Pattern disablePattern = Pattern.compile(DISABLE_PATTERN);
+    private static final String PATTERN_STRING = "(\\w+)=((\\[[^\\[]*])|(\"[^\"]*\")|('[^']*')|([^,]+))";
+    static final Pattern opPattern = Pattern.compile(PATTERN_STRING);
+
+    record OperationParameter(String name, String value) {
+    }
+
 
     static Map<String, String> longNameMap = Map.of(
             "TDCOMB", "Phase Sensitive Mode",
@@ -20,7 +26,7 @@ public class ProcessingOperation {
     );
 
     String opName;
-    String opArgs;
+    List<OperationParameter> parameters = new ArrayList<>();
     boolean disabled = false;
 
     public ProcessingOperation(String string) {
@@ -28,11 +34,12 @@ public class ProcessingOperation {
     }
 
     public String getTitle(boolean detailed) {
-        String title = detailed ? toString() : longNameMap.getOrDefault(opName, opName);
-        return title;
+        return detailed ? toString() : longNameMap.getOrDefault(opName, opName);
     }
 
     public void update(String string) {
+        parameters.clear();
+        String opArgs;
         int index = string.indexOf('(');
         boolean lastIsClosePar = string.charAt(string.length() - 1) == ')';
         if ((index != -1) && lastIsClosePar) {
@@ -43,19 +50,40 @@ public class ProcessingOperation {
             opArgs = "";
         }
         if (!opArgs.isBlank()) {
-            Matcher matcher = disablePattern.matcher(opArgs);
-            if (matcher.matches()) {
-                String status = matcher.group(1);
-                System.out.println("match " + opArgs + " " + status);
+            Matcher matcher = opPattern.matcher(opArgs);
+            while (matcher.find()) {
+                if (matcher.groupCount() > 1) {
+                    String parName = matcher.group(1);
+                    String parValue = matcher.group(2);
+                    if (parName.equals("disabled")) {
+                        disabled = parValue.equals("True");
+                    } else {
+                        OperationParameter parameter = new OperationParameter(parName, parValue);
+                        parameters.add(parameter);
+                    }
+                }
             }
         }
     }
 
+    public boolean isDisabled() {
+        return disabled;
+    }
+
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(opName).append("(").append(opArgs);
+        stringBuilder.append(opName).append("(");
+        boolean firstArg = true;
+        for (var parameter : parameters) {
+            if (!firstArg) {
+                stringBuilder.append(",");
+            } else {
+                firstArg = false;
+            }
+            stringBuilder.append(parameter.name).append("=").append(parameter.value);
+        }
         if (disabled) {
-            if (!opArgs.isBlank()) {
+            if (!firstArg) {
                 stringBuilder.append(",");
             }
             stringBuilder.append("disabled=True");

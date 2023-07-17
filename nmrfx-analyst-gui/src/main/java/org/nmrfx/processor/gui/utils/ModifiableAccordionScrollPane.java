@@ -4,12 +4,18 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.skin.TitledPaneSkin;
+import javafx.scene.effect.InnerShadow;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.ContextMenuEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -22,6 +28,8 @@ import java.util.List;
 
 public class ModifiableAccordionScrollPane extends ScrollPane {
     private final ModifiableAccordion accordion = new ModifiableAccordion();
+    private  ModifiableTitlePane source;
+    private  ModifiableTitlePane target;
 
     public ModifiableAccordionScrollPane() {
         this.setFitToHeight(true);
@@ -47,19 +55,24 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
     }
 
     public ModifiableAccordionScrollPane.ModifiableTitlePane get(int i) {
-       return  (ModifiableAccordionScrollPane.ModifiableTitlePane)  accordion.getPanes().get(i);
+        return (ModifiableAccordionScrollPane.ModifiableTitlePane) accordion.getPanes().get(i);
     }
 
     public void add(ModifiableTitlePane titledPane) {
         accordion.add(titledPane);
     }
 
-    public static class ModifiableTitlePane extends TitledPane {
+    public ModifiableTitlePane makeNewTitlePane(ProcessorController processorController, ProcessingOperation processingOperation) {
+        return new ModifiableTitlePane(processorController, processingOperation);
+    }
+
+    public class ModifiableTitlePane extends TitledPane {
         ContextMenu contextMenu = new ContextMenu();
         ProcessingOperation processingOperation;
         ProcessorController processorController;
         CheckBox checkBox;
         int index = -1;
+
         public ModifiableTitlePane(ProcessorController processorController, ProcessingOperation processingOperation) {
             this.processorController = processorController;
             this.processingOperation = processingOperation;
@@ -116,7 +129,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
          * @param titledPane The titledPane of to use.
          * @return A populated HBox.
          */
-        private HBox createContents(TitledPane titledPane) {
+        private HBox createContents(ModifiableTitlePane titledPane) {
             HBox titleBox = new HBox();
             titledPane.setOnContextMenuRequested(e -> showContextMenu(e, titledPane));
             titleBox.setSpacing(5);
@@ -135,17 +148,109 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             titleBox.getChildren().add(spacer);
             // Create Right Aligned Buttons
             checkBox = new CheckBox();
+            checkBox.setSelected(!processingOperation.isDisabled());
+            Color fillColor = processingOperation.isDisabled() ? Color.BLUE : Color.GRAY;
+            titledPane.setTextFill(fillColor);
             Text moveIcon = GlyphsDude.createIcon(FontAwesomeIcon.ARROWS_V, "14");
             moveIcon.setOnMouseReleased(Event::consume);
             titleBox.getChildren().addAll(checkBox, moveIcon);
             titledPane.textFillProperty().bind(Bindings.when(checkBox.selectedProperty()).then(Color.BLUE).otherwise(Color.GRAY));
+            setupDragHandling(titledPane, moveIcon);
             return titleBox;
         }
-
         private void showContextMenu(ContextMenuEvent e, TitledPane titledPane) {
             contextMenu.show(titledPane, e.getScreenX(), e.getScreenY());
         }
 
+        void setupDragHandling(ModifiableTitlePane titledPane, Node node) {
+            node.setOnDragDetected(event -> {
+                source = titledPane;
+                target = null;
+                /* drag was detected, start a drag-and-drop gesture*/
+                /* allow any transfer mode */
+                Dragboard db = source.startDragAndDrop(TransferMode.MOVE);
+
+                /* Put a string on a dragboard */
+                ClipboardContent content = new ClipboardContent();
+                content.putString(source.getText());
+                db.setContent(content);
+                event.consume();
+            });
+
+            titledPane.setOnDragOver(event -> {
+                /* data is dragged over the target */
+                /* accept it only if it is not dragged from the same node
+                 * and if it has a string data */
+                if (target != null) {
+                    target.setEffect(null);
+                }
+                target = titledPane;
+                if (event.getGestureSource() != target && event.getDragboard().hasString()) {
+                    /* allow for both copying and moving, whatever user chooses */
+                    event.acceptTransferModes(TransferMode.MOVE);
+                    InnerShadow is = new InnerShadow();
+                    is.setOffsetX(1.0);
+                    is.setColor(Color.web("#666666"));
+                    is.setOffsetY(1.0);
+                    target.setEffect(is);
+                }
+
+                event.consume();
+            });
+
+            titledPane.setOnDragEntered(event -> {
+                /* the drag-and-drop gesture entered the target */
+                /* show to the user that it is an actual gesture target */
+                if (event.getGestureSource() != target && event.getDragboard().hasString()) {
+                    target = titledPane;
+                    InnerShadow is = new InnerShadow();
+                    is.setOffsetX(1.0);
+                    is.setColor(Color.web("#FFFF00"));
+                    is.setOffsetY(1.0);
+                    target.setEffect(is);
+                }
+                event.consume();
+            });
+
+            titledPane.setOnDragExited(event -> {
+                if (target != null) {
+                    target.setEffect(null);
+                }
+                event.consume();
+            });
+
+            titledPane.setOnDragDropped(event -> {
+                /* data dropped */
+                /* if there is a string data on dragboard, read it and use it */
+                if (target != null) {
+                    target.setEffect(null);
+                }
+                Dragboard db = event.getDragboard();
+                boolean success = db.hasString();
+                /* let the source know whether the string was successfully
+                 * transferred and used */
+                event.setDropCompleted(success);
+
+                event.consume();
+            });
+
+            titledPane.setOnDragDone(event -> {
+                ObservableList<ProcessingOperation> listItems = processorController.getOperationList();
+
+                /* the drag and drop gesture ended */
+                /* if the data was successfully moved, clear it */
+                if (event != null && target != null && target.getIndex() >= 0) {
+                    if (event.getTransferMode() == TransferMode.MOVE) {
+                        int sourceIndex = Math.max(0, source.getIndex());
+                        int targetIndex = Math.min(target.getIndex(), listItems.size() - 1);
+                        ProcessingOperation swap = listItems.remove(sourceIndex);
+                        listItems.add(targetIndex, swap);
+                    }
+                    target = null;
+                    event.consume();
+                }
+            });
+        }
     }
 
     private static class ModifiableAccordion extends Accordion {
