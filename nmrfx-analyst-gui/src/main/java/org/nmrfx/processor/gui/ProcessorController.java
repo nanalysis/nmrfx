@@ -600,7 +600,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         setPropSheet(titledPane, opPropertySheet,  op);
     }
 
-    private void newTitledPane(ProcessingOperation op) {
+    private ModifiableAccordionScrollPane.ModifiableTitlePane newTitledPane(ProcessingOperation op) {
         ModifiableAccordionScrollPane.ModifiableTitlePane titledPane = accordion.makeNewTitlePane(this, op);
         PropertySheet opPropertySheet = new PropertySheet();
         VBox vBox = new VBox();
@@ -610,6 +610,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titledPane.getProperties().put("PropSheet", opPropertySheet);
         updateTitledPane(titledPane, op);
         accordion.add(titledPane);
+        return titledPane;
     }
 
     public int getExpandedTitlePane() {
@@ -672,26 +673,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     private void updateAccordionList() {
         accordion.getPanes().clear();
-        int nOps = operationList.size();
-        int origSize = accordion.size();
-        int nDiff = nOps - origSize;
-        int nTest = nOps;
-        if (nDiff > 0) {
-            nTest = origSize;
-            for (int i = 0; i < nDiff; i++) {
-                newTitledPane(operationList.get(i + nTest));
-            }
-        } else if (nDiff < 0) {
-            accordion.remove(nOps, accordion.size());
-        }
-        for (int i = 0;i<nTest;i++) {
-            ModifiableAccordionScrollPane.ModifiableTitlePane pane = accordion.get(i);
-            updateTitledPane(pane, operationList.get(i));
-        }
         int i = 0;
-        for (var pane: accordion.getPanes()) {
-            ModifiableAccordionScrollPane.ModifiableTitlePane mPane = (ModifiableAccordionScrollPane.ModifiableTitlePane) pane;
-            mPane.setIndex(i++);
+        for (var processingOperation : operationList) {
+            ModifiableAccordionScrollPane.ModifiableTitlePane pane = newTitledPane(processingOperation);
+            pane.setIndex(i++);
         }
     }
 
