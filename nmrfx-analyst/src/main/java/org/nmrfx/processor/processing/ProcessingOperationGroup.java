@@ -32,6 +32,11 @@ public class ProcessingOperationGroup implements ProcessingOperationInterface {
     }
 
     @Override
+    public void disabled(boolean state) {
+        disabled = state;
+    }
+
+    @Override
     public boolean isDisabled() {
         return disabled;
     }

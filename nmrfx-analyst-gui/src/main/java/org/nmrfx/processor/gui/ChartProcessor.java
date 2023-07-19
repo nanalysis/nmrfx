@@ -513,7 +513,7 @@ public class ChartProcessor {
         }
     }
 
-    private Map<String, List<ProcessingOperationInterface>> getScriptList() {
+    public Map<String, List<ProcessingOperationInterface>> getScriptList() {
         Map<String, List<ProcessingOperationInterface>> copyOfMapOpLists = new TreeMap<>(new DimensionComparator());
         if (mapOpLists != null) {
             for (Map.Entry<String, List<ProcessingOperationInterface>> entry : mapOpLists.entrySet()) {
@@ -943,13 +943,15 @@ public class ChartProcessor {
                     scriptBuilder.append(lineSep);
                     for (ProcessingOperationInterface processingOperation : scriptList) {
                         if (processingOperation instanceof ProcessingOperation op) {
-                            scriptBuilder.append(indent).append(op.toString());
+                            scriptBuilder.append(indent).append(op);
                             scriptBuilder.append(lineSep);
                         } else if (processingOperation instanceof ProcessingOperationGroup groupOp) {
-                            for (var op : groupOp.getProcessingOperationList()) {
-                                if (!op.isDisabled()) {
-                                    scriptBuilder.append(indent).append(op.toString());
-                                    scriptBuilder.append(lineSep);
+                            if (!groupOp.isDisabled()) {
+                                for (var op : groupOp.getProcessingOperationList()) {
+                                    if (!op.isDisabled()) {
+                                        scriptBuilder.append(indent).append(op);
+                                        scriptBuilder.append(lineSep);
+                                    }
                                 }
                             }
                         }

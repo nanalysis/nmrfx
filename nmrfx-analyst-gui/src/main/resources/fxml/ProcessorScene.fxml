@@ -37,9 +37,8 @@
                                   text="Save Operations..."/>
                     </items>
                 </MenuButton>
+                <ChoiceBox fx:id="viewMode" onAction="#viewMode" value="FID"/>
                 <ChoiceBox fx:id="dimChoice" value=""/>
-                <ChoiceBox fx:id="viewMode" onAction="#viewMode" value="FID">
-                </ChoiceBox>
                 <Pane HBox.hgrow="ALWAYS"/>
             </items>
         </ToolBar>
@@ -63,8 +62,7 @@
                                 <Button fx:id="opDocButton" onAction="#showOpDoc" text="Docs"/>
                             </items>
                         </ToolBar>
-
-                        <ModifiableAccordionScrollPane fx:id="accordion" VBox.vgrow="ALWAYS"/>
+                        <Accordion fx:id="dimAccordion"/>
                     </children>
                 </VBox>
             </Tab>

@@ -160,34 +160,35 @@ public class PropertyManager {
         return currentIndex;
     }
 
-    public int getCurrentPosition(String op) {
+    public int getCurrentPosition(List<ProcessingOperationInterface> items, String op) {
         op = op.trim();
         op = OperationInfo.fixOp(op);
-        int currentPos = OperationInfo.getCurrentPosition(listItems, op);
+        int currentPos = OperationInfo.getCurrentPosition(items, op);
         return currentPos;
     }
 
     public void updateOp(ProcessingOperation processingOperation, String op) {
         if (processingOperation != null) {
+            System.out.println("update op " + processingOperation.getName() + " " + op);
             processingOperation.update(op);
             processorController.chartProcessor.updateOpList();
         }
     }
 
-    public void addOp(ProcessingOperation processingOperation, int index) {
+    public void addOp(ProcessingOperation processingOperation, List<ProcessingOperationInterface> ops, int index) {
             if (processingOperation != null) {
                 int opIndex = -1;
                 String opName = processingOperation.getName();
                 opIndex = index;
                 if (opIndex == -1) {
-                    opIndex = OperationInfo.getPosition(listItems, opName);
+                    opIndex = OperationInfo.getPosition(ops, opName);
                 }
                 if (opIndex < 0) {
                     System.out.println("bad op");
-                } else if (opIndex >= listItems.size()) {
-                    listItems.add(processingOperation);
+                } else if (opIndex >= ops.size()) {
+                    ops.add(processingOperation);
                 } else {
-                    listItems.add(opIndex, processingOperation);
+                    ops.add(opIndex, processingOperation);
                 }
                 popOver.hide();
             }
@@ -231,20 +232,12 @@ public class PropertyManager {
     }
 
     private void updateOp(OperationItem updateItem) {
-        currentIndex = processorController.getExpandedTitlePane();
-        if (currentIndex == -1) {
-            return;
-        }
-        int index = currentIndex;
         PropertySheet propertySheet = updateItem.getPropertySheet();
         String opName = updateItem.getCategory();
-        updatePropertySheet(propertySheet, opName, index);
-//        if (!opName.equals(currentOp)) {
-//            return;
-//        }
+        updatePropertySheet(propertySheet, opName);
     }
 
-    public void updatePropertySheet(PropertySheet propertySheet, String opName, int index) {
+    public void updatePropertySheet(PropertySheet propertySheet, String opName) {
         List<PropertySheet.Item> items = propertySheet.getItems();
         if (items.size() == 0) {
             return;
