@@ -75,6 +75,7 @@ import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
 import org.nmrfx.processor.processing.ProcessingOperation;
+import org.nmrfx.processor.processing.ProcessingOperationInterface;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
@@ -1412,10 +1413,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         int start = 0;
         int end = size - 1;
         if (chartProcessor != null) {
-            List<ProcessingOperation> listItems = chartProcessor.getOperations(vecDimName);
+            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(vecDimName);
             if (listItems != null) {
                 Map<String, String> values = null;
-                for (ProcessingOperation processingOperation : listItems) {
+                for (ProcessingOperationInterface processingOperation : listItems) {
                     if (processingOperation.getName().equals("EXTRACT")) {
                         values = PropertyManager.parseOpString(processingOperation.toString());
                     }
@@ -1443,12 +1444,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         ArrayList<Double> fracs = new ArrayList<>();
         if (chartProcessor != null) {
             int currentIndex = chartProcessor.getProcessorController().getPropertyManager().getCurrentIndex();
-            List<ProcessingOperation> listItems = chartProcessor.getOperations(vecDimName);
+            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(vecDimName);
             if (listItems != null) {
                 log.info("curr ind {}", currentIndex);
                 Map<String, String> values = null;
                 if (currentIndex != -1) {
-                    ProcessingOperation processingOperation = listItems.get(currentIndex);
+                    ProcessingOperationInterface processingOperation = listItems.get(currentIndex);
                     if (processingOperation.getName().equals("REGIONS")) {
                         values = PropertyManager.parseOpString(processingOperation.toString());
                         if (log.isInfoEnabled()) {
@@ -1457,7 +1458,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                     }
                 }
                 if (values == null) {
-                    for (ProcessingOperation processingOperation : listItems) {
+                    for (ProcessingOperationInterface processingOperation : listItems) {
                         if (processingOperation.getName().equals("REGIONS")) {
                             values = PropertyManager.parseOpString(processingOperation.toString());
                         }

@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ProcessingOperation {
+public class ProcessingOperation implements ProcessingOperationInterface {
     private static final String PATTERN_STRING = "(\\w+)=((\\[[^\\[]*])|(\"[^\"]*\")|('[^']*')|([^,]+))";
     static final Pattern opPattern = Pattern.compile(PATTERN_STRING);
 
@@ -57,6 +57,7 @@ public class ProcessingOperation {
             opName = string;
             opArgs = "";
         }
+        disabled = false;
         if (!opArgs.isBlank()) {
             Matcher matcher = opPattern.matcher(opArgs);
             while (matcher.find()) {

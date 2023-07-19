@@ -30,10 +30,7 @@ import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.processing.MultiVecCounter;
-import org.nmrfx.processor.processing.ProcessingOperation;
-import org.nmrfx.processor.processing.Processor;
-import org.nmrfx.processor.processing.VecIndex;
+import org.nmrfx.processor.processing.*;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
 import org.nmrfx.processor.processing.processes.ProcessOps;
 import org.nmrfx.utils.GUIUtils;
@@ -88,7 +85,7 @@ public class ChartProcessor {
      * Map of lists of operations with key being the dimension the operations
      * apply to
      */
-    private Map<String, List<ProcessingOperation>> mapOpLists = new TreeMap<>(new DimensionComparator());
+    private Map<String, List<ProcessingOperationInterface>> mapOpLists = new TreeMap<>(new DimensionComparator());
     /**
      * Which Vec of the list of vectors should currently be displayed
      */
@@ -506,7 +503,7 @@ public class ChartProcessor {
         }
     }
 
-    public List<ProcessingOperation> getOperations(String dimName) {
+    public List<ProcessingOperationInterface> getOperations(String dimName) {
         return mapOpLists.get(dimName);
     }
 
@@ -516,11 +513,11 @@ public class ChartProcessor {
         }
     }
 
-    private Map<String, List<ProcessingOperation>> getScriptList() {
-        Map<String, List<ProcessingOperation>> copyOfMapOpLists = new TreeMap<>(new DimensionComparator());
+    private Map<String, List<ProcessingOperationInterface>> getScriptList() {
+        Map<String, List<ProcessingOperationInterface>> copyOfMapOpLists = new TreeMap<>(new DimensionComparator());
         if (mapOpLists != null) {
-            for (Map.Entry<String, List<ProcessingOperation>> entry : mapOpLists.entrySet()) {
-                List<ProcessingOperation> newList = new ArrayList<>();
+            for (Map.Entry<String, List<ProcessingOperationInterface>> entry : mapOpLists.entrySet()) {
+                List<ProcessingOperationInterface> newList = new ArrayList<>();
                 if (entry.getValue() != null) {
                     newList.addAll(entry.getValue());
                 }
@@ -530,13 +527,13 @@ public class ChartProcessor {
         return copyOfMapOpLists;
     }
 
-    public void setScripts(List<String> newHeaderList, Map<String, List<ProcessingOperation>> opMap) {
+    public void setScripts(List<String> newHeaderList, Map<String, List<ProcessingOperationInterface>> opMap) {
         if (opMap == null || opMap.size() == 0) {
             return;
         }
         mapOpLists = new TreeMap<>(new DimensionComparator());
         mapOpLists.putAll(opMap);
-        List<ProcessingOperation> opList = mapOpLists.get(vecDimName);
+        List<ProcessingOperationInterface> opList = mapOpLists.get(vecDimName);
         headerList.clear();
         headerList.addAll(newHeaderList);
         processorController.refManager.setDataFields(headerList);
@@ -565,7 +562,7 @@ public class ChartProcessor {
             return;
         }
         scriptValid = false;
-        List<ProcessingOperation> newList = new ArrayList<>(processorController.getOperationList());
+        List<ProcessingOperationInterface> newList = new ArrayList<>(processorController.getOperationList());
         boolean clearedOperations = newList.isEmpty() && vecDimName.equals("D1");
         areOperationListsValid.set(!clearedOperations);
         mapOpLists.put(vecDimName, newList);
@@ -598,7 +595,7 @@ public class ChartProcessor {
         }
         vecDimName = dimName;
         vecDim = value;
-        ArrayList<ProcessingOperation> oldList = new ArrayList<>();
+        ArrayList<ProcessingOperationInterface> oldList = new ArrayList<>();
 
         if (isDim) {
             if (mapOpLists.get(vecDimName) != null) {
@@ -883,10 +880,10 @@ public class ChartProcessor {
             acqMode[i] = AcquisitionType.HYPER.getLabel();
         }
 
-        for (Map.Entry<String, List<ProcessingOperation>> entry : mapOpLists.entrySet()) {
-            List<ProcessingOperation> scriptList = entry.getValue();
+        for (Map.Entry<String, List<ProcessingOperationInterface>> entry : mapOpLists.entrySet()) {
+            List<ProcessingOperationInterface> scriptList = entry.getValue();
             if (scriptList != null && !scriptList.isEmpty()) {
-                for (ProcessingOperation processingOperation : scriptList) {
+                for (ProcessingOperationInterface processingOperation : scriptList) {
                     String string = processingOperation.toString();
                     if (string.contains("TDCOMB")) {
                         Map<String, String> values = PropertyManager.parseOpString(string);
@@ -915,7 +912,7 @@ public class ChartProcessor {
         StringBuilder scriptBuilder = new StringBuilder();
         int nDatasetDims = 0;
         mapToDataset = new int[nDim];
-        for (Map.Entry<String, List<ProcessingOperation>> entry : mapOpLists.entrySet()) {
+        for (Map.Entry<String, List<ProcessingOperationInterface>> entry : mapOpLists.entrySet()) {
             if (entry.getValue() != null) {
                 String dimMode = entry.getKey().substring(0, 1);
                 String parDim = entry.getKey().substring(1);
@@ -937,16 +934,25 @@ public class ChartProcessor {
                         mapToDataset[dimNum] = nDatasetDims++;
                     }
                 }
-                List<ProcessingOperation> scriptList = (List<ProcessingOperation>) entry.getValue();
+                List<ProcessingOperationInterface> scriptList = (List<ProcessingOperationInterface>) entry.getValue();
                 if ((scriptList != null) && (!scriptList.isEmpty())) {
                     if (parDim.equals("_ALL")) {
                         parDim = "";
                     }
                     scriptBuilder.append(indent).append("DIM(").append(parDim).append(")");
                     scriptBuilder.append(lineSep);
-                    for (ProcessingOperation processingOperation : scriptList) {
-                        scriptBuilder.append(indent).append(processingOperation.toString());
-                        scriptBuilder.append(lineSep);
+                    for (ProcessingOperationInterface processingOperation : scriptList) {
+                        if (processingOperation instanceof ProcessingOperation op) {
+                            scriptBuilder.append(indent).append(op.toString());
+                            scriptBuilder.append(lineSep);
+                        } else if (processingOperation instanceof ProcessingOperationGroup groupOp) {
+                            for (var op : groupOp.getProcessingOperationList()) {
+                                if (!op.isDisabled()) {
+                                    scriptBuilder.append(indent).append(op.toString());
+                                    scriptBuilder.append(lineSep);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1025,7 +1031,7 @@ public class ChartProcessor {
         if ((mapOpLists == null) || (mapOpLists.size() != nDim)) {
             mapOpLists = new TreeMap<>(new DimensionComparator());
         }
-        Map<String, List<ProcessingOperation>> listOfScripts = getScriptList();
+        Map<String, List<ProcessingOperationInterface>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>(headerList);
 
         // when setting data reset vecdim back to 0 as it could have been set to

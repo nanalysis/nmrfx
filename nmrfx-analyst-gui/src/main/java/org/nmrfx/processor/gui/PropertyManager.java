@@ -33,6 +33,7 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.processor.gui.spectra.SpecRegion;
 import org.nmrfx.processor.processing.ProcessingOperation;
+import org.nmrfx.processor.processing.ProcessingOperationInterface;
 import org.nmrfx.utils.properties.*;
 import org.python.core.PyComplex;
 
@@ -55,7 +56,7 @@ public class PropertyManager {
     ChangeListener<String> complexListener;
     ChangeListener<String> listListener;
     ProcessorController processorController;
-    ObservableList<ProcessingOperation> listItems;
+    ObservableList<ProcessingOperationInterface> listItems;
     private int currentIndex = -1;
     private String currentOp = "";
     private TextField opTextField;
@@ -64,7 +65,7 @@ public class PropertyManager {
     ChangeListener<Number> scriptOpListener = null;
     Map<String, ParInfo> parInfoMap = new HashMap<>();
 
-    PropertyManager(ProcessorController processorController, ObservableList<ProcessingOperation> listItems, TextField opTextField, PopOver popOver) {
+    PropertyManager(ProcessorController processorController, ObservableList<ProcessingOperationInterface> listItems, TextField opTextField, PopOver popOver) {
         this.processorController = processorController;
         this.listItems = listItems;
         this.opTextField = opTextField;
@@ -166,49 +167,30 @@ public class PropertyManager {
         return currentPos;
     }
 
-    public int setOp(String op, boolean appendOp, int index) {
-        op = op.trim();
-        op = OperationInfo.fixOp(op);
-        int opIndex = -1;
-        if (op.length() != 0) {
-            int currentPos = OperationInfo.getCurrentPosition(listItems, op);
-            if (appendOp && (currentPos == -1)) {
-                appendOp = false;
-            }
-            opIndex = index;
-            if (opIndex == -1) {
-                opIndex = OperationInfo.getPosition(listItems, op);
-            }
-            if (opIndex < 0) {
-                System.out.println("bad op");
-            } else if (opIndex >= listItems.size()) {
-                listItems.add(new ProcessingOperation(op));
-                // scriptView.getSelectionModel().select(opIndex);
-                opIndex = listItems.size() - 1;
-            } else {
-                String curOp = listItems.get(opIndex).getName();
-                String trimOp = OperationInfo.trimOp(op);
-                if (!appendOp && trimOp.equals(curOp)) {
-                    ProcessingOperation procOp = listItems.get(opIndex);
-                    procOp.update(op);
-                    processorController.chartProcessor.updateOpList();
-                    /**
-                     * If the selected index isn't equal to the op index, or if
-                     * we are not at the case where there's a single op, then
-                     * change the selected cell.
-                     */
-//                    if (!(scriptView.getSelectionModel().getSelectedIndex() == opIndex)
-//                            && !(scriptView.getSelectionModel().getSelectedIndex() == -1 && listItems.size() == 1)) {
-//                        scriptView.getSelectionModel().select(opIndex);
-//                    }
-                } else {
-                    listItems.add(opIndex, new ProcessingOperation(op));
-                    //   scriptView.getSelectionModel().select(opIndex);
-                }
-            }
-            popOver.hide();
+    public void updateOp(ProcessingOperation processingOperation, String op) {
+        if (processingOperation != null) {
+            processingOperation.update(op);
+            processorController.chartProcessor.updateOpList();
         }
-        return opIndex;
+    }
+
+    public void addOp(ProcessingOperation processingOperation, int index) {
+            if (processingOperation != null) {
+                int opIndex = -1;
+                String opName = processingOperation.getName();
+                opIndex = index;
+                if (opIndex == -1) {
+                    opIndex = OperationInfo.getPosition(listItems, opName);
+                }
+                if (opIndex < 0) {
+                    System.out.println("bad op");
+                } else if (opIndex >= listItems.size()) {
+                    listItems.add(processingOperation);
+                } else {
+                    listItems.add(opIndex, processingOperation);
+                }
+                popOver.hide();
+            }
     }
 
     void updatePhases(PropertySheet.Item item, Number oldValue, Number newValue) {
@@ -244,8 +226,8 @@ public class PropertyManager {
 
     }
 
-    int setOp(String op) {
-        return setOp(op, false, -1);
+    void setOp(String op) {
+       // fixme  setOp(null, op, false, -1);
     }
 
     private void updateOp(OperationItem updateItem) {
@@ -285,20 +267,20 @@ public class PropertyManager {
                 }
                 opString.append(opItem.getStringRep());
                 first = false;
-            } else {
             }
 
         }
         opString.append(')');
-        setOp(opString.toString(), false, index);
+        ProcessingOperation processingOperation = (ProcessingOperation) propertySheet.getProperties().get("Op");
+        updateOp(processingOperation, opString.toString());
     }
 
     void addExtractRegion(double min, double max, double f1, double f2) {
         int imin = (int) (min + 0.5);
         int imax = (int) (max + 0.5);
         String opString = "EXTRACT(start=" + imin + ",end=" + imax + ",mode='region')";
-        int opIndex = setOp(opString);
-        setPropSheet(opIndex, opString);
+          setOp(opString);
+        //setPropSheet(opIndex, opString);
     }
 
     void addBaselineRegion(ArrayList<Double> values, double f1, double f2, boolean clear) {
@@ -332,9 +314,9 @@ public class PropertyManager {
         String opString = "REGIONS(regions=[" + sBuilder.toString() + "])";
         int opIndex = -1;
         if ((currentIndex != -1) && currentOp.equals("REGIONS")) {
-            opIndex = setOp(opString, false, currentIndex);
+          // fixme   setOp(null, opString, false, currentIndex);
         } else {
-            opIndex = setOp(opString);
+             setOp(opString);
         }
         setPropSheet(opIndex, opString);
     }
@@ -343,9 +325,9 @@ public class PropertyManager {
         String opString = "REGIONS(regions=[])";
         int opIndex = -1;
         if ((currentIndex != -1) && currentOp.equals("REGIONS")) {
-            opIndex = setOp(opString, false, currentIndex);
+         // fixme    setOp(null, opString, false, currentIndex);
         } else {
-            opIndex = setOp(opString);
+             setOp(opString);
         }
         setPropSheet(opIndex, opString);
 

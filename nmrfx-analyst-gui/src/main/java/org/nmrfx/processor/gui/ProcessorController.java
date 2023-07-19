@@ -69,9 +69,7 @@ import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
-import org.nmrfx.processor.processing.ProcessingOperation;
-import org.nmrfx.processor.processing.Processor;
-import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
+import org.nmrfx.processor.processing.*;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.FormatUtils;
@@ -99,6 +97,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private static final String[] BASIC_OPS = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
     private static final AtomicBoolean aListUpdated = new AtomicBoolean(false);
+    public static final int GROUP_SCALE = 1000;
 
     private enum DisplayMode {
         FID("FID"),
@@ -152,7 +151,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     @FXML
     private MenuButton opMenuButton;
-    final ObservableList<ProcessingOperation> operationList = FXCollections.observableArrayList();
+    final ObservableList<ProcessingOperationInterface> operationList = FXCollections.observableArrayList();
     EventHandler<ActionEvent> menuHandler;
     PopOver popOver = new PopOver();
 
@@ -222,7 +221,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private AtomicBoolean isProcessing = new AtomicBoolean(false);
     private AtomicBoolean doProcessWhenDone = new AtomicBoolean(false);
     private final ProcessDataset processDataset = new ProcessDataset();
-    ListChangeListener<ProcessingOperation> opListListener = null;
+    ListChangeListener<ProcessingOperationInterface> opListListener = null;
 
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
     private final ObjectProperty<Boolean> processorAvailable = new SimpleObjectProperty<>();
@@ -267,11 +266,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         operationList.clear();
     }
 
-    protected void setOperationList(List<ProcessingOperation> scriptList) {
+    protected void setOperationList(List<ProcessingOperationInterface> scriptList) {
         operationList.setAll(scriptList);
     }
 
-    public ObservableList<ProcessingOperation> getOperationList() {
+    public ObservableList<ProcessingOperationInterface> getOperationList() {
         return operationList;
     }
 
@@ -513,9 +512,18 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     public String getScript() {
         StringBuilder script = new StringBuilder();
-        for (Object obj : operationList) {
-            script.append(obj.toString());
-            script.append("\n");
+        for (var processingOp : operationList) {
+            if (processingOp instanceof ProcessingOperation op) {
+                script.append(op.toString());
+                script.append("\n");
+            } else if (processingOp instanceof ProcessingOperationGroup groupOp) {
+                for (var op : groupOp.getProcessingOperationList()) {
+                    if (!op.isDisabled()) {
+                        script.append(op.toString());
+                        script.append("\n");
+                    }
+                }
+            }
         }
         return script.toString();
     }
@@ -601,17 +609,44 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         setPropSheet(titledPane, opPropertySheet,  op);
     }
 
-    private ModifiableAccordionScrollPane.ModifiableTitlePane newTitledPane(ProcessingOperation op) {
-        ModifiableAccordionScrollPane.ModifiableTitlePane titledPane = accordion.makeNewTitlePane(this, op);
-        PropertySheet opPropertySheet = new PropertySheet();
-        VBox vBox = new VBox();
-        HBox hBox = new HBox();
-        vBox.getChildren().addAll(hBox, opPropertySheet);
-        titledPane.setContent(vBox);
-        titledPane.getProperties().put("PropSheet", opPropertySheet);
-        updateTitledPane(titledPane, op);
-        accordion.add(titledPane);
+    private ModifiableAccordionScrollPane.ModifiableTitlePane newTitledPane(ModifiableAccordionScrollPane opAccordion, ProcessingOperationInterface op, int index) {
+        ModifiableAccordionScrollPane.ModifiableTitlePane titledPane = null;
+        if (op instanceof ProcessingOperation processingOperation) {
+            titledPane = opAccordion.makeNewTitlePane(this, processingOperation);
+            PropertySheet opPropertySheet = new PropertySheet();
+            VBox vBox = new VBox();
+            HBox hBox = new HBox();
+            vBox.getChildren().addAll(hBox, opPropertySheet);
+            titledPane.setContent(vBox);
+            titledPane.getProperties().put("PropSheet", opPropertySheet);
+            opPropertySheet.getProperties().put("Op", processingOperation);
+            updateTitledPane(titledPane, processingOperation);
+            opAccordion.add(titledPane);
+            titledPane.setIndex(index);
+        } else {
+            ProcessingOperationGroup group = (ProcessingOperationGroup) op;
+            ModifiableAccordionScrollPane groupAccordion = new ModifiableAccordionScrollPane();
+            titledPane = accordion.makeNewTitlePane(this, group);
+            titledPane.setIndex(index);
+            VBox vBox = new VBox();
+            vBox.getChildren().addAll(groupAccordion);
+            titledPane.setContent(vBox);
+            titledPane.setText(group.getTitle(false));
+            accordion.add(titledPane);
+            updateGroupAccordion(groupAccordion, group, index);
+        }
         return titledPane;
+    }
+
+    public void updateGroupAccordion(
+            ModifiableAccordionScrollPane groupAccordion,
+            ProcessingOperationGroup group, int index) {
+        groupAccordion.getPanes().clear();
+        index *= GROUP_SCALE;
+        for (var groupedOp : group.getProcessingOperationList()) {
+            ModifiableAccordionScrollPane.ModifiableTitlePane pane = newTitledPane(groupAccordion, groupedOp, index);
+            pane.setIndex(index++);
+        }
     }
 
     public int getExpandedTitlePane() {
@@ -662,7 +697,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private void updateActiveState(Observable e, PropertySheet propertySheet, ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, ProcessingOperation op) {
         BooleanProperty b = (BooleanProperty) e;
         op.disabled(!b.get());
-        propertyManager.updatePropertySheet(propertySheet, op.getName(), titledPane.getIndex());
+        chartProcessor.updateOpList();
+
+       // propertyManager.updatePropertySheet(propertySheet, op.getName(), titledPane.getIndex());
     }
 
     private void updateAccordionTitles() {
@@ -672,12 +709,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         }
     }
 
-    private void updateAccordionList() {
+    public void updateAccordionList() {
         accordion.getPanes().clear();
         int i = 0;
         for (var processingOperation : operationList) {
-            ModifiableAccordionScrollPane.ModifiableTitlePane pane = newTitledPane(processingOperation);
-            pane.setIndex(i++);
+            ModifiableAccordionScrollPane.ModifiableTitlePane pane = newTitledPane(accordion, processingOperation, i++);
         }
     }
 
@@ -693,12 +729,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         MenuItem menuItem = (MenuItem) event.getSource();
         String op = menuItem.getText();
         int index = propertyManager.getCurrentPosition(op);
-        if (index != -1) {
-            propertyManager.setOp(menuItem.getText(), true, index);
-        } else {
-            propertyManager.setOp(menuItem.getText(), false, -1);
-
-        }
+        ProcessingOperation processingOperation = new ProcessingOperation(menuItem.getText());
+        propertyManager.addOp(processingOperation, index);
     }
 
     private void opSequenceMenuAction(ActionEvent event) {
@@ -826,7 +858,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             String[] ops = scriptString.split("\n");
             for (String op : ops) {
                 op = op.trim();
-                propertyManager.setOp(op, true, 9999);
+                ProcessingOperation processingOperation = new ProcessingOperation(op);
+                propertyManager.addOp(processingOperation, 9999);
             }
         }
     }
@@ -873,10 +906,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         }
         String[] lines = scriptString.split("\n");
         List<String> headerList = new ArrayList<>();
-        List<ProcessingOperation> dimList = null;
-        Map<String, List<ProcessingOperation>> mapOpLists = new TreeMap<>();
+        List<ProcessingOperationInterface> dimList = null;
+        Map<String, List<ProcessingOperationInterface>> mapOpLists = new TreeMap<>();
 
         String dimNum = "";
+        ApodizationGroup apodizationGroup = null;
         for (String line : lines) {
             line = line.trim();
             if (line.equals("")) {
@@ -906,9 +940,18 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                         }
                         mapOpLists.put(prefix + newDim, dimList);
                         dimNum = newDim;
+                        apodizationGroup = null;
                     }
                 } else if (dimList != null) {
-                    dimList.add(new ProcessingOperation(line));
+                    if (ApodizationGroup.opInGroup(opName)) {
+                        if (apodizationGroup == null) {
+                            apodizationGroup = new ApodizationGroup();
+                            dimList.add(apodizationGroup);
+                        }
+                        apodizationGroup.update(opName, line);
+                    } else {
+                        dimList.add(new ProcessingOperation(line));
+                    }
                 } else if (refOps.contains(opName)) {
                     headerList.add(line);
                 } else if (opName.equals("markrows")) {

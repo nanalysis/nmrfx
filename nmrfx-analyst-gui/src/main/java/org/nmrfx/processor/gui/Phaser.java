@@ -29,6 +29,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.operations.AutoPhase;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.processing.ProcessingOperation;
+import org.nmrfx.processor.processing.ProcessingOperationInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -323,8 +324,8 @@ public class Phaser {
 
     public void setPhaseOp(String opString) {
         PolyChart chart = controller.getActiveChart();
-        int opIndex = chart.getProcessorController().propertyManager.setOp(opString);
-        chart.getProcessorController().propertyManager.setPropSheet(opIndex, opString);
+//        int opIndex = chart.getProcessorController().propertyManager.setOp(opString);
+//        chart.getProcessorController().propertyManager.setPropSheet(opIndex, opString);
     }
 
     public void setPhaseOp() {
@@ -334,9 +335,9 @@ public class Phaser {
         String phaseDim = String.valueOf(chart.getPhaseDim() + 1);
         if (chart.hasData() && (controller.getChartProcessor() != null)) {
             if (chart.is1D()) {
-                List<ProcessingOperation> listItems = controller.getChartProcessor().getOperations("D" + phaseDim);
+                List<ProcessingOperationInterface> listItems = controller.getChartProcessor().getOperations("D" + phaseDim);
                 if (listItems != null) {
-                    for (ProcessingOperation processingOperation : listItems) {
+                    for (ProcessingOperationInterface processingOperation : listItems) {
                         if (processingOperation.getName().equals("AUTOPHASE")) {
                             double aph0 = AutoPhase.lastPh0.get();
                             double aph1 = AutoPhase.lastPh1.get();
@@ -380,10 +381,10 @@ public class Phaser {
         }
         String phaseDim = "D" + (chart.getPhaseDim() + 1);
         if (controller.getChartProcessor() != null) {
-            List<ProcessingOperation> listItems = controller.getChartProcessor().getOperations(phaseDim);
+            List<ProcessingOperationInterface> listItems = controller.getChartProcessor().getOperations(phaseDim);
             if (listItems != null) {
                 Map<String, String> values = null;
-                for (ProcessingOperation processingOperation : listItems) {
+                for (ProcessingOperationInterface processingOperation : listItems) {
                     String opName = processingOperation.getName();
                     if (opName.equals("PHASE")) {
                         values = PropertyManager.parseOpString(processingOperation.toString());

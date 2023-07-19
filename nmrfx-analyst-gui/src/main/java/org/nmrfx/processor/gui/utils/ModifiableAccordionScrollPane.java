@@ -23,6 +23,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.gui.ProcessorController;
+import org.nmrfx.processor.processing.ProcessingOperationGroup;
+import org.nmrfx.processor.processing.ProcessingOperationInterface;
 
 import java.util.List;
 
@@ -63,17 +65,42 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
     }
 
     public ModifiableTitlePane makeNewTitlePane(ProcessorController processorController, ProcessingOperation processingOperation) {
-        return new ModifiableTitlePane(processorController, processingOperation);
+        return new ModifiableTitlePane(this, processorController, processingOperation);
+    }
+
+    public ModifiableTitlePane makeNewTitlePane(ProcessorController processorController, ProcessingOperationGroup processingOperation) {
+        return new ModifiableTitlePane(this, processorController, processingOperation);
     }
 
     public class ModifiableTitlePane extends TitledPane {
+        ModifiableAccordionScrollPane accordionScrollPane;
         ContextMenu contextMenu = new ContextMenu();
-        ProcessingOperation processingOperation;
+        ProcessingOperationInterface processingOperation;
         ProcessorController processorController;
         CheckBox checkBox;
         int index = -1;
 
-        public ModifiableTitlePane(ProcessorController processorController, ProcessingOperation processingOperation) {
+        public ModifiableTitlePane(ModifiableAccordionScrollPane accordionScrollPane, ProcessorController processorController, ProcessingOperation processingOperation) {
+            this.accordionScrollPane = accordionScrollPane;
+            this.processorController = processorController;
+            this.processingOperation = processingOperation;
+
+            // Formatting for titledPane
+            // Create Container with title + buttons
+            HBox titleBox = createContents(this);
+            setGraphicTextGap(0);
+            // It is easier to align the buttons if the title is a label within the graphic instead of showing the
+            // title in the default way
+            setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            setGraphic(titleBox);
+            setSkin(new ButtonTitlePaneSkin(this));
+            MenuItem deleteItem = new MenuItem("Delete");
+            deleteItem.setOnAction(e -> deleteItem());
+            contextMenu.getItems().add(deleteItem);
+        }
+
+        public ModifiableTitlePane(ModifiableAccordionScrollPane accordionScrollPane, ProcessorController processorController, ProcessingOperationGroup processingOperation) {
+            this.accordionScrollPane = accordionScrollPane;
             this.processorController = processorController;
             this.processingOperation = processingOperation;
 
@@ -235,16 +262,28 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             });
 
             titledPane.setOnDragDone(event -> {
-                ObservableList<ProcessingOperation> listItems = processorController.getOperationList();
+                ObservableList<ProcessingOperationInterface> listItems = processorController.getOperationList();
 
                 /* the drag and drop gesture ended */
                 /* if the data was successfully moved, clear it */
                 if (event != null && target != null && target.getIndex() >= 0) {
                     if (event.getTransferMode() == TransferMode.MOVE) {
                         int sourceIndex = Math.max(0, source.getIndex());
-                        int targetIndex = Math.min(target.getIndex(), listItems.size() - 1);
-                        ProcessingOperation swap = listItems.remove(sourceIndex);
-                        listItems.add(targetIndex, swap);
+                        if (sourceIndex > ProcessorController.GROUP_SCALE) {
+                            int groupIndex = sourceIndex / ProcessorController.GROUP_SCALE;
+                            sourceIndex = sourceIndex % ProcessorController.GROUP_SCALE;
+                            int targetIndex = target.getIndex();
+                            targetIndex = targetIndex % ProcessorController.GROUP_SCALE;
+                            ProcessingOperationInterface procOpI = listItems.get(groupIndex);
+                            if (procOpI instanceof  ProcessingOperationGroup procGroup) {
+                                procGroup.adjust(sourceIndex, targetIndex);
+                                processorController.updateGroupAccordion(target.accordionScrollPane, procGroup, groupIndex);
+                            }
+                        } else {
+                            int targetIndex = Math.min(target.getIndex(), listItems.size() - 1);
+                            ProcessingOperationInterface swap = listItems.remove(sourceIndex);
+                            listItems.add(targetIndex, swap);
+                        }
                     }
                     target = null;
                     event.consume();
