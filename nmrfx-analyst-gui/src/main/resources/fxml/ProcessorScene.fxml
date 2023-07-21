@@ -53,18 +53,7 @@
                 </VBox>
             </Tab>
             <Tab closable="false" text="Operations">
-                <VBox>
-                    <children>
-                        <ToolBar fx:id="opBox" VBox.vgrow="NEVER">
-                            <items>
-                                <Label text="Operations:"/>
-                                <MenuButton fx:id="opMenuButton" mnemonicParsing="false" text="Add"/>
-                                <Button fx:id="opDocButton" onAction="#showOpDoc" text="Docs"/>
-                            </items>
-                        </ToolBar>
-                        <Accordion fx:id="dimAccordion"/>
-                    </children>
-                </VBox>
+                <Accordion fx:id="dimAccordion"/>
             </Tab>
             <Tab closable="false" text="Navigation">
                 <content>
@@ -219,6 +208,7 @@
                     <Button fx:id="haltProcessButton" mnemonicParsing="false" onAction="#haltProcessAction"
                             text="Halt"/>
                     <CheckBox fx:id="autoProcess" mnemonicParsing="false" text="Auto Update"/>
+                    <ToggleButton fx:id="detailButton" mnemonicParsing="false" text=""/>
 
                 </children>
             </HBox>

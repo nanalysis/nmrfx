@@ -25,7 +25,10 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.collections.*;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
@@ -34,9 +37,11 @@ import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.skin.TitledPaneSkin;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
@@ -117,8 +122,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     @FXML
     private BorderPane mainBox;
     @FXML
-    private ToolBar toolBar;
-    @FXML
     private TextField opTextField;
 
     @FXML
@@ -149,8 +152,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private StatusBar statusBar;
     private final Circle statusCircle = new Circle(10.0, Color.GREEN);
 
-    @FXML
-    private MenuButton opMenuButton;
     EventHandler<ActionEvent> menuHandler;
     PopOver popOver = new PopOver();
 
@@ -198,6 +199,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     @FXML
     private Button haltProcessButton;
     @FXML
+    ToggleButton detailButton;
+    @FXML
     private Button opDocButton;
     @FXML
     private ChoiceBox<Integer> scanMaxN;
@@ -215,7 +218,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     TextField nLSCatFracField;
     TextField[][] lsTextFields;
     List<RadioButton> vectorDimButtons = new ArrayList<>();
-    ToggleButton detailButton;
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
     PolyChart chart;
@@ -249,6 +251,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         controller.nmrControlRightSidePane = nmrControlRightSidePane;
         fxmlController.processorCreated(controller.mainBox);
         nmrControlRightSidePane.addContent(controller);
+        controller.createSimulatorAccordion();
+        controller.viewMode.setValue(DisplayMode.FID_OPS);
+
         return controller;
     }
 
@@ -271,7 +276,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     public List<ProcessingOperationInterface> getOperationList() {
-        return mapOpLists.computeIfAbsent(currentDimName, k -> new ArrayList<>());
+        if (currentDimName.isBlank()) {
+            return Collections.emptyList();
+        } else {
+            return mapOpLists.computeIfAbsent(currentDimName, k -> new ArrayList<>());
+        }
     }
 
     protected String getFullScript() {
@@ -344,16 +353,75 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         }
     }
 
-    private void addTitlePane(String name, String title) {
+    private void addTitleBar(TitledPane titledPane, String name) {
+        titledPane.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+        titledPane.setGraphicTextGap(0);
+        titledPane.setSkin(new ButtonTitlePaneSkin(titledPane));
+
+        HBox titleBox = new HBox();
+        titleBox.setPadding(new Insets(0, 5, 0, 5));
+        //titleBox.setAlignment(Pos.CENTER);
+        HBox.setHgrow(titleBox, Priority.ALWAYS);
+        // Create Title
+        Label label = new Label(titledPane.getText());
+        label.textProperty().bind(titledPane.textProperty());
+        label.textFillProperty().bind(titledPane.textFillProperty());
+
+        titleBox.getChildren().add(label);
+        // Create spacer to separate label and buttons
+        Pane spacer = ToolBarUtils.makeFiller(100);
+        titleBox.getChildren().add(spacer);
+        MenuButton menuButton = new MenuButton("");
+        menuButton.setGraphic(GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "10"));
+        menuButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+        menuButton.getItems().addAll(getMenuItems());
+        titleBox.getChildren().addAll(menuButton);
+        titledPane.setGraphic(titleBox);
+        menuButton.setDisable(true);
+        menuButton.disableProperty().bind(titledPane.expandedProperty().not());
+    }
+    private static class ButtonTitlePaneSkin extends TitledPaneSkin {
+        final Region arrow;
+
+        ButtonTitlePaneSkin(final TitledPane titledPane) {
+            super(titledPane);
+            arrow = (Region) getSkinnable().lookup(".arrow-button");
+
+        }
+
+        @Override
+        protected void layoutChildren(final double x, final double y, final double w, final double h) {
+            super.layoutChildren(x, y, w, h);
+            double arrowWidth = arrow.getLayoutBounds().getWidth();
+            double arrowPadding = arrow.getPadding().getLeft() + arrow.getPadding().getRight();
+
+            ((Region) getSkinnable().getGraphic()).setMinWidth(w - (arrowWidth + arrowPadding));
+        }
+    }
+
+    private TitledPane addTitlePane(String name, String title) {
         TitledPane titledPane = new TitledPane();
         titledPane.expandedProperty().addListener(c -> setActivePane(name, titledPane));
         titledPane.setText(title);
+        addTitleBar(titledPane, title);
         ModifiableAccordionScrollPane accordion1 = new ModifiableAccordionScrollPane();
         titledPane.setContent(accordion1);
         dimensionPanes.put(name, titledPane);
         dimAccordion.getPanes().add(titledPane);
+        return titledPane;
 
     }
+
+    protected void createSimulatorAccordion() {
+        dimChoice.getSelectionModel().selectedItemProperty().removeListener(dimListener);
+        dimensionPanes.clear();
+        dimAccordion.getPanes().clear();
+        currentDimName = "D" + 1;
+        var titledPane = addTitlePane(currentDimName, "SIMULATION");
+        titledPane.setExpanded(true);
+        accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentDimName).getContent();
+    }
+
     protected void updateDimChoice(boolean[] complex) {
         dimensionPanes.clear();
         dimAccordion.getPanes().clear();
@@ -370,14 +438,16 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     sBuilder.append(",");
                     sBuilder.append(j);
                 }
-                addTitlePane(sBuilder.toString(), "Indirect Matrix");
+                addTitlePane(sBuilder.toString(), "INDIRECT MATRIX");
                 dimList.add(sBuilder.toString());
             }
         }
-        addTitlePane("D_ALL", "FULL DATASET");
+        if (nDim > 1) {
+            addTitlePane("D_ALL", "FULL DATASET");
 
-        for (int i = 1; i <= nDim; i++) {
-            addTitlePane("P" + i, "POLISHING " + i);
+            for (int i = 1; i <= nDim; i++) {
+                addTitlePane("P" + i, "POLISHING " + i);
+            }
         }
         currentDimName = "D" + 1;
         accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentDimName).getContent();
@@ -1298,7 +1368,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         navHBox.getChildren().clear();
         List<MenuItem> menuItems = getMenuItems();
 
-        opMenuButton.getItems().addAll(menuItems);
         popOver.setContentNode(new Text("hello"));
 
         propertyManager = new PropertyManager(this, opTextField, popOver);
@@ -1319,18 +1388,15 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         scanMaxN.getItems().addAll(5, 10, 20, 50, 100, 200);
         scanMaxN.setValue(50);
         viewMode.getItems().addAll(DisplayMode.values());
-        detailButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.INFO, "",
-                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
-        opBox.getItems().add(ToolBarUtils.makeFiller(20));
-        opBox.getItems().addAll(detailButton);
+        Text detailIcon = GlyphsDude.createIcon(FontAwesomeIcon.INFO,
+                AnalystApp.ICON_SIZE_STR);
+        detailButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+        detailButton.setGraphic(detailIcon);
         detailButton.setOnAction(e -> updateAccordionTitles());
-
         dimChoice.disableProperty().bind(viewMode.valueProperty().isEqualTo(DisplayMode.SPECTRUM));
 
         initTable();
         setupListeners();
-
-
     }
 
     public void updateAfterOperationListChanged() {
