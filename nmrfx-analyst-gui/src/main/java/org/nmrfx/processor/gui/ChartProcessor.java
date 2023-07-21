@@ -19,6 +19,8 @@ package org.nmrfx.processor.gui;
 
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
 import javafx.stage.FileChooser;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
@@ -85,7 +87,8 @@ public class ChartProcessor {
      * Map of lists of operations with key being the dimension the operations
      * apply to
      */
-    private Map<String, List<ProcessingOperationInterface>> mapOpLists = new TreeMap<>(new DimensionComparator());
+    private Map<String, List<ProcessingOperationInterface>> backingMap = new TreeMap<>(new DimensionComparator());
+    protected ObservableMap<String, List<ProcessingOperationInterface>> mapOpLists = FXCollections.observableMap(backingMap);
     /**
      * Which Vec of the list of vectors should currently be displayed
      */
@@ -531,18 +534,13 @@ public class ChartProcessor {
         if (opMap == null || opMap.size() == 0) {
             return;
         }
-        mapOpLists = new TreeMap<>(new DimensionComparator());
+        mapOpLists.clear();
         mapOpLists.putAll(opMap);
-        List<ProcessingOperationInterface> opList = mapOpLists.get(vecDimName);
         headerList.clear();
         headerList.addAll(newHeaderList);
         processorController.refManager.setDataFields(headerList);
         vecDim = 0;
         processorController.refManager.setupItems(0);
-        if (opList == null) {
-            opList = new ArrayList<>();
-        }
-        processorController.setOperationList(opList);
         if (!processorController.isViewingDataset()) {
             chart.full();
             chart.autoScale();
@@ -558,14 +556,10 @@ public class ChartProcessor {
     }
 
     public void updateOpList() {
-        if (vecDimName.equals("")) {
-            return;
-        }
-        scriptValid = false;
+       scriptValid = false;
         List<ProcessingOperationInterface> newList = new ArrayList<>(processorController.getOperationList());
-        boolean clearedOperations = newList.isEmpty() && vecDimName.equals("D1");
+        boolean clearedOperations = newList.isEmpty() && processorController.getActiveDimPane().orElse("").equals("D1");
         areOperationListsValid.set(!clearedOperations);
-        mapOpLists.put(vecDimName, newList);
         ProcessorController pController = processorController;
         if (pController.isViewingDataset() && pController.autoProcess.isSelected()) {
             processorController.processIfIdle();
@@ -595,20 +589,11 @@ public class ChartProcessor {
         }
         vecDimName = dimName;
         vecDim = value;
-        ArrayList<ProcessingOperationInterface> oldList = new ArrayList<>();
 
-        if (isDim) {
-            if (mapOpLists.get(vecDimName) != null) {
-                oldList.addAll(mapOpLists.get(vecDimName));
-            }
-        } else if (mapOpLists.containsKey(dimName)) {
-            oldList.addAll(mapOpLists.get(dimName));
-        }
         updateAcqModeFromTdComb();
         if (!processorController.isViewingDataset()) {
             reloadData();
         }
-        processorController.setOperationList(oldList);
         fxmlController.setPhaseDimChoice(vecDim);
         if (!processorController.isViewingDataset()) {
             chart.full();
@@ -934,7 +919,7 @@ public class ChartProcessor {
                         mapToDataset[dimNum] = nDatasetDims++;
                     }
                 }
-                List<ProcessingOperationInterface> scriptList = (List<ProcessingOperationInterface>) entry.getValue();
+                List<ProcessingOperationInterface> scriptList = entry.getValue();
                 if ((scriptList != null) && (!scriptList.isEmpty())) {
                     if (parDim.equals("_ALL")) {
                         parDim = "";
@@ -1029,10 +1014,7 @@ public class ChartProcessor {
         updateCounter();
         int nDim = getNMRData().getNDim();
         acqMode = new String[nDim];
-
-        if ((mapOpLists == null) || (mapOpLists.size() != nDim)) {
-            mapOpLists = new TreeMap<>(new DimensionComparator());
-        }
+        mapOpLists.clear();
         Map<String, List<ProcessingOperationInterface>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>(headerList);
 
@@ -1099,7 +1081,6 @@ public class ChartProcessor {
 
         fxmlController.getPhaser().setPH0Slider(chart.getPh0());
         fxmlController.getPhaser().setPH1Slider(chart.getPh1());
-        processorController.clearOperationList();
         chart.layoutPlotChildren();
     }
 

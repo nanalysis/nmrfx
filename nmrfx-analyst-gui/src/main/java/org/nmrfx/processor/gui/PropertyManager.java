@@ -65,7 +65,7 @@ public class PropertyManager {
     ChangeListener<Number> scriptOpListener = null;
     Map<String, ParInfo> parInfoMap = new HashMap<>();
 
-    PropertyManager(ProcessorController processorController, ObservableList<ProcessingOperationInterface> listItems, TextField opTextField, PopOver popOver) {
+    PropertyManager(ProcessorController processorController, TextField opTextField, PopOver popOver) {
         this.processorController = processorController;
         this.listItems = listItems;
         this.opTextField = opTextField;

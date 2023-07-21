@@ -262,7 +262,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             });
 
             titledPane.setOnDragDone(event -> {
-                ObservableList<ProcessingOperationInterface> listItems = processorController.getOperationList();
+                List<ProcessingOperationInterface> listItems = processorController.getOperationList();
 
                 /* the drag and drop gesture ended */
                 /* if the data was successfully moved, clear it */
@@ -283,6 +283,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
                             int targetIndex = Math.min(target.getIndex(), listItems.size() - 1);
                             ProcessingOperationInterface swap = listItems.remove(sourceIndex);
                             listItems.add(targetIndex, swap);
+                            processorController.updateAfterOperationListChanged();
                         }
                     }
                     target = null;
