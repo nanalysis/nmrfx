@@ -854,24 +854,41 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         dwc.load();
     }
 
+    private void addOperation(String opName) {
+        List<ProcessingOperationInterface> ops = getOperationList();
+        if (ApodizationGroup.opInGroup(opName)) {
+            int index = propertyManager.getCurrentPosition(ops, "Apodization");
+            ApodizationGroup apodizationGroup = index != -1 ? (ApodizationGroup) ops.get(index) : new ApodizationGroup();
+            if (index == -1) {
+                propertyManager.addOp(apodizationGroup, ops, index);
+            }
+            apodizationGroup.update(opName, opName);
+        } else {
+            int index = propertyManager.getCurrentPosition(ops, opName);
+            ProcessingOperation processingOperation = new ProcessingOperation(opName);
+            propertyManager.addOp(processingOperation, ops, index);
+        }
+    }
+
     private void opMenuAction(ActionEvent event) {
         MenuItem menuItem = (MenuItem) event.getSource();
         String opName = menuItem.getText();
-        ProcessingOperation processingOperation = new ProcessingOperation(opName);
         getActiveDimPane().ifPresent(dimName -> {
-            List<ProcessingOperationInterface> ops = getOperationList();
-            int index = propertyManager.getCurrentPosition(ops, opName);
-            propertyManager.addOp(processingOperation, ops, index);
+            addOperation(opName);
             updateAfterOperationListChanged();
         });
     }
 
     private void opSequenceMenuAction(ActionEvent event) {
-        MenuItem menuItem = (MenuItem) event.getSource();
-        String[] ops = menuItem.getText().split(" ");
-        for (String op : ops) {
-            propertyManager.setOp(op);
-        }
+        getActiveDimPane().ifPresent(dimName -> {
+            getOperationList().clear();
+            MenuItem menuItem = (MenuItem) event.getSource();
+            String[] ops = menuItem.getText().split(" ");
+            for (String opName : ops) {
+                addOperation(opName);
+            }
+            updateAfterOperationListChanged();
+        });
     }
 
     @FXML

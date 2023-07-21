@@ -65,6 +65,7 @@ public class OperationInfo {
             "LP",
             "LPR",
             "Cascade-Apodization",
+            "Apodization",
             "APODIZE",
             "BLACKMAN",
             "EXPD",

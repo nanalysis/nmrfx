@@ -175,7 +175,7 @@ public class PropertyManager {
         }
     }
 
-    public void addOp(ProcessingOperation processingOperation, List<ProcessingOperationInterface> ops, int index) {
+    public void addOp(ProcessingOperationInterface processingOperation, List<ProcessingOperationInterface> ops, int index) {
             if (processingOperation != null) {
                 int opIndex = -1;
                 String opName = processingOperation.getName();
