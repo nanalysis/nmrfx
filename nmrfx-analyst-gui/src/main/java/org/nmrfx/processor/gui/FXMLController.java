@@ -294,7 +294,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public boolean isPhaseSliderVisible() {
-        return borderPane.getRight() == phaserBox;
+        return borderPane.getRight() == phaserBox || (processControllerVisible.get() && getActiveChart().getProcessorController().isPhaserActive());
     }
 
     public Stage getStage() {
@@ -786,7 +786,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 crossHairStates[iCross][jOrient] = true;
             }
         }
-        phaser = new Phaser(this, phaserBox);
+        phaser = new Phaser(this, phaserBox, Orientation.VERTICAL);
         nmrControlRightSidePane.addContentListener(this::updateStageSize);
         cursorProperty.addListener(e -> setCursor());
         attributesController = AttributesController.create(this);
@@ -878,6 +878,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             chart.getCrossHairs().setAllStates(CanvasCursor.isCrosshair(cursor));
         }
         statusBar.updateCursorBox();
+    }
+
+    public void setPhaser(Phaser phaser) {
+        this.phaser = phaser;
     }
 
     public Phaser getPhaser() {

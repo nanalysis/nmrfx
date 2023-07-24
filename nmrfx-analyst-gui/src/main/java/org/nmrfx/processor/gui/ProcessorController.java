@@ -38,7 +38,9 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
+import javafx.scene.Cursor;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.skin.TitledPaneSkin;
@@ -224,6 +226,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private AtomicBoolean idleMode = new AtomicBoolean(false);
     private AtomicBoolean isProcessing = new AtomicBoolean(false);
     private AtomicBoolean doProcessWhenDone = new AtomicBoolean(false);
+    private AtomicBoolean isPhaserActive = new AtomicBoolean(false);
     private final ProcessDataset processDataset = new ProcessDataset();
     MapChangeListener<String, List<ProcessingOperationInterface>> opListListener = null;
 
@@ -336,19 +339,13 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             currentDimName = name;
             if (!currentDimName.isBlank()) {
                 accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentDimName).getContent();
-            }
-            if (currentDimName.substring(0,1).equals("D") && StringUtils.isNumeric(currentDimName.substring(1))) {
-                if (viewMode.getValue() != DisplayMode.SPECTRUM) {
+                if (currentDimName.substring(0, 1).equals("D") && StringUtils.isNumeric(currentDimName.substring(1))) {
                     dimChoice.setValue(currentDimName);
                     chartProcessor.setVecDim(currentDimName);
-                    if (isViewingDataset() && autoProcess.isSelected()) {
-                        processIfIdle();
-                    } else {
+                    if (!isViewingDataset()) {
                         chartProcessor.execScriptList(false);
                     }
                 }
-            } else {
-
             }
         }
     }
@@ -716,24 +713,32 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titledPane.setProcessingOperation(op);
         titledPane.setDetailedTitle(detailButton.isSelected());
         PropertySheet opPropertySheet = (PropertySheet) titledPane.getProperties().get("PropSheet");
-        opPropertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory(this));
-        opPropertySheet.setMode(PropertySheet.Mode.NAME);
-        opPropertySheet.setModeSwitcherVisible(false);
-        opPropertySheet.setSearchBoxVisible(false);
-        setPropSheet(titledPane, opPropertySheet,  op);
+        if (opPropertySheet != null) {
+            opPropertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory(this));
+            opPropertySheet.setMode(PropertySheet.Mode.NAME);
+            opPropertySheet.setModeSwitcherVisible(false);
+            opPropertySheet.setSearchBoxVisible(false);
+            setPropSheet(titledPane, opPropertySheet, op);
+        }
+        titledPane.getCheckBoxSelectedProperty().addListener(e -> updateActiveState(e, op));
     }
 
     private ModifiableAccordionScrollPane.ModifiableTitlePane newTitledPane(ModifiableAccordionScrollPane opAccordion, ProcessingOperationInterface op, int index) {
         ModifiableAccordionScrollPane.ModifiableTitlePane titledPane = null;
         if (op instanceof ProcessingOperation processingOperation) {
             titledPane = opAccordion.makeNewTitlePane(this, processingOperation);
-            PropertySheet opPropertySheet = new PropertySheet();
             VBox vBox = new VBox();
             HBox hBox = new HBox();
-            vBox.getChildren().addAll(hBox, opPropertySheet);
+            if (op.getName().equals("PHASE")) {
+                Pane phaserPane = makePhaserPane(titledPane, processingOperation);
+                vBox.getChildren().add(phaserPane);
+            } else {
+                PropertySheet opPropertySheet = new PropertySheet();
+                vBox.getChildren().addAll(hBox, opPropertySheet);
+                titledPane.getProperties().put("PropSheet", opPropertySheet);
+                opPropertySheet.getProperties().put("Op", processingOperation);
+            }
             titledPane.setContent(vBox);
-            titledPane.getProperties().put("PropSheet", opPropertySheet);
-            opPropertySheet.getProperties().put("Op", processingOperation);
             updateTitledPane(titledPane, processingOperation);
             opAccordion.add(titledPane);
             titledPane.setIndex(index);
@@ -778,6 +783,41 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return index;
     }
 
+    public boolean isPhaserActive() {
+        return isPhaserActive.get();
+    }
+
+    private Pane makePhaserPane( ModifiableAccordionScrollPane.ModifiableTitlePane phaserPane, ProcessingOperation processingOperation) {
+        VBox phaserBox = new VBox();
+        Phaser phaser = new Phaser(chart.getFXMLController(), phaserBox, Orientation.HORIZONTAL, processingOperation);
+        phaserPane.expandedProperty().addListener(e -> {
+            if (phaserPane.isExpanded()) {
+                final int vecDim = chartProcessor.getVecDim();
+                phaser.setPhaseDim(vecDim);
+                phaser.getPhaseOp();
+                FXMLController fxmlController = chart.getFXMLController();
+                fxmlController.setPhaser(phaser);
+                isPhaserActive.set(true);
+
+                if (!chart.is1D()) {
+                    fxmlController.sliceStatusProperty().set(true);
+                    fxmlController.setCursor(Cursor.CROSSHAIR);
+                    if (vecDim == 0) {
+                        chart.getSliceAttributes().setSlice1State(true);
+                        chart.getSliceAttributes().setSlice2State(false);
+                    } else {
+                        chart.getSliceAttributes().setSlice1State(true);
+                        chart.getSliceAttributes().setSlice1State(true);
+                    }
+                    chart.getCrossHairs().refresh();
+                }
+            } else {
+                isPhaserActive.set(false);
+            }
+        });
+        return phaserBox;
+    }
+
     void setPropSheet(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, PropertySheet opPropertySheet, ProcessingOperation op) {
         opPropertySheet.getItems().clear();
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
@@ -805,7 +845,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         opPropertySheet.setMode(PropertySheet.Mode.NAME);
         opPropertySheet.setModeSwitcherVisible(false);
         opPropertySheet.setSearchBoxVisible(false);
-        titledPane.getCheckBoxSelectedProperty().addListener(e -> updateActiveState(e, op));
         opPropertySheet.getItems().setAll(newItems);
     }
 
@@ -827,6 +866,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         var accordionPane = (ModifiableAccordionScrollPane) titledPane.getContent();
         accordionPane.getPanes().clear();
         int i = 0;
+        currentDimName = name;
         for (var processingOperation: processingOperations) {
             ModifiableAccordionScrollPane.ModifiableTitlePane pane = newTitledPane(accordionPane, processingOperation, i++);
         }

@@ -1014,7 +1014,7 @@ public class PolyChart extends Region {
         if (dataset == null) {
             setPivot(null);
         } else {
-            Orientation orientation = phaseAxis + 1 % 2 == 0 ? Orientation.HORIZONTAL : Orientation.VERTICAL;
+            Orientation orientation = phaseAxis % 2 == 0 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
             setPivot(crossHairs.getPosition(0, orientation));
         }
     }
@@ -1036,28 +1036,50 @@ public class PolyChart extends Region {
         return Optional.ofNullable(vec);
     }
 
-    protected void autoPhase(boolean doMax, boolean doFirst) {
-        if (!is1D()) {
-            return;
-        }
-        getFirstVec().ifPresent(vec -> {
-            if (doMax) {
-                setPh0(vec.autoPhaseByMax());
-            } else {
-                double[] phases = vec.autoPhase(doFirst, 0, 0, 2, 180.0, 1.0);
-                setPh0(phases[0]);
-                setPh1(0.0);
-                if (phases.length == 2) {
-                    setPh1(phases[1]);
-                }
-            }
+    protected void setPivotToMax() {
+        if (is1D()) {
+            getFirstVec().ifPresent(vec -> {
+                int maxIndex = vec.maxIndex().getIndex();
+                double ppm = vec.pointToPPM(maxIndex);
+                setPivot(ppm);
+            });
+        } else {
+            Vec sliceVec = new Vec(32, false);
+            sliceVec.setName("phasing slice");
+            int iOrient = 0;
+            int iCross = 0;
+            DatasetAttributes dataAttr = datasetAttributesList.get(0);
 
-            double sliderPH0 = getPh0() + vec.getPH0();
-            double sliderPH1 = getPh1() + vec.getPH1();
-            controller.getPhaser().handlePh1Reset(sliderPH1);
-            controller.getPhaser().handlePh0Reset(sliderPH0);
-            layoutPlotChildren();
-        });
+            try {
+                dataAttr.getSlice(sliceVec, iOrient,
+                        crossHairs.getPosition(iCross, Orientation.VERTICAL),
+                        crossHairs.getPosition(iCross, Orientation.HORIZONTAL));
+            } catch (IOException ex) {
+                log.error(ex.getMessage(), ex);
+            }
+        }
+    }
+    protected void autoPhase(boolean doMax, boolean doFirst) {
+        if (is1D()) {
+            getFirstVec().ifPresent(vec -> {
+                if (doMax) {
+                    setPh0(vec.autoPhaseByMax());
+                } else {
+                    double[] phases = vec.autoPhase(doFirst, 0, 0, 2, 180.0, 1.0);
+                    setPh0(phases[0]);
+                    setPh1(0.0);
+                    if (phases.length == 2) {
+                        setPh1(phases[1]);
+                    }
+                }
+
+                double sliderPH0 = getPh0() + vec.getPH0();
+                double sliderPH1 = getPh1() + vec.getPH1();
+                controller.getPhaser().handlePh1Reset(sliderPH1);
+                controller.getPhaser().handlePh0Reset(sliderPH0);
+                layoutPlotChildren();
+            });
+        }
     }
 
     protected void expand(Orientation orientation) {
