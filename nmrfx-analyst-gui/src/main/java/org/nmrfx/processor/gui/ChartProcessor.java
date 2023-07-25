@@ -1014,6 +1014,7 @@ public class ChartProcessor {
         updateCounter();
         int nDim = getNMRData().getNDim();
         acqMode = new String[nDim];
+        processorController.removeOpListener();
         mapOpLists.clear();
         Map<String, List<ProcessingOperationInterface>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>(headerList);
@@ -1036,6 +1037,7 @@ public class ChartProcessor {
         }
         NMRDataUtil.setCurrentData(data);
         addFIDToPython();
+        processorController.addOpListener();
     }
 
     public void reloadData() {

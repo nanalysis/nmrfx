@@ -241,6 +241,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     private AtomicReference<Dataset> saveObject = new AtomicReference<>();
     ScheduledFuture futureUpdate = null;
+    Map<String, PhaserAndPane> phasersPanes = new HashMap<>();
 
 
     public static ProcessorController create(FXMLController fxmlController, NmrControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
@@ -341,6 +342,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentDimName).getContent();
                 if (currentDimName.substring(0, 1).equals("D") && StringUtils.isNumeric(currentDimName.substring(1))) {
                     dimChoice.setValue(currentDimName);
+                    updatePhaser();
                     chartProcessor.setVecDim(currentDimName);
                     if (!isViewingDataset()) {
                         chartProcessor.execScriptList(false);
@@ -648,7 +650,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
               then unselect the scriptView.
              */
             propertyManager.removeScriptListener();
-            mapOpLists.removeListener(opListListener);
+            removeOpListener();
 
             try {
                 getOperationList().remove(index);
@@ -656,7 +658,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 log.warn(ex.getMessage(), ex);
             } finally {
                 propertyManager.addScriptListener();
-                mapOpLists.addListener(opListListener);
+                addOpListener();
                 chartProcessor.updateOpList();
             }
             updateAccordionList();
@@ -787,35 +789,55 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return isPhaserActive.get();
     }
 
+    record PhaserAndPane(TitledPane phaserPane, Phaser phaser) {}
+
     private Pane makePhaserPane( ModifiableAccordionScrollPane.ModifiableTitlePane phaserPane, ProcessingOperation processingOperation) {
         VBox phaserBox = new VBox();
         Phaser phaser = new Phaser(chart.getFXMLController(), phaserBox, Orientation.HORIZONTAL, processingOperation);
+        PhaserAndPane phaserAndPane = new PhaserAndPane(phaserPane, phaser);
+        phasersPanes.put(currentDimName, phaserAndPane);
         phaserPane.expandedProperty().addListener(e -> {
-            if (phaserPane.isExpanded()) {
-                final int vecDim = chartProcessor.getVecDim();
-                phaser.setPhaseDim(vecDim);
-                phaser.getPhaseOp();
-                FXMLController fxmlController = chart.getFXMLController();
-                fxmlController.setPhaser(phaser);
-                isPhaserActive.set(true);
-
-                if (!chart.is1D()) {
-                    fxmlController.sliceStatusProperty().set(true);
-                    fxmlController.setCursor(Cursor.CROSSHAIR);
-                    if (vecDim == 0) {
-                        chart.getSliceAttributes().setSlice1State(true);
-                        chart.getSliceAttributes().setSlice2State(false);
-                    } else {
-                        chart.getSliceAttributes().setSlice1State(true);
-                        chart.getSliceAttributes().setSlice1State(true);
-                    }
-                    chart.getCrossHairs().refresh();
-                }
-            } else {
-                isPhaserActive.set(false);
-            }
+            updatePhaser(phaserPane, phaser);
         });
         return phaserBox;
+    }
+
+    void updatePhaser() {
+        PhaserAndPane phaserAndPane = phasersPanes.get(currentDimName);
+        if (phaserAndPane != null) {
+            updatePhaser(phaserAndPane.phaserPane, phaserAndPane.phaser);
+        }
+    }
+
+    void updatePhaser(TitledPane phaserPane, Phaser phaser) {
+        FXMLController fxmlController = chart.getFXMLController();
+        if (phaserPane.isExpanded()) {
+            Cursor cursor = fxmlController.getCurrentCursor();
+            if (cursor == null) {
+                cursor = Cursor.MOVE;
+            }
+            final int vecDim = chartProcessor.getVecDim();
+            phaser.setPhaseDim(vecDim);
+            phaser.getPhaseOp();
+            fxmlController.setPhaser(phaser);
+            isPhaserActive.set(true);
+            phaser.sliceStatus(fxmlController.sliceStatusProperty().get());
+            phaser.cursor(cursor);
+
+            if (!chart.is1D()) {
+                fxmlController.sliceStatusProperty().set(true);
+                fxmlController.setCursor(Cursor.CROSSHAIR);
+                chart.getSliceAttributes().setSlice1State(true);
+                chart.getSliceAttributes().setSlice2State(false);
+                chart.getCrossHairs().refresh();
+            }
+        } else {
+            isPhaserActive.set(false);
+            fxmlController.sliceStatusProperty().set(phaser.sliceStatus);
+            fxmlController.setCursor(phaser.cursor());
+            fxmlController.setCursor();
+            chart.getCrossHairs().refresh();
+        }
     }
 
     void setPropSheet(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, PropertySheet opPropertySheet, ProcessingOperation op) {
@@ -1461,13 +1483,21 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         updateAccordionList();
     }
 
+    public void removeOpListener() {
+        mapOpLists.removeListener(opListListener);
+    }
+
+    public void addOpListener() {
+        mapOpLists.addListener(opListListener);
+    }
+
     private void setupListeners() {
         chartProcessor.nmrDataProperty().addListener((observable, oldValue, newValue) -> enableRealFeatures(newValue));
 
         opListListener = change -> {
             updateAfterOperationListChanged();
         };
-        mapOpLists.addListener(opListListener);
+        addOpListener();
 
         dimListener = (observableValue, dimName, dimName2) -> {
             chartProcessor.setVecDim(dimName2);

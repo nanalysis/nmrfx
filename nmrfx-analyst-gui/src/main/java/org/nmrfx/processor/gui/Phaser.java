@@ -19,6 +19,7 @@ package org.nmrfx.processor.gui;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Orientation;
+import javafx.scene.Cursor;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -58,6 +59,8 @@ public class Phaser {
     List<MenuItem> datasetMenuItems = new ArrayList<>();
     MenuButton phaseMenuButton = null;
     ProcessingOperation processingOperation = null;
+    boolean sliceStatus = false;
+    Cursor cursor = null;
 
     public Phaser(FXMLController controller, VBox vbox, Orientation orientation) {
         this.controller = controller;
@@ -134,7 +137,7 @@ public class Phaser {
         splitMenuButton.getItems().add(setPivotItem);
 
         SplitMenuButton phaseMenuButton = new SplitMenuButton();
-        phaseMenuButton.setText("Phases");
+        phaseMenuButton.setText("Set");
         phaseMenuButton.setOnAction(e -> setPhases());
 
         MenuItem setPhasesToDataValuesItem = new MenuItem("To Data Values");
@@ -247,6 +250,22 @@ public class Phaser {
             setPH1Slider(chart.getDataPH1());
             setPH0Slider(chart.getDataPH0());
         }
+    }
+
+    public void sliceStatus(boolean state) {
+        sliceStatus = state;
+    }
+
+    public boolean sliceStatus() {
+        return sliceStatus;
+    }
+
+    public void cursor(Cursor cursor) {
+        this.cursor = cursor;
+    }
+
+    public Cursor cursor() {
+        return cursor;
     }
 
     void handlePhReset(int iPh) {
