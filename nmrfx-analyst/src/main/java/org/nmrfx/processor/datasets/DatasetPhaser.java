@@ -134,9 +134,9 @@ public class DatasetPhaser {
                 pt[jDim][1] = iE[jDim];
             }
             dataset.readVectorFromDatasetFile(pt, dim, testVec);
-            double sdev = Util.sdev(testVec, winSize, nWin);
             testVec.hft();
             testVec.abs();
+            double sdev = Util.sdev(testVec, winSize, nWin);
             int dSize = 1;
             int index = 0;
             boolean ok = true;
