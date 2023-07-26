@@ -169,7 +169,6 @@ public class PropertyManager {
 
     public void updateOp(ProcessingOperation processingOperation, String op) {
         if (processingOperation != null) {
-            System.out.println("update op " + processingOperation.getName() + " " + op);
             processingOperation.update(op);
             processorController.chartProcessor.updateOpList();
         }
@@ -326,7 +325,46 @@ public class PropertyManager {
 
     }
 
-    void setPropSheet(int scriptIndex, String op) {
+    public void setPropSheet(PropertySheet propertySheet, String op) {
+        currentIndex = -1;
+        String trimOp = OperationInfo.trimOp(op);
+        Pattern pattern = null;
+        String opPars = "";
+        if (!op.equals("")) {
+            opPars = op.substring(op.indexOf('(') + 1, op.length() - 1);
+            pattern = Pattern.compile(PATTERN_STRING);
+        }
+        List<PropertySheet.Item> items = propertySheet.getItems();
+        ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
+        for (PropertySheet.Item item : items) {
+            if (item == null) {
+                System.out.println("item null");
+            } else if (item.getCategory().equals(trimOp) && (pattern != null)) {
+
+                boolean foundIt = false;
+                Matcher matcher = pattern.matcher(opPars);
+                while (matcher.find()) {
+                    if (matcher.groupCount() > 1) {
+                        String parName = matcher.group(1);
+                        if (item.getName().equals(parName)) {
+                            String parValue = matcher.group(2);
+                            foundIt = true;
+                            ((OperationItem) item).setFromString(parValue);
+                        }
+                    }
+                }
+                if (!foundIt) {
+                    ((OperationItem) item).setToDefault();
+                }
+            }
+            newItems.add(item);
+        }
+        propertySheet.getItems().setAll(newItems);
+    }
+
+
+
+    public void setPropSheet(int scriptIndex, String op) {
         currentIndex = -1;
         String trimOp = OperationInfo.trimOp(op);
         Pattern pattern = null;
@@ -340,6 +378,7 @@ public class PropertyManager {
             if (item == null) {
                 System.out.println("item null");
             } else if (item.getCategory().equals(trimOp) && (pattern != null)) {
+
                 boolean foundIt = false;
                 Matcher matcher = pattern.matcher(opPars);
                 while (matcher.find()) {

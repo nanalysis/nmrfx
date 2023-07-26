@@ -110,6 +110,7 @@ public class OperationInfo {
             "Cascade-Regions",
             "BUCKET",
             "EXTRACT",
+            "EXTRACTP",
             "Cascade-Measure",
             "INTEGRATE",
             "MEASURE",

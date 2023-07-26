@@ -22,7 +22,8 @@ public class ProcessingOperation implements ProcessingOperationInterface {
             "PHASE", "Phasing",
             "BC", "Baseline Correction",
             "SUPPRESS", "Signal Suppression",
-            "EXTRACT", "Extract Region"
+            "EXTRACT", "Extract Region",
+            "EXTRACTP", "Extract Region"
     );
 
     String opName;

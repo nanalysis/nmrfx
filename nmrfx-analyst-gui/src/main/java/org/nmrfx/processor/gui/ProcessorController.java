@@ -100,7 +100,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ProcessorController implements Initializable, ProgressUpdater, NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
     private static final String[] BASIC_OPS = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
-    private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
+    private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACTP", "BC"};
     private static final AtomicBoolean aListUpdated = new AtomicBoolean(false);
     public static final int GROUP_SCALE = 1000;
 
@@ -736,6 +736,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 vBox.getChildren().add(phaserPane);
             } else {
                 PropertySheet opPropertySheet = new PropertySheet();
+                if (op.getName().equals("EXTRACTP")) {
+                    makeExtractButtons(opPropertySheet, hBox, processingOperation);
+                }
                 vBox.getChildren().addAll(hBox, opPropertySheet);
                 titledPane.getProperties().put("PropSheet", opPropertySheet);
                 opPropertySheet.getProperties().put("Op", processingOperation);
@@ -838,6 +841,24 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             fxmlController.setCursor();
             chart.getCrossHairs().refresh();
         }
+    }
+
+    void makeExtractButtons(PropertySheet opPropertySheet, HBox hBox, ProcessingOperation processingOperation) {
+        Button extractButton = new Button("Add Region");
+
+        extractButton.setOnAction(e -> {
+            var regionRangeOpt = chart.addRegionRange();
+            regionRangeOpt.ifPresent(regionRange -> {
+                double ppm0 = regionRange.ppm0();
+                double ppm1 = regionRange.ppm1();
+                String opString = "EXTRACTP(start=" + ppm0 + ",end=" + ppm1 + ",mode='region')";
+                processingOperation.update(opString);
+                chartProcessor.updateOpList();
+                propertyManager.setPropSheet(opPropertySheet, opString);
+
+            });
+        });
+        hBox.getChildren().add(extractButton);
     }
 
     void setPropSheet(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, PropertySheet opPropertySheet, ProcessingOperation op) {

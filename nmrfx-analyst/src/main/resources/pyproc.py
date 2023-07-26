@@ -1670,33 +1670,58 @@ def LPR(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
         process.addOperation(op)
     return op
 
-def EXTRACTP(fstart=0.0, fend=0.0,  disabled=False, vector=None, process=None):
-    '''Extract a specified range of points.
+
+def EXTRACTP(start=0.0, end=0.0, mode='all',  disabled=False, vector=None, process=None):
+    '''Extract a specified range of the vector.
     Parameters
     ---------
-    fstart : real
+    start : real
         min : -1.0
         max : 15.0
         Start point of region to extract
-    fend : real
+    end : real
         min : -1.0
         max : 15.0
         End point of region to extract
+    mode : {'left', 'right', 'all', 'middle','region'}
+        Extract a named region (left,right,all,middle) instead of using start and end points
 '''
-    global fidInfo
-    global dataInfo
     if disabled:
         return None
-    curDim = dataInfo.curDim
-    curSize = dataInfo.size[curDim]
-    f1 = ppmToFrac(fidInfo, fstart,curSize,  curDim)
-    f2 = ppmToFrac(fidInfo, fend, curSize, curDim)
     process = process or getCurrentProcess()
-    op = Extract(f1,f2)
+    fmode = False
+    if (mode == 'left'):
+        fstart = 0.0
+        fend = 0.5
+        fmode = True
+    elif (mode == 'all'):
+        fstart = 0.0
+        fend = 1.0
+        fmode = True
+    elif (mode == 'right'):
+        fstart = 0.5
+        fend = 1.0
+        fmode = True
+    elif (mode == 'middle'):
+        fstart = 0.25
+        fend = 0.75
+        fmode = True
+    else:
+        global dataInfo
+        if (end == 0):
+            try:
+                end = dataInfo.size[dataInfo.curDim] - 1
+            except:
+                pass
+    if (fmode):
+        op = Extract(fstart,fend)
+    else:
+        op = Extract(start,end, True)
     if (vector != None):
         op.eval(vector)
     else:
         process.addOperation(op)
+
 
 def EXTRACT(start=0, end=0, mode='left', disabled=False, vector=None, process=None):
     '''Extract a specified range of points.
