@@ -1147,7 +1147,7 @@ public class PolyChart extends Region {
 
     public record RegionRange(double pt0, double pt1, double ppm0, double ppm1,  double f0, double f1) {}
 
-    public Optional<RegionRange>  addRegionRange() {
+    public Optional<RegionRange>  addRegionRange(boolean offsetByExtractRegion) {
         DatasetBase dataset = getDataset();
         DatasetAttributes datasetAttributes = getFirstDatasetAttributes().orElse(null);
         if (dataset == null || datasetAttributes == null || controller.getChartProcessor() == null) {
@@ -1173,7 +1173,6 @@ public class PolyChart extends Region {
             pt1 = axes.getMode(0).getIndex(datasetAttributes, 0, ppm1);
             size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
         }
-        int[] currentRegion = controller.getExtractRegion(vecDimName, size);
         if (pt0 > pt1) {
             double hold = pt0;
             pt0 = pt1;
@@ -1182,8 +1181,11 @@ public class PolyChart extends Region {
         if (pt0 < 0) {
             pt0 = 0.0;
         }
-        pt0 += currentRegion[0];
-        pt1 += currentRegion[0];
+        if (offsetByExtractRegion) {
+            int[] currentRegion = controller.getExtractRegion(vecDimName, size);
+            pt0 += currentRegion[0];
+            pt1 += currentRegion[0];
+        }
         double f0 = pt0 / (size - 1);
         double f1 = pt1 / (size - 1);
         double mul = Math.pow(10.0, Math.ceil(Math.log10(size)));

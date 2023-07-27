@@ -738,6 +738,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 PropertySheet opPropertySheet = new PropertySheet();
                 if (op.getName().equals("EXTRACTP")) {
                     makeExtractButtons(opPropertySheet, hBox, processingOperation);
+                } else if (op.getName().equals("BC")) {
+                    makeBCButtons(opPropertySheet, hBox, processingOperation);
                 }
                 vBox.getChildren().addAll(hBox, opPropertySheet);
                 titledPane.getProperties().put("PropSheet", opPropertySheet);
@@ -847,7 +849,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         Button extractButton = new Button("Add Region");
 
         extractButton.setOnAction(e -> {
-            var regionRangeOpt = chart.addRegionRange();
+            var regionRangeOpt = chart.addRegionRange(true);
             regionRangeOpt.ifPresent(regionRange -> {
                 double ppm0 = regionRange.ppm0();
                 double ppm1 = regionRange.ppm1();
@@ -860,6 +862,53 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         });
         hBox.getChildren().add(extractButton);
     }
+
+    void makeBCButtons(PropertySheet opPropertySheet, HBox hBox, ProcessingOperation processingOperation) {
+        Button addButton = new Button("Add Region");
+
+        addButton.setOnAction(e -> {
+            var regionRangeOpt = chart.addRegionRange(false);
+            regionRangeOpt.ifPresent(regionRange -> {
+                double ppm0 = regionRange.ppm0();
+                double ppm1 = regionRange.ppm1();
+
+                String opString = "BC(start=" + ppm0 + ",end=" + ppm1 + ",mode='region')";
+                processingOperation.update(opString);
+                chartProcessor.updateOpList();
+                propertyManager.setPropSheet(opPropertySheet, opString);
+
+            });
+        });
+        hBox.getChildren().add(addButton);
+    }
+
+    List<Double>  getCurrentRegion(ProcessingOperation processingOperation) {
+        List<Double> fracs = new ArrayList<>();
+        Map<String, ProcessingOperation.OperationParameter> params = processingOperation.getParameterMap();
+        if (params.containsKey("regions")) {
+            String value = params.get("regions").value();
+            if (value.length() > 1) {
+                if (value.charAt(0) == '[') {
+                    value = value.substring(1);
+                }
+                if (value.charAt(value.length() - 1) == ']') {
+                    value = value.substring(0, value.length() - 1);
+                }
+            }
+            String[] fields = value.split(",");
+            try {
+                for (String field : fields) {
+                    double frac = Double.parseDouble(field);
+                    fracs.add(frac);
+                }
+
+            } catch (NumberFormatException nfE) {
+                log.warn("Error {}", value, nfE);
+            }
+        }
+        return fracs;
+    }
+
 
     void setPropSheet(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, PropertySheet opPropertySheet, ProcessingOperation op) {
         opPropertySheet.getItems().clear();

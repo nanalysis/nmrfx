@@ -64,7 +64,7 @@ public class SpectrumMenu extends ChartMenu {
         MenuItem clearAllBaselineItem = new MenuItem("Clear Baseline Regions");
         clearAllBaselineItem.setOnAction((ActionEvent e) -> chart.clearBaselineRanges());
         MenuItem extractItem = new MenuItem("Add Extract Region");
-        extractItem.setOnAction((ActionEvent e) -> chart.addRegionRange());
+        extractItem.setOnAction((ActionEvent e) -> chart.addRegionRange(true));
 
         baselineMenu.getItems().add(addBaselineItem);
         baselineMenu.getItems().add(clearBaselineItem);

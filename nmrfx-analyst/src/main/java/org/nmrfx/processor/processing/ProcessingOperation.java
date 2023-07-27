@@ -1,6 +1,7 @@
 package org.nmrfx.processor.processing;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -25,7 +26,6 @@ public class ProcessingOperation implements ProcessingOperationInterface {
             "EXTRACT", "Extract Region",
             "EXTRACTP", "Extract Region"
     );
-
     String opName;
     List<OperationParameter> parameters = new ArrayList<>();
     boolean disabled = false;
@@ -36,6 +36,14 @@ public class ProcessingOperation implements ProcessingOperationInterface {
 
     public List<OperationParameter> getParameters() {
         return parameters;
+    }
+
+    public Map<String, OperationParameter> getParameterMap() {
+        Map<String, OperationParameter> map = new HashMap<>();
+        for (var opPar : parameters) {
+            map.put(opPar.name, opPar);
+        }
+        return map;
     }
 
     public String getName() {
