@@ -726,8 +726,15 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titledPane.getCheckBoxSelectedProperty().addListener(e -> updateActiveState(e, op));
     }
 
+    private void titlePaneExpanded(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, ProcessingOperationInterface processingOperation) {
+        if (titledPane.isExpanded()) {
+            titledPane.setActive(true);
+            processingOperation.disabled(false);
+        }
+    }
+
     private ModifiableAccordionScrollPane.ModifiableTitlePane newTitledPane(ModifiableAccordionScrollPane opAccordion, ProcessingOperationInterface op, int index) {
-        ModifiableAccordionScrollPane.ModifiableTitlePane titledPane = null;
+        final ModifiableAccordionScrollPane.ModifiableTitlePane titledPane;
         if (op instanceof ProcessingOperation processingOperation) {
             titledPane = opAccordion.makeNewTitlePane(this, processingOperation);
             VBox vBox = new VBox();
@@ -751,6 +758,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             updateTitledPane(titledPane, processingOperation);
             opAccordion.add(titledPane);
             titledPane.setIndex(index);
+            titledPane.expandedProperty().addListener(e -> {
+                titlePaneExpanded(titledPane, processingOperation);
+            });
+
         } else {
             ProcessingOperationGroup group = (ProcessingOperationGroup) op;
             ModifiableAccordionScrollPane groupAccordion = new ModifiableAccordionScrollPane();
@@ -763,6 +774,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             titledPane.getCheckBoxSelectedProperty().addListener(e -> updateActiveState(e, op));
             opAccordion.add(titledPane);
             updateGroupAccordion(groupAccordion, group, index);
+            titledPane.expandedProperty().addListener(e -> {
+                titlePaneExpanded(titledPane, op);
+            });
+
         }
         return titledPane;
     }
