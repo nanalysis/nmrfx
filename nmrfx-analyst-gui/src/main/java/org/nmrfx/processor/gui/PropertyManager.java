@@ -31,14 +31,16 @@ import javafx.scene.control.TextField;
 import org.apache.commons.math3.complex.Complex;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
-import org.nmrfx.processor.gui.spectra.SpecRegion;
 import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
 import org.nmrfx.utils.properties.*;
 import org.python.core.PyComplex;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -273,56 +275,6 @@ public class PropertyManager {
         String opString = "EXTRACT(start=" + imin + ",end=" + imax + ",mode='region')";
           setOp(opString);
         //setPropSheet(opIndex, opString);
-    }
-
-    void addBaselineRegion(ArrayList<Double> values, double f1, double f2, boolean clear) {
-        TreeSet<SpecRegion> regions = new TreeSet(new SpecRegion());
-        for (int i = 0; i < values.size(); i += 2) {
-            SpecRegion region = new SpecRegion(values.get(i), values.get(i + 1));
-            regions.add(region);
-        }
-
-        f1 = Math.round(f1 * 1.0e5) / 1.0e5;
-        f2 = Math.round(f2 * 1.0e5) / 1.0e5;
-        SpecRegion region = new SpecRegion(f1, f2);
-        region.removeOverlapping(regions);
-        if (!clear) {
-            regions.add(region);
-        }
-
-        StringBuilder sBuilder = new StringBuilder();
-        boolean first = true;
-        for (SpecRegion specRegion : regions) {
-            if (!first) {
-                sBuilder.append(",");
-            } else {
-                first = false;
-            }
-            sBuilder.append(specRegion.getSpecRegionStart(0));
-            sBuilder.append(",");
-            sBuilder.append(specRegion.getSpecRegionEnd(0));
-
-        }
-        String opString = "REGIONS(regions=[" + sBuilder.toString() + "])";
-        int opIndex = -1;
-        if ((currentIndex != -1) && currentOp.equals("REGIONS")) {
-          // fixme   setOp(null, opString, false, currentIndex);
-        } else {
-             setOp(opString);
-        }
-        setPropSheet(opIndex, opString);
-    }
-
-    void clearBaselineRegions() {
-        String opString = "REGIONS(regions=[])";
-        int opIndex = -1;
-        if ((currentIndex != -1) && currentOp.equals("REGIONS")) {
-         // fixme    setOp(null, opString, false, currentIndex);
-        } else {
-             setOp(opString);
-        }
-        setPropSheet(opIndex, opString);
-
     }
 
     public void setPropSheet(PropertySheet propertySheet, String op) {

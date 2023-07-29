@@ -72,6 +72,7 @@ import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
+import org.nmrfx.processor.gui.spectra.SpecRegion;
 import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.processing.*;
@@ -735,11 +736,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 Pane phaserPane = makePhaserPane(titledPane, processingOperation);
                 vBox.getChildren().add(phaserPane);
             } else {
+                hBox.setSpacing(10);
                 PropertySheet opPropertySheet = new PropertySheet();
                 if (op.getName().equals("EXTRACTP")) {
                     makeExtractButtons(opPropertySheet, hBox, processingOperation);
-                } else if (op.getName().equals("BC")) {
-                    makeBCButtons(opPropertySheet, hBox, processingOperation);
+                } else if (op.getName().equals("REGIONS")) {
+                    makeRegionButtons(opPropertySheet, hBox, processingOperation);
                 }
                 vBox.getChildren().addAll(hBox, opPropertySheet);
                 titledPane.getProperties().put("PropSheet", opPropertySheet);
@@ -770,7 +772,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             ProcessingOperationGroup group, int index) {
         groupAccordion.getPanes().clear();
         index *= GROUP_SCALE;
+        System.out.println("update group " + group);
         for (var groupedOp : group.getProcessingOperationList()) {
+            System.out.println("group op " + groupedOp);
             ModifiableAccordionScrollPane.ModifiableTitlePane pane = newTitledPane(groupAccordion, groupedOp, index);
             pane.setIndex(index++);
         }
@@ -863,23 +867,76 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         hBox.getChildren().add(extractButton);
     }
 
-    void makeBCButtons(PropertySheet opPropertySheet, HBox hBox, ProcessingOperation processingOperation) {
-        Button addButton = new Button("Add Region");
-
+    void makeRegionButtons(PropertySheet opPropertySheet, HBox hBox, ProcessingOperation processingOperation) {
+        Button addButton = new Button("Add");
         addButton.setOnAction(e -> {
             var regionRangeOpt = chart.addRegionRange(false);
             regionRangeOpt.ifPresent(regionRange -> {
-                double ppm0 = regionRange.ppm0();
-                double ppm1 = regionRange.ppm1();
-
-                String opString = "BC(start=" + ppm0 + ",end=" + ppm1 + ",mode='region')";
+                double f0 = regionRange.f0();
+                double f1 = regionRange.f1();
+                List<Double> currentRegion = getCurrentRegion(processingOperation);
+                String opString = addBaselineRegion(currentRegion, f0, f1, false);
                 processingOperation.update(opString);
                 chartProcessor.updateOpList();
                 propertyManager.setPropSheet(opPropertySheet, opString);
-
             });
         });
-        hBox.getChildren().add(addButton);
+        Button clearRegionButton = new Button("Clear");
+        clearRegionButton.setOnAction(e -> {
+            var regionRangeOpt = chart.addRegionRange(false);
+            regionRangeOpt.ifPresent(regionRange -> {
+                double f0 = regionRange.f0();
+                double f1 = regionRange.f1();
+                List<Double> currentRegion = getCurrentRegion(processingOperation);
+                String opString = addBaselineRegion(currentRegion, f0, f1, true);
+                processingOperation.update(opString);
+                chartProcessor.updateOpList();
+                propertyManager.setPropSheet(opPropertySheet, opString);
+            });
+        });
+        Button clearButton = new Button("Clear All");
+        clearButton.setOnAction(e -> {
+            String opString = clearBaselineRegions();
+            processingOperation.update(opString);
+            chartProcessor.updateOpList();
+            propertyManager.setPropSheet(opPropertySheet, opString);
+        });
+        hBox.getChildren().addAll(addButton, clearRegionButton, clearButton);
+    }
+
+    String addBaselineRegion(List<Double> values, double f1, double f2, boolean clear) {
+        TreeSet<SpecRegion> regions = new TreeSet(new SpecRegion());
+        for (int i = 0; i < values.size(); i += 2) {
+            SpecRegion region = new SpecRegion(values.get(i), values.get(i + 1));
+            regions.add(region);
+        }
+
+        f1 = Math.round(f1 * 1.0e5) / 1.0e5;
+        f2 = Math.round(f2 * 1.0e5) / 1.0e5;
+        SpecRegion region = new SpecRegion(f1, f2);
+        region.removeOverlapping(regions);
+        if (!clear) {
+            regions.add(region);
+        }
+
+        StringBuilder sBuilder = new StringBuilder();
+        boolean first = true;
+        for (SpecRegion specRegion : regions) {
+            if (!first) {
+                sBuilder.append(",");
+            } else {
+                first = false;
+            }
+            sBuilder.append(specRegion.getSpecRegionStart(0));
+            sBuilder.append(",");
+            sBuilder.append(specRegion.getSpecRegionEnd(0));
+
+        }
+        return "REGIONS(regions=[" + sBuilder.toString() + "])";
+    }
+
+    String clearBaselineRegions() {
+        return "REGIONS(regions=[])";
     }
 
     List<Double>  getCurrentRegion(ProcessingOperation processingOperation) {
@@ -995,6 +1052,13 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 propertyManager.addOp(apodizationGroup, ops, index);
             }
             apodizationGroup.update(opName, opName);
+        } else if (BaselineGroup.opInGroup(opName)) {
+                int index = propertyManager.getCurrentPosition(ops, "Baseline Correction");
+            BaselineGroup baselineGroup = index != -1 ? (BaselineGroup) ops.get(index) : new BaselineGroup();
+                if (index == -1) {
+                    propertyManager.addOp(baselineGroup, ops, index);
+                }
+            baselineGroup.update(opName, opName);
         } else {
             int index = propertyManager.getCurrentPosition(ops, opName);
             ProcessingOperation processingOperation = new ProcessingOperation(opName);
@@ -1196,6 +1260,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
         String dimNum = "";
         ApodizationGroup apodizationGroup = null;
+        BaselineGroup baselineGroup = null;
         for (String line : lines) {
             line = line.trim();
             if (line.equals("")) {
@@ -1234,6 +1299,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                             dimList.add(apodizationGroup);
                         }
                         apodizationGroup.update(opName, line);
+                    } else if (BaselineGroup.opInGroup(opName)) {
+                            if (baselineGroup == null) {
+                                baselineGroup = new BaselineGroup();
+                                dimList.add(baselineGroup);
+                            }
+                        baselineGroup.update(opName, line);
                     } else {
                         dimList.add(new ProcessingOperation(line));
                     }

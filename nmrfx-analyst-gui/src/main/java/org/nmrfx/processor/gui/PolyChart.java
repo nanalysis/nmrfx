@@ -1195,49 +1195,6 @@ public class PolyChart extends Region {
         return Optional.of(result);
     }
 
-    public void addBaselineRange(boolean clearMode) {
-        DatasetBase dataset = getDataset();
-        DatasetAttributes datasetAttributes = getFirstDatasetAttributes().orElse(null);
-        if (dataset == null || datasetAttributes == null || controller.getChartProcessor() == null) {
-            return;
-        }
-
-        String vecDimName = controller.getChartProcessor().getVecDimName();
-        int vecDim = controller.getChartProcessor().getVecDim();
-        double min;
-        double max;
-        int size;
-        if (is1D() || vecDimName.equals("D1")) {
-            min = axes.getMode(0).getIndex(datasetAttributes, 0, crossHairs.getPosition(0, Orientation.VERTICAL));
-            max = axes.getMode(0).getIndex(datasetAttributes, 0, crossHairs.getPosition(1, Orientation.VERTICAL));
-            size = dataset.getSizeReal(datasetAttributes.dim[0]);
-        } else {
-            min = axes.getMode(vecDim).getIndex(datasetAttributes, vecDim, crossHairs.getPosition(0, Orientation.HORIZONTAL));
-            max = axes.getMode(vecDim).getIndex(datasetAttributes, vecDim, crossHairs.getPosition(1, Orientation.HORIZONTAL));
-            size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
-        }
-
-        ArrayList<Double> currentRegions = controller.getBaselineRegions(vecDimName);
-        if (min > max) {
-            double hold = min;
-            min = max;
-            max = hold;
-        }
-        if (min < 0) {
-            min = 0.0;
-        }
-        double f1 = min / (size - 1);
-        double f2 = max / (size - 1);
-        double mul = Math.pow(10.0, Math.ceil(Math.log10(size)));
-        f1 = Math.round(f1 * mul) / mul;
-        f2 = Math.round(f2 * mul) / mul;
-        processorController.propertyManager.addBaselineRegion(currentRegions, f1, f2, clearMode);
-    }
-
-    public void clearBaselineRanges() {
-        processorController.propertyManager.clearBaselineRegions();
-    }
-
     public void clearDataAndPeaks() {
         datasetAttributesList.clear();
         peakListAttributesList.clear();
