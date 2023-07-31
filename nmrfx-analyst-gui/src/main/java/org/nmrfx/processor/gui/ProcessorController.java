@@ -1306,9 +1306,17 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                         mapOpLists.put(prefix + newDim, dimList);
                         dimNum = newDim;
                         apodizationGroup = null;
+                        baselineGroup = null;
                     }
                 } else if (dimList != null) {
-                    if (ApodizationGroup.opInGroup(opName)) {
+                    if (opName.equals("BaselineGroup")) {
+                        if (baselineGroup == null) {
+                            baselineGroup = new BaselineGroup();
+                            dimList.add(baselineGroup);
+                        }
+                        baselineGroup.update("BCWHIT", "BCWHIT()");
+                        baselineGroup.disabled(true);
+                    } else if (ApodizationGroup.opInGroup(opName)) {
                         if (apodizationGroup == null) {
                             apodizationGroup = new ApodizationGroup();
                             dimList.add(apodizationGroup);
