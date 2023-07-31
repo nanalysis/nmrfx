@@ -110,7 +110,8 @@ public class Extract extends Operation {
         if (end >= size) {
             end = size -1;
         }
-        if (end == start) {
+        if (Math.abs(end - start) < 4) {
+            start = 0;
             end = size - 1;
         }
         vector.extract(start, end);
