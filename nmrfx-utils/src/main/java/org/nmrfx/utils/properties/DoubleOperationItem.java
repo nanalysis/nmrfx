@@ -132,7 +132,6 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
                 newValue = getAmax();
             }
             value = newValue;
-            System.out.println(value + " " + oldValue + " " + listener);
             if ((value != oldValue) && (listener != null)) {
                 listener.changed(this, oldValue, value);
             }
