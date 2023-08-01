@@ -1276,6 +1276,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         String dimNum = "";
         ApodizationGroup apodizationGroup = null;
         BaselineGroup baselineGroup = null;
+        NUSGroup nusGroup = null;
         for (String line : lines) {
             line = line.trim();
             if (line.equals("")) {
@@ -1307,6 +1308,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                         dimNum = newDim;
                         apodizationGroup = null;
                         baselineGroup = null;
+                        nusGroup = null;
                     }
                 } else if (dimList != null) {
                     if (opName.equals("BaselineGroup")) {
@@ -1316,6 +1318,13 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                         }
                         baselineGroup.update("BCWHIT", "BCWHIT()");
                         baselineGroup.disabled(true);
+                    } else if (opName.equals("NUSGroup")) {
+                        if (nusGroup == null) {
+                            nusGroup = new NUSGroup();
+                            dimList.add(nusGroup);
+                        }
+                        nusGroup.update("NESTA", "NESTA()");
+                        nusGroup.disabled(false);
                     } else if (ApodizationGroup.opInGroup(opName)) {
                         if (apodizationGroup == null) {
                             apodizationGroup = new ApodizationGroup();
@@ -1323,11 +1332,17 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                         }
                         apodizationGroup.update(opName, line);
                     } else if (BaselineGroup.opInGroup(opName)) {
-                            if (baselineGroup == null) {
-                                baselineGroup = new BaselineGroup();
-                                dimList.add(baselineGroup);
-                            }
+                        if (baselineGroup == null) {
+                            baselineGroup = new BaselineGroup();
+                            dimList.add(baselineGroup);
+                        }
                         baselineGroup.update(opName, line);
+                    } else if (NUSGroup.opInGroup(opName)) {
+                        if (nusGroup == null) {
+                            nusGroup = new NUSGroup();
+                            dimList.add(nusGroup);
+                        }
+                        nusGroup.update(opName, line);
                     } else {
                         dimList.add(new ProcessingOperation(line));
                     }

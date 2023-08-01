@@ -3877,7 +3877,7 @@ def genScript(arrayed=False):
             continue
         script += 'DIM('+str(iDim)+')\n'
         if iDim == 2 and fidInfo.nd == 2 and fidInfo.fidObj.getSampleSchedule() != None:
-            script += 'NESTA()\n'
+            script += 'NUSGroup()\n'
         else:
             script += 'EXTEND(disabled=True)\n'
         script += 'SB(c=0.5)\n'
