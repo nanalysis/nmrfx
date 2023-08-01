@@ -224,10 +224,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
     PolyChart chart;
-    private AtomicBoolean idleMode = new AtomicBoolean(false);
-    private AtomicBoolean isProcessing = new AtomicBoolean(false);
-    private AtomicBoolean doProcessWhenDone = new AtomicBoolean(false);
-    private AtomicBoolean isPhaserActive = new AtomicBoolean(false);
+    private final AtomicBoolean idleMode = new AtomicBoolean(false);
+    private final AtomicBoolean isProcessing = new AtomicBoolean(false);
+    private final AtomicBoolean doProcessWhenDone = new AtomicBoolean(false);
+    private final AtomicBoolean isPhaserActive = new AtomicBoolean(false);
     private final ProcessDataset processDataset = new ProcessDataset();
     MapChangeListener<String, List<ProcessingOperationInterface>> opListListener = null;
 
@@ -238,9 +238,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     String currentText = "";
 
     ProcessingCodeAreaUtil codeAreaUtil;
-    private ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
+    private final ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
-    private AtomicReference<Dataset> saveObject = new AtomicReference<>();
+    private final AtomicReference<Dataset> saveObject = new AtomicReference<>();
     ScheduledFuture futureUpdate = null;
     Map<String, PhaserAndPane> phasersPanes = new HashMap<>();
 
@@ -341,7 +341,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             currentDimName = name;
             if (!currentDimName.isBlank()) {
                 accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentDimName).getContent();
-                if (currentDimName.substring(0, 1).equals("D") && StringUtils.isNumeric(currentDimName.substring(1))) {
+                if (currentDimName.charAt(0) == 'D' && StringUtils.isNumeric(currentDimName.substring(1))) {
                     dimChoice.setValue(currentDimName);
                     updatePhaser();
                     chartProcessor.setVecDim(currentDimName);
@@ -461,7 +461,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     public Optional<String> getActiveDimPane() {
-        return dimensionPanes.entrySet().stream().filter(e -> e.getValue().isExpanded()).map(e -> e.getKey()).findFirst();
+        return dimensionPanes.entrySet().stream().filter(e -> e.getValue().isExpanded()).map(Map.Entry::getKey).findFirst();
     }
 
     protected void updateLineshapeCatalog(int nDim) {
@@ -626,13 +626,13 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         StringBuilder script = new StringBuilder();
         for (var processingOp : getOperationList()) {
             if (processingOp instanceof ProcessingOperation op) {
-                script.append(op.toString());
+                script.append(op);
                 script.append("\n");
             } else if (processingOp instanceof ProcessingOperationGroup groupOp) {
                 if (!groupOp.isDisabled()) {
                     for (var op : groupOp.getProcessingOperationList()) {
                         if (!op.isDisabled()) {
-                            script.append(op.toString());
+                            script.append(op);
                             script.append("\n");
                         }
                     }
@@ -758,9 +758,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             updateTitledPane(titledPane, processingOperation);
             opAccordion.add(titledPane);
             titledPane.setIndex(index);
-            titledPane.expandedProperty().addListener(e -> {
-                titlePaneExpanded(titledPane, processingOperation);
-            });
+            titledPane.expandedProperty().addListener(e -> titlePaneExpanded(titledPane, processingOperation));
 
         } else {
             ProcessingOperationGroup group = (ProcessingOperationGroup) op;
@@ -774,9 +772,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             titledPane.getCheckBoxSelectedProperty().addListener(e -> updateActiveState(e, op));
             opAccordion.add(titledPane);
             updateGroupAccordion(groupAccordion, group, index);
-            titledPane.expandedProperty().addListener(e -> {
-                titlePaneExpanded(titledPane, op);
-            });
+            titledPane.expandedProperty().addListener(e -> titlePaneExpanded(titledPane, op));
 
         }
         return titledPane;
@@ -787,9 +783,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             ProcessingOperationGroup group, int index) {
         groupAccordion.getPanes().clear();
         index *= GROUP_SCALE;
-        System.out.println("update group " + group);
         for (var groupedOp : group.getProcessingOperationList()) {
-            System.out.println("group op " + groupedOp);
             ModifiableAccordionScrollPane.ModifiableTitlePane pane = newTitledPane(groupAccordion, groupedOp, index);
             pane.setIndex(index++);
         }
@@ -820,9 +814,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         Phaser phaser = new Phaser(chart.getFXMLController(), phaserBox, Orientation.HORIZONTAL, processingOperation);
         PhaserAndPane phaserAndPane = new PhaserAndPane(phaserPane, phaser);
         phasersPanes.put(currentDimName, phaserAndPane);
-        phaserPane.expandedProperty().addListener(e -> {
-            updatePhaser(phaserPane, phaser);
-        });
+        phaserPane.expandedProperty().addListener(e -> updatePhaser(phaserPane, phaser));
         return phaserBox;
     }
 
@@ -947,7 +939,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             sBuilder.append(specRegion.getSpecRegionEnd(0));
 
         }
-        return "REGIONS(regions=[" + sBuilder.toString() + "])";
+        return "REGIONS(regions=[" + sBuilder + "])";
     }
 
     String clearBaselineRegions() {
@@ -1673,9 +1665,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private void setupListeners() {
         chartProcessor.nmrDataProperty().addListener((observable, oldValue, newValue) -> enableRealFeatures(newValue));
 
-        opListListener = change -> {
-            updateAfterOperationListChanged();
-        };
+        opListListener = change -> updateAfterOperationListChanged();
         addOpListener();
 
         dimListener = (observableValue, dimName, dimName2) -> {
