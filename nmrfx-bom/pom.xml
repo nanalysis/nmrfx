@@ -265,24 +265,6 @@
                 <!-- license: BSD (3 clause) -->
             </dependency>
             <dependency>
-                <groupId>com.github.haifengl</groupId>
-                <artifactId>smile-core</artifactId>
-                <version>2.6.0</version>
-                <!-- license: LGPL 3 -->
-            </dependency>
-            <dependency>
-                <groupId>com.github.haifengl</groupId>
-                <artifactId>smile-interpolation</artifactId>
-                <version>2.6.0</version>
-                <!-- license: LGPL 3 -->
-            </dependency>
-            <dependency>
-                <groupId>com.github.haifengl</groupId>
-                <artifactId>smile-io</artifactId>
-                <version>2.6.0</version>
-                <!-- license: LGPL 3 -->
-            </dependency>
-            <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>javacpp</artifactId>
                 <version>1.5.7</version>
@@ -387,11 +369,16 @@
                 <version>3.3.1</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
-            <dependency>
-                <groupId>org.ojalgo</groupId>
-                <artifactId>ojalgo</artifactId>
-                <version>47.2.0</version>
-            </dependency>
+        <dependency>
+            <groupId>org.ojalgo</groupId>
+            <artifactId>ojalgo</artifactId>
+            <version>47.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.actelion.research</groupId>
+            <artifactId>openchemlib</artifactId>
+            <version>2023.3.3</version>
+        </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

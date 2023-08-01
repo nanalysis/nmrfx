@@ -34,6 +34,7 @@ import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
 import org.nmrfx.structure.chemistry.energy.GradientRefinement;
 import org.nmrfx.structure.chemistry.energy.RotationalDynamics;
@@ -803,6 +804,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
         structureCalculator.setMode(INIT);
         calcStructure();
     }
+    @FXML
+    private void to3DAction() {
+        to3D();
+    }
 
     @FXML
     private void activateBondAction() {
@@ -837,6 +842,20 @@ public class MolSceneController implements Initializable, StageBasedController, 
             AngleTreeGenerator angleGen = new AngleTreeGenerator();
             List<List<Atom>> aTree = angleGen.genTree(molecule, startAtom, null);
             AngleTreeGenerator.dumpAtomTree(aTree);
+        }
+    }
+
+    private void to3D() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule != null) {
+            OpenChemLibConverter.to3D(molecule);
+            removeAll();
+            try {
+                selectAll();
+                drawSticks();
+            } catch (InvalidMoleculeException imE) {
+
+            }
         }
     }
 

@@ -71,6 +71,8 @@
                                         </MenuButton>
                                         <MenuButton mnemonicParsing="false" text="Calculate">
                                             <items>
+                                                <MenuItem mnemonicParsing="false" onAction="#to3DAction"
+                                                          text="To3D" />
                                                 <MenuItem mnemonicParsing="false" onAction="#calcStructureAction"
                                                           text="Calc Structure"/>
                                                 <MenuItem mnemonicParsing="false" onAction="#refineStructureAction"

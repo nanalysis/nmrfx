@@ -6,17 +6,13 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
 import org.nmrfx.peaks.PeakDistance;
 import org.nmrfx.peaks.PeakPath;
 import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.peaks.PeakPaths.PATHMODE;
 import org.nmrfx.processor.optimization.FitUtils;
 import org.nmrfx.processor.optimization.Fitter;
-import smile.data.DataFrame;
-import smile.data.formula.Formula;
-import smile.regression.LinearModel;
-import smile.regression.OLS;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -110,8 +106,7 @@ public class PathFitter {
         int nSim = 100;
         int nPar = nDims * 3;
         int n = xValues[0].length;
-        double[][] x = new double[n][3];
-        double[][] parValues = new double[nDims * 3][nSim];
+        double[][] x = new double[n][2];
         bestPars = new double[nDims * 3];
         parErrs = new double[nDims * 3];
         for (int iDim = 0; iDim < nDims; iDim++) {
@@ -120,20 +115,17 @@ public class PathFitter {
                 for (int iP = 0; iP < 2; iP++) {
                     x[i][iP] = Math.pow(p, iP + 1.0) / (iP + 1.0);
                 }
-                x[i][2] = yValues[iDim][i];
-
             }
-            String[] colNames = {"a", "b", "y"};
-            DataFrame dataframe = DataFrame.of(x, colNames);
-            Formula f = Formula.lhs("y");
-            LinearModel model = OLS.fit(f, dataframe);
-            double[][] ppars = model.ttest();
-            bestPars[iDim * 3] = ppars[0][0];
-            bestPars[iDim * 3 + 1] = ppars[1][0];
-            bestPars[iDim * 3 + 2] = ppars[2][0];
-            parErrs[iDim * 3] = ppars[0][1];
-            parErrs[iDim * 3 + 1] = ppars[1][1];
-            parErrs[iDim * 3 + 2] = ppars[2][1];
+            OLSMultipleLinearRegression olsMultipleLinearRegression = new OLSMultipleLinearRegression();
+            olsMultipleLinearRegression.newSampleData(yValues[iDim], x);
+            double[] pars = olsMultipleLinearRegression.estimateRegressionParameters();
+            double[] errs = olsMultipleLinearRegression.estimateRegressionParametersStandardErrors();
+            bestPars[iDim * 3] = pars[0];
+            bestPars[iDim * 3 + 1] = pars[1];
+            bestPars[iDim * 3 + 2] = pars[2];
+            parErrs[iDim * 3] = errs[0];
+            parErrs[iDim * 3 + 1] = errs[1];
+            parErrs[iDim * 3 + 2] = errs[2];
         }
 
         for (int iPath = 0; iPath < nPaths; iPath++) {
