@@ -347,6 +347,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     chartProcessor.setVecDim(currentDimName);
                     if (!isViewingDataset()) {
                         chartProcessor.execScriptList(false);
+                        chart.full();
+                        chart.autoScale();
                     }
                 }
             }
@@ -607,10 +609,19 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     @FXML
     void viewFID() {
         dimChoice.getSelectionModel().select(0);
-        chartProcessor.setVecDim("D1");
+        if (currentDimName.isBlank()) {
+            currentDimName = "D1";
+        }
+        chartProcessor.setVecDim(currentDimName);
         viewMode.setValue(DisplayMode.FID_OPS);
         chart.getFXMLController().getUndoManager().clear();
         chart.getFXMLController().updateSpectrumStatusBarOptions(false);
+        if (!isViewingDataset()) {
+            chartProcessor.execScriptList(false);
+            chart.full();
+            chart.autoScale();
+        }
+
     }
 
     @FXML

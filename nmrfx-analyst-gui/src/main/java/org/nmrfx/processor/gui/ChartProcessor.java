@@ -579,13 +579,18 @@ public class ChartProcessor {
     public void setVecDim(String dimName) {
         int value;
         boolean isDim;
-        try {
-            value = Integer.parseInt(dimName.substring(1));
-            value--;
-            isDim = true;
-        } catch (NumberFormatException nFE) {
+        if (dimName.isBlank()) {
             value = 0;
             isDim = false;
+        } else {
+            try {
+                value = Integer.parseInt(dimName.substring(1));
+                value--;
+                isDim = true;
+            } catch (NumberFormatException nFE) {
+                value = 0;
+                isDim = false;
+            }
         }
         vecDimName = dimName;
         vecDim = value;
