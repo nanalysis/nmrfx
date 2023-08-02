@@ -185,7 +185,7 @@ public class PropertyManager {
                     opIndex = OperationInfo.getPosition(ops, opName);
                 }
                 if (opIndex < 0) {
-                    System.out.println("bad op");
+                    System.out.println("bad op " + opName);
                 } else if (opIndex >= ops.size()) {
                     ops.add(processingOperation);
                 } else {
