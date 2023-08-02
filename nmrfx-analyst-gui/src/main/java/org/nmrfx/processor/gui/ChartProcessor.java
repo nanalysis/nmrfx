@@ -1193,13 +1193,15 @@ public class ChartProcessor {
                 }
             }
             if (!processorController.isViewingDataset()) {
-                Vec loadVec = vectors.get(0);
-                if (loadVec.getFreqDomain() != lastWasFreqDomain) {
-                    chart.autoScale();
-                } else {
-                    chart.refresh();
+                if (!vectors.isEmpty()) {
+                    Vec loadVec = vectors.get(0);
+                    if (loadVec.getFreqDomain() != lastWasFreqDomain) {
+                        chart.autoScale();
+                    } else {
+                        chart.refresh();
+                    }
+                    lastWasFreqDomain = loadVec.getFreqDomain();
                 }
-                lastWasFreqDomain = loadVec.getFreqDomain();
             }
         }
     }

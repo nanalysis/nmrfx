@@ -101,7 +101,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ProcessorController implements Initializable, ProgressUpdater, NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
     private static final String[] BASIC_OPS = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
-    private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACTP", "BC"};
+    private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACTP", "AutoCorrect Baseline"};
     private static final AtomicBoolean aListUpdated = new AtomicBoolean(false);
     public static final int GROUP_SCALE = 1000;
 
@@ -376,7 +376,13 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         MenuButton menuButton = new MenuButton("");
         menuButton.setGraphic(GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "10"));
         menuButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-        menuButton.getItems().addAll(getMenuItems());
+        if (name.equals("FULL DATASET")) {
+            menuButton.getItems().addAll(getMenuItemsForDataset());
+        } else if (name.startsWith("POLISHING")) {
+            menuButton.getItems().addAll(getMenuItemsForPolishingt());
+        } else {
+            menuButton.getItems().addAll(getMenuItems());
+        }
         titleBox.getChildren().addAll(menuButton);
         titledPane.setGraphic(titleBox);
         menuButton.setDisable(true);
@@ -1067,6 +1073,21 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     private void addOperation(String opName) {
         List<ProcessingOperationInterface> ops = getOperationList();
+        if (opName.equals("AutoCorrect Baseline")) {
+            opName = "BCWHIT";
+        } else if (opName.equals("AutoPhase Dataset")) {
+            opName = "DPHASE";
+        } else if (opName.equals("APODIZE")) {
+            int nDim = 1;
+            if (getNMRData() != null) {
+                 nDim = getNMRData().getNDim();
+            }
+            if (nDim == 1) {
+                opName = "EXPD";
+            } else {
+                opName = "SB";
+            }
+        }
         if (ApodizationGroup.opInGroup(opName)) {
             int index = propertyManager.getCurrentPosition(ops, "Apodization");
             ApodizationGroup apodizationGroup = index != -1 ? (ApodizationGroup) ops.get(index) : new ApodizationGroup();
@@ -1729,6 +1750,27 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         corruptedIndicesListView.getSelectionModel().selectedItemProperty().addListener(e -> corruptedIndexListener());
 
     }
+    private List<MenuItem> getMenuItemsForDataset() {
+        List<MenuItem> menuItems = new ArrayList<>();
+        String[] opNames = {"AutoPhase Dataset"};
+        for (String opName : opNames) {
+            MenuItem menuItem = new MenuItem(opName);
+            menuItem.addEventHandler(ActionEvent.ACTION, this::opMenuAction);
+            menuItems.add(menuItem);
+        }
+        return menuItems;
+    }
+
+    private List<MenuItem> getMenuItemsForPolishingt() {
+        List<MenuItem> menuItems = new ArrayList<>();
+        String[] opNames = {"AutoCorrect Baseline"};
+        for (String opName : opNames) {
+            MenuItem menuItem = new MenuItem(opName);
+            menuItem.addEventHandler(ActionEvent.ACTION, this::opMenuAction);
+            menuItems.add(menuItem);
+        }
+        return menuItems;
+    }
 
     private List<MenuItem> getMenuItems() {
         List<MenuItem> menuItems = new ArrayList<>();
@@ -1768,9 +1810,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 advancedOpMenu.getItems().add(menu);
                 subMenuItems = new ArrayList<>();
             } else {
-                MenuItem menuItem = new MenuItem(op);
-                menuItem.addEventHandler(ActionEvent.ACTION, this::opMenuAction);
-                subMenuItems.add(menuItem);
+                if (!op.equals("Apodization") && !op.equals("Baseline Correction")) {
+                    MenuItem menuItem = new MenuItem(op);
+                    menuItem.addEventHandler(ActionEvent.ACTION, this::opMenuAction);
+                    subMenuItems.add(menuItem);
+                }
             }
         }
         // add last group of items (earlier ones added at each new Cascade item)

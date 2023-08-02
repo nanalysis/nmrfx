@@ -69,7 +69,6 @@ public class PropertyManager {
 
     PropertyManager(ProcessorController processorController, TextField opTextField, PopOver popOver) {
         this.processorController = processorController;
-        this.listItems = listItems;
         this.opTextField = opTextField;
         this.popOver = popOver;
         doubleSliderListener = new ChangeListener<Number>() {
@@ -185,7 +184,7 @@ public class PropertyManager {
                     opIndex = OperationInfo.getPosition(ops, opName);
                 }
                 if (opIndex < 0) {
-                    System.out.println("bad op");
+                    System.out.println("bad op " + opName);
                 } else if (opIndex >= ops.size()) {
                     ops.add(processingOperation);
                 } else {

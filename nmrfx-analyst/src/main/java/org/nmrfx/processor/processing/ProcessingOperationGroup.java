@@ -47,6 +47,9 @@ public class ProcessingOperationGroup implements ProcessingOperationInterface {
     }
 
     public void update(String opName, String line) {
+        if (!line.endsWith(")")) {
+            line = line + "()";
+        }
         for (ProcessingOperation processingOperation : processingOperationList) {
             if (processingOperation.getName().equals(opName)) {
                 processingOperation.update(line);
