@@ -608,20 +608,21 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     @FXML
     void viewFID() {
-        dimChoice.getSelectionModel().select(0);
-        if (currentDimName.isBlank()) {
-            currentDimName = "D1";
+        if (getNMRData() != null) {
+            dimChoice.getSelectionModel().select(0);
+            if (currentDimName.isBlank()) {
+                currentDimName = "D1";
+            }
+            chartProcessor.setVecDim(currentDimName);
+            viewMode.setValue(DisplayMode.FID_OPS);
+            chart.getFXMLController().getUndoManager().clear();
+            chart.getFXMLController().updateSpectrumStatusBarOptions(false);
+            if (!isViewingDataset()) {
+                chartProcessor.execScriptList(false);
+                chart.full();
+                chart.autoScale();
+            }
         }
-        chartProcessor.setVecDim(currentDimName);
-        viewMode.setValue(DisplayMode.FID_OPS);
-        chart.getFXMLController().getUndoManager().clear();
-        chart.getFXMLController().updateSpectrumStatusBarOptions(false);
-        if (!isViewingDataset()) {
-            chartProcessor.execScriptList(false);
-            chart.full();
-            chart.autoScale();
-        }
-
     }
 
     @FXML
@@ -631,6 +632,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         viewMode.setValue(DisplayMode.FID);
         chart.getFXMLController().getUndoManager().clear();
         chart.getFXMLController().updateSpectrumStatusBarOptions(false);
+        chartProcessor.execScript("", true, false);
+        chart.full();
+        chart.autoScale();
     }
 
     public String getScript() {

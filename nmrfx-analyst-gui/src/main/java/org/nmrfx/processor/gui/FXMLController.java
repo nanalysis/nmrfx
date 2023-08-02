@@ -265,7 +265,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         isFID = false;
         activeChart = chart;
         PolyChartManager.getInstance().setActiveChart(chart);
-        disableProcessorButton(!isProcessorControllerAvailable());
         ProcessorController processorController = chart.getProcessorController(false);
         // The chart has a processor controller setup, and can be in FID or Dataset mode.
         if (processorController != null) {
@@ -422,7 +421,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 getActiveChart().setProcessorController(null);
                 processorController.cleanUp();
             }
-            disableProcessorButton(true);
             if (addDatasetToChart) {
                 addDataset(dataset, append, false);
             }
@@ -438,7 +436,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         // Only create a new processor controller, if the active chart does not have one already created.
         ProcessorController processorController = getActiveChart().getProcessorController(true);
         if (processorController != null) {
-            disableProcessorButton(false);
             processorButton.setSelected(true);
             processorController.setAutoProcess(false);
             chartProcessor.setData(nmrData, clearOps);
@@ -829,18 +826,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             StackPane sp = new StackPane(menuBar, groupButton);
             sp.setAlignment(Pos.CENTER_RIGHT);
             topBar.getChildren().add(0, sp);
-        }
-    }
-
-    /**
-     * Set the processorButton disable property. If disabled is true, then the selectedProperty will also be set to
-     * false.
-     * @param disabled Whether to disable the button.
-     */
-    private void disableProcessorButton(boolean disabled) {
-        processorButton.setDisable(disabled);
-        if (disabled) {
-            processorButton.setSelected(false);
         }
     }
 
@@ -1398,15 +1383,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void addSelectedPeakListener(ChangeListener listener) {
         selectedPeaks.addListener(listener);
 
-    }
-
-    /**
-     * Checks if the active chart has a processorController instances or if the chart is empty.
-     *
-     * @return True if active chart has ProcessorController else returns false.
-     */
-    public boolean isProcessorControllerAvailable() {
-        return getActiveChart().getProcessorController(false) != null || getActiveChart().getDataset() == null;
     }
 
     protected void setPhaseDimChoice(int phaseDim) {

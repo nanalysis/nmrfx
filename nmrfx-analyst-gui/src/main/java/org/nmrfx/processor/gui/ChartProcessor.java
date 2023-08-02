@@ -165,8 +165,10 @@ public class ChartProcessor {
     public void setChart(PolyChart chart) {
         this.chart = chart;
         chart.getFXMLController().setChartProcessor(this);
-        initEmptyVecs();
-        execScript("", false, false);
+        if (chart.getDataset() == null) {
+            initEmptyVecs();
+            execScript("", false, false);
+        }
     }
 
     public File getDatasetFile() {
