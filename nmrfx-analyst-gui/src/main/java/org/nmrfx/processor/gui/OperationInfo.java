@@ -23,6 +23,9 @@
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.processor.processing.ProcessingOperation;
+import org.nmrfx.processor.processing.ProcessingOperationInterface;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,15 +65,16 @@ public class OperationInfo {
             "LP",
             "LPR",
             "Cascade-Apodization",
-            "APODIZE",
-            "BLACKMAN",
+            "Apodization",
             "EXPD",
-            "KAISER",
+            "GM",
             "SB",
+            "KAISER",
+            "BLACKMAN",
             "TRI",
             "TM",
-            "GM",
             "GMB",
+            "APODIZE",
             "Cascade-Transform",
             "ZF",
             "FT",
@@ -92,6 +96,7 @@ public class OperationInfo {
             "MAG",
             "POWER",
             "Cascade-Baseline",
+            "Baseline Correction",
             "BC",
             "DC",
             "DCFID",
@@ -106,6 +111,7 @@ public class OperationInfo {
             "Cascade-Regions",
             "BUCKET",
             "EXTRACT",
+            "EXTRACTP",
             "Cascade-Measure",
             "INTEGRATE",
             "MEASURE",
@@ -166,13 +172,20 @@ public class OperationInfo {
         return result;
     }
 
-    public static int getCurrentPosition(List<String> current, String newOp) {
+    public static int getCurrentPosition(List<ProcessingOperationInterface> current, ProcessingOperation newOp) {
+        String newOpName = newOp.getName();
+        return getCurrentPosition(current, newOpName);
+    }
+
+    public static int getCurrentPosition(List<ProcessingOperationInterface> current, String newOpName) {
+        if (newOpName.indexOf("(") != -1) {
+            newOpName = newOpName.substring(0, newOpName.indexOf("("));
+        }
         int index = -1;
-        newOp = trimOp(newOp);
         int iPos = 0;
-        for (String currentOp : current) {
-            currentOp = trimOp(currentOp);
-            if (newOp.equals(currentOp)) {
+        for (ProcessingOperationInterface currentOp : current) {
+            String currentOpName = currentOp.getName();
+            if (newOpName.equalsIgnoreCase(currentOpName)) {
                 index = iPos;
                 break;
             }
@@ -181,25 +194,32 @@ public class OperationInfo {
         return index;
     }
 
-    public static int getPosition(List<String> current, String newOp) {
+    public static int getPosition(List<ProcessingOperationInterface> current, ProcessingOperationInterface newOp) {
+        String newOpName = newOp.getName();
+        return getPosition(current, newOpName);
+    }
+
+    public static int getPosition(List<ProcessingOperationInterface> current, String newOpName) {
+        if (newOpName.indexOf("(") != -1) {
+            newOpName = newOpName.substring(0, newOpName.indexOf("("));
+        }
         int index = -1;
-        newOp = trimOp(newOp);
         int iPos = 0;
-        for (String currentOp : current) {
-            currentOp = trimOp(currentOp);
-            if (newOp.equals(currentOp)) {
+        for (ProcessingOperationInterface currentOp : current) {
+            String currentOpName = currentOp.getName();
+            if (newOpName.equalsIgnoreCase(currentOpName)) {
                 index = iPos;
                 break;
             }
             iPos++;
         }
         if (index == -1) {
-            int orderIndex = opOrderList.indexOf(newOp);
+            int orderIndex = opOrderList.indexOf(newOpName);
             if (orderIndex != -1) {
                 int i = 0;
-                for (String curOp : current) {
-                    curOp = trimOp(curOp);
-                    int curIndex = opOrderList.indexOf(curOp);
+                for (ProcessingOperationInterface currentOp : current) {
+                    String currentOpName = currentOp.getName();
+                    int curIndex = opOrderList.indexOf(currentOpName);
                     if (curIndex >= orderIndex) {
                         index = i;
                         break;

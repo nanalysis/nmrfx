@@ -55,6 +55,10 @@ public class BcPoly extends Operation {
         }
 
         boolean[] isInSignalRegion = vector.getSignalRegion();
+        if ((isInSignalRegion == null) || (isInSignalRegion.length <= 4)) {
+            vector.calcBaseLineRegions();
+            isInSignalRegion = vector.getSignalRegion();
+        }
 
         if ((isInSignalRegion != null) && (isInSignalRegion.length > 4)) {
             double[] reVec = new double[nRegions];

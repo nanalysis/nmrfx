@@ -34,6 +34,7 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
+import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.PropertySheet.Item;
 
 import java.util.function.Consumer;
@@ -45,13 +46,13 @@ public class TextWaitingOperationItem extends OperationItem implements Observabl
     private static final Background ACTIVE_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY));
 
     ChangeListener<? super String> listener;
-    Consumer<Item> f;
+    Consumer<OperationItem> f;
     String value;
     String defaultValue;
     Background defaultBackground = null;
 
-    public TextWaitingOperationItem(ChangeListener listener, Consumer<Item> f, String defaultValue, String category, String name, String description) {
-        super(category, name, description);
+    public TextWaitingOperationItem(PropertySheet propertySheet, ChangeListener listener, Consumer<OperationItem> f, String defaultValue, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;

@@ -1670,33 +1670,51 @@ def LPR(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
         process.addOperation(op)
     return op
 
-def EXTRACTP(fstart=0.0, fend=0.0,  disabled=False, vector=None, process=None):
-    '''Extract a specified range of points.
+
+def EXTRACTP(start=0.0, end=0.0, mode='left',  disabled=False, vector=None, process=None):
+    '''Extract a specified range of the vector.
     Parameters
     ---------
-    fstart : real
+    start : real
         min : -1.0
         max : 15.0
         Start point of region to extract
-    fend : real
+    end : real
         min : -1.0
         max : 15.0
         End point of region to extract
+    mode : {'left', 'right', 'all', 'middle','region'}
+        Extract a named region (left,right,all,middle) instead of using start and end points
 '''
-    global fidInfo
-    global dataInfo
     if disabled:
         return None
-    curDim = dataInfo.curDim
-    curSize = dataInfo.size[curDim]
-    f1 = ppmToFrac(fidInfo, fstart,curSize,  curDim)
-    f2 = ppmToFrac(fidInfo, fend, curSize, curDim)
     process = process or getCurrentProcess()
-    op = Extract(f1,f2)
+    fmode = False
+    if (mode == 'left'):
+        fstart = 0.0
+        fend = 0.5
+        fmode = True
+    elif (mode == 'all'):
+        fstart = 0.0
+        fend = 1.0
+        fmode = True
+    elif (mode == 'right'):
+        fstart = 0.5
+        fend = 1.0
+        fmode = True
+    elif (mode == 'middle'):
+        fstart = 0.25
+        fend = 0.75
+        fmode = True
+    if (fmode):
+        op = Extract(fstart,fend)
+    else:
+        op = Extract(start,end, True)
     if (vector != None):
         op.eval(vector)
     else:
         process.addOperation(op)
+
 
 def EXTRACT(start=0, end=0, mode='left', disabled=False, vector=None, process=None):
     '''Extract a specified range of points.
@@ -3804,14 +3822,17 @@ def genScript(arrayed=False):
     sequence = fidInfo.fidObj.getSequence()
     if fidInfo.nd < 2:
         script += 'DIM(1)\n'
-        script += 'APODIZE(lbOn=True, lb=0.5)\n'
+        script += 'SUPPRESS(disabled=True)\n'
+        script += 'EXPD(lb=1.0)\n'
         script += 'ZF()\n'
         script += 'FT()\n'
+
         trim = fidInfo.fidObj.getTrim()
         if trim > 1.0e-3:
             script += 'TRIM(ftrim=' + str(trim) +')\n'
         phases = NMRDataUtil.autoPhase(fidInfo.fidObj);
         script += 'PHASE(ph0='+str(round(phases[0],1))+',ph1='+str(round(phases[1]))+')\n'
+        script += 'BaselineGroup()\n'
     else:
         script += psspecial.scriptMods(fidInfo, 0)
         script += 'DIM(1)\n'
@@ -3829,6 +3850,7 @@ def genScript(arrayed=False):
                 script += ",coef='"
                 script += fCoef
                 script += "')\n"
+        script += 'SUPPRESS(disabled=True)\n'
         script += 'SB()\n'
         script += 'ZF()\n'
         script += 'FT()\n'
@@ -3836,6 +3858,7 @@ def genScript(arrayed=False):
         fCoef = fidInfo.getSymbolicCoefs(1)
         if fCoef != None and fCoef == 'sep' and not arrayed:
             script += "COMB(coef='sep')\n"
+        script += 'EXTRACTP(disabled=True)\n'
         if fidInfo.nd > 2 and fidInfo.fidObj.getSampleSchedule() != None:
             multiDim = 'DIM(2'
             for mDim in range(2,fidInfo.nd):
@@ -3854,7 +3877,9 @@ def genScript(arrayed=False):
             continue
         script += 'DIM('+str(iDim)+')\n'
         if iDim == 2 and fidInfo.nd == 2 and fidInfo.fidObj.getSampleSchedule() != None:
-            script += 'NESTA()\n'
+            script += 'NUSGroup()\n'
+        else:
+            script += 'EXTEND(disabled=True)\n'
         script += 'SB(c=0.5)\n'
         script += 'ZF()\n'
 
@@ -3880,6 +3905,21 @@ def genScript(arrayed=False):
             script += "MAG()\n"
         else:
             script += 'PHASE(ph0=0.0,ph1=0.0)\n'
+    if fidInfo.nd > 1:
+        for iDim in range(1,fidInfo.nd+1):
+            if fidInfo.size[iDim-1] < 2:
+                continue
+            if fidInfo.mapToDatasetList[iDim-1] == -1:
+                continue
+            if not fidInfo.fidObj.isFrequencyDim(iDim-1):
+                continue
+            if (iDim >= fidInfo.nd) and arrayed:
+                continue
+            if iDim == 1:
+                script += 'DIM()\n'
+                script += 'DPHASE(disabled=True)\n'
+            script += 'DIM('+str(iDim)+')\n'
+            script += 'BaselineGroup()\n'
     script += 'run()'
     return script
 

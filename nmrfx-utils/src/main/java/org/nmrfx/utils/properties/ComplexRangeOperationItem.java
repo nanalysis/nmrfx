@@ -25,18 +25,19 @@ package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ChangeListener;
 import org.apache.commons.math3.complex.Complex;
+import org.controlsfx.control.PropertySheet;
 
 /**
  * @author johnsonb
  */
 public class ComplexRangeOperationItem extends ComplexOperationItem {
 
-    public ComplexRangeOperationItem(ChangeListener listener, Complex defaultValue, String category, String name, String description) {
-        super(listener, defaultValue, category, name, description);
+    public ComplexRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, Complex defaultValue, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, category, name, description);
     }
 
-    public ComplexRangeOperationItem(ChangeListener listener, Complex defaultValue, Complex min, Complex max, String category, String name, String description) {
-        super(listener, defaultValue, min, max, category, name, description);
+    public ComplexRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, Complex defaultValue, Complex min, Complex max, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, min, max, category, name, description);
     }
 
     @Override

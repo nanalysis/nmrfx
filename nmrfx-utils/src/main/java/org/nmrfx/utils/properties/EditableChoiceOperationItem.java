@@ -24,6 +24,7 @@
 package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ChangeListener;
+import org.controlsfx.control.PropertySheet;
 
 import java.util.Collection;
 
@@ -32,8 +33,8 @@ import java.util.Collection;
  */
 public class EditableChoiceOperationItem extends ChoiceOperationItem {
 
-    public EditableChoiceOperationItem(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
-        super(listener, defaultValue, choices, category, name, description);
+    public EditableChoiceOperationItem(PropertySheet propertySheet, ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, choices, category, name, description);
     }
 
     @Override

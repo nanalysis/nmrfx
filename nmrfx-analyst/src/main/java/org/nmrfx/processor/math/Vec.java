@@ -43,6 +43,8 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.math.VecException;
+import org.nmrfx.processor.operations.IDBaseline2;
+import org.nmrfx.processor.operations.OperationException;
 import org.nmrfx.processor.operations.TestBasePoints;
 import org.nmrfx.processor.operations.Util;
 import org.nmrfx.processor.processing.SampleSchedule;
@@ -2023,11 +2025,29 @@ public class Vec extends VecBase {
         }
     }
 
+    public void calcBaseLineRegions() {
+        int vecSize = getSize();
+        int winSize = 16;
+        double ratio = 10.0;
+        if (winSize > vecSize) {
+            winSize = vecSize / 4;
+        }
+
+        boolean[] isInSignalRegion;
+
+        ArrayList<Integer> positions = Util.idBaseLineBySDev(this, winSize, ratio);
+        isInSignalRegion = Util.getSignalRegion(vecSize, positions);
+        setSignalRegion(isInSignalRegion);
+    }
+
     public Vec bcWhit(double lambda, int order, boolean baselineMode) {
         int vecSize = getSize();
 
         boolean[] isInSignalRegion = getSignalRegion();
-
+        if ((isInSignalRegion == null) || (isInSignalRegion.length <= 4)) {
+            calcBaseLineRegions();
+            isInSignalRegion = getSignalRegion();
+        }
         if ((isInSignalRegion != null) && (isInSignalRegion.length > 4)) {
             double[] w = new double[vecSize + 1];
             double[] z = new double[vecSize + 1];
