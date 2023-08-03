@@ -37,6 +37,10 @@
             <artifactId>vecmath</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>tensorflow-core-platform</artifactId>
+        </dependency>
+        <dependency>
             <groupId>tw.edu.ntu.csie</groupId>
             <artifactId>libsvm</artifactId>
         </dependency>
@@ -80,14 +84,6 @@
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>arpack-ng-platform</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.deeplearning4j</groupId>
-            <artifactId>deeplearning4j-nn</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.nd4j</groupId>
-            <artifactId>nd4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.actelion.research</groupId>
