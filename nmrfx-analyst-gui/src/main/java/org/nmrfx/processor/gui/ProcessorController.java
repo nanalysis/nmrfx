@@ -164,9 +164,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     PropertyManager propertyManager;
     RefManager refManager;
 
-    @FXML
-    PropertySheet refSheet;
-
     // script tab fields
     @FXML
     CodeArea textArea;
@@ -1663,8 +1660,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         propertyManager = new PropertyManager(this, opTextField, popOver);
         referencePane = new TitledPane();
         referencePane.setText("PARAMETERS");
-        refManager = new RefManager(this, refSheet, referencePane);
-        refManager.setupItems(0);
+        refManager = new RefManager(this, referencePane);
         statusBar.setProgress(0.0);
 
         statusBar.getLeftItems().add(statusCircle);
@@ -1712,21 +1708,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
         dimListener = (observableValue, dimName, dimName2) -> {
             chartProcessor.setVecDim(dimName2);
-            try {
-                if (StringUtils.isNumeric(dimName2.substring(1))) {
-                    int vecDim = Integer.parseInt(dimName2.substring(1));
-                    refManager.setupItems(vecDim - 1);
-                } else {
-                    refManager.clearItems();
-                }
-            } catch (NumberFormatException nfE) {
-                log.warn("Unable to parse vector dimension.", nfE);
-            }
         };
         refDimListener = (observableValue, number, number2) -> {
             int vecDim = (Integer) number2;
             log.info("refdim {}", vecDim);
-            refManager.setupItems(vecDim);
         };
 
         Processor.getProcessor().addProcessorAvailableStatusListener(processorAvailableStatusListener);

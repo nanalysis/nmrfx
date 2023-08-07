@@ -45,13 +45,6 @@
     </top>
     <center>
         <TabPane maxWidth="400" minHeight="100" minWidth="400" VBox.vgrow="ALWAYS">
-            <Tab closable="false" text="Parameters">
-                <VBox>
-                    <children>
-                        <PropertySheet fx:id="refSheet" minHeight="0.0" prefHeight="0" VBox.vgrow="ALWAYS"/>
-                    </children>
-                </VBox>
-            </Tab>
             <Tab closable="false" text="Operations">
                 <Accordion fx:id="dimAccordion"/>
             </Tab>

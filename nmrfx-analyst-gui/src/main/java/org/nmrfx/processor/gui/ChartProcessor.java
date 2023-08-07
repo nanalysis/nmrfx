@@ -542,7 +542,6 @@ public class ChartProcessor {
         headerList.addAll(newHeaderList);
         processorController.refManager.setDataFields(headerList);
         vecDim = 0;
-        processorController.refManager.setupItems(0);
         if (!processorController.isViewingDataset()) {
             chart.full();
             chart.autoScale();
@@ -1035,8 +1034,7 @@ public class ChartProcessor {
             complex[iDim] = data.getGroupSize(iDim) == 2;
         }
         processorController.updateDimChoice(complex);
-        processorController.refManager.resetData();
-        processorController.refManager.setupItems(0);
+        processorController.refManager.updateReferencePane(getNMRData(), nDim);
         reloadData();
         processorController.updateParTable(data);
         if (!clearOps) {
