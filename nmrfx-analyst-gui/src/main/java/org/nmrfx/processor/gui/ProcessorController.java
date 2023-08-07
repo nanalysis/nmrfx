@@ -216,6 +216,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     Map<String, TitledPane> dimensionPanes = new HashMap<>();
     ObservableMap<String, List<ProcessingOperationInterface>> mapOpLists;
     String currentDimName = "";
+    TitledPane referencePane;
 
     CheckBox genLSCatalog;
     TextField nLSCatFracField;
@@ -257,6 +258,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         fxmlController.processorCreated(controller.mainBox);
         nmrControlRightSidePane.addContent(controller);
         controller.createSimulatorAccordion();
+
         controller.viewMode.setValue(DisplayMode.FID_OPS);
 
         return controller;
@@ -434,6 +436,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         dimensionPanes.clear();
         dimAccordion.getPanes().clear();
         int nDim = complex.length;
+        dimAccordion.getPanes().add(referencePane);
+        refManager.updateReferencePane(getNMRData(), nDim);
         dimChoice.getSelectionModel().selectedItemProperty().removeListener(dimListener);
         ObservableList<String> dimList = FXCollections.observableArrayList();
         for (int i = 1; i <= nDim; i++) {
@@ -1657,7 +1661,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         popOver.setContentNode(new Text("hello"));
 
         propertyManager = new PropertyManager(this, opTextField, popOver);
-        refManager = new RefManager(this, refSheet);
+        referencePane = new TitledPane();
+        referencePane.setText("PARAMETERS");
+        refManager = new RefManager(this, refSheet, referencePane);
         refManager.setupItems(0);
         statusBar.setProgress(0.0);
 
