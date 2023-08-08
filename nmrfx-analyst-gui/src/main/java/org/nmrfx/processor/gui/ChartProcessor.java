@@ -1036,7 +1036,6 @@ public class ChartProcessor {
         processorController.updateDimChoice(complex);
         processorController.refManager.updateReferencePane(getNMRData(), nDim);
         reloadData();
-        processorController.updateParTable(data);
         if (!clearOps) {
             setScripts(saveHeaderList, listOfScripts);
         }

@@ -54,6 +54,7 @@ public class RefManager {
     ProcessorController processorController;
     Map<DataProps, ToggleButton> toggleButtons = new HashMap<>();
     Map<String, SimpleObjectProperty> objectPropertyMap = new HashMap<>();
+    VendorParsGUI vendorParsGUI = new VendorParsGUI();
 
 
     public static class PositiveIntegerFilter implements UnaryOperator<TextFormatter.Change> {
@@ -524,6 +525,14 @@ public class RefManager {
             }
             row++;
         }
+        Button button = new Button("Vendor Pars...");
+        vBox.getChildren().add(button);
+        button.setOnAction(e -> showVendorPars(nmrData));
+    }
+
+    private void showVendorPars(NMRData nmrData) {
+        vendorParsGUI.showStage();
+        vendorParsGUI.updateParTable(nmrData);
     }
 
 

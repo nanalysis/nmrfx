@@ -171,10 +171,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     CheckBox autoProcess;
 
     @FXML
-    ToolBar fidParToolBar;
-    @FXML
-    TableView<VendorPar> fidParTableView;
-    @FXML
     HBox navHBox;
     @FXML
     private VBox dimVBox;
@@ -1682,8 +1678,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         detailButton.setGraphic(detailIcon);
         detailButton.setOnAction(e -> updateAccordionTitles());
         dimChoice.disableProperty().bind(viewMode.valueProperty().isEqualTo(DisplayMode.SPECTRUM));
-
-        initTable();
         setupListeners();
     }
 
@@ -1829,27 +1823,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
      */
     public void cleanUp() {
         Processor.getProcessor().removeProcessorAvailableStatusListener(processorAvailableStatusListener);
-    }
-
-    void initTable() {
-        TableColumn<VendorPar, String> nameCol = new TableColumn<>("Name");
-        nameCol.setCellValueFactory(new PropertyValueFactory("Name"));
-        nameCol.setEditable(false);
-        nameCol.setPrefWidth(125);
-
-        TableColumn<VendorPar, String> valueCol = new TableColumn<>("Value");
-        valueCol.setCellValueFactory(new PropertyValueFactory("Value"));
-        valueCol.setEditable(false);
-        valueCol.setPrefWidth(260);
-        fidParTableView.getColumns().setAll(nameCol, valueCol);
-
-    }
-
-    public void updateParTable(NMRData data) {
-        List<VendorPar> vPars = data.getPars();
-        vPars.sort(Comparator.comparing(VendorPar::getName));
-        ObservableList<VendorPar> pars = FXCollections.observableArrayList(vPars);
-        fidParTableView.setItems(pars);
     }
 
     @FXML
