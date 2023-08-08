@@ -740,7 +740,7 @@ public class ChartProcessor {
         }
 
         String indent = "";
-        scriptBuilder.append(processorController.refManager.getParString(nDim, indent));
+        scriptBuilder.append(processorController.refManager.getScriptReferenceLines(nDim, indent));
         scriptBuilder.append(processorController.getLSScript());
         String scriptCmds = getScriptCmds(nDim, indent);
         scriptBuilder.append(scriptCmds);
@@ -753,7 +753,7 @@ public class ChartProcessor {
         }
         StringBuilder scriptBuilder = new StringBuilder();
         String indent = "";
-        scriptBuilder.append(processorController.refManager.getParString(nDim, indent));
+        scriptBuilder.append(processorController.refManager.getScriptReferenceLines(nDim, indent));
         String scriptCmds = getScriptCmds(nDim, indent);
         scriptBuilder.append(scriptCmds);
         return scriptBuilder.toString();
@@ -1126,7 +1126,7 @@ public class ChartProcessor {
             }
             processorController.clearProcessingTextLabel();
             if (nmrData != null) {
-                String parString = processorController.refManager.getParString(nmrData.getNDim(), "");
+                String parString = processorController.refManager.getScriptReferenceLines(nmrData.getNDim(), "");
                 AnalystPythonInterpreter.exec(parString);
             }
             if (reloadData) {

@@ -25,12 +25,15 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.util.converter.DoubleStringConverter;
+import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.collections4.iterators.PermutationIterator;
 import org.controlsfx.control.textfield.CustomTextField;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -39,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.function.UnaryOperator;
 
 /**
  * @author brucejohnson
@@ -48,37 +52,163 @@ public class RefManager {
     private static final Logger log = LoggerFactory.getLogger(RefManager.class);
     TitledPane referencePane;
     ProcessorController processorController;
-    Map<String, Object> controlsMap = new HashMap<>();
     Map<DataProps, ToggleButton> toggleButtons = new HashMap<>();
+    Map<String, SimpleObjectProperty> objectPropertyMap = new HashMap<>();
+
+
+    public static class PositiveIntegerFilter implements UnaryOperator<TextFormatter.Change> {
+
+        @Override
+        public TextFormatter.Change apply(TextFormatter.Change change) {
+            if (change.getControlNewText().matches("[0-9]*")) {
+                return change;
+            }
+            return null;
+        }
+    }
+
+    public static class PositiveIntegerStringConverter extends IntegerStringConverter {
+
+        @Override
+        public Integer fromString(String value) {
+            int result = super.fromString(value);
+            if (result < 0) {
+                throw new RuntimeException("Negative number");
+            }
+            return result;
+        }
+
+        @Override
+        public String toString(Integer value) {
+            if (value < 0) {
+                return "0";
+            }
+            return super.toString(value);
+        }
+
+    }
+
+    public static class FixedDecimalFilter implements UnaryOperator<TextFormatter.Change> {
+
+        @Override
+        public TextFormatter.Change apply(TextFormatter.Change change) {
+            if (change.getControlNewText().matches("-?([0-9]*)?(\\.[0-9]*)?")) {
+                return change;
+            }
+            return null;
+        }
+    }
+
+    public class FixedDecimalConverter extends DoubleStringConverter {
+
+        private final int decimalPlaces;
+
+        public FixedDecimalConverter(int decimalPlaces) {
+            this.decimalPlaces = decimalPlaces;
+        }
+
+        @Override
+        public String toString(Double value) {
+            return String.format("%." + decimalPlaces + "f", value);
+        }
+
+        @Override
+        public Double fromString(String valueString) {
+            if (valueString.isEmpty()) {
+                return 0d;
+            }
+            return super.fromString(valueString);
+        }
+    }
 
     enum DataProps {
         LABEL("Label", false) {
-            String getValue(NMRData nmrData, int iDim) {
+            String getDataValue(NMRData nmrData, int iDim) {
                 return nmrData.getLabelNames()[iDim];
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim) {
+                ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(nmrData.getLabelNames()[iDim]);
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+                ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(value);
+            }
+
+            SimpleObjectProperty<String> getObjectProperty() {
+                return new SimpleObjectProperty<>("");
             }
         },
         TDSIZE("TDSize", true) {
-            String getValue(NMRData nmrData, int iDim) {
+            String getDataValue(NMRData nmrData, int iDim) {
                 return String.valueOf(nmrData.getSize(iDim));
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim) {
+                ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSize(iDim));
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+                ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(Integer.parseInt(value));
+            }
+
+            SimpleObjectProperty<Integer> getObjectProperty() {
+                return new SimpleObjectProperty<>(0);
             }
         },
         ACQSIZE("AcqSize", true) {
-            String getValue(NMRData nmrData, int iDim) {
+            String getDataValue(NMRData nmrData, int iDim) {
                 return String.valueOf(nmrData.getSize(iDim));
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim) {
+                ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSize(iDim));
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+                ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(Integer.parseInt(value));
+            }
+
+            SimpleObjectProperty<Integer> getObjectProperty() {
+                return new SimpleObjectProperty<>(0);
             }
         },
         SF("Frequency (MHz)", true) {
-            String getValue(NMRData nmrData, int iDim) {
+            String getDataValue(NMRData nmrData, int iDim) {
                 return String.valueOf(nmrData.getSF(iDim));
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim) {
+                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSF(iDim));
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(Double.parseDouble(value));
+            }
+
+            SimpleObjectProperty<Double> getObjectProperty() {
+                return new SimpleObjectProperty<>(0.0);
             }
         },
         SW("Sweep Width", true) {
-            String getValue(NMRData nmrData, int iDim) {
+            String getDataValue(NMRData nmrData, int iDim) {
                 return String.valueOf(nmrData.getSW(iDim));
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim) {
+                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSW(iDim));
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(Double.parseDouble(value));
+            }
+
+            SimpleObjectProperty<Double> getObjectProperty() {
+                return new SimpleObjectProperty<>(0.0);
             }
         },
         REF("Reference", false) {
-            String getValue(NMRData nmrData, int iDim) {
+            String getDataValue(NMRData nmrData, int iDim) {
                 String value;
                 if (iDim == 0) {
                     value = "";
@@ -93,10 +223,34 @@ public class RefManager {
                 }
                 return value;
             }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim) {
+                ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(getDataValue(nmrData, iDim));
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+                ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(value);
+            }
+
+            SimpleObjectProperty<String> getObjectProperty() {
+                return new SimpleObjectProperty<>("");
+            }
         },
         SKIP("Skip", true) {
-            String getValue(NMRData nmrData, int iDim) {
+            String getDataValue(NMRData nmrData, int iDim) {
                 return "0";
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim) {
+                ((SimpleObjectProperty<Boolean>) objectPropertyMap.get(name() + iDim)).set(false);
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+                ((SimpleObjectProperty<Boolean>) objectPropertyMap.get(name() + iDim)).set(Boolean.parseBoolean(value.toLowerCase()));
+            }
+
+            SimpleObjectProperty<Boolean> getObjectProperty() {
+                return new SimpleObjectProperty<>(false);
             }
         };
         final String title;
@@ -107,19 +261,18 @@ public class RefManager {
             this.locked = locked;
         }
 
-        abstract String getValue(NMRData nmrData, int iDim);
+        abstract String getDataValue(NMRData nmrData, int iDim);
 
-        String getString(Map<String, Object> textFieldMap, int iDim) {
-            Object field = textFieldMap.get(name() + iDim);
-            if (field instanceof TextField textField) {
-                return textField.getText().trim();
-            } else if (field instanceof ReferenceMenuTextField referenceMenuTextField) {
-                return referenceMenuTextField.getTextField().getText();
-            } else if (field instanceof CheckBox checkBox) {
-                return checkBox.isSelected() ? "True" : "False";
-            } else {
-                return "";
-            }
+        abstract void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim);
+
+        abstract void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim);
+
+        abstract SimpleObjectProperty getObjectProperty();
+
+        String getString(Map<String, SimpleObjectProperty> objectPropertyMap, int iDim) {
+            SimpleObjectProperty field = objectPropertyMap.get(name() + iDim);
+            Object value = field.getValue();
+            return value == null ? "" : value.toString();
         }
     }
 
@@ -132,7 +285,7 @@ public class RefManager {
         this.referencePane = referencePane;
     }
 
-    public String getCurrentValues(DataProps dataProps, int nDim, String indent) {
+    public String getPythonString(DataProps dataProps, int nDim, String indent) {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(indent);
         sBuilder.append(dataProps.name().toLowerCase(Locale.ROOT));
@@ -173,32 +326,14 @@ public class RefManager {
     }
 
     public String getCurrentValue(DataProps dataProps, int iDim) {
-        return dataProps.getString(controlsMap, iDim);
+        return dataProps.getString(objectPropertyMap, iDim);
     }
 
     private void updateEditable(ToggleButton toggleButton, DataProps dataProp, NMRData nmrData, int nDim) {
         if (toggleButton.isSelected()) {
             for (int iDim = 0; iDim < nDim; iDim++) {
-                Object field = controlsMap.get(dataProp.name() + iDim);
-                if (field instanceof TextField textField) {
-                    textField.setText(dataProp.getValue(nmrData, iDim));
-                } else if (field instanceof ReferenceMenuTextField referenceMenuTextField) {
-                    referenceMenuTextField.setText(dataProp.getValue(nmrData, iDim));
-                } else if (field instanceof CheckBox checkBox) {
-                } else {
-                }
+                dataProp.setObjectValue(objectPropertyMap, nmrData, iDim);
             }
-        }
-    }
-
-    private void setControlValue(Object control, String value) {
-        if (control instanceof TextField textField) {
-            textField.setText(value);
-        } else if (control instanceof ReferenceMenuTextField referenceMenuTextField) {
-            referenceMenuTextField.setText(value);
-        } else if (control instanceof CheckBox checkBox) {
-            checkBox.setSelected(Boolean.parseBoolean(value.toLowerCase()));
-        } else {
         }
     }
 
@@ -316,30 +451,46 @@ public class RefManager {
             toggleButton.setOnAction(e -> updateEditable(toggleButton, dataProp, nmrData, nDim));
             toggleButtons.put(dataProp, toggleButton);
             for (int i = 0; i < nDim; i++) {
+                var prop = dataProp.getObjectProperty();
                 if (dataProp == DataProps.SKIP) {
                     if (i > 0) {
                         CheckBox checkBox = new CheckBox();
-                        gridPane.add(checkBox, i + start, row);
-                        controlsMap.put(dataProp.name() + i, checkBox);
                         checkBox.disableProperty().bind(toggleButton.selectedProperty());
                         checkBox.setOnAction(e -> invalidateScript());
+                        objectPropertyMap.put(dataProp.name() + i, prop);
+                        gridPane.add(checkBox, i + start, row);
                     }
                 } else {
                     if (dataProp == DataProps.REF) {
                         ReferenceMenuTextField referenceMenuTextField = new ReferenceMenuTextField(processorController);
                         referenceMenuTextField.setPrefWidth(100);
-                        referenceMenuTextField.setText(dataProp.getValue(nmrData, i));
+                        referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));
                         referenceMenuTextField.getTextField().textProperty().addListener(e -> invalidateScript());
                         gridPane.add(referenceMenuTextField, i + start, row);
-                        controlsMap.put(dataProp.name() + i, referenceMenuTextField);
+                        objectPropertyMap.put(dataProp.name() + i, prop);
                     } else {
                         CustomTextField textField = new CustomTextField();
                         textField.setPrefWidth(100);
-                        textField.setText(dataProp.getValue(nmrData, i));
                         textField.editableProperty().bind(toggleButton.selectedProperty().not());
                         textField.setOnKeyPressed(e -> invalidateScript());
                         gridPane.add(textField, i + start, row);
-                        controlsMap.put(dataProp.name() + i, textField);
+                        objectPropertyMap.put(dataProp.name() + i, prop);
+                        if (prop.get() instanceof Double dValue) {
+                            prop.set(Double.parseDouble(dataProp.getDataValue(nmrData, i)));
+                            TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(2), 0.0, new FixedDecimalFilter());
+                            textFormatter.valueProperty().bindBidirectional(prop);
+                            textField.setTextFormatter(textFormatter);
+                        } else if (prop.get() instanceof Integer dValue) {
+                            prop.set(Integer.parseInt(dataProp.getDataValue(nmrData, i)));
+                            TextFormatter<Integer> textFormatter = new TextFormatter<>(new PositiveIntegerStringConverter(), 0, new PositiveIntegerFilter());
+                            textFormatter.valueProperty().bindBidirectional(prop);
+                            textField.setTextFormatter(textFormatter);
+                        } else {
+                            prop.set(dataProp.getDataValue(nmrData, i));
+                            TextFormatter<String> textFormatter = new TextFormatter<>(TextFormatter.IDENTITY_STRING_CONVERTER);
+                            textFormatter.valueProperty().bindBidirectional(prop);
+                            textField.setTextFormatter(textFormatter);
+                        }
                     }
                 }
             }
@@ -349,11 +500,11 @@ public class RefManager {
 
 
     public boolean getSkip(String iDim) {
-        CheckBox checkBox = (CheckBox) controlsMap.get(DataProps.SKIP.name()+iDim);
-        return checkBox != null && checkBox.isSelected();
+        SimpleObjectProperty objectProp = objectPropertyMap.get(DataProps.SKIP.name() + iDim);
+        return (objectProp == null) || (objectProp.get() == null) ? false : ((Boolean) objectProp.get()).booleanValue();
     }
 
-    public String getParString(int nDim, String indent) {
+    public String getScriptReferenceLines(int nDim, String indent) {
         ChartProcessor chartProcessor = processorController.chartProcessor;
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(indent);
@@ -373,7 +524,7 @@ public class RefManager {
         sBuilder.append(System.lineSeparator());
         for (DataProps dataProps : DataProps.values()) {
             if (!toggleButtons.get(dataProps).isSelected()) {
-                sBuilder.append(getCurrentValues(dataProps, nDim, indent));
+                sBuilder.append(getPythonString(dataProps, nDim, indent));
                 sBuilder.append(System.lineSeparator());
             }
         }
@@ -395,36 +546,27 @@ public class RefManager {
     }
 
 
-
     public void setDataFields(List<String> headerList) {
         ChartProcessor chartProcessor = processorController.chartProcessor;
         for (String s : headerList) {
             int index = s.indexOf('(');
             boolean lastIsClosePar = s.charAt(s.length() - 1) == ')';
             if ((index != -1) && lastIsClosePar) {
-                String propName = s.substring(0, index);
+                String propName = s.substring(0, index).toUpperCase();
                 String args = s.substring(index + 1, s.length() - 1);
-                List<String> parValues = CSVLineParse.parseLine(args);
                 switch (propName) {
-                    case "acqOrder":
-                        chartProcessor.setAcqOrder(args);
-                        break;
-                    case "acqarray":
-                        chartProcessor.setArraySize(args);
-                        break;
-                    case "fixdsp":
-                        chartProcessor.setFixDSP(args.equals("True"));
-                        break;
-                    default:
+                    case "ACQORDER" -> chartProcessor.setAcqOrder(args);
+                    case "ACQARRAY" -> chartProcessor.setArraySize(args);
+                    case "FIXDSP" -> chartProcessor.setFixDSP(args.equals("True"));
+                    default -> {
+                        DataProps dataProps = DataProps.valueOf(propName);
+                        List<String> parValues = CSVLineParse.parseLine(args);
                         int dim = 0;
                         for (String parValue : parValues) {
-                            String dimName = "" + (dim + 1);
-                            String nameWithDim = propName + dimName;
-                            Object control = controlsMap.get(nameWithDim);
-                            setControlValue(control, parValue);
+                            dataProps.setObjectValue(objectPropertyMap, parValue, dim);
                             dim++;
                         }
-                        break;
+                    }
                 }
             }
         }
