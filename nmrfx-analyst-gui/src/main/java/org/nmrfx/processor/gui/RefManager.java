@@ -395,13 +395,40 @@ public class RefManager {
         processorController.updateFileButton();
     }
 
+    HBox getParDisplay(NMRData nmrData, String field) {
+        HBox hBox = new HBox();
+        Label label = new Label(field);
+        label.setPrefWidth(100);
+        label.setAlignment(Pos.CENTER_LEFT);
+        hBox.setSpacing(10);
+        TextField textField = new TextField();
+        textField.setPrefWidth(200);
+        textField.setEditable(false);
+
+        switch (field) {
+            case "Solvent" -> textField.setText(nmrData.getSolvent());
+            case "Sequence" -> textField.setText(nmrData.getSequence());
+            case "Temperature" -> textField.setText(String.valueOf(nmrData.getTempK()));
+            case "Date" -> textField.setText(nmrData.getZonedDate().toString());
+        }
+        hBox.getChildren().addAll(label, textField);
+        return hBox;
+    }
+
     public void updateReferencePane(NMRData nmrData, int nDim) {
         VBox vBox = new VBox();
         vBox.setSpacing(10);
+        String[] infoFields = {"Sequence", "Solvent", "Temperature", "Date"};
+        for (String infoField: infoFields) {
+            vBox.getChildren().add(getParDisplay(nmrData, infoField));
+        }
+
         Label dataTypeLabel = new Label("Output Type");
         dataTypeLabel.setPrefWidth(100);
         dataTypeLabel.setAlignment(Pos.CENTER_LEFT);
         HBox datatypeBox = new HBox();
+        datatypeBox.setSpacing(10);
+
         datatypeBox.setAlignment(Pos.CENTER_LEFT);
         ChoiceBox<DatasetType> dataChoice = new ChoiceBox<>();
         dataChoice.getItems().addAll(DatasetType.values());
@@ -413,6 +440,7 @@ public class RefManager {
         acqOrderLabel.setPrefWidth(100);
         acqOrderLabel.setAlignment(Pos.CENTER_LEFT);
         HBox acqOrderBox = new HBox();
+        acqOrderBox.setSpacing(10);
         acqOrderBox.setAlignment(Pos.CENTER_LEFT);
         acqOrderBox.getChildren().addAll(acqOrderLabel, setupAcqOrder(nmrData));
 
@@ -436,7 +464,7 @@ public class RefManager {
         referencePane.setContent(vBox);
         int start = 2;
         for (int i = 0; i < nDim; i++) {
-            Label label = new Label(String.valueOf(i + 1));
+            Label label = new Label("Dim: " + String.valueOf(i + 1));
             gridPane.add(label, i + start, 0);
         }
         int row = 1;
