@@ -18,11 +18,11 @@
 
     </top>
     <center>
-        <Accordion fx:id="dimAccordion"/>
+        <Accordion fx:id="dimAccordion" maxWidth="400"/>
     </center>
     <bottom>
         <VBox maxWidth="400.0">
-            <HBox>
+            <HBox spacing="10">
                 <children>
                     <Button fx:id="datasetFileButton" mnemonicParsing="false" onAction="#datasetFileAction"
                             text="File..."/>
@@ -61,9 +61,9 @@
                     </MenuButton>
                     <ChoiceBox fx:id="viewMode" onAction="#viewMode" value="FID"/>
                     <ChoiceBox fx:id="dimChoice" value=""/>
+                    <Pane HBox.hgrow="ALWAYS"/>
                     <Button mnemonicParsing="false" onAction="#showNavigator"
                             text="Navigator"/>
-                    <Pane HBox.hgrow="ALWAYS"/>
 
                 </items>
             </ToolBar>
