@@ -176,6 +176,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             // Create Right Aligned Buttons
             checkBox = new CheckBox();
             checkBox.setSelected(!processingOperation.isDisabled());
+            checkBox.setOnAction(e -> updateTitle());
             Color fillColor = processingOperation.isDisabled() ? Color.BLUE : Color.GRAY;
             titledPane.setTextFill(fillColor);
             Text moveIcon = GlyphsDude.createIcon(FontAwesomeIcon.ARROWS_V, "14");
@@ -185,6 +186,11 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             setupDragHandling(titledPane, moveIcon);
             return titleBox;
         }
+
+        private void updateTitle() {
+            setDetailedTitle(processorController.detailSelected());
+        }
+
         private void showContextMenu(ContextMenuEvent e, TitledPane titledPane) {
             contextMenu.show(titledPane, e.getScreenX(), e.getScreenY());
         }

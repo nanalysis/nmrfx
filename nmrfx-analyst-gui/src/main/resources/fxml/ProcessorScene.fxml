@@ -29,6 +29,7 @@
                     <Button fx:id="haltProcessButton" mnemonicParsing="false" onAction="#haltProcessAction"
                             text="Halt"/>
                     <CheckBox fx:id="autoProcess" mnemonicParsing="false" text="Auto Update" alignment="CENTER_LEFT"/>
+                    <Pane HBox.hgrow="ALWAYS"/>
                     <ToggleButton fx:id="detailButton" mnemonicParsing="false" text=""/>
                 </children>
             </HBox>

@@ -362,6 +362,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         menuButton.setDisable(true);
         menuButton.disableProperty().bind(titledPane.expandedProperty().not());
     }
+
     private static class ButtonTitlePaneSkin extends TitledPaneSkin {
         final Region arrow;
 
@@ -414,7 +415,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         ObservableList<String> dimList = FXCollections.observableArrayList();
         for (int i = 1; i <= nDim; i++) {
             addTitlePane("D" + i, "DIMENSION " + i);
-            dimList.add("D"+i);
+            dimList.add("D" + i);
             if ((i == 1) && (nDim > 2)) {
                 StringBuilder sBuilder = new StringBuilder();
                 sBuilder.append("D2");
@@ -708,6 +709,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return accordion.getPanes().stream().anyMatch(p -> p.getText().equals(trimOp));
     }
 
+    public boolean detailSelected() {
+        return detailButton.isSelected();
+    }
 
     private void updateTitledPane(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, ProcessingOperation op) {
         titledPane.setProcessingOperation(op);
@@ -790,7 +794,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         int index = -1;
         TitledPane activePane = null;
         int i = 0;
-        for (var pane:accordion.getPanes()) {
+        for (var pane : accordion.getPanes()) {
             if (pane.isExpanded()) {
                 index = i;
                 activePane = pane;
@@ -804,9 +808,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return isPhaserActive.get();
     }
 
-    record PhaserAndPane(TitledPane phaserPane, Phaser phaser) {}
+    record PhaserAndPane(TitledPane phaserPane, Phaser phaser) {
+    }
 
-    private Pane makePhaserPane( ModifiableAccordionScrollPane.ModifiableTitlePane phaserPane, ProcessingOperation processingOperation) {
+    private Pane makePhaserPane(ModifiableAccordionScrollPane.ModifiableTitlePane phaserPane, ProcessingOperation processingOperation) {
         VBox phaserBox = new VBox();
         Phaser phaser = new Phaser(chart.getFXMLController(), phaserBox, Orientation.HORIZONTAL, processingOperation);
         PhaserAndPane phaserAndPane = new PhaserAndPane(phaserPane, phaser);
@@ -943,7 +948,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return "REGIONS(regions=[])";
     }
 
-    List<Double>  getCurrentRegion(ProcessingOperation processingOperation) {
+    List<Double> getCurrentRegion(ProcessingOperation processingOperation) {
         List<Double> fracs = new ArrayList<>();
         Map<String, ProcessingOperation.OperationParameter> params = processingOperation.getParameterMap();
         if (params.containsKey("regions")) {
@@ -1020,12 +1025,39 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         accordionPane.getPanes().clear();
         int i = 0;
         currentDimName = name;
-        for (var processingOperation: processingOperations) {
+        for (var processingOperation : processingOperations) {
             ModifiableAccordionScrollPane.ModifiableTitlePane pane = newTitledPane(accordionPane, processingOperation, i++);
         }
     }
+
+    private void updateAllAccordionTitles() {
+        for (var dimensionPane : dimensionPanes.values()) {
+            var content = dimensionPane.getContent();
+            if (content instanceof ModifiableAccordionScrollPane accordion) {
+                for (var pane : accordion.getPanes()) {
+                    System.out.println("pane is " + pane);
+                    if (pane instanceof ModifiableAccordionScrollPane.ModifiableTitlePane titledPane) {
+                        titledPane.setDetailedTitle(detailButton.isSelected());
+                        System.out.println(titledPane.getContent());
+                        if (titledPane.getContent() instanceof VBox vBox) {
+                            if (!vBox.getChildren().isEmpty()) {
+                                if (vBox.getChildren().get(0) instanceof ModifiableAccordionScrollPane spane) {
+                                    for (var pane2 : spane.getPanes()) {
+                                        if (pane2 instanceof ModifiableAccordionScrollPane.ModifiableTitlePane titledPane2) {
+                                            titledPane2.setDetailedTitle(detailButton.isSelected());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private void updateAccordionTitles() {
-        for (var pane: accordion.getPanes()) {
+        for (var pane : accordion.getPanes()) {
             ModifiableAccordionScrollPane.ModifiableTitlePane mPane = (ModifiableAccordionScrollPane.ModifiableTitlePane) pane;
             mPane.setDetailedTitle(detailButton.isSelected());
         }
@@ -1056,7 +1088,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         } else if (opName.equals("APODIZE")) {
             int nDim = 1;
             if (getNMRData() != null) {
-                 nDim = getNMRData().getNDim();
+                nDim = getNMRData().getNDim();
             }
             if (nDim == 1) {
                 opName = "EXPD";
@@ -1072,11 +1104,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             }
             apodizationGroup.update(opName, opName);
         } else if (BaselineGroup.opInGroup(opName)) {
-                int index = propertyManager.getCurrentPosition(ops, "Baseline Correction");
+            int index = propertyManager.getCurrentPosition(ops, "Baseline Correction");
             BaselineGroup baselineGroup = index != -1 ? (BaselineGroup) ops.get(index) : new BaselineGroup();
-                if (index == -1) {
-                    propertyManager.addOp(baselineGroup, ops, index);
-                }
+            if (index == -1) {
+                propertyManager.addOp(baselineGroup, ops, index);
+            }
             baselineGroup.update(opName, opName);
         } else {
             int index = propertyManager.getCurrentPosition(ops, opName);
@@ -1650,7 +1682,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 AnalystApp.ICON_SIZE_STR);
         detailButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         detailButton.setGraphic(detailIcon);
-        detailButton.setOnAction(e -> updateAccordionTitles());
+        detailButton.setOnAction(e -> updateAllAccordionTitles());
         dimChoice.disableProperty().bind(viewMode.valueProperty().isEqualTo(DisplayMode.SPECTRUM));
 
         datasetFileButton.setOnAction(e -> datasetFileAction());
@@ -1714,6 +1746,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             }
         });
     }
+
     private List<MenuItem> getMenuItemsForDataset() {
         List<MenuItem> menuItems = new ArrayList<>();
         String[] opNames = {"AutoPhase Dataset"};
