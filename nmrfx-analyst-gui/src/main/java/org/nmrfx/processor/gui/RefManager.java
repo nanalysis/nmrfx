@@ -433,7 +433,7 @@ public class RefManager {
         datatypeBox.setAlignment(Pos.CENTER_LEFT);
         ChoiceBox<DatasetType> dataChoice = new ChoiceBox<>();
         dataChoice.getItems().addAll(DatasetType.values());
-        datatypeBox.getChildren().addAll(dataTypeLabel, dataChoice);
+        datatypeBox.getChildren().addAll(dataTypeLabel, dataChoice, processorController.getDatasetFileButton());
         dataChoice.setValue(processorController.chartProcessor.getDatasetType());
         dataChoice.setOnAction(e -> updateDatasetChoice(dataChoice.getValue()));
 

@@ -165,8 +165,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     @FXML
     private ChoiceBox<DisplayMode> viewMode;
     @FXML
-    private Button datasetFileButton;
-    @FXML
     private Button processDatasetButton;
     @FXML
     private Button haltProcessButton;
@@ -181,6 +179,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     String currentDimName = "";
     TitledPane referencePane;
     NavigatorGUI navigatorGUI;
+    private Button datasetFileButton = new Button("File...");
 
     CheckBox genLSCatalog;
     TextField nLSCatFracField;
@@ -1649,7 +1648,14 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         detailButton.setGraphic(detailIcon);
         detailButton.setOnAction(e -> updateAccordionTitles());
         dimChoice.disableProperty().bind(viewMode.valueProperty().isEqualTo(DisplayMode.SPECTRUM));
+
+        datasetFileButton.setOnAction(e -> datasetFileAction());
+
         setupListeners();
+    }
+
+    public Button getDatasetFileButton() {
+        return datasetFileButton;
     }
 
     NMRData getNMRData() {
