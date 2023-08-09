@@ -42,7 +42,6 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.skin.TitledPaneSkin;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -58,7 +57,6 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.fxmisc.richtext.CodeArea;
 import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fx;
@@ -68,10 +66,8 @@ import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
-import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
-import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.gui.spectra.SpecRegion;
 import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
@@ -166,8 +162,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     // script tab fields
     @FXML
-    CodeArea textArea;
-    @FXML
     CheckBox autoProcess;
 
     @FXML
@@ -231,12 +225,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     Throwable processingThrowable;
     String currentText = "";
 
-    ProcessingCodeAreaUtil codeAreaUtil;
     private final ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     private final AtomicReference<Dataset> saveObject = new AtomicReference<>();
     ScheduledFuture futureUpdate = null;
     Map<String, PhaserAndPane> phasersPanes = new HashMap<>();
+    ScriptGUI scriptGUI = new ScriptGUI();
 
 
     public static ProcessorController create(FXMLController fxmlController, NmrControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
@@ -1135,29 +1129,29 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     void updateScriptDisplay() {
         String script = getFullScript();
         if (!script.equals(currentText)) {
-            textArea.replaceText(script);
+            scriptGUI.replaceText(script);
             currentText = script;
         }
         chartProcessor.setScriptValid(true);
     }
 
     boolean fixDatasetName() {
-        String script = textArea.getText();
+        String script = scriptGUI.getText();
         if (!chartProcessor.scriptHasDataset(script)) {
             Optional<String> scriptOpt = chartProcessor.fixDatasetName(script);
             if (scriptOpt.isEmpty()) {
                 return false;
             }
-            textArea.replaceText(scriptOpt.get());
+            scriptGUI.replaceText(scriptOpt.get());
         }
         return true;
     }
 
     void unsetDatasetName() {
-        String script = textArea.getText();
+        String script = scriptGUI.getText();
         if (chartProcessor.scriptHasDataset(script)) {
             script = chartProcessor.removeDatasetName(script);
-            textArea.replaceText(script);
+            scriptGUI.replaceText(script);
         }
     }
 
@@ -1290,7 +1284,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         refOps.add("tdsize");
         refOps.add("fixdsp");
         if (!scriptString.equals(currentText)) {
-            textArea.replaceText(scriptString);
+            scriptGUI.replaceText(scriptString);
             currentText = scriptString;
         }
         String[] lines = scriptString.split("\n");
@@ -1381,7 +1375,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         chartProcessor.setScripts(headerList, mapOpLists);
         String script = getFullScript();
         if (!script.equals(currentText)) {
-            textArea.replaceText(script);
+            scriptGUI.replaceText(script);
             currentText = script;
         }
         chartProcessor.setScriptValid(true);
@@ -1394,7 +1388,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         File parent = chartProcessor.getScriptDir();
         if (parent != null) {
             File scriptFile = chartProcessor.getDefaultScriptFile();
-            String script = textArea.getText();
+            String script = scriptGUI.getText();
             try {
                 chartProcessor.writeScript(script, scriptFile);
             } catch (IOException ex) {
@@ -1414,7 +1408,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         }
         File saveFile = fileChooser.showSaveDialog(null);
         if (saveFile != null) {
-            String script = textArea.getText();
+            String script = scriptGUI.getText();
             try {
                 chartProcessor.writeScript(script, saveFile);
             } catch (IOException ex) {
@@ -1542,7 +1536,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                             doProcessWhenDone.set(false);
                             isProcessing.set(true);
                             Processor.getProcessor().setProcessorAvailableStatus(false);
-                            script = textArea.getText();
+                            script = scriptGUI.getText();
                             try (PythonInterpreter processInterp = new PythonInterpreter()) {
                                 updateStatus("Start processing");
                                 updateTitle("Start Processing");
@@ -1664,9 +1658,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         statusBarToolTip.textProperty().bind(statusBar.textProperty());
         statusBar.setTooltip(statusBarToolTip);
 
-        codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
-        textArea.setEditable(false);
-        textArea.setWrapText(true);
         scanRatio.getItems().addAll(0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 10.0);
         scanRatio.setValue(3.0);
         scanMaxN.getItems().addAll(5, 10, 20, 50, 100, 200);
@@ -2172,5 +2163,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 nmrData.addSkipGroup(datasetGroupIndex);
             }
         }
+    }
+
+    public void showScriptGUI() {
+        scriptGUI.showStage();
     }
 }

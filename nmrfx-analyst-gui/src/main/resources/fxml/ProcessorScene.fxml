@@ -19,6 +19,9 @@
             <items>
                 <MenuButton mnemonicParsing="false" text="Scripts">
                     <items>
+                        <MenuItem  mnemonicParsing="false" onAction="#showScriptGUI"
+                                  text="Show Script"/>
+
                         <MenuItem fx:id="autoGenerateScript" mnemonicParsing="false" onAction="#genDefaultScript"
                                   text="Auto Generate"/>
                         <MenuItem fx:id="autoGenerateArrayedScript" mnemonicParsing="false"
@@ -171,13 +174,6 @@
                     </HBox>
                 </content>
             </Tab>
-            <Tab closable="false" onSelectionChanged="#loadScriptTab" text="Script">
-                <VBox>
-                    <children>
-                        <CodeArea fx:id="textArea" minHeight="0.0" prefHeight="0" VBox.vgrow="ALWAYS"/>
-                    </children>
-                </VBox>
-            </Tab>
         </TabPane>
     </center>
     <bottom>
@@ -191,6 +187,7 @@
                     <Button fx:id="haltProcessButton" mnemonicParsing="false" onAction="#haltProcessAction"
                             text="Halt"/>
                     <CheckBox fx:id="autoProcess" mnemonicParsing="false" text="Auto Update"/>
+
                     <ToggleButton fx:id="detailButton" mnemonicParsing="false" text=""/>
 
                 </children>
