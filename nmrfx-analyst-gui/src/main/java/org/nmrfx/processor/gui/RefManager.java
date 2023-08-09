@@ -495,6 +495,7 @@ public class RefManager {
                         referenceMenuTextField.setPrefWidth(100);
                         referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));
                         referenceMenuTextField.getTextField().textProperty().addListener(e -> invalidateScript());
+                        referenceMenuTextField.getTextField().textProperty().bindBidirectional(prop);
                         gridPane.add(referenceMenuTextField, i + start, row);
                         objectPropertyMap.put(dataProp.name() + i, prop);
                     } else {
