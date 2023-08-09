@@ -1256,6 +1256,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     public void parseScript(String scriptString) {
+        boolean autoProcessState = autoProcess.isSelected();
+        setAutoProcess(false);
         HashSet<String> refOps = new HashSet<>();
         refOps.add("skip");
         refOps.add("sw");
@@ -1365,6 +1367,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         chartProcessor.setScriptValid(true);
         navigatorGUI.updateSkipIndices();
         updateAllAccordions();
+        setAutoProcess(autoProcessState);
     }
 
     @FXML
