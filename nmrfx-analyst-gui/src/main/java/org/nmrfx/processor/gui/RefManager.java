@@ -572,7 +572,7 @@ public class RefManager {
         Optional<String> result = Optional.empty();
         NMRData nmrData = getNMRData();
         if (nmrData != null) {
-            Optional<String> skipString = processorController.getSkipString();
+            Optional<String> skipString = processorController.navigatorGUI.getSkipString();
             if (skipString.isPresent()) {
                 String s = "markrows(" + skipString.get() + ")";
                 result = Optional.of(s);

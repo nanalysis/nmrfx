@@ -15,166 +15,10 @@
         <URL value="@/styles/Styles.css"/>
     </stylesheets>
     <top>
-        <ToolBar fx:id="toolBar">
-            <items>
-                <MenuButton mnemonicParsing="false" text="Scripts">
-                    <items>
-                        <MenuItem  mnemonicParsing="false" onAction="#showScriptGUI"
-                                  text="Show Script"/>
 
-                        <MenuItem fx:id="autoGenerateScript" mnemonicParsing="false" onAction="#genDefaultScript"
-                                  text="Auto Generate"/>
-                        <MenuItem fx:id="autoGenerateArrayedScript" mnemonicParsing="false"
-                                  onAction="#genDefaultScriptArrayed" text="Auto Generate (Arrayed)"/>
-                        <MenuItem fx:id="openDefaultScript" mnemonicParsing="false" onAction="#openDefaultScriptAction"
-                                  text="Open (process.py)"/>
-                        <MenuItem fx:id="openScript" mnemonicParsing="false" onAction="#openScriptAction"
-                                  text="Open..."/>
-                        <MenuItem fx:id="saveScript" mnemonicParsing="false" onAction="#writeDefaultScriptAction"
-                                  text="Save (process.py)"/>
-                        <MenuItem fx:id="saveScriptAs" mnemonicParsing="false" onAction="#writeScriptAction"
-                                  text="Save As..."/>
-                        <MenuItem fx:id="openOperations" mnemonicParsing="false" onAction="#openVecScriptAction"
-                                  text="Load Operations..."/>
-                        <MenuItem fx:id="saveOperations" mnemonicParsing="false" onAction="#writeVecScriptAction"
-                                  text="Save Operations..."/>
-                    </items>
-                </MenuButton>
-                <ChoiceBox fx:id="viewMode" onAction="#viewMode" value="FID"/>
-                <ChoiceBox fx:id="dimChoice" value=""/>
-                <Pane HBox.hgrow="ALWAYS"/>
-            </items>
-        </ToolBar>
     </top>
     <center>
-        <TabPane maxWidth="400" minHeight="100" minWidth="400" VBox.vgrow="ALWAYS">
-            <Tab closable="false" text="Operations">
-                <Accordion fx:id="dimAccordion"/>
-            </Tab>
-            <Tab closable="false" text="Navigation">
-                <content>
-                    <HBox fx:id="navHBox" prefHeight="100.0">
-                        <children>
-                            <HBox prefHeight="410.0" prefWidth="59.0">
-                                <children>
-                                    <Slider fx:id="vecNum1" blockIncrement="1.0" majorTickUnit="16.0" max="64.0" min="1"
-                                            minorTickCount="4" onMouseReleased="#handleVecRelease"
-                                            onValueChange="#handleVecNum" orientation="VERTICAL" showTickLabels="true"
-                                            showTickMarks="true">
-                                        <HBox.margin>
-                                            <Insets bottom="5.0" top="5.0"/>
-                                        </HBox.margin>
-                                    </Slider>
-                                </children>
-                                <HBox.margin>
-                                    <Insets left="5.0"/>
-                                </HBox.margin>
-                            </HBox>
-                            <VBox fx:id="navDetailsVBox" prefHeight="200.0" spacing="5.0"
-                                  HBox.hgrow="ALWAYS">
-                                <children>
-                                    <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
-                                        <children>
-                                            <Label prefWidth="100.0" text="Dimension:"/>
-                                            <VBox fx:id="dimVBox" prefHeight="69.0" prefWidth="236.0" spacing="5.0"
-                                                  HBox.hgrow="ALWAYS"/>
-                                        </children>
-                                    </HBox>
-                                    <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
-                                        <children>
-                                            <Label prefWidth="100.0" text="Datatype: "/>
-                                            <ChoiceBox fx:id="realImagChoiceBox" maxWidth="1.7976931348623157E308"
-                                                       prefWidth="150.0" HBox.hgrow="ALWAYS"/>
-                                        </children>
-                                    </HBox>
-                                    <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
-                                        <children>
-                                            <Label prefWidth="100.0" text="File Index: "/>
-                                            <TextField fx:id="fileIndexTextBox" HBox.hgrow="ALWAYS"/>
-                                        </children>
-                                    </HBox>
-                                    <TitledPane text="Corrupted Index ID" expanded="false">
-                                        <content>
-                                            <GridPane BorderPane.alignment="CENTER" hgap="5">
-                                                <rowConstraints>
-                                                    <RowConstraints minHeight="10.0" prefHeight="30.0"
-                                                                    maxHeight="30.0"/>
-                                                    <RowConstraints minHeight="10.0" prefHeight="30.0"
-                                                                    maxHeight="30.0"/>
-                                                    <RowConstraints minHeight="10.0" prefHeight="30.0"
-                                                                    maxHeight="30.0"/>
-                                                    <RowConstraints minHeight="10.0" prefHeight="30.0"
-                                                                    maxHeight="30.0"/>
-                                                    <RowConstraints minHeight="10.0" prefHeight="30.0"
-                                                                    maxHeight="30.0"/>
-                                                </rowConstraints>
-                                                <children>
-                                                    <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
-                                                            onAction="#addCorruptedIndex"
-                                                            text="Add"
-                                                            GridPane.columnIndex="0" GridPane.rowIndex="0"
-                                                    />
-                                                    <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
-                                                            onAction="#deleteCorruptedIndex"
-                                                            text="Delete"
-                                                            GridPane.columnIndex="0" GridPane.rowIndex="1"
-                                                    />
-                                                    <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
-                                                            onAction="#addCorruptedDim"
-                                                            text="Add Dim"
-                                                            GridPane.columnIndex="0" GridPane.rowIndex="2"
-                                                    />
-                                                    <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
-                                                            onAction="#clearCorruptedIndex"
-                                                            text="Clear All"
-                                                            GridPane.columnIndex="0" GridPane.rowIndex="3"
-                                                    />
-
-                                                    <ListView fx:id="corruptedIndicesListView"
-                                                              prefWidth="100" maxWidth="100" prefHeight="150"
-                                                              editable="false"
-                                                              GridPane.columnIndex="1" GridPane.rowIndex="0"
-                                                              GridPane.columnSpan="1" GridPane.rowSpan="5"
-                                                    />
-                                                    <Button mnemonicParsing="false" prefWidth="60"
-                                                            onAction="#scanForCorruption"
-                                                            text="Scan"
-                                                            GridPane.columnIndex="2" GridPane.rowIndex="0"
-                                                    />
-                                                    <Label
-                                                            text="Max number of hits: "
-                                                            GridPane.columnIndex="2" GridPane.rowIndex="1"
-                                                            GridPane.columnSpan="2"
-                                                    />
-                                                    <ChoiceBox fx:id="scanMaxN"
-                                                               prefWidth="60"
-                                                               GridPane.columnIndex="3" GridPane.rowIndex="2"
-                                                               GridPane.columnSpan="1"
-                                                    />
-                                                    <Label
-                                                            text=" Minimum SDev Ratio: "
-                                                            GridPane.columnIndex="2" GridPane.rowIndex="3"
-                                                            GridPane.columnSpan="2"
-                                                    />
-                                                    <ChoiceBox fx:id="scanRatio" prefWidth="60"
-                                                               GridPane.columnIndex="3" GridPane.rowIndex="4"
-
-                                                    />
-
-                                                </children>
-                                            </GridPane>
-                                        </content>
-                                    </TitledPane>
-                                </children>
-                            </VBox>
-                        </children>
-                        <padding>
-                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
-                        </padding>
-                    </HBox>
-                </content>
-            </Tab>
-        </TabPane>
+        <Accordion fx:id="dimAccordion"/>
     </center>
     <bottom>
         <VBox maxWidth="400.0">
@@ -187,11 +31,42 @@
                     <Button fx:id="haltProcessButton" mnemonicParsing="false" onAction="#haltProcessAction"
                             text="Halt"/>
                     <CheckBox fx:id="autoProcess" mnemonicParsing="false" text="Auto Update"/>
-
                     <ToggleButton fx:id="detailButton" mnemonicParsing="false" text=""/>
-
                 </children>
             </HBox>
+            <ToolBar fx:id="toolBar">
+                <items>
+                    <MenuButton mnemonicParsing="false" text="Scripts">
+                        <items>
+                            <MenuItem  mnemonicParsing="false" onAction="#showScriptGUI"
+                                       text="Show Script"/>
+
+                            <MenuItem fx:id="autoGenerateScript" mnemonicParsing="false" onAction="#genDefaultScript"
+                                      text="Auto Generate"/>
+                            <MenuItem fx:id="autoGenerateArrayedScript" mnemonicParsing="false"
+                                      onAction="#genDefaultScriptArrayed" text="Auto Generate (Arrayed)"/>
+                            <MenuItem fx:id="openDefaultScript" mnemonicParsing="false" onAction="#openDefaultScriptAction"
+                                      text="Open (process.py)"/>
+                            <MenuItem fx:id="openScript" mnemonicParsing="false" onAction="#openScriptAction"
+                                      text="Open..."/>
+                            <MenuItem fx:id="saveScript" mnemonicParsing="false" onAction="#writeDefaultScriptAction"
+                                      text="Save (process.py)"/>
+                            <MenuItem fx:id="saveScriptAs" mnemonicParsing="false" onAction="#writeScriptAction"
+                                      text="Save As..."/>
+                            <MenuItem fx:id="openOperations" mnemonicParsing="false" onAction="#openVecScriptAction"
+                                      text="Load Operations..."/>
+                            <MenuItem fx:id="saveOperations" mnemonicParsing="false" onAction="#writeVecScriptAction"
+                                      text="Save Operations..."/>
+                        </items>
+                    </MenuButton>
+                    <ChoiceBox fx:id="viewMode" onAction="#viewMode" value="FID"/>
+                    <ChoiceBox fx:id="dimChoice" value=""/>
+                    <Button mnemonicParsing="false" onAction="#showNavigator"
+                            text="Navigator"/>
+                    <Pane HBox.hgrow="ALWAYS"/>
+
+                </items>
+            </ToolBar>
             <HBox>
                 <children>
                     <StatusBar fx:id="statusBar" HBox.hgrow="ALWAYS"/>

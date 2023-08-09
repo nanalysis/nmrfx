@@ -497,7 +497,7 @@ public class ChartProcessor {
     public void vecRow(int[] rows) {
         if (getNMRData() != null) {
             int[] fileIndices = loadVectors(rows);
-            processorController.setFileIndex(fileIndices);
+            processorController.navigatorGUI.setFileIndex(fileIndices);
             try {
                 ProcessOps process = getProcess();
                 process.exec();
@@ -1060,7 +1060,7 @@ public class ChartProcessor {
             chart.setDataset(nvData.getDataset());
             chart.getCrossHairs().setStates(true, true, true, true);
             int[] sizes = new int[0];
-            processorController.vectorStatus(sizes, vecDim);
+            processorController.navigatorGUI.vectorStatus(sizes, vecDim);
         } else {
             chart.getFXMLController().setFIDActive(true);
 
@@ -1080,7 +1080,7 @@ public class ChartProcessor {
                     sizes[i] = nmrData.getSize(i);
                 }
             }
-            processorController.vectorStatus(sizes, vecDim);
+            processorController.navigatorGUI.vectorStatus(sizes, vecDim);
         }
         chart.full();
         chart.autoScale();
