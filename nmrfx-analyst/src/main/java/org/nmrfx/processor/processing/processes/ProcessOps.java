@@ -19,7 +19,9 @@ package org.nmrfx.processor.processing.processes;
 
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.*;
 import org.nmrfx.processor.processing.ProcessingException;
@@ -55,6 +57,7 @@ public class ProcessOps implements Callable<Object> {
     private boolean isMatrix = false;
     private boolean isDataset = false;
     private boolean isUndo = false;
+    private boolean firstProcess = true;
 
     private String completionMessage;
 
@@ -128,6 +131,10 @@ public class ProcessOps implements Callable<Object> {
         return name;
     }
 
+    public void setDim(int dim) {
+        dims[0] = dim;
+    }
+
     public int getDim() {
         return dims[0];
     }
@@ -154,6 +161,10 @@ public class ProcessOps implements Callable<Object> {
 
     public boolean isUndo() {
         return isUndo;
+    }
+
+    public void firstProcess(boolean state) {
+        firstProcess = state;
     }
 
     /**
@@ -188,6 +199,30 @@ public class ProcessOps implements Callable<Object> {
         vectors.addAll(addVectors);
     }
 
+    private void addTDCombine() {
+        Processor processor = Processor.getProcessor();
+        if (firstProcess && (dims[0] == 0)) {
+            NMRData nmrData = processor.getNMRData();
+            if (nmrData != null) {
+                for (int i = 1; i < nmrData.getNDim(); i++) {
+                    if (!hasOperation(TDCombine.class)) {
+                        AcquisitionType acquisitionType = nmrData.getUserSymbolicCoefs(i);
+                        double[] coef = acquisitionType != null ? acquisitionType.getCoefficients() : nmrData.getCoefs(i);
+                        if (coef != null) {
+                            int nCoef = coef.length;
+                            if (nCoef > 4) {
+                                int numInVec = (int) (Math.log(nCoef / 2) / Math.log(2));
+                                int numOutVec = numInVec;
+                                TDCombine op = new TDCombine(i, numInVec, numOutVec, coef);
+                                operations.add(0, op);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Execute all of the operations in the pool.
      */
@@ -205,8 +240,8 @@ public class ProcessOps implements Callable<Object> {
         }
 
         Processor processor = Processor.getProcessor();
-
         vectors = new ArrayList<>();
+        addTDCombine();
         // fixme  should we have don't write flag so write op doesn't get added
         if (!hasOperation(WriteVector.class)) {
             if (isUndo) {
@@ -392,6 +427,7 @@ public class ProcessOps implements Callable<Object> {
         if (vectors.isEmpty()) {
             return this;
         }
+        addTDCombine();
         for (Operation op : operations) {
             try {
                 op.eval(vectors);
@@ -438,6 +474,8 @@ public class ProcessOps implements Callable<Object> {
         }
 
         proc.isUndo = isUndo;
+
+        proc.firstProcess = firstProcess;
 
         proc.operations = new ArrayList<>();
 

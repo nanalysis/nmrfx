@@ -85,6 +85,8 @@ public class BrukerData implements NMRData {
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
     private final Double[] Sf = new Double[MAXDIM];
+    private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
+
     private String text = null;
 
     private final String fpath;
@@ -498,6 +500,14 @@ public class BrukerData implements NMRData {
     @Override
     public String getSymbolicCoefs(int iDim) {
         return f1coefS[iDim];
+    }
+
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
     }
 
     @Override
