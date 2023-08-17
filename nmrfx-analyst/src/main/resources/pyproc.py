@@ -610,6 +610,13 @@ def tdsize(*size):
         else:
             fidInfo.useSize.append(par)
 
+def acqmode(*modes):
+    ''' Set the acquisition modes (complex, hypercomplex, echo-antiecho etc. for each dimension. 
+    '''
+    global fidInfo
+    for i,par in enumerate(modes):
+        fidInfo.fidObj.setAcqMode(i, par)
+
 def p(par):
     return fidInfo.getPar(par)
 

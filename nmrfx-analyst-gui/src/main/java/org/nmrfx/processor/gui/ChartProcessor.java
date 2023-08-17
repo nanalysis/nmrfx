@@ -99,7 +99,7 @@ public class ChartProcessor {
      * Currently, only used in reading vectors from raw data file for
      * interactive processing.
      */
-    private String[] acqMode = null;
+    private AcquisitionType[] acqMode = null;
     /**
      * Should Bruker FIDs be corrected when loading them for the DSP artifact at
      * beginning of FID.
@@ -439,7 +439,7 @@ public class ChartProcessor {
                 fileIndices[j] = index + j;
                 nmrData.readVector(vecDim, index + j, newVec);
                 if (nmrData.getGroupSize(vecDim) > 1) {
-                    AcquisitionType type = AcquisitionType.fromLabel(acqMode[vecDim]);
+                    AcquisitionType type = acqMode[vecDim];
                     if(type == null) {
                         newVec.hcCombine();
                     } else {
@@ -861,6 +861,10 @@ public class ChartProcessor {
         return mapDim;
     }
 
+    public void acqMode(int iDim, AcquisitionType mode) {
+        acqMode[iDim] = mode;
+    }
+
     private void updateAcqModeFromTdComb() {
         if (getNMRData() == null) {
             return;
@@ -868,28 +872,9 @@ public class ChartProcessor {
 
         int nDim = getNMRData().getNDim();
         for (int i = 1; i < nDim; i++) {
-            acqMode[i] = AcquisitionType.HYPER.getLabel();
-        }
-
-        for (Map.Entry<String, List<ProcessingOperationInterface>> entry : mapOpLists.entrySet()) {
-            List<ProcessingOperationInterface> scriptList = entry.getValue();
-            if (scriptList != null && !scriptList.isEmpty()) {
-                for (ProcessingOperationInterface processingOperation : scriptList) {
-                    String string = processingOperation.toString();
-                    if (string.contains("TDCOMB")) {
-                        Map<String, String> values = PropertyManager.parseOpString(string);
-                        int dim = 1;
-                        if (values.containsKey("dim")) {
-                            String value = values.get("dim");
-                            dim = Integer.parseInt(value) - 1;
-                        }
-                        if (values.containsKey("coef")) {
-                            String value = values.get("coef");
-                            value = value.replace("'", "");
-                            acqMode[dim] = value;
-                        }
-                    }
-                }
+            acqMode[i] = getNMRData().getUserSymbolicCoefs(i);
+            if (acqMode[i] == null) {
+                acqMode[i] = AcquisitionType.HYPER;
             }
         }
     }
@@ -1019,7 +1004,7 @@ public class ChartProcessor {
         setFlags(flags);
         updateCounter();
         int nDim = getNMRData().getNDim();
-        acqMode = new String[nDim];
+        acqMode = new AcquisitionType[nDim];
         processorController.removeOpListener();
         mapOpLists.clear();
         Map<String, List<ProcessingOperationInterface>> listOfScripts = getScriptList();
@@ -1100,6 +1085,8 @@ public class ChartProcessor {
         Processor.getProcessor().clearProcessorError();
         ProcessOps process = getProcess();
         process.clearOps();
+        System.out.println("set dim " + vecDim);
+        process.setDim(vecDim);
         if (processorController == null) {
             log.info("null processor controller.");
             return;

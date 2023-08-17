@@ -31,11 +31,13 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.collections4.iterators.PermutationIterator;
 import org.controlsfx.control.textfield.CustomTextField;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.slf4j.Logger;
@@ -253,7 +255,28 @@ public class RefManager {
             SimpleObjectProperty<Boolean> getObjectProperty() {
                 return new SimpleObjectProperty<>(false);
             }
-        };
+        },
+
+        ACQMODE("AcqMode", true) {
+            String getDataValue(NMRData nmrData, int iDim) {
+                return nmrData.getSymbolicCoefs(iDim);
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim) {
+                AcquisitionType modeType = getMode(nmrData, iDim);
+                ((SimpleObjectProperty<AcquisitionType>) objectPropertyMap.get(name() + iDim)).set(modeType);
+            }
+
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+                AcquisitionType modeType = getMode(value);
+                ((SimpleObjectProperty<AcquisitionType>) objectPropertyMap.get(name() + iDim)).set(modeType);
+            }
+
+            SimpleObjectProperty<AcquisitionType> getObjectProperty() {
+                return new SimpleObjectProperty<>(AcquisitionType.HYPER);
+            }
+        },
+        ;
         final String title;
         final boolean locked;
 
@@ -284,6 +307,29 @@ public class RefManager {
     RefManager(ProcessorController processorController, TitledPane referencePane) {
         this.processorController = processorController;
         this.referencePane = referencePane;
+    }
+
+    public static AcquisitionType getMode(NMRData nmrData, int iDim) {
+        AcquisitionType modeType;
+        if (iDim == 0) {
+            modeType = AcquisitionType.COMPLEX;
+        } else {
+            String modeString = nmrData.getSymbolicCoefs(iDim);
+            modeType = getMode(modeString);
+        }
+        return modeType;
+    }
+
+    public static AcquisitionType getMode(String modeString) {
+        AcquisitionType modeType;
+        try {
+            modeType = AcquisitionType.fromLabel(modeString);
+            System.out.println("mode type " + modeString + " " + modeType);
+        } catch (IllegalArgumentException iAE) {
+            System.out.println("mode error " + modeString);
+            modeType = AcquisitionType.HYPER;
+        }
+        return modeType;
     }
 
     public String getPythonString(DataProps dataProps, int nDim, String indent) {
@@ -418,7 +464,7 @@ public class RefManager {
 
     public void updateReferencePane(NMRData nmrData, int nDim) {
         VBox vBox = new VBox();
-        vBox.setSpacing(10);
+        vBox.setSpacing(4);
         String[] infoFields = {"Sequence", "Solvent", "Temperature", "Date"};
         for (String infoField: infoFields) {
             vBox.getChildren().add(getParDisplay(nmrData, infoField));
@@ -459,6 +505,7 @@ public class RefManager {
         }
 
         ScrollPane scrollPane = new ScrollPane();
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
         GridPane gridPane = new GridPane();
         scrollPane.setContent(gridPane);
         vBox.getChildren().add(scrollPane);
@@ -490,7 +537,25 @@ public class RefManager {
                         gridPane.add(checkBox, i + start, row);
                     }
                 } else {
-                    if (dataProp == DataProps.REF) {
+                    if (dataProp == DataProps.ACQMODE) {
+                        ChoiceBox<AcquisitionType> modeBox = new ChoiceBox<>();
+                        if (i == 0) {
+                            modeBox.getItems().add(AcquisitionType.COMPLEX);
+                        } else {
+                            modeBox.getItems().addAll(AcquisitionType.values());
+                        }
+                        modeBox.setPrefWidth(100);
+                        AcquisitionType modeType = getMode(nmrData, i);
+                        prop.set(modeType);
+
+                        modeBox.setValue(modeType);
+                        gridPane.add(modeBox, i + start, row);
+                        objectPropertyMap.put(dataProp.name() + i, prop);
+                        modeBox.valueProperty().bindBidirectional(prop);
+                        modeBox.valueProperty().addListener(e -> invalidateScript());
+                        modeBox.disableProperty().bind(toggleButton.selectedProperty());
+
+                    } else if (dataProp == DataProps.REF) {
                         ReferenceMenuTextField referenceMenuTextField = new ReferenceMenuTextField(processorController);
                         referenceMenuTextField.setPrefWidth(100);
                         referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));

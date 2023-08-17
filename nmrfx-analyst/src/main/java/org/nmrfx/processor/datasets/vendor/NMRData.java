@@ -19,6 +19,7 @@ package org.nmrfx.processor.datasets.vendor;
 
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
@@ -389,10 +390,31 @@ public interface NMRData {
      * combination that should be done during processing.
      *
      * @param dim data dimension index
-     * @return spectrometer frequency
+     * @return symbolic coefficients name
      */
     String getSymbolicCoefs(int dim);
 
+    /**
+     * Return a symbolic name (like hyper, echo-antiecho) (set by the user) for the data
+     * combination that should be done during processing.
+     *
+     * @param dim data dimension index
+     * @return symbolic coefficients name
+     */
+    AcquisitionType getUserSymbolicCoefs(int dim);
+
+    /**
+     * Set the symbolic coefficients for the specified dimension
+     *
+     * @param dim   data dimension index
+     * @param coef  symbolic coefficients name
+     */
+    void setUserSymbolicCoefs(int dim, AcquisitionType coef);
+
+    default void setAcqMode(int i, String mode) {
+        AcquisitionType acqType = AcquisitionType.fromLabel(mode);
+        setUserSymbolicCoefs(i, acqType);
+    }
     /**
      * Return the name of the vendor of instrument used to collect data.
      *
