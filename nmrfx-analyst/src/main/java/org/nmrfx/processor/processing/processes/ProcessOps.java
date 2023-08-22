@@ -207,6 +207,12 @@ public class ProcessOps implements Callable<Object> {
                 for (int i = 1; i < nmrData.getNDim(); i++) {
                     if (!hasOperation(TDCombine.class)) {
                         AcquisitionType acquisitionType = nmrData.getUserSymbolicCoefs(i);
+                        if ((acquisitionType != null) && acquisitionType == AcquisitionType.HYPER) {
+                            continue;
+                        }
+                        if ((acquisitionType == null) && nmrData.getSymbolicCoefs(i).equalsIgnoreCase("hyper")) {
+                            continue;
+                        }
                         double[] coef = acquisitionType != null ? acquisitionType.getCoefficients() : nmrData.getCoefs(i);
                         if (coef != null) {
                             int nCoef = coef.length;
