@@ -1114,8 +1114,12 @@ public class BrukerData implements NMRData {
                         deltaPh0_2 = 90.0;
                         break;
                     case 1:
-                        f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
                         complexDim[i - 1] = getValues(i - 1).isEmpty();
+                        if (complexDim[i - 1]) {
+                            f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
+                        } else {
+                            f1coefS[i - 1] = AcquisitionType.ARRAY.getLabel();
+                        }
                         break;
                     default:
                         f1coef[i - 1] = new double[]{1, 0, 0, 1};
