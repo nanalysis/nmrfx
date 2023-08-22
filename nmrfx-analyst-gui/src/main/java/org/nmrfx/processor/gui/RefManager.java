@@ -257,7 +257,7 @@ public class RefManager {
             }
         },
 
-        ACQMODE("AcqMode", true) {
+        ACQMODE("AcqMode", false) {
             String getDataValue(NMRData nmrData, int iDim) {
                 return nmrData.getSymbolicCoefs(iDim);
             }
@@ -324,9 +324,7 @@ public class RefManager {
         AcquisitionType modeType;
         try {
             modeType = AcquisitionType.fromLabel(modeString);
-            System.out.println("mode type " + modeString + " " + modeType);
         } catch (IllegalArgumentException iAE) {
-            System.out.println("mode error " + modeString);
             modeType = AcquisitionType.HYPER;
         }
         return modeType;
@@ -528,12 +526,12 @@ public class RefManager {
             toggleButtons.put(dataProp, toggleButton);
             for (int i = 0; i < nDim; i++) {
                 var prop = dataProp.getObjectProperty();
+                objectPropertyMap.put(dataProp.name() + i, prop);
                 if (dataProp == DataProps.SKIP) {
                     if (i > 0) {
                         CheckBox checkBox = new CheckBox();
                         checkBox.disableProperty().bind(toggleButton.selectedProperty());
                         checkBox.setOnAction(e -> invalidateScript());
-                        objectPropertyMap.put(dataProp.name() + i, prop);
                         gridPane.add(checkBox, i + start, row);
                     }
                 } else {
@@ -550,7 +548,6 @@ public class RefManager {
 
                         modeBox.setValue(modeType);
                         gridPane.add(modeBox, i + start, row);
-                        objectPropertyMap.put(dataProp.name() + i, prop);
                         modeBox.valueProperty().bindBidirectional(prop);
                         modeBox.valueProperty().addListener(e -> invalidateScript());
                         modeBox.disableProperty().bind(toggleButton.selectedProperty());
@@ -559,17 +556,15 @@ public class RefManager {
                         ReferenceMenuTextField referenceMenuTextField = new ReferenceMenuTextField(processorController);
                         referenceMenuTextField.setPrefWidth(100);
                         referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));
-                        referenceMenuTextField.getTextField().textProperty().addListener(e -> invalidateScript());
                         referenceMenuTextField.getTextField().textProperty().bindBidirectional(prop);
+                        referenceMenuTextField.getTextField().textProperty().addListener(e -> invalidateScript());
                         gridPane.add(referenceMenuTextField, i + start, row);
-                        objectPropertyMap.put(dataProp.name() + i, prop);
                     } else {
                         CustomTextField textField = new CustomTextField();
                         textField.setPrefWidth(100);
                         textField.editableProperty().bind(toggleButton.selectedProperty().not());
                         textField.setOnKeyPressed(e -> invalidateScript());
                         gridPane.add(textField, i + start, row);
-                        objectPropertyMap.put(dataProp.name() + i, prop);
                         if (prop.get() instanceof Double dValue) {
                             prop.set(Double.parseDouble(dataProp.getDataValue(nmrData, i)));
                             TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(2), 0.0, new FixedDecimalFilter());
