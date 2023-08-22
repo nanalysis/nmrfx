@@ -3850,13 +3850,6 @@ def genScript(arrayed=False):
                 continue
             if fidInfo.mapToDatasetList[iDim-1] == -1:
                 continue
-            fCoef = fidInfo.getSymbolicCoefs(iDim-1)
-            if fCoef != None and fCoef != 'hyper' and fCoef != 'sep':
-                script += 'TDCOMB('
-                script += "dim="+str(iDim)
-                script += ",coef='"
-                script += fCoef
-                script += "')\n"
         script += 'SUPPRESS(disabled=True)\n'
         script += 'SB()\n'
         script += 'ZF()\n'
@@ -3881,6 +3874,9 @@ def genScript(arrayed=False):
         if not fidInfo.fidObj.isFrequencyDim(iDim-1):
             continue
         if (iDim >= fidInfo.nd) and arrayed:
+            continue
+        fCoef = fidInfo.getSymbolicCoefs(iDim-1)
+        if fCoef == "array":
             continue
         script += 'DIM('+str(iDim)+')\n'
         if iDim == 2 and fidInfo.nd == 2 and fidInfo.fidObj.getSampleSchedule() != None:
@@ -3921,6 +3917,9 @@ def genScript(arrayed=False):
             if not fidInfo.fidObj.isFrequencyDim(iDim-1):
                 continue
             if (iDim >= fidInfo.nd) and arrayed:
+                continue
+            fCoef = fidInfo.getSymbolicCoefs(iDim-1)
+            if fCoef == "array":
                 continue
             if iDim == 1:
                 script += 'DIM()\n'
