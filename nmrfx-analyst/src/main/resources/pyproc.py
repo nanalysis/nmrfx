@@ -558,6 +558,8 @@ def acqarray(*pars):
         else:
             fidInfo.acqArray.append(0)
             fidInfo.fidObj.setArraySize(i,0)
+    size = list(fidInfo.maxSize)
+    acqsize(size)
 
 # set fid size limits 
 def acqsize(*pars):

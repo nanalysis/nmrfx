@@ -57,6 +57,8 @@ public class RefManager {
     Map<DataProps, ToggleButton> toggleButtons = new HashMap<>();
     Map<String, SimpleObjectProperty> objectPropertyMap = new HashMap<>();
     VendorParsGUI vendorParsGUI = new VendorParsGUI();
+    ComboBox<String> acqOrderCombo;
+    ChoiceBox<Integer> acqArrayChoice;
 
 
     public static class PositiveIntegerFilter implements UnaryOperator<TextFormatter.Change> {
@@ -352,7 +354,11 @@ public class RefManager {
 
                 }
             }
-            if ((value.equals("False") || value.equals("True"))) {
+            if (value.equals("false")) {
+                value = "False";
+                useString = false;
+            } else if (value.equals("true")) {
+                value = "True";
                 useString = false;
             }
             if (dataProps == DataProps.LABEL) {
@@ -380,6 +386,7 @@ public class RefManager {
                 dataProp.setObjectValue(objectPropertyMap, nmrData, iDim);
             }
         }
+        invalidateScript();
     }
 
     private void invalidateScript() {
@@ -387,8 +394,28 @@ public class RefManager {
         refresh();
     }
 
+    private void acqOrderChanged() {
+        String acqOrderValue = acqOrderCombo.getValue();
+        boolean ok = processorController.chartProcessor.setAcqOrder(acqOrderValue);
+        if (ok) {
+            invalidateScript();
+        }
+    }
+
+    private void acqArrayChanged() {
+        int arraySize = acqArrayChoice.getValue();
+        String acqOrder = processorController.chartProcessor.getAcqOrder(false);
+        int index = acqOrder.indexOf("a");
+        if (index != -1) {
+            int arrayDim = Integer.parseInt(acqOrder.substring(index + 1, index + 2)) - 1;
+            processorController.chartProcessor.setArraySize(arrayDim, arraySize);
+            invalidateScript();
+        }
+
+    }
+
     private ComboBox<String> setupAcqOrder(NMRData nmrData) {
-        ComboBox<String> choiceBox = new ComboBox();
+        acqOrderCombo = new ComboBox();
         if (nmrData != null) {
             ArrayList<String> choices = new ArrayList<>();
             if (nmrData.getNDim() > 1) {
@@ -409,13 +436,13 @@ public class RefManager {
                     }
                     choices.add(sBuilder.toString());
                 }
-                choiceBox.getItems().addAll(choices);
-                choiceBox.setEditable(true);
-                choiceBox.setValue(processorController.chartProcessor.getAcqOrder());
-                choiceBox.valueProperty().addListener(e -> invalidateScript());
+                acqOrderCombo.getItems().addAll(choices);
+                acqOrderCombo.setEditable(true);
+                acqOrderCombo.setValue(processorController.chartProcessor.getAcqOrder());
+                acqOrderCombo.valueProperty().addListener(e -> acqOrderChanged());
             }
         }
-        return choiceBox;
+        return acqOrderCombo;
     }
 
 
@@ -487,7 +514,14 @@ public class RefManager {
         HBox acqOrderBox = new HBox();
         acqOrderBox.setSpacing(10);
         acqOrderBox.setAlignment(Pos.CENTER_LEFT);
-        acqOrderBox.getChildren().addAll(acqOrderLabel, setupAcqOrder(nmrData));
+        acqArrayChoice = new ChoiceBox<>();
+        for (int i=0;i<32;i++) {
+            acqArrayChoice.getItems().add(i);
+        }
+        acqArrayChoice.setValue(0);
+        acqOrderBox.getChildren().addAll(acqOrderLabel, setupAcqOrder(nmrData), acqArrayChoice);
+        acqArrayChoice.valueProperty().addListener(e -> acqArrayChanged());
+
 
 
         vBox.getChildren().addAll(datatypeBox, acqOrderBox);
@@ -531,6 +565,7 @@ public class RefManager {
                     if (i > 0) {
                         CheckBox checkBox = new CheckBox();
                         checkBox.disableProperty().bind(toggleButton.selectedProperty());
+                        checkBox.selectedProperty().bindBidirectional(prop);
                         checkBox.setOnAction(e -> invalidateScript());
                         gridPane.add(checkBox, i + start, row);
                     }
@@ -667,6 +702,10 @@ public class RefManager {
                     }
                 }
             }
+        }
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            updateReferencePane(nmrData, nmrData.getNDim());
         }
     }
 

@@ -187,13 +187,14 @@ public class ChartProcessor {
         return getAcqOrder(false);
     }
 
-    public void setAcqOrder(String acqOrder) {
+    public boolean setAcqOrder(String acqOrder) {
         NMRData nmrData = getNMRData();
+        boolean ok = false;
         if (nmrData != null) {
             String[] acqOrderArray = acqOrder.split(",");
             // fixme  should have a general acqOrder validator
+            ok = true;
 
-            boolean ok = true;
             int nDimChars = 0;
             for (int i = 0; i < acqOrderArray.length; i++) {
                 acqOrderArray[i] = acqOrderArray[i].trim();
@@ -242,6 +243,7 @@ public class ChartProcessor {
                 updateCounter();
             }
         }
+        return ok;
     }
 
     public String getAcqOrder(boolean useQuotes) {
@@ -554,6 +556,9 @@ public class ChartProcessor {
 
     public void setScriptValid(boolean state) {
         scriptValid = state;
+        if (!state) {
+            processorController.updateScriptDisplay();
+        }
     }
 
     public void updateOpList() {
@@ -1085,7 +1090,6 @@ public class ChartProcessor {
         Processor.getProcessor().clearProcessorError();
         ProcessOps process = getProcess();
         process.clearOps();
-        System.out.println("set dim " + vecDim);
         process.setDim(vecDim);
         if (processorController == null) {
             log.info("null processor controller.");
