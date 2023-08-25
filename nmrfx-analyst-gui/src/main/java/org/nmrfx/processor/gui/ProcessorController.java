@@ -313,8 +313,13 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             currentDimName = "";
         } else if (titledPane.isExpanded() && !currentDimName.equals(name)) {
             currentDimName = name;
+            if (name.equals("D1-REF")) {
+                currentDimName = "D1";
+            }
             if (!currentDimName.isBlank()) {
-                accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentDimName).getContent();
+                if (dimensionPanes.containsKey(name)) {
+                    accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentDimName).getContent();
+                }
                 if (currentDimName.charAt(0) == 'D' && StringUtils.isNumeric(currentDimName.substring(1))) {
                     dimChoice.setValue(currentDimName);
                     updatePhaser();
@@ -410,6 +415,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         dimAccordion.getPanes().clear();
         int nDim = complex.length;
         dimAccordion.getPanes().add(referencePane);
+        referencePane.expandedProperty().addListener(c -> setActivePane("D1-REF", referencePane));
+
         refManager.updateReferencePane(getNMRData(), nDim);
         dimChoice.getSelectionModel().selectedItemProperty().removeListener(dimListener);
         ObservableList<String> dimList = FXCollections.observableArrayList();
@@ -431,7 +438,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             addTitlePane("D_ALL", "FULL DATASET");
 
             for (int i = 1; i <= nDim; i++) {
-                addTitlePane("P" + i, "POLISHING " + i);
+                addTitlePane("P" + i, "DIMENSION " + i + " (post processing)");
             }
         }
         currentDimName = "D" + 1;

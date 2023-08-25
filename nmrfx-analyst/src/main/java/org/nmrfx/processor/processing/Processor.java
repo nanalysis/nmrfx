@@ -336,6 +336,11 @@ public class Processor {
         acqOrder = null;
     }
 
+    public void addDataset(NMRData nmrData) {
+        nmrDataSets.clear();
+        nmrDataSets.add(nmrData);
+    }
+
     /**
      * Open a NMRView or Varian file in read-only mode.
      *

@@ -902,6 +902,7 @@ public class ChartProcessor {
                     boolean parseInt = !parDim.isEmpty() && !parDim.contains(",") && !parDim.contains("_ALL");
                     if (parseInt) {
                         try {
+                            parDim = parDim.substring(0,1);
                             dimNum = Integer.parseInt(parDim) - 1;
                             if (dimNum >= nDim) {
                                 break;
@@ -1099,6 +1100,7 @@ public class ChartProcessor {
             return;
         }
         NMRData nmrData = getNMRData();
+        Processor.getProcessor().addDataset(nmrData);
         try {
             if (nmrData != null) {
                 NMRDataUtil.setCurrentData(nmrData);

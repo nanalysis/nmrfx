@@ -203,9 +203,19 @@ public class ProcessOps implements Callable<Object> {
         Processor processor = Processor.getProcessor();
         if (firstProcess && (dims[0] == 0)) {
             NMRData nmrData = processor.getNMRData();
+            List<Operation> tdOps = getOperation(TDCombine.class);
             if (nmrData != null) {
                 for (int i = 1; i < nmrData.getNDim(); i++) {
-                    if (!hasOperation(TDCombine.class)) {
+                    boolean hasOp = false;
+                    for (Operation op : tdOps) {
+                        if (op instanceof TDCombine tdCombine) {
+                            if (tdCombine.getDim() == i) {
+                                hasOp = true;
+                            }
+                        }
+                    }
+                    if (!hasOp) {
+
                         AcquisitionType acquisitionType = nmrData.getUserSymbolicCoefs(i);
                         if ((acquisitionType != null) && acquisitionType == AcquisitionType.HYPER) {
                             continue;
@@ -465,6 +475,16 @@ public class ProcessOps implements Callable<Object> {
             }
         }
         return hasOp;
+    }
+
+    public List<Operation> getOperation(Class classType) {
+        List<Operation> operationsPresent = new ArrayList<>();
+        for (Operation op : operations) {
+            if (op.getClass().isAssignableFrom(classType)) {
+                operationsPresent.add(op);
+            }
+        }
+        return operationsPresent;
     }
 
     public String getCompletionMessage() {
