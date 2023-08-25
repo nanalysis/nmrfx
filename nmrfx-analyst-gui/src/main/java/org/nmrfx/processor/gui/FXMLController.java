@@ -1488,13 +1488,26 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             contentController.update();
             viewProcessorControllerIfPossible = false;
         } else if (processorButton.isSelected()) {
+            boolean dataIsFID = false;
+            if (chartProcessor != null) {
+                var dataset = chartProcessor.getChart().getDataset();
+                if ((dataset != null) && (dataset.getName().equals("vec0"))) {
+                    dataIsFID = true;
+                }
+            }
+            isFID = dataIsFID || (chartProcessor != null) && (chartProcessor.getNMRData() != null);
             nmrControlRightSidePane.addContent(getActiveChart().getProcessorController(true));
+            updateSpectrumStatusBarOptions(false);
             viewProcessorControllerIfPossible = true;
         } else {
             nmrControlRightSidePane.clear();
             if (!processorButton.isDisabled() && getActiveChart().getProcessorController(false) != null) {
                 viewProcessorControllerIfPossible = false;
             }
+        }
+        if (!processorButton.isSelected()) {
+            isFID = false;
+            updateSpectrumStatusBarOptions(false);
         }
     }
 

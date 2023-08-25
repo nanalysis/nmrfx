@@ -42,7 +42,6 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.skin.TitledPaneSkin;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -53,25 +52,20 @@ import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.fxmisc.richtext.CodeArea;
 import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
-import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
-import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
-import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.gui.spectra.SpecRegion;
 import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
@@ -164,39 +158,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     PropertyManager propertyManager;
     RefManager refManager;
 
-    @FXML
-    PropertySheet refSheet;
-
     // script tab fields
-    @FXML
-    CodeArea textArea;
     @FXML
     CheckBox autoProcess;
 
     @FXML
-    ToolBar fidParToolBar;
-    @FXML
-    TableView<VendorPar> fidParTableView;
-    @FXML
-    HBox navHBox;
-    @FXML
-    private VBox dimVBox;
-    @FXML
-    private Slider vecNum1;
-    @FXML
-    VBox navDetailsVBox;
-    private TextField[] rowTextBoxes = new TextField[0];
-    @FXML
-    private TextField fileIndexTextBox;
-    @FXML
-    private ListView<DatasetGroupIndex> corruptedIndicesListView;
-    ToggleGroup rowToggleGroup = new ToggleGroup();
-    @FXML
-    private ChoiceBox<String> realImagChoiceBox;
-    @FXML
     private ChoiceBox<DisplayMode> viewMode;
-    @FXML
-    private Button datasetFileButton;
     @FXML
     private Button processDatasetButton;
     @FXML
@@ -206,21 +173,17 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     @FXML
     private Button opDocButton;
     @FXML
-    private ChoiceBox<Integer> scanMaxN;
-    @FXML
-    private ChoiceBox<Double> scanRatio;
-    private final List<String> realImagChoices = new ArrayList<>();
-    ChangeListener<String> vecNumListener;
-    int[] rowIndices;
-    int[] vecSizes;
+
     Map<String, TitledPane> dimensionPanes = new HashMap<>();
     ObservableMap<String, List<ProcessingOperationInterface>> mapOpLists;
     String currentDimName = "";
+    TitledPane referencePane;
+    NavigatorGUI navigatorGUI;
+    private Button datasetFileButton = new Button("File...");
 
     CheckBox genLSCatalog;
     TextField nLSCatFracField;
     TextField[][] lsTextFields;
-    List<RadioButton> vectorDimButtons = new ArrayList<>();
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
     PolyChart chart;
@@ -237,12 +200,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     Throwable processingThrowable;
     String currentText = "";
 
-    ProcessingCodeAreaUtil codeAreaUtil;
     private final ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     private final AtomicReference<Dataset> saveObject = new AtomicReference<>();
     ScheduledFuture futureUpdate = null;
     Map<String, PhaserAndPane> phasersPanes = new HashMap<>();
+    ScriptGUI scriptGUI = new ScriptGUI();
 
 
     public static ProcessorController create(FXMLController fxmlController, NmrControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
@@ -256,8 +219,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         controller.nmrControlRightSidePane = nmrControlRightSidePane;
         fxmlController.processorCreated(controller.mainBox);
         nmrControlRightSidePane.addContent(controller);
-        controller.createSimulatorAccordion();
-        controller.viewMode.setValue(DisplayMode.FID_OPS);
+        if (chart.getDataset() == null) {
+            controller.createSimulatorAccordion();
+            controller.viewMode.setValue(DisplayMode.FID_OPS);
+        }
+        controller.navigatorGUI = NavigatorGUI.create(controller);
 
         return controller;
     }
@@ -268,6 +234,14 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     public boolean isVisible() {
         return mainBox.isVisible();
+    }
+
+    @FXML
+    public void showNavigator() {
+        if (viewMode.getValue() == DisplayMode.SPECTRUM) {
+            viewMode.setValue(DisplayMode.FID_OPS);
+        }
+        navigatorGUI.showStage();
     }
 
     public PropertyManager getPropertyManager() {
@@ -339,8 +313,13 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             currentDimName = "";
         } else if (titledPane.isExpanded() && !currentDimName.equals(name)) {
             currentDimName = name;
+            if (name.equals("D1-REF")) {
+                currentDimName = "D1";
+            }
             if (!currentDimName.isBlank()) {
-                accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentDimName).getContent();
+                if (dimensionPanes.containsKey(name)) {
+                    accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentDimName).getContent();
+                }
                 if (currentDimName.charAt(0) == 'D' && StringUtils.isNumeric(currentDimName.substring(1))) {
                     dimChoice.setValue(currentDimName);
                     updatePhaser();
@@ -355,7 +334,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         }
     }
 
-    private void addTitleBar(TitledPane titledPane, String name) {
+    private void addTitleBar(TitledPane titledPane, String name, boolean addMenu) {
         titledPane.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         titledPane.setGraphicTextGap(0);
         titledPane.setSkin(new ButtonTitlePaneSkin(titledPane));
@@ -373,21 +352,24 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         // Create spacer to separate label and buttons
         Pane spacer = ToolBarUtils.makeFiller(100);
         titleBox.getChildren().add(spacer);
-        MenuButton menuButton = new MenuButton("");
-        menuButton.setGraphic(GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "10"));
-        menuButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-        if (name.equals("FULL DATASET")) {
-            menuButton.getItems().addAll(getMenuItemsForDataset());
-        } else if (name.startsWith("POLISHING")) {
-            menuButton.getItems().addAll(getMenuItemsForPolishingt());
-        } else {
-            menuButton.getItems().addAll(getMenuItems());
+        if (addMenu) {
+            MenuButton menuButton = new MenuButton("");
+            menuButton.setGraphic(GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "10"));
+            menuButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            if (name.equals("FULL DATASET")) {
+                menuButton.getItems().addAll(getMenuItemsForDataset());
+            } else if (name.startsWith("POLISHING")) {
+                menuButton.getItems().addAll(getMenuItemsForPolishingt());
+            } else {
+                menuButton.getItems().addAll(getMenuItems());
+            }
+            titleBox.getChildren().addAll(menuButton);
+            menuButton.setDisable(true);
+            menuButton.disableProperty().bind(titledPane.expandedProperty().not());
         }
-        titleBox.getChildren().addAll(menuButton);
         titledPane.setGraphic(titleBox);
-        menuButton.setDisable(true);
-        menuButton.disableProperty().bind(titledPane.expandedProperty().not());
     }
+
     private static class ButtonTitlePaneSkin extends TitledPaneSkin {
         final Region arrow;
 
@@ -411,7 +393,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         TitledPane titledPane = new TitledPane();
         titledPane.expandedProperty().addListener(c -> setActivePane(name, titledPane));
         titledPane.setText(title);
-        addTitleBar(titledPane, title);
+        addTitleBar(titledPane, title, true);
         ModifiableAccordionScrollPane accordion1 = new ModifiableAccordionScrollPane();
         titledPane.setContent(accordion1);
         dimensionPanes.put(name, titledPane);
@@ -434,11 +416,15 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         dimensionPanes.clear();
         dimAccordion.getPanes().clear();
         int nDim = complex.length;
+        dimAccordion.getPanes().add(referencePane);
+        referencePane.expandedProperty().addListener(c -> setActivePane("D1-REF", referencePane));
+
+        refManager.updateReferencePane(getNMRData(), nDim);
         dimChoice.getSelectionModel().selectedItemProperty().removeListener(dimListener);
         ObservableList<String> dimList = FXCollections.observableArrayList();
         for (int i = 1; i <= nDim; i++) {
             addTitlePane("D" + i, "DIMENSION " + i);
-            dimList.add("D"+i);
+            dimList.add("D" + i);
             if ((i == 1) && (nDim > 2)) {
                 StringBuilder sBuilder = new StringBuilder();
                 sBuilder.append("D2");
@@ -454,7 +440,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             addTitlePane("D_ALL", "FULL DATASET");
 
             for (int i = 1; i <= nDim; i++) {
-                addTitlePane("P" + i, "POLISHING " + i);
+                addTitlePane("P" + i, "DIMENSION " + i + " (post processing)");
             }
         }
         currentDimName = "D" + 1;
@@ -463,7 +449,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         dimChoice.getSelectionModel().select(0);
         dimChoice.getSelectionModel().selectedItemProperty().addListener(dimListener);
 
-        updateVecNumChoice(complex);
+        navigatorGUI.updateVecNumChoice(complex);
 
         updateLineshapeCatalog(nDim);
     }
@@ -732,6 +718,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return accordion.getPanes().stream().anyMatch(p -> p.getText().equals(trimOp));
     }
 
+    public boolean detailSelected() {
+        return detailButton.isSelected();
+    }
 
     private void updateTitledPane(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, ProcessingOperation op) {
         titledPane.setProcessingOperation(op);
@@ -814,7 +803,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         int index = -1;
         TitledPane activePane = null;
         int i = 0;
-        for (var pane:accordion.getPanes()) {
+        for (var pane : accordion.getPanes()) {
             if (pane.isExpanded()) {
                 index = i;
                 activePane = pane;
@@ -828,9 +817,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return isPhaserActive.get();
     }
 
-    record PhaserAndPane(TitledPane phaserPane, Phaser phaser) {}
+    record PhaserAndPane(TitledPane phaserPane, Phaser phaser) {
+    }
 
-    private Pane makePhaserPane( ModifiableAccordionScrollPane.ModifiableTitlePane phaserPane, ProcessingOperation processingOperation) {
+    private Pane makePhaserPane(ModifiableAccordionScrollPane.ModifiableTitlePane phaserPane, ProcessingOperation processingOperation) {
         VBox phaserBox = new VBox();
         Phaser phaser = new Phaser(chart.getFXMLController(), phaserBox, Orientation.HORIZONTAL, processingOperation);
         PhaserAndPane phaserAndPane = new PhaserAndPane(phaserPane, phaser);
@@ -967,7 +957,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return "REGIONS(regions=[])";
     }
 
-    List<Double>  getCurrentRegion(ProcessingOperation processingOperation) {
+    List<Double> getCurrentRegion(ProcessingOperation processingOperation) {
         List<Double> fracs = new ArrayList<>();
         Map<String, ProcessingOperation.OperationParameter> params = processingOperation.getParameterMap();
         if (params.containsKey("regions")) {
@@ -1044,12 +1034,37 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         accordionPane.getPanes().clear();
         int i = 0;
         currentDimName = name;
-        for (var processingOperation: processingOperations) {
+        for (var processingOperation : processingOperations) {
             ModifiableAccordionScrollPane.ModifiableTitlePane pane = newTitledPane(accordionPane, processingOperation, i++);
         }
     }
+
+    private void updateAllAccordionTitles() {
+        for (var dimensionPane : dimensionPanes.values()) {
+            var content = dimensionPane.getContent();
+            if (content instanceof ModifiableAccordionScrollPane accordion) {
+                for (var pane : accordion.getPanes()) {
+                    if (pane instanceof ModifiableAccordionScrollPane.ModifiableTitlePane titledPane) {
+                        titledPane.setDetailedTitle(detailButton.isSelected());
+                        if (titledPane.getContent() instanceof VBox vBox) {
+                            if (!vBox.getChildren().isEmpty()) {
+                                if (vBox.getChildren().get(0) instanceof ModifiableAccordionScrollPane spane) {
+                                    for (var pane2 : spane.getPanes()) {
+                                        if (pane2 instanceof ModifiableAccordionScrollPane.ModifiableTitlePane titledPane2) {
+                                            titledPane2.setDetailedTitle(detailButton.isSelected());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private void updateAccordionTitles() {
-        for (var pane: accordion.getPanes()) {
+        for (var pane : accordion.getPanes()) {
             ModifiableAccordionScrollPane.ModifiableTitlePane mPane = (ModifiableAccordionScrollPane.ModifiableTitlePane) pane;
             mPane.setDetailedTitle(detailButton.isSelected());
         }
@@ -1080,7 +1095,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         } else if (opName.equals("APODIZE")) {
             int nDim = 1;
             if (getNMRData() != null) {
-                 nDim = getNMRData().getNDim();
+                nDim = getNMRData().getNDim();
             }
             if (nDim == 1) {
                 opName = "EXPD";
@@ -1096,11 +1111,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             }
             apodizationGroup.update(opName, opName);
         } else if (BaselineGroup.opInGroup(opName)) {
-                int index = propertyManager.getCurrentPosition(ops, "Baseline Correction");
+            int index = propertyManager.getCurrentPosition(ops, "Baseline Correction");
             BaselineGroup baselineGroup = index != -1 ? (BaselineGroup) ops.get(index) : new BaselineGroup();
-                if (index == -1) {
-                    propertyManager.addOp(baselineGroup, ops, index);
-                }
+            if (index == -1) {
+                propertyManager.addOp(baselineGroup, ops, index);
+            }
             baselineGroup.update(opName, opName);
         } else {
             int index = propertyManager.getCurrentPosition(ops, opName);
@@ -1138,29 +1153,29 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     void updateScriptDisplay() {
         String script = getFullScript();
         if (!script.equals(currentText)) {
-            textArea.replaceText(script);
+            scriptGUI.replaceText(script);
             currentText = script;
         }
         chartProcessor.setScriptValid(true);
     }
 
     boolean fixDatasetName() {
-        String script = textArea.getText();
+        String script = scriptGUI.getText();
         if (!chartProcessor.scriptHasDataset(script)) {
             Optional<String> scriptOpt = chartProcessor.fixDatasetName(script);
             if (scriptOpt.isEmpty()) {
                 return false;
             }
-            textArea.replaceText(scriptOpt.get());
+            scriptGUI.replaceText(scriptOpt.get());
         }
         return true;
     }
 
     void unsetDatasetName() {
-        String script = textArea.getText();
+        String script = scriptGUI.getText();
         if (chartProcessor.scriptHasDataset(script)) {
             script = chartProcessor.removeDatasetName(script);
-            textArea.replaceText(script);
+            scriptGUI.replaceText(script);
         }
     }
 
@@ -1281,6 +1296,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     public void parseScript(String scriptString) {
+        boolean autoProcessState = autoProcess.isSelected();
+        setAutoProcess(false);
         HashSet<String> refOps = new HashSet<>();
         refOps.add("skip");
         refOps.add("sw");
@@ -1289,11 +1306,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         refOps.add("label");
         refOps.add("acqOrder");
         refOps.add("acqarray");
+        refOps.add("acqmode");
         refOps.add("acqsize");
         refOps.add("tdsize");
         refOps.add("fixdsp");
         if (!scriptString.equals(currentText)) {
-            textArea.replaceText(scriptString);
+            scriptGUI.replaceText(scriptString);
             currentText = scriptString;
         }
         String[] lines = scriptString.split("\n");
@@ -1377,19 +1395,20 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 } else if (refOps.contains(opName)) {
                     headerList.add(line);
                 } else if (opName.equals("markrows")) {
-                    parseMarkRows(args);
+                    navigatorGUI.parseMarkRows(args);
                 }
             }
         }
         chartProcessor.setScripts(headerList, mapOpLists);
         String script = getFullScript();
         if (!script.equals(currentText)) {
-            textArea.replaceText(script);
+            scriptGUI.replaceText(script);
             currentText = script;
         }
         chartProcessor.setScriptValid(true);
-        updateSkipIndices();
+        navigatorGUI.updateSkipIndices();
         updateAllAccordions();
+        setAutoProcess(autoProcessState);
     }
 
     @FXML
@@ -1397,7 +1416,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         File parent = chartProcessor.getScriptDir();
         if (parent != null) {
             File scriptFile = chartProcessor.getDefaultScriptFile();
-            String script = textArea.getText();
+            String script = scriptGUI.getText();
             try {
                 chartProcessor.writeScript(script, scriptFile);
             } catch (IOException ex) {
@@ -1417,7 +1436,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         }
         File saveFile = fileChooser.showSaveDialog(null);
         if (saveFile != null) {
-            String script = textArea.getText();
+            String script = scriptGUI.getText();
             try {
                 chartProcessor.writeScript(script, saveFile);
             } catch (IOException ex) {
@@ -1545,7 +1564,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                             doProcessWhenDone.set(false);
                             isProcessing.set(true);
                             Processor.getProcessor().setProcessorAvailableStatus(false);
-                            script = textArea.getText();
+                            script = scriptGUI.getText();
                             try (PythonInterpreter processInterp = new PythonInterpreter()) {
                                 updateStatus("Start processing");
                                 updateTitle("Start Processing");
@@ -1651,14 +1670,16 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         chartProcessor = new ChartProcessor(this);
         mapOpLists = chartProcessor.mapOpLists;
 
-        navHBox.getChildren().clear();
         List<MenuItem> menuItems = getMenuItems();
 
         popOver.setContentNode(new Text("hello"));
 
         propertyManager = new PropertyManager(this, opTextField, popOver);
-        refManager = new RefManager(this, refSheet);
-        refManager.setupItems(0);
+        referencePane = new TitledPane();
+        referencePane.setText("PARAMETERS");
+        addTitleBar(referencePane, "PARAMETERS", false);
+
+        refManager = new RefManager(this, referencePane);
         statusBar.setProgress(0.0);
 
         statusBar.getLeftItems().add(statusCircle);
@@ -1666,24 +1687,31 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         statusBarToolTip.textProperty().bind(statusBar.textProperty());
         statusBar.setTooltip(statusBarToolTip);
 
-        codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
-        textArea.setEditable(false);
-        textArea.setWrapText(true);
-        scanRatio.getItems().addAll(0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 10.0);
-        scanRatio.setValue(3.0);
-        scanMaxN.getItems().addAll(5, 10, 20, 50, 100, 200);
-        scanMaxN.setValue(50);
         viewMode.getItems().addAll(DisplayMode.values());
         Text detailIcon = GlyphsDude.createIcon(FontAwesomeIcon.INFO,
                 AnalystApp.ICON_SIZE_STR);
         detailButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         detailButton.setGraphic(detailIcon);
-        detailButton.setOnAction(e -> updateAccordionTitles());
+        detailButton.setOnAction(e -> updateAllAccordionTitles());
         dimChoice.disableProperty().bind(viewMode.valueProperty().isEqualTo(DisplayMode.SPECTRUM));
 
-        initTable();
+        datasetFileButton.setOnAction(e -> datasetFileAction());
+
         setupListeners();
     }
+
+    public Button getDatasetFileButton() {
+        return datasetFileButton;
+    }
+
+    NMRData getNMRData() {
+        NMRData nmrData = null;
+        if (chartProcessor != null) {
+            nmrData = chartProcessor.getNMRData();
+        }
+        return nmrData;
+    }
+
 
     public void updateAfterOperationListChanged() {
         chartProcessor.updateOpList();
@@ -1706,21 +1734,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
         dimListener = (observableValue, dimName, dimName2) -> {
             chartProcessor.setVecDim(dimName2);
-            try {
-                if (StringUtils.isNumeric(dimName2.substring(1))) {
-                    int vecDim = Integer.parseInt(dimName2.substring(1));
-                    refManager.setupItems(vecDim - 1);
-                } else {
-                    refManager.clearItems();
-                }
-            } catch (NumberFormatException nfE) {
-                log.warn("Unable to parse vector dimension.", nfE);
-            }
         };
         refDimListener = (observableValue, number, number2) -> {
             int vecDim = (Integer) number2;
             log.info("refdim {}", vecDim);
-            refManager.setupItems(vecDim);
         };
 
         Processor.getProcessor().addProcessorAvailableStatusListener(processorAvailableStatusListener);
@@ -1732,24 +1749,14 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                         .or(processorAvailable.isEqualTo(false)));
         haltProcessButton.disableProperty().bind(stateProperty.isNotEqualTo(Worker.State.RUNNING));
 
-        rowToggleGroup.selectedToggleProperty().addListener(e -> handleRowDimChange());
-        vecNumListener = (observableValue, string, string2) -> {
-            String text = realImagChoiceBox.getValue();
-            int vecNum = realImagChoices.indexOf(text);
-            chartProcessor.setVector(vecNum);
-            setFileIndex();
-        };
-
         statusCircle.setOnMousePressed((Event d) -> {
             if (processingThrowable != null) {
                 ExceptionDialog dialog = new ExceptionDialog(processingThrowable);
                 dialog.showAndWait();
             }
         });
-
-        corruptedIndicesListView.getSelectionModel().selectedItemProperty().addListener(e -> corruptedIndexListener());
-
     }
+
     private List<MenuItem> getMenuItemsForDataset() {
         List<MenuItem> menuItems = new ArrayList<>();
         String[] opNames = {"AutoPhase Dataset"};
@@ -1840,373 +1847,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         Processor.getProcessor().removeProcessorAvailableStatusListener(processorAvailableStatusListener);
     }
 
-    void initTable() {
-        TableColumn<VendorPar, String> nameCol = new TableColumn<>("Name");
-        nameCol.setCellValueFactory(new PropertyValueFactory("Name"));
-        nameCol.setEditable(false);
-        nameCol.setPrefWidth(125);
 
-        TableColumn<VendorPar, String> valueCol = new TableColumn<>("Value");
-        valueCol.setCellValueFactory(new PropertyValueFactory("Value"));
-        valueCol.setEditable(false);
-        valueCol.setPrefWidth(260);
-        fidParTableView.getColumns().setAll(nameCol, valueCol);
-
-    }
-
-    public void updateParTable(NMRData data) {
-        List<VendorPar> vPars = data.getPars();
-        vPars.sort(Comparator.comparing(VendorPar::getName));
-        ObservableList<VendorPar> pars = FXCollections.observableArrayList(vPars);
-        fidParTableView.setItems(pars);
-    }
-
-    @FXML
-    protected void vectorStatus(int[] sizes, int vecDim) {
-        int nDim = sizes.length;
-        vecSizes = sizes.clone();
-        if (nDim > 1) {
-            if (rowTextBoxes.length != (nDim - 1)) {
-                updateRowBoxes(nDim);
-            }
-            int j = 0;
-            if (vecNum1 != null) {
-                for (int i = 0; i < nDim; i++) {
-                    if (i != vecDim) {
-                        String dimName = String.valueOf(i + 1);
-                        vectorDimButtons.get(j).setText(dimName);
-                        if (j == 0) {
-                            updateVectorSlider(sizes[i]);
-                        }
-                        rowTextBoxes[j].setText(1 + " / " + sizes[i]);
-                        fileIndexTextBox.setText("1");
-                        realImagChoiceBox.setValue(realImagChoices.get(0));
-                        j++;
-                    }
-                }
-            }
-        } else {
-            navHBox.getChildren().clear();
-        }
-    }
-
-    private void updateVectorSlider(int size) {
-        vecNum1.setMax(size);
-        int majorTic = Math.max(1, size / 8);
-        vecNum1.setMajorTickUnit(majorTic);
-        vecNum1.setMinorTickCount(4);
-        vecNum1.setValue(1);
-    }
-
-    private void updateRowBoxes(int nDim) {
-        vectorDimButtons.clear();
-        navHBox.getChildren().clear();
-        navHBox.getChildren().add(vecNum1);
-        navHBox.getChildren().add(navDetailsVBox);
-        rowTextBoxes = new TextField[nDim - 1];
-        dimVBox.setId("dimVBox");
-        dimVBox.getChildren().clear();
-        for (int i = 0; i < nDim - 1; i++) {
-            rowTextBoxes[i] = new TextField();
-            rowTextBoxes[i].setEditable(false);
-            HBox.setHgrow(rowTextBoxes[i], Priority.ALWAYS);
-            RadioButton radioButton = new RadioButton((i + 2) + ": ");
-            dimVBox.getChildren().add(new HBox(radioButton, rowTextBoxes[i]));
-            radioButton.setToggleGroup(rowToggleGroup);
-            vectorDimButtons.add(radioButton);
-            if (i == 0) {
-                rowToggleGroup.selectToggle(radioButton);
-            }
-        }
-        fileIndexTextBox.setPrefWidth(60);
-        fileIndexTextBox.setEditable(false);
-    }
-
-    Integer getRowChoice() {
-        RadioButton radioButton = (RadioButton) rowToggleGroup.getSelectedToggle();
-        int iDim;
-        if (radioButton == null) {
-            iDim = 1;
-        } else {
-            String text = radioButton.getText();
-            iDim = Integer.parseInt(text.substring(0, 1));
-        }
-        return iDim;
-    }
-
-    void handleRowDimChange() {
-        Integer iDim = getRowChoice();
-        if (iDim != null) {
-            int[] rows = getRows();
-            if (rows.length > 0) {
-                if ((vecNum1 != null) && vecNum1.isVisible()) {
-                    int size = vecSizes[iDim - 1];
-                    updateVectorSlider(size);
-                    vecNum1.setMax(size);
-                }
-            }
-        }
-    }
-
-    protected void setRowLabel(int row, int size) {
-        for (int i = 0; i < vectorDimButtons.size(); i++) {
-            if (vectorDimButtons.get(i).isSelected()) {
-                rowTextBoxes[i].setText(row + " / " + size);
-            }
-        }
-    }
-
-    void setFileIndex(int[] indices) {
-        this.rowIndices = indices;
-        setFileIndex();
-    }
-
-    void setFileIndex() {
-        if (rowIndices != null) {
-            String text = realImagChoiceBox.getValue();
-            int riIndex = realImagChoices.indexOf(text);
-            if ((riIndex != -1) && (riIndex < rowIndices.length)) {
-                int index = rowIndices[riIndex];
-                fileIndexTextBox.setText(String.valueOf(index + 1));
-            }
-        }
-    }
-
-    String getRealImaginaryChoice() {
-        return realImagChoiceBox.getValue();
-    }
-
-    @FXML
-    private void handleVecNum(Event event) {
-        Slider slider = (Slider) event.getSource();
-        int iRow = (int) slider.getValue() - 1;
-        int iDim = getRowChoice() - 1;
-        updateRowLabels(iDim, iRow);
-        int[] rows = getRows();
-        chartProcessor.vecRow(rows);
-        chart.layoutPlotChildren();
-    }
-
-    private void updateRowLabels(int iDim, int i) {
-        if (getNMRData() != null) {
-            int nDim = getNMRData().getNDim();
-            int size = 1;
-            if (nDim > 1) {
-                size = getNMRData().getSize(iDim);
-            }
-
-            if (i >= size) {
-                i = size - 1;
-            }
-            if (i < 0) {
-                i = 0;
-            }
-            setRowLabel(i + 1, size);
-        }
-    }
-
-    private void corruptedIndexListener() {
-        DatasetGroupIndex groupIndex = corruptedIndicesListView.getSelectionModel().getSelectedItem();
-        if (groupIndex != null) {
-            int[] indices = groupIndex.getIndices();
-            for (int iDim = 0; iDim < indices.length; iDim++) {
-                updateRowLabels(iDim + 1, indices[iDim]);
-            }
-            int[] rows = getRows();
-            String realImagChoice = groupIndex.getGroupIndex();
-            if (!realImagChoice.equals("")) {
-                realImagChoiceBox.setValue(realImagChoice);
-            }
-            chartProcessor.vecRow(rows);
-        }
-        chart.layoutPlotChildren();
-    }
-
-    public int[] getRows() {
-        int[] rows = new int[rowTextBoxes.length];
-        for (int i = 0; i < rows.length; i++) {
-            if (rowTextBoxes[i] == null) {
-                rows[i] = 0;
-            } else {
-                String text = rowTextBoxes[i].getText();
-                if (text.isBlank()) {
-                    rows[i] = 0;
-                } else {
-                    String[] fields = text.split("/");
-                    int row = Integer.parseInt(fields[0].trim()) - 1;
-                    rows[i] = row;
-                }
-            }
-        }
-        return rows;
-    }
-
-    @FXML
-    private void handleVecRelease(Event event) {
-        Slider slider = (Slider) event.getSource();
-        int iRow = (int) slider.getValue();
-        int delta = (int) (slider.getMax() - slider.getMin());
-
-        int start = (delta / 4 * (iRow / delta / 4)) - delta / 2;
-        if (start < 1) {
-            start = 1;
-        }
-        double end = (double) start + delta;
-        slider.setMin(start);
-        slider.setMax(end);
-
-    }
-
-    protected void updateVecNumChoice(boolean[] complex) {
-        char[] chars = {'R', 'I'};
-        realImagChoices.clear();
-        realImagChoiceBox.getItems().clear();
-        int nDim = complex.length;
-        if (nDim > 1) {
-            int[] sizes = new int[nDim - 1];
-            for (int iDim = 1; iDim < nDim; iDim++) {
-                sizes[iDim - 1] = complex[iDim] ? 2 : 1;
-            }
-            realImagChoiceBox.valueProperty().removeListener(vecNumListener);
-            StringBuilder sBuilder = new StringBuilder();
-            MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
-            var iterator = counter.iterator();
-            while (iterator.hasNext()) {
-                iterator.next();
-                int[] counts = iterator.getCounts();
-                sBuilder.setLength(0);
-                for (int i : counts) {
-                    sBuilder.append(chars[i]);
-                }
-                realImagChoiceBox.getItems().add(sBuilder.toString());
-                realImagChoices.add(sBuilder.toString());
-            }
-            realImagChoiceBox.setValue(realImagChoices.get(0));
-            realImagChoiceBox.valueProperty().addListener(vecNumListener);
-        }
-    }
-
-    NMRData getNMRData() {
-        NMRData nmrData = null;
-        if (chartProcessor != null) {
-            nmrData = chartProcessor.getNMRData();
-        }
-        return nmrData;
-    }
-
-    @FXML
-    private void addCorruptedIndex() {
-        int[] rows = getRows();
-        NMRData nmrData = getNMRData();
-        if (nmrData != null) {
-            nmrData.addSkipGroup(rows, getRealImaginaryChoice());
-        }
-        updateSkipIndices();
-    }
-
-    @FXML
-    private void scanForCorruption() {
-        clearCorruptedIndex();
-        NMRData nmrData = getNMRData();
-        if (nmrData != null) {
-            if (nmrData.getSampleSchedule() != null) {
-                GUIUtils.warn("Corruption Scan", "Can't scan a NUS dataset");
-                return;
-            }
-            double ratio = scanRatio.getValue();
-            int scanN = scanMaxN.getValue();
-            List<ChartProcessor.VecIndexScore> indices = chartProcessor.scanForCorruption(ratio, scanN);
-            for (ChartProcessor.VecIndexScore vecIndexScore : indices) {
-                var vecIndex = vecIndexScore.vecIndex();
-                int maxIndex = vecIndexScore.maxIndex();
-                int[][] outVec = vecIndex.getOutVec(0);
-                int[] groupIndices = new int[outVec.length - 1];
-                for (int i = 0; i < groupIndices.length; i++) {
-                    groupIndices[i] = outVec[i + 1][0] / 2;
-                }
-                DatasetGroupIndex groupIndex = new DatasetGroupIndex(groupIndices, realImagChoices.get(maxIndex));
-                nmrData.addSkipGroup(groupIndex);
-            }
-        }
-        updateSkipIndices();
-    }
-
-    @FXML
-    private void addCorruptedDim() {
-        int[] rows = getRows();
-        int iDim = getRowChoice() - 2;
-        for (int i = 0; i < rows.length; i++) {
-            if (i != iDim) {
-                rows[i] = -1;
-            }
-        }
-        NMRData nmrData = getNMRData();
-        if (nmrData != null) {
-            nmrData.addSkipGroup(rows, "");
-        }
-        updateSkipIndices();
-    }
-
-    void updateSkipIndices() {
-        corruptedIndicesListView.setItems(getSkipList());
-        updateScriptDisplay();
-    }
-
-    @FXML
-    private void clearCorruptedIndex() {
-        NMRData nmrData = getNMRData();
-        if (nmrData != null) {
-            nmrData.clearSkipGroups();
-        }
-        updateSkipIndices();
-    }
-
-    @FXML
-    private void deleteCorruptedIndex() {
-        NMRData nmrData = getNMRData();
-        if (nmrData != null) {
-            int index = corruptedIndicesListView.getSelectionModel().getSelectedIndex();
-            if (index >= 0) {
-                nmrData.getSkipGroups().remove(index);
-            }
-        }
-        updateSkipIndices();
-    }
-
-    public Optional<String> getSkipString() {
-        Optional<String> result = Optional.empty();
-        NMRData nmrData = getNMRData();
-        if (nmrData != null) {
-            result = DatasetGroupIndex.getSkipString(nmrData.getSkipGroups());
-        }
-        return result;
-    }
-
-    public ObservableList<DatasetGroupIndex> getSkipList() {
-        ObservableList<DatasetGroupIndex> groupList = FXCollections.observableArrayList();
-        NMRData nmrData = getNMRData();
-        if (nmrData != null) {
-            groupList.addAll(nmrData.getSkipGroups());
-        }
-        return groupList;
-    }
-
-    void parseMarkRows(String markRowsArg) {
-        NMRData nmrData = getNMRData();
-        if (nmrData != null) {
-            nmrData.getSkipGroups().clear();
-            String[] fields = markRowsArg.split("\\]\\s*,\\s*\\[");
-            for (var field : fields) {
-                field = field.trim();
-                if (field.charAt(0) == '[') {
-                    field = field.substring(1);
-                }
-                if (field.endsWith("]")) {
-                    field = field.substring(0, field.length() - 1);
-                }
-                DatasetGroupIndex datasetGroupIndex = new DatasetGroupIndex(field);
-                nmrData.addSkipGroup(datasetGroupIndex);
-            }
-        }
+    public void showScriptGUI() {
+        scriptGUI.showStage();
     }
 }
