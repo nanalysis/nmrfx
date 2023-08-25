@@ -327,6 +327,14 @@ public class ChartProcessor {
         }
     }
 
+    public void setAcqMode(int dim, String acqMode) {
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            nmrData.setAcqMode(dim, acqMode);
+            updateCounter();
+        }
+    }
+
     public boolean getFixDSP() {
         return fixDSP;
     }

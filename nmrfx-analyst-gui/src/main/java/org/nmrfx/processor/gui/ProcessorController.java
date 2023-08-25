@@ -334,7 +334,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         }
     }
 
-    private void addTitleBar(TitledPane titledPane, String name) {
+    private void addTitleBar(TitledPane titledPane, String name, boolean addMenu) {
         titledPane.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         titledPane.setGraphicTextGap(0);
         titledPane.setSkin(new ButtonTitlePaneSkin(titledPane));
@@ -352,20 +352,22 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         // Create spacer to separate label and buttons
         Pane spacer = ToolBarUtils.makeFiller(100);
         titleBox.getChildren().add(spacer);
-        MenuButton menuButton = new MenuButton("");
-        menuButton.setGraphic(GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "10"));
-        menuButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-        if (name.equals("FULL DATASET")) {
-            menuButton.getItems().addAll(getMenuItemsForDataset());
-        } else if (name.startsWith("POLISHING")) {
-            menuButton.getItems().addAll(getMenuItemsForPolishingt());
-        } else {
-            menuButton.getItems().addAll(getMenuItems());
+        if (addMenu) {
+            MenuButton menuButton = new MenuButton("");
+            menuButton.setGraphic(GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "10"));
+            menuButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            if (name.equals("FULL DATASET")) {
+                menuButton.getItems().addAll(getMenuItemsForDataset());
+            } else if (name.startsWith("POLISHING")) {
+                menuButton.getItems().addAll(getMenuItemsForPolishingt());
+            } else {
+                menuButton.getItems().addAll(getMenuItems());
+            }
+            titleBox.getChildren().addAll(menuButton);
+            menuButton.setDisable(true);
+            menuButton.disableProperty().bind(titledPane.expandedProperty().not());
         }
-        titleBox.getChildren().addAll(menuButton);
         titledPane.setGraphic(titleBox);
-        menuButton.setDisable(true);
-        menuButton.disableProperty().bind(titledPane.expandedProperty().not());
     }
 
     private static class ButtonTitlePaneSkin extends TitledPaneSkin {
@@ -391,7 +393,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         TitledPane titledPane = new TitledPane();
         titledPane.expandedProperty().addListener(c -> setActivePane(name, titledPane));
         titledPane.setText(title);
-        addTitleBar(titledPane, title);
+        addTitleBar(titledPane, title, true);
         ModifiableAccordionScrollPane accordion1 = new ModifiableAccordionScrollPane();
         titledPane.setContent(accordion1);
         dimensionPanes.put(name, titledPane);
@@ -1306,6 +1308,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         refOps.add("label");
         refOps.add("acqOrder");
         refOps.add("acqarray");
+        refOps.add("acqmode");
         refOps.add("acqsize");
         refOps.add("tdsize");
         refOps.add("fixdsp");
@@ -1676,6 +1679,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         propertyManager = new PropertyManager(this, opTextField, popOver);
         referencePane = new TitledPane();
         referencePane.setText("PARAMETERS");
+        addTitleBar(referencePane, "PARAMETERS", false);
+
         refManager = new RefManager(this, referencePane);
         statusBar.setProgress(0.0);
 

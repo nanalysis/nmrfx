@@ -316,8 +316,11 @@ public class RefManager {
         if (iDim == 0) {
             modeType = AcquisitionType.COMPLEX;
         } else {
-            String modeString = nmrData.getSymbolicCoefs(iDim);
-            modeType = getMode(modeString);
+            modeType = nmrData.getUserSymbolicCoefs(iDim);
+            if (modeType == null) {
+                String modeString = nmrData.getSymbolicCoefs(iDim);
+                modeType = getMode(modeString);
+            }
         }
         return modeType;
     }
@@ -559,7 +562,13 @@ public class RefManager {
             toggleButton.setOnAction(e -> updateEditable(toggleButton, dataProp, nmrData, nDim));
             toggleButtons.put(dataProp, toggleButton);
             for (int i = 0; i < nDim; i++) {
-                var prop = dataProp.getObjectProperty();
+                var currentProp = objectPropertyMap.get(dataProp.name() + i);
+                SimpleObjectProperty prop;
+                if (currentProp != null) {
+                    prop = currentProp;
+                } else {
+                    prop = dataProp.getObjectProperty();
+                }
                 objectPropertyMap.put(dataProp.name() + i, prop);
                 if (dataProp == DataProps.SKIP) {
                     if (i > 0) {
@@ -578,10 +587,12 @@ public class RefManager {
                             modeBox.getItems().addAll(AcquisitionType.values());
                         }
                         modeBox.setPrefWidth(100);
-                        AcquisitionType modeType = getMode(nmrData, i);
-                        prop.set(modeType);
+                        if (currentProp == null) {
+                            AcquisitionType modeType = getMode(nmrData, i);
+                            prop.set(modeType);
+                            modeBox.setValue(modeType);
+                        }
 
-                        modeBox.setValue(modeType);
                         gridPane.add(modeBox, i + start, row);
                         modeBox.valueProperty().bindBidirectional(prop);
                         modeBox.valueProperty().addListener(e -> invalidateScript());
@@ -590,7 +601,9 @@ public class RefManager {
                     } else if (dataProp == DataProps.REF) {
                         ReferenceMenuTextField referenceMenuTextField = new ReferenceMenuTextField(processorController);
                         referenceMenuTextField.setPrefWidth(100);
-                        referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));
+                        if (currentProp == null) {
+                            referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));
+                        }
                         referenceMenuTextField.getTextField().textProperty().bindBidirectional(prop);
                         referenceMenuTextField.getTextField().textProperty().addListener(e -> invalidateScript());
                         gridPane.add(referenceMenuTextField, i + start, row);
@@ -601,17 +614,23 @@ public class RefManager {
                         textField.setOnKeyPressed(e -> invalidateScript());
                         gridPane.add(textField, i + start, row);
                         if (prop.get() instanceof Double dValue) {
-                            prop.set(Double.parseDouble(dataProp.getDataValue(nmrData, i)));
+                            if (currentProp == null) {
+                                prop.set(Double.parseDouble(dataProp.getDataValue(nmrData, i)));
+                            }
                             TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(2), 0.0, new FixedDecimalFilter());
                             textFormatter.valueProperty().bindBidirectional(prop);
                             textField.setTextFormatter(textFormatter);
                         } else if (prop.get() instanceof Integer dValue) {
-                            prop.set(Integer.parseInt(dataProp.getDataValue(nmrData, i)));
+                            if (currentProp == null) {
+                                prop.set(Integer.parseInt(dataProp.getDataValue(nmrData, i)));
+                            }
                             TextFormatter<Integer> textFormatter = new TextFormatter<>(new PositiveIntegerStringConverter(), 0, new PositiveIntegerFilter());
                             textFormatter.valueProperty().bindBidirectional(prop);
                             textField.setTextFormatter(textFormatter);
                         } else {
-                            prop.set(dataProp.getDataValue(nmrData, i));
+                            if (currentProp == null) {
+                                prop.set(dataProp.getDataValue(nmrData, i));
+                            }
                             TextFormatter<String> textFormatter = new TextFormatter<>(TextFormatter.IDENTITY_STRING_CONVERTER);
                             textFormatter.valueProperty().bindBidirectional(prop);
                             textField.setTextFormatter(textFormatter);
@@ -680,6 +699,11 @@ public class RefManager {
 
 
     public void setDataFields(List<String> headerList) {
+        objectPropertyMap.clear();
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            updateReferencePane(nmrData, nmrData.getNDim());
+        }
         ChartProcessor chartProcessor = processorController.chartProcessor;
         for (String s : headerList) {
             int index = s.indexOf('(');
@@ -697,13 +721,15 @@ public class RefManager {
                         int dim = 0;
                         for (String parValue : parValues) {
                             dataProps.setObjectValue(objectPropertyMap, parValue, dim);
+                            if (dataProps == DataProps.ACQMODE) {
+                                chartProcessor.setAcqMode(dim, parValue.toUpperCase());
+                            }
                             dim++;
                         }
                     }
                 }
             }
         }
-        NMRData nmrData = getNMRData();
         if (nmrData != null) {
             updateReferencePane(nmrData, nmrData.getNDim());
         }
