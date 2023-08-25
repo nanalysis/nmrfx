@@ -227,7 +227,7 @@ public class ProcessOps implements Callable<Object> {
                         if (coef != null) {
                             int nCoef = coef.length;
                             if (nCoef > 4) {
-                                int numInVec = (int) (Math.log(nCoef / 2) / Math.log(2));
+                                int numInVec = (int) (Math.log(nCoef / 2.0) / Math.log(2.0));
                                 int numOutVec = numInVec;
                                 TDCombine op = new TDCombine(i, numInVec, numOutVec, coef);
                                 operations.add(0, op);

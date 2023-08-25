@@ -97,7 +97,7 @@ public class RefManager {
 
         @Override
         public TextFormatter.Change apply(TextFormatter.Change change) {
-            if (change.getControlNewText().matches("-?([0-9]*)?(\\.[0-9]*)?")) {
+            if (change.getControlNewText().matches("-?([0-9]+)?(\\.[0-9]*)?")) {
                 return change;
             }
             return null;

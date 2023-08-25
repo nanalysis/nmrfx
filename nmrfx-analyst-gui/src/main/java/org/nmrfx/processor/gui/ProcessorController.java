@@ -1044,10 +1044,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             var content = dimensionPane.getContent();
             if (content instanceof ModifiableAccordionScrollPane accordion) {
                 for (var pane : accordion.getPanes()) {
-                    System.out.println("pane is " + pane);
                     if (pane instanceof ModifiableAccordionScrollPane.ModifiableTitlePane titledPane) {
                         titledPane.setDetailedTitle(detailButton.isSelected());
-                        System.out.println(titledPane.getContent());
                         if (titledPane.getContent() instanceof VBox vBox) {
                             if (!vBox.getChildren().isEmpty()) {
                                 if (vBox.getChildren().get(0) instanceof ModifiableAccordionScrollPane spane) {
