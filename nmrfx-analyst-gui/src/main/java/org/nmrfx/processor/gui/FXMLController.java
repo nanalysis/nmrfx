@@ -1512,14 +1512,34 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void updatePhaser(boolean showPhaser) {
+
+        PolyChart chart = getActiveChart();
         if (showPhaser) {
+            Cursor cursor = getCurrentCursor();
+            if (cursor == null) {
+                cursor = Cursor.MOVE;
+            }
+            phaser.sliceStatus(sliceStatusProperty().get());
+            phaser.cursor(cursor);
             borderPane.setRight(phaserBox);
             phaser.getPhaseOp();
             if (chartProcessor == null) {
                 phaser.setPH1Slider(activeChart.getDataPH1());
                 phaser.setPH0Slider(activeChart.getDataPH0());
             }
+
+            if (!chart.is1D()) {
+                sliceStatusProperty().set(true);
+                setCursor(Cursor.CROSSHAIR);
+                chart.getSliceAttributes().setSlice1State(true);
+                chart.getSliceAttributes().setSlice2State(false);
+                chart.getCrossHairs().refresh();
+            }
         } else {
+            sliceStatusProperty().set(phaser.sliceStatus);
+            setCursor(phaser.cursor());
+            setCursor();
+            chart.getCrossHairs().refresh();
             if (borderPane.getRight() == phaserBox) {
                 borderPane.setRight(null);
             }
