@@ -48,6 +48,7 @@ import java.util.Map;
 public class Phaser {
 
     private static final Logger log = LoggerFactory.getLogger(Phaser.class);
+    private final boolean processMode;
     String delImagString = "False";
     FXMLController controller;
     Slider[] sliders = new Slider[2];
@@ -64,6 +65,7 @@ public class Phaser {
 
     public Phaser(FXMLController controller, VBox vbox, Orientation orientation) {
         this.controller = controller;
+        processMode = false;
         makeSliders(vbox, orientation);
         setupMenus(vbox);
     }
@@ -71,6 +73,7 @@ public class Phaser {
     public Phaser(FXMLController controller, VBox vbox, Orientation orientation,
                   ProcessingOperation processingOperation) {
         this.controller = controller;
+        processMode = true;
         this.processingOperation = processingOperation;
         HBox hBox = new HBox();
         setupMenus(hBox);
@@ -236,7 +239,7 @@ public class Phaser {
      void setChartPhaseDim() {
         PolyChart chart = controller.getActiveChart();
         chart.setPhaseDim(phaseChoice.get().equals("X") ? 0 : 1);
-        if ((controller.getChartProcessor() == null) || !controller.isProcessControllerVisible()) {
+        if (!processMode) {
             setPH1Slider(chart.getDataPH1());
             setPH0Slider(chart.getDataPH0());
         }
@@ -418,12 +421,15 @@ public class Phaser {
     public void setPhaseOp(String opString) {
         PolyChart chart = controller.getActiveChart();
         processingOperation.update(opString);
-        chart.getProcessorController().chartProcessor.updateOpList();
-//        int opIndex = chart.getProcessorController().propertyManager.setOp(opString);
-//        chart.getProcessorController().propertyManager.setPropSheet(opIndex, opString);
+        if (processMode) {
+            chart.getProcessorController().chartProcessor.updateOpList();
+        }
     }
 
     public void setPhaseOp() {
+        if (!processMode) {
+            return;
+        }
         PolyChart chart = controller.getActiveChart();
         double ph0 = sliders[0].getValue();
         double ph1 = sliders[1].getValue();
@@ -473,6 +479,9 @@ public class Phaser {
     }
 
     protected void getPhaseOp() {
+        if (!processMode) {
+            return;
+        }
         PolyChart chart = controller.getActiveChart();
         double ph0 = 0.0;
         double ph1 = 0.0;
