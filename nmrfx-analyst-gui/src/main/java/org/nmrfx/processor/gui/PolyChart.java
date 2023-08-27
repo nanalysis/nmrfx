@@ -1014,7 +1014,7 @@ public class PolyChart extends Region {
         if (dataset == null) {
             setPivot(null);
         } else {
-            Orientation orientation = phaseAxis + 1 % 2 == 0 ? Orientation.HORIZONTAL : Orientation.VERTICAL;
+            Orientation orientation = phaseAxis % 2 == 0 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
             setPivot(crossHairs.getPosition(0, orientation));
         }
     }
@@ -1036,28 +1036,50 @@ public class PolyChart extends Region {
         return Optional.ofNullable(vec);
     }
 
-    protected void autoPhase(boolean doMax, boolean doFirst) {
-        if (!is1D()) {
-            return;
-        }
-        getFirstVec().ifPresent(vec -> {
-            if (doMax) {
-                setPh0(vec.autoPhaseByMax());
-            } else {
-                double[] phases = vec.autoPhase(doFirst, 0, 0, 2, 180.0, 1.0);
-                setPh0(phases[0]);
-                setPh1(0.0);
-                if (phases.length == 2) {
-                    setPh1(phases[1]);
-                }
-            }
+    protected void setPivotToMax() {
+        if (is1D()) {
+            getFirstVec().ifPresent(vec -> {
+                int maxIndex = vec.maxIndex().getIndex();
+                double ppm = vec.pointToPPM(maxIndex);
+                setPivot(ppm);
+            });
+        } else {
+            Vec sliceVec = new Vec(32, false);
+            sliceVec.setName("phasing slice");
+            int iOrient = 0;
+            int iCross = 0;
+            DatasetAttributes dataAttr = datasetAttributesList.get(0);
 
-            double sliderPH0 = getPh0() + vec.getPH0();
-            double sliderPH1 = getPh1() + vec.getPH1();
-            controller.getPhaser().handlePh1Reset(sliderPH1);
-            controller.getPhaser().handlePh0Reset(sliderPH0);
-            layoutPlotChildren();
-        });
+            try {
+                dataAttr.getSlice(sliceVec, iOrient,
+                        crossHairs.getPosition(iCross, Orientation.VERTICAL),
+                        crossHairs.getPosition(iCross, Orientation.HORIZONTAL));
+            } catch (IOException ex) {
+                log.error(ex.getMessage(), ex);
+            }
+        }
+    }
+    protected void autoPhase(boolean doMax, boolean doFirst) {
+        if (is1D()) {
+            getFirstVec().ifPresent(vec -> {
+                if (doMax) {
+                    setPh0(vec.autoPhaseByMax());
+                } else {
+                    double[] phases = vec.autoPhase(doFirst, 0, 0, 2, 180.0, 1.0);
+                    setPh0(phases[0]);
+                    setPh1(0.0);
+                    if (phases.length == 2) {
+                        setPh1(phases[1]);
+                    }
+                }
+
+                double sliderPH0 = getPh0() + vec.getPH0();
+                double sliderPH1 = getPh1() + vec.getPH1();
+                controller.getPhaser().handlePh1Reset(sliderPH1);
+                controller.getPhaser().handlePh0Reset(sliderPH0);
+                layoutPlotChildren();
+            });
+        }
     }
 
     protected void expand(Orientation orientation) {
@@ -1123,86 +1145,54 @@ public class PolyChart extends Region {
         return newCenter;
     }
 
-    public void addRegionRange() {
+    public record RegionRange(double pt0, double pt1, double ppm0, double ppm1,  double f0, double f1) {}
+
+    public Optional<RegionRange>  addRegionRange(boolean offsetByExtractRegion) {
         DatasetBase dataset = getDataset();
         DatasetAttributes datasetAttributes = getFirstDatasetAttributes().orElse(null);
         if (dataset == null || datasetAttributes == null || controller.getChartProcessor() == null) {
-            return;
+            return Optional.empty();
         }
         String vecDimName = controller.getChartProcessor().getVecDimName();
         int vecDim = controller.getChartProcessor().getVecDim();
-        double min;
-        double max;
+        double pt0;
+        double pt1;
+        double ppm0;
+        double ppm1;
         int size;
         if (is1D() || vecDimName.equals("D1")) {
-            min = axes.getMode(0).getIndex(datasetAttributes, 0, crossHairs.getPosition(0, Orientation.VERTICAL));
-            max = axes.getMode(0).getIndex(datasetAttributes, 0, crossHairs.getPosition(1, Orientation.VERTICAL));
+            ppm0 = crossHairs.getPosition(0, Orientation.VERTICAL);
+            ppm1 = crossHairs.getPosition(1, Orientation.VERTICAL);
+            pt0 = axes.getMode(0).getIndex(datasetAttributes, 0, ppm0);
+            pt1 = axes.getMode(0).getIndex(datasetAttributes, 0, ppm1);
             size = dataset.getSizeReal(datasetAttributes.dim[0]);
         } else {
-            min = axes.getMode(vecDim).getIndex(datasetAttributes, vecDim, crossHairs.getPosition(0, Orientation.HORIZONTAL));
-            max = axes.getMode(vecDim).getIndex(datasetAttributes, vecDim, crossHairs.getPosition(1, Orientation.HORIZONTAL));
+            ppm0 = crossHairs.getPosition(0, Orientation.HORIZONTAL);
+            ppm1 = crossHairs.getPosition(1, Orientation.HORIZONTAL);
+            pt0 = axes.getMode(0).getIndex(datasetAttributes, 0, ppm0);
+            pt1 = axes.getMode(0).getIndex(datasetAttributes, 0, ppm1);
             size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
         }
-        int[] currentRegion = controller.getExtractRegion(vecDimName, size);
-        if (min > max) {
-            double hold = min;
-            min = max;
-            max = hold;
+        if (pt0 > pt1) {
+            double hold = pt0;
+            pt0 = pt1;
+            pt1 = hold;
         }
-        if (min < 0) {
-            min = 0.0;
+        if (pt0 < 0) {
+            pt0 = 0.0;
         }
-        min += currentRegion[0];
-        max += currentRegion[0];
-        double f1 = min / (size - 1);
-        double f2 = max / (size - 1);
+        if (offsetByExtractRegion) {
+            int[] currentRegion = controller.getExtractRegion(vecDimName, size);
+            pt0 += currentRegion[0];
+            pt1 += currentRegion[0];
+        }
+        double f0 = pt0 / (size - 1);
+        double f1 = pt1 / (size - 1);
         double mul = Math.pow(10.0, Math.ceil(Math.log10(size)));
+        f0 = Math.round(f0 * mul) / mul;
         f1 = Math.round(f1 * mul) / mul;
-        f2 = Math.round(f2 * mul) / mul;
-        processorController.propertyManager.addExtractRegion(min, max, f1, f2);
-    }
-
-    public void addBaselineRange(boolean clearMode) {
-        DatasetBase dataset = getDataset();
-        DatasetAttributes datasetAttributes = getFirstDatasetAttributes().orElse(null);
-        if (dataset == null || datasetAttributes == null || controller.getChartProcessor() == null) {
-            return;
-        }
-
-        String vecDimName = controller.getChartProcessor().getVecDimName();
-        int vecDim = controller.getChartProcessor().getVecDim();
-        double min;
-        double max;
-        int size;
-        if (is1D() || vecDimName.equals("D1")) {
-            min = axes.getMode(0).getIndex(datasetAttributes, 0, crossHairs.getPosition(0, Orientation.VERTICAL));
-            max = axes.getMode(0).getIndex(datasetAttributes, 0, crossHairs.getPosition(1, Orientation.VERTICAL));
-            size = dataset.getSizeReal(datasetAttributes.dim[0]);
-        } else {
-            min = axes.getMode(vecDim).getIndex(datasetAttributes, vecDim, crossHairs.getPosition(0, Orientation.HORIZONTAL));
-            max = axes.getMode(vecDim).getIndex(datasetAttributes, vecDim, crossHairs.getPosition(1, Orientation.HORIZONTAL));
-            size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
-        }
-
-        ArrayList<Double> currentRegions = controller.getBaselineRegions(vecDimName);
-        if (min > max) {
-            double hold = min;
-            min = max;
-            max = hold;
-        }
-        if (min < 0) {
-            min = 0.0;
-        }
-        double f1 = min / (size - 1);
-        double f2 = max / (size - 1);
-        double mul = Math.pow(10.0, Math.ceil(Math.log10(size)));
-        f1 = Math.round(f1 * mul) / mul;
-        f2 = Math.round(f2 * mul) / mul;
-        processorController.propertyManager.addBaselineRegion(currentRegions, f1, f2, clearMode);
-    }
-
-    public void clearBaselineRanges() {
-        processorController.propertyManager.clearBaselineRegions();
+        var result = new RegionRange(pt0, pt1, ppm0, ppm1,  f0, f1);
+        return Optional.of(result);
     }
 
     public void clearDataAndPeaks() {

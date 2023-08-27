@@ -8,6 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import org.nmrfx.analyst.gui.tools.IntegralTool;
+import org.nmrfx.analyst.gui.utitlity.DoubleTableCell;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.DatasetRegionListener;
 import org.nmrfx.processor.gui.PolyChart;
@@ -40,30 +41,29 @@ public class RegionsTable extends TableView<DatasetRegion> {
     private final DatasetRegionListener regionListener;
 
     /**
-     * Table cell formatter to format non-editable columns of doubles
+     * Formatter to change between Double and Strings in editable columns of Doubles
      */
-    private static class DoubleTableCell extends TableCell<DatasetRegion, Double> {
+    private static class DoubleColumnFormatter extends javafx.util.converter.DoubleStringConverter {
         String formatString;
 
-        public DoubleTableCell() {
-            formatString = "%." + NUMBER_DECIMAL_PLACES_INTEGRAL + "f";
-        }
-
-        public DoubleTableCell(int decimalPlaces) {
+        public DoubleColumnFormatter(int decimalPlaces) {
             formatString = "%." + decimalPlaces + "f";
         }
 
         @Override
-        protected void updateItem(Double value, boolean empty) {
-            super.updateItem(value, empty);
-            if (empty) {
-                setText(null);
-            } else {
-                setText(String.format(formatString, value));
+        public String toString(Double object) {
+            return String.format(formatString, object);
+        }
+
+        @Override
+        public Double fromString(String string) {
+            try {
+                return Double.parseDouble(string);
+            } catch (NumberFormatException e) {
+                return null;
             }
         }
     }
-
 
     public RegionsTable() {
         setPlaceholder(new Label("No regions to display"));
@@ -98,7 +98,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
 
         TableColumn<DatasetRegion, Double> integralCol = new TableColumn<>(INTEGRAL_COLUMN_NAME);
         integralCol.setCellValueFactory(new PropertyValueFactory<>("integral"));
-        integralCol.setCellFactory(column -> new DoubleTableCell(NUMBER_DECIMAL_PLACES_INTEGRAL));
+        integralCol.setCellFactory(column -> new DoubleTableCell<>(NUMBER_DECIMAL_PLACES_INTEGRAL));
         getColumns().add(integralCol);
 
         TableColumn<DatasetRegion, Double> normalizedIntegralCol = new TableColumn<>(NORMALIZED_INTEGRAL_COLUMN_NAME);
@@ -107,8 +107,8 @@ public class RegionsTable extends TableView<DatasetRegion> {
             Double normProp = Math.abs(norm) > 1.0e-9 ? param.getValue().getIntegral() / norm : null;
             return new SimpleObjectProperty<>(normProp);
         });
-        normalizedIntegralCol.setCellFactory(column -> new DoubleTableCell());
-        normalizedIntegralCol.setCellFactory(TextFieldTableCell.forTableColumn(TableUtils.getDoubleColumnFormatter(NUMBER_DECIMAL_PLACES_INTEGRAL)));
+        normalizedIntegralCol.setCellFactory(column -> new DoubleTableCell<>(NUMBER_DECIMAL_PLACES_INTEGRAL));
+        normalizedIntegralCol.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleColumnFormatter(NUMBER_DECIMAL_PLACES_INTEGRAL)));
         normalizedIntegralCol.setEditable(true);
         normalizedIntegralCol.setOnEditCommit(this::normalizedIntegralChanged);
         getColumns().add(normalizedIntegralCol);

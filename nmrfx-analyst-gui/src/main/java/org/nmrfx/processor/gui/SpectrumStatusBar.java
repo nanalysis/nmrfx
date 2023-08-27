@@ -212,6 +212,7 @@ public class SpectrumStatusBar {
         primaryToolbar.getItems().add(complexStatus);
         complexStatus.setOnAction(this::complexStatusChanged);
         phaserButton.setOnAction(event -> controller.updatePhaser(phaserButton.isSelected()));
+        phaserButton.disableProperty().bind(controller.processControllerVisibleProperty());
 
         primaryToolbar.getItems().add(phaserButton);
 

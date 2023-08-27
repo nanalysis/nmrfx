@@ -31,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.DatasetLayout;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -97,6 +98,7 @@ public class RS2DData implements NMRData {
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
     private final Double[] Sf = new Double[MAXDIM];
+    private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
     private final boolean[] negateImag = new boolean[MAXDIM];
     private final String[] obsNuc = new String[MAXDIM];
     private final boolean[] complexDim = new boolean[MAXDIM];
@@ -208,22 +210,45 @@ public class RS2DData implements NMRData {
      * @return if FID data was successfully found or not
      */
     public static boolean findFID(StringBuilder bpath) {
+        return findFiles(bpath, false);
+    }
+
+    /**
+     * Finds either fid or processed data, given a path to search for vendor-specific files and
+     * directories.
+     *
+     * @param bpath Full path for processed data.
+     * @param findDataset If True, search for processed data, otherwise search for fid.
+     * @return If processed data was successfully found or not.
+     */
+    private static boolean findFiles(StringBuilder bpath, boolean findDataset) {
         boolean found = false;
         if (findFIDFiles(bpath.toString())) {
-            found = true;
+            found = findDataset == isValidDatasetPath(Path.of(bpath.toString()));
         } else {
             File f = new File(bpath.toString());
             File parent = f.getParentFile();
             if (findFIDFiles(parent.getAbsolutePath())) {
                 String fileName = f.getName();
                 if (fileName.equals(DATA_FILE_NAME)) {
-                    found = true;
+                    found = findDataset == isValidDatasetPath(parent.toPath());
                 }
                 bpath.setLength(0);
                 bpath.append(parent);
             }
         }
         return found;
+    }
+
+    /**
+     * Finds processed data, given a path to search for vendor-specific files and
+     * directories.
+     *
+     * @param bpath full path for processed data
+     * @return if processed data was successfully found or not
+     */
+    public static boolean findData(StringBuilder bpath) {
+        return findFiles(bpath, true);
     }
 
     @Override
@@ -757,6 +782,14 @@ public class RS2DData implements NMRData {
     @Override
     public String getSymbolicCoefs(int iDim) {
         return f1coefS[iDim];
+    }
+
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
     }
 
     @Override
@@ -1297,7 +1330,7 @@ public class RS2DData implements NMRData {
 
     }
 
-    public boolean isValidDatasetPath(Path procNumPath) {
+    public static boolean isValidDatasetPath(Path procNumPath) {
         return StringUtils.isNumeric(procNumPath.getFileName().toString())
                 && procNumPath.getParent().getFileName().toString().equals(PROC_DIR);
     }

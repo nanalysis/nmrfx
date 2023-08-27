@@ -5,6 +5,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
+import org.nmrfx.utilities.DatasetSummary;
 import javafx.scene.layout.*;
 
 
@@ -37,14 +38,10 @@ public abstract class DatasetBrowserTabController {
     private void initToolbar() {
         Button retrieveIndexButton = new Button("Index");
         retrieveIndexButton.setOnAction(e -> retrieveIndex());
-        Button fidButton = new Button("FID");
-        fidButton.setOnAction(e -> openFile(true));
-        Button datasetButton = new Button("Dataset");
-        datasetButton.setOnAction(e -> openFile(false));
         HBox.setHgrow(toolbarSpacer, Priority.ALWAYS);
         filterTextField.textProperty().addListener((observable, oldValue, newValue) -> filterChanged());
         filterTextField.setPrefWidth(200);
-        toolBar.getItems().addAll(retrieveIndexButton, fidButton, datasetButton, toolbarSpacer, filterTextField);
+        toolBar.getItems().addAll(retrieveIndexButton, toolbarSpacer, filterTextField);
     }
 
     /**
@@ -53,6 +50,20 @@ public abstract class DatasetBrowserTabController {
     protected void addToolbarButton(Button button) {
         int spacerIndex = toolBar.getItems().indexOf(toolbarSpacer);
         toolBar.getItems().add(spacerIndex, button);
+    }
+
+    protected void setTableView(DatasetBrowserTableView tableView) {
+        this.tableView = tableView;
+        borderPane.setCenter(tableView);
+        tableView.setOnMousePressed(event -> {
+            if (event.isPrimaryButtonDown() && event.getClickCount() == 2) {
+                DatasetSummary datasetSummary = tableView.getSelectionModel().getSelectedItem();
+                if (datasetSummary != null) {
+                    // always try to open fid if control is down
+                    openFile(event.isControlDown() || datasetSummary.getProcessed().isEmpty());
+                }
+            }
+        });
     }
 
     /**

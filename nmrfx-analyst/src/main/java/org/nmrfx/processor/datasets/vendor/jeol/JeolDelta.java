@@ -68,6 +68,8 @@ public class JeolDelta implements NMRData {
     private String[] sfNames;
     private Double[] refValue;
     private Double[] refPoint;
+    private AcquisitionType[] symbolicCoefs;
+
     private String[] nucleiNames;
     private int[] dimSizes;
     private double dspPh = 0.0;
@@ -269,6 +271,14 @@ public class JeolDelta implements NMRData {
     @Override
     public double[] getCoefs(int dim) {
         return AcquisitionType.HYPER.getCoefficients();
+    }
+
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
     }
 
     @Override
@@ -866,6 +876,8 @@ public class JeolDelta implements NMRData {
     void standardize() {
         sw = new Double[nDim];
         sf = new Double[nDim];
+        symbolicCoefs = new AcquisitionType[nDim];
+
         swNames = new String[nDim];
         sfNames = new String[nDim];
         nucleiNames = new String[nDim];

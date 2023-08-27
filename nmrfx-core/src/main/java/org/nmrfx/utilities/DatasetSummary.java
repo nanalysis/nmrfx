@@ -11,7 +11,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author brucejohnson
@@ -60,7 +62,8 @@ public class DatasetSummary {
      * present on the local file system
      */
     private boolean present;
-    private String processed;
+    private List<String> processed;
+    private int selectedProcessedDataIndex = -1;
 
     /**
      * @return the path
@@ -189,12 +192,33 @@ public class DatasetSummary {
         present = state;
     }
 
-    public String getProcessed() {
-        return processed == null ? "" : processed;
+    public List<String> getProcessed() {
+        return processed == null ? new ArrayList<>() : processed;
     }
 
-    public void setProcessed(String fileName) {
-        processed = fileName;
+    public void setProcessed(List<String> fileNames) {
+        processed = fileNames;
+        if (processed == null || fileNames.isEmpty()) {
+            selectedProcessedDataIndex = -1;
+        } else {
+            selectedProcessedDataIndex = 0;
+        }
+
+    }
+
+    public void setSelectedProcessedDataIndex(int index) {
+        if (index < -1 || index >= processed.size()) {
+            log.warn("Invalid index: {}", index);
+            index = -1;
+        }
+        selectedProcessedDataIndex = index;
+    }
+
+    public Optional<String> getSelectedProcessedData() {
+        if (processed == null || processed.isEmpty() || selectedProcessedDataIndex < 0) {
+            return Optional.empty();
+        }
+        return Optional.of(processed.get(selectedProcessedDataIndex));
     }
 
     /**
@@ -325,7 +349,7 @@ public class DatasetSummary {
 
     @Override
     public String toString() {
-        return "RemoteDataset{" + "path=" + path + ", type=" + type + ", user=" + user + ", seq=" + seq + ", sf=" + sf + ", time=" + time + ", tn=" + tn + ", sol=" + sol + ", te=" + te + ", pos=" + pos + ", nd=" + nd + ", nv=" + nv + ", text=" + text + ", vnd=" + vnd + ", nb=" + nb + ", sample=" + sample + ", iso=" + iso + '}';
+        return "DatasetSummary{" + "path=" + path + ", type=" + type + ", user=" + user + ", seq=" + seq + ", sf=" + sf + ", time=" + time + ", tn=" + tn + ", sol=" + sol + ", te=" + te + ", pos=" + pos + ", nd=" + nd + ", nv=" + nv + ", text=" + text + ", vnd=" + vnd + ", nb=" + nb + ", sample=" + sample + ", iso=" + iso + '}';
     }
 
     public static List<DatasetSummary> datasetsFromJson(String jsonString) {
