@@ -309,16 +309,23 @@ public class ScanTable {
                 || processorController.isViewingDataset()
                 || !processorController.isVisible()) {
             List<FileTableItem> showRows = new ArrayList<>();
-            if (selected.isEmpty()) {
+            for (var item : getItems()) {
+                item.setSelected(false);
+            }
+            ScannerTool.TableSelectionMode tableSelectionMode = scannerTool.tableSelectionMode();
+            if (tableSelectionMode == ScannerTool.TableSelectionMode.HIGHLIGHT) {
+                for (var item : selected) {
+                    item.setSelected(true);
+                }
+            }
+
+            boolean showAll = tableSelectionMode == ScannerTool.TableSelectionMode.ALL || tableSelectionMode == ScannerTool.TableSelectionMode.HIGHLIGHT;
+            if (selected.isEmpty() || showAll) {
                 showRows.addAll(tableView.getItems());
             } else {
                 showRows.addAll(selected);
             }
             Double curLvl = null;
-//            if (!chart.getDatasetAttributes().isEmpty()) {
-//                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-//                curLvl = dataAttr.getLvl();
-//            }
 
             setDatasetVisibility(showRows, curLvl);
             refresh();

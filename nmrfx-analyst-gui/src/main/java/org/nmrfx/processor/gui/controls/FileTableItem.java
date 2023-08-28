@@ -164,6 +164,19 @@ public class FileTableItem {
             dataAttr.setNegColor(color);
         }
     }
+
+    public boolean getSelected() {
+        var dataAttr = getDatasetAttributes();
+        return dataAttr == null || dataAttr.isSelected(getRow() - 1);
+    }
+
+    public void setSelected(boolean state) {
+        var dataAttr = getDatasetAttributes();
+        if (dataAttr != null) {
+            dataAttr.setSelectedElem(getRow() - 1, state);
+        }
+    }
+
     public void setLvl(double value) {
         var dataAttr = getDatasetAttributes();
         if (dataAttr != null) {

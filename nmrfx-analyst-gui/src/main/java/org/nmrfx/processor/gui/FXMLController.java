@@ -735,6 +735,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (nmrControlRightSidePane.isContentShowing(attributesController)) {
             attributesController.updateDatasetAttributeControls();
         }
+        if (scannerTool != null) {
+            scannerTool.getScanTable().refresh();
+        }
     }
 
     public SpectrumStatusBar getStatusBar() {

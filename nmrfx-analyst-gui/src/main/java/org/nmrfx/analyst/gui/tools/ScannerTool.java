@@ -23,6 +23,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.linear.ArrayRealVector;
@@ -63,6 +64,11 @@ import java.util.regex.Pattern;
 public class ScannerTool implements ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(ScannerTool.class);
     private static final String BIN_MEASURE_NAME = "binValues";
+    enum TableSelectionMode {
+        ALL,
+        HIGHLIGHT,
+        ONLY
+    }
 
     BorderPane borderPane;
 
@@ -81,6 +87,8 @@ public class ScannerTool implements ControllerTool {
     TRACTGUI tractGUI = null;
     TablePlotGUI plotGUI = null;
     MinerController miner;
+    ChoiceBox<TableSelectionMode> tableSelectionChoice = new ChoiceBox<>();
+
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
@@ -106,7 +114,18 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
+        tableSelectionChoice.getItems().addAll(TableSelectionMode.values());
+        tableSelectionChoice.setValue(TableSelectionMode.HIGHLIGHT);
+        tableSelectionChoice.valueProperty().addListener(e -> scanTable.selectionChanged());
+        VBox vBox = new VBox();
+        Label label = new Label("Sel. Mode:");
+        vBox.getChildren().addAll(label, tableSelectionChoice);
+        borderPane.setLeft(vBox);
         loadFromDataset();
+    }
+
+    public TableSelectionMode tableSelectionMode() {
+        return tableSelectionChoice.getValue();
     }
 
     public void showMenus() {

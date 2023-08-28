@@ -724,11 +724,12 @@ public class DrawSpectrum {
         } else {
             ok = dataAttr.getNeg();
         }
+        double widthScale = dataAttr.isSelected() ? 3.0 : 1.0;
         if (ok) {
             if (iPosNeg == 0) {
-                contour.setAttributes(dataAttr.posWidthProperty().get(), dataAttr.getPosColor());
+                contour.setAttributes(dataAttr.posWidthProperty().get() * widthScale, dataAttr.getPosColor());
             } else {
-                contour.setAttributes(dataAttr.negWidthProperty().get(), dataAttr.getNegColor());
+                contour.setAttributes(dataAttr.negWidthProperty().get() * widthScale, dataAttr.getNegColor());
             }
         }
         return ok;
