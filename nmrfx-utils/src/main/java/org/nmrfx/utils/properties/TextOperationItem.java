@@ -26,6 +26,7 @@ package org.nmrfx.utils.properties;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
+import org.controlsfx.control.PropertySheet;
 import org.controlsfx.property.editor.PropertyEditor;
 
 /**
@@ -38,8 +39,8 @@ public class TextOperationItem extends OperationItem implements ObservableString
     String defaultValue;
     PropertyEditor editor;
 
-    public TextOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
-        super(category, name, description);
+    public TextOperationItem(PropertySheet propertySheet, ChangeListener listener, String defaultValue, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;

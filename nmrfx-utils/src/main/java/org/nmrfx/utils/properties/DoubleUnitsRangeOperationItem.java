@@ -24,6 +24,7 @@
 package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ChangeListener;
+import org.controlsfx.control.PropertySheet;
 
 /**
  * @author brucejohnson
@@ -32,17 +33,17 @@ public class DoubleUnitsRangeOperationItem extends DoubleOperationItem {
 
     ZoomSlider slider = null;
 
-    public DoubleUnitsRangeOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
-        super(listener, defaultValue, category, name, description);
+    public DoubleUnitsRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, category, name, description);
 
     }
 
-    public DoubleUnitsRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
-        super(listener, defaultValue, min, max, category, name, description);
+    public DoubleUnitsRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, min, max, category, name, description);
     }
 
-    public DoubleUnitsRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
-        super(listener, defaultValue, min, max, amin, amax, category, name, description);
+    public DoubleUnitsRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, min, max, amin, amax, category, name, description);
     }
 
     @Override

@@ -26,6 +26,7 @@ package org.nmrfx.utils.properties;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableBooleanValue;
+import org.controlsfx.control.PropertySheet;
 
 /**
  * @author brucejohnson
@@ -38,8 +39,8 @@ public class BooleanOperationItem extends OperationItem implements ObservableBoo
     boolean defaultValue;
     ChangeListener<Boolean> listener;
 
-    public BooleanOperationItem(ChangeListener listener, boolean defaultValue, String category, String name, String description) {
-        super(category, name, description);
+    public BooleanOperationItem(PropertySheet propertySheet, ChangeListener listener, boolean defaultValue, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;

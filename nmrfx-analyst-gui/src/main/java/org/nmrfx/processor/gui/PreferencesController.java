@@ -88,56 +88,56 @@ public class PreferencesController implements Initializable, StageBasedControlle
         nprocessListener = (ObservableValue<? extends Integer> observableValue, Integer n1, Integer n2) -> {
             setNProcesses(n2);
         };
-        FileOperationItem nestaFileItem = new FileOperationItem(stringListener, getNESTANMR().getPath(), "External Programs", "NESTA-NMR", "desc");
+        FileOperationItem nestaFileItem = new FileOperationItem(prefSheet, stringListener, getNESTANMR().getPath(), "External Programs", "NESTA-NMR", "desc");
         ArrayList<String> locationChoices = new ArrayList<>();
         locationChoices.add("FID directory");
         locationChoices.add("Dataset directory");
-        ChoiceOperationItem locationTypeItem = new ChoiceOperationItem(locationListener, getLocation(), locationChoices, "File Locations", "location", "Directory Location for Dataset");
+        ChoiceOperationItem locationTypeItem = new ChoiceOperationItem(prefSheet, locationListener, getLocation(), locationChoices, "File Locations", "location", "Directory Location for Dataset");
 
-        DirectoryOperationItem locationFileItem = new DirectoryOperationItem(datasetListener, getDatasetDirectory().getPath(), "File Locations", "Datasets", "desc");
+        DirectoryOperationItem locationFileItem = new DirectoryOperationItem(prefSheet, datasetListener, getDatasetDirectory().getPath(), "File Locations", "Datasets", "desc");
 
         int nProcessesDefault = Runtime.getRuntime().availableProcessors() / 2;
-        IntRangeOperationItem nProcessesItem = new IntRangeOperationItem(nprocessListener,
+        IntRangeOperationItem nProcessesItem = new IntRangeOperationItem(prefSheet, nprocessListener,
                 nProcessesDefault, 1, 32, "Processor", "NProcesses",
                 "How many parallel processes to run during processing");
 
-        IntRangeOperationItem ticFontSizeItem = new IntRangeOperationItem(
+        IntRangeOperationItem ticFontSizeItem = new IntRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     tickFontSizeProp.setValue((Integer) c);
                 },
                 getTickFontSize(), 1, 32, "Spectra", "TicFontSize", "Font size for tic mark labels");
 
-        IntRangeOperationItem labelFontSizeItem = new IntRangeOperationItem(
+        IntRangeOperationItem labelFontSizeItem = new IntRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     labelFontSizeProp.setValue((Integer) c);
                 },
                 getLabelFontSize(), 1, 32, "Spectra", "LabelFontSize", "Font size for axis labels");
 
-        IntRangeOperationItem peakFontSizeItem = new IntRangeOperationItem(
+        IntRangeOperationItem peakFontSizeItem = new IntRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     peakFontSizeProp.setValue((Integer) c);
                 },
                 getPeakFontSize(), 1, 32, "Spectra", "PeakFontSize", "Font size for peak box labels");
 
-        BooleanOperationItem fitPeakShapeItem = new BooleanOperationItem(
+        BooleanOperationItem fitPeakShapeItem = new BooleanOperationItem(prefSheet,
                 (a, b, c) -> {
                     fitPeakShapeProp.setValue((Boolean) c);
                 },
                 getFitPeakShape(), "Peak", "FitPeakShape", "Fit Non-Lorentzian Peak Shapes");
 
-        BooleanOperationItem constrainPeakShapeItem = new BooleanOperationItem(
+        BooleanOperationItem constrainPeakShapeItem = new BooleanOperationItem(prefSheet,
                 (a, b, c) -> {
                     constrainPeakShapeProp.setValue((Boolean) c);
                 },
                 getConstrainPeakShape(), "Peak", "ConstrainPeakShape", "Constrain Non-Lorentzian Peak Shapes");
 
-        DoubleRangeOperationItem peakShapeDirectItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem peakShapeDirectItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     peakShapeDirectFactorProp.setValue((Double) c);
                 },
                 getPeakShapeDirectFactor(), 0.0, 1.5, 0.0, 1.5, "Peak", "PeakShapeDirect", "Shape factor for direct dimension");
 
-        DoubleRangeOperationItem peakShapeInirectItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem peakShapeInirectItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     peakShapeIndirectFactorProp.setValue((Double) c);
                 },

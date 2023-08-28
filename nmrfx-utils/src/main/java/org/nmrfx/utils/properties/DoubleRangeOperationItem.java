@@ -24,6 +24,7 @@
 package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ChangeListener;
+import org.controlsfx.control.PropertySheet;
 
 /**
  * @author brucejohnson
@@ -34,24 +35,24 @@ public class DoubleRangeOperationItem extends DoubleOperationItem {
 
     final boolean zoomable;
 
-    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
-        super(listener, defaultValue, category, name, description);
+    public DoubleRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, category, name, description);
         zoomable = true;
 
     }
 
-    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, boolean zoomable, String category, String name, String description) {
-        super(listener, defaultValue, min, max, category, name, description);
+    public DoubleRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, double min, double max, boolean zoomable, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, min, max, category, name, description);
         this.zoomable = zoomable;
     }
 
-    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
-        super(listener, defaultValue, min, max, category, name, description);
+    public DoubleRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, min, max, category, name, description);
         zoomable = true;
     }
 
-    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
-        super(listener, defaultValue, min, max, amin, amax, category, name, description);
+    public DoubleRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, min, max, amin, amax, category, name, description);
         zoomable = true;
     }
 

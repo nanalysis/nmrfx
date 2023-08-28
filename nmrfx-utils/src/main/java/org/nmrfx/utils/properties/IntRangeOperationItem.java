@@ -24,6 +24,7 @@
 package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ChangeListener;
+import org.controlsfx.control.PropertySheet;
 
 /**
  * @author brucejohnson
@@ -32,13 +33,13 @@ import javafx.beans.value.ChangeListener;
 // @PluginAPI("ring")
 public class IntRangeOperationItem extends IntOperationItem {
 
-    public IntRangeOperationItem(ChangeListener listener, int defaultValue, String category, String name, String description) {
-        super(listener, defaultValue, category, name, description);
+    public IntRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, int defaultValue, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, category, name, description);
 
     }
 
-    public IntRangeOperationItem(ChangeListener listener, int defaultValue, int min, int max, String category, String name, String description) {
-        super(listener, defaultValue, min, max, category, name, description);
+    public IntRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, int defaultValue, int min, int max, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, min, max, category, name, description);
 
     }
 

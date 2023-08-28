@@ -50,6 +50,7 @@ public class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
     private static final double AMBIENT_TEMPERATURE = 298.0; // in K, around 25° C
     private static final double SCALE = 1.0;
+    private final AcquisitionType[] symbolicCoefs = new AcquisitionType[2];
 
     /**
      * JCamp-defined acquisition scheme.
@@ -500,6 +501,15 @@ public class JCAMPData implements NMRData {
         AcquisitionScheme scheme = getAcquisitionScheme();
         return scheme == null ? null : scheme.getSymbolicCoefs();
     }
+
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
+    }
+
 
     @Override
     public String getVendor() {

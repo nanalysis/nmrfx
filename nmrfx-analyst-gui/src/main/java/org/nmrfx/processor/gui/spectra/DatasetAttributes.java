@@ -59,12 +59,12 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
     private final Map<String, Float> extremes = new HashMap<>();
     private final Map<Integer, Color> colorMap = new HashMap<>();
     private final Map<Integer, Double> offsetMap = new HashMap<>();
+    private final Set<Integer> selectionSet = new HashSet<>();
+    public boolean selected;
 
     public int mChunk = 0;
     public int[] dim;
     public List<Integer> drawList = new ArrayList<>();
-    public boolean[] selectionList = null;
-    public boolean selected;
     public boolean intSelected;
     public String title = "";
     int[] chunkSize;
@@ -461,9 +461,8 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
             dAttr.drawList = new ArrayList<>();
             dAttr.drawList.addAll(drawList);
         }
-        if (selectionList != null) {
-            dAttr.selectionList = selectionList.clone();
-        }
+        dAttr.selectionSet.clear();
+        dAttr.selectionSet.addAll(selectionSet);
         dAttr.selected = selected;
     }
 
@@ -555,13 +554,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
     }
 
     public void setDrawListSize(final int size) {
-        if (size == 0) {
-            drawList.clear();
-            selectionList = null;
-        } else {
-            drawList.clear();
-            selectionList = new boolean[size];
-        }
+        drawList.clear();
     }
 
     public void incrDrawList(int delta) {
@@ -595,15 +588,10 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
 
     public void setDrawList(List<Integer> indices) {
         drawList.clear();
-        if (indices.isEmpty()) {
-            selectionList = null;
-        } else {
+        if (!indices.isEmpty()) {
             if (dim.length > 1) {
                 indices.stream().filter(i -> i >= 0 && i < theFile.getSizeReal(dim[1])).
                         forEach(drawList::add);
-                selectionList = new boolean[indices.size()];
-            } else {
-                selectionList = null;
             }
         }
     }
@@ -1540,34 +1528,30 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         }
     }
 
-    public void setSelectedElem(int iElem) {
-        if (selectionList == null) {
-            selectionList = new boolean[getLastChunk(0) + 1];
+    public void setSelectedElem(int iElem, boolean state) {
+        if (state) {
+            selectionSet.add(iElem);
+        } else {
+            selectionSet.remove(iElem);
         }
-        if (iElem < selectionList.length) {
-            selectionList[iElem] = true;
-        }
+        selected = state;
     }
 
     public int[] getSelected() {
         int[] result = new int[0];
-        if ((selectionList != null) && (selectionList.length != 0)) {
-            List<Integer> resultList = new ArrayList<>();
-            for (int i = 0; i < selectionList.length; i++) {
-                if (selectionList[i]) {
-                    if (!drawList.isEmpty()) {
-                        resultList.add(i);
-                    } else if (pt.length > 1) {
-                        resultList.add(i);
-                    }
-                }
+        List<Integer> resultList = new ArrayList<>();
+        for (int i : selectionSet) {
+            if (!drawList.isEmpty()) {
+                resultList.add(i);
+            } else if (pt.length > 1) {
+                resultList.add(i);
             }
-            result = new int[resultList.size()];
-            int i = 0;
-            for (Integer iVal : resultList) {
-                result[i++] = iVal;
+        }
+        result = new int[resultList.size()];
+        int i = 0;
+        for (Integer iVal : resultList) {
+            result[i++] = iVal;
 
-            }
         }
         return result;
     }
@@ -1579,16 +1563,14 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
     public void setSelected(boolean state) {
         selected = state;
         if (!state) {
-            if (selectionList != null) {
-                selectionList = new boolean[selectionList.length];
-            }
+            selectionSet.clear();
         }
     }
 
     public boolean isSelected(int iElem) {
         boolean value;
-        if ((selectionList != null) && (iElem < selectionList.length) && (iElem >= 0)) {
-            value = selectionList[iElem];
+        if (!selectionSet.isEmpty()) {
+            value = selectionSet.contains(iElem);
         } else {
             value = selected;
         }
