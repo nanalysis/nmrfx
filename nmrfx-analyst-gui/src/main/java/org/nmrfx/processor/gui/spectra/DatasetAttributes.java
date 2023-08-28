@@ -554,11 +554,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
     }
 
     public void setDrawListSize(final int size) {
-        if (size == 0) {
-            drawList.clear();
-        } else {
-            drawList.clear();
-        }
+        drawList.clear();
     }
 
     public void incrDrawList(int delta) {
