@@ -12,6 +12,16 @@
             </excludes>
         </fileSet>
         <fileSet>
+            <directory>../../models</directory>
+            <outputDirectory>models/</outputDirectory>
+            <includes>
+                <include>**</include>
+            </includes>
+            <excludes>
+                <exclude>CVS</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
             <directory>src/main/licenses</directory>
             <outputDirectory></outputDirectory>
             <includes>
