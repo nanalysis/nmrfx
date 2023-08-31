@@ -17,30 +17,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.datasets.peaks.ConvolutionPickPar;
-import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
-import org.nmrfx.utils.properties.*;
-import org.nmrfx.processor.operations.NESTANMREx;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.prefs.Preferences;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -54,6 +30,7 @@ import org.controlsfx.control.PropertySheet;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
+import org.nmrfx.processor.datasets.peaks.ConvolutionPickPar;
 import org.nmrfx.processor.operations.NESTANMREx;
 import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
@@ -175,37 +152,37 @@ public class PreferencesController implements Initializable, StageBasedControlle
                 },
                 getPeakShapeIndirectFactor(), 0.0, 1.5, false, "Peak Fit", "PeakShapeIndirect", "Shape factor for indirect dimension");
 
-        BooleanOperationItem convolutionPickItem = new BooleanOperationItem(
+        BooleanOperationItem convolutionPickItem = new BooleanOperationItem(prefSheet,
                 (a, b, c) -> {
                     convolutionPickProp.setValue((Boolean) c);
                 },
                 getConvolutionPick(), "Peak Picker", "ConvolutionPick", "Pick using convolution mode");
 
-        IntRangeOperationItem convolutionPickIterationsItem = new IntRangeOperationItem(
+        IntRangeOperationItem convolutionPickIterationsItem = new IntRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     convolutionPickIterationsProp.setValue((Integer) c);
                 },
                 getConvolutionPickIterations(), 1,200, "Peak Picker", "ConvolutionPickIterations", "Convolution Pick Iterations");
 
-        DoubleRangeOperationItem convolutionPickSquashItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem convolutionPickSquashItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     convolutionPickSquashProp.setValue((Double) c);
                 },
                 getConvolutionPickSquash(), 0.25, 1.5, false, "Peak Picker", "ConvolutionPickSquash", "Convolution Pick Squash Factor");
 
-        DoubleRangeOperationItem convolutionPickScaleItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem convolutionPickScaleItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     convolutionPickScaleProp.setValue((Double) c);
                 },
                 getConvolutionPickScale(), 0.5, 2.0, false, "Peak Picker", "ConvolutionPickScale", "Convolution Pick Scale Factor");
 
-        DoubleRangeOperationItem convolutionPickDirectWidthItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem convolutionPickDirectWidthItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     convolutionPickDirectWidthProp.setValue((Double) c);
                 },
                 getConvolutionPickDirectWidth(), 0.5, 40.0, false, "Peak Picker", "ConvolutionPickDirectWidth", "Convolution Pick Direct Width");
 
-        DoubleRangeOperationItem convolutionPickInirectWidthItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem convolutionPickInirectWidthItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     convolutionPickIndirectWidthProp.setValue((Double) c);
                 },
