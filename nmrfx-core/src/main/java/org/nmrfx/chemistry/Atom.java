@@ -172,6 +172,11 @@ public class Atom implements IAtom, Comparable<Atom> {
         return new Atom(name, eProp);
     }
 
+    public static Atom genAtomWithElement(String name, int aNum) {
+        AtomEnergyProp eProp = AtomEnergyProp.getDefault(aNum);
+        return new Atom(name, eProp);
+    }
+
     @Override
     public void setType(String name) {
         type = name;

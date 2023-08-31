@@ -8,7 +8,6 @@ import org.nmrfx.chemistry.Residue;
 import org.nmrfx.peaks.*;
 import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import smile.clustering.KMeans;
-import smile.math.MathEx;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -1052,11 +1051,12 @@ public class SpinSystem {
             }
             i++;
         }
+
         KMeans kMeans = KMeans.lloyd(values, 2);
-        int[] labels = kMeans.y;
-        double[][] centroids = kMeans.centroids;
-        double dis0 = MathEx.norm(centroids[0]);
-        double dis1 = MathEx.norm(centroids[1]);
+        double[][] centroids = kMeans.centroids();
+        int[] labels = kMeans.getClusterLabel();
+        double dis0 = smile.math.Math.norm(centroids[0]);
+        double dis1 = smile.math.Math.norm(centroids[1]);
         int origCluster;
         int newCluster;
         if (dis0 < dis1) {

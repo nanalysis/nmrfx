@@ -84,6 +84,15 @@ public class Compound extends Entity implements AtomIterable {
         setHasEquivalentAtoms(false);
     }
 
+    public void removeAllAtoms() {
+        int nAtoms = atoms.size();
+        for (int i = nAtoms - 1; i >= 0; i--) {
+            Atom atom = atoms.get(i);
+            removeAtom(atom);
+        }
+        bonds.clear();
+    }
+
     @Override
     public void addAtom(Atom afterAtom, Atom atom) {
         super.addAtom(afterAtom, atom);

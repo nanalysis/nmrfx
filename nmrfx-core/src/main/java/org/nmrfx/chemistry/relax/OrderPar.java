@@ -347,6 +347,13 @@ public class OrderPar implements RelaxationValues {
         }
     }
 
+    public double getAICC() {
+        int k = nPars;
+        return getAIC() + 2.0 * k * (k + 1) / (nValues - k - 1.0);
+    }
+
+
+
     @Override
     public Double getError(String name) {
         switch (name) {
@@ -426,7 +433,6 @@ public class OrderPar implements RelaxationValues {
                 append(String.format("%.4f", getReducedChiSqr())).
                 append("\t").append(String.format("%.4f", getAIC())).append("\t").
                 append(nValues).append("\t").append(nPars);
-
         return sBuilder.toString();
     }
 
