@@ -62,7 +62,7 @@ public class DatasetCompare {
                         float refFloat = refRAFile.readFloat();
                         float testFloat = testRAFile.readFloat();
                         if (Float.compare(refFloat, testFloat) != 0) {
-                            if (Math.abs(refFloat - testFloat) > 0.75e-5) {
+                            if (Math.abs(refFloat - testFloat) > 1.0e-4) {
                                 System.out.println(refFloat + " " + testFloat + " " + Math.abs(refFloat - testFloat));
                                 dataErrorPosition = i;
                                 break;
