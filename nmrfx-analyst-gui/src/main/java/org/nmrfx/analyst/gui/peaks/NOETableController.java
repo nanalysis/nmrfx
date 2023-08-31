@@ -133,16 +133,16 @@ public class NOETableController implements Initializable, StageBasedController {
         updatePeakListMenu();
         masterDetailPane.showDetailNodeProperty().bindBidirectional(detailsCheckBox.selectedProperty());
         List<String> intVolChoice = List.of("Intensity", "Volume");
-        modeItem = new ChoiceOperationItem((a, b, c) -> refresh(), "intensity", intVolChoice, "Exp Calibrate", "Mode", "Reference Distance");
-        refDistanceItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+        modeItem = new ChoiceOperationItem(propertySheet, (a, b, c) -> refresh(), "intensity", intVolChoice, "Exp Calibrate", "Mode", "Reference Distance");
+        refDistanceItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
                 3.0, 1.0, 6.0, false, "Exp Calibrate", "Ref Distance", "Reference Distance");
-        expItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+        expItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
                 6.0, 1.0, 6.0, false, "Exp Calibrate", "Exp Factor", "Exponent value");
-        minDisItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+        minDisItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
                 2.0, 1.0, 3.0, false, "Exp Calibrate", "Min Distance", "Minimum bound");
-        maxDisItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+        maxDisItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
                 6.0, 3.0, 6.0, false, "Exp Calibrate", "Max Distance", "Maximum bound");
-        fErrorItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+        fErrorItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
                 0.125, 0.0, 0.2, false, "Exp Calibrate", "Tolerance", "Fractional additional bound");
         propertySheet.getItems().addAll(modeItem, refDistanceItem, expItem, minDisItem, maxDisItem, fErrorItem);
     }

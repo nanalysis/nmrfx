@@ -2,14 +2,12 @@ package org.nmrfx.analyst.gui.datasetbrowser;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.Button;
 import javafx.stage.DirectoryChooser;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.fxutil.Fx;
-import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.utilities.DatasetSummary;
 import org.nmrfx.utils.GUIUtils;
@@ -20,6 +18,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class LocalDatasetBrowserTabController extends DatasetBrowserTabController {
@@ -30,8 +29,7 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
 
     public LocalDatasetBrowserTabController(Consumer<String> taskStatusUpdater) {
         super(TAB_NAME);
-        tableView = new DatasetBrowserTableView(false);
-        borderPane.setCenter(tableView);
+        setTableView(new DatasetBrowserTableView(false));
         this.taskStatusUpdater = taskStatusUpdater;
         directoryTextField.setText(AnalystPrefs.getLocalDirectory());
 
@@ -65,10 +63,9 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
             protected List<DatasetSummary> call() {
                 Fx.runOnFxThread(() -> taskStatusUpdater.accept("Dataset Browser: Scanning"));
 
-                List<DatasetSummary> results = NMRDataUtil.scanDirectory(scanDir, outPath);
-                Platform.runLater(() -> tableView.setDatasetSummaries(results));
+                List<DatasetSummary> results = DatasetBrowserUtil.scanDirectory(scanDir, outPath);
+                Fx.runOnFxThread(() -> tableView.setDatasetSummaries(results));
                 Fx.runOnFxThread(() -> taskStatusUpdater.accept("Dataset Browser"));
-
                 return results;
             }
         };
@@ -88,9 +85,14 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
                 return;
             }
             FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
-            if (!useFID && !datasetSummary.getProcessed().isEmpty()) {
-                File localDataset = fileSystem.getPath(directoryTextField.getText(), fileName, datasetSummary.getProcessed()).toFile();
-                if (localDataset.exists()) {
+            Optional<String> selectedProcessedDataset = datasetSummary.getSelectedProcessedData();
+            if (!useFID && selectedProcessedDataset.isPresent()) {
+                File baseFile = fileSystem.getPath(directoryTextField.getText(), fileName).toFile();
+                if (baseFile.isFile()) {
+                    baseFile = baseFile.getParentFile();
+                }
+                File localDataset = fileSystem.getPath(baseFile.toString(), selectedProcessedDataset.get()).toFile();
+                 if (localDataset.exists()) {
                     controller.openDataset(localDataset, false, true);
                 }
             } else {

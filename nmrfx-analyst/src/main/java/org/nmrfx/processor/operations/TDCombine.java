@@ -196,6 +196,10 @@ public class TDCombine extends Operation {
         }
     }
 
+    public int getDim() {
+        return dim;
+    }
+
     public TDCombine clone() {
         TDCombine temp = new TDCombine(dim, numInputVec, numOutputVec, coef);
         return temp;

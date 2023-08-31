@@ -56,20 +56,6 @@ public class SpectrumMenu extends ChartMenu {
         popOutItem.setOnAction((ActionEvent e) -> chart.popView());
         viewMenu.getItems().add(popOutItem);
 
-        Menu baselineMenu = new Menu("Baseline/Extract Regions");
-        MenuItem addBaselineItem = new MenuItem("Add Baseline Region");
-        addBaselineItem.setOnAction((ActionEvent e) -> chart.addBaselineRange(false));
-        MenuItem clearBaselineItem = new MenuItem("Clear Baseline Region");
-        clearBaselineItem.setOnAction((ActionEvent e) -> chart.addBaselineRange(true));
-        MenuItem clearAllBaselineItem = new MenuItem("Clear Baseline Regions");
-        clearAllBaselineItem.setOnAction((ActionEvent e) -> chart.clearBaselineRanges());
-        MenuItem extractItem = new MenuItem("Add Extract Region");
-        extractItem.setOnAction((ActionEvent e) -> chart.addRegionRange());
-
-        baselineMenu.getItems().add(addBaselineItem);
-        baselineMenu.getItems().add(clearBaselineItem);
-        baselineMenu.getItems().add(clearAllBaselineItem);
-        baselineMenu.getItems().add(extractItem);
         Menu peakMenu = new Menu("Peaks");
         Menu peakFitMenu = new Menu("Fit");
 
@@ -224,7 +210,6 @@ public class SpectrumMenu extends ChartMenu {
         chartMenu.getItems().add(viewMenu);
         chartMenu.getItems().add(peakMenu);
         chartMenu.getItems().add(refMenu);
-        chartMenu.getItems().add(baselineMenu);
         chartMenu.getItems().add(linkMenu);
         chartMenu.getItems().add(extractMenu);
     }

@@ -503,6 +503,9 @@ public class Util {
         MathArrays.sortInPlace(sortVec);
         double sd = 0.0;
         nNoise = (int) (nRegions / 8.0);
+        if (nNoise < 3) {
+            nNoise = 3;
+        }
 
         int n = 0;
         double threshold = maxValue * 1.0e-8;
@@ -524,11 +527,11 @@ public class Util {
             if (sdVec[i] < threshold) {
                 int start = i * winSize;
                 if (!lastWasBase) {
-                    start += winSize / 2;
+                    start += winSize / 2; // don't use edge or area close to signal as baseline
                 }
                 int end = i * winSize + winSize - 1;
-                if (end >= vecSize) {
-                    end = vecSize - 1;
+                if (end >= vecSize - winSize / 2) { // don't include edge as baseline
+                    end = vecSize - winSize / 2;
                 }
                 baseList.add(start);
                 baseList.add(end);
@@ -541,7 +544,6 @@ public class Util {
                 lastWasBase = false;
             }
         }
-
         return baseList;
     }
 

@@ -46,6 +46,7 @@ import javafx.stage.Stage;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.fxutil.StageBasedController;
@@ -74,6 +75,8 @@ import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
+import org.nmrfx.processor.processing.ProcessingOperation;
+import org.nmrfx.processor.processing.ProcessingOperationInterface;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
@@ -91,6 +94,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.*;
 
+import static org.nmrfx.analyst.gui.AnalystApp.getFXMLControllerManager;
 import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionInput;
 
 @PluginAPI("parametric")
@@ -148,6 +152,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private BorderPane mainBox;
     @FXML
     private HBox leftBar;
+    @FXML SplitPane splitPane;
+    ScannerTool scannerTool;
+
     private double previousStageRestoreWidth = 0;
     private double previousStageRestoreProcControllerWidth = 0;
     private boolean previousStageRestoreNmrControlRightSideContentVisible = false;
@@ -263,7 +270,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         isFID = false;
         activeChart = chart;
         PolyChartManager.getInstance().setActiveChart(chart);
-        disableProcessorButton(!isProcessorControllerAvailable());
         ProcessorController processorController = chart.getProcessorController(false);
         // The chart has a processor controller setup, and can be in FID or Dataset mode.
         if (processorController != null) {
@@ -280,6 +286,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (attributesController != null) {
             attributesController.setChart(activeChart);
         }
+        if (scannerTool != null) {
+            scannerTool.setChart(activeChart);
+        }
         if (contentController != null) {
             contentController.setChart(activeChart);
         }
@@ -292,7 +301,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public boolean isPhaseSliderVisible() {
-        return borderPane.getRight() == phaserBox;
+        return borderPane.getRight() == phaserBox || (processControllerVisible.get() && getActiveChart().getProcessorController().isPhaserActive());
     }
 
     public Stage getStage() {
@@ -420,7 +429,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 getActiveChart().setProcessorController(null);
                 processorController.cleanUp();
             }
-            disableProcessorButton(true);
             if (addDatasetToChart) {
                 addDataset(dataset, append, false);
             }
@@ -436,7 +444,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         // Only create a new processor controller, if the active chart does not have one already created.
         ProcessorController processorController = getActiveChart().getProcessorController(true);
         if (processorController != null) {
-            disableProcessorButton(false);
             processorButton.setSelected(true);
             processorController.setAutoProcess(false);
             chartProcessor.setData(nmrData, clearOps);
@@ -477,7 +484,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             processorController.viewingDataset(true);
         }
         borderPane.setLeft(null);
-        borderPane.setBottom(null);
         updateSpectrumStatusBarOptions(true);
 
         phaser.getPhaseOp();
@@ -729,6 +735,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (nmrControlRightSidePane.isContentShowing(attributesController)) {
             attributesController.updateDatasetAttributeControls();
         }
+        if (scannerTool != null) {
+            scannerTool.getScanTable().refresh();
+        }
     }
 
     public SpectrumStatusBar getStatusBar() {
@@ -784,7 +793,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 crossHairStates[iCross][jOrient] = true;
             }
         }
-        phaser = new Phaser(this, phaserBox);
+        phaser = new Phaser(this, phaserBox, Orientation.VERTICAL);
         nmrControlRightSidePane.addContentListener(this::updateStageSize);
         cursorProperty.addListener(e -> setCursor());
         attributesController = AttributesController.create(this);
@@ -831,18 +840,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     /**
-     * Set the processorButton disable property. If disabled is true, then the selectedProperty will also be set to
-     * false.
-     * @param disabled Whether to disable the button.
-     */
-    private void disableProcessorButton(boolean disabled) {
-        processorButton.setDisable(disabled);
-        if (disabled) {
-            processorButton.setSelected(false);
-        }
-    }
-
-    /**
      * Called by controller manager directly after creation by FXMLLoader.
      * Used to pass additional parameters that can't be passed to a constructor.
      * <p>
@@ -876,6 +873,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             chart.getCrossHairs().setAllStates(CanvasCursor.isCrosshair(cursor));
         }
         statusBar.updateCursorBox();
+    }
+
+    public void setPhaser(Phaser phaser) {
+        this.phaser = phaser;
     }
 
     public Phaser getPhaser() {
@@ -1394,15 +1395,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     }
 
-    /**
-     * Checks if the active chart has a processorController instances or if the chart is empty.
-     *
-     * @return True if active chart has ProcessorController else returns false.
-     */
-    public boolean isProcessorControllerAvailable() {
-        return getActiveChart().getProcessorController(false) != null || getActiveChart().getDataset() == null;
-    }
-
     protected void setPhaseDimChoice(int phaseDim) {
         phaser.setPhaseDim(phaseDim);
     }
@@ -1411,12 +1403,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         int start = 0;
         int end = size - 1;
         if (chartProcessor != null) {
-            List<String> listItems = chartProcessor.getOperations(vecDimName);
+            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(vecDimName);
             if (listItems != null) {
                 Map<String, String> values = null;
-                for (String s : listItems) {
-                    if (s.contains("EXTRACT")) {
-                        values = PropertyManager.parseOpString(s);
+                for (ProcessingOperationInterface processingOperation : listItems) {
+                    if (processingOperation.getName().equals("EXTRACT")) {
+                        values = PropertyManager.parseOpString(processingOperation.toString());
                     }
                 }
                 if (values != null) {
@@ -1442,24 +1434,23 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         ArrayList<Double> fracs = new ArrayList<>();
         if (chartProcessor != null) {
             int currentIndex = chartProcessor.getProcessorController().getPropertyManager().getCurrentIndex();
-            List<String> listItems = chartProcessor.getOperations(vecDimName);
+            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(vecDimName);
             if (listItems != null) {
                 log.info("curr ind {}", currentIndex);
                 Map<String, String> values = null;
                 if (currentIndex != -1) {
-                    String s = listItems.get(currentIndex);
-                    log.info(s);
-                    if (s.contains("REGIONS")) {
-                        values = PropertyManager.parseOpString(s);
+                    ProcessingOperationInterface processingOperation = listItems.get(currentIndex);
+                    if (processingOperation.getName().equals("REGIONS")) {
+                        values = PropertyManager.parseOpString(processingOperation.toString());
                         if (log.isInfoEnabled()) {
                             log.info(values.toString());
                         }
                     }
                 }
                 if (values == null) {
-                    for (String s : listItems) {
-                        if (s.contains("REGIONS")) {
-                            values = PropertyManager.parseOpString(s);
+                    for (ProcessingOperationInterface processingOperation : listItems) {
+                        if (processingOperation.getName().equals("REGIONS")) {
+                            values = PropertyManager.parseOpString(processingOperation.toString());
                         }
                     }
                 }
@@ -1507,7 +1498,16 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             contentController.update();
             viewProcessorControllerIfPossible = false;
         } else if (processorButton.isSelected()) {
+            boolean dataIsFID = false;
+            if (chartProcessor != null) {
+                var dataset = chartProcessor.getChart().getDataset();
+                if ((dataset != null) && (dataset.getName().equals("vec0"))) {
+                    dataIsFID = true;
+                }
+            }
+            isFID = dataIsFID || (chartProcessor != null) && (chartProcessor.getNMRData() != null);
             nmrControlRightSidePane.addContent(getActiveChart().getProcessorController(true));
+            updateSpectrumStatusBarOptions(false);
             viewProcessorControllerIfPossible = true;
         } else {
             nmrControlRightSidePane.clear();
@@ -1515,17 +1515,41 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 viewProcessorControllerIfPossible = false;
             }
         }
+        if (!processorButton.isSelected()) {
+            isFID = false;
+            updateSpectrumStatusBarOptions(false);
+        }
     }
 
     public void updatePhaser(boolean showPhaser) {
+
+        PolyChart chart = getActiveChart();
         if (showPhaser) {
+            Cursor cursor = getCurrentCursor();
+            if (cursor == null) {
+                cursor = Cursor.MOVE;
+            }
+            phaser.sliceStatus(sliceStatusProperty().get());
+            phaser.cursor(cursor);
             borderPane.setRight(phaserBox);
             phaser.getPhaseOp();
             if (chartProcessor == null) {
                 phaser.setPH1Slider(activeChart.getDataPH1());
                 phaser.setPH0Slider(activeChart.getDataPH0());
             }
+
+            if (!chart.is1D()) {
+                sliceStatusProperty().set(true);
+                setCursor(Cursor.CROSSHAIR);
+                chart.getSliceAttributes().setSlice1State(true);
+                chart.getSliceAttributes().setSlice2State(false);
+                chart.getCrossHairs().refresh();
+            }
         } else {
+            sliceStatusProperty().set(phaser.sliceStatus);
+            setCursor(phaser.cursor());
+            setCursor();
+            chart.getCrossHairs().refresh();
             if (borderPane.getRight() == phaserBox) {
                 borderPane.setRight(null);
             }
@@ -1785,4 +1809,58 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         return docString;
     }
+
+    public void updateScannerTool(ToggleButton button) {
+        if (button.isSelected()) {
+            showScannerTool();
+        } else {
+            hideScannerTool();
+        }
+    }
+
+    public void showScannerMenus() {
+        showScannerTool();
+        scannerTool.showMenus();
+    }
+
+    public void hideScannerMenus() {
+        if (scannerTool != null) {
+            scannerTool.hideMenus();
+        }
+    }
+
+    public void showScannerTool() {
+        if (getBottomBox().getChildren().isEmpty()) {
+            BorderPane vBox;
+            if (scannerTool != null) {
+                vBox = scannerTool.getBox();
+            } else {
+                vBox = new BorderPane();
+                scannerTool = new ScannerTool(this);
+                scannerTool.initialize(vBox);
+            }
+            splitPane.setDividerPosition(0, scannerTool.getSplitPanePosition());
+            getBottomBox().getChildren().add(vBox);
+            addTool(scannerTool);
+        }
+    }
+
+    public void hideScannerTool() {
+        if (scannerTool != null) {
+            removeScannerTool();
+            splitPane.setDividerPosition(0, 1.0);
+        }
+    }
+
+
+    public void removeScannerTool() {
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
+        controller.removeTool(ScannerTool.class);
+        double[] dividerPositions = controller.splitPane.getDividerPositions();
+        if (scannerTool != null) {
+            scannerTool.setSplitPanePosition(dividerPositions[0]);
+            controller.getBottomBox().getChildren().remove(scannerTool.getBox());
+        }
+    }
+
 }

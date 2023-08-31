@@ -20,9 +20,8 @@ package org.nmrfx.structure.chemistry.energy;
 import org.nmrfx.chemistry.Util;
 import smile.math.DifferentiableMultivariateFunction;
 
-public class DihedralEnergyGradient implements DifferentiableMultivariateFunction {
-
-    final Dihedral dihedral;
+public class DihedralEnergyGradient {
+        Dihedral dihedral;
     final GradientRefinement gradRefine;
 
     public DihedralEnergyGradient(Dihedral dihedral, GradientRefinement gradRefine) {

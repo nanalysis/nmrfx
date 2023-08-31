@@ -67,6 +67,8 @@ public class NMRPipeData implements NMRData {
     private Double[] Ref = new Double[MAXDIM];
     private Double[] Sw = new Double[MAXDIM];
     private Double[] Sf = new Double[MAXDIM];
+    private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
+
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     Header fileHeader;
@@ -453,6 +455,14 @@ public class NMRPipeData implements NMRData {
     @Override
     public String getSymbolicCoefs(int dim) {
         return AcquisitionType.HYPER.getLabel();
+    }
+
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
     }
 
     @Override

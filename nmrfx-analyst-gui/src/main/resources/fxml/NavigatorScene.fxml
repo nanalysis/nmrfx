@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+            prefHeight="400.0" prefWidth="400" styleClass="mainFxmlClass"
+            fx:id="attrBorderPane"
+            fx:controller="org.nmrfx.processor.gui.NavigatorGUI">
+    <top>
+        <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="600"
+                 BorderPane.alignment="CENTER">
+            <items>
+            </items>
+        </ToolBar>
+    </top>
+    <center>
+        <HBox fx:id="navHBox" prefHeight="100.0">
+            <children>
+                <HBox prefHeight="410.0" prefWidth="59.0">
+                    <children>
+                        <Slider fx:id="vecNum1" blockIncrement="1.0" majorTickUnit="16.0" max="64.0" min="1"
+                                minorTickCount="4" onMouseReleased="#handleVecRelease"
+                                onValueChange="#handleVecNum" orientation="VERTICAL" showTickLabels="true"
+                                showTickMarks="true">
+                            <HBox.margin>
+                                <Insets bottom="5.0" top="5.0"/>
+                            </HBox.margin>
+                        </Slider>
+                    </children>
+                    <HBox.margin>
+                        <Insets left="5.0"/>
+                    </HBox.margin>
+                </HBox>
+                <VBox fx:id="navDetailsVBox" prefHeight="200.0" spacing="5.0"
+                      HBox.hgrow="ALWAYS">
+                    <children>
+                        <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
+                            <children>
+                                <Label prefWidth="100.0" text="Dimension:"/>
+                                <VBox fx:id="dimVBox" prefHeight="69.0" prefWidth="236.0" spacing="5.0"
+                                      HBox.hgrow="ALWAYS"/>
+                            </children>
+                        </HBox>
+                        <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
+                            <children>
+                                <Label prefWidth="100.0" text="Datatype: "/>
+                                <ChoiceBox fx:id="realImagChoiceBox" maxWidth="1.7976931348623157E308"
+                                           prefWidth="150.0" HBox.hgrow="ALWAYS"/>
+                            </children>
+                        </HBox>
+                        <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
+                            <children>
+                                <Label prefWidth="100.0" text="File Index: "/>
+                                <TextField fx:id="fileIndexTextBox" HBox.hgrow="ALWAYS"/>
+                            </children>
+                        </HBox>
+                        <TitledPane text="Corrupted Index ID" expanded="false">
+                            <content>
+                                <GridPane BorderPane.alignment="CENTER" hgap="5">
+                                    <rowConstraints>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0"
+                                                        maxHeight="30.0"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0"
+                                                        maxHeight="30.0"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0"
+                                                        maxHeight="30.0"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0"
+                                                        maxHeight="30.0"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0"
+                                                        maxHeight="30.0"/>
+                                    </rowConstraints>
+                                    <children>
+                                        <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
+                                                onAction="#addCorruptedIndex"
+                                                text="Add"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="0"
+                                        />
+                                        <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
+                                                onAction="#deleteCorruptedIndex"
+                                                text="Delete"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="1"
+                                        />
+                                        <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
+                                                onAction="#addCorruptedDim"
+                                                text="Add Dim"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="2"
+                                        />
+                                        <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
+                                                onAction="#clearCorruptedIndex"
+                                                text="Clear All"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="3"
+                                        />
+
+                                        <ListView fx:id="corruptedIndicesListView"
+                                                  prefWidth="100" maxWidth="100" prefHeight="150"
+                                                  editable="false"
+                                                  GridPane.columnIndex="1" GridPane.rowIndex="0"
+                                                  GridPane.columnSpan="1" GridPane.rowSpan="5"
+                                        />
+                                        <Button mnemonicParsing="false" prefWidth="60"
+                                                onAction="#scanForCorruption"
+                                                text="Scan"
+                                                GridPane.columnIndex="2" GridPane.rowIndex="0"
+                                        />
+                                        <Label
+                                                text="Max number of hits: "
+                                                GridPane.columnIndex="2" GridPane.rowIndex="1"
+                                                GridPane.columnSpan="2"
+                                        />
+                                        <ChoiceBox fx:id="scanMaxN"
+                                                   prefWidth="60"
+                                                   GridPane.columnIndex="3" GridPane.rowIndex="2"
+                                                   GridPane.columnSpan="1"
+                                        />
+                                        <Label
+                                                text=" Minimum SDev Ratio: "
+                                                GridPane.columnIndex="2" GridPane.rowIndex="3"
+                                                GridPane.columnSpan="2"
+                                        />
+                                        <ChoiceBox fx:id="scanRatio" prefWidth="60"
+                                                   GridPane.columnIndex="3" GridPane.rowIndex="4"
+
+                                        />
+
+                                    </children>
+                                </GridPane>
+                            </content>
+                        </TitledPane>
+                    </children>
+                </VBox>
+            </children>
+            <padding>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+            </padding>
+        </HBox>
+    </center>
+</BorderPane>

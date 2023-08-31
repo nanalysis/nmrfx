@@ -24,6 +24,7 @@
 package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ObservableValue;
+import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.PropertySheet.Item;
 
 import java.util.Optional;
@@ -32,15 +33,20 @@ import java.util.Optional;
  * @author brucejohnson
  */
 public abstract class OperationItem implements Item {
+    final PropertySheet propertySheet;
+    final String category;
+    final String description;
+    final String name;
 
-    String category;
-    String description;
-    String name;
-
-    public OperationItem(String category, String name, String description) {
+    public OperationItem(PropertySheet propertySheet, String category, String name, String description) {
+        this.propertySheet = propertySheet;
         this.category = category;
         this.description = description;
         this.name = name;
+    }
+
+    public PropertySheet getPropertySheet() {
+        return propertySheet;
     }
 
     @Override

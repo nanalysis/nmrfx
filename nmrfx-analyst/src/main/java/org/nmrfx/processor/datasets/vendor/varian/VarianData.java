@@ -76,6 +76,7 @@ public class VarianData implements NMRData {
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
     private final Double[] Sf = new Double[MAXDIM];
+    private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
     private String text = null;
     private SampleSchedule sampleSchedule = null;
     Integer nDimVal = null;
@@ -272,6 +273,14 @@ public class VarianData implements NMRData {
             nDimVal = nDim;
         }
         return nDimVal;
+    }
+
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
     }
 
     @Override

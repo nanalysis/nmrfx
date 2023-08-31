@@ -27,6 +27,7 @@ import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
 import javafx.collections.ListChangeListener;
+import org.controlsfx.control.PropertySheet;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,8 +44,8 @@ public class CheckComboOperationItem extends OperationItem implements Observable
     private final Collection<?> choices;
     private List<String> values = new ArrayList<>();
 
-    public CheckComboOperationItem(ListChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
-        super(category, name, description);
+    public CheckComboOperationItem(PropertySheet propertySheet, ListChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         values.add(defaultValue);

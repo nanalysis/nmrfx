@@ -26,6 +26,7 @@ package org.nmrfx.utils.properties;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableObjectValue;
+import org.controlsfx.control.PropertySheet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,8 +53,8 @@ public class ListOperationItem extends OperationItem implements ObservableObject
      * @param description
      * @param typeSelector
      */
-    public ListOperationItem(ChangeListener<? super String> listener, List<?> defaultValue, String category, String name, String description, ChoiceOperationItem typeSelector) {
-        super(category, name, description);
+    public ListOperationItem(PropertySheet propertySheet, ChangeListener<? super String> listener, List<?> defaultValue, String category, String name, String description, ChoiceOperationItem typeSelector) {
+        super(propertySheet, category, name, description);
         this.defaultValue = Objects.requireNonNullElseGet(defaultValue, ArrayList::new);
         this.value = this.defaultValue;
         this.listener = listener;

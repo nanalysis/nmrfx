@@ -336,6 +336,11 @@ public class Processor {
         acqOrder = null;
     }
 
+    public void addDataset(NMRData nmrData) {
+        nmrDataSets.clear();
+        nmrDataSets.add(nmrData);
+    }
+
     /**
      * Open a NMRView or Varian file in read-only mode.
      *
@@ -1459,6 +1464,7 @@ public class Processor {
         clearProcessorError();
         int nDimsProcessed = 0;
         for (ProcessOps p : dimProcesses) {
+            p.firstProcess(!nvDataset);
             // check if this process corresponds to dimension that should be skipped
             if (mapToDataset(p.getDim()) == -1) {
                 log.warn("Skip dim {}", (p.getDim() + 1));
@@ -1740,7 +1746,7 @@ public class Processor {
     }
 
     public NMRData getNMRData() {
-        return nmrDataSets.get(0);
+        return nmrDataSets.size() > 0 ? nmrDataSets.get(0) : null;
     }
 
     public boolean isNVDataset() {

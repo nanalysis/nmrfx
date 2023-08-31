@@ -24,14 +24,15 @@
 package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ChangeListener;
+import org.controlsfx.control.PropertySheet;
 
 /**
  * @author brucejohnson
  */
 public class MenuTextOperationItem extends TextOperationItem {
 
-    public MenuTextOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
-        super(listener, defaultValue, category, name, description);
+    public MenuTextOperationItem(PropertySheet propertySheet, ChangeListener listener, String defaultValue, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;

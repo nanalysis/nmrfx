@@ -2514,7 +2514,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         dataFile.force();
     }
 
-    public double[] autoPhase(int iDim, boolean firstOrder, int winSize, double ratio, double ph1Limit, IDBaseline2.ThreshMode threshMode) throws IOException {
+    public double[] autoPhase(int iDim, boolean firstOrder, int winSize, double ratio, double ph1Limit, IDBaseline2.ThreshMode threshMode, boolean apply) throws IOException {
         if (!isWritable()) {
             changeWriteMode(true);
         }
@@ -2524,19 +2524,25 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         double dph1 = 0.0;
         if (firstOrder) {
             double[] phases = phaser.getPhase(ph1Limit);
-            phaser.applyPhases2(iDim, phases[0], phases[1]);
+            if (apply) {
+                phaser.applyPhases2(iDim, phases[0], phases[1]);
+            }
             dph0 = phases[0];
             dph1 = phases[1];
         } else {
             dph0 = phaser.getPhaseZero();
-            phaser.applyPhases2(iDim, dph0, 0.0);
+            if (apply) {
+                phaser.applyPhases2(iDim, dph0, 0.0);
+            }
         }
-        setPh0(iDim, dph0);
-        setPh0_r(iDim, dph0);
-        setPh1(iDim, dph1);
-        setPh1_r(iDim, dph1);
-        writeHeader();
-        dataFile.force();
+        if (apply) {
+            setPh0(iDim, dph0);
+            setPh0_r(iDim, dph0);
+            setPh1(iDim, dph1);
+            setPh1_r(iDim, dph1);
+            writeHeader();
+            dataFile.force();
+        }
         return new double[]{dph0, dph1};
     }
 

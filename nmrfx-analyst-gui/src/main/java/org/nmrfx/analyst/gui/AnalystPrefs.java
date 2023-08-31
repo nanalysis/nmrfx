@@ -139,66 +139,66 @@ public class AnalystPrefs {
 
     public static void addPrefs(PreferencesController preferencesController) {
         PropertySheet prefSheet = preferencesController.getPrefSheet();
-        IntRangeOperationItem libraryVectorSizeItem = new IntRangeOperationItem(
+        IntRangeOperationItem libraryVectorSizeItem = new IntRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     libraryVectorSize.setValue((Integer) c);
                 },
                 getLibraryVectorSize(), 8, 17, "Spectrum Library", "VectorSize",
                 "Log2 of size of simulated spectra, 8 -> 256, 9-> 512 etc.");
-        DoubleRangeOperationItem libraryVectorLBItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem libraryVectorLBItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     libraryVectorLB.setValue((Double) c);
                 },
                 getLibraryVectorLB(), 0, 10.0, "Spectrum Library", "VectorLW",
                 "Line broadening (Hz) for simulated spectra");
-        DoubleRangeOperationItem libraryVectorSFItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem libraryVectorSFItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     libraryVectorSF.setValue((Double) c);
                 },
                 getLibraryVectorSF(), 40, 1200, "Spectrum Library", "VectorSF",
                 "Spectrometer frequency (MHz) for simulated spectra");
-        DoubleRangeOperationItem libraryVectorSWItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem libraryVectorSWItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     libraryVectorSW.setValue((Double) c);
                 },
                 getLibraryVectorSW(), 1000, 16000, "Spectrum Library", "VectorSW",
                 "Sweep Width (Hz) for simulated spectra");
-        DoubleRangeOperationItem libraryVectorREFItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem libraryVectorREFItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     libraryVectorREF.setValue((Double) c);
                 },
                 getLibraryVectorREF(), 0, 10.0, "Spectrum Library", "VectorREF",
                 "Center reference (PPM) for simulated spectra");
 
-        TextOperationItem remoteUserItem = new TextOperationItem((a, b, c) -> {
+        TextOperationItem remoteUserItem = new TextOperationItem(prefSheet, (a, b, c) -> {
             setRemoteUserName((String) c);
         }, getRemoteUserName(), "Remote Data",
                 "UserName",
                 "User name on remote host");
 
-        TextOperationItem remoteHostItem = new TextOperationItem((a, b, c) -> {
+        TextOperationItem remoteHostItem = new TextOperationItem(prefSheet, (a, b, c) -> {
             setRemoteHostName((String) c);
         }, getRemoteHostName(), "Remote Data",
                 "HostName",
                 "Name of remote host (server)");
 
-        TextOperationItem remoteDirectoryItem = new TextOperationItem((a, b, c) -> {
+        TextOperationItem remoteDirectoryItem = new TextOperationItem(prefSheet, (a, b, c) -> {
             setRemoteDirectory((String) c);
         }, getRemoteDirectory(), "Remote Data",
                 "Directory",
                 "Directory on remote host that stores data");
 
-        BooleanOperationItem remoteUsePasswordItem = new BooleanOperationItem((a, b, c) -> {
+        BooleanOperationItem remoteUsePasswordItem = new BooleanOperationItem(prefSheet, (a, b, c) -> {
             setUseRemotePassword((Boolean) c);
         }, getUseRemotePassword(), "Remote Data", "UsePassword", "Prompt for password when connecting");
 
-        TextOperationItem localDirectoryItem = new TextOperationItem((a, b, c) -> {
+        TextOperationItem localDirectoryItem = new TextOperationItem(prefSheet, (a, b, c) -> {
             setLocalDirectory((String) c);
         }, getLocalDirectory(), "Local Data",
                 "Directory",
                 "Directory on local host that stores data");
 
-        DirectoryOperationItem localResidueDirectoryItem = new DirectoryOperationItem((a, b, c) -> {
+        DirectoryOperationItem localResidueDirectoryItem = new DirectoryOperationItem(prefSheet, (a, b, c) -> {
             setLocaResiduelDirectory((String) c);
         }, getLocalResidueDirectory(), "Structure",
                 "Local Residue Directory",

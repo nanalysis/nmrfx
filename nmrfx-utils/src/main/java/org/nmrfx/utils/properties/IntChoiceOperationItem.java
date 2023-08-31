@@ -26,6 +26,7 @@ package org.nmrfx.utils.properties;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableIntegerValue;
+import org.controlsfx.control.PropertySheet;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,8 +41,8 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
     ChangeListener<? super Number> listener;
     private final Collection<?> choices;
 
-    public IntChoiceOperationItem(ChangeListener listener, Integer defaultValue, Collection<?> choices, String category, String name, String description) {
-        super(category, name, description);
+    public IntChoiceOperationItem(PropertySheet propertySheet, ChangeListener listener, Integer defaultValue, Collection<?> choices, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;
