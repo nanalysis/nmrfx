@@ -123,6 +123,16 @@
                                         <TextField fx:id="stackYField" text="" prefWidth="50"
                                                    GridPane.columnIndex="2" GridPane.rowIndex="9"
                                         />
+                                        <Label text="Line Width:"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="10" GridPane.columnSpan="2"
+                                        />
+                                        <Slider fx:id="posWidthSlider1D" prefWidth="150"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="11" GridPane.columnSpan="2"
+                                        />
+                                        <TextField fx:id="posWidthField1D" text="" prefWidth="35"
+                                                   GridPane.columnIndex="2" GridPane.rowIndex="11"
+                                        />
+
                                     </children>
                                 </GridPane>
                             </children>
