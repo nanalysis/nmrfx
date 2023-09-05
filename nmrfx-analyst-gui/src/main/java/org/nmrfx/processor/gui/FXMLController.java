@@ -132,6 +132,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private double widthScale = 10.0;
     private Phaser phaser;
     private AttributesController attributesController;
+    private ToolController toolController;
     private ContentController contentController;
     private AnalyzerBar analyzerBar = null;
     @FXML
@@ -797,6 +798,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         nmrControlRightSidePane.addContentListener(this::updateStageSize);
         cursorProperty.addListener(e -> setCursor());
         attributesController = AttributesController.create(this);
+        toolController = ToolController.create(this);
 
         contentController = ContentController.create(this);
     }
@@ -809,11 +811,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         // Note processor button is already created, just needs to have action listener and style setup
         ToggleButton attributesButton = new ToggleButton("Attributes");
         ToggleButton contentButton = new ToggleButton("Content");
-        SegmentedButton groupButton = new SegmentedButton(processorButton, contentButton, attributesButton);
+        ToggleButton toolButton = new ToggleButton("Tools");
+        SegmentedButton groupButton = new SegmentedButton(processorButton, contentButton, attributesButton, toolButton);
         groupButton.getButtons().forEach(button -> {
             // need to listen to property instead of action so toggle method is triggered when setSelected is called.
             button.selectedProperty().addListener((obs, oldValue, newValue) ->
-                    toggleNmrControlRightSideContent(attributesButton, contentButton, processorButton));
+                    toggleNmrControlRightSideContent(attributesButton, contentButton, processorButton, toolButton));
             button.getStyleClass().add("toolButton");
         });
         processorButton.disableProperty().addListener((observable, oldValue, newValue) -> {
@@ -1488,7 +1491,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
      * @param contentButton The content toggle button.
      * @param processorButton The processor toggle button.
      */
-    private void toggleNmrControlRightSideContent(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
+    private void toggleNmrControlRightSideContent(ToggleButton attributesButton, ToggleButton contentButton,
+                                                  ToggleButton processorButton, ToggleButton toolButton) {
         if (attributesButton.isSelected()) {
             nmrControlRightSidePane.addContent(attributesController);
             attributesController.setAttributeControls();
@@ -1496,6 +1500,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         } else if (contentButton.isSelected()) {
             nmrControlRightSidePane.addContent(contentController);
             contentController.update();
+            viewProcessorControllerIfPossible = false;
+        } else if (toolButton.isSelected()) {
+            nmrControlRightSidePane.addContent(toolController);
+            toolController.update();
             viewProcessorControllerIfPossible = false;
         } else if (processorButton.isSelected()) {
             boolean dataIsFID = false;
