@@ -328,9 +328,24 @@ public class ScanTable {
             }
             Double curLvl = null;
 
-            setDatasetVisibility(showRows, curLvl);
-            refresh();
-            chart.refresh();
+            boolean hasDataset = false;
+            for (var item : showRows) {
+                if (!item.getDatasetName().isBlank()) {
+                    hasDataset = true;
+                    break;
+                }
+            }
+
+            if (hasDataset) {
+                setDatasetVisibility(showRows, curLvl);
+                refresh();
+                chart.refresh();
+            } else {
+                openSelectedListFile();
+                chart.refresh();
+            }
+        } else {
+            openSelectedListFile();
         }
     }
 
@@ -521,6 +536,7 @@ public class ScanTable {
             ensureAllDatasetsAdded();
             selectionChanged();
             processingTable = false;
+            refresh();
         }
     }
 
