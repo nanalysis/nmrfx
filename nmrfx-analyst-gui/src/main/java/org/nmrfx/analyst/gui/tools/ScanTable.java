@@ -646,7 +646,7 @@ public class ScanTable {
             return;
         }
         if (dataset.getNDim() < 2) {
-            log.warn("Unable to load dataset, dataset only has 1 dimension.");
+            loadMultipleDatasets();
             return;
         }
         scanDir = null;
