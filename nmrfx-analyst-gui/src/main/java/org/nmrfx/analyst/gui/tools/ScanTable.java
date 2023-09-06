@@ -150,6 +150,7 @@ public class ScanTable {
     public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
         this.scannerTool = controller;
         this.tableView = tableView;
+        currentChart = controller.getChart();
         init();
     }
 
@@ -442,6 +443,9 @@ public class ScanTable {
 
         PolyChart chart = scannerTool.getChart();
         processingTable = true;
+        tableView.getSelectionModel().getSelectedIndices().removeListener(selectionListener);
+        tableView.getItems().removeListener(filterItemListener);
+
         try (PythonInterpreter processInterp = new PythonInterpreter()) {
             List<String> fileNames = new ArrayList<>();
 
@@ -511,6 +515,11 @@ public class ScanTable {
             scannerTool.miner.setDisableSubMenus(!combineFileMode);
 
         } finally {
+            tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
+            tableView.getItems().addListener(filterItemListener);
+            getGroups();
+            ensureAllDatasetsAdded();
+            selectionChanged();
             processingTable = false;
         }
     }
@@ -1398,8 +1407,8 @@ public class ScanTable {
            }
            chart.getDatasetAttributes().addListener(datasetListener);
            currentChart = chart;
+           loadFromDataset();
         }
-        loadFromDataset();
         updateFilter();
     }
 
@@ -1556,6 +1565,8 @@ public class ScanTable {
                 datasetAttributes.setLvl(dataAttr0.getLvl());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1570,6 +1581,8 @@ public class ScanTable {
                 datasetAttributes.setClm(dataAttr0.getClm());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1584,6 +1597,8 @@ public class ScanTable {
                 datasetAttributes.setNlvls(dataAttr0.getNlvls());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1598,6 +1613,8 @@ public class ScanTable {
                 datasetAttributes.setOffset(dataAttr0.getOffset());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1617,6 +1634,8 @@ public class ScanTable {
                 }
             }
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
