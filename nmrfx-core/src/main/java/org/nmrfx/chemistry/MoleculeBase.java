@@ -654,7 +654,15 @@ public class MoleculeBase implements Serializable, ITree {
                                 validRes = false;
                             }
                         }
-
+                        if (!molFilter.firstResType.equals("*")) {
+                            if (compound instanceof Residue residue) {
+                                String snglChar = String.valueOf(residue.getOneLetter());
+                                String resType = molFilter.firstResType;
+                                if (!snglChar.equals(resType)) {
+                                    validRes = false;
+                                }
+                            }
+                        }
                         if (validRes) {
                             boolean validAtom = false;
 
