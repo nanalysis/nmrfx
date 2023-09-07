@@ -31,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.DatasetLayout;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -97,6 +98,7 @@ public class RS2DData implements NMRData {
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
     private final Double[] Sf = new Double[MAXDIM];
+    private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
     private final boolean[] negateImag = new boolean[MAXDIM];
     private final String[] obsNuc = new String[MAXDIM];
     private final boolean[] complexDim = new boolean[MAXDIM];
@@ -780,6 +782,14 @@ public class RS2DData implements NMRData {
     @Override
     public String getSymbolicCoefs(int iDim) {
         return f1coefS[iDim];
+    }
+
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
     }
 
     @Override

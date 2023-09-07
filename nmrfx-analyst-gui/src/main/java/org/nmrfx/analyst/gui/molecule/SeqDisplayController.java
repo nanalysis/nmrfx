@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -632,8 +633,7 @@ public class SeqDisplayController implements Initializable, StageBasedController
                     pred2ndStr.predict(mol);
                     currentMol = mol;
                 }
-
-            } catch (IOException ex) {
+            } catch (IOException | URISyntaxException ex) {
                 log.warn(ex.getMessage(), ex);
             }
         }
@@ -685,7 +685,7 @@ public class SeqDisplayController implements Initializable, StageBasedController
                 pred2ndStr = new Protein2ndStructurePredictor();
                 try {
                     pred2ndStr.load();
-                } catch (IOException ex) {
+                } catch (IOException | URISyntaxException ex) {
                     log.warn(ex.getMessage(), ex);
                 }
             }
@@ -694,7 +694,7 @@ public class SeqDisplayController implements Initializable, StageBasedController
                     pred2ndStr.load();
                     pred2ndStr.predict(mol);
                     currentMol = mol;
-                } catch (IOException ex) {
+                } catch (IOException | URISyntaxException ex) {
                     log.warn(ex.getMessage(), ex);
                 }
             }

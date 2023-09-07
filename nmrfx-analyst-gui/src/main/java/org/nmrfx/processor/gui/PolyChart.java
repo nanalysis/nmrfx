@@ -1921,7 +1921,8 @@ public class PolyChart extends Region {
                             double[][] xy = drawSpectrum.getXY();
                             int nPoints = drawSpectrum.getNPoints();
                             int rowIndex = drawSpectrum.getRowIndex();
-                            drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
+                            boolean selected = datasetAttributes.isSelected(rowIndex);
+                            drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy, selected);
                             gC.setFill(datasetAttributes.getPosColor(rowIndex));
                             if (chartProps.getIntegrals()) {
                                 draw1DIntegral(datasetAttributes, gC);
@@ -1936,7 +1937,7 @@ public class PolyChart extends Region {
                     drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axes.getMode(0));
                     double[][] xy = drawSpectrum.getXY();
                     int nPoints = drawSpectrum.getNPoints();
-                    drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy);
+                    drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy, false);
                 } finally {
                     gC.restore();
                 }
@@ -2204,7 +2205,7 @@ public class PolyChart extends Region {
                     int rowIndex = drawSpectrum.getRowIndex();
                     gC.setTextAlign(TextAlignment.CENTER);
                     gC.setTextBaseline(VPos.BASELINE);
-                    drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy);
+                    drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy, false);
                     String text = String.format("%.1f", result.get() / norm);
                     double xCenter = (xy[0][0] + xy[0][nPoints - 1]) / 2.0;
                     double yCenter = (xy[1][0] + xy[1][nPoints - 1]) / 2.0;
@@ -2387,14 +2388,15 @@ public class PolyChart extends Region {
         return hit;
     }
 
-    void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContextInterface gC, int iMode, int rowIndex, int nPoints, double[][] xy) throws GraphicsIOException {
+    void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContextInterface gC, int iMode, int rowIndex, int nPoints, double[][] xy, boolean selected) throws GraphicsIOException {
         if (nPoints > 1) {
+            double widthScale = selected ? 3.0 : 1.0;
             if (iMode == 0) {
                 gC.setStroke(datasetAttributes.getPosColor(rowIndex));
-                gC.setLineWidth(datasetAttributes.getPosWidth());
+                gC.setLineWidth(datasetAttributes.getPosWidth() * widthScale);
             } else {
                 gC.setStroke(datasetAttributes.getNegColor());
-                gC.setLineWidth(datasetAttributes.getNegWidth());
+                gC.setLineWidth(datasetAttributes.getNegWidth() * widthScale);
             }
             gC.setLineCap(StrokeLineCap.BUTT);
             gC.strokePolyline(xy[0], xy[1], nPoints);

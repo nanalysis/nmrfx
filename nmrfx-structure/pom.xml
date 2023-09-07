@@ -82,10 +82,6 @@
             <artifactId>openblas-platform</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>arpack-ng-platform</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.actelion.research</groupId>
             <artifactId>openchemlib</artifactId>
         </dependency>

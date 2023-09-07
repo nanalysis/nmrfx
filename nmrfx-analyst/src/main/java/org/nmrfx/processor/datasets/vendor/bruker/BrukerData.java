@@ -85,6 +85,8 @@ public class BrukerData implements NMRData {
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
     private final Double[] Sf = new Double[MAXDIM];
+    private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
+
     private String text = null;
 
     private final String fpath;
@@ -500,6 +502,14 @@ public class BrukerData implements NMRData {
         return f1coefS[iDim];
     }
 
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
+    }
+
     @Override
     public String[] getSFNames() {
         int nDim = getNDim();
@@ -875,7 +885,7 @@ public class BrukerData implements NMRData {
                 log.warn(ex.getMessage(), ex);
             }
         }
-        String[] listTypes = {"vd", "vc", "vp", "fq3"};
+        String[] listTypes = {"vd", "vc", "vp", "fq2", "fq3"};
         for (String listType : listTypes) {
             Path listPath = parDirFile.toPath().resolve(listType + "list");
             if (Files.exists(listPath)) {
@@ -981,7 +991,7 @@ public class BrukerData implements NMRData {
 
     private void adjustTDForComplex() {
         for (int j = 1; j < tdsize.length; j++) {
-            if (isComplex(j)) {
+            if (isComplex(j) && (tdsize[j] > 1)) {
                 tdsize[j] /= 2;
             }
             maxSize[j] = tdsize[j];
@@ -993,7 +1003,7 @@ public class BrukerData implements NMRData {
         // kluge  find smallest dimension.  This is the most likely one to use an array of values
         int smallDim = getMinDim();
         if (parMap != null) {
-            String[] listTypes = {"vd", "vc", "vp", "fq3"};
+            String[] listTypes = {"vd", "vc", "vp", "fq2", "fq3"};
 
             for (String listType : listTypes) {
                 String parValue;
@@ -1003,16 +1013,16 @@ public class BrukerData implements NMRData {
                         List<String> sList = Arrays.asList(sValues);
                         int dimSize = getSize(smallDim);
                         if (listType.startsWith("fq")) {
-                            System.out.println(listType + " " + getSequence());
-                            // first line of fqlist can start with value like "bf ppm", so remove that line
                             if (getSequence().contains("cest")) {
-                                System.out.println("is cest");
                                 sList.set(0, "0.0");
-                                System.out.println(sList.toString());
                             }
                         }
 
                         for (String sValue : sList) {
+                            // first line of fqlist can start with value like "bf ppm", so remove that line
+                            if (sValue.startsWith("bf")) {
+                                continue;
+                            }
                             try {
                                 double scale = 1.0;
                                 if (sValue.endsWith("m")) {
@@ -1092,6 +1102,16 @@ public class BrukerData implements NMRData {
                         f1coefS[i - 1] = AcquisitionType.HYPER_R.getLabel();
                         break;
                     case 0:
+                        complexDim[i - 1] = getValues(i - 1).isEmpty();
+                        if (complexDim[i - 1]) {
+                            f1coef[i - 1] = AcquisitionType.HYPER.getCoefficients();
+                            f1coefS[i - 1] = AcquisitionType.HYPER.getLabel();
+                            complexDim[i - 1] = true;
+                            fttype[i - 1] = "negate";
+                        } else {
+                            f1coefS[i - 1] = AcquisitionType.ARRAY.getLabel();
+                        }
+                        break;
                     case 5:
                         f1coef[i - 1] = AcquisitionType.HYPER.getCoefficients();
                         f1coefS[i - 1] = AcquisitionType.HYPER.getLabel();
@@ -1104,13 +1124,20 @@ public class BrukerData implements NMRData {
                         deltaPh0_2 = 90.0;
                         break;
                     case 1:
-                        f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
                         complexDim[i - 1] = getValues(i - 1).isEmpty();
+                        if (complexDim[i - 1]) {
+                            f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
+                        } else {
+                            f1coefS[i - 1] = AcquisitionType.ARRAY.getLabel();
+                        }
                         break;
                     default:
                         f1coef[i - 1] = new double[]{1, 0, 0, 1};
                         f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
                         break;
+                }
+                if (tdsize[i -1] < 2) {
+                    complexDim[i - 1] = false;
                 }
             }
         }

@@ -48,13 +48,14 @@ import java.util.Map;
 public class Phaser {
 
     private static final Logger log = LoggerFactory.getLogger(Phaser.class);
+    private final boolean processMode;
     String delImagString = "False";
     FXMLController controller;
     Slider[] sliders = new Slider[2];
     TextField[] phLabels = new TextField[2];
     double[] scales = {1, 8};
     SimpleStringProperty phaseChoice = new SimpleStringProperty("X");
-    ChoiceBox xyPhaseChoice;
+    ChoiceBox<String> xyPhaseChoice;
     List<MenuItem> processorMenuItems = new ArrayList<>();
     List<MenuItem> datasetMenuItems = new ArrayList<>();
     MenuButton phaseMenuButton = null;
@@ -64,6 +65,7 @@ public class Phaser {
 
     public Phaser(FXMLController controller, VBox vbox, Orientation orientation) {
         this.controller = controller;
+        processMode = false;
         makeSliders(vbox, orientation);
         setupMenus(vbox);
     }
@@ -71,19 +73,19 @@ public class Phaser {
     public Phaser(FXMLController controller, VBox vbox, Orientation orientation,
                   ProcessingOperation processingOperation) {
         this.controller = controller;
+        processMode = true;
         this.processingOperation = processingOperation;
         HBox hBox = new HBox();
         setupMenus(hBox);
         vbox.setSpacing(15);
         vbox.getChildren().add(hBox);
         makeSliders(vbox, orientation);
-        System.out.println("new phaser " + processingOperation);
     }
 
     private void makeSliders(VBox vbox, Orientation orientation) {
-        Pane layoutPane = orientation == Orientation.VERTICAL ? vbox : new HBox();
+        Pane layoutPane;
         for (int iPh = 0; iPh < 2; iPh++) {
-            HBox hBox = null;
+            HBox hBox;
             if (orientation == Orientation.HORIZONTAL) {
                 hBox = new HBox();
                 HBox.setHgrow(hBox, Priority.ALWAYS);
@@ -95,7 +97,7 @@ public class Phaser {
             final int phMode = iPh;
             Label label = new Label("PH" + iPh);
             Slider slider = new Slider();
-            slider.setBlockIncrement(1.0 * scales[iPh]);
+            slider.setBlockIncrement(scales[iPh]);
             slider.setMajorTickUnit(15.0 * scales[iPh]);
             slider.setMin(-45.0 * scales[iPh]);
             slider.setMax(45.0 * scales[iPh]);
@@ -111,7 +113,6 @@ public class Phaser {
             } else {
                 HBox.setHgrow(slider, Priority.ALWAYS);
             }
-            Separator sep = new Separator();
             phLabels[iPh] = new TextField();
             phLabels[iPh].setPrefWidth(50);
             layoutPane.getChildren().addAll(label, slider, phLabels[iPh]);
@@ -136,9 +137,9 @@ public class Phaser {
         setPivotItem.setOnAction(e -> setPhasePivot());
         splitMenuButton.getItems().add(setPivotItem);
 
-        SplitMenuButton phaseMenuButton = new SplitMenuButton();
-        phaseMenuButton.setText("Set");
-        phaseMenuButton.setOnAction(e -> setPhases());
+        SplitMenuButton phaseSplitMenuButton = new SplitMenuButton();
+        phaseSplitMenuButton.setText("Set");
+        phaseSplitMenuButton.setOnAction(e -> setPhases());
 
         MenuItem setPhasesToDataValuesItem = new MenuItem("To Data Values");
         setPhasesToDataValuesItem.setOnAction(e -> setPhases());
@@ -155,7 +156,7 @@ public class Phaser {
         MenuItem invertPhaseItem = new MenuItem("Invert");
         invertPhaseItem.setOnAction(e -> invertPhase());
 
-        phaseMenuButton.getItems().addAll(setPhasesToDataValuesItem, setPhase0_0Item, setPhase180_0Item, setPhase90_180Item, invertPhaseItem);
+        phaseSplitMenuButton.getItems().addAll(setPhasesToDataValuesItem, setPhase0_0Item, setPhase180_0Item, setPhase90_180Item, invertPhaseItem);
 
         SplitMenuButton autoPhaseMenuButton = new SplitMenuButton();
         autoPhaseMenuButton.setText("Auto");
@@ -170,15 +171,17 @@ public class Phaser {
         autoPhaseMenuButton.getItems().addAll(autoPhase01Item, autoPhase0Item);
 
         hbox.setSpacing(15);
-        hbox.getChildren().addAll(splitMenuButton, phaseMenuButton, autoPhaseMenuButton);
+        hbox.getChildren().addAll(splitMenuButton, phaseSplitMenuButton, autoPhaseMenuButton);
 
     }
 
     private void setupMenus(VBox vbox) {
-        xyPhaseChoice = new ChoiceBox();
+        xyPhaseChoice = new ChoiceBox<>();
         xyPhaseChoice.getItems().addAll("X", "Y");
         vbox.getChildren().add(xyPhaseChoice);
+
         xyPhaseChoice.valueProperty().bindBidirectional(phaseChoice);
+        xyPhaseChoice.valueProperty().addListener(e -> setChartPhaseDim());
 
         phaseMenuButton = new MenuButton("Phase");
 
@@ -229,24 +232,14 @@ public class Phaser {
                 autoPhaseDataset0Item, autoPhaseDataset01Item, resetPhaseItem);
 
         vbox.getChildren().add(phaseMenuButton);
-        phaseMenuButton.getItems().addAll(processorMenuItems);
+        phaseMenuButton.getItems().addAll(datasetMenuItems);
 
     }
 
-    void resetMenus() {
-        if (controller.isProcessControllerVisible()) {
-            phaseMenuButton.getItems().setAll(processorMenuItems);
-            xyPhaseChoice.setVisible(false);
-        } else {
-            phaseMenuButton.getItems().setAll(datasetMenuItems);
-            xyPhaseChoice.setVisible(true);
-        }
-    }
-
-    void setChartPhaseDim() {
+     void setChartPhaseDim() {
         PolyChart chart = controller.getActiveChart();
         chart.setPhaseDim(phaseChoice.get().equals("X") ? 0 : 1);
-        if ((controller.getChartProcessor() == null) || !controller.isProcessControllerVisible()) {
+        if (!processMode) {
             setPH1Slider(chart.getDataPH1());
             setPH0Slider(chart.getDataPH0());
         }
@@ -428,12 +421,15 @@ public class Phaser {
     public void setPhaseOp(String opString) {
         PolyChart chart = controller.getActiveChart();
         processingOperation.update(opString);
-        chart.getProcessorController().chartProcessor.updateOpList();
-//        int opIndex = chart.getProcessorController().propertyManager.setOp(opString);
-//        chart.getProcessorController().propertyManager.setPropSheet(opIndex, opString);
+        if (processMode) {
+            chart.getProcessorController().chartProcessor.updateOpList();
+        }
     }
 
     public void setPhaseOp() {
+        if (!processMode) {
+            return;
+        }
         PolyChart chart = controller.getActiveChart();
         double ph0 = sliders[0].getValue();
         double ph1 = sliders[1].getValue();
@@ -464,12 +460,10 @@ public class Phaser {
                 chart.setPh1(0.0);
                 chart.layoutPlotChildren();
             } else if (phaseDim.equals(controller.getChartProcessor().getVecDimName().substring(1))) {
-                double newph0 = ph0;
-                double newph1 = ph1;
                 double deltaPH0 = ph0 - chart.getDataPH0();
                 double deltaPH1 = ph1 - chart.getDataPH1();
 
-                String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", newph0, newph1, delImagString);
+                String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", ph0, ph1, delImagString);
                 if (processingOperation != null) {
                     processingOperation.update(opString);
                     controller.getChartProcessor().updateOpList();
@@ -485,6 +479,9 @@ public class Phaser {
     }
 
     protected void getPhaseOp() {
+        if (!processMode) {
+            return;
+        }
         PolyChart chart = controller.getActiveChart();
         double ph0 = 0.0;
         double ph1 = 0.0;
@@ -526,12 +523,7 @@ public class Phaser {
                         } else {
                             ph1 = 0.0;
                         }
-                        if (values.containsKey("dimag")) {
-                            String value = values.get("dimag");
-                            delImagString = value;
-                        } else {
-                            delImagString = "False";
-                        }
+                        delImagString = values.getOrDefault("dimag", "False");
                     } catch (NumberFormatException nfE) {
                         log.warn("Unable to parse phase.", nfE);
                     }

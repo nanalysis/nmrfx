@@ -25,8 +25,10 @@ import org.tensorflow.types.TFloat32;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.ndarray.NdArrays;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 
 /*
  *
@@ -36,13 +38,22 @@ public class Protein2ndStructurePredictor {
 
     static SavedModelBundle graphModel;
 
-    public static void load() throws IOException {
+    public static void load() throws IOException, URISyntaxException {
         if (graphModel == null) {
-            graphModel = SavedModelBundle.load("/Users/ekoag/model2");
+            String jarPath = Protein2ndStructurePredictor.class
+                    .getProtectionDomain()
+                    .getCodeSource()
+                    .getLocation()
+                    .toURI()
+                    .getPath();
+            File jarFile = new File(jarPath);
+            String modelFilePath = jarFile.getParentFile().getParentFile().toPath().resolve("models").resolve("protein_ss_model").toString();
+            System.out.println(modelFilePath);
+            graphModel = SavedModelBundle.load(modelFilePath);
         }
     }
 
-    public void predict(Molecule mol) throws IOException {
+    public void predict(Molecule mol) throws IOException, URISyntaxException {
         if (graphModel == null) {
             load();
         }

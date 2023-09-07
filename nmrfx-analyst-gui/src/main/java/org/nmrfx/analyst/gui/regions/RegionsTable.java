@@ -13,6 +13,7 @@ import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.DatasetRegionListener;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartManager;
+import org.nmrfx.utils.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,14 +84,14 @@ public class RegionsTable extends TableView<DatasetRegion> {
 
         TableColumn<DatasetRegion, Double> startPosCol = new TableColumn<>(REGION_START_COLUMN_NAME);
         startPosCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getRegionStart(0)));
-        startPosCol.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleColumnFormatter(NUMBER_DECIMAL_PLACES_REGION_BOUNDS)));
+        startPosCol.setCellFactory(TextFieldTableCell.forTableColumn(TableUtils.getDoubleColumnFormatter(NUMBER_DECIMAL_PLACES_REGION_BOUNDS)));
         startPosCol.setEditable(true);
         startPosCol.setOnEditCommit(this::regionBoundChanged);
         getColumns().add(startPosCol);
 
         TableColumn<DatasetRegion, Double> endPosCol = new TableColumn<>(REGION_END_COLUMN_NAME);
         endPosCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getRegionEnd(0)));
-        endPosCol.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleColumnFormatter(NUMBER_DECIMAL_PLACES_REGION_BOUNDS)));
+        endPosCol.setCellFactory(TextFieldTableCell.forTableColumn(TableUtils.getDoubleColumnFormatter(NUMBER_DECIMAL_PLACES_REGION_BOUNDS)));
         endPosCol.setEditable(true);
         endPosCol.setOnEditCommit(this::regionBoundChanged);
         getColumns().add(endPosCol);

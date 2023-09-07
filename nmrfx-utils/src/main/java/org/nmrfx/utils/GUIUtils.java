@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.function.DoubleConsumer;
 
 /**
  * @author brucejohnson
@@ -85,7 +86,7 @@ public class GUIUtils {
      * Splits the provided string segment into a list of strings where each string is shorter than the region length.
      * The segment string is split by words unless the region width is smaller than the width of the longest word in the
      * segment. In that case the segment string will be split by character.
-     * If the regionWidth is less than the average character list, the segement string will be returned as a list of
+     * If the regionWidth is less than the average character list, the segment string will be returned as a list of
      * strings containing a single character only.
      *
      * @param regionWidth The width of the display region.
@@ -300,5 +301,45 @@ public class GUIUtils {
         TextFormatter<Number> formatter = new TextFormatter<>(converter, 0);
         field.setTextFormatter(formatter);
         slider.valueProperty().bindBidirectional(formatter.valueProperty());
+    }
+
+    public record SliderRange(double min, double value, double max, double incrValue) {}
+
+    public static Optional<Double> getSliderValue(String name, double x, double y, SliderRange sliderRange,  DoubleConsumer applyValue) {
+        Dialog<Double> dialog = new Dialog<>();
+        dialog.setX(x);
+        dialog.setY(y);
+        dialog.setTitle(name);
+        dialog.setHeaderText("");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
+
+        Slider slider = new Slider(sliderRange.min, sliderRange.max, sliderRange.value);
+        slider.setBlockIncrement(sliderRange.incrValue);
+        Label valueLabel = new Label();
+        slider.setMinWidth(200);
+        valueLabel.setMinWidth(80);
+        int nDigits = Math.max(1, (int) Math.ceil(Math.log10(1.0/sliderRange.max))) + 1;
+        String format = "%." + nDigits + "f";
+        valueLabel.setText(String.format(format, sliderRange.value));
+
+        if (applyValue != null) {
+            slider.valueProperty().addListener((a,b,c) -> applyValue.accept(c.doubleValue()));
+        }
+        slider.valueProperty().addListener((a,b,c) -> {
+            valueLabel.setText(String.format(format, c));
+        });
+
+        HBox content = new HBox();
+        content.setAlignment(Pos.CENTER_LEFT);
+        content.setSpacing(10);
+        content.getChildren().addAll(new Label("Value:"), slider, valueLabel);
+        dialog.getDialogPane().setContent(content);
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.APPLY) {
+                return slider.getValue();
+            }
+            return null;
+        });
+        return dialog.showAndWait();
     }
 }

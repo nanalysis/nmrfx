@@ -19,6 +19,7 @@ package org.nmrfx.processor.datasets.vendor.nmrview;
 
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -50,6 +51,7 @@ public class NMRViewData implements NMRData {
     private SampleSchedule sampleSchedule = null;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
+    private final AcquisitionType[] symbolicCoefs = new AcquisitionType[8];
 
     /**
      * open NMRView parameter and data files
@@ -258,6 +260,14 @@ public class NMRViewData implements NMRData {
     @Override
     public String getSymbolicCoefs(int idim) {
         return null;
+    }
+
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
     }
 
     @Override

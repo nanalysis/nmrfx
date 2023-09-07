@@ -98,10 +98,6 @@
             <artifactId>openblas-platform</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>arpack-ng-platform</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.python</groupId>
             <artifactId>jython-slim</artifactId>
         </dependency>

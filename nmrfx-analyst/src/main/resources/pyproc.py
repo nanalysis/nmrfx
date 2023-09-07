@@ -558,6 +558,8 @@ def acqarray(*pars):
         else:
             fidInfo.acqArray.append(0)
             fidInfo.fidObj.setArraySize(i,0)
+    size = list(fidInfo.maxSize)
+    acqsize(size)
 
 # set fid size limits 
 def acqsize(*pars):
@@ -609,6 +611,13 @@ def tdsize(*size):
             fidInfo.useSize.append(fidInfo.size[i])
         else:
             fidInfo.useSize.append(par)
+
+def acqmode(*modes):
+    ''' Set the acquisition modes (complex, hypercomplex, echo-antiecho etc. for each dimension. 
+    '''
+    global fidInfo
+    for i,par in enumerate(modes):
+        fidInfo.fidObj.setAcqMode(i, par)
 
 def p(par):
     return fidInfo.getPar(par)
@@ -3843,13 +3852,6 @@ def genScript(arrayed=False):
                 continue
             if fidInfo.mapToDatasetList[iDim-1] == -1:
                 continue
-            fCoef = fidInfo.getSymbolicCoefs(iDim-1)
-            if fCoef != None and fCoef != 'hyper' and fCoef != 'sep':
-                script += 'TDCOMB('
-                script += "dim="+str(iDim)
-                script += ",coef='"
-                script += fCoef
-                script += "')\n"
         script += 'SUPPRESS(disabled=True)\n'
         script += 'SB()\n'
         script += 'ZF()\n'
@@ -3874,6 +3876,9 @@ def genScript(arrayed=False):
         if not fidInfo.fidObj.isFrequencyDim(iDim-1):
             continue
         if (iDim >= fidInfo.nd) and arrayed:
+            continue
+        fCoef = fidInfo.getSymbolicCoefs(iDim-1)
+        if fCoef == "array":
             continue
         script += 'DIM('+str(iDim)+')\n'
         if iDim == 2 and fidInfo.nd == 2 and fidInfo.fidObj.getSampleSchedule() != None:
@@ -3914,6 +3919,9 @@ def genScript(arrayed=False):
             if not fidInfo.fidObj.isFrequencyDim(iDim-1):
                 continue
             if (iDim >= fidInfo.nd) and arrayed:
+                continue
+            fCoef = fidInfo.getSymbolicCoefs(iDim-1)
+            if fCoef == "array":
                 continue
             if iDim == 1:
                 script += 'DIM()\n'

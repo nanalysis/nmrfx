@@ -165,6 +165,63 @@ public class FileTableItem {
         }
     }
 
+    public boolean getSelected() {
+        var dataAttr = getDatasetAttributes();
+        return dataAttr == null || dataAttr.isSelected(getRow() - 1);
+    }
+
+    public void setSelected(boolean state) {
+        var dataAttr = getDatasetAttributes();
+        if (dataAttr != null) {
+            dataAttr.setSelectedElem(getRow() - 1, state);
+        }
+    }
+
+    public void setLvl(double value) {
+        var dataAttr = getDatasetAttributes();
+        if (dataAttr != null) {
+            dataAttr.setLvl(value);
+        }
+    }
+
+    public double getLvl() {
+        var dataAttr = getDatasetAttributes();
+        return dataAttr != null ? dataAttr.getLvl() : 0.0;
+    }
+
+    public void setClm(double value) {
+        if (datasetAttr != null) {
+            datasetAttr.get().setClm(value);
+        }
+    }
+
+    public double getClm() {
+        var dataAttr = getDatasetAttributes();
+        return dataAttr != null ? dataAttr.getClm() : 1.2;
+    }
+
+    public void setOffset(double value) {
+        if (datasetAttr != null) {
+            datasetAttr.get().setOffset(value);
+        }
+    }
+
+    public double getOffset() {
+        var dataAttr = getDatasetAttributes();
+        return dataAttr != null ? dataAttr.getOffset() : 0.0;
+    }
+
+    public void setNlvls(int value) {
+        if (datasetAttr != null) {
+            datasetAttr.get().setNlvls(value);
+        }
+    }
+
+    public int getNlvls() {
+        var dataAttr = getDatasetAttributes();
+        return dataAttr != null ? dataAttr.getNlvls() : 1;
+    }
+
     public DatasetAttributes getDatasetAttributes() {
         return datasetAttr == null ? null : datasetAttr.get();
     }

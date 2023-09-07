@@ -519,13 +519,7 @@ public class AnalystApp extends Application {
 
     public void showScannerTool() {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        if (!controller.containsTool(ScannerTool.class)) {
-            BorderPane vBox = new BorderPane();
-            controller.getBottomBox().getChildren().add(vBox);
-            ScannerTool scannerTool = new ScannerTool(controller, this::removeScannerTool);
-            scannerTool.initialize(vBox);
-            controller.addTool(scannerTool);
-        }
+        controller.showScannerMenus();
     }
 
     public void showRunAboutTool() {

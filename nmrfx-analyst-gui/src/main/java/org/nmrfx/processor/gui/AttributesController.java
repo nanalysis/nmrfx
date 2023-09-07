@@ -46,7 +46,6 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     private VBox attributesVBox;
 
     enum SelectionChoice {
-        ITEM,
         CHART,
         WINDOW
     }
@@ -57,10 +56,6 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     ScrollPane attributeScrollPane;
     @FXML
     ChoiceBox<SelectionChoice> itemChoiceState;
-    @FXML
-    ChoiceBox<DatasetAttributes> datasetChoiceBox;
-    @FXML
-    ChoiceBox<PeakListAttributes> peakListChoiceBox;
     @FXML
     Accordion attributesAccordion;
     @FXML
@@ -213,6 +208,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     @FXML
     TextField posWidthField;
     @FXML
+    Slider posWidthSlider1D;
+    @FXML
+    TextField posWidthField1D;
+    @FXML
     Slider negWidthSlider;
     @FXML
     TextField negWidthField;
@@ -255,13 +254,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
         controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
         controller.itemChoiceState.setValue(SelectionChoice.CHART);
-        controller.datasetChoiceBox.disableProperty()
-                .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
-        controller.peakListChoiceBox.disableProperty()
-                .bind(controller.itemChoiceState.valueProperty().isNotEqualTo(SelectionChoice.ITEM));
         controller.setChart(fxmlController.getActiveChart());
-        controller.datasetChoiceBox.valueProperty().addListener(e -> controller.datasetChoiceChanged());
-        controller.peakListChoiceBox.valueProperty().addListener(e -> controller.peakListChoiceChanged());
         return controller;
     }
 
@@ -371,6 +364,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         posWidthSlider.setOnMouseReleased(e -> setPosWidthSlider(true));
         GUIUtils.bindSliderField(posWidthSlider, posWidthField);
 
+        posWidthSlider1D.valueProperty().addListener(posWidthSliderListener);
+        posWidthSlider1D.setOnMouseReleased(e -> setPosWidthSlider(true));
+        GUIUtils.bindSliderField(posWidthSlider1D, posWidthField1D);
+
         negWidthSlider.valueProperty().addListener(negWidthSliderListener);
         negWidthSlider.setOnMouseReleased(e -> setPosWidthSlider(false));
         GUIUtils.bindSliderField(negWidthSlider, negWidthField);
@@ -390,7 +387,6 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         linkPeakDisplayCheckBox.selectedProperty().addListener(drawLinkPeaksListener);
         peakOnColorPicker.valueProperty().addListener(peakOnColorListener);
         peakOffColorPicker.valueProperty().addListener(peakOffColorListener);
-        peakAppearancePane.expandedProperty().addListener(e -> peakPaneExpaned());
     }
 
     public Pane getPane() {
@@ -509,42 +505,12 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         chart.getPeakListAttributes().addListener((ListChangeListener<? super PeakListAttributes>) e -> peakListsChanged());
     }
 
-    private void peakPaneExpaned() {
-        if (peakAppearancePane.isExpanded()) {
-            applyVBox.getChildren().remove(datasetChoiceBox);
-            if (!applyVBox.getChildren().contains(peakListChoiceBox)) {
-                applyVBox.getChildren().add(peakListChoiceBox);
-            }
-        } else {
-            applyVBox.getChildren().remove(peakListChoiceBox);
-            if (!applyVBox.getChildren().contains(datasetChoiceBox)) {
-                applyVBox.getChildren().add(datasetChoiceBox);
-            }
-        }
-    }
-
     private void peakListsChanged() {
-        peakListChoiceBox.setItems(chart.getPeakListAttributes());
-        if (!peakListChoiceBox.getItems().isEmpty()) {
-            peakListChoiceBox.setValue(peakListChoiceBox.getItems().get(0));
-        }
         setPeakControls();
     }
 
     private void datasetsChanged() {
-        datasetChoiceBox.setItems(chart.getDatasetAttributes().filtered(d -> !d.isProjection()));
-        if (!datasetChoiceBox.getItems().isEmpty()) {
-            datasetChoiceBox.setValue(datasetChoiceBox.getItems().get(0));
-        }
         setDatasetControls();
-    }
-
-    private void datasetChoiceChanged() {
-        updateDatasetAttributeControls();
-    }
-
-    private void peakListChoiceChanged() {
-        setPeakControls();
     }
 
     private void refreshCharts() {
@@ -559,34 +525,18 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
     private List<DatasetAttributes> getDatasetAttributes() {
         List<DatasetAttributes> result;
-        if (itemChoiceState.getValue() == SelectionChoice.ITEM) {
-            if (datasetChoiceBox.getItems().isEmpty() || (datasetChoiceBox.getValue() == null)) {
-                result = Collections.emptyList();
-            } else {
-                result = List.of(datasetChoiceBox.getValue());
-            }
-        } else {
-            result = new ArrayList<>();
-            for (var aChart : getCharts(allCharts())) {
-                result.addAll(aChart.getDatasetAttributes());
-            }
+        result = new ArrayList<>();
+        for (var aChart : getCharts(allCharts())) {
+            result.addAll(aChart.getDatasetAttributes());
         }
         return result;
     }
 
     private List<PeakListAttributes> getPeakListAttributes() {
         List<PeakListAttributes> result;
-        if (itemChoiceState.getValue() == SelectionChoice.ITEM) {
-            if (peakListChoiceBox.getItems().isEmpty() || (peakListChoiceBox.getValue() == null)) {
-                result = Collections.emptyList();
-            } else {
-                result = List.of(peakListChoiceBox.getValue());
-            }
-        } else {
-            result = new ArrayList<>();
-            for (var aChart : getCharts(allCharts())) {
-                result.addAll(aChart.getPeakListAttributes());
-            }
+        result = new ArrayList<>();
+        for (var aChart : getCharts(allCharts())) {
+            result.addAll(aChart.getPeakListAttributes());
         }
         return result;
     }
@@ -787,6 +737,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
             double incrValue = 0.1;
             if (posMode) {
                 setSlider(posWidthSliderListener, posWidthSlider, min, max, incrValue, value);
+                setSlider(posWidthSliderListener, posWidthSlider1D, min, max, incrValue, value);
             } else {
                 setSlider(negWidthSliderListener, negWidthSlider, min, max, incrValue, value);
             }

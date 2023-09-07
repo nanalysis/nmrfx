@@ -2029,7 +2029,7 @@ public class Vec extends VecBase {
         int vecSize = getSize();
         int winSize = 16;
         double ratio = 10.0;
-        if (winSize > vecSize) {
+        if (winSize > (vecSize / 4)) {
             winSize = vecSize / 4;
         }
 
@@ -2055,27 +2055,29 @@ public class Vec extends VecBase {
             if (isComplex()) {
                 makeReal();
             }
+
+            int nSig = 0;
             for (int i = 0; i < vecSize; i++) {
                 y[i + 1] = rvec[i];
                 if (isInSignalRegion[i]) {
                     w[i + 1] = 0;
+                    nSig++;
                 } else {
                     w[i + 1] = 1;
                 }
             }
             double[] a = new double[order + 1];
-
-            Util.pascalrow(a, order);
-
-            //is this fine?
-            Util.asmooth(w, y, z, a, lambda, vecSize, order);
-            if (baselineMode) {
-                if (vecSize >= 0) {
-                    System.arraycopy(z, 1, rvec, 0, vecSize);
-                }
-            } else {
-                for (int i = 0; i < vecSize; i++) {
-                    rvec[i] -= z[i + 1];
+            if (nSig < (vecSize - 4)) {
+                Util.pascalrow(a, order);
+                Util.asmooth(w, y, z, a, lambda, vecSize, order);
+                if (baselineMode) {
+                    if (vecSize >= 0) {
+                        System.arraycopy(z, 1, rvec, 0, vecSize);
+                    }
+                } else {
+                    for (int i = 0; i < vecSize; i++) {
+                        rvec[i] -= z[i + 1];
+                    }
                 }
             }
         }
