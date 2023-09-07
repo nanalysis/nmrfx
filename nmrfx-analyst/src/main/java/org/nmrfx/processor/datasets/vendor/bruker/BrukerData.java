@@ -991,7 +991,7 @@ public class BrukerData implements NMRData {
 
     private void adjustTDForComplex() {
         for (int j = 1; j < tdsize.length; j++) {
-            if (isComplex(j)) {
+            if (isComplex(j) && (tdsize[j] > 1)) {
                 tdsize[j] /= 2;
             }
             maxSize[j] = tdsize[j];
@@ -1135,6 +1135,9 @@ public class BrukerData implements NMRData {
                         f1coef[i - 1] = new double[]{1, 0, 0, 1};
                         f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
                         break;
+                }
+                if (tdsize[i -1] < 2) {
+                    complexDim[i - 1] = false;
                 }
             }
         }
