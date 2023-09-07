@@ -26,7 +26,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.CanvasAnnotation;
-import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,7 +106,7 @@ public class AnnoText implements CanvasAnnotation {
         this.fill = fill;
     }
     public void setFill(String fill) {
-        this.fill = GUIScripter.getColor(fill);
+        this.fill = GUIUtils.getColor(fill);
     }
 
     @Override

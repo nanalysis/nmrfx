@@ -19,7 +19,7 @@ package org.nmrfx.processor.gui.annotations;
 
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.CanvasAnnotation;
-import org.nmrfx.processor.gui.GUIScripter;
+import org.nmrfx.utils.GUIUtils;
 
 /**
  * @author brucejohnson
@@ -50,7 +50,7 @@ public abstract class AnnoShape implements CanvasAnnotation {
     }
 
     public void setStroke(String stroke) {
-        this.stroke = GUIScripter.getColor(stroke);
+        this.stroke = GUIUtils.getColor(stroke);
     }
 
     /**
@@ -68,7 +68,7 @@ public abstract class AnnoShape implements CanvasAnnotation {
     }
 
     public void setFill(String fill) {
-        this.fill = GUIScripter.getColor(fill);
+        this.fill = GUIUtils.getColor(fill);
     }
 
     /**

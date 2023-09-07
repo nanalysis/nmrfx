@@ -4,23 +4,20 @@ import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.annotations.*;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
-import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,19 +72,6 @@ public class GUIScripter {
 
     public static String toRGBCode(Color color) {
         return ColorProperty.toRGBCode(color);
-    }
-
-    public static Color getColor(String colorString) {
-        Color color = null;
-        if (colorString != null && !colorString.isBlank()) {
-            try {
-                color = Color.web(colorString);
-            } catch(Exception e) {
-                color = Color.web("black");
-            }
-        }
-        return color;
-
     }
 
     public static void showPeak(String peakSpecifier) {
@@ -362,7 +346,7 @@ public class GUIScripter {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 if (key.contains("Color")) {
-                    value = getColor(value.toString());
+                    value = GUIUtils.getColor(value.toString());
                 }
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     String testName = dataAttr.getFileName();
@@ -458,7 +442,7 @@ public class GUIScripter {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 if (key.contains("Color")) {
-                    value = getColor(value.toString());
+                    value = GUIUtils.getColor(value.toString());
                 }
                 for (PeakListAttributes peakAttr : peakAttrs) {
                     String testName = peakAttr.getPeakListName();
@@ -479,7 +463,7 @@ public class GUIScripter {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 if (key.contains("Color") && (value != null)) {
-                    value = getColor(value.toString());
+                    value = GUIUtils.getColor(value.toString());
                 }
                 chart.getChartProperties().setPublicPropertyValue(key, value);
 
@@ -504,7 +488,7 @@ public class GUIScripter {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 if (key.contains("Color") && (value != null)) {
-                    value = getColor(value.toString());
+                    value = GUIUtils.getColor(value.toString());
                 }
                 getActiveController().setPublicPropertyValue(key, value);
 
@@ -796,7 +780,7 @@ public class GUIScripter {
     }
 
     public AnnoShape addPolyLine(List<Double> xList, List<Double> yList, String strokeName, Double lineWidth) {
-        Color stroke = getColor(strokeName);
+        Color stroke = GUIUtils.getColor(strokeName);
         AnnoShape shape = new AnnoPolyLine(xList, yList,
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         shape.setStroke(stroke);
@@ -811,8 +795,8 @@ public class GUIScripter {
     }
 
     public AnnoShape addRectangle(Double x1, Double y1, Double x2, Double y2, String strokeName, String fillName, Double lineWidth) {
-        Color stroke = getColor(strokeName);
-        Color fill = getColor(fillName);
+        Color stroke = GUIUtils.getColor(strokeName);
+        Color fill = GUIUtils.getColor(fillName);
         AnnoShape shape = new AnnoRectangle(x1, y1, x2, y2,
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         shape.setStroke(stroke);
@@ -828,8 +812,8 @@ public class GUIScripter {
     }
 
     public AnnoShape addOval(Double x1, Double y1, Double x2, Double y2, String strokeName, String fillName, Double lineWidth) {
-        Color stroke = getColor(strokeName);
-        Color fill = getColor(fillName);
+        Color stroke = GUIUtils.getColor(strokeName);
+        Color fill = GUIUtils.getColor(fillName);
         AnnoShape shape = new AnnoOval(x1, y1, x2, y2,
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         shape.setStroke(stroke);
@@ -845,8 +829,8 @@ public class GUIScripter {
     }
 
     public AnnoShape addPolygon(List<Double> xList, List<Double> yList, String strokeName, String fillName, Double lineWidth) {
-        Color stroke = getColor(strokeName);
-        Color fill = getColor(fillName);
+        Color stroke = GUIUtils.getColor(strokeName);
+        Color fill = GUIUtils.getColor(fillName);
         AnnoShape shape = new AnnoPolygon(xList, yList,
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         shape.setStroke(stroke);
@@ -862,8 +846,8 @@ public class GUIScripter {
     }
 
     public AnnoShape addArrowLine(Double x1, Double y1, Double x2, Double y2, Boolean arrowFirst, Boolean arrowLast, String strokeName, String fillName, Double lineWidth) {
-        Color stroke = getColor(strokeName);
-        Color fill = getColor(fillName);
+        Color stroke = GUIUtils.getColor(strokeName);
+        Color fill = GUIUtils.getColor(fillName);
         AnnoShape shape = new AnnoLine(x1, y1, x2, y2, arrowFirst, arrowLast, lineWidth,
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         shape.setStroke(stroke);
@@ -878,8 +862,8 @@ public class GUIScripter {
 
     }
     public AnnoShape addLineText(Double x1, Double y1, Double x2, Double y2,  String text, Double fontSize, String strokeName, String fillName, Double lineWidth) {
-        Color stroke = getColor(strokeName);
-        Color fill = getColor(fillName);
+        Color stroke = GUIUtils.getColor(strokeName);
+        Color fill = GUIUtils.getColor(fillName);
         AnnoShape shape = new AnnoLineText(x1, y1, x2, y2, text, fontSize, lineWidth,
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         shape.setStroke(stroke);
