@@ -42,7 +42,7 @@ import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.annotations.AnnoLine;
+import org.nmrfx.processor.gui.annotations.AnnoSimpleLine;
 import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -1795,12 +1795,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     PeakDim peakDim = peak.getPeakDim(dataLabel);
                     if (peakDim != null) {
                         double ppm = peakDim.getChemShiftValue();
-                        AnnoLine annoLine = iDim == 0 ?
-                                new AnnoLine(ppm, 0.0, ppm, 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.FRACTION) :
-                                new AnnoLine(0.0, ppm, 1.0, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
+                        AnnoSimpleLine annoSimpleLine = iDim == 0 ?
+                                new AnnoSimpleLine(ppm, 0.0, ppm, 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.FRACTION) :
+                                new AnnoSimpleLine(0.0, ppm, 1.0, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
                         var color = Color.BLUE;
-                        annoLine.setStroke(color);
-                        chart.addAnnotation(annoLine);
+                        annoSimpleLine.setStroke(color);
+                        chart.addAnnotation(annoSimpleLine);
                     }
                 }
                 chart.refresh();
@@ -2005,9 +2005,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 }
 
                 double ppm = spinSystem.getValue(isIntra ? 1 : 0, atomIndex);
-                AnnoLine annoLine = new AnnoLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
-                annoLine.setStroke(color);
-                chart.addAnnotation(annoLine);
+                AnnoSimpleLine annoSimpleLine = new AnnoSimpleLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
+                annoSimpleLine.setStroke(color);
+                chart.addAnnotation(annoSimpleLine);
             }
         }
     }
@@ -2032,17 +2032,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     if (!typePresent.isIntraResidue()) {
                         text = text.toLowerCase();
                     }
-                    AnnoText annoText = new AnnoText(x, -8, x + delta, -8, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, text);
+                    AnnoText annoText = new AnnoText(x, -8, x + delta, -8, text, 12.0, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
                     annoText.setFont(font);
                     chart.addAnnotation(annoText);
                     Color presentColor = typePresent.isPresent() ? Color.LIGHTGREEN : Color.RED;
-                    AnnoLine annoLine2 = new AnnoLine(x, -2, x + textWidth, -2, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
-                    annoLine2.setStroke(presentColor);
-                    annoLine2.setLineWidth(6);
-                    chart.addAnnotation(annoLine2);
+                    AnnoSimpleLine annoSimpleLine2 = new AnnoSimpleLine(x, -2, x + textWidth, -2, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
+                    annoSimpleLine2.setStroke(presentColor);
+                    annoSimpleLine2.setLineWidth(6);
+                    chart.addAnnotation(annoSimpleLine2);
                     x += delta;
                 }
-                AnnoText annoText = new AnnoText(x, -8, x + textWidth, -8, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, String.valueOf(nPeaks - nExpected));
+                AnnoText annoText = new AnnoText(x, -8, x + textWidth, -8, String.valueOf(nPeaks - nExpected), 12.0, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
                 annoText.setFont(font);
                 chart.addAnnotation(annoText);
             }
@@ -2071,17 +2071,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     chart.moveTo(i, pos, widths[iChart][i]);
                 }
                 if (i == 0) {
-                    AnnoLine annoLine = new AnnoLine(ppms[0], 0.0, ppms[0], 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.
+                    AnnoSimpleLine annoSimpleLine = new AnnoSimpleLine(ppms[0], 0.0, ppms[0], 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.
                             FRACTION);
-                    annoLine.setStroke(Color.BLUE);
-                    annoLine.setLineWidth(0.0);
-                    chart.addAnnotation(annoLine);
+                    annoSimpleLine.setStroke(Color.BLUE);
+                    annoSimpleLine.setLineWidth(0.0);
+                    chart.addAnnotation(annoSimpleLine);
                 } else if (i == 1) {
-                    AnnoLine annoLine = new AnnoLine(0.0, ppms[1], 1.0, ppms[1], CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.
+                    AnnoSimpleLine annoSimpleLine = new AnnoSimpleLine(0.0, ppms[1], 1.0, ppms[1], CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.
                             WORLD);
-                    annoLine.setStroke(Color.BLUE);
-                    annoLine.setLineWidth(0.0);
-                    chart.addAnnotation(annoLine);
+                    annoSimpleLine.setStroke(Color.BLUE);
+                    annoSimpleLine.setLineWidth(0.0);
+                    chart.addAnnotation(annoSimpleLine);
                 }
             } else {
                 chart.full(i);

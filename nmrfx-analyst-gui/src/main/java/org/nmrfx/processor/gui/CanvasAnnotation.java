@@ -102,14 +102,14 @@ public interface CanvasAnnotation {
         return switch (pos.getHpos()) {
             case LEFT -> HANDLE_WIDTH;
             case RIGHT -> -HANDLE_WIDTH;
-            case CENTER -> HANDLE_WIDTH / 2;
+            case CENTER -> -HANDLE_WIDTH / 2;
         };
     }
 
     private static double getVOffset(Pos pos) {
         return switch (pos.getVpos()) {
             case TOP -> HANDLE_WIDTH;
-            case CENTER -> HANDLE_WIDTH / 2;
+            case CENTER -> -HANDLE_WIDTH / 2;
             case BOTTOM, BASELINE -> -HANDLE_WIDTH;
         };
     }
@@ -147,7 +147,7 @@ public interface CanvasAnnotation {
 
     boolean isSelectable();
 
-    void setSelectable(boolean state);
+    //void setSelectable(boolean state);
 
     int hitHandle(double x, double y);
 

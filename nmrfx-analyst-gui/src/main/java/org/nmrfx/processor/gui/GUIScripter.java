@@ -4,20 +4,28 @@ import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
-import org.nmrfx.processor.gui.annotations.AnnoShape;
+import org.nmrfx.processor.gui.annotations.*;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.properties.ColorProperty;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
+import java.awt.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
@@ -35,9 +43,13 @@ public class GUIScripter {
         useChart = null;
     }
 
-    public static void setController(FXMLController controllerValue) {
-        AnalystApp.getFXMLControllerManager().setActiveController(controllerValue);
-        controller = controllerValue;
+    public GUIScripter(String chartName) {
+        Optional<PolyChart> chartOpt = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getCharts().stream().filter(c -> c.getName().equals(chartName)).findFirst();
+        if (chartOpt.isPresent()) {
+            useChart = chartOpt.get();
+        } else {
+            throw new IllegalArgumentException("Chart \"" + chartName + "\" doesn't exist");
+        }
     }
 
     public static void setActiveController() {
@@ -52,16 +64,60 @@ public class GUIScripter {
         return controller;
     }
 
+    public static void setController(FXMLController controllerValue) {
+        AnalystApp.getFXMLControllerManager().setActiveController(controllerValue);
+        controller = controllerValue;
+    }
+
     public static FXMLController getActiveController() {
         return AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
     }
 
-    public GUIScripter(String chartName) {
-        Optional<PolyChart> chartOpt = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getCharts().stream().filter(c -> c.getName().equals(chartName)).findFirst();
-        if (chartOpt.isPresent()) {
-            useChart = chartOpt.get();
-        } else {
-            throw new IllegalArgumentException("Chart \"" + chartName + "\" doesn't exist");
+    public static String toRGBCode(Color color) {
+        return ColorProperty.toRGBCode(color);
+    }
+
+    public static Color getColor(String colorString) {
+        Color color = null;
+        if (colorString != null && !colorString.isBlank()) {
+            try {
+                color = Color.web(colorString);
+            } catch(Exception e) {
+                color = Color.web("black");
+            }
+        }
+        return color;
+
+    }
+
+    public static void showPeak(String peakSpecifier) {
+        Fx.runOnFxThread(() -> {
+            FXMLController activeController = getActiveController();
+            activeController.refreshPeakView(peakSpecifier);
+        });
+    }
+
+    public static void showPeak(Peak peak) {
+        Fx.runOnFxThread(() -> {
+            FXMLController activeController = getActiveController();
+            activeController.refreshPeakView(peak);
+        });
+    }
+
+    /**
+     * Execute a command for a specific chart. The chart will temporarily become the active one.
+     *
+     * @param keyStr the action key for the command to execute
+     * @param chart  the chart on which the command must be executed
+     */
+    public static void chartCommand(String keyStr, PolyChart chart) {
+        PolyChartManager chartManager = PolyChartManager.getInstance();
+        PolyChart currentActive = chartManager.getActiveChart();
+        try {
+            chartManager.setActiveChart(chart);
+            AnalystPythonInterpreter.exec(keyActions.get(keyStr));
+        } finally {
+            chartManager.setActiveChart(currentActive);
         }
     }
 
@@ -466,6 +522,39 @@ public class GUIScripter {
         return future.get();
     }
 
+    public String getAnnotations() throws InterruptedException, ExecutionException {
+        FutureTask<String> future = new FutureTask(() -> {
+            PolyChart chart = getChart();
+            List<CanvasAnnotation> annoTypes = chart.getCanvasAnnotations();
+            Yaml yaml = new Yaml();
+            String output = yaml.dump(annoTypes);
+            return output;
+        });
+        Fx.runOnFxThread(future);
+        return future.get();
+    }
+
+    public void loadAnnotations(String yamlData) {
+        Fx.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
+            try (InputStream stream = new ByteArrayInputStream(yamlData.getBytes())) {
+                Yaml yaml = new Yaml();
+                List<CanvasAnnotation> annoTypes = (List<CanvasAnnotation>) yaml.load(stream);
+                for (CanvasAnnotation annoType : annoTypes) {
+                    chart.addAnnotation(annoType);
+                }
+                for (CanvasAnnotation annoType: chart.getCanvasAnnotations()) {
+                    System.out.println(annoType.getClass());
+                }
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            getActiveController().draw();
+        });
+    }
+
     public List<Integer> grid() throws InterruptedException, ExecutionException {
         FutureTask<List<Integer>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
@@ -681,15 +770,6 @@ public class GUIScripter {
         });
     }
 
-    public static String toRGBCode(Color color) {
-        return ColorProperty.toRGBCode(color);
-    }
-
-    public static Color getColor(String colorString) {
-        return Color.web(colorString);
-
-    }
-
     public Cursor getCursor() throws InterruptedException, ExecutionException {
         FutureTask<Cursor> future = new FutureTask(() -> {
             return getActiveController().getActiveChart().getCanvasCursor();
@@ -711,26 +791,12 @@ public class GUIScripter {
         });
     }
 
-    public static void showPeak(String peakSpecifier) {
-        Fx.runOnFxThread(() -> {
-            FXMLController activeController = getActiveController();
-            activeController.refreshPeakView(peakSpecifier);
-        });
-    }
-
-    public static void showPeak(Peak peak) {
-        Fx.runOnFxThread(() -> {
-            FXMLController activeController = getActiveController();
-            activeController.refreshPeakView(peak);
-        });
-    }
-
     public List<Stage> getStages() {
         return AnalystApp.getStages();
     }
 
-    public AnnoShape addPolyLine(List<Double> xList, List<Double> yList, String strokeName, double lineWidth) {
-        Color stroke = Color.web(strokeName);
+    public AnnoShape addPolyLine(List<Double> xList, List<Double> yList, String strokeName, Double lineWidth) {
+        Color stroke = getColor(strokeName);
         AnnoShape shape = new AnnoPolyLine(xList, yList,
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         shape.setStroke(stroke);
@@ -744,28 +810,106 @@ public class GUIScripter {
 
     }
 
+    public AnnoShape addRectangle(Double x1, Double y1, Double x2, Double y2, String strokeName, String fillName, Double lineWidth) {
+        Color stroke = getColor(strokeName);
+        Color fill = getColor(fillName);
+        AnnoShape shape = new AnnoRectangle(x1, y1, x2, y2,
+                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
+        shape.setStroke(stroke);
+        shape.setFill(fill);
+        shape.setLineWidth(lineWidth);
+        Fx.runOnFxThread(() -> {
+            getChart().addAnnotation(shape);
+            getChart().refresh();
+        });
+
+        return shape;
+
+    }
+
+    public AnnoShape addOval(Double x1, Double y1, Double x2, Double y2, String strokeName, String fillName, Double lineWidth) {
+        Color stroke = getColor(strokeName);
+        Color fill = getColor(fillName);
+        AnnoShape shape = new AnnoOval(x1, y1, x2, y2,
+                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
+        shape.setStroke(stroke);
+        shape.setFill(fill);
+        shape.setLineWidth(lineWidth);
+        Fx.runOnFxThread(() -> {
+            getChart().addAnnotation(shape);
+            getChart().refresh();
+        });
+
+        return shape;
+
+    }
+
+    public AnnoShape addPolygon(List<Double> xList, List<Double> yList, String strokeName, String fillName, Double lineWidth) {
+        Color stroke = getColor(strokeName);
+        Color fill = getColor(fillName);
+        AnnoShape shape = new AnnoPolygon(xList, yList,
+                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
+        shape.setStroke(stroke);
+        shape.setFill(fill);
+        shape.setLineWidth(lineWidth);
+        Fx.runOnFxThread(() -> {
+            getChart().addAnnotation(shape);
+            getChart().refresh();
+        });
+
+        return shape;
+
+    }
+
+    public AnnoShape addArrowLine(Double x1, Double y1, Double x2, Double y2, Boolean arrowFirst, Boolean arrowLast, String strokeName, String fillName, Double lineWidth) {
+        Color stroke = getColor(strokeName);
+        Color fill = getColor(fillName);
+        AnnoShape shape = new AnnoLine(x1, y1, x2, y2, arrowFirst, arrowLast, lineWidth,
+                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
+        shape.setStroke(stroke);
+        shape.setFill(fill);
+        shape.setLineWidth(lineWidth);
+        Fx.runOnFxThread(() -> {
+            getChart().addAnnotation(shape);
+            getChart().refresh();
+        });
+
+        return shape;
+
+    }
+    public AnnoShape addLineText(Double x1, Double y1, Double x2, Double y2,  String text, Double fontSize, String strokeName, String fillName, Double lineWidth) {
+        Color stroke = getColor(strokeName);
+        Color fill = getColor(fillName);
+        AnnoShape shape = new AnnoLineText(x1, y1, x2, y2, text, fontSize, lineWidth,
+                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
+        shape.setStroke(stroke);
+        shape.setFill(fill);
+        shape.setLineWidth(lineWidth);
+        Fx.runOnFxThread(() -> {
+            getChart().addAnnotation(shape);
+            getChart().refresh();
+        });
+
+        return shape;
+
+    }
+    public AnnoText addText(Double x1, Double y1, Double x2, Double y2,  String text, Double fontSize) {
+        AnnoText annoText = new AnnoText(x1, y1, x2, y2, text, fontSize,
+                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
+        Fx.runOnFxThread(() -> {
+            getChart().addAnnotation(annoText);
+            getChart().refresh();
+        });
+
+        return annoText;
+
+    }
+
     public void bindKeys(String keyStr, String actionStr) {
         Fx.runOnFxThread(() -> {
             KeyBindings.registerGlobalKeyAction(keyStr, GUIScripter::chartCommand);
             keyActions.put(keyStr, actionStr);
         });
-    }
-
-    /**
-     * Execute a command for a specific chart. The chart will temporarily become the active one.
-     *
-     * @param keyStr the action key for the command to execute
-     * @param chart  the chart on which the command must be executed
-     */
-    public static void chartCommand(String keyStr, PolyChart chart) {
-        PolyChartManager chartManager = PolyChartManager.getInstance();
-        PolyChart currentActive = chartManager.getActiveChart();
-        try {
-            chartManager.setActiveChart(chart);
-            AnalystPythonInterpreter.exec(keyActions.get(keyStr));
-        } finally {
-            chartManager.setActiveChart(currentActive);
-        }
     }
 
 }

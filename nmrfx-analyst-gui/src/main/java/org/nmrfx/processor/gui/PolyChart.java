@@ -2116,8 +2116,8 @@ public class PolyChart extends Region {
                         double xPos = 10;
                         double yPos = chartProps.getTicFontSize() * 2;
                         double textWidth = 200;
-                        parameterText = new AnnoText(xPos, yPos, textWidth, 200,
-                                CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, text);
+                        parameterText = new AnnoText(xPos, yPos, textWidth, 200, text, 12.0,
+                                CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
                         addAnnotation(parameterText);
                     } else {
                         parameterText.setText(text);
@@ -2567,7 +2567,7 @@ public class PolyChart extends Region {
         double width = getWidth();
         double height = getHeight();
         double[][] bounds = {{xPos + borders.getLeft(), xPos + width - borders.getRight()}, {yPos + borders.getTop(), yPos + height - borders.getBottom()}};
-        double[][] world = {{axes.getX().getUpperBound(), axes.getY().getLowerBound()},
+        double[][] world = {{axes.getX().getUpperBound(), axes.getX().getLowerBound()},
                 {axes.getY().getLowerBound(), axes.getY().getUpperBound()}};
         double[] dragPos = {x, y};
         anno.move(bounds, world, dragStart, dragPos);
@@ -3175,6 +3175,9 @@ public class PolyChart extends Region {
         }
     }
 
+    public List<CanvasAnnotation> getCanvasAnnotations(){
+        return canvasAnnotations;
+    }
     void drawAnnotations(GraphicsContextInterface gC) {
         if (!canvasAnnotations.isEmpty()) {
             double xPos = getLayoutX();

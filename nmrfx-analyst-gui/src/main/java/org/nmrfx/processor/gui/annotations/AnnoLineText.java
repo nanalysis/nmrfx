@@ -1,13 +1,21 @@
 package org.nmrfx.processor.gui.annotations;
 
+import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
+import javafx.geometry.VPos;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
+import org.nmrfx.processor.gui.CanvasAnnotation;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AnnoLine extends AnnoShape {
-    private static final Logger log = LoggerFactory.getLogger(AnnoLine.class);
+public class AnnoLineText extends AnnoShape {
+    private static final Logger log = LoggerFactory.getLogger(AnnoLineText.class);
     final private int PTS_IN_ARROW = 6;
+    protected String text;
     double x1;
     double y1;
     double x2;
@@ -18,8 +26,6 @@ public class AnnoLine extends AnnoShape {
     double yp2;
     double[] xCPoints;
     double[] yCPoints;
-    boolean arrowFirst = false;
-    boolean arrowLast = false;
     double arrowShapeA = 8.0;
     double arrowShapeB = 10.0;
     double arrowShapeC = 3.0;
@@ -29,45 +35,40 @@ public class AnnoLine extends AnnoShape {
     double startY2;
     double width;
     int activeHandle = -1;
+    Font font = Font.font("Liberation Sans", 12);
 
-    public AnnoLine() {
+    Color fill = Color.BLACK;
+
+    public AnnoLineText() {
 
     }
 
-    public AnnoLine(double x1, double y1, double x2, double y2) {
-        this.x1 = x1;
-        this.y1 = y1;
-        this.x2 = x2;
-        this.y2 = y2;
+    public void setFontSize(double size) {
+        this.font = Font.font(font.getFamily(), size);
     }
 
-    public AnnoLine(double x1, double y1, double x2, double y2, boolean arrowFirst, boolean arrowLast,
-                    double lineWidth, POSTYPE xPosType, POSTYPE yPosType) {
+    public double getFontSize() {
+        return font.getSize();
+    }
+
+    public AnnoLineText(double x1, double y1, double x2, double y2, String text, double fontSize, double width,
+                        POSTYPE xPosType, POSTYPE yPosType) {
         this.x1 = x1;
         this.y1 = y1;
         this.x2 = x2;
         this.y2 = y2;
         this.xPosType = xPosType;
         this.yPosType = yPosType;
-        this.arrowFirst = arrowFirst;
-        this.arrowLast = arrowLast;
-        this.width = lineWidth;
+        this.text = text;
+        this.width = width;
+        this.setFontSize(fontSize);
+    }
+    public String getText() {
+        return text;
     }
 
-    public boolean isArrowFirst() {
-        return arrowFirst;
-    }
-
-    public void setArrowFirst(boolean arrowFirst) {
-        this.arrowFirst = arrowFirst;
-    }
-
-    public boolean isArrowLast() {
-        return arrowLast;
-    }
-
-    public void setArrowLast(boolean arrowLast) {
-        this.arrowLast = arrowLast;
+    public void setText(String text) {
+        this.text = text;
     }
 
     public double getX1() {
@@ -134,6 +135,10 @@ public class AnnoLine extends AnnoShape {
         try {
             gC.setStroke(stroke);
             gC.setLineWidth(lineWidth);
+            gC.setFill(fill);
+            gC.setFont(font);
+            gC.setTextAlign(TextAlignment.LEFT);
+            gC.setTextBaseline(VPos.BASELINE);
             xp1 = xPosType.transform(x1, bounds[0], world[0]);
             yp1 = yPosType.transform(y1, bounds[1], world[1]);
             xp2 = xPosType.transform(x2, bounds[0], world[0]);
@@ -144,33 +149,27 @@ public class AnnoLine extends AnnoShape {
             double xa2 = xp2;
             double ya2 = yp2;
 
-            if (arrowFirst) {
-                xCPoints = new double[PTS_IN_ARROW];
-                yCPoints = new double[PTS_IN_ARROW];
-                double[] poly = addArrowFirst();
-                for (int i = 0; i < poly.length / 2; i++) {
-                    xCPoints[i] = poly[2 * i];
-                    yCPoints[i] = poly[2 * i + 1];
-                }
-                xa1 = (xCPoints[2] + xCPoints[3]) / 2;
-                ya1 = (yCPoints[2] + yCPoints[3]) / 2;
-                gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
+            xCPoints = new double[PTS_IN_ARROW];
+            yCPoints = new double[PTS_IN_ARROW];
+            double[] poly = addArrowFirst();
+            for (int i = 0; i < poly.length / 2; i++) {
+                xCPoints[i] = poly[2 * i];
+                yCPoints[i] = poly[2 * i + 1];
             }
-
-            if (arrowLast) {
-                xCPoints = new double[PTS_IN_ARROW];
-                yCPoints = new double[PTS_IN_ARROW];
-                double[] poly = addArrowLast();
-                for (int i = 0; i < poly.length / 2; i++) {
-                    xCPoints[i] = poly[2 * i];
-                    yCPoints[i] = poly[2 * i + 1];
-                }
-                xa2 = (xCPoints[2] + xCPoints[3]) / 2;
-                ya2 = (yCPoints[2] + yCPoints[3]) / 2;
-                gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
-            }
+            xa1 = (xCPoints[2] + xCPoints[3]) / 2;
+            ya1 = (yCPoints[2] + yCPoints[3]) / 2;
+            gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
 
             gC.strokeLine(xa1, ya1, xa2, ya2);
+            double textWidth = GUIUtils.getTextWidth(text, font);
+            double textX = xp2 - textWidth / 2.0;
+            double textY;
+            if (yp1 > yp2) {
+                textY = yp2 - 2;
+            } else {
+                textY = yp2 + getFontSize();
+            }
+            gC.fillText(text, textX, textY);
 
             if (isSelected()) {
                 drawHandles(gC);
@@ -180,18 +179,28 @@ public class AnnoLine extends AnnoShape {
         }
     }
 
+    @Override
+    public void drawHandles(GraphicsContextInterface gC) {
+        drawHandle(gC, xp1, yp1, Pos.CENTER);
+        drawHandle(gC, xp2, yp2, Pos.CENTER);
+    }
+
+    @Override
+    public int hitHandle(double x, double y) {
+        if (hitHandle(x, y, Pos.CENTER, xp1, yp1)) {
+            activeHandle = 0;
+        } else if (hitHandle(x, y, Pos.CENTER, xp2, yp2)) {
+            activeHandle = 1;
+        } else {
+            activeHandle = -1;
+        }
+        return activeHandle;
+    }
+
     double[] addArrowFirst() {
         double[] poly = new double[PTS_IN_ARROW * 2];
 
         calcArrow(this.xp1, this.yp1, this.xp2, this.yp2, poly);
-
-        return poly;
-    }
-
-    double[] addArrowLast() {
-        double[] poly = new double[PTS_IN_ARROW * 2];
-
-        calcArrow(this.xp2, this.yp2, this.xp1, this.yp1, poly);
 
         return poly;
     }
@@ -229,24 +238,6 @@ public class AnnoLine extends AnnoShape {
         thetaTrig[1] = sinTheta;
         return thetaTrig;
     }
-
-    @Override
-    public void drawHandles(GraphicsContextInterface gC) {
-        drawHandle(gC, xp1, yp1, Pos.CENTER);
-        drawHandle(gC, xp2, yp2, Pos.CENTER);
-    }
-
-    @Override
-    public int hitHandle(double x, double y) {
-        if (hitHandle(x, y, Pos.CENTER, xp1, yp1)) {
-            activeHandle = 0;
-        } else if (hitHandle(x, y, Pos.CENTER, xp2, yp2)) {
-            activeHandle = 1;
-        } else {
-            activeHandle = -1;
-        }
-        return activeHandle;
-    }
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
@@ -264,5 +255,4 @@ public class AnnoLine extends AnnoShape {
             y2 = xPosType.move(startY2, dy, bounds[1], world[1]);
         }
     }
-
 }

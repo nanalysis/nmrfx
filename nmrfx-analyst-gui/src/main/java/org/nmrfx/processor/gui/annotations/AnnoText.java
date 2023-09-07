@@ -26,6 +26,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.CanvasAnnotation;
+import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,8 +59,11 @@ public class AnnoText implements CanvasAnnotation {
 
     Color fill = Color.BLACK;
 
-    public AnnoText(double x1, double y1, double x2, double y2,
-                    POSTYPE xPosType, POSTYPE yPosType, String text) {
+    public AnnoText() {
+
+    }
+    public AnnoText(double x1, double y1, double x2, double y2, String text, double fontSize,
+                    POSTYPE xPosType, POSTYPE yPosType) {
         this.x1 = x1;
         this.y1 = y1;
         this.x2 = x2;
@@ -67,6 +71,7 @@ public class AnnoText implements CanvasAnnotation {
         this.xPosType = xPosType;
         this.yPosType = yPosType;
         this.text = text;
+        this.setFontSize(fontSize);
     }
 
     public void setText(String text) {
@@ -77,19 +82,22 @@ public class AnnoText implements CanvasAnnotation {
         return text;
     }
 
-    public Font getFont() {
-        return font;
-    }
-
     public void setFont(Font font) {
         this.font = font;
+    }
+    public void setFontSize(double size) {
+        this.font = Font.font(font.getFamily(), size);
+    }
+
+    public double getFontSize() {
+        return font.getSize();
     }
 
     /**
      * @return the fill
      */
-    public Color getFill() {
-        return fill;
+    public String getFill() {
+        return fill == null ? "" : fill.toString();
     }
 
     /**
@@ -97,6 +105,9 @@ public class AnnoText implements CanvasAnnotation {
      */
     public void setFill(Color fill) {
         this.fill = fill;
+    }
+    public void setFill(String fill) {
+        this.fill = GUIScripter.getColor(fill);
     }
 
     @Override
@@ -112,6 +123,46 @@ public class AnnoText implements CanvasAnnotation {
             selected = hit;
         }
         return hit;
+    }
+
+    public void setXPosType(POSTYPE xPosType) {
+        this.xPosType = xPosType;
+    }
+
+    public void setYPosType(POSTYPE yPosType) {
+        this.yPosType = yPosType;
+    }
+
+    public double getX1() {
+        return x1;
+    }
+
+    public void setX1(double x1) {
+        this.x1 = x1;
+    }
+
+    public double getY1() {
+        return y1;
+    }
+
+    public void setY1(double y1) {
+        this.y1 = y1;
+    }
+
+    public double getX2() {
+        return x2;
+    }
+
+    public void setX2(double x2) {
+        this.x2 = x2;
+    }
+
+    public double getY2() {
+        return y2;
+    }
+
+    public void setY2(double y2) {
+        this.y2 = y2;
     }
 
     public Bounds getBounds() {
@@ -210,10 +261,10 @@ public class AnnoText implements CanvasAnnotation {
         return selectable;
     }
 
-    @Override
-    public void setSelectable(boolean state) {
-        selectable = state;
-    }
+    //@Override
+    //public void setSelectable(boolean state) {
+    //    selectable = state;
+    //}
 
 
     @Override
