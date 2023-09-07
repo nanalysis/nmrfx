@@ -208,6 +208,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     @FXML
     TextField posWidthField;
     @FXML
+    Slider posWidthSlider1D;
+    @FXML
+    TextField posWidthField1D;
+    @FXML
     Slider negWidthSlider;
     @FXML
     TextField negWidthField;
@@ -359,6 +363,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         posWidthSlider.valueProperty().addListener(posWidthSliderListener);
         posWidthSlider.setOnMouseReleased(e -> setPosWidthSlider(true));
         GUIUtils.bindSliderField(posWidthSlider, posWidthField);
+
+        posWidthSlider1D.valueProperty().addListener(posWidthSliderListener);
+        posWidthSlider1D.setOnMouseReleased(e -> setPosWidthSlider(true));
+        GUIUtils.bindSliderField(posWidthSlider1D, posWidthField1D);
 
         negWidthSlider.valueProperty().addListener(negWidthSliderListener);
         negWidthSlider.setOnMouseReleased(e -> setPosWidthSlider(false));
@@ -729,6 +737,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
             double incrValue = 0.1;
             if (posMode) {
                 setSlider(posWidthSliderListener, posWidthSlider, min, max, incrValue, value);
+                setSlider(posWidthSliderListener, posWidthSlider1D, min, max, incrValue, value);
             } else {
                 setSlider(negWidthSliderListener, negWidthSlider, min, max, incrValue, value);
             }

@@ -150,6 +150,7 @@ public class ScanTable {
     public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
         this.scannerTool = controller;
         this.tableView = tableView;
+        currentChart = controller.getChart();
         init();
     }
 
@@ -327,9 +328,24 @@ public class ScanTable {
             }
             Double curLvl = null;
 
-            setDatasetVisibility(showRows, curLvl);
-            refresh();
-            chart.refresh();
+            boolean hasDataset = false;
+            for (var item : showRows) {
+                if (!item.getDatasetName().isBlank()) {
+                    hasDataset = true;
+                    break;
+                }
+            }
+
+            if (hasDataset) {
+                setDatasetVisibility(showRows, curLvl);
+                refresh();
+                chart.refresh();
+            } else {
+                openSelectedListFile();
+                chart.refresh();
+            }
+        } else {
+            openSelectedListFile();
         }
     }
 
@@ -442,6 +458,9 @@ public class ScanTable {
 
         PolyChart chart = scannerTool.getChart();
         processingTable = true;
+        tableView.getSelectionModel().getSelectedIndices().removeListener(selectionListener);
+        tableView.getItems().removeListener(filterItemListener);
+
         try (PythonInterpreter processInterp = new PythonInterpreter()) {
             List<String> fileNames = new ArrayList<>();
 
@@ -511,7 +530,13 @@ public class ScanTable {
             scannerTool.miner.setDisableSubMenus(!combineFileMode);
 
         } finally {
+            tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
+            tableView.getItems().addListener(filterItemListener);
+            getGroups();
+            ensureAllDatasetsAdded();
+            selectionChanged();
             processingTable = false;
+            refresh();
         }
     }
 
@@ -621,7 +646,7 @@ public class ScanTable {
             return;
         }
         if (dataset.getNDim() < 2) {
-            log.warn("Unable to load dataset, dataset only has 1 dimension.");
+            loadMultipleDatasets();
             return;
         }
         scanDir = null;
@@ -1398,8 +1423,8 @@ public class ScanTable {
            }
            chart.getDatasetAttributes().addListener(datasetListener);
            currentChart = chart;
+           loadFromDataset();
         }
-        loadFromDataset();
         updateFilter();
     }
 
@@ -1556,6 +1581,8 @@ public class ScanTable {
                 datasetAttributes.setLvl(dataAttr0.getLvl());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1570,6 +1597,8 @@ public class ScanTable {
                 datasetAttributes.setClm(dataAttr0.getClm());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1584,6 +1613,8 @@ public class ScanTable {
                 datasetAttributes.setNlvls(dataAttr0.getNlvls());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1598,6 +1629,8 @@ public class ScanTable {
                 datasetAttributes.setOffset(dataAttr0.getOffset());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1617,6 +1650,8 @@ public class ScanTable {
                 }
             }
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 

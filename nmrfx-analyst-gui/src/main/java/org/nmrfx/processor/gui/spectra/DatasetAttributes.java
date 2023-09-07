@@ -1569,7 +1569,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
 
     public boolean isSelected(int iElem) {
         boolean value;
-        if (!selectionSet.isEmpty()) {
+        if ((iElem >= 0) && !selectionSet.isEmpty()) {
             value = selectionSet.contains(iElem);
         } else {
             value = selected;
