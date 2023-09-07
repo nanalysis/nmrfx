@@ -260,12 +260,6 @@ public class AnnoText implements CanvasAnnotation {
         return selectable;
     }
 
-    //@Override
-    //public void setSelectable(boolean state) {
-    //    selectable = state;
-    //}
-
-
     @Override
     public int hitHandle(double x, double y) {
         if (hitHandle(x, y, Pos.BOTTOM_RIGHT, bounds2D.getMinX(), (bounds2D.getMinY() + bounds2D.getMaxY()) / 2)) {

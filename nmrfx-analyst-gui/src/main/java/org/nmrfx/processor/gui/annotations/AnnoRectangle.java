@@ -1,14 +1,10 @@
 package org.nmrfx.processor.gui.annotations;
 
-import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
-import org.nmrfx.processor.gui.spectra.mousehandlers.AnnotationMouseHandlerHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.annotation.Annotation;
 
 public class AnnoRectangle extends AnnoShape {
     private static final Logger log = LoggerFactory.getLogger(AnnoRectangle.class);
@@ -21,8 +17,6 @@ public class AnnoRectangle extends AnnoShape {
     double yp1;
     double xp2;
     double yp2;
-    double width;
-    double height;
     int activeHandle = -1;
     double startX1;
     double startY1;
@@ -79,10 +73,7 @@ public class AnnoRectangle extends AnnoShape {
         double width = xp2-xp1;
         double height = yp2-yp1;
         Rectangle2D bounds2D = new Rectangle2D(xp1, yp1, width, height);
-        boolean hit = false;
-        if (bounds2D.contains(x, y)) {
-            hit = true;
-        }
+        boolean hit = bounds2D.contains(x, y);
         if (hit) {
             startX1 = x1;
             startX2 = x2;
@@ -104,8 +95,8 @@ public class AnnoRectangle extends AnnoShape {
             yp1 = yPosType.transform(y1, bounds[1], world[1]);
             xp2 = xPosType.transform(x2, bounds[0], world[0]);
             yp2 = yPosType.transform(y2, bounds[1], world[1]);
-            width = Math.abs(xp2 - xp1);
-            height = Math.abs(yp2 - yp1);
+            double width = Math.abs(xp2 - xp1);
+            double height = Math.abs(yp2 - yp1);
             if (xp1 > xp2) {
                 double hold = xp1;
                 xp1 = xp2;
@@ -156,6 +147,7 @@ public class AnnoRectangle extends AnnoShape {
         return activeHandle;
     }
 
+    @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];

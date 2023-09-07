@@ -6,7 +6,6 @@ import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class AnnoPolygon extends AnnoShape {
@@ -68,10 +67,7 @@ public class AnnoPolygon extends AnnoShape {
         double height = yp2 - yp1;
 
         Rectangle2D bounds2D = new Rectangle2D(xp1, yp1, width, height);
-        boolean hit = false;
-        if (bounds2D.contains(x, y)) {
-            hit = true;
-        }
+        boolean hit = bounds2D.contains(x, y);
         if (hit) {
             startX = xPoints.clone();
             startY = yPoints.clone();
@@ -140,10 +136,10 @@ public class AnnoPolygon extends AnnoShape {
         return activeHandle;
     }
 
+    @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
-        double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
         if (activeHandle < 0) {
             for (int i = 0; i < startX.length; i++) {
                 xPoints[i] = xPosType.move(startX[i], dx, bounds[0], world[0]);

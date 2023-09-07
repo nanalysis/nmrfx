@@ -1,20 +1,18 @@
 package org.nmrfx.processor.gui.annotations;
 
-import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
-import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AnnoLineText extends AnnoShape {
     private static final Logger log = LoggerFactory.getLogger(AnnoLineText.class);
-    final private int PTS_IN_ARROW = 6;
+    private static final int PTS_IN_ARROW = 6;
     protected String text;
     double x1;
     double y1;
@@ -144,8 +142,8 @@ public class AnnoLineText extends AnnoShape {
             xp2 = xPosType.transform(x2, bounds[0], world[0]);
             yp2 = yPosType.transform(y2, bounds[1], world[1]);
 
-            double xa1 = xp1;
-            double ya1 = yp1;
+            double xa1;
+            double ya1;
             double xa2 = xp2;
             double ya2 = yp2;
 
@@ -216,7 +214,7 @@ public class AnnoLineText extends AnnoShape {
         double length = Math.hypot(dx, dy);
         double sinTheta = 0.0;
         double cosTheta = 0.0;
-        if (length != 0) {
+        if (length > 1.0e-9) {
             sinTheta = dy / length;
             cosTheta = dx / length;
         }
@@ -238,10 +236,11 @@ public class AnnoLineText extends AnnoShape {
         thetaTrig[1] = sinTheta;
         return thetaTrig;
     }
+
+    @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
-        double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
         if (activeHandle < 0) {
             x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
             x2 = xPosType.move(startX2, dx, bounds[0], world[0]);

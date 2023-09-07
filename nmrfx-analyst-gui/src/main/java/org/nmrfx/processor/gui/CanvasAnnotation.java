@@ -121,9 +121,9 @@ public interface CanvasAnnotation {
         gC.strokeRect(x + hOffset, y + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
     }
 
-    public POSTYPE getXPosType();
+    POSTYPE getXPosType();
 
-    public POSTYPE getYPosType();
+    POSTYPE getYPosType();
 
     /**
      * Get the separation limit between two handles converted to POSTYPE.
@@ -146,8 +146,6 @@ public interface CanvasAnnotation {
     boolean isSelected();
 
     boolean isSelectable();
-
-    //void setSelectable(boolean state);
 
     int hitHandle(double x, double y);
 

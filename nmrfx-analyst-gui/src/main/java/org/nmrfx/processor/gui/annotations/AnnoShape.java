@@ -129,10 +129,4 @@ public abstract class AnnoShape implements CanvasAnnotation {
     public boolean isSelectable() {
         return selected;
     }
-
-    //@Override
-    //public void setSelectable(boolean state) {
-    //    selectable = state;
-    //}
-
 }

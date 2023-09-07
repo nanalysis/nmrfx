@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 public class AnnoLine extends AnnoShape {
     private static final Logger log = LoggerFactory.getLogger(AnnoLine.class);
-    final private int PTS_IN_ARROW = 6;
+    private static final int PTS_IN_ARROW = 6;
     double x1;
     double y1;
     double x2;
@@ -207,7 +207,7 @@ public class AnnoLine extends AnnoShape {
         double length = Math.hypot(dx, dy);
         double sinTheta = 0.0;
         double cosTheta = 0.0;
-        if (length != 0) {
+        if (length > 1.0e-9) {
             sinTheta = dy / length;
             cosTheta = dx / length;
         }
@@ -247,10 +247,11 @@ public class AnnoLine extends AnnoShape {
         }
         return activeHandle;
     }
+
+    @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
-        double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
         if (activeHandle < 0) {
             x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
             x2 = xPosType.move(startX2, dx, bounds[0], world[0]);

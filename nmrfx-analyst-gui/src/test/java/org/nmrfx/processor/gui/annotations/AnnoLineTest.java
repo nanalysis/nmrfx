@@ -4,17 +4,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
-import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
-
 public class AnnoLineTest {
     @Test
-    public void testAnnoLineYamlNoConstructor() throws IOException {
+    public void testAnnoLineYamlNoConstructor() {
         String initialString = """
                     !!org.nmrfx.processor.gui.annotations.AnnoLine
                     x1: 0.0
@@ -25,11 +21,11 @@ public class AnnoLineTest {
                 """;
         Yaml yaml = new Yaml();
         AnnoLine line = yaml.load(initialString);
-        Assert.assertTrue(line.getXPosType() == CanvasAnnotation.POSTYPE.FRACTION);
+        Assert.assertSame(CanvasAnnotation.POSTYPE.FRACTION, line.getXPosType());
     }
 
     @Test
-    public void testAnnoLineYamlMultipleObjects() throws IOException {
+    public void testAnnoLineYamlMultipleObjects() {
         String initialString = """
                 - !!org.nmrfx.processor.gui.annotations.AnnoLine {XPosType: WORLD, YPosType: WORLD,
                   clipInAxes: false, fill: '0x000000ff', lineWidth: 1.0, stroke: '0x000000ff',
@@ -46,10 +42,10 @@ public class AnnoLineTest {
     }
 
     @Test
-    public void testAnnoLineDumpYaml() throws IOException {
+    public void testAnnoLineDumpYaml() {
         AnnoLine annoLine = new AnnoLine(0, 1.0, 4.0, 10.0);
         AnnoLine annoLine2 = new AnnoLine(0, 1.0, 4.0, 10.0);
-        ArrayList lines = new ArrayList();
+        List<AnnoLine> lines = new ArrayList<>();
         lines.add(annoLine);
         lines.add(annoLine2);
         Yaml yaml = new Yaml();
@@ -62,7 +58,7 @@ public class AnnoLineTest {
                   arrowFirst: false, arrowLast: false, clipInAxes: false, fill: '0x000000ff', lineWidth: 1.0,
                   stroke: '0x000000ff', x1: 0.0, x2: 4.0, y1: 1.0, y2: 10.0}""";
 
-        Assert.assertTrue(output.trim().equals(validOutput.trim()));
+        Assert.assertEquals(output.trim(), validOutput.trim());
     }
 
 }

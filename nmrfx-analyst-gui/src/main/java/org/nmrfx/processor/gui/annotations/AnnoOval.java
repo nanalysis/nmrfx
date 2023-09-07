@@ -17,8 +17,6 @@ public class AnnoOval extends AnnoShape {
     double yp1;
     double xp2;
     double yp2;
-    double width;
-    double height;
     double startX1;
     double startY1;
     double startX2;
@@ -76,10 +74,7 @@ public class AnnoOval extends AnnoShape {
         double width = xp2-xp1;
         double height = yp2-yp1;
         Rectangle2D bounds2D = new Rectangle2D(xp1, yp1, width, height);
-        boolean hit = false;
-        if (bounds2D.contains(x, y)) {
-            hit = true;
-        }
+        boolean hit = bounds2D.contains(x, y);
         if (hit) {
             startX1 = x1;
             startX2 = x2;
@@ -101,8 +96,8 @@ public class AnnoOval extends AnnoShape {
             yp1 = yPosType.transform(y1, bounds[1], world[1]);
             xp2 = xPosType.transform(x2, bounds[0], world[0]);
             yp2 = yPosType.transform(y2, bounds[1], world[1]);
-            width = Math.abs(xp2 - xp1);
-            height = Math.abs(yp2 - yp1);
+            double width = Math.abs(xp2 - xp1);
+            double height = Math.abs(yp2 - yp1);
             if (xp1 > xp2) {
                 double hold = xp1;
                 xp1 = xp2;
@@ -151,6 +146,8 @@ public class AnnoOval extends AnnoShape {
         }
         return activeHandle;
     }
+
+    @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
