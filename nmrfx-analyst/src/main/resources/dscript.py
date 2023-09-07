@@ -30,7 +30,7 @@ class NMRFxDatasetScripting:
         return dataset
 
     def create(self, fileName, sizes, srcDataset=None, title=""):
-        Dataset.createDataset(fileName, "", sizes, True) 
+        Dataset.createDataset(fileName, os.path.basename(fileName), "", sizes, True, True) 
         dataset = self.open(fileName, True)
         if srcDataset:
             nDim = len(sizes)
@@ -51,7 +51,7 @@ class NMRFxDatasetScripting:
         for iDim in range(nDim):
             sizes.append(srcDataset.getSizeTotal(iDim))
 
-        Dataset.createDataset(fileName, "", sizes, True) 
+        Dataset.createDataset(fileName, os.path.basename(fileName), "", sizes, False, True) 
         dataset = self.open(fileName, True)
         for iDim in range(nDim):
             srcDataset.copyHeader(dataset, iDim)
@@ -134,6 +134,38 @@ class NMRFxDatasetScripting:
         peakList = peakPicker.peakPick()
       
         return peakList
+
+    def diffRows(self, dataset, newName=None, row1=0, row2=1):
+        if isinstance(dataset,basestring):
+            dataset = self.get(dataset)
+        if newName == None:
+            oldName = dataset.getName()
+            name,ext = os.path.splitext(oldName) 
+            newName = name+'_diff_'+str(row1)+'_'+str(row2)+'.nv'
+        oldFilePath = dataset.getCanonicalFile()
+        dirName = os.path.dirname(oldFilePath)
+        fileName = os.path.join(dirName, newName)
+        newDataset = self.createSub(fileName, 1, dataset, title="")
+        v1 = dataset.readVector(row1, 0)
+        v2 = dataset.readVector(row2, 0)
+        v3 = v1-v2
+        newDataset.writeVector(v3)
+        return newDataset
+
+    def getRow(self, dataset, newName=None, row1=0):
+        if isinstance(dataset,basestring):
+            dataset = self.get(dataset)
+        if newName == None:
+            oldName = dataset.getName()
+            name,ext = os.path.splitext(oldName) 
+            newName = name+'_row_'+str(row1)+'.nv'
+        oldFilePath = dataset.getCanonicalFile()
+        dirName = os.path.dirname(oldFilePath)
+        fileName = os.path.join(dirName, newName)
+        newDataset = self.createSub(fileName, 1, dataset, title="")
+        v1 = dataset.readVector(row1, 0)
+        newDataset.writeVector(v1)
+        return newDataset
 
         
 nd = NMRFxDatasetScripting()
