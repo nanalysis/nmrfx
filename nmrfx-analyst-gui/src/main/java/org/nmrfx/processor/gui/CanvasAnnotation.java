@@ -102,14 +102,14 @@ public interface CanvasAnnotation {
         return switch (pos.getHpos()) {
             case LEFT -> HANDLE_WIDTH;
             case RIGHT -> -HANDLE_WIDTH;
-            case CENTER -> HANDLE_WIDTH / 2;
+            case CENTER -> -HANDLE_WIDTH / 2;
         };
     }
 
     private static double getVOffset(Pos pos) {
         return switch (pos.getVpos()) {
             case TOP -> HANDLE_WIDTH;
-            case CENTER -> HANDLE_WIDTH / 2;
+            case CENTER -> -HANDLE_WIDTH / 2;
             case BOTTOM, BASELINE -> -HANDLE_WIDTH;
         };
     }
@@ -121,9 +121,9 @@ public interface CanvasAnnotation {
         gC.strokeRect(x + hOffset, y + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
     }
 
-    public POSTYPE getXPosType();
+    POSTYPE getXPosType();
 
-    public POSTYPE getYPosType();
+    POSTYPE getYPosType();
 
     /**
      * Get the separation limit between two handles converted to POSTYPE.
@@ -146,8 +146,6 @@ public interface CanvasAnnotation {
     boolean isSelected();
 
     boolean isSelectable();
-
-    void setSelectable(boolean state);
 
     int hitHandle(double x, double y);
 

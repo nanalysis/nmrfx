@@ -67,6 +67,7 @@ public class PolyChartManager {
         for (PolyChart chart : allCharts) {
             chart.clearDataAndPeaks();
             chart.clearAnnotations();
+            chart.refresh();
         }
 
         synchronizer.clearObsoleteSynchronizations();

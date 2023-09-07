@@ -881,10 +881,10 @@ public class CanvasMolecule implements CanvasAnnotation {
         return selectable;
     }
 
-    @Override
-    public void setSelectable(boolean state) {
-        selectable = state;
-    }
+    //@Override
+    //public void setSelectable(boolean state) {
+     //   selectable = state;
+    //}
 
     @Override
     public int hitHandle(double x, double y) {

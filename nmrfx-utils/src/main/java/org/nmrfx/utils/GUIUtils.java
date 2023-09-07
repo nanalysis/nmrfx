@@ -303,6 +303,19 @@ public class GUIUtils {
         slider.valueProperty().bindBidirectional(formatter.valueProperty());
     }
 
+    public static Color getColor(String colorString) {
+        Color color = null;
+        if (colorString != null && !colorString.isBlank()) {
+            try {
+                color = Color.web(colorString);
+            } catch(Exception e) {
+                color = Color.web("black");
+            }
+        }
+        return color;
+
+    }
+
     public record SliderRange(double min, double value, double max, double incrValue) {}
 
     public static Optional<Double> getSliderValue(String name, double x, double y, SliderRange sliderRange,  DoubleConsumer applyValue) {
