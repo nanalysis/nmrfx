@@ -118,6 +118,14 @@ public class CanvasMolecule implements CanvasAnnotation {
         return yPosType;
     }
 
+
+    public void setXPosType(POSTYPE xPosType) {
+        this.xPosType = xPosType;
+    }
+    public void setYPosType(POSTYPE yPosType) {
+        this.yPosType = yPosType;
+    }
+
     void calcBounds() {
         if (molName == null) {
             return;
@@ -900,6 +908,20 @@ public class CanvasMolecule implements CanvasAnnotation {
             activeHandle = -1;
         }
         return activeHandle;
+    }
+    public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double x1Pix = xPosType.transform(x1, bounds, world);
+        double x2Pix = xPosType.transform(x2, bounds, world);
+        x1 = newType.itransform(x1Pix, bounds, world);
+        x2 = newType.itransform(x2Pix, bounds, world);
+        xPosType = newType;
+    }
+    public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double y1Pix = yPosType.transform(y1, bounds, world);
+        double y2Pix = yPosType.transform(y2, bounds, world);
+        y1 = newType.itransform(y1Pix, bounds, world);
+        y2 = newType.itransform(y2Pix, bounds, world);
+        yPosType = newType;
     }
 
 }

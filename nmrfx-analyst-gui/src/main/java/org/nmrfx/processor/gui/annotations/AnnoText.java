@@ -37,7 +37,7 @@ import java.util.List;
  */
 public class AnnoText implements CanvasAnnotation {
     private static final Logger log = LoggerFactory.getLogger(AnnoText.class);
-
+    protected String text;
     double x1;
     double y1;
     double x2;
@@ -49,18 +49,16 @@ public class AnnoText implements CanvasAnnotation {
     boolean selected = false;
     boolean selectable = true;
     int activeHandle = -1;
-
     POSTYPE xPosType;
     POSTYPE yPosType;
     Bounds bounds2D;
-    protected String text;
     Font font = Font.font("Liberation Sans", 12);
-
     Color fill = Color.BLACK;
 
     public AnnoText() {
 
     }
+
     public AnnoText(double x1, double y1, double x2, double y2, String text, double fontSize,
                     POSTYPE xPosType, POSTYPE yPosType) {
         this.x1 = x1;
@@ -73,23 +71,24 @@ public class AnnoText implements CanvasAnnotation {
         this.setFontSize(fontSize);
     }
 
-    public void setText(String text) {
-        this.text = text;
-    }
-
     public String getText() {
         return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
     }
 
     public void setFont(Font font) {
         this.font = font;
     }
-    public void setFontSize(double size) {
-        this.font = Font.font(font.getFamily(), size);
-    }
 
     public double getFontSize() {
         return font.getSize();
+    }
+
+    public void setFontSize(double size) {
+        this.font = Font.font(font.getFamily(), size);
     }
 
     /**
@@ -105,8 +104,13 @@ public class AnnoText implements CanvasAnnotation {
     public void setFill(Color fill) {
         this.fill = fill;
     }
+
     public void setFill(String fill) {
         this.fill = GUIUtils.getColor(fill);
+    }
+
+    public Color getFillColor() {
+        return this.fill;
     }
 
     @Override
@@ -122,14 +126,6 @@ public class AnnoText implements CanvasAnnotation {
             selected = hit;
         }
         return hit;
-    }
-
-    public void setXPosType(POSTYPE xPosType) {
-        this.xPosType = xPosType;
-    }
-
-    public void setYPosType(POSTYPE yPosType) {
-        this.yPosType = yPosType;
     }
 
     public double getX1() {
@@ -200,7 +196,9 @@ public class AnnoText implements CanvasAnnotation {
     @Override
     public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world) {
         try {
-            gC.setFill(fill);
+            if (fill != null) {
+                gC.setFill(fill);
+            }
             gC.setFont(font);
             gC.setTextAlign(TextAlignment.LEFT);
             gC.setTextBaseline(VPos.BASELINE);
@@ -217,11 +215,15 @@ public class AnnoText implements CanvasAnnotation {
                 if (width > regionWidth) {
                     List<String> strings = GUIUtils.splitToWidth(regionWidth, segment, font);
                     for (String string : strings) {
-                        gC.fillText(string, xp1, y);
+                        if (fill != null) {
+                            gC.fillText(string, xp1, y);
+                        }
                         y += font.getSize() + 3;
                     }
                 } else {
-                    gC.fillText(segment, xp1, y);
+                    if (fill != null) {
+                        gC.fillText(segment, xp1, y);
+                    }
                     y += font.getSize() + 3;
                 }
             }
@@ -239,9 +241,17 @@ public class AnnoText implements CanvasAnnotation {
         return xPosType;
     }
 
+    public void setXPosType(POSTYPE xPosType) {
+        this.xPosType = xPosType;
+    }
+
     @Override
     public POSTYPE getYPosType() {
         return yPosType;
+    }
+
+    public void setYPosType(POSTYPE yPosType) {
+        this.yPosType = yPosType;
     }
 
     @Override
@@ -270,6 +280,22 @@ public class AnnoText implements CanvasAnnotation {
             activeHandle = -1;
         }
         return activeHandle;
+    }
+
+    public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double x1Pix = xPosType.transform(x1, bounds, world);
+        double x2Pix = xPosType.transform(x2, bounds, world);
+        x1 = newType.itransform(x1Pix, bounds, world);
+        x2 = newType.itransform(x2Pix, bounds, world);
+        xPosType = newType;
+    }
+
+    public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double y1Pix = yPosType.transform(y1, bounds, world);
+        double y2Pix = yPosType.transform(y2, bounds, world);
+        y1 = newType.itransform(y1Pix, bounds, world);
+        y2 = newType.itransform(y2Pix, bounds, world);
+        yPosType = newType;
     }
 
 }

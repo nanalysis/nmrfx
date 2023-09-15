@@ -861,6 +861,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return mainBox;
     }
 
+    public ToolController getToolController() {
+        return toolController;
+    }
+
     public Cursor getCurrentCursor() {
         return chartDrawingLayers.getCursor();
     }

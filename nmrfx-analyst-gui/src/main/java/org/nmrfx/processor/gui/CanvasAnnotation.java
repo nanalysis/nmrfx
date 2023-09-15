@@ -125,6 +125,8 @@ public interface CanvasAnnotation {
 
     POSTYPE getYPosType();
 
+    public void setXPosType(POSTYPE yPosType);
+    public void setYPosType(POSTYPE yPosType);
     /**
      * Get the separation limit between two handles converted to POSTYPE.
      *
@@ -155,5 +157,7 @@ public interface CanvasAnnotation {
         Rectangle2D rect = new Rectangle2D(handleX + hOffset, handleY + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
         return rect.contains(x, y);
     }
+    void updateXPosType(CanvasAnnotation.POSTYPE type, double[] bounds, double[] world);
+    void updateYPosType(CanvasAnnotation.POSTYPE type, double[] bounds, double[] world);
 
 }

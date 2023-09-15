@@ -82,7 +82,6 @@ public class AnnoPolygon extends AnnoShape {
     @Override
     public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world) {
         try {
-            gC.setStroke(stroke);
             gC.setLineWidth(lineWidth);
             double xMax = -1.0;
             double xMin = 10000.0;
@@ -109,7 +108,15 @@ public class AnnoPolygon extends AnnoShape {
             xp2 = xMax;
             yp1 = yMin;
             yp2 = yMax;
-            gC.strokePolygon(xCPoints, yCPoints, xCPoints.length);
+            if (stroke != null) {
+                gC.setStroke(stroke);
+                gC.strokePolygon(xCPoints, yCPoints, xCPoints.length);
+            }
+            if (fill != null) {
+                gC.setFill(fill);
+                gC.fillPolygon(xCPoints, yCPoints, xCPoints.length);
+            }
+
             if (isSelected()) {
                 drawHandles(gC);
             }
@@ -150,5 +157,21 @@ public class AnnoPolygon extends AnnoShape {
             xPoints[i] = xPosType.move(startX[i], dx, bounds[0], world[0]);
             yPoints[i] = xPosType.move(startY[i], dy, bounds[1], world[1]);
         }
+    }
+
+    public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
+        for (int i = 0; i < xPoints.length; i++) {
+            double xPix = xPosType.transform(xPoints[i], bounds, world);
+            xPoints[i] = newType.itransform(xPix, bounds, world);
+        }
+        xPosType = newType;
+    }
+
+    public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
+        for (int i = 0; i < yPoints.length; i++) {
+            double yPix = yPosType.transform(yPoints[i], bounds, world);
+            yPoints[i] = newType.itransform(yPix, bounds, world);
+        }
+        yPosType = newType;
     }
 }
