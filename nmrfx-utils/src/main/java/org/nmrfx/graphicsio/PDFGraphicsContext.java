@@ -215,7 +215,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void fillOval(double x, double y, double w, double h) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        doOval(x, y, w, h, true);
     }
 
     @Override
@@ -260,7 +260,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public Paint getFill() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return fill;
     }
 
     @Override
@@ -471,7 +471,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void strokeOval(double x, double y, double w, double h) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        doOval(x, y, w, h, false);
     }
 
     @Override
@@ -551,4 +551,28 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         }
     }
 
+    void doOval(
+            double x, double y, double w, double h, boolean fill) {
+
+        final float k = 0.552284749831f;
+        float cx = tX(x + w / 2.0);
+        float cy = tY(y + h / 2.0);
+        float rx =  Math.abs(tX(x) - cx);
+        float ry =  Math.abs(tY(y) - cy);
+
+        try {
+            contentStream.moveTo(cx - rx, cy);
+            contentStream.curveTo(cx - rx, cy + k * ry, cx - k * rx, cy + ry, cx, cy + ry);
+            contentStream.curveTo(cx + k * rx, cy + ry, cx + rx, cy + k * ry, cx + rx, cy);
+            contentStream.curveTo(cx + rx, cy - k * ry, cx + k * rx, cy - ry, cx, cy - ry);
+            contentStream.curveTo(cx - k * rx, cy - ry, cx - rx, cy - k * ry, cx - rx, cy);
+            if (fill) {
+                contentStream.fill();
+            } else {
+                contentStream.stroke();
+            }
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+     }
 }
