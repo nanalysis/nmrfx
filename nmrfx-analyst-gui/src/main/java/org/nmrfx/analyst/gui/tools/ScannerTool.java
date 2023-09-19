@@ -102,7 +102,6 @@ public class ScannerTool implements ControllerTool {
         this.borderPane = borderPane;
         scannerBar = new ToolBar();
         tableView = new TableView<>();
-        tableView.setPrefHeight(250.0);
         borderPane.setCenter(tableView);
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> controller.hideScannerMenus());
