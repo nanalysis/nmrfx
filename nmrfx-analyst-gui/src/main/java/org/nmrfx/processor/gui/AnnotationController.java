@@ -4,6 +4,7 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.geometry.Orientation;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -15,6 +16,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.annotations.*;
+import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.utils.GUIUtils;
 
 import java.util.Arrays;
@@ -43,6 +45,7 @@ public class AnnotationController {
 
     public void setup(FXMLController fxmlController, TitledPane annoPane) {
         this.fxmlController = fxmlController;
+        this.chart = fxmlController.getActiveChart();
         VBox vBox = new VBox();
         annoPane.setContent(vBox);
         ToolBar toolBar = new ToolBar();
@@ -159,6 +162,26 @@ public class AnnotationController {
         this.chart = activeChart;
     }
 
+    private Double[] getCrossHairs() {
+        Double[] positions = new Double[4];
+        if (chart.getDisDimProperty().getValue() == PolyChart.DISDIM.TwoD) {
+            CrossHairs crossHairs = chart.getCrossHairs();
+            Orientation[] orientations = new Orientation[]{Orientation.VERTICAL,Orientation.HORIZONTAL};
+            int j = 0;
+            for (Orientation orientation : orientations) {
+                for (int iCrossHair = 0; iCrossHair < 2; iCrossHair++) {
+                    if (crossHairs.getState(iCrossHair, orientation)) {
+                        positions[j] = crossHairs.getPosition(iCrossHair, orientation);
+                    } else {
+                        positions[j] = null;
+                    }
+                    j++;
+                }
+            }
+        }
+        return positions;
+    }
+
     private Rectangle2D getDefaultPosition() {
         double[][] world = getChart().getWorld();
         double width = Math.abs(world[0][1] - world[0][0]) / 10.0;
@@ -171,6 +194,31 @@ public class AnnotationController {
         }
         double y1 = world[1][0] + height;
         return new Rectangle2D(x1, y1, width, height);
+    }
+
+    private Double[] getStartPositions(Boolean primaryOnly) {
+        Double[] positions = getCrossHairs();
+        boolean useDefault = false;
+        for (int i = 0; i < positions.length; i++) {
+            if (primaryOnly) {
+                if (i % 2 == 0 && positions[i] == null) {
+                    useDefault = true;
+                    break;
+                }
+            } else if (positions[i] == null) {
+                useDefault = true;
+                break;
+            }
+        }
+
+        if (useDefault) {
+            Rectangle2D rectangle2D = getDefaultPosition();
+            positions[0] = rectangle2D.getMinX();
+            positions[1] = positions[0] - rectangle2D.getWidth();
+            positions[2] = rectangle2D.getMinY();
+            positions[3] = positions[2] + rectangle2D.getHeight();
+        }
+        return positions;
     }
 
     private void createPentagon() {
@@ -219,11 +267,11 @@ public class AnnotationController {
     }
 
     private void createLine() {
-        Rectangle2D rectangle2D = getDefaultPosition();
-        double x1 = rectangle2D.getMinX();
-        double x2 = x1 - rectangle2D.getWidth();
-        double y1 = rectangle2D.getMinY();
-        double y2 = y1 + rectangle2D.getHeight();
+        Double[] positions = getStartPositions(false);
+        double x1 = positions[0];
+        double x2 = positions[1];
+        double y1 = positions[2];
+        double y2 = positions[3];
         double lineWidth = 1.0;
         Color fill = Color.BLACK;
         String text = "Hello";
@@ -237,9 +285,9 @@ public class AnnotationController {
     }
 
     private void createText() {
-        Rectangle2D rectangle2D = getDefaultPosition();
-        double x1 = rectangle2D.getMinX();
-        double y1 = rectangle2D.getMinY();
+        Double[] positions = getStartPositions(true);
+        double x1 = positions[0];
+        double y1 = positions[2];
         Color fill = Color.BLACK;
         String text = "Hello";
         double fontSize = 12.0;
@@ -252,11 +300,11 @@ public class AnnotationController {
     }
 
     private void createOval() {
-        Rectangle2D rectangle2D = getDefaultPosition();
-        double x1 = rectangle2D.getMinX();
-        double x2 = x1 - rectangle2D.getWidth();
-        double y1 = rectangle2D.getMinY();
-        double y2 = y1 + rectangle2D.getHeight();
+        Double[] positions = getStartPositions(false);
+        double x1 = positions[0];
+        double x2 = positions[1];
+        double y1 = positions[2];
+        double y2 = positions[3];
         double lineWidth = 1.0;
         Color stroke = Color.BLACK;
         Color fill = GUIUtils.getColor("");
@@ -270,11 +318,11 @@ public class AnnotationController {
     }
 
     private void createArrow() {
-        Rectangle2D rectangle2D = getDefaultPosition();
-        double x1 = rectangle2D.getMinX();
-        double x2 = x1 - rectangle2D.getWidth();
-        double y1 = rectangle2D.getMinY();
-        double y2 = y1 + rectangle2D.getHeight();
+        Double[] positions = getStartPositions(false);
+        double x1 = positions[0];
+        double x2 = positions[1];
+        double y1 = positions[2];
+        double y2 = positions[3];
         boolean arrowFirst = true;
         boolean arrowLast = false;
         double lineWidth = 1.0;
@@ -288,11 +336,11 @@ public class AnnotationController {
     }
 
     private void createRectangle() {
-        Rectangle2D rectangle2D = getDefaultPosition();
-        double x1 = rectangle2D.getMinX();
-        double x2 = x1 - rectangle2D.getWidth();
-        double y1 = rectangle2D.getMinY();
-        double y2 = y1 + rectangle2D.getHeight();
+        Double[] positions = getStartPositions(false);
+        double x1 = positions[0];
+        double x2 = positions[1];
+        double y1 = positions[2];
+        double y2 = positions[3];
         double lineWidth = 1.0;
         Color stroke = Color.BLACK;
         Color fill = GUIUtils.getColor("");
