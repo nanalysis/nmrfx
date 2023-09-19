@@ -177,6 +177,10 @@ public class ScanTable {
         columnTypes.put(DATASET_COLUMN_NAME, "S");
         columnTypes.put(ETIME_COLUMN_NAME, "I");
         columnTypes.put(GROUP_COLUMN_NAME, "I");
+        if (currentChart != null) {
+            currentChart.getDatasetAttributes().addListener(datasetListener);
+        }
+
 
     }
 
