@@ -4,11 +4,13 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -33,6 +35,9 @@ public class AnnotationController {
     private CheckBox arrowFirstCheckBox = new CheckBox();
     private CheckBox arrowLastCheckBox = new CheckBox();
     private TextField textField = new TextField();
+    private TextArea textArea = new TextArea();
+
+    private Pane textPane = new Pane();
     private Slider fontSizeSlider = new Slider();
     private Slider lineWidthSlider = new Slider();
 
@@ -51,9 +56,6 @@ public class AnnotationController {
         Button ovalButton = GlyphsDude.createIconButton(FontAwesomeIcon.CIRCLE_ALT, "Oval", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         ovalButton.setOnAction(e -> createOval());
         toolBar.getItems().add(ovalButton);
-        Button triangleButton = GlyphsDude.createIconButton(FontAwesomeIcon.CARET_UP, "Polygon", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        triangleButton.setOnAction(e -> createTriangle());
-        toolBar.getItems().add(triangleButton);
         Button lineButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDERLINE, "Annotation", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         lineButton.setOnAction(e -> createLine());
         toolBar.getItems().add(lineButton);
@@ -82,20 +84,28 @@ public class AnnotationController {
         gridPane.add(fillColorPicker, 1, row);
         gridPane.add(fillColorCheckBox, 2, row);
         row++;
+        gridPane.add(new Label("Line Width"), 0, row);
+        gridPane.add(lineWidthSlider, 1, row);
+        row++;
+        gridPane.add(new Label("Text"), 0, row);
+        gridPane.add(textPane, 1, row);
+        GridPane.setColumnSpan(textPane, 2);
+        textPane.getChildren().add(textArea);
+        row++;
+        gridPane.add(new Label("Font Size"), 0, row);
+        gridPane.add(fontSizeSlider, 1, row);
+        row++;
+
         gridPane.add(new Label("Arrow First"), 0, row);
         gridPane.add(arrowFirstCheckBox, 1, row);
         row++;
         gridPane.add(new Label("Arrow Last"), 0, row);
         gridPane.add(arrowLastCheckBox, 1, row);
-        row++;
-        gridPane.add(new Label("Text"), 0, row);
-        gridPane.add(textField, 1, row);
-        row++;
-        gridPane.add(new Label("Font Size"), 0, row);
-        gridPane.add(fontSizeSlider, 1, row);
-        row++;
-        gridPane.add(new Label("Line Width"), 0, row);
-        gridPane.add(lineWidthSlider, 1, row);
+
+        textArea.setPrefWidth(200);
+        textArea.setPrefHeight(50);
+        textArea.setWrapText(true);
+        textField.setPrefWidth(200);
 
         strokeColorPicker.disableProperty().bind(strokeColorCheckBox.selectedProperty().not());
         strokeColorPicker.valueProperty().addListener(strokeColorListener);
@@ -119,6 +129,9 @@ public class AnnotationController {
         textField.setOnKeyPressed(keyEvent -> textKeyPressed(keyEvent));
         textField.setDisable(true);
 
+        textArea.setOnKeyPressed(keyEvent -> textAreaPressed(keyEvent));
+        textArea.setDisable(true);
+
         fontSizeSlider.valueProperty().addListener(e -> updateFontSize());
         fontSizeSlider.setMax(50.0);
         fontSizeSlider.setMin(0.0);
@@ -126,6 +139,7 @@ public class AnnotationController {
         fontSizeSlider.setMinorTickCount(1);
         fontSizeSlider.setShowTickMarks(true);
         fontSizeSlider.setShowTickLabels(true);
+        fontSizeSlider.setDisable(true);
 
         lineWidthSlider.valueProperty().addListener(e -> updateLineWidth());
         lineWidthSlider.setMax(10.0);
@@ -134,6 +148,7 @@ public class AnnotationController {
         lineWidthSlider.setMinorTickCount(3);
         lineWidthSlider.setShowTickMarks(true);
         lineWidthSlider.setShowTickLabels(true);
+        lineWidthSlider.setDisable(true);
     }
 
     public PolyChart getChart() {
@@ -144,8 +159,22 @@ public class AnnotationController {
         this.chart = activeChart;
     }
 
+    private Rectangle2D getDefaultPosition() {
+        double[][] world = getChart().getWorld();
+        double width = Math.abs(world[0][1] - world[0][0]) / 10.0;
+        double height = Math.abs(world[1][1] - world[1][0]) / 10.0;
+        double x1;
+        if (world[0][0] > world[0][1]) {
+            x1 = world[0][0] - width;
+        } else {
+            x1 = world[0][0] + width;
+        }
+        double y1 = world[1][0] + height;
+        return new Rectangle2D(x1, y1, width, height);
+    }
+
     private void createPentagon() {
-        List<Double> x = Arrays.asList(10.3, 10.5, 10.2, 10.1, 10.0);
+        List<Double> x = Arrays.asList(10.1, 10.2, 10., 9.9, 9.8);
         List<Double> y = Arrays.asList(110.0, 107.0, 105.0, 107.0, 110.0);
         double lineWidth = 1.0;
         Color stroke = Color.BLACK;
@@ -174,38 +203,6 @@ public class AnnotationController {
         refresh();
     }
 
-    private void createLine() {
-        double x1 = 10.0;
-        double x2 = 9.5;
-        double y1 = 110.0;
-        double y2 = 115.0;
-        double lineWidth = 1.0;
-        Color fill = Color.BLACK;
-        String text = "Hello";
-        double fontSize = 12.0;
-        AnnoShape shape = new AnnoLineText(x1, y1, x2, y2, text, fontSize, lineWidth,
-                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
-        shape.setFill(fill);
-        shape.setLineWidth(lineWidth);
-        getChart().addAnnotation(shape);
-        refresh();
-    }
-
-    private void createText() {
-        double x1 = 10.0;
-        double x2 = 9.5;
-        double y1 = 110.0;
-        double y2 = 115.0;
-        Color fill = Color.BLACK;
-        String text = "Hello";
-        double fontSize = 12.0;
-        AnnoText annoText = new AnnoText(x1, y1, x2, y2, text, fontSize,
-                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
-        annoText.setFill(fill);
-        getChart().addAnnotation(annoText);
-        refresh();
-    }
-
     private void createTriangle() {
         List<Double> x = Arrays.asList(10.0, 9.5, 9.0);
         List<Double> y = Arrays.asList(110.0, 105.0, 110.0);
@@ -221,11 +218,45 @@ public class AnnotationController {
         refresh();
     }
 
+    private void createLine() {
+        Rectangle2D rectangle2D = getDefaultPosition();
+        double x1 = rectangle2D.getMinX();
+        double x2 = x1 - rectangle2D.getWidth();
+        double y1 = rectangle2D.getMinY();
+        double y2 = y1 + rectangle2D.getHeight();
+        double lineWidth = 1.0;
+        Color fill = Color.BLACK;
+        String text = "Hello";
+        double fontSize = 12.0;
+        AnnoShape shape = new AnnoLineText(x1, y1, x2, y2, text, fontSize, lineWidth,
+                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
+        shape.setFill(fill);
+        shape.setLineWidth(lineWidth);
+        getChart().addAnnotation(shape);
+        refresh();
+    }
+
+    private void createText() {
+        Rectangle2D rectangle2D = getDefaultPosition();
+        double x1 = rectangle2D.getMinX();
+        double y1 = rectangle2D.getMinY();
+        Color fill = Color.BLACK;
+        String text = "Hello";
+        double fontSize = 12.0;
+        double width = text.length() * fontSize;
+        AnnoText annoText = new AnnoText(x1, y1, width, text, fontSize,
+                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
+        annoText.setFill(fill);
+        getChart().addAnnotation(annoText);
+        refresh();
+    }
+
     private void createOval() {
-        double x1 = 10.0;
-        double x2 = 9.5;
-        double y1 = 110.0;
-        double y2 = 115.0;
+        Rectangle2D rectangle2D = getDefaultPosition();
+        double x1 = rectangle2D.getMinX();
+        double x2 = x1 - rectangle2D.getWidth();
+        double y1 = rectangle2D.getMinY();
+        double y2 = y1 + rectangle2D.getHeight();
         double lineWidth = 1.0;
         Color stroke = Color.BLACK;
         Color fill = GUIUtils.getColor("");
@@ -239,10 +270,11 @@ public class AnnotationController {
     }
 
     private void createArrow() {
-        double x1 = 10.0;
-        double x2 = 9.5;
-        double y1 = 110.0;
-        double y2 = 115.0;
+        Rectangle2D rectangle2D = getDefaultPosition();
+        double x1 = rectangle2D.getMinX();
+        double x2 = x1 - rectangle2D.getWidth();
+        double y1 = rectangle2D.getMinY();
+        double y2 = y1 + rectangle2D.getHeight();
         boolean arrowFirst = true;
         boolean arrowLast = false;
         double lineWidth = 1.0;
@@ -250,6 +282,24 @@ public class AnnotationController {
         AnnoShape shape = new AnnoLine(x1, y1, x2, y2, arrowFirst, arrowLast, lineWidth,
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         shape.setStroke(stroke);
+        shape.setLineWidth(lineWidth);
+        getChart().addAnnotation(shape);
+        refresh();
+    }
+
+    private void createRectangle() {
+        Rectangle2D rectangle2D = getDefaultPosition();
+        double x1 = rectangle2D.getMinX();
+        double x2 = x1 - rectangle2D.getWidth();
+        double y1 = rectangle2D.getMinY();
+        double y2 = y1 + rectangle2D.getHeight();
+        double lineWidth = 1.0;
+        Color stroke = Color.BLACK;
+        Color fill = GUIUtils.getColor("");
+        AnnoShape shape = new AnnoRectangle(x1, y1, x2, y2,
+                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
+        shape.setStroke(stroke);
+        shape.setFill(fill);
         shape.setLineWidth(lineWidth);
         getChart().addAnnotation(shape);
         refresh();
@@ -264,6 +314,9 @@ public class AnnotationController {
         arrowFirstCheckBox.setDisable(true);
         arrowLastCheckBox.setDisable(true);
         textField.setDisable(true);
+        textField.clear();
+        textArea.setDisable(true);
+        textArea.clear();
         fontSizeSlider.setDisable(true);
         lineWidthSlider.setDisable(true);
     }
@@ -273,6 +326,7 @@ public class AnnotationController {
         xPosTypeChoiceBox.setValue(annotation.getXPosType());
         yPosTypeChoiceBox.setValue(annotation.getYPosType());
         fillColorCheckBox.setDisable(false);
+        textField.clear();
         textField.setDisable(true);
         arrowFirstCheckBox.setDisable(true);
         arrowLastCheckBox.setDisable(true);
@@ -296,39 +350,24 @@ public class AnnotationController {
                 arrowFirstCheckBox.setSelected(line.isArrowFirst());
                 arrowLastCheckBox.setSelected(line.isArrowLast());
             } else if (annotation instanceof AnnoLineText text) {
+                textPane.getChildren().set(0, textField);
                 textField.setDisable(false);
                 textField.setText(text.getText());
                 fontSizeSlider.setDisable(false);
                 fontSizeSlider.setValue(text.getFontSize());
             }
         } else if (annotation instanceof AnnoText text) {
+            textPane.getChildren().set(0, textArea);
             strokeColorCheckBox.setSelected(false);
             strokeColorCheckBox.setDisable(true);
             lineWidthSlider.setDisable(true);
-            textField.setDisable(false);
-            textField.setText(text.getText());
+            textArea.setDisable(false);
+            textArea.setText(text.getText());
             fontSizeSlider.setDisable(false);
             fontSizeSlider.setValue(text.getFontSize());
             fillColorPicker.setValue(text.getFillColor());
             fillColorCheckBox.setSelected(text.getFillColor() != null);
         }
-    }
-
-    private void createRectangle() {
-        double x1 = 10.0;
-        double x2 = 9.5;
-        double y1 = 110.0;
-        double y2 = 115.0;
-        double lineWidth = 1.0;
-        Color stroke = Color.BLACK;
-        Color fill = GUIUtils.getColor("");
-        AnnoShape shape = new AnnoRectangle(x1, y1, x2, y2,
-                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
-        shape.setStroke(stroke);
-        shape.setFill(fill);
-        shape.setLineWidth(lineWidth);
-        getChart().addAnnotation(shape);
-        refresh();
     }
 
     private void updateXPosType() {
@@ -432,9 +471,17 @@ public class AnnotationController {
     private void textKeyPressed(KeyEvent keyEvent) {
         if (keyEvent.getCode() == KeyCode.ENTER) {
             String text = textField.getText();
-            if (selectedAnno instanceof AnnoText anno) {
+            if (selectedAnno instanceof AnnoLineText anno) {
                 anno.setText(text);
-            } else if (selectedAnno instanceof AnnoLineText anno) {
+            }
+            refresh();
+        }
+    }
+
+    private void textAreaPressed(KeyEvent keyEvent) {
+        if (keyEvent.getCode() == KeyCode.ENTER) {
+            String text = textArea.getText();
+            if (selectedAnno instanceof AnnoText anno) {
                 anno.setText(text);
             }
             refresh();

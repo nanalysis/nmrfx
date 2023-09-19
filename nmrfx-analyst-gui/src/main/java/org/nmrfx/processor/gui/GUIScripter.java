@@ -878,7 +878,8 @@ public class GUIScripter {
 
     }
     public AnnoText addText(Double x1, Double y1, Double x2, Double y2,  String text, Double fontSize) {
-        AnnoText annoText = new AnnoText(x1, y1, x2, y2, text, fontSize,
+        double width = text.length() * fontSize;
+        AnnoText annoText = new AnnoText(x1, y1, width, text, fontSize,
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         Fx.runOnFxThread(() -> {
             getChart().addAnnotation(annoText);

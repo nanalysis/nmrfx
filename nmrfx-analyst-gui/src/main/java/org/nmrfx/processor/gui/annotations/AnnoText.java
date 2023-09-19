@@ -40,12 +40,10 @@ public class AnnoText implements CanvasAnnotation {
     protected String text;
     double x1;
     double y1;
-    double x2;
-    double y2;
+    double width;
     double startX1;
     double startY1;
-    double startX2;
-    double startY2;
+    double startWidth;
     boolean selected = false;
     boolean selectable = true;
     int activeHandle = -1;
@@ -59,12 +57,11 @@ public class AnnoText implements CanvasAnnotation {
 
     }
 
-    public AnnoText(double x1, double y1, double x2, double y2, String text, double fontSize,
+    public AnnoText(double x1, double y1, double width, String text, double fontSize,
                     POSTYPE xPosType, POSTYPE yPosType) {
         this.x1 = x1;
         this.y1 = y1;
-        this.x2 = x2;
-        this.y2 = y2;
+        this.width = width;
         this.xPosType = xPosType;
         this.yPosType = yPosType;
         this.text = text;
@@ -118,9 +115,8 @@ public class AnnoText implements CanvasAnnotation {
         boolean hit = (bounds2D != null) && bounds2D.contains(x, y);
         if (hit) {
             startX1 = x1;
-            startX2 = x2;
             startY1 = y1;
-            startY2 = y2;
+            startWidth = width;
         }
         if (selectMode && selectable) {
             selected = hit;
@@ -144,20 +140,12 @@ public class AnnoText implements CanvasAnnotation {
         this.y1 = y1;
     }
 
-    public double getX2() {
-        return x2;
+    public double getWidth() {
+        return width;
     }
 
-    public void setX2(double x2) {
-        this.x2 = x2;
-    }
-
-    public double getY2() {
-        return y2;
-    }
-
-    public void setY2(double y2) {
-        this.y2 = y2;
+    public void setWidth(double value) {
+        width = value;
     }
 
     public Bounds getBounds() {
@@ -181,15 +169,17 @@ public class AnnoText implements CanvasAnnotation {
         double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
         if (activeHandle < 0) {
             x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
             y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-            y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
         } else if (activeHandle == 0) {
-            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-            x1 = Math.min(x1, x2 - handleSeparationLimit);
+            if (dx < startWidth) {
+                x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+                width = startWidth - dx;
+            }
+            // x1 = Math.min(x1, x2 - handleSeparationLimit);
         } else if (activeHandle == 1) {
-            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-            x2 = Math.max(x1 + handleSeparationLimit, x2);
+            if (dx > -startWidth) {
+                width = startWidth + dx;
+            }
         }
     }
 
@@ -205,15 +195,14 @@ public class AnnoText implements CanvasAnnotation {
 
             double xp1 = xPosType.transform(x1, bounds[0], world[0]);
             double yp1 = yPosType.transform(y1, bounds[1], world[1]);
-            double xp2 = xPosType.transform(x2, bounds[0], world[0]);
-            double regionWidth = xp2 - xp1;
+
             String[] segments = text.split("\n");
             double topY = yp1 - font.getSize();
             double y = yp1;
             for (String segment : segments) {
                 double width = GUIUtils.getTextWidth(segment, font);
-                if (width > regionWidth) {
-                    List<String> strings = GUIUtils.splitToWidth(regionWidth, segment, font);
+                if (width > this.width) {
+                    List<String> strings = GUIUtils.splitToWidth(this.width, segment, font);
                     for (String string : strings) {
                         if (fill != null) {
                             gC.fillText(string, xp1, y);
@@ -227,7 +216,7 @@ public class AnnoText implements CanvasAnnotation {
                     y += font.getSize() + 3;
                 }
             }
-            bounds2D = new BoundingBox(xp1, topY, regionWidth, y - topY);
+            bounds2D = new BoundingBox(xp1, topY, width, y - topY);
             if (isSelected()) {
                 drawHandles(gC);
             }
@@ -284,17 +273,13 @@ public class AnnoText implements CanvasAnnotation {
 
     public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
         double x1Pix = xPosType.transform(x1, bounds, world);
-        double x2Pix = xPosType.transform(x2, bounds, world);
         x1 = newType.itransform(x1Pix, bounds, world);
-        x2 = newType.itransform(x2Pix, bounds, world);
         xPosType = newType;
     }
 
     public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
         double y1Pix = yPosType.transform(y1, bounds, world);
-        double y2Pix = yPosType.transform(y2, bounds, world);
         y1 = newType.itransform(y1Pix, bounds, world);
-        y2 = newType.itransform(y2Pix, bounds, world);
         yPosType = newType;
     }
 
