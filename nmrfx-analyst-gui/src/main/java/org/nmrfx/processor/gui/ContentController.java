@@ -87,10 +87,12 @@ public class ContentController implements NmrControlRightSideContent {
         if (getPane().isVisible()) {
             Platform.runLater(() -> {
                 chart = fxmlController.getActiveChart();
-                chart.setChartDisabled(true);
-                datasetViewController.updateDatasetView();
-                updatePeakView();
-                chart.setChartDisabled(false);
+                if (chart != null) {
+                    chart.setChartDisabled(true);
+                    datasetViewController.updateDatasetView();
+                    updatePeakView();
+                    chart.setChartDisabled(false);
+                }
             });
         }
     }
