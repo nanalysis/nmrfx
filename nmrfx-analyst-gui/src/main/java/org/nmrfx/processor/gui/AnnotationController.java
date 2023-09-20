@@ -11,6 +11,7 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import org.kordamp.ikonli.javafx.FontIcon;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.annotations.*;
 import org.nmrfx.utils.GUIUtils;
@@ -60,6 +61,15 @@ public class AnnotationController {
         Button textButton = GlyphsDude.createIconButton(FontAwesomeIcon.COMMENT, "Text Box", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         textButton.setOnAction(e -> createText());
         toolBar.getItems().add(textButton);
+
+        Button bbb = new Button();
+        var fi = new FontIcon();
+        fi.setIconLiteral("mdi2f-format-text-rotation-angle-down");
+        fi.setIconSize(20);
+        bbb.setGraphic(fi);
+        bbb.setContentDisplay(ContentDisplay.TOP);
+        bbb.setText("howdy");
+        toolBar.getItems().add(bbb);
 
 
         GridPane gridPane = new GridPane();
