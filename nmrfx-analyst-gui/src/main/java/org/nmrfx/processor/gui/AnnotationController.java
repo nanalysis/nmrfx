@@ -193,7 +193,8 @@ public class AnnotationController {
             int j = 0;
             for (Orientation orientation : orientations) {
                 for (int iCrossHair = 0; iCrossHair < 2; iCrossHair++) {
-                    if (crossHairs.getState(iCrossHair, orientation)) {
+                    boolean visible = crossHairs.isVisible(iCrossHair, orientation);
+                    if (crossHairs.getState(iCrossHair, orientation) && visible) {
                         positions[j] = crossHairs.getPosition(iCrossHair, orientation);
                     } else {
                         positions[j] = null;
