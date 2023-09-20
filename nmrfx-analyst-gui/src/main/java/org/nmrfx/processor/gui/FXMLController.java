@@ -42,6 +42,7 @@ import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -853,6 +854,27 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         this.stage = stage;
 
         stage.maximizedProperty().addListener(this::adjustSizeAfterMaximize);
+    }
+
+    public void initStageGeometry() {
+        boolean firstStage = AnalystApp.getFXMLControllerManager().getControllers().size() == 1;
+        var bounds = Screen.getPrimary().getBounds();
+        double scale = 0.8;
+        double width = bounds.getWidth() - 500.0;  // allow for expanded right pane
+        double height = bounds.getHeight() * scale;
+        double xPos = 20.0;
+        double yPos = 50.0;
+        // make later stages smaller and approximately centered
+        if (!firstStage) {
+            width = width * 0.75;
+            height = height * 0.75;
+            xPos = Math.max((bounds.getWidth() - 500.0 - width) / 2.0, 20);
+            yPos = (bounds.getHeight() - height) / 2.0;
+        }
+        stage.setWidth(width);
+        stage.setHeight(height);
+        stage.setX(xPos);
+        stage.setY(yPos);
     }
 
     public BorderPane getMainBox() {

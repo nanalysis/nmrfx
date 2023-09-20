@@ -138,6 +138,7 @@ public class FXMLControllerManager {
             closeController(controller);
             AnalystApp.removeStage(stage);
         });
+        controller.initStageGeometry();
         stage.show();
 
         return controller;
