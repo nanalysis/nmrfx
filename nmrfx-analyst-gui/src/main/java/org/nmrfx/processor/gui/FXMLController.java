@@ -42,6 +42,7 @@ import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -787,6 +788,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             }
             chartDrawingLayers.getGrid().requestLayout();
         });
+        SplitPane.setResizableWithParent(bottomBox, false);
 
         statusBar.setMode(SpectrumStatusBar.DataMode.DATASET_1D);
         for (int iCross = 0; iCross < 2; iCross++) {
@@ -857,6 +859,27 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         stage.maximizedProperty().addListener(this::adjustSizeAfterMaximize);
     }
 
+    public void initStageGeometry() {
+        boolean firstStage = AnalystApp.getFXMLControllerManager().getControllers().size() == 1;
+        var bounds = Screen.getPrimary().getBounds();
+        double scale = 0.8;
+        double width = bounds.getWidth() - 500.0;  // allow for expanded right pane
+        double height = bounds.getHeight() * scale;
+        double xPos = 20.0;
+        double yPos = 50.0;
+        // make later stages smaller and approximately centered
+        if (!firstStage) {
+            width = width * 0.75;
+            height = height * 0.75;
+            xPos = Math.max((bounds.getWidth() - 500.0 - width) / 2.0, 20);
+            yPos = (bounds.getHeight() - height) / 2.0;
+        }
+        stage.setWidth(width);
+        stage.setHeight(height);
+        stage.setX(xPos);
+        stage.setY(yPos);
+    }
+
     public BorderPane getMainBox() {
         return mainBox;
     }
@@ -913,6 +936,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             peakNavigator.removePeakList();
             bottomBox.getChildren().remove(peakNavigator.getToolBar());
             peakNavigator = null;
+            if (bottomBox.getChildren().isEmpty()) {
+                splitPane.setDividerPosition(0, 1.0);
+            }
         }
     }
 
@@ -943,6 +969,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (spectrumComparator != null) {
             bottomBox.getChildren().remove(spectrumComparator.getToolBar());
             spectrumComparator = null;
+            if (bottomBox.getChildren().isEmpty()) {
+                splitPane.setDividerPosition(0, 1.0);
+            }
         }
     }
 
@@ -962,6 +991,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private void removeSpectrumMeasureBar(Object o) {
         if (measureBar != null) {
             bottomBox.getChildren().remove(measureBar.getToolBar());
+            if (bottomBox.getChildren().isEmpty()) {
+                splitPane.setDividerPosition(0, 1.0);
+            }
             measureBar = null;
         }
     }
@@ -978,6 +1010,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private void removeAnalyzerBar(Object o) {
         if (analyzerBar != null) {
             bottomBox.getChildren().remove(analyzerBar.getToolBar());
+            if (bottomBox.getChildren().isEmpty()) {
+                splitPane.setDividerPosition(0, 1.0);
+            }
             analyzerBar = null;
         }
     }
@@ -1380,6 +1415,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             if (tool.getClass() == classType) {
                 result = true;
                 tools.remove(tool);
+                if (bottomBox.getChildren().isEmpty()) {
+                    splitPane.setDividerPosition(0, 1.0);
+                }
                 break;
             }
         }
@@ -1842,15 +1880,15 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void showScannerTool() {
-        if (getBottomBox().getChildren().isEmpty()) {
-            BorderPane vBox;
-            if (scannerTool != null) {
-                vBox = scannerTool.getBox();
-            } else {
-                vBox = new BorderPane();
-                scannerTool = new ScannerTool(this);
-                scannerTool.initialize(vBox);
-            }
+        BorderPane vBox;
+        if (scannerTool != null) {
+            vBox = scannerTool.getBox();
+        } else {
+            vBox = new BorderPane();
+            scannerTool = new ScannerTool(this);
+            scannerTool.initialize(vBox);
+        }
+        if (!getBottomBox().getChildren().contains(vBox)) {
             splitPane.setDividerPosition(0, scannerTool.getSplitPanePosition());
             getBottomBox().getChildren().add(vBox);
             addTool(scannerTool);
@@ -1860,18 +1898,24 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void hideScannerTool() {
         if (scannerTool != null) {
             removeScannerTool();
-            splitPane.setDividerPosition(0, 1.0);
         }
     }
 
 
     public void removeScannerTool() {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(ScannerTool.class);
         double[] dividerPositions = controller.splitPane.getDividerPositions();
+        controller.removeTool(ScannerTool.class);
         if (scannerTool != null) {
             scannerTool.setSplitPanePosition(dividerPositions[0]);
-            controller.getBottomBox().getChildren().remove(scannerTool.getBox());
+            removeBottomBoxNode(scannerTool.getBox());
+        }
+    }
+
+    public void removeBottomBoxNode(Node node) {
+        getBottomBox().getChildren().remove(node);
+        if (getBottomBox().getChildren().isEmpty()) {
+            splitPane.setDividerPosition(0, 1.0);
         }
     }
 

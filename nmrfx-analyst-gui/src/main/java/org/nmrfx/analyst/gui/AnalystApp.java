@@ -550,50 +550,50 @@ public class AnalystApp extends Application {
     public void removePeakPathTool(PathTool pathTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(PathTool.class);
-        controller.getBottomBox().getChildren().remove(pathTool.getBox());
+        controller.removeBottomBoxNode(pathTool.getBox());
     }
 
     public void removePeakAssignTool(PeakAssignTool peakAssignTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(PeakAssignTool.class);
-        controller.getBottomBox().getChildren().remove(peakAssignTool.getBox());
+        controller.removeBottomBoxNode(peakAssignTool.getBox());
     }
 
     public void removePeakSlider(PeakSlider peakSlider) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(PeakSlider.class);
-        controller.getBottomBox().getChildren().remove(peakSlider.getBox());
+        controller.removeBottomBoxNode(peakSlider.getBox());
         peakSlider.removeListeners();
     }
 
     public void removeMolSim(SimMolController simMolController) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(SimMolController.class);
-        controller.getBottomBox().getChildren().remove(simMolController.getToolBar());
+        controller.removeBottomBoxNode(simMolController.getToolBar());
     }
 
     public void removeMolFitter(SimFitMolController simMolController) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(SimFitMolController.class);
-        controller.getBottomBox().getChildren().remove(simMolController.getBox());
+        controller.removeBottomBoxNode(simMolController.getBox());
     }
 
     public void removeScannerTool(ScannerTool scannerTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(ScannerTool.class);
-        controller.getBottomBox().getChildren().remove(scannerTool.getBox());
+        controller.removeBottomBoxNode(scannerTool.getBox());
     }
 
     public void removeRunaboutTool(RunAboutGUI runaboutTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(RunAboutGUI.class);
-        controller.getBottomBox().getChildren().remove(runaboutTool.getTabPane());
+        controller.removeBottomBoxNode(runaboutTool.getTabPane());
     }
 
     public void removeStripsBar(StripController stripsController) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(StripController.class);
-        controller.getBottomBox().getChildren().remove(stripsController.getBox());
+        controller.removeBottomBoxNode(stripsController.getBox());
     }
 
     public void readMolecule(String type) {

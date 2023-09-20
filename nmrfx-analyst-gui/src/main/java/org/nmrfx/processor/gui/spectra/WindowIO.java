@@ -145,9 +145,11 @@ public class WindowIO implements FileWatchListener {
 
     public static void loadWindow(File file) throws IOException {
         AnalystPythonInterpreter.exec("import nwyaml\\n");
+        String fileContent = Files.readString(file.toPath());
+        AnalystPythonInterpreter.set("yamlContents", fileContent);
         AnalystPythonInterpreter.set("yamlFileName", file.toString());
         AnalystPythonInterpreter.set("yamlFileNum", 1);
-        AnalystPythonInterpreter.exec("nwyaml.loadYamlWin(yamlFileName, yamlFileNum)");
+        AnalystPythonInterpreter.exec("nwyaml.loadYamlWin(yamlFileName, yamlContents, yamlFileNum)");
     }
 
     public static void loadWindows(Path directory) throws IOException {
