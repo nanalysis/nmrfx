@@ -1,7 +1,5 @@
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
@@ -15,7 +13,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import org.kordamp.ikonli.javafx.FontIcon;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.annotations.*;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.utils.GUIUtils;
@@ -51,31 +48,47 @@ public class AnnotationController {
         annoPane.setContent(vBox);
         ToolBar toolBar = new ToolBar();
         vBox.getChildren().add(toolBar);
-        Button arrowButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_LEFT, "Arrow", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+
+        int iconSize = 18;
+        FontIcon arrowFontIcon = new FontIcon();
+        arrowFontIcon.setIconLiteral("mdi2a-arrow-top-left-bottom-right");
+        arrowFontIcon.setIconSize(iconSize);
+        Button arrowButton = new Button("Arrow", arrowFontIcon);
+        arrowButton.setContentDisplay(ContentDisplay.TOP);
         arrowButton.setOnAction(e -> createArrow());
         toolBar.getItems().add(arrowButton);
-        Button rectangleButton = GlyphsDude.createIconButton(FontAwesomeIcon.STOP, "Rectangle", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+
+        FontIcon rectangleFontIcon = new FontIcon();
+        rectangleFontIcon.setIconLiteral("mdi2r-rectangle-outline");
+        rectangleFontIcon.setIconSize(iconSize);
+        Button rectangleButton = new Button("Rectangle", rectangleFontIcon);
+        rectangleButton.setContentDisplay(ContentDisplay.TOP);
         rectangleButton.setOnAction(e -> createRectangle());
         toolBar.getItems().add(rectangleButton);
-        Button ovalButton = GlyphsDude.createIconButton(FontAwesomeIcon.CIRCLE_ALT, "Oval", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+
+        FontIcon ovalFontIcon = new FontIcon();
+        ovalFontIcon.setIconLiteral("mdi2c-circle-outline");
+        ovalFontIcon.setIconSize(iconSize);
+        Button ovalButton = new Button("Oval", ovalFontIcon);
+        ovalButton.setContentDisplay(ContentDisplay.TOP);
         ovalButton.setOnAction(e -> createOval());
         toolBar.getItems().add(ovalButton);
-        Button lineButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDERLINE, "Annotation", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+
+        FontIcon lineFontIcon = new FontIcon();
+        lineFontIcon.setIconLiteral("mdi2f-format-text-rotation-angle-up");
+        lineFontIcon.setIconSize(iconSize);
+        Button lineButton = new Button("Annotate",lineFontIcon);
+        lineButton.setContentDisplay(ContentDisplay.TOP);
         lineButton.setOnAction(e -> createLine());
         toolBar.getItems().add(lineButton);
-        Button textButton = GlyphsDude.createIconButton(FontAwesomeIcon.COMMENT, "Text Box", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+
+        FontIcon textFontIcon = new FontIcon();
+        textFontIcon.setIconLiteral("mdi2f-format-size");
+        textFontIcon.setIconSize(iconSize);
+        Button textButton = new Button("Text Box", textFontIcon);
+        textButton.setContentDisplay(ContentDisplay.TOP);
         textButton.setOnAction(e -> createText());
         toolBar.getItems().add(textButton);
-
-        Button bbb = new Button();
-        var fi = new FontIcon();
-        fi.setIconLiteral("mdi2f-format-text-rotation-angle-down");
-        fi.setIconSize(20);
-        bbb.setGraphic(fi);
-        bbb.setContentDisplay(ContentDisplay.TOP);
-        bbb.setText("howdy");
-        toolBar.getItems().add(bbb);
-
 
         GridPane gridPane = new GridPane();
         ColumnConstraints col0Constraint = new ColumnConstraints();
