@@ -2125,7 +2125,7 @@ public class PolyChart extends Region {
                         double xPos = 10;
                         double yPos = chartProps.getTicFontSize() * 2;
                         double textWidth = 200;
-                        parameterText = new AnnoText(xPos, yPos, textWidth, 200, text, 12.0,
+                        parameterText = new AnnoText(xPos, yPos, textWidth, text, 12.0,
                                 CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
                         addAnnotation(parameterText);
                     } else {

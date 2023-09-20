@@ -2032,7 +2032,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     if (!typePresent.isIntraResidue()) {
                         text = text.toLowerCase();
                     }
-                    AnnoText annoText = new AnnoText(x, -8, x + delta, -8, text, 12.0, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
+                    AnnoText annoText = new AnnoText(x, -8, delta, text, 12.0, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
                     annoText.setFont(font);
                     chart.addAnnotation(annoText);
                     Color presentColor = typePresent.isPresent() ? Color.LIGHTGREEN : Color.RED;
@@ -2042,7 +2042,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     chart.addAnnotation(annoSimpleLine2);
                     x += delta;
                 }
-                AnnoText annoText = new AnnoText(x, -8, x + textWidth, -8, String.valueOf(nPeaks - nExpected), 12.0, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
+                AnnoText annoText = new AnnoText(x, -8, textWidth, String.valueOf(nPeaks - nExpected), 12.0, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
                 annoText.setFont(font);
                 chart.addAnnotation(annoText);
             }
