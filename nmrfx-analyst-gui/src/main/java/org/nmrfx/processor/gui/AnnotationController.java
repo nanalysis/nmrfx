@@ -3,7 +3,6 @@ package org.nmrfx.processor.gui;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -40,6 +39,8 @@ public class AnnotationController {
     private Pane textPane = new Pane();
     private Slider fontSizeSlider = new Slider();
     private Slider lineWidthSlider = new Slider();
+
+    record BoundsRectangle(double x1, double y1, double x2, double y2) {}
 
     public void setup(FXMLController fxmlController, TitledPane annoPane) {
         this.fxmlController = fxmlController;
@@ -207,18 +208,15 @@ public class AnnotationController {
         return positions;
     }
 
-    private Rectangle2D getDefaultPosition() {
+    private BoundsRectangle getDefaultPosition() {
         double[][] world = getChart().getWorld();
-        double width = Math.abs(world[0][1] - world[0][0]) / 10.0;
-        double height = Math.abs(world[1][1] - world[1][0]) / 10.0;
-        double x1;
-        if (world[0][0] > world[0][1]) {
-            x1 = world[0][0] - width;
-        } else {
-            x1 = world[0][0] + width;
-        }
+        double width = (world[0][1] - world[0][0]) / 10.0;
+        double height = (world[1][1] - world[1][0]) / 10.0;
+        double x1 = world[0][0] + width;
+        double x2 = x1 + width;
         double y1 = world[1][0] + height;
-        return new Rectangle2D(x1, y1, width, height);
+        double y2 = y1 + height;
+        return new BoundsRectangle(x1, y1, x2, y2);
     }
 
     private Double[] getStartPositions(Boolean primaryOnly) {
@@ -237,11 +235,11 @@ public class AnnotationController {
         }
 
         if (useDefault) {
-            Rectangle2D rectangle2D = getDefaultPosition();
-            positions[0] = rectangle2D.getMinX();
-            positions[1] = positions[0] - rectangle2D.getWidth();
-            positions[2] = rectangle2D.getMinY();
-            positions[3] = positions[2] + rectangle2D.getHeight();
+            BoundsRectangle boundsRectangle = getDefaultPosition();
+            positions[0] = boundsRectangle.x1();
+            positions[1] = boundsRectangle.x2();
+            positions[2] = boundsRectangle.y1();
+            positions[3] = boundsRectangle.y2();
         }
         return positions;
     }
