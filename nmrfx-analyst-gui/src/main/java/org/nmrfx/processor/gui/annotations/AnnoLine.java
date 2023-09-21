@@ -136,6 +136,7 @@ public class AnnoLine extends AnnoShape {
             gC.setLineWidth(lineWidth);
             if (stroke != null) {
                 gC.setStroke(stroke);
+                gC.setFill(stroke);
             }
 
             xp1 = xPosType.transform(x1, bounds[0], world[0]);
@@ -159,7 +160,8 @@ public class AnnoLine extends AnnoShape {
                 xa1 = (xCPoints[2] + xCPoints[3]) / 2;
                 ya1 = (yCPoints[2] + yCPoints[3]) / 2;
                 if (stroke != null) {
-                    gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
+                    gC.strokePolygon(xCPoints, yCPoints, xCPoints.length);
+                    gC.fillPolygon(xCPoints, yCPoints, xCPoints.length);
                 }
             }
 
@@ -174,9 +176,11 @@ public class AnnoLine extends AnnoShape {
                 xa2 = (xCPoints[2] + xCPoints[3]) / 2;
                 ya2 = (yCPoints[2] + yCPoints[3]) / 2;
                 if (stroke != null) {
-                    gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
+                    gC.strokePolygon(xCPoints, yCPoints, xCPoints.length);
+                    gC.fillPolygon(xCPoints, yCPoints, xCPoints.length);
                 }
             }
+
             if (stroke != null) {
                 gC.strokeLine(xa1, ya1, xa2, ya2);
             }
