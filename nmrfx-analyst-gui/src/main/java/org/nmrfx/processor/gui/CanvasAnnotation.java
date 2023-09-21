@@ -125,8 +125,8 @@ public interface CanvasAnnotation {
 
     POSTYPE getYPosType();
 
-    public void setXPosType(POSTYPE yPosType);
-    public void setYPosType(POSTYPE yPosType);
+    void setXPosType(POSTYPE yPosType);
+    void setYPosType(POSTYPE yPosType);
     /**
      * Get the separation limit between two handles converted to POSTYPE.
      *

@@ -175,11 +175,12 @@ public class AnnoText implements CanvasAnnotation {
                 x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
                 width = startWidth - dx;
             }
-            // x1 = Math.min(x1, x2 - handleSeparationLimit);
+            width = Math.max(width, handleSeparationLimit);
         } else if (activeHandle == 1) {
             if (dx > -startWidth) {
                 width = startWidth + dx;
             }
+            width = Math.max(width, handleSeparationLimit);
         }
     }
 
@@ -200,8 +201,8 @@ public class AnnoText implements CanvasAnnotation {
             double topY = yp1 - font.getSize();
             double y = yp1;
             for (String segment : segments) {
-                double width = GUIUtils.getTextWidth(segment, font);
-                if (width > this.width) {
+                double textWidth = GUIUtils.getTextWidth(segment, font);
+                if (textWidth > width) {
                     List<String> strings = GUIUtils.splitToWidth(this.width, segment, font);
                     for (String string : strings) {
                         if (fill != null) {

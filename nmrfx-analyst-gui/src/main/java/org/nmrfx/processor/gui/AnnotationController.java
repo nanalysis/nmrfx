@@ -26,20 +26,20 @@ public class AnnotationController {
     FXMLController fxmlController;
     StrokeColorListener strokeColorListener = new StrokeColorListener();
     FillColorListener fillColorListener = new FillColorListener();
-    private ColorPicker strokeColorPicker = new ColorPicker();
-    private ColorPicker fillColorPicker = new ColorPicker();
-    private ChoiceBox<CanvasAnnotation.POSTYPE> xPosTypeChoiceBox = new ChoiceBox<>();
-    private ChoiceBox<CanvasAnnotation.POSTYPE> yPosTypeChoiceBox = new ChoiceBox<>();
-    private CheckBox strokeColorCheckBox = new CheckBox();
-    private CheckBox fillColorCheckBox = new CheckBox();
-    private CheckBox arrowFirstCheckBox = new CheckBox();
-    private CheckBox arrowLastCheckBox = new CheckBox();
-    private TextField textField = new TextField();
-    private TextArea textArea = new TextArea();
+    private final ColorPicker strokeColorPicker = new ColorPicker();
+    private final ColorPicker fillColorPicker = new ColorPicker();
+    private final ChoiceBox<CanvasAnnotation.POSTYPE> xPosTypeChoiceBox = new ChoiceBox<>();
+    private final ChoiceBox<CanvasAnnotation.POSTYPE> yPosTypeChoiceBox = new ChoiceBox<>();
+    private final CheckBox strokeColorCheckBox = new CheckBox();
+    private final CheckBox fillColorCheckBox = new CheckBox();
+    private final CheckBox arrowFirstCheckBox = new CheckBox();
+    private final CheckBox arrowLastCheckBox = new CheckBox();
+    private final TextField textField = new TextField();
+    private final TextArea textArea = new TextArea();
 
-    private Pane textPane = new Pane();
-    private Slider fontSizeSlider = new Slider();
-    private Slider lineWidthSlider = new Slider();
+    private final Pane textPane = new Pane();
+    private final Slider fontSizeSlider = new Slider();
+    private final Slider lineWidthSlider = new Slider();
 
     public void setup(FXMLController fxmlController, TitledPane annoPane) {
         this.fxmlController = fxmlController;
@@ -77,7 +77,7 @@ public class AnnotationController {
         FontIcon lineFontIcon = new FontIcon();
         lineFontIcon.setIconLiteral("mdi2f-format-text-rotation-angle-up");
         lineFontIcon.setIconSize(iconSize);
-        Button lineButton = new Button("Annotate",lineFontIcon);
+        Button lineButton = new Button("Annotate", lineFontIcon);
         lineButton.setContentDisplay(ContentDisplay.TOP);
         lineButton.setOnAction(e -> createLine());
         toolBar.getItems().add(lineButton);
@@ -89,7 +89,11 @@ public class AnnotationController {
         textButton.setContentDisplay(ContentDisplay.TOP);
         textButton.setOnAction(e -> createText());
         toolBar.getItems().add(textButton);
+        arrangeControls(vBox);
+        configureControls();
+    }
 
+    void arrangeControls(VBox vBox) {
         GridPane gridPane = new GridPane();
         ColumnConstraints col0Constraint = new ColumnConstraints();
         col0Constraint.setMinWidth(75);
@@ -132,7 +136,9 @@ public class AnnotationController {
         textArea.setPrefHeight(50);
         textArea.setWrapText(true);
         textField.setPrefWidth(200);
+    }
 
+    void configureControls() {
         strokeColorPicker.disableProperty().bind(strokeColorCheckBox.selectedProperty().not());
         strokeColorPicker.valueProperty().addListener(strokeColorListener);
         strokeColorCheckBox.selectedProperty().addListener(e -> updateStrokeColor());
@@ -152,10 +158,10 @@ public class AnnotationController {
         yPosTypeChoiceBox.getItems().addAll(CanvasAnnotation.POSTYPE.values());
         yPosTypeChoiceBox.setOnAction(e -> updateYPosType());
 
-        textField.setOnKeyPressed(keyEvent -> textKeyPressed(keyEvent));
+        textField.setOnKeyPressed(this::textKeyPressed);
         textField.setDisable(true);
 
-        textArea.setOnKeyPressed(keyEvent -> textAreaPressed(keyEvent));
+        textArea.setOnKeyPressed(this::textAreaPressed);
         textArea.setDisable(true);
 
         fontSizeSlider.valueProperty().addListener(e -> updateFontSize());
@@ -189,7 +195,7 @@ public class AnnotationController {
         Double[] positions = new Double[4];
         if (chart.getDisDimProperty().getValue() == PolyChart.DISDIM.TwoD) {
             CrossHairs crossHairs = chart.getCrossHairs();
-            Orientation[] orientations = new Orientation[]{Orientation.VERTICAL,Orientation.HORIZONTAL};
+            Orientation[] orientations = new Orientation[]{Orientation.VERTICAL, Orientation.HORIZONTAL};
             int j = 0;
             for (Orientation orientation : orientations) {
                 for (int iCrossHair = 0; iCrossHair < 2; iCrossHair++) {
@@ -220,7 +226,7 @@ public class AnnotationController {
         return new Rectangle2D(x1, y1, width, height);
     }
 
-    private Double[] getStartPositions(Boolean primaryOnly) {
+    private Double[] getStartPositions(boolean primaryOnly) {
         Double[] positions = getCrossHairs();
         boolean useDefault = false;
         for (int i = 0; i < positions.length; i++) {
