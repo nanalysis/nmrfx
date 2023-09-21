@@ -85,8 +85,8 @@ import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 
 @PluginAPI("parametric")
 public class PolyChart extends Region {
-    private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
     public static final int HORIZONTAL = 0;
+    private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
     private static final int VERTICAL = 1;
     private static final double OVERLAP_SCALE = 3.0;
     private static final double MIN_MOVE = 20;
@@ -97,8 +97,7 @@ public class PolyChart extends Region {
     private final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
     private final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
     private final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
-    private final PeakListener peakListener = this::peakListChanged;
-    private final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
+    private final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);    private final PeakListener peakListener = this::peakListChanged;
     private final FXMLController controller;
     private final ChartDrawingLayers drawingLayers;
     private final Path bcPath = new Path();
@@ -118,7 +117,6 @@ public class PolyChart extends Region {
     private final SliceAttributes sliceAttributes = new SliceAttributes();
     private final ChartProperties chartProps = new ChartProperties(this);
     private final PolyChartAxes axes = new PolyChartAxes(datasetAttributesList);
-
     private ProcessorController processorController = null;
     private DatasetAttributes lastDatasetAttr = null;
     private AnnoText parameterText = null;
@@ -142,7 +140,6 @@ public class PolyChart extends Region {
     private MouseBindings mouseBindings;
     private GestureBindings gestureBindings;
     private CrossHairs crossHairs;
-
     protected PolyChart(FXMLController controller, String name, ChartDrawingLayers drawingLayers) {
         this.controller = controller;
         this.name = name;
@@ -153,6 +150,19 @@ public class PolyChart extends Region {
         initChart();
         drawPeaks = new DrawPeaks(this, drawingLayers.getGraphicsContextFor(ChartDrawingLayers.Item.Peaks));
         setVisible(false);
+    }
+
+    /**
+     * Called by PeakSlider to prevent handling peak events during peak alignment
+     *
+     * @param state true to enable peak listener, false to disable it
+     */
+    public static void setPeakListenerState(boolean state) {
+        listenToPeaks = state;
+    }
+
+    public static void registerPeakDeleteAction(Consumer<PeakDeleteEvent> func) {
+        manualPeakDeleteAction = func;
     }
 
     public ChartProperties getChartProperties() {
@@ -240,7 +250,6 @@ public class PolyChart extends Region {
         integralMenu = new IntegralMenu(this);
         drawingLayers.requestFocus();
     }
-
 
     public String getName() {
         return name;
@@ -455,12 +464,12 @@ public class PolyChart extends Region {
         return completed;
     }
 
-    public void setProcessorController(ProcessorController controller) {
-        this.processorController = controller;
-    }
-
     public ProcessorController getProcessorController() {
         return processorController;
+    }
+
+    public void setProcessorController(ProcessorController controller) {
+        this.processorController = controller;
     }
 
     public Optional<DatasetAttributes> getFirstDatasetAttributes() {
@@ -475,14 +484,14 @@ public class PolyChart extends Region {
         return getFirstDatasetAttributes().map(DatasetAttributes::getDataset).orElse(null);
     }
 
+    public void setDataset(DatasetBase dataset) {
+        setDataset(dataset, false, false);
+    }
+
     @Nullable
     public File getDatasetFile() {
         DatasetBase dataset = getDataset();
         return dataset != null ? dataset.getFile() : null;
-    }
-
-    public void setDataset(DatasetBase dataset) {
-        setDataset(dataset, false, false);
     }
 
     void removeAllDatasets() {
@@ -988,10 +997,6 @@ public class PolyChart extends Region {
         return datasetPhaseDim;
     }
 
-    protected void resetPhaseDim() {
-        datasetPhaseDim = 0;
-    }
-
     protected void setPhaseDim(int phaseDim) {
         String vecDimName = "";
         if ((controller.getChartProcessor() != null) && controller.isProcessControllerVisible()) {
@@ -1007,6 +1012,10 @@ public class PolyChart extends Region {
         } else if (phaseDim > 0) {
             phaseAxis = PolyChartAxes.Y_INDEX;
         }
+    }
+
+    protected void resetPhaseDim() {
+        datasetPhaseDim = 0;
     }
 
     protected void setPhasePivot() {
@@ -1059,6 +1068,7 @@ public class PolyChart extends Region {
             }
         }
     }
+
     protected void autoPhase(boolean doMax, boolean doFirst) {
         if (is1D()) {
             getFirstVec().ifPresent(vec -> {
@@ -1145,9 +1155,7 @@ public class PolyChart extends Region {
         return newCenter;
     }
 
-    public record RegionRange(double pt0, double pt1, double ppm0, double ppm1,  double f0, double f1) {}
-
-    public Optional<RegionRange>  addRegionRange(boolean offsetByExtractRegion) {
+    public Optional<RegionRange> addRegionRange(boolean offsetByExtractRegion) {
         DatasetBase dataset = getDataset();
         DatasetAttributes datasetAttributes = getFirstDatasetAttributes().orElse(null);
         if (dataset == null || datasetAttributes == null || controller.getChartProcessor() == null) {
@@ -1191,7 +1199,7 @@ public class PolyChart extends Region {
         double mul = Math.pow(10.0, Math.ceil(Math.log10(size)));
         f0 = Math.round(f0 * mul) / mul;
         f1 = Math.round(f1 * mul) / mul;
-        var result = new RegionRange(pt0, pt1, ppm0, ppm1,  f0, f1);
+        var result = new RegionRange(pt0, pt1, ppm0, ppm1, f0, f1);
         return Optional.of(result);
     }
 
@@ -2117,7 +2125,7 @@ public class PolyChart extends Region {
                         double xPos = 10;
                         double yPos = chartProps.getTicFontSize() * 2;
                         double textWidth = 200;
-                        parameterText = new AnnoText(xPos, yPos, textWidth, 200, text, 12.0,
+                        parameterText = new AnnoText(xPos, yPos, textWidth, text, 12.0,
                                 CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
                         addAnnotation(parameterText);
                     } else {
@@ -2569,8 +2577,7 @@ public class PolyChart extends Region {
         double width = getWidth();
         double height = getHeight();
         double[][] bounds = {{xPos + borders.getLeft(), xPos + width - borders.getRight()}, {yPos + borders.getTop(), yPos + height - borders.getBottom()}};
-        double[][] world = {{axes.getX().getUpperBound(), axes.getX().getLowerBound()},
-                {axes.getY().getLowerBound(), axes.getY().getUpperBound()}};
+        double[][] world = getWorld();
         double[] dragPos = {x, y};
         anno.move(bounds, world, dragStart, dragPos);
         drawPeakLists(false);
@@ -3117,10 +3124,18 @@ public class PolyChart extends Region {
     public Optional<CanvasAnnotation> hitAnnotation(double x, double y, boolean selectMode) {
         Optional<CanvasAnnotation> result = Optional.empty();
         for (CanvasAnnotation anno : canvasAnnotations) {
+            boolean alreadySelected = anno.isSelected();
             int handle = anno.hitHandle(x, y);
             if ((handle >= 0) || anno.hit(x, y, selectMode)) {
                 result = Optional.of(anno);
-                break;
+                if (selectMode) {
+                    getFXMLController().getToolController().getAnnotationController().setChart(this);
+                    getFXMLController().getToolController().getAnnotationController().annotationSelected(anno);
+                }
+            } else {
+                if (selectMode && alreadySelected) {
+                    getFXMLController().getToolController().getAnnotationController().annotationDeselected(anno);
+                }
             }
 
         }
@@ -3177,9 +3192,37 @@ public class PolyChart extends Region {
         }
     }
 
-    public List<CanvasAnnotation> getCanvasAnnotations(){
+    public List<CanvasAnnotation> getCanvasAnnotations() {
         return canvasAnnotations;
     }
+
+    public double[][] getBounds() {
+        double xPos = getLayoutX();
+        double yPos = getLayoutY();
+        double width = getWidth();
+        double height = getHeight();
+        double[][] bounds = {{xPos + borders.getLeft(), xPos + width - borders.getRight()}, {yPos + borders.getTop(), yPos + height - borders.getBottom()}};
+        return bounds;
+    }
+    public double[][] getWorld() {
+        double x1, x2, y1, y2;
+        if (axes.getX().isReversed()) {
+            x1 = axes.getX().getUpperBound();
+            x2 = axes.getX().getLowerBound();
+        } else {
+            x1 = axes.getX().getLowerBound();
+            x2 = axes.getX().getUpperBound();
+        }
+        if (axes.getY().isReversed()) {
+            y1 = axes.getY().getLowerBound();
+            y2 = axes.getY().getUpperBound();
+        } else {
+            y1 = axes.getY().getUpperBound();
+            y2 = axes.getY().getLowerBound();
+        }
+        return new double[][]{{x1, x2}, {y1, y2}};
+    }
+
     void drawAnnotations(GraphicsContextInterface gC) {
         if (!canvasAnnotations.isEmpty()) {
             double xPos = getLayoutX();
@@ -3193,8 +3236,8 @@ public class PolyChart extends Region {
                 gC.clip();
                 gC.beginPath();
                 double[][] bounds = {{xPos + borders.getLeft(), xPos + width - borders.getRight()}, {yPos + borders.getTop(), yPos + height - borders.getBottom()}};
-                double[][] world = {{axes.getX().getUpperBound(), axes.getX().getLowerBound()},
-                        {axes.getY().getLowerBound(), axes.getY().getUpperBound()}};
+
+                double[][] world = getWorld();
                 boolean lastClipAxes = false;
 
                 for (CanvasAnnotation anno : canvasAnnotations) {
@@ -3798,20 +3841,12 @@ public class PolyChart extends Region {
         }
     }
 
-    /**
-     * Called by PeakSlider to prevent handling peak events during peak alignment
-     *
-     * @param state true to enable peak listener, false to disable it
-     */
-    public static void setPeakListenerState(boolean state) {
-        listenToPeaks = state;
-    }
-
-    public static void registerPeakDeleteAction(Consumer<PeakDeleteEvent> func) {
-        manualPeakDeleteAction = func;
-    }
-
     public enum DISDIM {
         OneDX, OneDY, TwoD
     }
+
+    public record RegionRange(double pt0, double pt1, double ppm0, double ppm1, double f0, double f1) {
+    }
+
+
 }

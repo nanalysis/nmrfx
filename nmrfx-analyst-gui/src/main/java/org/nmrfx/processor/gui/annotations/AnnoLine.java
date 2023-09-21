@@ -105,8 +105,9 @@ public class AnnoLine extends AnnoShape {
     double getDistance(double x1, double x2, double y1, double y2) {
         double d1 = x2 - x1;
         double d2 = y2 - y1;
-        return Math.hypot(d1,d2);
+        return Math.hypot(d1, d2);
     }
+
     @Override
     public boolean hit(double x, double y, boolean selectMode) {
         double distance1 = getDistance(x, xp1, y, yp1);
@@ -132,8 +133,12 @@ public class AnnoLine extends AnnoShape {
     @Override
     public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world) {
         try {
-            gC.setStroke(stroke);
             gC.setLineWidth(lineWidth);
+            if (stroke != null) {
+                gC.setStroke(stroke);
+                gC.setFill(stroke);
+            }
+
             xp1 = xPosType.transform(x1, bounds[0], world[0]);
             yp1 = yPosType.transform(y1, bounds[1], world[1]);
             xp2 = xPosType.transform(x2, bounds[0], world[0]);
@@ -154,7 +159,10 @@ public class AnnoLine extends AnnoShape {
                 }
                 xa1 = (xCPoints[2] + xCPoints[3]) / 2;
                 ya1 = (yCPoints[2] + yCPoints[3]) / 2;
-                gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
+                if (stroke != null) {
+                    gC.strokePolygon(xCPoints, yCPoints, xCPoints.length);
+                    gC.fillPolygon(xCPoints, yCPoints, xCPoints.length);
+                }
             }
 
             if (arrowLast) {
@@ -167,10 +175,15 @@ public class AnnoLine extends AnnoShape {
                 }
                 xa2 = (xCPoints[2] + xCPoints[3]) / 2;
                 ya2 = (yCPoints[2] + yCPoints[3]) / 2;
-                gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
+                if (stroke != null) {
+                    gC.strokePolygon(xCPoints, yCPoints, xCPoints.length);
+                    gC.fillPolygon(xCPoints, yCPoints, xCPoints.length);
+                }
             }
 
-            gC.strokeLine(xa1, ya1, xa2, ya2);
+            if (stroke != null) {
+                gC.strokeLine(xa1, ya1, xa2, ya2);
+            }
 
             if (isSelected()) {
                 drawHandles(gC);
@@ -265,5 +278,22 @@ public class AnnoLine extends AnnoShape {
             y2 = xPosType.move(startY2, dy, bounds[1], world[1]);
         }
     }
+
+    public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double x1Pix = xPosType.transform(x1, bounds, world);
+        double x2Pix = xPosType.transform(x2, bounds, world);
+        x1 = newType.itransform(x1Pix, bounds, world);
+        x2 = newType.itransform(x2Pix, bounds, world);
+        xPosType = newType;
+    }
+
+    public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double y1Pix = yPosType.transform(y1, bounds, world);
+        double y2Pix = yPosType.transform(y2, bounds, world);
+        y1 = newType.itransform(y1Pix, bounds, world);
+        y2 = newType.itransform(y2Pix, bounds, world);
+        yPosType = newType;
+    }
+
 
 }

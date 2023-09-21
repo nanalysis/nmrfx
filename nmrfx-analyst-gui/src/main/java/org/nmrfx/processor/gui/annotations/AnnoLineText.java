@@ -2,7 +2,6 @@ package org.nmrfx.processor.gui.annotations;
 
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
@@ -35,18 +34,9 @@ public class AnnoLineText extends AnnoShape {
     int activeHandle = -1;
     Font font = Font.font("Liberation Sans", 12);
 
-    Color fill = Color.BLACK;
 
     public AnnoLineText() {
 
-    }
-
-    public void setFontSize(double size) {
-        this.font = Font.font(font.getFamily(), size);
-    }
-
-    public double getFontSize() {
-        return font.getSize();
     }
 
     public AnnoLineText(double x1, double y1, double x2, double y2, String text, double fontSize, double width,
@@ -61,6 +51,15 @@ public class AnnoLineText extends AnnoShape {
         this.width = width;
         this.setFontSize(fontSize);
     }
+
+    public double getFontSize() {
+        return font.getSize();
+    }
+
+    public void setFontSize(double size) {
+        this.font = Font.font(font.getFamily(), size);
+    }
+
     public String getText() {
         return text;
     }
@@ -104,8 +103,9 @@ public class AnnoLineText extends AnnoShape {
     double getDistance(double x1, double x2, double y1, double y2) {
         double d1 = x2 - x1;
         double d2 = y2 - y1;
-        return Math.hypot(d1,d2);
+        return Math.hypot(d1, d2);
     }
+
     @Override
     public boolean hit(double x, double y, boolean selectMode) {
         double distance1 = getDistance(x, xp1, y, yp1);
@@ -131,9 +131,7 @@ public class AnnoLineText extends AnnoShape {
     @Override
     public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world) {
         try {
-            gC.setStroke(stroke);
             gC.setLineWidth(lineWidth);
-            gC.setFill(fill);
             gC.setFont(font);
             gC.setTextAlign(TextAlignment.LEFT);
             gC.setTextBaseline(VPos.BASELINE);
@@ -156,7 +154,12 @@ public class AnnoLineText extends AnnoShape {
             }
             xa1 = (xCPoints[2] + xCPoints[3]) / 2;
             ya1 = (yCPoints[2] + yCPoints[3]) / 2;
-            gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
+            if (stroke != null) {
+                gC.setStroke(stroke);
+                gC.setFill(stroke);
+                gC.strokePolygon(xCPoints, yCPoints, xCPoints.length);
+                gC.fillPolygon(xCPoints, yCPoints, xCPoints.length);
+            }
 
             gC.strokeLine(xa1, ya1, xa2, ya2);
             double textWidth = GUIUtils.getTextWidth(text, font);
@@ -167,7 +170,10 @@ public class AnnoLineText extends AnnoShape {
             } else {
                 textY = yp2 + getFontSize();
             }
-            gC.fillText(text, textX, textY);
+            if (fill != null) {
+                gC.setFill(fill);
+                gC.fillText(text, textX, textY);
+            }
 
             if (isSelected()) {
                 drawHandles(gC);
@@ -253,5 +259,21 @@ public class AnnoLineText extends AnnoShape {
             x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
             y2 = xPosType.move(startY2, dy, bounds[1], world[1]);
         }
+    }
+
+    public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double x1Pix = xPosType.transform(x1, bounds, world);
+        double x2Pix = xPosType.transform(x2, bounds, world);
+        x1 = newType.itransform(x1Pix, bounds, world);
+        x2 = newType.itransform(x2Pix, bounds, world);
+        xPosType = newType;
+    }
+
+    public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double y1Pix = yPosType.transform(y1, bounds, world);
+        double y2Pix = yPosType.transform(y2, bounds, world);
+        y1 = newType.itransform(y1Pix, bounds, world);
+        y2 = newType.itransform(y2Pix, bounds, world);
+        yPosType = newType;
     }
 }

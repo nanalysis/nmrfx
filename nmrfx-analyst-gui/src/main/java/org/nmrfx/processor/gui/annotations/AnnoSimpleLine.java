@@ -28,10 +28,10 @@ import org.slf4j.LoggerFactory;
 public class AnnoSimpleLine extends AnnoShape {
     private static final Logger log = LoggerFactory.getLogger(AnnoSimpleLine.class);
 
-    final double x1;
-    final double y1;
-    final double x2;
-    final double y2;
+    double x1;
+    double y1;
+    double x2;
+    double y2;
     double xp1;
     double yp1;
     double xp2;
@@ -88,6 +88,19 @@ public class AnnoSimpleLine extends AnnoShape {
         }
         return activeHandle;
     }
-
+    public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double x1Pix = xPosType.transform(x1, bounds, world);
+        double x2Pix = xPosType.transform(x2, bounds, world);
+        x1 = newType.itransform(x1Pix, bounds, world);
+        x2 = newType.itransform(x2Pix, bounds, world);
+        xPosType = newType;
+    }
+    public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double y1Pix = yPosType.transform(y1, bounds, world);
+        double y2Pix = yPosType.transform(y2, bounds, world);
+        y1 = newType.itransform(y1Pix, bounds, world);
+        y2 = newType.itransform(y2Pix, bounds, world);
+        yPosType = newType;
+    }
 
 }

@@ -219,10 +219,8 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             return;
         }
 
-        if (hasRegions()) {
-            if (!clearAnalysis(true)) {
-                return;
-            }
+        if (hasRegions() && !clearAnalysis(true)) {
+            return;
         }
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
@@ -403,7 +401,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 removeJournalFormatOnChart();
             } else {
                 peakList.registerPeakChangeListener(this);
-                AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 0.9, 100,
+                AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 300,
                         CanvasAnnotation.POSTYPE.FRACTION,
                         CanvasAnnotation.POSTYPE.PIXEL,
                         peakList.getName());

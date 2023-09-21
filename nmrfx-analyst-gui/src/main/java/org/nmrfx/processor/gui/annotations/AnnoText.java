@@ -37,59 +37,55 @@ import java.util.List;
  */
 public class AnnoText implements CanvasAnnotation {
     private static final Logger log = LoggerFactory.getLogger(AnnoText.class);
-
+    protected String text;
     double x1;
     double y1;
-    double x2;
-    double y2;
+    double width;
     double startX1;
     double startY1;
-    double startX2;
-    double startY2;
+    double startWidth;
     boolean selected = false;
     boolean selectable = true;
     int activeHandle = -1;
-
     POSTYPE xPosType;
     POSTYPE yPosType;
     Bounds bounds2D;
-    protected String text;
     Font font = Font.font("Liberation Sans", 12);
-
     Color fill = Color.BLACK;
 
     public AnnoText() {
 
     }
-    public AnnoText(double x1, double y1, double x2, double y2, String text, double fontSize,
+
+    public AnnoText(double x1, double y1, double width, String text, double fontSize,
                     POSTYPE xPosType, POSTYPE yPosType) {
         this.x1 = x1;
         this.y1 = y1;
-        this.x2 = x2;
-        this.y2 = y2;
+        this.width = width;
         this.xPosType = xPosType;
         this.yPosType = yPosType;
         this.text = text;
         this.setFontSize(fontSize);
     }
 
-    public void setText(String text) {
-        this.text = text;
-    }
-
     public String getText() {
         return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
     }
 
     public void setFont(Font font) {
         this.font = font;
     }
-    public void setFontSize(double size) {
-        this.font = Font.font(font.getFamily(), size);
-    }
 
     public double getFontSize() {
         return font.getSize();
+    }
+
+    public void setFontSize(double size) {
+        this.font = Font.font(font.getFamily(), size);
     }
 
     /**
@@ -105,8 +101,13 @@ public class AnnoText implements CanvasAnnotation {
     public void setFill(Color fill) {
         this.fill = fill;
     }
+
     public void setFill(String fill) {
         this.fill = GUIUtils.getColor(fill);
+    }
+
+    public Color getFillColor() {
+        return this.fill;
     }
 
     @Override
@@ -114,22 +115,13 @@ public class AnnoText implements CanvasAnnotation {
         boolean hit = (bounds2D != null) && bounds2D.contains(x, y);
         if (hit) {
             startX1 = x1;
-            startX2 = x2;
             startY1 = y1;
-            startY2 = y2;
+            startWidth = width;
         }
         if (selectMode && selectable) {
             selected = hit;
         }
         return hit;
-    }
-
-    public void setXPosType(POSTYPE xPosType) {
-        this.xPosType = xPosType;
-    }
-
-    public void setYPosType(POSTYPE yPosType) {
-        this.yPosType = yPosType;
     }
 
     public double getX1() {
@@ -148,20 +140,12 @@ public class AnnoText implements CanvasAnnotation {
         this.y1 = y1;
     }
 
-    public double getX2() {
-        return x2;
+    public double getWidth() {
+        return width;
     }
 
-    public void setX2(double x2) {
-        this.x2 = x2;
-    }
-
-    public double getY2() {
-        return y2;
-    }
-
-    public void setY2(double y2) {
-        this.y2 = y2;
+    public void setWidth(double value) {
+        width = value;
     }
 
     public Bounds getBounds() {
@@ -185,47 +169,55 @@ public class AnnoText implements CanvasAnnotation {
         double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
         if (activeHandle < 0) {
             x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
             y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-            y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
         } else if (activeHandle == 0) {
-            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-            x1 = Math.min(x1, x2 - handleSeparationLimit);
+            if (dx < startWidth) {
+                x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+                width = startWidth - dx;
+            }
+            width = Math.max(width, handleSeparationLimit);
         } else if (activeHandle == 1) {
-            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-            x2 = Math.max(x1 + handleSeparationLimit, x2);
+            if (dx > -startWidth) {
+                width = startWidth + dx;
+            }
+            width = Math.max(width, handleSeparationLimit);
         }
     }
 
     @Override
     public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world) {
         try {
-            gC.setFill(fill);
+            if (fill != null) {
+                gC.setFill(fill);
+            }
             gC.setFont(font);
             gC.setTextAlign(TextAlignment.LEFT);
             gC.setTextBaseline(VPos.BASELINE);
 
             double xp1 = xPosType.transform(x1, bounds[0], world[0]);
             double yp1 = yPosType.transform(y1, bounds[1], world[1]);
-            double xp2 = xPosType.transform(x2, bounds[0], world[0]);
-            double regionWidth = xp2 - xp1;
+
             String[] segments = text.split("\n");
             double topY = yp1 - font.getSize();
             double y = yp1;
             for (String segment : segments) {
-                double width = GUIUtils.getTextWidth(segment, font);
-                if (width > regionWidth) {
-                    List<String> strings = GUIUtils.splitToWidth(regionWidth, segment, font);
+                double textWidth = GUIUtils.getTextWidth(segment, font);
+                if (textWidth > width) {
+                    List<String> strings = GUIUtils.splitToWidth(this.width, segment, font);
                     for (String string : strings) {
-                        gC.fillText(string, xp1, y);
+                        if (fill != null) {
+                            gC.fillText(string, xp1, y);
+                        }
                         y += font.getSize() + 3;
                     }
                 } else {
-                    gC.fillText(segment, xp1, y);
+                    if (fill != null) {
+                        gC.fillText(segment, xp1, y);
+                    }
                     y += font.getSize() + 3;
                 }
             }
-            bounds2D = new BoundingBox(xp1, topY, regionWidth, y - topY);
+            bounds2D = new BoundingBox(xp1, topY, width, y - topY);
             if (isSelected()) {
                 drawHandles(gC);
             }
@@ -239,9 +231,17 @@ public class AnnoText implements CanvasAnnotation {
         return xPosType;
     }
 
+    public void setXPosType(POSTYPE xPosType) {
+        this.xPosType = xPosType;
+    }
+
     @Override
     public POSTYPE getYPosType() {
         return yPosType;
+    }
+
+    public void setYPosType(POSTYPE yPosType) {
+        this.yPosType = yPosType;
     }
 
     @Override
@@ -270,6 +270,18 @@ public class AnnoText implements CanvasAnnotation {
             activeHandle = -1;
         }
         return activeHandle;
+    }
+
+    public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double x1Pix = xPosType.transform(x1, bounds, world);
+        x1 = newType.itransform(x1Pix, bounds, world);
+        xPosType = newType;
+    }
+
+    public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double y1Pix = yPosType.transform(y1, bounds, world);
+        y1 = newType.itransform(y1Pix, bounds, world);
+        yPosType = newType;
     }
 
 }

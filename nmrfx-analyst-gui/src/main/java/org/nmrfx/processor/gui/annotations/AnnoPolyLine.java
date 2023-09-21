@@ -93,5 +93,19 @@ public class AnnoPolyLine extends AnnoShape {
         }
         return activeHandle;
     }
+    public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
+        for (int i = 0; i < xPoints.length; i++) {
+            double xPix = xPosType.transform(xPoints[i], bounds, world);
+            xPoints[i] = newType.itransform(xPix, bounds, world);
+        }
+        xPosType = newType;
+    }
+    public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
+        for (int i=0; i < yPoints.length; i++) {
+            double yPix = yPosType.transform(yPoints[i], bounds, world);
+            yPoints[i] = newType.itransform(yPix, bounds, world);
+        }
+        yPosType = newType;
+    }
 
 }
