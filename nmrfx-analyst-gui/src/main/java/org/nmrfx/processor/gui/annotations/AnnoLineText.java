@@ -156,7 +156,9 @@ public class AnnoLineText extends AnnoShape {
             ya1 = (yCPoints[2] + yCPoints[3]) / 2;
             if (stroke != null) {
                 gC.setStroke(stroke);
-                gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
+                gC.setFill(stroke);
+                gC.strokePolygon(xCPoints, yCPoints, xCPoints.length);
+                gC.fillPolygon(xCPoints, yCPoints, xCPoints.length);
             }
 
             gC.strokeLine(xa1, ya1, xa2, ya2);

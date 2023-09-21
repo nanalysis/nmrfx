@@ -77,7 +77,7 @@ public class AnnotationController {
         FontIcon lineFontIcon = new FontIcon();
         lineFontIcon.setIconLiteral("mdi2f-format-text-rotation-angle-up");
         lineFontIcon.setIconSize(iconSize);
-        Button lineButton = new Button("Annotate",lineFontIcon);
+        Button lineButton = new Button("Annotate", lineFontIcon);
         lineButton.setContentDisplay(ContentDisplay.TOP);
         lineButton.setOnAction(e -> createLine());
         toolBar.getItems().add(lineButton);
@@ -187,20 +187,21 @@ public class AnnotationController {
 
     private Double[] getCrossHairs() {
         Double[] positions = new Double[4];
-        if (chart.getDisDimProperty().getValue() == PolyChart.DISDIM.TwoD) {
-            CrossHairs crossHairs = chart.getCrossHairs();
-            Orientation[] orientations = new Orientation[]{Orientation.VERTICAL,Orientation.HORIZONTAL};
-            int j = 0;
-            for (Orientation orientation : orientations) {
-                for (int iCrossHair = 0; iCrossHair < 2; iCrossHair++) {
-                    boolean visible = crossHairs.isVisible(iCrossHair, orientation);
-                    if (crossHairs.getState(iCrossHair, orientation) && visible) {
-                        positions[j] = crossHairs.getPosition(iCrossHair, orientation);
-                    } else {
-                        positions[j] = null;
-                    }
-                    j++;
+        CrossHairs crossHairs = chart.getCrossHairs();
+        Orientation[] orientations = new Orientation[]{Orientation.VERTICAL, Orientation.HORIZONTAL};
+        int j = 0;
+        double[] axis = chart.getAxes().getRange(1);
+        System.out.println(axis[0] + " " + axis[1]);
+        for (Orientation orientation : orientations) {
+            for (int iCrossHair = 0; iCrossHair < 2; iCrossHair++) {
+                boolean visible = crossHairs.isVisible(iCrossHair, orientation);
+                if (crossHairs.getState(iCrossHair, orientation) && visible) {
+                    double position = crossHairs.getPosition(iCrossHair, orientation);
+                    positions[j] = position;
+                } else {
+                    positions[j] = null;
                 }
+                j++;
             }
         }
         return positions;
@@ -354,6 +355,7 @@ public class AnnotationController {
         AnnoShape shape = new AnnoLine(x1, y1, x2, y2, arrowFirst, arrowLast, lineWidth,
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         shape.setStroke(stroke);
+        shape.setFill(stroke);
         shape.setLineWidth(lineWidth);
         getChart().addAnnotation(shape);
         refresh();
@@ -497,7 +499,6 @@ public class AnnotationController {
                 shape.setFill(color);
             } else {
                 if (selectedAnno instanceof AnnoLineText line) {
-                    line.setStroke(Color.BLACK);
                     line.setFill(Color.BLACK);
                 } else if (shape.getStroke().isBlank()) {
                     shape.setStroke(Color.BLACK);
