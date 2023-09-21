@@ -2577,8 +2577,7 @@ public class PolyChart extends Region {
         double width = getWidth();
         double height = getHeight();
         double[][] bounds = {{xPos + borders.getLeft(), xPos + width - borders.getRight()}, {yPos + borders.getTop(), yPos + height - borders.getBottom()}};
-        double[][] world = {{axes.getX().getUpperBound(), axes.getX().getLowerBound()},
-                {axes.getY().getLowerBound(), axes.getY().getUpperBound()}};
+        double[][] world = getWorld();
         double[] dragPos = {x, y};
         anno.move(bounds, world, dragStart, dragPos);
         drawPeakLists(false);
@@ -3206,9 +3205,22 @@ public class PolyChart extends Region {
         return bounds;
     }
     public double[][] getWorld() {
-        double[][] world = {{axes.getX().getUpperBound(), axes.getX().getLowerBound()},
-                {axes.getY().getLowerBound(), axes.getY().getUpperBound()}};
-        return world;
+        double x1, x2, y1, y2;
+        if (axes.getX().isReversed()) {
+            x1 = axes.getX().getUpperBound();
+            x2 = axes.getX().getLowerBound();
+        } else {
+            x1 = axes.getX().getLowerBound();
+            x2 = axes.getX().getUpperBound();
+        }
+        if (axes.getY().isReversed()) {
+            y1 = axes.getY().getLowerBound();
+            y2 = axes.getY().getUpperBound();
+        } else {
+            y1 = axes.getY().getUpperBound();
+            y2 = axes.getY().getLowerBound();
+        }
+        return new double[][]{{x1, x2}, {y1, y2}};
     }
 
     void drawAnnotations(GraphicsContextInterface gC) {
@@ -3224,8 +3236,8 @@ public class PolyChart extends Region {
                 gC.clip();
                 gC.beginPath();
                 double[][] bounds = {{xPos + borders.getLeft(), xPos + width - borders.getRight()}, {yPos + borders.getTop(), yPos + height - borders.getBottom()}};
-                double[][] world = {{axes.getX().getUpperBound(), axes.getX().getLowerBound()},
-                        {axes.getY().getLowerBound(), axes.getY().getUpperBound()}};
+
+                double[][] world = getWorld();
                 boolean lastClipAxes = false;
 
                 for (CanvasAnnotation anno : canvasAnnotations) {

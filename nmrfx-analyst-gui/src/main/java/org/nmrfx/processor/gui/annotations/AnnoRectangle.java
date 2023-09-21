@@ -22,10 +22,13 @@ public class AnnoRectangle extends AnnoShape {
     double startY1;
     double startX2;
     double startY2;
+    boolean swapX = false;
+    boolean swapY = false;
 
-    public AnnoRectangle(){
+    public AnnoRectangle() {
 
     }
+
     public AnnoRectangle(double x1, double y1, double x2, double y2,
                          POSTYPE xPosType, POSTYPE yPosType) {
         this.x1 = x1;
@@ -75,6 +78,7 @@ public class AnnoRectangle extends AnnoShape {
         x2 = newType.itransform(x2Pix, bounds, world);
         xPosType = newType;
     }
+
     public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
         double y1Pix = yPosType.transform(y1, bounds, world);
         double y2Pix = yPosType.transform(y2, bounds, world);
@@ -85,8 +89,8 @@ public class AnnoRectangle extends AnnoShape {
 
     @Override
     public boolean hit(double x, double y, boolean selectMode) {
-        double width = xp2-xp1;
-        double height = yp2-yp1;
+        double width = xp2 - xp1;
+        double height = yp2 - yp1;
         Rectangle2D bounds2D = new Rectangle2D(xp1, yp1, width, height);
         boolean hit = bounds2D.contains(x, y);
         if (hit) {
@@ -116,11 +120,17 @@ public class AnnoRectangle extends AnnoShape {
                 double hold = xp1;
                 xp1 = xp2;
                 xp2 = hold;
+                swapX = true;
+            } else {
+                swapX = false;
             }
             if (yp1 > yp2) {
                 double hold = yp1;
                 yp1 = yp2;
                 yp2 = hold;
+                swapY = true;
+            } else {
+                swapY = false;
             }
             if (stroke != null) {
                 gC.setStroke(stroke);
@@ -148,13 +158,17 @@ public class AnnoRectangle extends AnnoShape {
 
     @Override
     public int hitHandle(double x, double y) {
-        if (hitHandle(x, y, Pos.CENTER, xp1, yp1)) {
+        double xh1 = swapX ? xp2 : xp1;
+        double xh2 = swapX ? xp1 : xp2;
+        double yh1 = swapX ? yp2 : yp1;
+        double yh2 = swapX ? yp1 : yp2;
+        if (hitHandle(x, y, Pos.CENTER, xh1, yh1)) {
             activeHandle = 0;
-        } else if (hitHandle(x, y, Pos.CENTER, xp1, yp2)) {
+        } else if (hitHandle(x, y, Pos.CENTER, xh1, yh2)) {
             activeHandle = 1;
-        } else if (hitHandle(x, y, Pos.CENTER, xp2, yp2)) {
+        } else if (hitHandle(x, y, Pos.CENTER, xh2, yh2)) {
             activeHandle = 2;
-        } else if (hitHandle(x, y, Pos.CENTER, xp2, yp1)) {
+        } else if (hitHandle(x, y, Pos.CENTER, xh2, yh1)) {
             activeHandle = 3;
         } else {
             activeHandle = -1;
@@ -164,6 +178,10 @@ public class AnnoRectangle extends AnnoShape {
 
     @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
+        move4(bounds, world, start, pos);
+    }
+
+    public void move4(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
         if (activeHandle < 0) {
@@ -184,7 +202,6 @@ public class AnnoRectangle extends AnnoShape {
             x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
             y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
         }
-
     }
 
 }

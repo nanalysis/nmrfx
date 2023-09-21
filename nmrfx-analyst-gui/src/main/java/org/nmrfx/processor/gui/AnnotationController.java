@@ -3,7 +3,6 @@ package org.nmrfx.processor.gui;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -40,6 +39,8 @@ public class AnnotationController {
     private final Pane textPane = new Pane();
     private final Slider fontSizeSlider = new Slider();
     private final Slider lineWidthSlider = new Slider();
+
+    record BoundsRectangle(double x1, double y1, double x2, double y2) {}
 
     public void setup(FXMLController fxmlController, TitledPane annoPane) {
         this.fxmlController = fxmlController;
@@ -193,37 +194,35 @@ public class AnnotationController {
 
     private Double[] getCrossHairs() {
         Double[] positions = new Double[4];
-        if (chart.getDisDimProperty().getValue() == PolyChart.DISDIM.TwoD) {
-            CrossHairs crossHairs = chart.getCrossHairs();
-            Orientation[] orientations = new Orientation[]{Orientation.VERTICAL, Orientation.HORIZONTAL};
-            int j = 0;
-            for (Orientation orientation : orientations) {
-                for (int iCrossHair = 0; iCrossHair < 2; iCrossHair++) {
-                    boolean visible = crossHairs.isVisible(iCrossHair, orientation);
-                    if (crossHairs.getState(iCrossHair, orientation) && visible) {
-                        positions[j] = crossHairs.getPosition(iCrossHair, orientation);
-                    } else {
-                        positions[j] = null;
-                    }
-                    j++;
+        CrossHairs crossHairs = chart.getCrossHairs();
+        Orientation[] orientations = new Orientation[]{Orientation.VERTICAL, Orientation.HORIZONTAL};
+        int j = 0;
+        double[] axis = chart.getAxes().getRange(1);
+        System.out.println(axis[0] + " " + axis[1]);
+        for (Orientation orientation : orientations) {
+            for (int iCrossHair = 0; iCrossHair < 2; iCrossHair++) {
+                boolean visible = crossHairs.isVisible(iCrossHair, orientation);
+                if (crossHairs.getState(iCrossHair, orientation) && visible) {
+                    double position = crossHairs.getPosition(iCrossHair, orientation);
+                    positions[j] = position;
+                } else {
+                    positions[j] = null;
                 }
+                j++;
             }
         }
         return positions;
     }
 
-    private Rectangle2D getDefaultPosition() {
+    private BoundsRectangle getDefaultPosition() {
         double[][] world = getChart().getWorld();
-        double width = Math.abs(world[0][1] - world[0][0]) / 10.0;
-        double height = Math.abs(world[1][1] - world[1][0]) / 10.0;
-        double x1;
-        if (world[0][0] > world[0][1]) {
-            x1 = world[0][0] - width;
-        } else {
-            x1 = world[0][0] + width;
-        }
+        double width = (world[0][1] - world[0][0]) / 10.0;
+        double height = (world[1][1] - world[1][0]) / 10.0;
+        double x1 = world[0][0] + width;
+        double x2 = x1 + width;
         double y1 = world[1][0] + height;
-        return new Rectangle2D(x1, y1, width, height);
+        double y2 = y1 + height;
+        return new BoundsRectangle(x1, y1, x2, y2);
     }
 
     private Double[] getStartPositions(boolean primaryOnly) {
@@ -242,11 +241,11 @@ public class AnnotationController {
         }
 
         if (useDefault) {
-            Rectangle2D rectangle2D = getDefaultPosition();
-            positions[0] = rectangle2D.getMinX();
-            positions[1] = positions[0] - rectangle2D.getWidth();
-            positions[2] = rectangle2D.getMinY();
-            positions[3] = positions[2] + rectangle2D.getHeight();
+            BoundsRectangle boundsRectangle = getDefaultPosition();
+            positions[0] = boundsRectangle.x1();
+            positions[1] = boundsRectangle.x2();
+            positions[2] = boundsRectangle.y1();
+            positions[3] = boundsRectangle.y2();
         }
         return positions;
     }
@@ -360,6 +359,7 @@ public class AnnotationController {
         AnnoShape shape = new AnnoLine(x1, y1, x2, y2, arrowFirst, arrowLast, lineWidth,
                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
         shape.setStroke(stroke);
+        shape.setFill(stroke);
         shape.setLineWidth(lineWidth);
         getChart().addAnnotation(shape);
         refresh();
@@ -503,7 +503,6 @@ public class AnnotationController {
                 shape.setFill(color);
             } else {
                 if (selectedAnno instanceof AnnoLineText line) {
-                    line.setStroke(Color.BLACK);
                     line.setFill(Color.BLACK);
                 } else if (shape.getStroke().isBlank()) {
                     shape.setStroke(Color.BLACK);
