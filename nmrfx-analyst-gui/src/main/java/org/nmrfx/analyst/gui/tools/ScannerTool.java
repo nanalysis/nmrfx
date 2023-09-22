@@ -112,13 +112,15 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeScoreMenu());
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
+        Button reloadButton = new Button("Reload");
+        reloadButton.setOnAction(e -> loadFromDataset());
         scanTable = new ScanTable(this, tableView);
         tableSelectionChoice.getItems().addAll(TableSelectionMode.values());
         tableSelectionChoice.setValue(TableSelectionMode.HIGHLIGHT);
         tableSelectionChoice.valueProperty().addListener(e -> scanTable.selectionChanged());
         VBox vBox = new VBox();
         Label label = new Label("Sel. Mode:");
-        vBox.getChildren().addAll(label, tableSelectionChoice);
+        vBox.getChildren().addAll(reloadButton, label, tableSelectionChoice);
         borderPane.setLeft(vBox);
         loadFromDataset();
     }
