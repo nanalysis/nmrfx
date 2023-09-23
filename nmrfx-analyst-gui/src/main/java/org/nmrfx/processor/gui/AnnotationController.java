@@ -6,10 +6,7 @@ import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.nmrfx.processor.gui.annotations.*;
@@ -93,11 +90,19 @@ public class AnnotationController {
     }
 
     void arrangeControls(VBox vBox) {
+        Label lockLabel = new Label("Lock Annotations");
+        HBox hBox = new HBox();
+        hBox.setSpacing(20);
+        hBox.getChildren().addAll(lockLabel, lockAnnotationsCheckBox);
+        Separator separator = new Separator();
+
         GridPane gridPane = new GridPane();
+        vBox.setSpacing(10);
+        vBox.getChildren().addAll(hBox, separator, gridPane);
+
         ColumnConstraints col0Constraint = new ColumnConstraints();
         col0Constraint.setMinWidth(75);
         gridPane.getColumnConstraints().add(col0Constraint);
-        vBox.getChildren().add(gridPane);
         int row = 0;
         gridPane.add(new Label("X Pos Type"), 0, row);
         gridPane.add(xPosTypeChoiceBox, 1, row);
@@ -131,9 +136,6 @@ public class AnnotationController {
         gridPane.add(new Label("Arrow Last"), 0, row);
         gridPane.add(arrowLastCheckBox, 1, row);
         row++;
-
-        gridPane.add(new Label("Lock Annotations"), 0, row);
-        gridPane.add(lockAnnotationsCheckBox, 1, row);
 
         textArea.setPrefWidth(200);
         textArea.setPrefHeight(50);
