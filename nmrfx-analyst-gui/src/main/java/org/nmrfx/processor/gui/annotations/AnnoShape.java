@@ -52,7 +52,10 @@ public abstract class AnnoShape implements CanvasAnnotation {
     public void setStroke(String stroke) {
         this.stroke = GUIUtils.getColor(stroke);
     }
-    public Color getStrokeColor(){return this.stroke;}
+
+    public Color getStrokeColor() {
+        return this.stroke;
+    }
 
     /**
      * @return the fill
@@ -71,7 +74,10 @@ public abstract class AnnoShape implements CanvasAnnotation {
     public void setFill(String fill) {
         this.fill = GUIUtils.getColor(fill);
     }
-    public Color getFillColor(){return this.fill;}
+
+    public Color getFillColor() {
+        return this.fill;
+    }
 
     /**
      * @return the lineWidth

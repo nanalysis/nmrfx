@@ -6,10 +6,7 @@ import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.nmrfx.processor.gui.annotations.*;
@@ -20,11 +17,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class AnnotationController {
-    PolyChart chart;
-    CanvasAnnotation selectedAnno;
-    FXMLController fxmlController;
-    StrokeColorListener strokeColorListener = new StrokeColorListener();
-    FillColorListener fillColorListener = new FillColorListener();
     private final ColorPicker strokeColorPicker = new ColorPicker();
     private final ColorPicker fillColorPicker = new ColorPicker();
     private final ChoiceBox<CanvasAnnotation.POSTYPE> xPosTypeChoiceBox = new ChoiceBox<>();
@@ -33,14 +25,17 @@ public class AnnotationController {
     private final CheckBox fillColorCheckBox = new CheckBox();
     private final CheckBox arrowFirstCheckBox = new CheckBox();
     private final CheckBox arrowLastCheckBox = new CheckBox();
+    private final CheckBox lockAnnotationsCheckBox = new CheckBox();
     private final TextField textField = new TextField();
     private final TextArea textArea = new TextArea();
-
     private final Pane textPane = new Pane();
     private final Slider fontSizeSlider = new Slider();
     private final Slider lineWidthSlider = new Slider();
-
-    record BoundsRectangle(double x1, double y1, double x2, double y2) {}
+    PolyChart chart;
+    CanvasAnnotation selectedAnno;
+    FXMLController fxmlController;
+    StrokeColorListener strokeColorListener = new StrokeColorListener();
+    FillColorListener fillColorListener = new FillColorListener();
 
     public void setup(FXMLController fxmlController, TitledPane annoPane) {
         this.fxmlController = fxmlController;
@@ -95,11 +90,19 @@ public class AnnotationController {
     }
 
     void arrangeControls(VBox vBox) {
+        Label lockLabel = new Label("Lock Annotations");
+        HBox hBox = new HBox();
+        hBox.setSpacing(20);
+        hBox.getChildren().addAll(lockLabel, lockAnnotationsCheckBox);
+        Separator separator = new Separator();
+
         GridPane gridPane = new GridPane();
+        vBox.setSpacing(10);
+        vBox.getChildren().addAll(hBox, separator, gridPane);
+
         ColumnConstraints col0Constraint = new ColumnConstraints();
         col0Constraint.setMinWidth(75);
         gridPane.getColumnConstraints().add(col0Constraint);
-        vBox.getChildren().add(gridPane);
         int row = 0;
         gridPane.add(new Label("X Pos Type"), 0, row);
         gridPane.add(xPosTypeChoiceBox, 1, row);
@@ -132,6 +135,7 @@ public class AnnotationController {
         row++;
         gridPane.add(new Label("Arrow Last"), 0, row);
         gridPane.add(arrowLastCheckBox, 1, row);
+        row++;
 
         textArea.setPrefWidth(200);
         textArea.setPrefHeight(50);
@@ -153,6 +157,8 @@ public class AnnotationController {
         arrowFirstCheckBox.setDisable(true);
         arrowLastCheckBox.setOnAction(e -> updateArrowLast());
         arrowLastCheckBox.setDisable(true);
+        lockAnnotationsCheckBox.setOnAction(e -> lockAnnotations());
+        lockAnnotationsCheckBox.setDisable(true);
 
         xPosTypeChoiceBox.getItems().addAll(CanvasAnnotation.POSTYPE.values());
         xPosTypeChoiceBox.setOnAction(e -> updateXPosType());
@@ -197,8 +203,6 @@ public class AnnotationController {
         CrossHairs crossHairs = chart.getCrossHairs();
         Orientation[] orientations = new Orientation[]{Orientation.VERTICAL, Orientation.HORIZONTAL};
         int j = 0;
-        double[] axis = chart.getAxes().getRange(1);
-        System.out.println(axis[0] + " " + axis[1]);
         for (Orientation orientation : orientations) {
             for (int iCrossHair = 0; iCrossHair < 2; iCrossHair++) {
                 boolean visible = crossHairs.isVisible(iCrossHair, orientation);
@@ -409,6 +413,7 @@ public class AnnotationController {
         arrowFirstCheckBox.setDisable(true);
         arrowLastCheckBox.setDisable(true);
         fontSizeSlider.setDisable(true);
+        lockAnnotationsCheckBox.setDisable(false);
 
         if (annotation instanceof AnnoShape shape) {
             strokeColorCheckBox.setDisable(false);
@@ -577,6 +582,18 @@ public class AnnotationController {
 
     private void refresh() {
         getChart().drawPeakLists(true);
+    }
+
+    private void lockAnnotations() {
+        if (lockAnnotationsCheckBox.isSelected()) {
+            chart.setLockAnno(true);
+        } else {
+            chart.setLockAnno(false);
+        }
+        refresh();
+    }
+
+    record BoundsRectangle(double x1, double y1, double x2, double y2) {
     }
 
     abstract class ColorListener implements ChangeListener<Color> {

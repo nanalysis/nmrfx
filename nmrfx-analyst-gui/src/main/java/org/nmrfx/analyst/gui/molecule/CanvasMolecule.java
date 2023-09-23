@@ -26,14 +26,13 @@ import java.util.List;
 
 public class CanvasMolecule implements CanvasAnnotation {
     private static final Logger log = LoggerFactory.getLogger(CanvasMolecule.class);
-
-    PolyChart chart = null;
-    ChartMenu menu = null;
     private static final int BY_ATOM = 0;
     private static final int BY_VALUE = 1;
     private static final int CIRCLE_SHAPE = 0;
     private static final int SQUARE_SHAPE = 1;
     private static final int TRIANGLE_SHAPE = 2;
+    PolyChart chart = null;
+    ChartMenu menu = null;
     float radius = 0.4f;
     float valueScale = 10.0f;
     float valueZero = 0.0f;
@@ -113,15 +112,15 @@ public class CanvasMolecule implements CanvasAnnotation {
         return xPosType;
     }
 
+    public void setXPosType(POSTYPE xPosType) {
+        this.xPosType = xPosType;
+    }
+
     @Override
     public POSTYPE getYPosType() {
         return yPosType;
     }
 
-
-    public void setXPosType(POSTYPE xPosType) {
-        this.xPosType = xPosType;
-    }
     public void setYPosType(POSTYPE yPosType) {
         this.yPosType = yPosType;
     }
@@ -909,6 +908,7 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
         return activeHandle;
     }
+
     public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
         double x1Pix = xPosType.transform(x1, bounds, world);
         double x2Pix = xPosType.transform(x2, bounds, world);
@@ -916,6 +916,7 @@ public class CanvasMolecule implements CanvasAnnotation {
         x2 = newType.itransform(x2Pix, bounds, world);
         xPosType = newType;
     }
+
     public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
         double y1Pix = yPosType.transform(y1, bounds, world);
         double y2Pix = yPosType.transform(y2, bounds, world);
