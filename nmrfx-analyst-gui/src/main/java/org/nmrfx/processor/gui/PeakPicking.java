@@ -205,7 +205,18 @@ public class PeakPicking {
                 peakPickPar.limit(jDim, pos, pos);
             } else {
                 if (chart.getAxes().getMode(iDim) == DatasetAttributes.AXMODE.PTS) {
-                    peakPickPar.limit(jDim, (int) chart.getAxes().get(iDim).getLowerBound(), (int) chart.getAxes().get(iDim).getUpperBound());
+                    int index = dataAttr.getDrawListIndex(0);
+                    int lB = (int) chart.getAxes().get(iDim).getLowerBound();
+                    int uB = (int) chart.getAxes().get(iDim).getUpperBound();
+                    if (lB != uB) {
+                        if (index != -1) {
+                            peakPickPar.limit(jDim, index, index);
+                        } else {
+                            peakPickPar.limit(jDim, lB, lB);
+                        }
+                    } else {
+                        peakPickPar.limit(jDim, lB, lB);
+                    }
                 } else {
                     peakPickPar.limit(jDim, chart.getAxes().get(iDim).getLowerBound(), chart.getAxes().get(iDim).getUpperBound());
                 }
