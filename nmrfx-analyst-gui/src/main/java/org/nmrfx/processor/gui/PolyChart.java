@@ -131,6 +131,7 @@ public class PolyChart extends Region {
     private int datasetPhaseDim = 0;
     private double phaseFraction = 0.0;
     private boolean useImmediateMode = true;
+    private boolean lockAnno = false;
     private Consumer<DatasetRegion> onRegionAdded = null;
     private ChartMenu spectrumMenu;
     private ChartMenu peakMenu;
@@ -3121,8 +3122,13 @@ public class PolyChart extends Region {
         }
     }
 
+    public void setLockAnno(boolean state) { lockAnno = state;}
+
     public Optional<CanvasAnnotation> hitAnnotation(double x, double y, boolean selectMode) {
         Optional<CanvasAnnotation> result = Optional.empty();
+        if (lockAnno) {
+            return result;
+        }
         for (CanvasAnnotation anno : canvasAnnotations) {
             boolean alreadySelected = anno.isSelected();
             int handle = anno.hitHandle(x, y);
