@@ -1258,6 +1258,14 @@ public class Peak implements Comparable, PeakOrMulti {
         return measures;
     }
 
+    public double getFirstIntensity() {
+        if (measures.isPresent()) {
+            return measures.get()[0][0];
+        } else {
+            return getIntensity();
+        }
+    }
+
     public void quantifyPeak(DatasetBase dataset, int[] pdim, Function<RegionData, Double> f, String mode) throws IOException, IllegalArgumentException {
         int[] planes = new int[0];
         RegionData regionData = Peak.analyzePeakRegion(this, dataset, planes, pdim);

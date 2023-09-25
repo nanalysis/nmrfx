@@ -2676,7 +2676,8 @@ public class PolyChart extends Region {
                 return;
             }
             double[] delays = null;
-            if (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.EXP) {
+            if ((fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.EXP) ||
+                    (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ)) {
                 log.info("nrows {}", fitRows[0]);
                 delays = getFitValues(peakListAttr);
                 if ((delays == null)) {
@@ -2692,7 +2693,16 @@ public class PolyChart extends Region {
             try {
 
                 Set<Peak> peaks = peakListAttr.getSelectedPeaks();
-                if ((fitPars.fitMode() == PeakFitParameters.FIT_MODE.ALL) && peaks.isEmpty()) {
+                if (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ) {
+                    if (peaks.size() != 4) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Peak ZZ fit");
+                        alert.setContentText("Must select exactly 4 peaks");
+                        alert.showAndWait();
+                        return;
+                    }
+                    PeakListTools.fitZZPeaks(peakListAttr.getPeakList(), dataset, peaks, fitPars, fitRows, delays);
+                } else if ((fitPars.fitMode() == PeakFitParameters.FIT_MODE.ALL) && peaks.isEmpty()) {
                     PeakListTools.groupPeakListAndFit(peakListAttr.getPeakList(), dataset, fitRows, delays, fitPars);
                 } else if (!peaks.isEmpty()) {
                     PeakListTools.groupPeaksAndFit(peakListAttr.getPeakList(), dataset, fitRows, delays, peaks, fitPars);

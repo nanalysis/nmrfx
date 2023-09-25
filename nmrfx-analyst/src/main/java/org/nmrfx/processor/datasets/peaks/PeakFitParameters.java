@@ -8,7 +8,8 @@ public class PeakFitParameters {
     public enum ARRAYED_FIT_MODE {
         SINGLE,
         PLANES,
-        EXP;
+        EXP,
+        ZZ;
     }
 
     public enum FIT_MODE {

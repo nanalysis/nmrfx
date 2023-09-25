@@ -7,7 +7,10 @@ package org.nmrfx.processor.optimization;
 
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.processor.datasets.peaks.SyncPar;
 import org.nmrfx.processor.processing.LineShapeCatalog;
+
+import java.util.List;
 
 /**
  * @author brucejohnson
@@ -80,7 +83,7 @@ public class LorentzGaussNDWithCatalog extends LorentzGaussND {
     }
 
     public final void setOffsets(final double[] start, final double[] lower,
-                                 final double[] upper, boolean[] floating, int[][] syncPars) {
+                                 final double[] upper, boolean[] floating, List<SyncPar> syncPars) {
         super.setOffsets(start, lower, upper, floating, syncPars);
         catValues = new double[nSignals][nDim][];
         offsets = new int[nSignals][nDim];

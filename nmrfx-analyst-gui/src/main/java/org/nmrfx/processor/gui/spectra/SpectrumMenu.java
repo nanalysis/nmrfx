@@ -120,6 +120,13 @@ public class SpectrumMenu extends ChartMenu {
             chart.fitPeakLists(fitPars, true);
         });
         peakFitMenu.getItems().add(fitExpDecayItem);
+        MenuItem fitZZDecayItem = new MenuItem("Fit Planes (ZZ)");
+        fitZZDecayItem.setOnAction((ActionEvent e) -> {
+            PeakFitParameters fitPars = new PeakFitParameters();
+            fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.ZZ);
+            chart.fitPeakLists(fitPars, true);
+        });
+        peakFitMenu.getItems().add(fitZZDecayItem);
 
         MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
         fitLSItem.setOnAction((ActionEvent e) -> {
