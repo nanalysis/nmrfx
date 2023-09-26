@@ -47,6 +47,10 @@ import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
+import org.nmrfx.chart.DataSeries;
+import org.nmrfx.chart.XYCanvasChart;
+import org.nmrfx.chart.XYChartPane;
+import org.nmrfx.chart.XYValue;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.*;
@@ -54,6 +58,7 @@ import org.nmrfx.peaks.io.PeakPatternReader;
 import org.nmrfx.peaks.types.PeakListType;
 import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.optimization.LorentzGaussND;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.TableUtils;
 import org.slf4j.Logger;
@@ -64,6 +69,8 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -115,7 +122,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
     @FXML
     private ChoiceBox<PEAK_NORM> normChoice;
 
-    private ScatterChart<Number, Number> scatterChart;
+    private XYCanvasChart scatterChart;
 
     PeakNavigator peakNavigator;
 
@@ -184,13 +191,14 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
         final NumberAxis xAxis = new NumberAxis(0, 10, 1);
         final NumberAxis yAxis = new NumberAxis(-100, 500, 100);
-        scatterChart = new ScatterChart<>(xAxis, yAxis);
+        XYChartPane chartPane = new XYChartPane();
+
+        scatterChart = chartPane.getChart();
         xAxis.setAutoRanging(true);
         yAxis.setAutoRanging(true);
         xAxis.setAnimated(false);
         yAxis.setAnimated(false);
-        scatterChart.setAnimated(false);
-        graphBorderPane.setCenter(scatterChart);
+        graphBorderPane.setCenter(chartPane);
         tabPane.getSelectionModel().selectedItemProperty().addListener(e -> {
             String tabText = tabPane.getSelectionModel().getSelectedItem().textProperty().get();
             if (tabText.equals("Peaks")) {
@@ -304,9 +312,15 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
     public void updateGraph() {
         if ((currentPeak != null) && currentPeak.getMeasures().isPresent()) {
-            ObservableList<XYChart.Series<Number, Number>> data = FXCollections.observableArrayList();
-            Series series = new Series<>();
-            data.add(series);
+            if (addZZFit()) {
+                return;
+            }
+            scatterChart.getData().clear();
+            scatterChart.xAxis.setAutoRanging(true);
+            scatterChart.yAxis.setAutoRanging(true);
+            scatterChart.yAxis.setZeroIncluded(true);
+            DataSeries series = new DataSeries();
+
             PEAK_NORM normMode = normChoice.getValue();
             double[][] values = currentPeak.getMeasures().get();
             double[] yValues = values[0];
@@ -323,14 +337,111 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                     if (normMode == PEAK_NORM.NO_NORM) {
                         err = errs[i];
                     }
-                    XYChart.Data value = new XYChart.Data(xValue, yValue.get(), err);
-                    series.getData().add(value);
+                    XYValue value = new XYValue(xValue, yValue.get(), err);
+                    series.add(value);
                 }
             }
-            scatterChart.getData().setAll(data);
-        } else {
-            scatterChart.getData().clear();
+            scatterChart.getData().add(series);
+            addExpFit(xValues);
         }
+    }
+
+    private boolean addExpFit(double[] xValues) {
+        String comment = currentPeak.getComment();
+        String zzPattern = "R1 +([0-9.]+)";
+        Pattern pattern = Pattern.compile(zzPattern);
+        Matcher matcher = pattern.matcher(comment.trim());
+        if (matcher.matches()) {
+            double r1 = Double.parseDouble(matcher.group(1));
+            DataSeries lineSeries = new DataSeries();
+            lineSeries.drawLine(true);
+            lineSeries.drawSymbol(false);
+            lineSeries.fillSymbol(false);
+            double intensity = currentPeak.getIntensity();
+            double xMax = xValues[xValues.length - 1];
+            int nPoints = 100;
+            for (int i = 0; i < nPoints; i++) {
+                double delay = i * xMax / (nPoints - 1);
+                double y = intensity * Math.exp(-delay * r1);
+                XYValue value = new XYValue(delay, y);
+                lineSeries.getData().add(value);
+            }
+            scatterChart.getData().add(lineSeries);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean addZZFit() {
+        String comment = currentPeak.getComment();
+        String zzPattern = "AA +I +([0-9.]+) +R1 +([0-9.]+) +KeX +([0-9.]+) +pA +([0-9.]+)";
+        Pattern pattern = Pattern.compile(zzPattern);
+        //AA R1 0.463 KeX 1.154 pA 0.57
+        Matcher matcher = pattern.matcher(comment.trim());
+        if (matcher.matches()) {
+            var peakBAOpt = PeakList.getLinkedPeakDims(currentPeak,0).stream().filter(p -> p.getPeak() != currentPeak).findFirst();
+            var peakABOpt = PeakList.getLinkedPeakDims(currentPeak,1).stream().filter(p -> p.getPeak() != currentPeak).findFirst();
+            if (peakBAOpt.isPresent() && peakABOpt.isPresent()) {
+                Peak peakBA = peakBAOpt.get().getPeak();
+                var peakBBOpt = PeakList.getLinkedPeakDims(peakBA, 1).stream().filter(p -> p.getPeak() != peakBA).findFirst();
+                if (peakBBOpt.isPresent()) {
+                    var peakAB = peakABOpt.get().getPeak();
+                    var peakBB = peakBBOpt.get().getPeak();
+                    double[][] measuresAA;
+                    Peak[] peaks = {currentPeak, peakBB, peakAB, peakBA};
+                    double[] xValues = currentPeak.getPeakList().getMeasureValues();
+                    scatterChart.getData().clear();
+                    scatterChart.xAxis.setAutoRanging(true);
+                    scatterChart.yAxis.setAutoRanging(true);
+
+                    double intensity = Double.parseDouble(matcher.group(1));
+                    double r1 = Double.parseDouble(matcher.group(2));
+                    double kEx = Double.parseDouble(matcher.group(3));
+                    double pA = Double.parseDouble(matcher.group(4));
+                    int iSig = 0;
+                    String[] peakLabels = {"AA", "BB", "BA", "AB"};
+
+                    for (Peak peak : peaks) {
+                        DataSeries series = new DataSeries();
+                        series.setStroke(XYCanvasChart.colors[iSig]);
+                        series.setFill(XYCanvasChart.colors[iSig]);
+                        series.setName(peakLabels[iSig]);
+
+                        peak.getMeasures().ifPresent(measures -> {
+                            double[] yValues = measures[0];
+                            double[] errs = measures[1];
+                            for (int i = 0; i < yValues.length; i++) {
+                                double yValue = yValues[i];
+                                double xValue = xValues != null ? xValues[i] : 1.0 * i;
+                                XYValue value = new XYValue(xValue, yValue);
+                                series.add(value);
+                            }
+                        });
+                        scatterChart.getData().add(series);
+                        DataSeries lineSeries = new DataSeries();
+                        lineSeries.drawLine(true);
+                        lineSeries.drawSymbol(false);
+                        lineSeries.fillSymbol(false);
+                        lineSeries.setStroke(XYCanvasChart.colors[iSig]);
+                        lineSeries.setFill(XYCanvasChart.colors[iSig]);
+                        lineSeries.setName(peakLabels[iSig]);
+
+                        double xMax = xValues[xValues.length - 1];
+                        int nPoints = 100;
+                        for (int i = 0;i<nPoints;i++) {
+                            double delay = i * xMax/(nPoints - 1);
+                            double y = intensity * LorentzGaussND.zzAmplitude(r1, pA, kEx, delay, iSig);
+                            XYValue value = new XYValue(delay, y);
+                            lineSeries.getData().add(value);
+                        }
+                        iSig++;
+                        scatterChart.getData().add(lineSeries);
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void updateDatasetNames() {

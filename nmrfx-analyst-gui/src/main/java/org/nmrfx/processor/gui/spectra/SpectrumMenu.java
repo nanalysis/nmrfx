@@ -123,10 +123,18 @@ public class SpectrumMenu extends ChartMenu {
         MenuItem fitZZDecayItem = new MenuItem("Fit Planes (ZZ)");
         fitZZDecayItem.setOnAction((ActionEvent e) -> {
             PeakFitParameters fitPars = new PeakFitParameters();
-            fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.ZZ);
+            fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.ZZ_SHAPE);
             chart.fitPeakLists(fitPars, true);
         });
         peakFitMenu.getItems().add(fitZZDecayItem);
+
+        MenuItem fitZZIntensityItem = new MenuItem("Fit Planes (ZZ Intensity)");
+        fitZZIntensityItem.setOnAction((ActionEvent e) -> {
+            PeakFitParameters fitPars = new PeakFitParameters();
+            fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY);
+            chart.fitPeakLists(fitPars, true);
+        });
+        peakFitMenu.getItems().add(fitZZIntensityItem);
 
         MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
         fitLSItem.setOnAction((ActionEvent e) -> {

@@ -9,7 +9,8 @@ public class PeakFitParameters {
         SINGLE,
         PLANES,
         EXP,
-        ZZ;
+        ZZ_SHAPE,
+        ZZ_INTENSITY;
     }
 
     public enum FIT_MODE {

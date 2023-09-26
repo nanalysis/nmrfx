@@ -2677,7 +2677,7 @@ public class PolyChart extends Region {
             }
             double[] delays = null;
             if ((fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.EXP) ||
-                    (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ)) {
+                    (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_SHAPE) || (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY) ) {
                 log.info("nrows {}", fitRows[0]);
                 delays = getFitValues(peakListAttr);
                 if ((delays == null)) {
@@ -2693,7 +2693,7 @@ public class PolyChart extends Region {
             try {
 
                 Set<Peak> peaks = peakListAttr.getSelectedPeaks();
-                if (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ) {
+                if ((fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_SHAPE) || (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY)) {
                     if (peaks.size() != 4) {
                         Alert alert = new Alert(Alert.AlertType.ERROR);
                         alert.setTitle("Peak ZZ fit");

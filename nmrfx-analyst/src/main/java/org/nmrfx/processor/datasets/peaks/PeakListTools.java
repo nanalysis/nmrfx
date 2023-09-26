@@ -25,6 +25,7 @@ import org.apache.commons.math3.optimization.univariate.BrentOptimizer;
 import org.apache.commons.math3.optimization.univariate.UnivariatePointValuePair;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
@@ -34,6 +35,7 @@ import org.nmrfx.datasets.RegionData;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.optimization.*;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import smile.clustering.HierarchicalClustering;
@@ -1283,9 +1285,9 @@ public class PeakListTools {
      * @throws PeakFitException
      */
     public static List<Object> fitZZPeaks(PeakList peakList, Dataset theFile, Collection<Peak> peaks,
-                                        PeakFitParameters fitPars,
-                                        int[] rows,
-                                        double[] delays)
+                                          PeakFitParameters fitPars,
+                                          int[] rows,
+                                          double[] delays)
             throws IllegalArgumentException, IOException, PeakFitException {
         if (peaks.size() != 4) {
             throw new IllegalArgumentException("ZZ fit requires 4 peaks but " + peaks.size() + " provided");
@@ -1302,7 +1304,7 @@ public class PeakListTools {
         int ix = 0;
         int iy = 0;
         int ib = 1;
-        for (int i = 1;i< sortedPeaks.size();i++) {
+        for (int i = 1; i < sortedPeaks.size(); i++) {
             double xi = sortedPeaks.get(i).getPeakDim(0).getChemShiftValue();
             double yi = sortedPeaks.get(i).getPeakDim(1).getChemShiftValue();
             double dX = Math.abs(x0 - xi);
@@ -1316,7 +1318,7 @@ public class PeakListTools {
                 iy = i;
             }
         }
-        for (int i = 1;i< sortedPeaks.size();i++) {
+        for (int i = 1; i < sortedPeaks.size(); i++) {
             if ((i != ix) && (i != iy)) {
                 ib = i;
                 break;
@@ -1331,15 +1333,75 @@ public class PeakListTools {
         PeakList.linkPeaks(aaPeak, 1, abPeak, 1);
         PeakList.linkPeaks(bbPeak, 0, abPeak, 0);
         PeakList.linkPeaks(bbPeak, 1, baPeak, 1);
-
         List<Peak> abPeaks = new ArrayList<>();
         abPeaks.add(aaPeak);
         abPeaks.add(bbPeak);
         abPeaks.add(baPeak);
         abPeaks.add(abPeak);
-        return fitPeaks(peakList, theFile, abPeaks, fitPars, null, rows, delays);
+        if (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY) {
+            return fitZZPeaks(peakList, abPeaks);
+        } else {
+            return fitPeaks(peakList, theFile, abPeaks, fitPars, null, rows, delays);
+        }
     }
 
+    public static List<Object> fitZZPeaks(PeakList peakList, List<Peak> abPeaks) {
+        var measureX = peakList.getMeasureValues();
+        double[][] xValues = new double[1][measureX.length];
+        double[][] yValues = new double[4][measureX.length];
+        double[][] errValues = new double[4][measureX.length];
+        System.arraycopy(measureX, 0, xValues[0], 0, xValues[0].length);
+        for (int i=0;i<4;i++) {
+            var measureOpt = abPeaks.get(i).getMeasures();
+            int iSig = i;
+            measureOpt.ifPresent(measures -> {
+                System.arraycopy(measures[0], 0, yValues[iSig], 0, yValues[iSig].length);
+                System.arraycopy(measures[1], 0, errValues[iSig], 0, errValues[iSig].length);
+            });
+        }
+        DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics();
+        for (int i=0;i<xValues[0].length;i++) {
+            double delay = xValues[0][i];
+            double aa = yValues[0][i];
+            double bb = yValues[1][i];
+            double ba = yValues[2][i];
+            double ab = yValues[3][i];
+            double norm = (ab * ba) / (aa*bb - ab*ba);
+            double kEXI = norm / (delay * delay);
+            if (delay > 0.02) {
+                descriptiveStatistics.addValue(kEXI);
+            }
+        }
+        double kExGuessMedian = descriptiveStatistics.getPercentile(50);
+        double kExGuessMean = descriptiveStatistics.getMean();
+        double kExGuessStdDev = descriptiveStatistics.getStandardDeviation();
+
+        log.info(String.format("kEx median %.3f mean %.3f +/- %.3f", kExGuessMedian, kExGuessMean, kExGuessStdDev));
+
+        ZZFit zzFit = new ZZFit();
+        zzFit.setXYE(xValues, yValues, errValues);
+        PointValuePair result = zzFit.fit();
+        if (result == null) {
+            GUIUtils.warn("Fitting", "Error fitting data");
+            return Collections.EMPTY_LIST;
+        }
+        double[] pars = zzFit.getPars();
+        double[] errs = zzFit.getParErrs();
+        String[] parNames = zzFit.parNames();
+        String[] peakLabels = {"AA", "BB", "BA", "AB"};
+        for (int jPeak=0;jPeak<4;jPeak++) {
+            String label = peakLabels[jPeak];
+            Peak peak = abPeaks.get(jPeak);
+            if (jPeak == 0) {
+                peak.setComment(String.format("%s I %.3f R1 %.3f KeX %.3f pA %.2f", label, pars[0], pars[1], pars[2], pars[3]));
+            } else {
+                peak.setComment(label);
+            }
+        }
+
+        return Collections.EMPTY_LIST;
+
+    }
 
     /**
      * Fit peaks by adjusting peak position (chemical shift), linewidth and
@@ -1389,7 +1451,7 @@ public class PeakListTools {
         if ((delays != null) && (delays.length > 0)) {
             maxDelay = StatUtils.max(delays);
         }
-        boolean zzMode = fitPars.arrayedFitMode == PeakFitParameters.ARRAYED_FIT_MODE.ZZ;
+        boolean zzMode = fitPars.arrayedFitMode == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_SHAPE;
         List<SyncPar> syncPars = new ArrayList<>();
 
         for (int i = 0; i < nPeakDim; i++) {
@@ -1575,7 +1637,7 @@ public class PeakListTools {
             guessList.add(gValue);
         }
         if (zzMode) {
-            guessList.add(0, new GuessValue(globalMax * 2.0, globalMax , 4.0 * globalMax, zzMode, GLOBAL_INTENSITY));
+            guessList.add(0, new GuessValue(globalMax * 1.5, globalMax / 2.0 , 4.0 * globalMax, zzMode, GLOBAL_INTENSITY));
         } else {
             guessList.add(0, new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, zzMode, GLOBAL_INTENSITY));
         }
@@ -1694,13 +1756,14 @@ public class PeakListTools {
                 if ((delays != null) && (delays.length > 0)) {
                     if (zzMode) {
                         int last = values.length - 1;
+                        double amplitude = values[0];
                         double r1 = values[last - 2];
                         double pA = values[last - 1];
                         double kEx = values[last];
                         String[] peakLabels = {"AA", "BB", "BA", "AB"};
                         String label = peakLabels[jPeak];
                         if (jPeak == 0) {
-                            peak.setComment(String.format("%s R1 %.3f KeX %.3f pA %.2f", label, r1, kEx, pA));
+                            peak.setComment(String.format("%s I %.3f R1 %.3f KeX %.3f pA %.2f", label, amplitude, r1, kEx, pA));
                         } else {
                             peak.setComment(label);
                         }

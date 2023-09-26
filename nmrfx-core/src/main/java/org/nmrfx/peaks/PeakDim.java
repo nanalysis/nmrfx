@@ -57,6 +57,10 @@ public class PeakDim {
         myPeak = peak;
         setSpectralDim(iDim);
     }
+    @Override
+    public String toString() {
+        return myPeak.getName() + "." + spectralDim;
+    }
 
     public PeakDim copy(Peak peak) {
         PeakDim newPeakDim = new PeakDim(peak, spectralDim);
