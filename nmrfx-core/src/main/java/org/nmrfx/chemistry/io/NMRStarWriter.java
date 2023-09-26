@@ -1345,5 +1345,6 @@ public class NMRStarWriter {
             }
         }
         ProjectBase.getActive().writeSaveframes(chan);
+        ProjectBase.getActive().writeIgnoredSaveframes(chan);
     }
 }
