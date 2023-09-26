@@ -1720,10 +1720,12 @@ public class NMRStarReader {
             buildRunAbout();
             log.debug("process paths");
             buildPeakPaths();
+
+            ProjectBase.processExtraSaveFrames(star3);
+
             log.debug("clean resonances");
             resFactory.clean();
 
-            ProjectBase.processExtraSaveFrames(star3);
             log.debug("process done");
         } else if ("shifts".startsWith(argv[0])) {
             int fromSet = Integer.parseInt(argv[1]);
