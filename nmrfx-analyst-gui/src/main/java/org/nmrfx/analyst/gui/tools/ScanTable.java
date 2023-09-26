@@ -139,7 +139,7 @@ public class ScanTable {
         ensureAllDatasetsAdded();
         selectionChanged();
     };
-    ListChangeListener<? super DatasetAttributes> datasetListener = c -> loadFromDataset();
+    ListChangeListener<? super DatasetAttributes> datasetListener = c -> datasetsInChartChanged();
 
     ListChangeListener<Integer> selectionListener;
     PolyChart currentChart;
@@ -186,6 +186,9 @@ public class ScanTable {
 
     public void refresh() {
         tableView.refresh();
+    }
+
+    private void datasetsInChartChanged() {
     }
 
     private void ensureAllDatasetsAdded() {
@@ -1136,6 +1139,7 @@ public class ScanTable {
         posDrawOnCol.setEditable(true);
         posDrawOnCol.setCellValueFactory(e -> new SimpleBooleanProperty(e.getValue().getPos()));
         TableUtils.addCheckBoxEditor(posDrawOnCol, (item, b) -> {
+            System.out.println("set item " + b);
             item.setPos(b);
             scannerTool.getChart().refresh();
         });
