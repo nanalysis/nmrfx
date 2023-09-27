@@ -26,6 +26,7 @@
  */
 package org.nmrfx.star;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -35,9 +36,17 @@ public class Saveframe {
 
     final STAR3Base star3;
     final String name;
+    static int readAheadLimit = 40960;
+
     String saveframeCategory;
     final LinkedHashMap loops = new LinkedHashMap();
     final LinkedHashMap categoryMap = new LinkedHashMap();
+    final StringBuilder rawText = new StringBuilder();
+    private boolean rawTextAvailable = false;
+
+    public static void setReadAhead(long length) {
+        readAheadLimit = (int) length;
+    }
 
     /**
      * Creates a new instance of Saveframe
@@ -87,12 +96,26 @@ public class Saveframe {
     public Saveframe(STAR3Base star3, String name) {
         this.star3 = star3;
         this.name = name;
+        try {
+            star3.getLineReader().mark(readAheadLimit);
+            addRawText(name);
+            rawTextAvailable = true;
+        } catch (IOException ex) {
+            rawTextAvailable = false;
+        }
     }
 
     public Saveframe(STAR3Base star3, String name, String saveframeCategory) {
         this.star3 = star3;
         this.name = name;
         this.saveframeCategory = saveframeCategory;
+        try {
+            star3.getLineReader().mark(readAheadLimit);
+            addRawText(name);
+            rawTextAvailable = true;
+        } catch (IOException ex) {
+            rawTextAvailable = false;
+        }
     }
 
     public STAR3Base getSTAR3() {
@@ -183,6 +206,30 @@ public class Saveframe {
                 }
                 currentTagCategory = tokenPair[0];
             }
+        }
+
+        int currentLine = getSTAR3().getLineReader().getLineNumber();
+        try {
+            getSTAR3().getLineReader().reset();
+            while (getSTAR3().getLineReader().getLineNumber()<currentLine) {
+                addRawText(getSTAR3().getLineReader().readLine());
+            }
+            addRawText("");
+        } catch (IOException ex) {
+            rawTextAvailable = false;
+        }
+    }
+
+
+    private void addRawText(String line) {
+        rawText.append(line+"\n");
+    }
+
+    public String getRawText()  {
+        if (rawTextAvailable) {
+            return rawText.toString();
+        } else {
+            return "";
         }
     }
 

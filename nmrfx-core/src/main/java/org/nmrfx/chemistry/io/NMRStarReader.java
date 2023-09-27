@@ -49,6 +49,34 @@ import java.util.*;
 public class NMRStarReader {
     private static final Logger log = LoggerFactory.getLogger(NMRStarReader.class);
 
+    private static final List<String> recognizedCategories = new ArrayList<>(Arrays.asList(
+            "entity",
+            "experiment_list",
+            "assembly",
+            "spectral_peak_list",
+            "resonance_linker",
+            "assigned_chemical_shifts",
+            "conformer_family_coord_set",
+            "general_distance_constraints",
+            "torsion_angle_constraints",
+            "RDCs",
+            "heteronucl_NOEs",
+            "order_parameters",
+            "nmrfx_peak_path"
+    ));
+
+    {
+        for (relaxTypes relaxType : relaxTypes.values()) {
+            String expName = relaxType.getName().toUpperCase();
+            if (expName.equals("R1")) {
+                expName = "T1";
+            } else if (expName.equals("R2")) {
+                expName = "T2";
+            }
+            recognizedCategories.add("heteronucl_" + expName + "_relaxation");
+        }
+    }
+
     final STAR3 star3;
     final File starFile;
 
@@ -68,6 +96,8 @@ public class NMRStarReader {
     }
 
     public static STAR3 read(File starFile) throws ParseException {
+        Saveframe.setReadAhead(starFile.length());
+
         FileReader fileReader;
         try {
             fileReader = new FileReader(starFile);
@@ -106,6 +136,13 @@ public class NMRStarReader {
         }
         NMRStarReader reader = new NMRStarReader(starFile, star);
         reader.buildChemShifts(0, ppmSet);
+    }
+
+    public static boolean isSaveFrameProcessed (Saveframe saveframe) {
+        String name = saveframe.getCategoryName();
+        return ProjectBase.recognizedExtraSaveFrame(saveframe) ||
+                recognizedCategories.contains(name) ||
+                name.startsWith("nmrview_");
     }
 
     static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
@@ -572,6 +609,15 @@ public class NMRStarReader {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().startsWith("nmrview_")) {
                 log.debug("process tool {}", saveframe.getName());
+            }
+        }
+    }
+
+    private void addIgnoredSaveframes() {
+        for (Saveframe saveframe : star3.getSaveFrames().values()) {
+            if (!isSaveFrameProcessed(saveframe)) {
+                log.debug("process ignored {}", saveframe.getName());
+                ProjectBase.addIgnoredSaveframe(saveframe);
             }
         }
     }
@@ -1724,6 +1770,9 @@ public class NMRStarReader {
             resFactory.clean();
 
             ProjectBase.processExtraSaveFrames(star3);
+
+            addIgnoredSaveframes();
+
             log.debug("process done");
         } else if ("shifts".startsWith(argv[0])) {
             int fromSet = Integer.parseInt(argv[1]);

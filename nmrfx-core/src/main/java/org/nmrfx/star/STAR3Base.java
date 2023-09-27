@@ -62,6 +62,10 @@ public class STAR3Base {
         return lineReader.getLineNumber();
     }
 
+    public LineNumberReader getLineReader() {
+        return lineReader;
+    }
+
     public void writeToken(String token) {
         out.print(token);
     }

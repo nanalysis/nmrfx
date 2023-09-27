@@ -62,6 +62,7 @@ public class ProjectBase {
     protected List<DatasetBase> datasets = new ArrayList<>();
     protected Map<String, PeakList> peakLists = new HashMap<>();
     protected List<SaveframeWriter> extraSaveframes = new ArrayList<>();
+    private static List<Saveframe> ignoredSaveframes = new ArrayList<>();
 
     protected ProjectBase(String name) {
         this.name = name;
@@ -115,6 +116,10 @@ public class ProjectBase {
             fileNum = Optional.of(Integer.parseInt(matcher2.group(1)));
         }
         return fileNum;
+    }
+
+    public static void addIgnoredSaveframe(Saveframe saveframe) {
+        ignoredSaveframes.add(saveframe);
     }
 
     public final void setActive() {
@@ -192,6 +197,16 @@ public class ProjectBase {
         for (SaveframeWriter saveframeWriter : extraSaveframes) {
             saveframeWriter.write(chan);
         }
+    }
+
+    public void writeIgnoredSaveframes(Writer chan) throws IOException {
+        for (Saveframe saveframe : ignoredSaveframes) {
+            chan.write(saveframe.getRawText());
+        }
+    }
+
+    public static boolean recognizedExtraSaveFrame(Saveframe saveframe) {
+        return saveframeProcessors.containsKey(saveframe.getCategoryName());
     }
 
     public static void processExtraSaveFrames(STAR3 star3) throws ParseException {
