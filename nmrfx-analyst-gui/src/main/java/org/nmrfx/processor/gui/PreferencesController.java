@@ -52,6 +52,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
     private static File datasetDir = null;
     private static String location = null;
     private static Integer nProcesses = null;
+    private static BooleanProperty useImmediateModeProp = null;
     private static IntegerProperty tickFontSizeProp = null;
     private static IntegerProperty labelFontSizeProp = null;
     private static IntegerProperty peakFontSizeProp = null;
@@ -119,6 +120,14 @@ public class PreferencesController implements Initializable, StageBasedControlle
                 },
                 getPeakFontSize(), 1, 32, "Spectra", "PeakFontSize", "Font size for peak box labels");
 
+        BooleanOperationItem useImmediateModeItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    useImmediateModeProp.setValue((Boolean) c);
+                    PolyChart.updateImmediateModes((Boolean) c);
+                    setBoolean("IMMEDIATE_MODE", (Boolean) c);
+                },
+                getUseImmediateMode(), "Spectra", "UseImmediateMode", "Don't multi-thread drawing");
+
         BooleanOperationItem fitPeakShapeItem = new BooleanOperationItem(prefSheet,
                 (a, b, c) -> {
                     fitPeakShapeProp.setValue((Boolean) c);
@@ -145,7 +154,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
 
 
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
-                nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem,
+                nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem, useImmediateModeItem,
                 fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem);
     }
 
@@ -415,6 +424,10 @@ public class PreferencesController implements Initializable, StageBasedControlle
         return peakFontSizeProp.getValue();
     }
 
+    public static Boolean getUseImmediateMode() {
+        useImmediateModeProp = getBoolean(useImmediateModeProp, "IMMEDIATE_MODE", false);
+        return useImmediateModeProp.getValue();
+    }
     public static Boolean getFitPeakShape() {
         fitPeakShapeProp = getBoolean(fitPeakShapeProp, "FIT_PEAK_SHAPE", false);
         return fitPeakShapeProp.getValue();
