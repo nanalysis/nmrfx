@@ -227,6 +227,7 @@ public class PolyChart extends Region {
     }
 
     private void initChart() {
+        useImmediateMode= PreferencesController.getUseImmediateMode();
         crossHairs = new CrossHairs(this);
         drawingLayers.getTopPane().getChildren().addAll(crossHairs.getAllGraphicalLines());
 
@@ -1684,6 +1685,12 @@ public class PolyChart extends Region {
         highlightRect.setHeight(height - 2);
     }
 
+    public static void updateImmediateModes(boolean state) {
+        AnalystApp.getFXMLControllerManager().getControllers().stream()
+                .forEach(controller -> {
+                    controller.getCharts().stream().forEach(chart -> chart.useImmediateMode(state));
+                });
+    }
     public void useImmediateMode(boolean state) {
         useImmediateMode = state;
     }
@@ -1696,7 +1703,6 @@ public class PolyChart extends Region {
         if (disabled) {
             return;
         }
-        useImmediateMode = false;
         if (is1D()) {
             axes.setYAxisByLevel();
         }
