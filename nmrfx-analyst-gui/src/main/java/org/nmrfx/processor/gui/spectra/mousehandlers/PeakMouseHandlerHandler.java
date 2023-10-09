@@ -1,15 +1,19 @@
 package org.nmrfx.processor.gui.spectra.mousehandlers;
 
 import javafx.scene.input.MouseEvent;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
+import org.nmrfx.processor.gui.undo.PeaksUndo;
 
 import java.util.Optional;
 
 public class PeakMouseHandlerHandler extends MouseHandler {
     Peak peak;
     boolean widthMode = false;
+    PeaksUndo peaksUndo;
+    PeaksUndo peaksRedo;
 
     public PeakMouseHandlerHandler(MouseBindings mouseBindings) {
         super(mouseBindings);
@@ -72,6 +76,8 @@ public class PeakMouseHandlerHandler extends MouseHandler {
         dragStart[1] = y;
         if (mouseBindings.getMoved()) {
             mouseBindings.getChart().dragPeak(dragStart, x, y, widthMode);
+            peaksRedo = new PeaksUndo(mouseBindings.getChart().getSelectedPeaks());
+            mouseBindings.getChart().getFXMLController().getUndoManager().add("Auto Add Peak", peaksUndo, peaksRedo);
         }
     }
 
@@ -83,6 +89,9 @@ public class PeakMouseHandlerHandler extends MouseHandler {
     @Override
     public void mouseDragged(MouseEvent mouseEvent) {
         if (mouseBindings.getMoved()) {
+            if (peaksUndo == null) {
+                peaksUndo = new PeaksUndo(mouseBindings.getChart().getSelectedPeaks());
+            }
             double x = mouseEvent.getX();
             double y = mouseEvent.getY();
             double[] dragStart = mouseBindings.getDragStart();
