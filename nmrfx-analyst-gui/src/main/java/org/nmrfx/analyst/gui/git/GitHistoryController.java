@@ -22,8 +22,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -32,12 +31,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.TableColumn;
+import javafx.scene.control.*;
 
-import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
@@ -45,7 +40,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.utils.GUIUtils;
 
@@ -64,10 +58,9 @@ public class GitHistoryController implements Initializable {
     GUIProject project = GUIProject.getActive();
     GitManager gitManager;
     @FXML
-    ChoiceBox actionMenu = new ChoiceBox();
+    MenuButton actionMenu = new MenuButton();
     
-    private enum Choices {
-        SELECT("Select Option..."),
+    private enum GitAction {
         DIFF("Diff to Selected Commit"),
         LOAD("Load Selected Commit"),
         MERGE("Merge Selected Commit into Master Branch"),
@@ -79,7 +72,7 @@ public class GitHistoryController implements Initializable {
 
         private final String label;
 
-        Choices(String label) {
+        GitAction(String label) {
             this.label = label;
         }
 
@@ -93,7 +86,7 @@ public class GitHistoryController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         if (project != null) {
             initializeHistory();
-            List<Choices> choices = Arrays.asList(Choices.values());
+            List<GitAction> choices = Arrays.asList(GitAction.values());
             setUpMenu(actionMenu, choices);
         }
     }
@@ -128,14 +121,12 @@ public class GitHistoryController implements Initializable {
 
     }
     
-    private void setUpMenu(ChoiceBox menu, List<Choices> values) {
-        menu.setItems(FXCollections.observableArrayList(values));
-        menu.setValue(values.get(0));
-        menu.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Choices>() {
-            public void changed(ObservableValue ov, Choices value, Choices newValue) {
-                choiceAction(newValue);
-            }
-        });
+    private void setUpMenu(MenuButton menu, List<GitAction> values) {
+        for (var choice:values) {
+            MenuItem menuItem = new MenuItem(choice.label);
+            menu.getItems().add(menuItem);
+            menuItem.setOnAction(e -> gitMenuAction(choice));
+        }
     }
     
     private void initializeHistory()  { 
@@ -194,7 +185,7 @@ public class GitHistoryController implements Initializable {
         historyTable.setItems(data);
     }
     
-    private void choiceAction(Choices choice) {
+    private void gitMenuAction(GitAction choice) {
         switch (choice) {
             case DIFF:
                 gitDiff();
