@@ -1,12 +1,12 @@
 package org.nmrfx.processor.gui.spectra.mousehandlers;
 
 import javafx.scene.input.MouseEvent;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.undo.PeaksUndo;
 
+import java.util.List;
 import java.util.Optional;
 
 public class PeakMouseHandlerHandler extends MouseHandler {
@@ -78,7 +78,7 @@ public class PeakMouseHandlerHandler extends MouseHandler {
         if (mouseBindings.getMoved()) {
             mouseBindings.getChart().dragPeak(dragStart, x, y, widthMode);
             if (peaksUndo != null) {
-                peaksRedo = new PeaksUndo(mouseBindings.getChart().getSelectedPeaks());
+                peaksRedo = new PeaksUndo(getSelectedPeaks());
                 mouseBindings.getChart().getFXMLController().getUndoManager().add("Auto Add Peak", peaksUndo, peaksRedo);
                 peaksUndo = null;
                 peaksRedo = null;
@@ -95,12 +95,24 @@ public class PeakMouseHandlerHandler extends MouseHandler {
     public void mouseDragged(MouseEvent mouseEvent) {
         if (mouseBindings.getMoved()) {
             if (peaksUndo == null) {
-                peaksUndo = new PeaksUndo(mouseBindings.getChart().getSelectedPeaks());
+                List<Peak> peaks = getSelectedPeaks();
+                if (!peaks.isEmpty()) {
+                    peaksUndo = new PeaksUndo(peaks);
+                }
             }
             double x = mouseEvent.getX();
             double y = mouseEvent.getY();
             double[] dragStart = mouseBindings.getDragStart();
             mouseBindings.getChart().dragPeak(dragStart, x, y, widthMode);
         }
+    }
+
+    List<Peak> getSelectedPeaks() {
+        List<Peak> peaks = mouseBindings.getChart().getSelectedPeaks();
+        if (peaks.isEmpty()) {
+            peaks.addAll(mouseBindings.getChart().getSelectedMultiplets().stream()
+                    .map(m -> m.getMultiplet().getPeakDim().getPeak()).distinct().toList());
+        }
+        return peaks;
     }
 }
