@@ -1,7 +1,5 @@
 package org.nmrfx.processor.gui.undo;
 
-import org.nmrfx.peaks.Peak;
-
 import java.util.ArrayList;
 import java.util.List;
 
