@@ -2527,12 +2527,18 @@ public class PolyChart extends Region {
 
     public void deleteSelectedPeaks() {
         List<Peak> deletedPeaks = new ArrayList<>();
+        resetUndoGroup();
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
+            addPeaksUndo(peaks);
             for (Peak peak : peaks) {
                 peak.setStatus(-1);
                 deletedPeaks.add(peak);
             }
+            addPeaksRedo(peaks);
+        }
+        if (!deletedPeaks.isEmpty()) {
+            addUndoGroup("Delete Peaks");
         }
         if (!deletedPeaks.isEmpty() && (manualPeakDeleteAction != null)) {
             PeakDeleteEvent peakDeleteEvent = new PeakDeleteEvent(deletedPeaks, this);
