@@ -52,6 +52,9 @@ public class ProjectMenuActions extends MenuActions {
         MenuItem saveSTARMenuItem = new MenuItem("Save STAR3...");
         saveSTARMenuItem.setOnAction(this::writeSTAR);
 
+        MenuItem showHistoryAction = new MenuItem("GIT Manager...");
+        showHistoryAction.setOnAction(this::showHistory);
+
         List<Path> recentProjects = PreferencesController.getRecentProjects();
         for (Path path : recentProjects) {
             int count = path.getNameCount();
@@ -66,7 +69,7 @@ public class ProjectMenuActions extends MenuActions {
 
         menu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem,
                 projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem,
-                openSTARMenuItem, saveSTARMenuItem);
+                openSTARMenuItem, saveSTARMenuItem, showHistoryAction);
 
     }
 
@@ -199,5 +202,9 @@ public class ProjectMenuActions extends MenuActions {
                 interpreter.exec("sparky.loadProjectFile(sparkyFile)");
             }
         }
+    }
+
+    void showHistory(ActionEvent event) {
+        AnalystApp.getAnalystApp().showHistoryAction(event);
     }
 }

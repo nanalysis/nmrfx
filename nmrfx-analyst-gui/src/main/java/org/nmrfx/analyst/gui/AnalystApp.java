@@ -31,12 +31,12 @@ import javafx.geometry.Bounds;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
 import org.nmrfx.analyst.gui.datasetbrowser.DatasetBrowserController;
 import org.nmrfx.analyst.gui.events.DataFormatHandlerUtil;
+import org.nmrfx.analyst.gui.git.*;
 import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
 import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
 import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
@@ -382,7 +382,7 @@ public class AnalystApp extends Application {
     public void waitForCommit() {
         int nTries = 30;
         int iTry = 0;
-        while (GUIProject.isCommitting() && (iTry < nTries)) {
+        while (GitManager.isCommitting() && (iTry < nTries)) {
             System.out.println("committing");
             try {
                 Thread.sleep(500);
@@ -734,6 +734,14 @@ public class AnalystApp extends Application {
                 PreferencesController.getPeakShapeDirectFactor(),
                 PreferencesController.getPeakShapeIndirectFactor());
     }
+    public static void showHistoryAction(ActionEvent event) {
+        GUIProject guiProject = GUIProject.getActive();
+        if (guiProject != null) {
+            guiProject.getGitManager().showHistoryAction(event);
+        }
+    }
+
+
 
     public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
         AnalystApp.getAnalystApp().moleculeMap.addListener(listener);

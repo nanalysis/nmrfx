@@ -25,7 +25,7 @@ public class GUIProjectTest {
 
     @Before
     public void setUp() {
-        Mockito.doReturn(null).when(testProject).createAndInitializeGitObject(any());
+        Mockito.doReturn(null).when(testProject).getGitManager().createAndInitializeGitObject(any());
     }
 
     @Test
