@@ -63,8 +63,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
 import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings.MOUSE_ACTION;
-import org.nmrfx.processor.gui.undo.ChartUndoLimits;
-import org.nmrfx.processor.gui.undo.ChartUndoScale;
+import org.nmrfx.processor.gui.undo.*;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.project.ProjectText;
 import org.nmrfx.project.ProjectBase;
@@ -141,6 +140,9 @@ public class PolyChart extends Region {
     private MouseBindings mouseBindings;
     private GestureBindings gestureBindings;
     private CrossHairs crossHairs;
+    private List<ChartUndo> undos = new ArrayList<>();
+    private List<ChartUndo> redos = new ArrayList<>();
+
     protected PolyChart(FXMLController controller, String name, ChartDrawingLayers drawingLayers) {
         this.controller = controller;
         this.name = name;
@@ -2656,10 +2658,49 @@ public class PolyChart extends Region {
         fitPeakLists(fitPars, true);
     }
 
+    void addPeaksUndo(Collection<Peak> peaks) {
+        if (undos.isEmpty()) {
+            redos.clear();
+        }
+        PeaksUndo undo = new PeaksUndo(peaks);
+        undos.add(undo);
+    }
+    void addPeaksRedo(Collection<Peak> peaks) {
+        PeaksUndo undo = new PeaksUndo(peaks);
+        redos.add(undo);
+    }
+    void addPeakListUndo(PeakList peakList) {
+        if (undos.isEmpty()) {
+            redos.clear();
+        }
+        PeakListUndo undo = new PeakListUndo(peakList);
+        undos.add(undo);
+    }
+    void addPeakListRedo(PeakList peakList) {
+        PeakListUndo undo = new PeakListUndo(peakList);
+        redos.add(undo);
+    }
+
+    void addUndoGroup(String label) {
+        if (!undos.isEmpty() && (undos.size() == redos.size())) {
+            GroupUndo groupUndo = new GroupUndo(undos);
+            GroupUndo groupRedo = new GroupUndo(redos);
+            undos.clear();
+            redos.clear();
+            controller.getUndoManager().add(label, groupUndo, groupRedo);
+        }
+    }
+
+    void resetUndoGroup() {
+        undos.clear();
+        redos.clear();
+    }
+
     public void fitPeakLists(PeakFitParameters fitPars, boolean getShapePars) {
         if (getShapePars) {
             AnalystApp.getShapePrefs(fitPars);
         }
+        resetUndoGroup();
         peakListAttributesList.forEach((peakListAttr) -> {
             DatasetBase datasetBase = peakListAttr.getDatasetAttributes().getDataset();
             Dataset dataset = null;
@@ -2697,7 +2738,6 @@ public class PolyChart extends Region {
                 log.info("ndel {}", delays.length);
             }
             try {
-
                 Set<Peak> peaks = peakListAttr.getSelectedPeaks();
                 if ((fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_SHAPE) || (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY)) {
                     if (peaks.size() != 4) {
@@ -2707,19 +2747,27 @@ public class PolyChart extends Region {
                         alert.showAndWait();
                         return;
                     }
+                    addPeaksUndo(peaks);
                     PeakListTools.fitZZPeaks(peakListAttr.getPeakList(), dataset, peaks, fitPars, fitRows, delays);
+                    addPeaksRedo(peaks);
                 } else if ((fitPars.fitMode() == PeakFitParameters.FIT_MODE.ALL) && peaks.isEmpty()) {
+                    addPeaksUndo(peakListAttr.getPeakList().peaks());
                     PeakListTools.groupPeakListAndFit(peakListAttr.getPeakList(), dataset, fitRows, delays, fitPars);
+                    addPeaksRedo(peakListAttr.getPeakList().peaks());
                 } else if (!peaks.isEmpty()) {
+                    addPeaksUndo(peaks);
                     PeakListTools.groupPeaksAndFit(peakListAttr.getPeakList(), dataset, fitRows, delays, peaks, fitPars);
+                    addPeaksRedo(peaks);
                 }
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 log.error(ex.getMessage(), ex);
             }
         });
+        addUndoGroup("Peaks Fit");
     }
 
     public void tweakPeaks() {
+        resetUndoGroup();
         peakListAttributesList.forEach((peakListAttr) -> {
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             if (!peaks.isEmpty()) {
@@ -2733,17 +2781,20 @@ public class PolyChart extends Region {
                         }
                         int nExtra = dim.length - peakListAttr.getPeakList().nDim;
                         int[] planes = new int[nExtra];
+                        addPeaksUndo(peaks);
                         PeakListTools.tweakPeaks(peakListAttr.getPeakList(), dataset, peaks, planes);
-
+                        addPeaksRedo(peaks);
                     } catch (IllegalArgumentException ex) {
                         log.error(ex.getMessage(), ex);
                     }
                 }
             }
         });
+        addUndoGroup("Tweak Peaks");
     }
 
     public void tweakPeakLists() {
+        resetUndoGroup();
         peakListAttributesList.forEach((peakListAttr) -> {
             DatasetBase datasetBase = peakListAttr.getDatasetAttributes().getDataset();
             Dataset dataset = datasetBase instanceof Dataset ? (Dataset) datasetBase : null;
@@ -2751,13 +2802,17 @@ public class PolyChart extends Region {
                 try {
                     int nExtra = dataset.getNDim() - peakListAttr.getPeakList().nDim;
                     int[] planes = new int[nExtra];
+                    addPeakListUndo(peakListAttr.getPeakList());
                     PeakListTools.tweakPeaks(peakListAttr.getPeakList(), dataset, planes);
+                    addPeakListRedo(peakListAttr.getPeakList());
 
                 } catch (IllegalArgumentException ex) {
                     log.error(ex.getMessage(), ex);
                 }
             }
         });
+        addUndoGroup("Tweak Peaks");
+
     }
 
     public void duplicatePeakList() {

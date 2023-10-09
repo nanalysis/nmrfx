@@ -2,15 +2,16 @@ package org.nmrfx.processor.gui.undo;
 
 import org.nmrfx.peaks.Peak;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class PeaksUndo extends ChartUndo {
-    List<Peak> origPeaks;
+    Collection<Peak> origPeaks;
     Map<Peak, Peak> savedPeaks;
 
-    public PeaksUndo(List<Peak> peaks) {
+    public PeaksUndo(Collection<Peak> peaks) {
         this.origPeaks = peaks;
         this.savedPeaks = new HashMap<>();
         for (var peak : peaks) {

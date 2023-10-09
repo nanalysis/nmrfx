@@ -65,6 +65,7 @@ public class PeakMouseHandlerHandler extends MouseHandler {
     @Override
     public void mousePressed(MouseEvent mouseEvent) {
         widthMode = mouseEvent.isAltDown() || mouseEvent.isControlDown();
+        peaksUndo = null;
     }
 
     @Override
@@ -76,8 +77,12 @@ public class PeakMouseHandlerHandler extends MouseHandler {
         dragStart[1] = y;
         if (mouseBindings.getMoved()) {
             mouseBindings.getChart().dragPeak(dragStart, x, y, widthMode);
-            peaksRedo = new PeaksUndo(mouseBindings.getChart().getSelectedPeaks());
-            mouseBindings.getChart().getFXMLController().getUndoManager().add("Auto Add Peak", peaksUndo, peaksRedo);
+            if (peaksUndo != null) {
+                peaksRedo = new PeaksUndo(mouseBindings.getChart().getSelectedPeaks());
+                mouseBindings.getChart().getFXMLController().getUndoManager().add("Auto Add Peak", peaksUndo, peaksRedo);
+                peaksUndo = null;
+                peaksRedo = null;
+            }
         }
     }
 

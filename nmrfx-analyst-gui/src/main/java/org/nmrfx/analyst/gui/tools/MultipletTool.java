@@ -32,6 +32,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
+import org.nmrfx.processor.gui.undo.PeakListUndo;
 import org.nmrfx.processor.gui.undo.PeakUndo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -422,6 +423,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     public void split() {
         CrossHairs crossHairs = chart.getCrossHairs();
+        PeakListUndo undo = getPeakListUndo();
         if (crossHairs.hasState("v0")) {
             splitMultipletRegion();
         } else {
@@ -429,6 +431,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                 splitMultiplet();
             }
         }
+        PeakListUndo redo = getPeakListUndo();
+        if ((undo != null) && (redo != null)) {
+            controller.getUndoManager().add("Split", undo, redo);
+        }
+
         activeMultiplet = Optional.empty();
         if (popOver != null) {
             popOver.hide();
@@ -505,14 +512,30 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             }
             analyzer.removeRegion(ppm0, ppm1, true);
             analyzer.addRegion(ppm0, ppm1, true);
+
+            PeakListUndo undo = getPeakListUndo();
+            PeakListUndo redo = null;
             try {
                 activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
                 updateMultipletField(false);
+                if (undo !=  null) {
+                    redo = getPeakListUndo();
+                }
                 chart.refresh();
+                if ((undo != null) && (redo != null)) {
+                    controller.getUndoManager().add("Update regions ", undo, redo);
+                }
             } catch (IOException ex) {
                 log.warn(ex.getMessage(), ex);
             }
         }
+    }
+    PeakListUndo getPeakListUndo() {
+        PeakListUndo undo = null;
+        if (getPeakList().isPresent()) {
+            undo = new PeakListUndo(getPeakList().get());
+        }
+        return undo;
     }
 
     public void mergeRegion(List<Peak> peaks) {
@@ -548,6 +571,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         if (analyzer != null) {
             double ppm0;
             double ppm1;
+            PeakListUndo undo = getPeakListUndo();
             if (region == null) {
                 ppm0 = chart.getCrossHairs().getVerticalPositions()[0];
                 ppm1 = chart.getCrossHairs().getVerticalPositions()[1];
@@ -567,6 +591,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                         peakList.scale = activeMultiplet.get().getVolume();
                     }
                 }
+                PeakListUndo redo = getPeakListUndo();
+                if ((undo != null) && (redo != null)) {
+                    controller.getUndoManager().add("Add Region", undo, redo);
+                }
+
                 updateMultipletField(false);
                 chart.refresh();
 
@@ -741,8 +770,14 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             List<Multiplet> multiplets = getSelMultiplets(mSet);
             if (multiplets.size() == 1) {
                 Multiplet multiplet = multiplets.get(0);
+                PeakListUndo undo = getPeakListUndo();
                 extractMultiplet(mSet, multiplet);
                 activeMultiplet = Optional.empty();
+                PeakListUndo redo = getPeakListUndo();
+                if ((undo != null) && (redo != null)) {
+                    controller.getUndoManager().add("Add Region", undo, redo);
+                }
+
                 chart.clearSelectedMultiplets();
                 if (popOver != null) {
                     popOver.hide();
@@ -780,8 +815,14 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         if (multiplets.size() == 1) {
             Multiplet multiplet = multiplets.get(0);
             List<MultipletSelection> mSet = chart.getSelectedMultiplets();
+            PeakListUndo undo = getPeakListUndo();
             Multiplet newMultiplet = extractMultiplet(mSet, multiplet);
             activeMultiplet.ifPresent(m -> activeMultiplet = Multiplets.transferPeaks(m, List.of(newMultiplet.getPeakDim().getPeak())));
+            PeakListUndo redo = getPeakListUndo();
+            if ((undo != null) && (redo != null)) {
+                controller.getUndoManager().add("Add Region", undo, redo);
+            }
+
             chart.clearSelectedMultiplets();
             if (popOver != null) {
                 popOver.hide();
