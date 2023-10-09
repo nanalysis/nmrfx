@@ -96,6 +96,12 @@ public class PeakDim {
         targetPeakDim.decayRateError = decayRateError;
         targetPeakDim.error = error.clone();
         targetPeakDim.user = user;
+        if (multiplet != null) {
+            Multiplet newMultiplet = new Multiplet(targetPeakDim);
+            multiplet.copyTo(newMultiplet);
+            newMultiplet.myPeakDim = targetPeakDim;
+            targetPeakDim.multiplet = newMultiplet;
+        }
     }
 
     public void restoreFrom(PeakDim peakDim) {

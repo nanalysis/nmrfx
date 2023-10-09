@@ -32,6 +32,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
+import org.nmrfx.processor.gui.undo.PeakUndo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -401,7 +402,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             activeMultiplet.ifPresent(m -> {
+                PeakUndo undo = new PeakUndo(m.getOrigin());
                 Optional<Double> result = analyzer.fitMultiplet(m);
+                PeakUndo redo = new PeakUndo(m.getOrigin());
+                controller.getUndoManager().add("Fit Multiplet", undo, redo);
+
             });
             refresh();
         }
@@ -596,8 +601,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             activeMultiplet.ifPresent(m -> {
                 Optional<Double> result = Multiplets.deviation(m);
                 if (result.isPresent()) {
+                    PeakUndo undo = new PeakUndo(m.getOrigin());
                     Multiplets.addPeaksToMultiplet(m, result.get());
                     analyzer.fitMultiplet(m);
+                    PeakUndo redo = new PeakUndo(m.getOrigin());
+                    controller.getUndoManager().add("Auto Add Peak", undo, redo);
                     chart.refresh();
                     refresh();
 
@@ -619,6 +627,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             activeMultiplet.ifPresent(m -> {
+                PeakUndo undo = new PeakUndo(m.getOrigin());
                 double ppm1 = chart.getCrossHairs().getVerticalPositions()[0];
                 double ppm2 = chart.getCrossHairs().getVerticalPositions()[1];
                 if (both) {
@@ -627,6 +636,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                     Multiplets.addPeaksToMultiplet(m, ppm1);
 
                 }
+                PeakUndo redo = new PeakUndo(m.getOrigin());
+                controller.getUndoManager().add("Add Peaks", undo, redo);
                 analyzer.fitMultiplet(m);
                 chart.refresh();
                 refresh();
@@ -642,7 +653,13 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     }
 
     public void toDoublets() {
-        activeMultiplet.ifPresent(Multiplets::toDoublets);
+        activeMultiplet.ifPresent(m -> {
+            PeakUndo undo = new PeakUndo(m.getOrigin());
+            Multiplets.toDoublets(m);
+            PeakUndo redo = new PeakUndo(m.getOrigin());
+            controller.getUndoManager().add("Multiplets to Doublets", undo, redo);
+
+        });
         refresh();
     }
 
@@ -847,8 +864,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
                 String multOrig = m.getMultiplicity();
                 if (!multNew.equals(multOrig)) {
+                    PeakUndo undo = new PeakUndo(m.getOrigin());
                     Multiplets.convertMultiplicity(m, multOrig, multNew);
                     analyzer.fitMultiplet(m);
+                    PeakUndo redo = new PeakUndo(m.getOrigin());
+                    controller.getUndoManager().add("Change Multiplicity", undo, redo);
                     refresh();
                 }
             });
@@ -864,11 +884,14 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                     double newValue = Double.parseDouble(couplingStr);
                     if (newValue > 0.1) {
                         Multiplet multiplet = activeMultiplet.get();
+                        PeakUndo undo = new PeakUndo(multiplet.getOrigin());
                         Coupling coupling = multiplet.getCoupling();
                         if (coupling instanceof CouplingPattern) {
                             CouplingPattern cPattern = (CouplingPattern) coupling;
                             cPattern.adjustCouplings(iRow, newValue);
                         }
+                        PeakUndo redo = new PeakUndo(multiplet.getOrigin());
+                        controller.getUndoManager().add("Change Multiplicity", undo, redo);
                         refresh();
                     }
                 } catch (NumberFormatException nfE) {

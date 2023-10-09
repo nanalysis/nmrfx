@@ -24,6 +24,14 @@ public abstract class MultipletComponent {
         this.volume = volume;
     }
 
+    public MultipletComponent(Multiplet multiplet, MultipletComponent component) {
+        this.multiplet = multiplet;
+        this.offset = component.offset;
+        this.intensity = component.intensity;
+        this.lineWidth = component.lineWidth;
+        this.volume = component.volume;
+    }
+
     public double getOffset() {
         return offset;
     }
