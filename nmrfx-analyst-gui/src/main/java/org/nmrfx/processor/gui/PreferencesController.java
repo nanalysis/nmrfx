@@ -30,6 +30,7 @@ import org.controlsfx.control.PropertySheet;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.operations.NESTANMREx;
 import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
@@ -60,6 +61,9 @@ public class PreferencesController implements Initializable, StageBasedControlle
     private static BooleanProperty constrainPeakShapeProp = null;
     private static DoubleProperty peakShapeDirectFactorProp = null;
     private static DoubleProperty peakShapeIndirectFactorProp = null;
+    private static BooleanProperty projectSaveProp = null;
+    private static IntegerProperty projectSaveIntervalProp = null;
+
 
     @FXML
     PropertySheet prefSheet;
@@ -152,10 +156,26 @@ public class PreferencesController implements Initializable, StageBasedControlle
                 },
                 getPeakShapeIndirectFactor(), 0.0, 1.5, 0.0, 1.5, "Peak", "PeakShapeIndirect", "Shape factor for indirect dimension");
 
+        IntRangeOperationItem projectSaveIntervalItem = new IntRangeOperationItem(prefSheet,
+                (a, b, c) -> {
+                    projectSaveIntervalProp.setValue((Integer) c);
+                    setInteger("PROJECT_SAVE_INTERVAL", (Integer) c);
+                    GUIProject.projectSaveInterval((Integer) c);
+                },
+                getProjectSaveInterval(), 1, 120, "Project", "SaveInterval", "Project save interval (minutes)");
+
+        BooleanOperationItem projectSaveItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    projectSaveProp.setValue((Boolean) c);
+                    setBoolean("PROJECT_SAVE", (Boolean) c);
+                    GUIProject.projectSave((Boolean)c);
+                },
+                getProjectSave(), "Project", "AutoSave", "Auto Save Project on changes");
 
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
                 nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem, useImmediateModeItem,
-                fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem);
+                fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem,
+                projectSaveItem, projectSaveIntervalItem);
     }
 
     @Override
@@ -448,6 +468,15 @@ public class PreferencesController implements Initializable, StageBasedControlle
         return peakShapeIndirectFactorProp.getValue();
     }
 
+    public static Integer getProjectSaveInterval() {
+        projectSaveIntervalProp = getInteger(projectSaveIntervalProp, "PROJECT_SAVE_INTERVAL", 30);
+        return projectSaveIntervalProp.getValue();
+    }
+    public static Boolean getProjectSave() {
+        projectSaveProp = getBoolean(projectSaveProp, "PROJECT_SAVE", false);
+        return projectSaveProp.getValue();
+    }
+
     public static IntegerProperty getInteger(IntegerProperty prop, String name, int defValue) {
         if (prop == null) {
             Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
@@ -475,6 +504,15 @@ public class PreferencesController implements Initializable, StageBasedControlle
     }
 
     public static void setBoolean(String name, Boolean value) {
+        Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
+        if (value != null) {
+            prefs.put(name, value.toString());
+        } else {
+            prefs.remove(name);
+        }
+    }
+
+    public static void setInteger(String name, Integer value) {
         Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
         if (value != null) {
             prefs.put(name, value.toString());

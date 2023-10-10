@@ -10,6 +10,13 @@ import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableMap;
+import javafx.util.Duration;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -58,6 +65,12 @@ public class GUIProject extends ProjectBase {
     private Git git;
 
 
+    private static int projectSaveInterval;
+
+    private static boolean projectSave;
+
+    private static Timeline timeline = null;
+
     public GUIProject(String name) {
         super(name);
         log.info("new project {}", name);
@@ -105,6 +118,42 @@ public class GUIProject extends ProjectBase {
         git = createAndInitializeGitObject(projectDir.toFile());
         if (git != null) {
             writeIgnore();
+        }
+    }
+
+    private static void startTimer() {
+        if (timeline == null) {
+            KeyFrame save = new KeyFrame(
+                    Duration.seconds(60.0),
+                    event -> {
+                        saveCheck();
+                    }
+            );
+            Timeline timeline = new Timeline(
+                    save
+            );
+            timeline.setCycleCount(Animation.INDEFINITE);
+            timeline.play();
+        } else {
+            timeline.play();
+        }
+    }
+
+    private static void saveCheck() {
+        GUIProject activeProject = getActive();
+        System.out.println("save");
+    }
+
+    public static void projectSaveInterval(int interval) {
+        projectSaveInterval = interval;
+    }
+
+    public static void projectSave(boolean state) {
+        projectSave = state;
+        if (projectSave) {
+            startTimer();
+        } else if (timeline != null) {
+            timeline.stop();
         }
     }
 
