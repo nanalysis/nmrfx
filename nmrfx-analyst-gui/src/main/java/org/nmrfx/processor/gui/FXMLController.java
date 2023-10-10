@@ -502,6 +502,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         getActiveChart().layoutPlotChildren();
         undoManager.clear();
+        ProjectBase.getActive().projectChanged(true);
     }
 
     /**

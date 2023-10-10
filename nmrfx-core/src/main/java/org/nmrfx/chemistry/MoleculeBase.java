@@ -1237,6 +1237,7 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public void changed() {
+        ProjectBase.getActive().projectChanged(true);
         changed = true;
     }
 

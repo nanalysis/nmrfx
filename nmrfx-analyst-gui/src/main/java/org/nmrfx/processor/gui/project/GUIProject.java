@@ -5,6 +5,7 @@
  */
 package org.nmrfx.processor.gui.project;
 
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
@@ -51,6 +52,8 @@ public class GUIProject extends ProjectBase {
     private static final Logger log = LoggerFactory.getLogger(GUIProject.class);
     private static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     private static boolean commitActive = false;
+
+    private SimpleBooleanProperty projectChanged = new SimpleBooleanProperty(false);
 
     private Git git;
 
@@ -274,6 +277,7 @@ public class GUIProject extends ProjectBase {
         PreferencesController.saveRecentProjects(projectDir.toString());
         currentProject.setActive();
         currentProject.setActive();
+        projectChanged.set(false);
     }
 
     boolean loadSTAR3(Path directory) throws IOException {
@@ -510,12 +514,21 @@ public class GUIProject extends ProjectBase {
         }
         return didSomething;
     }
+    public void projectChanged(boolean state) {
+        projectChanged.set(state);
+        System.out.println("project changed");
+    }
+
+    public boolean projectChanged() {
+        return projectChanged.get();
+    }
 
     @Override
     public void addPeakList(PeakList peakList, String name) {
         super.addPeakList(peakList, name);
         PeakListUpdater updater = new PeakListUpdater(peakList);
         peakList.registerUpdater(updater);
+        projectChanged.set(true);
     }
 
     public void removePeakList(String name) {
@@ -524,6 +537,7 @@ public class GUIProject extends ProjectBase {
             peakList.removeUpdater();
         }
         super.removePeakList(name);
+        projectChanged.set(true);
 
     }
 

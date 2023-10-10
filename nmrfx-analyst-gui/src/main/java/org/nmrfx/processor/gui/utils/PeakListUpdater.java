@@ -21,6 +21,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.Updater;
 
 import java.util.ArrayList;
@@ -148,6 +149,7 @@ public class PeakListUpdater implements Updater {
         for (PeakListener listener : globalListeners) {
             listener.peakListChanged(new PeakEvent("*"));
         }
+        ProjectBase.getActive().projectChanged(true);
     }
 
 }

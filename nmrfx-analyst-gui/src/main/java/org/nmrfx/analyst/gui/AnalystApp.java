@@ -64,6 +64,7 @@ import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,6 +143,7 @@ public class AnalystApp extends Application {
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STARTUP, null);
         moleculeMap = FXCollections.observableHashMap();
         MoleculeFactory.setMoleculeMap(moleculeMap);
+        ProjectBase.getActive().projectChanged(false);
     }
 
     @Override
@@ -300,11 +302,14 @@ public class AnalystApp extends Application {
     }
 
     public void quit() {
-        System.out.println("quit");
-        saveDatasets();
-        waitForCommit();
-        Platform.exit();
-        System.exit(0);
+        boolean projectChanged = ProjectBase.getActive().projectChanged();
+        if (!projectChanged || GUIUtils.affirm("Project changed, really quit?")) {
+            System.out.println("quit");
+            saveDatasets();
+            waitForCommit();
+            Platform.exit();
+            System.exit(0);
+        }
     }
 
     private void showWebSiteAction(ActionEvent event) {
