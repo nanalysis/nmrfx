@@ -45,15 +45,12 @@ public class GitManager {
     Git git;
 
     public GitManager(GUIProject guiProject) throws IllegalArgumentException {
-        System.out.println("new git manager " + guiProject.getProjectDir());
         projectDir = guiProject.getProjectDir();
         try {
             git = Git.open(projectDir.toFile());
-            System.out.println("git opened");
         } catch (IOException ioE) {
             GUIProject.checkUserHomePath();
             git = createAndInitializeGitObject(projectDir.toFile());
-            System.out.println("git init " + git);
             if (git == null) {
                 throw new IllegalArgumentException("Can't create git");
             }
@@ -91,7 +88,7 @@ public class GitManager {
             historyController.getStage().show();
             historyController.getStage().toFront();
         } else {
-            System.out.println("Couldn't make controller");
+            log.error("Couldn't make controller");
         }
     }
 
@@ -103,7 +100,7 @@ public class GitManager {
         if (conflictController != null) {
             conflictController.getStage().show();
         } else {
-            System.out.println("Couldn't make controller");
+            log.error("Couldn't make conflict controller");
         }
     }
 
@@ -121,11 +118,11 @@ public class GitManager {
             if (data != null) {
                 String branch = data.getShortBranch();
                 int idx = data.getIndex();
-                diffController.getStage().setTitle("Git Diff to " + branch + " commit " + String.valueOf(idx));
+                diffController.getStage().setTitle("Git Diff to " + branch + " commit " + idx);
             }
             diffController.getStage().show();
         } else {
-            System.out.println("Couldn't make controller");
+            log.error("Couldn't make diff controller");
         }
     }
 
@@ -133,16 +130,8 @@ public class GitManager {
         return conflictController;
     }
 
-    public static void setConflictController(GitConflictController controller) {
-        conflictController = controller;
-    }
-
     public static GitDiffController getDiffController() {
         return diffController;
-    }
-
-    public static void setDiffController(GitDiffController controller) {
-        diffController = controller;
     }
 
     public void setProject(GUIProject guiProject) {
@@ -177,9 +166,9 @@ public class GitManager {
     }
 
     public void gitCommitOnThread() {
-        Task<Boolean> task = new Task<Boolean>() {
+        Task<Boolean> task = new Task<>() {
             @Override
-            protected Boolean call() throws Exception {
+            protected Boolean call() {
                 return gitCommit("");
             }
         };
@@ -225,8 +214,8 @@ public class GitManager {
                     actionMap.add(action);
                     git.rm().addFilepattern(missingFile).call();
                 }
-                actionMap.stream().forEach(action -> sBuilder.append(action).append(","));
-                RevCommit commit = git.commit().setMessage(msg + " " + sBuilder.toString()).call();
+                actionMap.forEach(action -> sBuilder.append(action).append(","));
+                RevCommit commit = git.commit().setMessage(msg + " " + sBuilder).call();
                 didSomething = true;
             }
         } catch (GitAPIException ex) {
@@ -277,7 +266,6 @@ public class GitManager {
             }
         } catch (IOException | GitAPIException | RevisionSyntaxException ex) {
             log.error("Error getting log", ex);
-            ex.printStackTrace();
         }
         return gitLog;
     }
@@ -297,7 +285,6 @@ public class GitManager {
             }
         } catch (GitAPIException ex) {
             log.error("Error getting branches", ex);
-            ex.printStackTrace();
         }
         return branchList;
     }
@@ -317,7 +304,6 @@ public class GitManager {
             }
         } catch (IOException ex) {
             log.error("Error getting current branch", ex);
-            ex.printStackTrace();
         }
         return branch;
     }
@@ -363,10 +349,7 @@ public class GitManager {
     private void resolveFileConflicts(String branchName, String message) {
         List<String> contents = Arrays.asList(message.split("\n"));
         List<String> files = contents.stream().filter(s -> s.contains(".")).collect(Collectors.toList());
-        for (int f = 0; f < files.size(); f++) {
-            String file = files.get(f);
-            files.set(f, String.join(File.separator, projectDir.toString(), file));
-        }
+        files.replaceAll(s -> String.join(File.separator, projectDir.toString(), s));
         message += "\n\nPush OK to resolve file conflicts, or";
         message += "\npush CANCEL to discard changes and force checkout to " + branchName + ".";
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.CANCEL, ButtonType.OK);
@@ -417,11 +400,10 @@ public class GitManager {
         if (response.isPresent() && (response.get() == ButtonType.YES)) {
             try {
                 for (int i = idx + 1; i < gitLog(branch).size() + 1; i++) {
-                    String file = String.join(File.separator, "windows", "commit_" + shortBranch + "_" + String.valueOf(i) + ".yaml");
+                    String file = String.join(File.separator, "windows", "commit_" + shortBranch + "_" + i + ".yaml");
                     gitDeleteFile(file);
                 }
                 Ref resetRef = git.reset().setRef(commit.getName()).call();
-                System.out.println("Reset to commit " + resetRef);
                 reset = true;
             } catch (GitAPIException ex) {
                 log.error("Error reseting to commit", ex);
@@ -446,7 +428,6 @@ public class GitManager {
         if (response.isPresent() && (response.get() == ButtonType.YES)) {
             try {
                 git.revert().include(commit).call();
-                System.out.println("Reverted commit " + commit);
             } catch (GitAPIException ex) {
                 log.error("Reverting commit", ex);
             }
@@ -470,7 +451,6 @@ public class GitManager {
                 gitOpen();
             }
             git.checkout().setCreateBranch(true).setName(newBranch).setStartPoint(commitID).call();
-            System.out.println("Created new branch " + newShortBranch + " from branch " + origShortBranch + " at revision " + commitID);
         } catch (GitAPIException ex) {
             log.error("Creating branch", ex);
             String message = ex.getMessage();
@@ -497,8 +477,6 @@ public class GitManager {
                         gitOpen();
                     }
                     git.branchDelete().setBranchNames(branchName).call();
-                    System.out.println("Deleted branch " + branchName);
-                    System.out.println(gitBranches());
                 } catch (GitAPIException ex) {
                     log.error("Deleting branch", ex);
                     String exMessage = ex.getMessage();
@@ -509,11 +487,8 @@ public class GitManager {
                         if (mergeResponse.isPresent() && (mergeResponse.get() == ButtonType.OK)) {
                             try {
                                 git.branchDelete().setBranchNames(branchName).setForce(true).call();
-                                System.out.println("Deleted branch " + branchName);
-                                System.out.println(gitBranches());
                             } catch (GitAPIException ex1) {
                                 log.error("Deleting branch", ex1);
-                                System.out.println(ex1.getMessage());
                             }
                         }
                     }
@@ -565,7 +540,6 @@ public class GitManager {
             }
         } catch (IOException | RevisionSyntaxException ex) {
             log.error("Diff", ex);
-            ex.printStackTrace();
         }
     }
 
@@ -580,20 +554,16 @@ public class GitManager {
                 gitOpen();
             }
             Path oldProjectDir = projectDir;
-            System.out.println("checkout " + name + " " + oldProjectDir.toString());
             guiProject.close();
             git.checkout().setName(name).call();
             guiProject.loadGUIProject(oldProjectDir);
         } catch (GitAPIException | IOException | MoleculeIOException ex) {
             log.error("Checkout", ex);
             String message = ex.getMessage();
-            System.out.println(message);
             if (message.contains("Checkout conflict with files:")) {
                 resolveFileConflicts(name, message);
             }
         }
-        System.out.println("Switched to branch: " + gitCurrentBranch());
-        System.out.println(gitBranches());
     }
 
     /**
@@ -615,12 +585,10 @@ public class GitManager {
                 if (gitCurrentBranch().equals(mergeDestBranch)) {
                     git.merge().include(commitToMerge).call();
                     gitCommit("Merged branch " + origBranch + " into " + mergeDestBranch);
-                    System.out.println("Merged " + commitToMerge + " into " + mergeDestBranch);
                 }
             }
         } catch (GitAPIException ex) {
             log.error("Merge", ex);
-            ex.printStackTrace();
         }
     }
 
@@ -633,7 +601,6 @@ public class GitManager {
      * @throws GitAPIException
      */
     public void gitStatusAction(Set<String> actionMap, String action, String file) throws GitAPIException {
-        System.out.println(action + ": " + file);
         if (action.equals("remove") || action.equals("missing")) {
             git.rm().addFilepattern(file).call();
         }

@@ -17,12 +17,6 @@
  */
 package org.nmrfx.analyst.gui.git;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ResourceBundle;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -32,9 +26,7 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -42,6 +34,14 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  * This class shows the Git History for a project.
@@ -50,10 +50,11 @@ import org.nmrfx.utils.GUIUtils;
  *
  */
 public class GitHistoryController implements Initializable {
+    private static final Logger log = LoggerFactory.getLogger(GitHistoryController.class);
 
     static GitHistoryController controller = null;
     @FXML
-    TableView<HistoryData> historyTable = new TableView();
+    TableView<HistoryData> historyTable = new TableView<>();
     Stage stage;
     GUIProject project = GUIProject.getActive();
     GitManager gitManager;
@@ -101,11 +102,9 @@ public class GitHistoryController implements Initializable {
         Stage stage = new Stage(StageStyle.DECORATED);
 
         try {
-            Scene scene = new Scene((Pane) loader.load());
+            Scene scene = new Scene(loader.load());
             stage.setScene(scene);
-//            scene.getStylesheets().add("/styles/consolescene.css");
-
-            controller = loader.<GitHistoryController>getController();
+            controller = loader.getController();
             controller.stage = stage;
             controller.gitManager = gitManager;
             Screen screen = Screen.getPrimary();
@@ -113,8 +112,7 @@ public class GitHistoryController implements Initializable {
             stage.toFront();
             stage.setY(screenSize.getHeight() - stage.getHeight());
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.error("Error creating history controller", ioE);
         }
 
         return controller;
@@ -174,9 +172,9 @@ public class GitHistoryController implements Initializable {
         List<Ref> branches = gitManager.gitBranches();
         for (Ref branch : branches) {
             String branchName = branch.getName();
-            List<RevCommit> log = gitManager.gitLog(branchName);
-            int idx = log.size();
-            for (RevCommit entry : log) {
+            List<RevCommit> gitLog = gitManager.gitLog(branchName);
+            int idx = gitLog.size();
+            for (RevCommit entry : gitLog) {
                 HistoryData historyData = new HistoryData(entry, idx, branchName);
                 data.addAll(historyData);
                 idx--;
@@ -187,32 +185,16 @@ public class GitHistoryController implements Initializable {
     
     private void gitMenuAction(GitAction choice) {
         switch (choice) {
-            case DIFF:
-                gitDiff();
-                break;
-            case LOAD:
-                gitLoad();
-                break;
-            case MERGE:
-                gitMerge();
-                break;
-            case RESET:
-                gitReset();
-                break;
-            case REVERT:
-                gitRevert();
-                break;
-            case NEW:
-                gitCreateBranch();
-                break;
-            case DELETE:
-                gitDeleteBranch();
-                break;
-            case SWITCH:
-                gitCheckoutCommit();
-                break;
-            default:
-                break;
+            case DIFF -> gitDiff();
+            case LOAD -> gitLoad();
+            case MERGE -> gitMerge();
+            case RESET -> gitReset();
+            case REVERT -> gitRevert();
+            case NEW -> gitCreateBranch();
+            case DELETE -> gitDeleteBranch();
+            case SWITCH -> gitCheckoutCommit();
+            default -> {
+            }
         }
     }
     
