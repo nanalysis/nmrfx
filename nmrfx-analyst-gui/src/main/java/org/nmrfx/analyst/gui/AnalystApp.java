@@ -736,7 +736,7 @@ public class AnalystApp extends Application {
     }
     public static void showHistoryAction(ActionEvent event) {
         GUIProject guiProject = GUIProject.getActive();
-        if (guiProject != null) {
+        if ((guiProject != null) && (guiProject.getGitManager() != null)) {
             guiProject.getGitManager().showHistoryAction(event);
         }
     }

@@ -44,6 +44,38 @@ public class GitManager {
 
     Git git;
 
+    public GitManager(GUIProject guiProject) throws IllegalArgumentException {
+        System.out.println("new git manager " + guiProject.getProjectDir());
+        projectDir = guiProject.getProjectDir();
+        try {
+            git = Git.open(projectDir.toFile());
+            System.out.println("git opened");
+        } catch (IOException ioE) {
+            GUIProject.checkUserHomePath();
+            git = createAndInitializeGitObject(projectDir.toFile());
+            System.out.println("git init " + git);
+            if (git == null) {
+                throw new IllegalArgumentException("Can't create git");
+            }
+            guiProject.writeIgnore();
+        }
+    }
+
+    public void close() {
+        if (git != null) {
+            git.close();
+        }
+        if (historyController != null) {
+            historyController.close();
+        }
+        if (diffController != null) {
+            diffController.close();
+        }
+        if (conflictController != null) {
+            conflictController.close();
+        }
+    }
+
 
     @FXML
     public void showHistoryAction(ActionEvent event) {
@@ -51,10 +83,13 @@ public class GitManager {
             historyController = GitHistoryController.create(this);
         }
         if (historyController != null) {
-            GUIProject project = historyController.getProject();
-            historyController.getStage().setTitle("Git History (Project = " + project.getName() + ", Current Branch = " + project.getGitManager().gitCurrentBranch() + ")");
+            historyController.setProject(guiProject);
+            if (guiProject.getProjectDir() != null) {
+                historyController.getStage().setTitle("Git History (Project = " + guiProject.getName() + ", Current Branch = " + guiProject.getGitManager().gitCurrentBranch() + ")");
+            }
             historyController.updateHistory();
             historyController.getStage().show();
+            historyController.getStage().toFront();
         } else {
             System.out.println("Couldn't make controller");
         }
@@ -112,7 +147,15 @@ public class GitManager {
 
     public void setProject(GUIProject guiProject) {
         this.guiProject = guiProject;
+        Path currentDir = projectDir;
         this.projectDir = guiProject.getProjectDir();
+        if ((git == null) || (currentDir == null) || !currentDir.equals(this.projectDir)) {
+            if (git != null) {
+                git.close();
+            }
+            git = null;
+            gitOpen();
+        }
     }
 
     public Git createAndInitializeGitObject(File gitDirectory) {
@@ -126,19 +169,7 @@ public class GitManager {
     }
 
     public boolean gitOpen() {
-        if (git == null) {
-            try {
-                git = Git.open(projectDir.toFile());
-            } catch (IOException ioE) {
-                GUIProject.checkUserHomePath();
-                git = createAndInitializeGitObject(projectDir.toFile());
-                if (git == null) {
-                    return false;
-                }
-                guiProject.writeIgnore();
-            }
-        }
-        return true;
+        return git != null;
     }
 
     public static boolean isCommitting() {

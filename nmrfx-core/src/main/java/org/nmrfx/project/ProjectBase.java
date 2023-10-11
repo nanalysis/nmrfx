@@ -117,6 +117,9 @@ public class ProjectBase {
         return fileNum;
     }
 
+    public final void clearActive() {
+        activeProject = null;
+    }
     public final void setActive() {
         PropertyChangeEvent event = new PropertyChangeEvent(this, "project", null, this);
         activeProject = this;

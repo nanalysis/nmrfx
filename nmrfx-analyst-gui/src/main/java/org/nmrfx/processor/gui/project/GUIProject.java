@@ -53,10 +53,6 @@ public class GUIProject extends ProjectBase {
         datasetMap = FXCollections.observableHashMap();
         datasets = FXCollections.observableArrayList();
         setActive();
-        if (gitManager == null) {
-            gitManager = new GitManager();
-        }
-        gitManager.setProject(this);
     }
 
     public static GUIProject replace(String name, GUIProject project) {
@@ -89,10 +85,7 @@ public class GUIProject extends ProjectBase {
         setProjectDir(projectDir);
         PreferencesController.saveRecentProjects(projectDir.toString());
         checkUserHomePath();
-        Git git = gitManager.createAndInitializeGitObject(projectDir.toFile());
-        if (git != null) {
-            writeIgnore();
-        }
+        gitManager = new GitManager(this);
     }
 
     /***
@@ -165,6 +158,8 @@ public class GUIProject extends ProjectBase {
         AnalystApp.closeAll();
         // Clear the project directory or else a user may accidentally overwrite their previously closed project
         setProjectDir(null);
+        gitManager.close();
+        clearActive();
     }
 
     public static boolean checkProjectActive() {
@@ -181,6 +176,7 @@ public class GUIProject extends ProjectBase {
 
 
         loadProject(projectDir, "datasets");
+        gitManager = new GitManager(this);
         FileSystem fileSystem = FileSystems.getDefault();
 
         String[] subDirTypes = {"star", "peaks", "molecules", "shifts", "refshifts", "windows"};
