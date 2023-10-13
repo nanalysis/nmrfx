@@ -5,8 +5,8 @@ import org.apache.commons.math3.optim.PointValuePair;
 /**
  * @author brucejohnson
  */
-public class ZZFit extends FitEquation {
-    static final String[] parNames = {"I", "R1", "Kex", "P"};
+public class ZZFit2 extends FitEquation {
+    static final String[] parNames = {"I", "R1A", "R1B", "KAB", "KBA", "P"};
 
     @Override
     public String[] parNames() {
@@ -32,26 +32,27 @@ public class ZZFit extends FitEquation {
         double r1 = -Math.log(0.5) / midX;
         double kEx = -Math.log(0.5) / midX2;
         double pA = yMax0 / (yMax0 + yMax1);
-        double[] start = {intensity, r1, kEx, pA};
-        double[] lower = {intensity / 2.0, r1 / 2.0, kEx / 3.0, 0.0};
-        double[] upper = {intensity * 2.0, r1 * 2.0, kEx * 3.0, 1.0};
+        double[] start = {intensity, r1, r1, kEx, kEx, pA};
+        double[] lower = {intensity / 2.0, r1 / 5.0, r1 / 5.0, kEx / 12.0, kEx / 12.0, 0.0};
+        double[] upper = {intensity * 2.0, r1 * 2.0, r1 * 2.0, kEx * 3.0, kEx * 3.0, 1.0};
         return new Guesses(start, lower, upper);
     }
 
     public double[] calcValue(double[] xA, double[] pars) {
         double delay = xA[0];
         double intensity = pars[0];
-        double r1 = pars[1];
-        double kEx = pars[2];
-        double pA = pars[3];
+        double r1A = pars[1];
+        double r1B = pars[2];
+        double kAB = pars[3];
+        double kBA = pars[4];
+        double pA = pars[5];
         double[] y = new double[4];
         for (int iSig = 0; iSig < 4; iSig++) {
-            y[iSig] = intensity * LorentzGaussND.zzAmplitude(r1, pA, kEx, delay, iSig);
+            y[iSig] = intensity * LorentzGaussND.zzAmplitude2(r1A, r1B, pA, kAB, kBA, delay, iSig);
         }
         return y;
     }
 
-    @Override
     public PointValuePair fit() {
         Fitter2 fitter = Fitter2.getArrayFitter(this::value);
         fitter.setXYE(xValues, yValues, errValues);
@@ -63,6 +64,9 @@ public class ZZFit extends FitEquation {
             var errResult = fitter.bootstrap(result.getPoint(), 100);
             if (errResult.isPresent()) {
                 parErrs = errResult.get();
+                for (int i = 0; i < guesses.lower().length; i++) {
+                    System.out.printf("%.3f %.3f %.3f %.3f %.3f\n", guesses.lower()[i], guesses.start()[i], guesses.upper()[i], bestPars[i], parErrs[i]);
+                }
                 return result;
             }
         }

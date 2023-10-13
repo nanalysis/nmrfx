@@ -1270,14 +1270,14 @@ public class PeakListTools {
      * intensity to optimize agreement with data values. Multiple peaks are fit
      * simultaneously. These are normally a group of overlapping peaks.
      *
-     * @param theFile  The dataset to fit the peaks to
-     * @param peaks    A collection of peaks to fit simultaneously
-     * @param rows     An array of rows (planes etc) of the dataset to be used. This
-     *                 is used when the number of peak dimensions is less than the number of
-     *                 dataset dimensions.
-     * @param delays   An array of doubles specifying relaxation delays. If not
-     *                 null then fit peaks to lineshapes and an exponential delay model using
-     *                 data values from different rows or planes of dataset
+     * @param theFile The dataset to fit the peaks to
+     * @param peaks   A collection of peaks to fit simultaneously
+     * @param rows    An array of rows (planes etc) of the dataset to be used. This
+     *                is used when the number of peak dimensions is less than the number of
+     *                dataset dimensions.
+     * @param delays  An array of doubles specifying relaxation delays. If not
+     *                null then fit peaks to lineshapes and an exponential delay model using
+     *                data values from different rows or planes of dataset
      * @return a List of alternating name/values with the parameters of the fit
      * if updatePeaks is false. Otherwise return empty list
      * @throws IllegalArgumentException
@@ -1336,8 +1336,8 @@ public class PeakListTools {
         List<Peak> abPeaks = new ArrayList<>();
         abPeaks.add(aaPeak);
         abPeaks.add(bbPeak);
-        abPeaks.add(baPeak);
         abPeaks.add(abPeak);
+        abPeaks.add(baPeak);
         if (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY) {
             return fitZZPeaks(peakList, abPeaks);
         } else {
@@ -1351,7 +1351,7 @@ public class PeakListTools {
         double[][] yValues = new double[4][measureX.length];
         double[][] errValues = new double[4][measureX.length];
         System.arraycopy(measureX, 0, xValues[0], 0, xValues[0].length);
-        for (int i=0;i<4;i++) {
+        for (int i = 0; i < 4; i++) {
             var measureOpt = abPeaks.get(i).getMeasures();
             int iSig = i;
             measureOpt.ifPresent(measures -> {
@@ -1360,13 +1360,13 @@ public class PeakListTools {
             });
         }
         DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics();
-        for (int i=0;i<xValues[0].length;i++) {
+        for (int i = 0; i < xValues[0].length; i++) {
             double delay = xValues[0][i];
             double aa = yValues[0][i];
             double bb = yValues[1][i];
             double ba = yValues[2][i];
             double ab = yValues[3][i];
-            double norm = (ab * ba) / (aa*bb - ab*ba);
+            double norm = (ab * ba) / (aa * bb - ab * ba);
             double kEXI = norm / (delay * delay);
             if (delay > 0.02) {
                 descriptiveStatistics.addValue(kEXI);
@@ -1377,8 +1377,9 @@ public class PeakListTools {
         double kExGuessStdDev = descriptiveStatistics.getStandardDeviation();
 
         log.info(String.format("kEx median %.3f mean %.3f +/- %.3f", kExGuessMedian, kExGuessMean, kExGuessStdDev));
+        int mode = 2;
+        FitEquation zzFit = mode == 2 ? new ZZFit2() : new ZZFit();
 
-        ZZFit zzFit = new ZZFit();
         zzFit.setXYE(xValues, yValues, errValues);
         PointValuePair result = zzFit.fit();
         if (result == null) {
@@ -1389,11 +1390,15 @@ public class PeakListTools {
         double[] errs = zzFit.getParErrs();
         String[] parNames = zzFit.parNames();
         String[] peakLabels = {"AA", "BB", "BA", "AB"};
-        for (int jPeak=0;jPeak<4;jPeak++) {
+        for (int jPeak = 0; jPeak < 4; jPeak++) {
             String label = peakLabels[jPeak];
             Peak peak = abPeaks.get(jPeak);
             if (jPeak == 0) {
-                peak.setComment(String.format("%s I %.3f R1 %.3f KeX %.3f pA %.2f", label, pars[0], pars[1], pars[2], pars[3]));
+                if (mode == 2) {
+                    peak.setComment(String.format("%s I %.3f R1A %.3f R1B %.3f KAB %.3f KBA %.3f pA %.2f", label, pars[0], pars[1], pars[2], pars[3], pars[4], pars[5]));
+                } else {
+                    peak.setComment(String.format("%s I %.3f R1 %.3f KeX %.3f pA %.2f", label, pars[0], pars[1], pars[2], pars[3]));
+                }
             } else {
                 peak.setComment(label);
             }
@@ -1465,7 +1470,7 @@ public class PeakListTools {
         boolean firstPeak = true;
         int iPeak = -1;
         int syncRefPar0 = -1;
-        int syncRefPar1= -1;
+        int syncRefPar1 = -1;
         double globalMax = 0.0;
         for (Peak peak : peaks) {
             iPeak++;
@@ -1637,22 +1642,30 @@ public class PeakListTools {
             guessList.add(gValue);
         }
         if (zzMode) {
-            guessList.add(0, new GuessValue(globalMax * 1.5, globalMax / 2.0 , 4.0 * globalMax, zzMode, GLOBAL_INTENSITY));
+            guessList.add(0, new GuessValue(globalMax * 1.5, globalMax / 2.0, 4.0 * globalMax, zzMode, GLOBAL_INTENSITY));
         } else {
             guessList.add(0, new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, zzMode, GLOBAL_INTENSITY));
         }
         if (zzMode) {
             double r1Guess = 2.0 / maxDelay;
             GuessValue gValue = new GuessValue(r1Guess, 0.0, r1Guess * 5.0, true, RELAX_RATE);
-            guessList.add( gValue);
+            guessList.add(gValue);
+            if (fitPars.fitZRAB()) {
+                gValue = new GuessValue(r1Guess, 0.0, r1Guess * 5.0, true, RELAX_RATE);
+                guessList.add(gValue);
+            }
             gValue = new GuessValue(0.5, 0.0, 1.0, true, POPULATION);
-            guessList.add( gValue);
+            guessList.add(gValue);
             double kExGuess = 1.0 / (maxDelay / 5.0);
             gValue = new GuessValue(kExGuess, 0.2, 100.0, true, EXCHANGE_RATE);
-            guessList.add( gValue);
+            guessList.add(gValue);
+            if (fitPars.fitZKAB()) {
+                gValue = new GuessValue(kExGuess, 0.2, 100.0, true, EXCHANGE_RATE);
+                guessList.add(gValue);
+            }
         }
 
-            // get a list of positions that are near the centers of each of the peaks
+        // get a list of positions that are near the centers of each of the peaks
         ArrayList<int[]> posArray = theFile.getFilteredPositions(p2, cpt, width, pdim, fitPars.multiplier(), 2);
         if (posArray.isEmpty()) {
             System.out.println("no positions");
@@ -1725,6 +1738,8 @@ public class PeakListTools {
             }
         }
         peakFit.fitZZ(zzMode);
+        peakFit.fitKAB(fitPars.fitZKAB());
+        peakFit.fitR1AB(fitPars.fitZRAB());
 
         peakFit.setDelays(delays, fitC);
         peakFit.setIntensities(intensities);
@@ -1755,18 +1770,7 @@ public class PeakListTools {
                 peak.setIntensity((float) values[index++]);
                 if ((delays != null) && (delays.length > 0)) {
                     if (zzMode) {
-                        int last = values.length - 1;
-                        double amplitude = values[0];
-                        double r1 = values[last - 2];
-                        double pA = values[last - 1];
-                        double kEx = values[last];
-                        String[] peakLabels = {"AA", "BB", "BA", "AB"};
-                        String label = peakLabels[jPeak];
-                        if (jPeak == 0) {
-                            peak.setComment(String.format("%s I %.3f R1 %.3f KeX %.3f pA %.2f", label, amplitude, r1, kEx, pA));
-                        } else {
-                            peak.setComment(label);
-                        }
+                        peak.setComment(getZZResult( fitPars.fitZRAB(),  fitPars.fitZKAB(),  values,  jPeak));
                     } else {
                         if (fitC) {
                             peak.setComment(String.format("R1 %.4f %.3f", values[index++], values[index++]));
@@ -1838,6 +1842,56 @@ public class PeakListTools {
             }
         }
         return peaksResult;
+    }
+
+    static String getZZResult( boolean fitKAB, boolean fitR1AB, double[] a, int jPeak) {
+        double amplitude;
+        int nZZ = 2;
+        int iPar = 0;
+        int last = a.length - 1;
+
+        int nR = 1;
+        amplitude = a[0];
+        nZZ = 3;
+        if (fitKAB) {
+            nZZ++;
+        }
+        if (fitR1AB) {
+            nZZ++;
+            nR = 2;
+        }
+        iPar++;
+        double r1A;
+        double r1B;
+        double kExAB;
+        double kExBA;
+        double pA;
+
+        r1A = a[last - nZZ + 1];
+        r1B = r1A;
+        if (fitR1AB) {
+            r1B = a[last - nZZ + 2];
+        }
+        pA = a[last - 1];
+        kExAB = a[last - nR + 1];
+        kExBA = kExAB;
+        if (fitKAB) {
+            kExBA = a[last - nR + 2];
+        }
+
+        String[] peakLabels = {"AA", "BB", "BA", "AB"};
+        String label = peakLabels[jPeak];
+        String result;
+        if (jPeak == 0) {
+            if (fitKAB) {
+                result = String.format("%s I %.3f R1A %.3f R1B %.3f KeXAB %.3f KeXBA %.3f pA %.2f", label, amplitude, r1A, r1B, kExAB, kExBA, pA);
+            } else {
+                result = String.format("%s I %.3f R1A %.3f R1B %.3f KeX %.3f pA %.2f", label, amplitude, r1A, r1B, kExAB, pA);
+            }
+        } else {
+            result = (label);
+        }
+        return result;
     }
 
     /**

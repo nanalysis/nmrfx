@@ -58,6 +58,8 @@ public class LorentzGaussND implements MultivariateFunction {
     double[][] uniformBoundaries = new double[2][];
     PointValuePair best = null;
     boolean fitZZ = false;
+    boolean fitKAB;
+    boolean fitR1AB;
     Random generator = null;
 
     public LorentzGaussND(final int[][] positions) {
@@ -106,6 +108,20 @@ public class LorentzGaussND implements MultivariateFunction {
 
     public boolean fitZZ() {
         return fitZZ;
+    }
+    public void fitKAB(boolean state) {
+        fitKAB = state;
+    }
+
+    public boolean fitKAB() {
+        return fitKAB;
+    }
+    public void fitR1AB(boolean state) {
+        fitR1AB = state;
+    }
+
+    public boolean fitR1AB() {
+        return fitR1AB;
     }
 
     public void initRandom(long seed) {
@@ -217,18 +233,38 @@ public class LorentzGaussND implements MultivariateFunction {
         int nZZ = 0;
         if (intensities.length > 1) {
             if (delays != null) {
+                int nR = 1;
                 if (fitZZ) {
                     amplitude = a[0];
                     nZZ = 3;
+                    if (fitKAB) {
+                        nZZ++;
+                    }
+                    if (fitR1AB) {
+                        nZZ++;
+                        nR = 2;
+                    }
                     iPar++;
                 } else {
                     amplitude = a[iPar++];
                 }
                 if (fitZZ) {
-                    double r1 = a[last - 2];
+                    double r1A = a[last - nZZ + 1];
+                    double r1B = r1A;
+                    if (fitR1AB) {
+                        r1B = a[last - nZZ + 2];
+                    }
                     double popA = a[last - 1];
-                    double kEx = a[last];
-                    amplitude *= zzAmplitude(r1, popA, kEx, delays[iDelay], iSig);
+                    double kExAB = a[last - nR + 1];
+                    double kExBA = kExAB;
+                    if (fitKAB) {
+                        kExBA = a[last - nR + 2];
+                    }
+                    if (!fitR1AB && !fitKAB) {
+                        amplitude *= zzAmplitude(r1A, popA, kExAB, delays[iDelay], iSig);
+                    } else {
+                        amplitude *= zzAmplitude2(r1A, r1B, popA, kExAB, kExBA, delays[iDelay], iSig);
+                    }
                 } else {
                     amplitude *= Math.exp(-a[iPar++] * delays[iDelay]);
                     if (fitC) {
@@ -269,6 +305,29 @@ public class LorentzGaussND implements MultivariateFunction {
             amplitude = popB * (popB + popA * exchange) * relax;
         } else {
             amplitude = popA * popB * (1.0 - exchange) * relax;
+        }
+        return amplitude;
+    }
+    public static double zzAmplitude2(double r1A, double r1B, double popA, double kAB, double kBA, double delay, int iSig) {
+        double popB = 1.0 - popA;
+
+        double a11 = r1A + kAB;
+        double a12 = -kBA;
+        double a21 = -kAB;
+        double a22 = r1B+kBA;
+        double dA = a11-a22;
+        double lambda1 = 0.5 * ((a11 + a22) + Math.sqrt(dA*dA+4.0*kAB*kBA));
+        double lambda2 = 0.5 * ((a11 + a22) -  Math.sqrt(dA*dA+4.0*kAB*kBA));
+
+        double amplitude;
+        if (iSig == 0) {
+            amplitude = popA*(-(lambda2-a11)*Math.exp(-lambda1*delay) + (lambda1-a11)*Math.exp(-lambda2*delay))/(lambda1-lambda2);
+        } else if (iSig == 1) {
+            amplitude = popB*(-(lambda2-a22)*Math.exp(-lambda1*delay) + (lambda1-a22)*Math.exp(-lambda2*delay))/(lambda1-lambda2);
+        } else if (iSig == 2) {
+            amplitude = popA*(a21*Math.exp(-lambda1*delay) - a21*Math.exp(-lambda2*delay))/(lambda1-lambda2);
+        } else {
+            amplitude = popB*(a12*Math.exp(-lambda1*delay) - a12*Math.exp(-lambda2*delay))/(lambda1-lambda2);
         }
         return amplitude;
     }
