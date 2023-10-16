@@ -36,6 +36,14 @@ public class SimpleResonance implements Resonance {
         this.id = id;
     }
 
+    public SimpleResonance copy() {
+        SimpleResonance copy = new SimpleResonance(id);
+        copy.peakDims.addAll(peakDims);
+        copy.names.addAll(names);
+        copy.atomName = atomName;
+        return copy;
+    }
+
     public void clearPeakDims() {
         peakDims = null;
     }
@@ -49,6 +57,9 @@ public class SimpleResonance implements Resonance {
         names.addAll(newNames);
     }
 
+    public List<String> getNames() {
+        return names;
+    }
     @Override
     public void remove(PeakDim peakDim) {
         peakDims.remove(peakDim);

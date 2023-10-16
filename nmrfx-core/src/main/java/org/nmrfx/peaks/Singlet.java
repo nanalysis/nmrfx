@@ -33,6 +33,10 @@ public class Singlet extends Coupling {
     public Singlet(Multiplet multiplet) {
         this.multiplet = multiplet;
     }
+    @Override
+    Coupling copy(Multiplet multiplet) {
+        return new Singlet(multiplet);
+    }
 
     Coupling update(double[] newValues, double[] newIntensities) {
         if (newIntensities.length == 1) {
@@ -50,6 +54,7 @@ public class Singlet extends Coupling {
     public boolean isCoupled() {
         return false;
     }
+
 
     @Override
     public String getMultiplicity() {
