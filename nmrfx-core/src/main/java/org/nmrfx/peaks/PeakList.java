@@ -190,12 +190,17 @@ public class PeakList {
      * @param peak
      * @return
      */
-    public static List getLinks(Peak peak) {
-        List peakDims = getLinkedPeakDims(peak, 0);
-        ArrayList peaks = new ArrayList(peakDims.size());
-        for (int i = 0; i < peakDims.size(); i++) {
-            PeakDim peakDim = (PeakDim) peakDims.get(i);
-            peaks.add(peakDim.getPeak());
+    public static List<Peak> getLinks(Peak peak) {
+        List<Peak> peaks = new ArrayList<>();
+        for (int iDim = 0; iDim < peak.getNDim(); iDim++) {
+            List<PeakDim> peakDims = getLinkedPeakDims(peak, iDim);
+            for (int i = 0; i < peakDims.size(); i++) {
+                PeakDim peakDim = peakDims.get(i);
+                Peak lPeak = peakDim.getPeak();
+                if (!peaks.contains(lPeak)) {
+                    peaks.add(lPeak);
+                }
+            }
         }
         return peaks;
     }
