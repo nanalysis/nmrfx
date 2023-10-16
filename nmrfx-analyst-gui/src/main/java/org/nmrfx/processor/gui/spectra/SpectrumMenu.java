@@ -35,6 +35,7 @@ public class SpectrumMenu extends ChartMenu {
     public SpectrumMenu(PolyChart chart) {
         super(chart);
     }
+
     PeaksUndo undo = null;
 
     void addSelectedPeaksUndo() {
@@ -193,7 +194,11 @@ public class SpectrumMenu extends ChartMenu {
         });
 
         MenuItem unlinkSelectedMenuItem = new MenuItem("Unlink Selected");
-        unlinkSelectedMenuItem.setOnAction((ActionEvent e) -> PeakLinker.unlinkSelected());
+        unlinkSelectedMenuItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
+            PeakLinker.unlinkSelected();
+            addSelectedPeaksUndoRedo("Unlink selected");
+        });
         MenuItem unlinkSelectedColumnMenuItem = new MenuItem("Unlink Selected Column");
         unlinkSelectedColumnMenuItem.setOnAction((ActionEvent e) -> {
             addSelectedPeaksUndo();
