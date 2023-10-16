@@ -33,7 +33,7 @@ public class ZZFit2 extends FitEquation {
         double kEx = -Math.log(0.5) / midX2;
         double pA = yMax0 / (yMax0 + yMax1);
         double[] start = {intensity, r1, r1, kEx, kEx, pA};
-        double[] lower = {intensity / 2.0, r1 / 5.0, r1 / 5.0, kEx / 12.0, kEx / 12.0, 0.0};
+        double[] lower = {intensity / 2.0, r1 / 10.0, r1 / 10.0, kEx / 12.0, kEx / 12.0, 0.0};
         double[] upper = {intensity * 2.0, r1 * 2.0, r1 * 2.0, kEx * 3.0, kEx * 3.0, 1.0};
         return new Guesses(start, lower, upper);
     }

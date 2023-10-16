@@ -363,6 +363,12 @@ public class LorentzGaussND implements MultivariateFunction {
             if (delays != null) {
                 if (fitZZ) {
                  nZZ = 3;
+                 if (fitKAB) {
+                     nZZ++;
+                 }
+                 if (fitR1AB) {
+                     nZZ++;
+                 }
                  nRelaxPar = 0;
                 } else {
                     if (fitC) {

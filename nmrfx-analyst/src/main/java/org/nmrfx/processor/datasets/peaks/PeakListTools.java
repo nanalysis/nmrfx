@@ -1304,6 +1304,9 @@ public class PeakListTools {
         int ix = 0;
         int iy = 0;
         int ib = 1;
+        for (Peak peak:sortedPeaks) {
+            PeakList.unLinkPeak(peak);
+        }
         for (int i = 1; i < sortedPeaks.size(); i++) {
             double xi = sortedPeaks.get(i).getPeakDim(0).getChemShiftValue();
             double yi = sortedPeaks.get(i).getPeakDim(1).getChemShiftValue();
@@ -1364,8 +1367,8 @@ public class PeakListTools {
             double delay = xValues[0][i];
             double aa = yValues[0][i];
             double bb = yValues[1][i];
-            double ba = yValues[2][i];
-            double ab = yValues[3][i];
+            double ab = yValues[2][i];
+            double ba = yValues[3][i];
             double norm = (ab * ba) / (aa * bb - ab * ba);
             double kEXI = norm / (delay * delay);
             if (delay > 0.02) {
@@ -1389,13 +1392,13 @@ public class PeakListTools {
         double[] pars = zzFit.getPars();
         double[] errs = zzFit.getParErrs();
         String[] parNames = zzFit.parNames();
-        String[] peakLabels = {"AA", "BB", "BA", "AB"};
+        String[] peakLabels = {"AA", "BB", "AB", "BA"};
         for (int jPeak = 0; jPeak < 4; jPeak++) {
             String label = peakLabels[jPeak];
             Peak peak = abPeaks.get(jPeak);
             if (jPeak == 0) {
                 if (mode == 2) {
-                    peak.setComment(String.format("%s I %.3f R1A %.3f R1B %.3f KAB %.3f KBA %.3f pA %.2f", label, pars[0], pars[1], pars[2], pars[3], pars[4], pars[5]));
+                    peak.setComment(String.format("%s I %.3f R1A %.3f R1B %.3f KeXAB %.3f KeXBA %.3f pA %.2f", label, pars[0], pars[1], pars[2], pars[3], pars[4], pars[5]));
                 } else {
                     peak.setComment(String.format("%s I %.3f R1 %.3f KeX %.3f pA %.2f", label, pars[0], pars[1], pars[2], pars[3]));
                 }

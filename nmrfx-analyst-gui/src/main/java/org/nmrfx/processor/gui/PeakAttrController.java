@@ -374,8 +374,9 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
     private boolean addZZFit() {
         String comment = currentPeak.getComment();
-        String zzPattern = "AA +I +([0-9.]+) +R1 +([0-9.]+) +KeX +([0-9.]+) +pA +([0-9.]+)";
-        String zzPattern2 = "AA +I +([0-9.]+) +R1A +([0-9.]+) +R1B +([0-9.]+) +KAB +([0-9.]+) +KBA +([0-9.]+) +pA +([0-9.]+)";
+        String zzPattern = "AA +I +([0-9.]+) +R1A +([0-9.]+) +R1B +([0-9.]+) +KeX +([0-9.]+) +pA +([0-9.]+)";
+        String zzPattern2 = "AA +I +([0-9.]+) +R1A +([0-9.]+) +R1B +([0-9.]+) +KeXAB +([0-9.]+) +KeXBA +([0-9.]+) +pA +([0-9.]+)";
+
         Pattern pattern = Pattern.compile(zzPattern);
         Matcher matcher = pattern.matcher(comment.trim());
         int matched = 0;
