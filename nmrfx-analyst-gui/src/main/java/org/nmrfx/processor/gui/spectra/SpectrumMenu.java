@@ -93,30 +93,21 @@ public class SpectrumMenu extends ChartMenu {
         peakMenu.getItems().add(tweakListItem);
 
         MenuItem duplicatePeakMenuItem = new MenuItem("Add Duplicate Peak List");
-        duplicatePeakMenuItem.setOnAction((ActionEvent e) -> {
-            chart.duplicatePeakList();
-        });
+        duplicatePeakMenuItem.setOnAction((ActionEvent e) -> chart.duplicatePeakList());
         peakMenu.getItems().add(duplicatePeakMenuItem);
 
         peakMenu.getItems().add(peakFitMenu);
 
-//     fitPeakLists(int syncDim, boolean fitAll, boolean lsFit, boolean fitPlanes) {
         MenuItem fitListItem = new MenuItem("Fit");
-        fitListItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(-1);
-        });
+        fitListItem.setOnAction((ActionEvent e) -> chart.fitPeakLists(-1));
         peakFitMenu.getItems().add(fitListItem);
 
         MenuItem fitColumnItem = new MenuItem("Fit Clustered Column");
-        fitColumnItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(0);
-        });
+        fitColumnItem.setOnAction((ActionEvent e) -> chart.fitPeakLists(0));
         peakFitMenu.getItems().add(fitColumnItem);
 
         MenuItem fitRowItem = new MenuItem("Fit Clustered Row");
-        fitRowItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(1);
-        });
+        fitRowItem.setOnAction((ActionEvent e) -> chart.fitPeakLists(1));
         peakFitMenu.getItems().add(fitRowItem);
 
         MenuItem fitPlanesItem = new MenuItem("Fit Planes");
@@ -151,63 +142,40 @@ public class SpectrumMenu extends ChartMenu {
         peakFitMenu.getItems().add(fitZZIntensityItem);
 
         MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
-        fitLSItem.setOnAction((ActionEvent e) -> {
-            PeakPicking.peakPickActive(chart.getFXMLController(), true, null);
-        });
+        fitLSItem.setOnAction((ActionEvent e) -> PeakPicking.peakPickActive(chart.getFXMLController(), true, null));
         peakFitMenu.getItems().add(fitLSItem);
 
         Menu refMenu = new Menu("Reference");
 
         MenuItem diagRefMenuItem = new MenuItem("Adjust Diagonal");
-        diagRefMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.adjustDiagonalReference();
-        });
+        diagRefMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.adjustDiagonalReference());
         MenuItem shiftRefMenuItem = new MenuItem("Shift Reference");
-        shiftRefMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.adjustDatasetRef();
-        });
+        shiftRefMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.adjustDatasetRef());
         MenuItem shiftPeaksMenuItem = new MenuItem("Shift Peaks");
-        shiftPeaksMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.shiftPeaks();
-        });
+        shiftPeaksMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.shiftPeaks());
         MenuItem setRefMenuItem = new MenuItem("Set Reference...");
-        setRefMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.showRefInput();
-        });
+        setRefMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.showRefInput());
         MenuItem undoRefMenuItem = new MenuItem("Undo");
-        undoRefMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.undo();
-        });
+        undoRefMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.undo());
         MenuItem writeRefMenuItem = new MenuItem("Write Reference Parameters");
-        writeRefMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.writePars();
-        });
+        writeRefMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.writePars());
 
         refMenu.getItems().addAll(setRefMenuItem, shiftRefMenuItem,
                 diagRefMenuItem, shiftPeaksMenuItem,
                 undoRefMenuItem, writeRefMenuItem);
-        Menu extractMenu = new Menu("Extract Slice/Projection"
-                + "");
+        Menu extractMenu = new Menu("Extract Slice/Projection");
 
         MenuItem projectMenuItem = new MenuItem("Project");
-        projectMenuItem.setOnAction((ActionEvent e) -> {
-            chart.projectDataset();
-        });
+        projectMenuItem.setOnAction((ActionEvent e) -> chart.projectDataset());
         MenuItem removeProjectionsItem = new MenuItem("Remove Projections");
         removeProjectionsItem.visibleProperty().bind(chart.getDisDimProperty().isEqualTo(PolyChart.DISDIM.TwoD));
         removeProjectionsItem.setOnAction((ActionEvent e) -> chart.removeProjections());
         MenuItem extractXMenuItem = new MenuItem("Extract-X");
-        extractXMenuItem.setOnAction((ActionEvent e) -> {
-            chart.extractSlice(0);
-        });
+        extractXMenuItem.setOnAction((ActionEvent e) -> chart.extractSlice(0));
         MenuItem extractYMenuItem = new MenuItem("Extract-Y");
-        extractYMenuItem.setOnAction((ActionEvent e) -> {
-            chart.extractSlice(1);
-        });
+        extractYMenuItem.setOnAction((ActionEvent e) -> chart.extractSlice(1));
         MenuItem extractZMenuItem = new MenuItem("Extract-Z");
-        extractZMenuItem.setOnAction((ActionEvent e) -> {
-            chart.extractSlice(2);
-        });
+        extractZMenuItem.setOnAction((ActionEvent e) -> chart.extractSlice(2));
         extractMenu.getItems().addAll(projectMenuItem, removeProjectionsItem, extractXMenuItem, extractYMenuItem, extractZMenuItem);
 
         Menu linkMenu = new Menu("Peak Linking");
@@ -225,9 +193,7 @@ public class SpectrumMenu extends ChartMenu {
         });
 
         MenuItem unlinkSelectedMenuItem = new MenuItem("Unlink Selected");
-        unlinkSelectedMenuItem.setOnAction((ActionEvent e) -> {
-            PeakLinker.unlinkSelected();
-        });
+        unlinkSelectedMenuItem.setOnAction((ActionEvent e) -> PeakLinker.unlinkSelected());
         MenuItem unlinkSelectedColumnMenuItem = new MenuItem("Unlink Selected Column");
         unlinkSelectedColumnMenuItem.setOnAction((ActionEvent e) -> {
             addSelectedPeaksUndo();
