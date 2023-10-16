@@ -25,6 +25,7 @@ import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.tools.PeakLinker;
+import org.nmrfx.processor.gui.undo.PeaksUndo;
 
 /**
  * @author Bruce Johnson
@@ -33,6 +34,19 @@ public class SpectrumMenu extends ChartMenu {
 
     public SpectrumMenu(PolyChart chart) {
         super(chart);
+    }
+    PeaksUndo undo = null;
+
+    void addSelectedPeaksUndo() {
+        undo = new PeaksUndo(PeakLinker.getSelectedPeaks());
+    }
+
+    void addSelectedPeaksUndoRedo(String name) {
+        if (undo != null) {
+            PeaksUndo redo = new PeaksUndo(PeakLinker.getSelectedPeaks());
+            chart.getFXMLController().getUndoManager().add(name, undo, redo);
+            undo = null;
+        }
     }
 
     public void makeChartMenu() {
@@ -199,11 +213,15 @@ public class SpectrumMenu extends ChartMenu {
         Menu linkMenu = new Menu("Peak Linking");
         MenuItem linkColumnMenuItem = new MenuItem("Link Selected Column");
         linkColumnMenuItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
             PeakLinker.linkSelectedPeaks(0);
+            addSelectedPeaksUndoRedo("Link Column");
         });
         MenuItem linkRowMenuItem = new MenuItem("Link Selected Row");
         linkRowMenuItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
             PeakLinker.linkSelectedPeaks(1);
+            addSelectedPeaksUndoRedo("Link Row");
         });
 
         MenuItem unlinkSelectedMenuItem = new MenuItem("Unlink Selected");
@@ -212,11 +230,15 @@ public class SpectrumMenu extends ChartMenu {
         });
         MenuItem unlinkSelectedColumnMenuItem = new MenuItem("Unlink Selected Column");
         unlinkSelectedColumnMenuItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
             PeakLinker.unlinkSelected(0);
+            addSelectedPeaksUndoRedo("Unlink Column");
         });
         MenuItem unlinkSelectedRowMenuItem = new MenuItem("Unlink Selected Row");
         unlinkSelectedRowMenuItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
             PeakLinker.unlinkSelected(1);
+            addSelectedPeaksUndoRedo("Unlink Row");
         });
 
         linkMenu.getItems().addAll(linkColumnMenuItem, linkRowMenuItem,
