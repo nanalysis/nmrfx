@@ -1369,10 +1369,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void undo() {
         undoManager.undo();
+        getActiveChart().refresh();
     }
 
     public void redo() {
         undoManager.redo();
+        getActiveChart().refresh();
     }
 
     @PluginAPI("parametric")
@@ -1646,11 +1648,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
         buttons.add(new Separator(Orientation.VERTICAL));
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(e -> undoManager.undo());
+        bButton.setOnAction(e -> undo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.undoable.not());
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REPEAT, "Redo", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(e -> undoManager.redo());
+        bButton.setOnAction(e -> redo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.redoable.not());
 

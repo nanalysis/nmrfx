@@ -18,6 +18,10 @@ public class AbsMultipletComponent extends MultipletComponent {
         super(multiplet, offset, intensity, volume, lw);
     }
 
+    public AbsMultipletComponent(Multiplet multiplet, AbsMultipletComponent component) {
+        super(multiplet, component);
+    }
+
     public RelMultipletComponent toRelative(double center, double sf) {
         return toRelative(multiplet, center, sf);
     }
