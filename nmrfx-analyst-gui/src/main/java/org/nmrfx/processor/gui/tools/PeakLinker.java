@@ -80,52 +80,8 @@ public class PeakLinker {
 
     }
 
-    public static void linkFourPeaks() {
+    public static void linkFourPeaks() throws  IllegalStateException{
         List<Peak> peaks = getSelectedPeaks();
-        if (peaks.size() != 4) {
-            throw new IllegalStateException("Need four selected peaks");
-        }
-
-        List<Peak> sortedPeaks = peaks.stream().sorted(Comparator.comparingDouble(Peak::getFirstIntensity).reversed()).toList();
-        double x0 = sortedPeaks.get(0).getPeakDim(0).getChemShiftValue();
-        double y0 = sortedPeaks.get(0).getPeakDim(1).getChemShiftValue();
-        double dXMin = Double.MAX_VALUE;
-        double dYMin = Double.MAX_VALUE;
-        int ix = 0;
-        int iy = 0;
-        int ib = 1;
-        for (Peak peak:sortedPeaks) {
-            PeakList.unLinkPeak(peak);
-        }
-        for (int i = 1; i < sortedPeaks.size(); i++) {
-            double xi = sortedPeaks.get(i).getPeakDim(0).getChemShiftValue();
-            double yi = sortedPeaks.get(i).getPeakDim(1).getChemShiftValue();
-            double dX = Math.abs(x0 - xi);
-            double dY = Math.abs(y0 - yi);
-            if (dX < dXMin) {
-                dXMin = dX;
-                ix = i;
-            }
-            if (dY < dYMin) {
-                dYMin = dY;
-                iy = i;
-            }
-        }
-        for (int i = 1; i < sortedPeaks.size(); i++) {
-            if ((i != ix) && (i != iy)) {
-                ib = i;
-                break;
-            }
-        }
-
-        Peak aaPeak = sortedPeaks.get(0);
-        Peak bbPeak = sortedPeaks.get(ib);
-        Peak baPeak = sortedPeaks.get(ix);
-        Peak abPeak = sortedPeaks.get(iy);
-        PeakList.linkPeaks(aaPeak, 0, baPeak, 0);
-        PeakList.linkPeaks(aaPeak, 1, abPeak, 1);
-        PeakList.linkPeaks(bbPeak, 0, abPeak, 0);
-        PeakList.linkPeaks(bbPeak, 1, baPeak, 1);
+        org.nmrfx.processor.datasets.peaks.PeakLinker.linkFourPeaks(peaks);
     }
-
 }
