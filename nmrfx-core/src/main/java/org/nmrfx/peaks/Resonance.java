@@ -54,4 +54,5 @@ public interface Resonance {
         return true;
     }
 
+    public Resonance copy();
 }
