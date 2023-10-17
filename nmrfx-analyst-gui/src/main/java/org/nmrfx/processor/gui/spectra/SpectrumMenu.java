@@ -26,6 +26,7 @@ import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.tools.PeakLinker;
 import org.nmrfx.processor.gui.undo.PeaksUndo;
+import org.nmrfx.utils.GUIUtils;
 
 /**
  * @author Bruce Johnson
@@ -211,9 +212,23 @@ public class SpectrumMenu extends ChartMenu {
             PeakLinker.unlinkSelected(1);
             addSelectedPeaksUndoRedo("Unlink Row");
         });
+        MenuItem linkFourPeaksItem = new MenuItem("Link Four Peaks(ZZ)");
+        linkFourPeaksItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
+            try {
+                PeakLinker.linkFourPeaks();
+                chart.getPeakListAttributes().get(0).setDrawLinks(true);
+                chart.refresh();
+            } catch (IllegalStateException iSE) {
+                GUIUtils.warn("Peak Linking", "Need exactly four selected peaks");
+                return;
+            }
+            addSelectedPeaksUndoRedo("Unlink Row");
+        });
 
         linkMenu.getItems().addAll(linkColumnMenuItem, linkRowMenuItem,
-                unlinkSelectedMenuItem, unlinkSelectedColumnMenuItem, unlinkSelectedRowMenuItem);
+                unlinkSelectedMenuItem, unlinkSelectedColumnMenuItem, unlinkSelectedRowMenuItem,
+                linkFourPeaksItem);
 
         chartMenu.getItems().add(viewMenu);
         chartMenu.getItems().add(peakMenu);
