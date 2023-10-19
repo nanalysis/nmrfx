@@ -374,13 +374,43 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
     private boolean addZZFit() {
         String comment = currentPeak.getComment();
-        String zzPattern = "AA +I +([0-9.]+) +R1 +([0-9.]+) +KeX +([0-9.]+) +pA +([0-9.]+)";
+        String zzPattern = "AA +I +([0-9.]+) +R1A +([0-9.]+) +R1B +([0-9.]+) +KeX +([0-9.]+) +pA +([0-9.]+)";
+        String zzPattern2 = "AA +I +([0-9.]+) +R1A +([0-9.]+) +R1B +([0-9.]+) +KeXAB +([0-9.]+) +KeXBA +([0-9.]+) +pA +([0-9.]+)";
+
         Pattern pattern = Pattern.compile(zzPattern);
-        //AA R1 0.463 KeX 1.154 pA 0.57
         Matcher matcher = pattern.matcher(comment.trim());
+        int matched = 0;
+        double intensity = 0;
+        double r1 = 0.0;
+        double r1A = 0;
+        double r1B = 0;
+        double kEx = 0;
+        double kAB = 0;
+        double kBA = 0;
+        double pA = 0;
         if (matcher.matches()) {
-            var peakBAOpt = PeakList.getLinkedPeakDims(currentPeak,0).stream().filter(p -> p.getPeak() != currentPeak).findFirst();
-            var peakABOpt = PeakList.getLinkedPeakDims(currentPeak,1).stream().filter(p -> p.getPeak() != currentPeak).findFirst();
+            intensity = Double.parseDouble(matcher.group(1));
+            r1 = Double.parseDouble(matcher.group(2));
+            kEx = Double.parseDouble(matcher.group(3));
+            pA = Double.parseDouble(matcher.group(4));
+            matched = 1;
+        } else {
+            pattern = Pattern.compile(zzPattern2);
+            matcher = pattern.matcher(comment.trim());
+            if (matcher.matches()) {
+                intensity = Double.parseDouble(matcher.group(1));
+                r1A = Double.parseDouble(matcher.group(2));
+                r1B = Double.parseDouble(matcher.group(3));
+                kAB = Double.parseDouble(matcher.group(4));
+                kBA = Double.parseDouble(matcher.group(5));
+                pA = Double.parseDouble(matcher.group(6));
+                matched = 2;
+            }
+
+        }
+        if (matched > 0) {
+            var peakBAOpt = PeakList.getLinkedPeakDims(currentPeak, 0).stream().filter(p -> p.getPeak() != currentPeak).findFirst();
+            var peakABOpt = PeakList.getLinkedPeakDims(currentPeak, 1).stream().filter(p -> p.getPeak() != currentPeak).findFirst();
             if (peakBAOpt.isPresent() && peakABOpt.isPresent()) {
                 Peak peakBA = peakBAOpt.get().getPeak();
                 var peakBBOpt = PeakList.getLinkedPeakDims(peakBA, 1).stream().filter(p -> p.getPeak() != peakBA).findFirst();
@@ -394,10 +424,6 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                     scatterChart.xAxis.setAutoRanging(true);
                     scatterChart.yAxis.setAutoRanging(true);
 
-                    double intensity = Double.parseDouble(matcher.group(1));
-                    double r1 = Double.parseDouble(matcher.group(2));
-                    double kEx = Double.parseDouble(matcher.group(3));
-                    double pA = Double.parseDouble(matcher.group(4));
                     int iSig = 0;
                     String[] peakLabels = {"AA", "BB", "BA", "AB"};
 
@@ -428,9 +454,14 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
                         double xMax = xValues[xValues.length - 1];
                         int nPoints = 100;
-                        for (int i = 0;i<nPoints;i++) {
-                            double delay = i * xMax/(nPoints - 1);
-                            double y = intensity * LorentzGaussND.zzAmplitude(r1, pA, kEx, delay, iSig);
+                        for (int i = 0; i < nPoints; i++) {
+                            double delay = i * xMax / (nPoints - 1);
+                            double y;
+                            if (matched == 1) {
+                                y = intensity * LorentzGaussND.zzAmplitude(r1, pA, kEx, delay, iSig);
+                            } else {
+                                y = intensity * LorentzGaussND.zzAmplitude2(r1A, r1B, pA, kAB, kBA, delay, iSig);
+                            }
                             XYValue value = new XYValue(delay, y);
                             lineSeries.getData().add(value);
                         }

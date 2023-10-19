@@ -46,6 +46,7 @@ public class ToolBarUtils {
         Pane filler = new Pane();
         HBox.setHgrow(filler, Priority.ALWAYS);
         filler.setMinWidth(min);
+        filler.setMaxWidth(max);
         return filler;
     }
 }
