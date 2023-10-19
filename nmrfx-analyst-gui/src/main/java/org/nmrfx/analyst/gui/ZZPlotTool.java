@@ -193,7 +193,7 @@ public class ZZPlotTool {
     }
 
     private void updateLigandConc() {
-        if ((proteinConc.get() > 1.0e-9) && (ligandConc.get() != 1.0e-9) && (kD.get() > 1.0e-9)) {
+        if ((proteinConc.get() > 1.0e-9) && (ligandConc.get() > 1.0e-9) && (kD.get() > 1.0e-9)) {
             freeLigandConc.set(ligandConc.get() - BindingUtils.boundLigand(proteinConc.get(), ligandConc.get(), kD.get()));
         }
     }
@@ -552,6 +552,7 @@ public class ZZPlotTool {
     private boolean addZZFit(PeakFitPars peakFitPars) {
         Peak currentPeak = peakFitPars.peak();
         List<Peak> peaks = new ArrayList<>();
+        double[] xValues = null;
         if (currentPeak != null) {
             var peakBAOpt = PeakList.getLinkedPeakDims(currentPeak, 0).stream().filter(p -> p.getPeak() != currentPeak).findFirst();
             var peakABOpt = PeakList.getLinkedPeakDims(currentPeak, 1).stream().filter(p -> p.getPeak() != currentPeak).findFirst();
@@ -564,6 +565,7 @@ public class ZZPlotTool {
                     peaks.addAll(List.of(currentPeak, peakBB, peakAB, peakBA));
                 }
             }
+            xValues = currentPeak.getPeakList().getMeasureValues();
         }
         activeChart.getData().clear();
         activeChart.xAxis.setAutoRanging(true);
@@ -573,9 +575,10 @@ public class ZZPlotTool {
             yAxis.setLabel("Ratio");
             addSeries(peakFitPars, peaks);
         } else {
-            double[] xValues = currentPeak.getPeakList().getMeasureValues();
             yAxis.setLabel("Intensity");
-            addSeries(peakFitPars, peaks, xValues);
+            if (xValues != null) {
+                addSeries(peakFitPars, peaks, xValues);
+            }
         }
         activeChart.drawChart();
         return true;
