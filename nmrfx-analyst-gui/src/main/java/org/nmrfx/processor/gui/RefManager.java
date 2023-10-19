@@ -104,7 +104,7 @@ public class RefManager {
         }
     }
 
-    public class FixedDecimalConverter extends DoubleStringConverter {
+    public static class FixedDecimalConverter extends DoubleStringConverter {
 
         private final int decimalPlaces;
 

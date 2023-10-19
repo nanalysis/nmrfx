@@ -25,8 +25,8 @@ import org.apache.commons.math3.optimization.univariate.BrentOptimizer;
 import org.apache.commons.math3.optimization.univariate.UnivariatePointValuePair;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.chart.XYValue;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -1264,6 +1264,99 @@ public class PeakListTools {
                 }
         );
     }
+    public record FitZZPeakRatioResult(PeakFitPars peakFitPars, List<Double> xValues, List<Double> yValues) {}
+    /**
+     * Fit peak measures (intensities or volumes) to ZZ function
+     *
+     * @param peakList The peakList
+     * @param theFile The dataset to fit the peaks to
+     * @param peakGroups   A collection of groups of four peaks to fit simultaneously
+     * @return a List of alternating name/values with the parameters of the fit
+     * if updatePeaks is false. Otherwise return empty list
+     * @throws IllegalArgumentException
+     * @throws IOException
+     * @throws PeakFitException
+     */
+    public static FitZZPeakRatioResult fitZZPeakRatios(PeakList peakList, Dataset theFile, List<Set<Peak>> peakGroups, boolean simFit)
+            throws IllegalArgumentException, IOException, PeakFitException {
+        boolean ok = peakGroups.stream().filter(group -> group.size() != 4).findAny().isEmpty();
+        if (!ok) {
+            throw new IllegalArgumentException("ZZ fit requires groups with 4 peaks ");
+        }
+        for (var group:peakGroups) {
+            for (Peak peak : group) {
+                if (peak.getMeasures().isEmpty()) {
+                    PeakListTools.quantifyPeaks(peakList, "center");
+                    break;
+                }
+            }
+        }
+        List<Double> xValues = new ArrayList<>();
+        List<Double> yValues= new ArrayList<>();
+        List<Double> errValues= new ArrayList<>();
+        Peak peak = null;
+        for (var group:peakGroups) {
+            List<Peak> abPeaks = PeakLinker.linkFourPeaks(group);
+            if (!simFit) {
+                peak = abPeaks.get(0);
+            }
+            XYEValues xyeValues = getXYErrValues( peakList, abPeaks);
+            List<XYValue> xyValues = calcRatioKK(xyeValues);
+            for (XYValue xyValue:xyValues) {
+                xValues.add(xyValue.getXValue());
+                yValues.add(xyValue.getYValue());
+            }
+        }
+        double[] x = xValues.stream().mapToDouble(d -> d).toArray();
+        double[][] xArray = {x};
+        double[] y = yValues.stream().mapToDouble(d -> d).toArray();
+        double[][] yArray = {y};
+        double[][] errArray = new double[1][xArray[0].length];
+
+        ZZFitRatio zzFitRatio = new ZZFitRatio();
+        zzFitRatio.setXYE(xArray,yArray,errArray);
+        PointValuePair result = zzFitRatio.fit();
+        if (result == null) {
+            GUIUtils.warn("Fitting", "Error fitting data");
+            return null;
+        }
+        double[] pars = zzFitRatio.getPars();
+        double[] errs = zzFitRatio.getParErrs();
+        String[] parNames = zzFitRatio.parNames();
+
+        Map<String, FitPar> fitPars = new HashMap<>();
+        for (int i=0;i<pars.length;i++) {
+            FitPar fitPar = new FitPar(parNames[i], pars[i], errs[i]);
+            fitPars.put(fitPar.name(), fitPar);
+        }
+        PeakFitPars peakFitPars = new PeakFitPars(peak, fitPars);
+        FitZZPeakRatioResult fitZZPeakRatioResult = new FitZZPeakRatioResult(peakFitPars, xValues, yValues);
+        return fitZZPeakRatioResult;
+    }
+
+    /**
+     * Fit peak measures (intensities or volumes) to ZZ function
+     *
+     * @param theFile The dataset to fit the peaks to
+     * @param peaks   A collection of peaks to fit simultaneously
+     * @return a List of alternating name/values with the parameters of the fit
+     * if updatePeaks is false. Otherwise return empty list
+     * @throws IllegalArgumentException
+     * @throws IOException
+     * @throws PeakFitException
+     */
+    public static List<PeakFitPars> fitZZPeakIntensities(PeakList peakList, Dataset theFile, Collection<Peak> peaks)
+            throws IllegalArgumentException, IOException, PeakFitException {
+        if (peaks.size() != 4) {
+            throw new IllegalArgumentException("ZZ fit requires 4 peaks but " + peaks.size() + " provided");
+        }
+        boolean missingMeasures = peaks.stream().anyMatch(peak -> !peak.getMeasures().isPresent());
+        if (missingMeasures) {
+            PeakListTools.quantifyPeaks(peakList, "center");
+        }
+        List<Peak> abPeaks = PeakLinker.linkFourPeaks(peaks);
+        return fitZZPeaks(peakList, abPeaks);
+    }
 
     /**
      * Fit peaks by adjusting peak position (chemical shift), linewidth and
@@ -1285,9 +1378,9 @@ public class PeakListTools {
      * @throws PeakFitException
      */
     public static List<Object> fitZZPeaks(PeakList peakList, Dataset theFile, Collection<Peak> peaks,
-                                          PeakFitParameters fitPars,
-                                          int[] rows,
-                                          double[] delays)
+                                               PeakFitParameters fitPars,
+                                               int[] rows,
+                                               double[] delays)
             throws IllegalArgumentException, IOException, PeakFitException {
         if (peaks.size() != 4) {
             throw new IllegalArgumentException("ZZ fit requires 4 peaks but " + peaks.size() + " provided");
@@ -1297,14 +1390,13 @@ public class PeakListTools {
             PeakListTools.quantifyPeaks(peakList, "center");
         }
         List<Peak> abPeaks = PeakLinker.linkFourPeaks(peaks);
-        if (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY) {
-            return fitZZPeaks(peakList, abPeaks);
-        } else {
-            return fitPeaks(peakList, theFile, abPeaks, fitPars, null, rows, delays);
-        }
+        return fitPeaks(peakList, theFile, abPeaks, fitPars, null, rows, delays);
+
     }
 
-    public static List<Object> fitZZPeaks(PeakList peakList, List<Peak> abPeaks) {
+    public record XYEValues(double[][] xValues, double[][] yValues, double[][] errValues) {}
+
+    public static XYEValues getXYErrValues(PeakList peakList, List<Peak> abPeaks) {
         var measureX = peakList.getMeasureValues();
         double[][] xValues = new double[1][measureX.length];
         double[][] yValues = new double[4][measureX.length];
@@ -1318,28 +1410,31 @@ public class PeakListTools {
                 System.arraycopy(measures[1], 0, errValues[iSig], 0, errValues[iSig].length);
             });
         }
-        DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics();
+        return new XYEValues(xValues, yValues, errValues);
+    }
+public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
+        double[][] xValues = xyeValues.xValues;
+        double[][] yValues = xyeValues.yValues;
+        List<XYValue> xyValues = new ArrayList<>();
+        double[] ratioValues = new double[xValues[0].length];
         for (int i = 0; i < xValues[0].length; i++) {
             double delay = xValues[0][i];
             double aa = yValues[0][i];
             double bb = yValues[1][i];
             double ab = yValues[2][i];
             double ba = yValues[3][i];
-            double norm = (ab * ba) / (aa * bb - ab * ba);
-            double kEXI = norm / (delay * delay);
-            if (delay > 0.02) {
-                descriptiveStatistics.addValue(kEXI);
-            }
+            double ratio  = (ab * ba) / (aa * bb - ab * ba);
+            XYValue xyValue = new XYValue(delay, ratio);
+            xyValues.add(xyValue);
         }
-        double kExGuessMedian = descriptiveStatistics.getPercentile(50);
-        double kExGuessMean = descriptiveStatistics.getMean();
-        double kExGuessStdDev = descriptiveStatistics.getStandardDeviation();
-
-        log.info(String.format("kEx median %.3f mean %.3f +/- %.3f", kExGuessMedian, kExGuessMean, kExGuessStdDev));
+        return xyValues;
+    }
+    public static List<PeakFitPars> fitZZPeaks(PeakList peakList, List<Peak> abPeaks) {
+        XYEValues xyeValues = getXYErrValues(peakList, abPeaks);
         int mode = 2;
         FitEquation zzFit = mode == 2 ? new ZZFit2() : new ZZFit();
 
-        zzFit.setXYE(xValues, yValues, errValues);
+        zzFit.setXYE(xyeValues.xValues, xyeValues.yValues, xyeValues.errValues);
         PointValuePair result = zzFit.fit();
         if (result == null) {
             GUIUtils.warn("Fitting", "Error fitting data");
@@ -1348,6 +1443,13 @@ public class PeakListTools {
         double[] pars = zzFit.getPars();
         double[] errs = zzFit.getParErrs();
         String[] parNames = zzFit.parNames();
+
+        Map<String, FitPar> fitPars = new HashMap<>();
+        for (int i=0;i<pars.length;i++) {
+            FitPar fitPar = new FitPar(parNames[i], pars[i], errs[i]);
+            fitPars.put(fitPar.name(), fitPar);
+        }
+        PeakFitPars peakFitPars = new PeakFitPars(abPeaks.get(0), fitPars);
         String[] peakLabels = {"AA", "BB", "AB", "BA"};
         for (int jPeak = 0; jPeak < 4; jPeak++) {
             String label = peakLabels[jPeak];
@@ -1362,9 +1464,7 @@ public class PeakListTools {
                 peak.setComment(label);
             }
         }
-
-        return Collections.EMPTY_LIST;
-
+        return Collections.singletonList(peakFitPars);
     }
 
     /**
@@ -2149,5 +2249,6 @@ public class PeakListTools {
             return sBuf.toString();
         }
     }
+
 
 }
