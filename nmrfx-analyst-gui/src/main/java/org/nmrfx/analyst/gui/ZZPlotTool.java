@@ -190,7 +190,7 @@ public class ZZPlotTool {
             activeChart = chartPane.getChart();
 
             exportSVGButton.setOnAction(e -> activeChart.exportSVG());
-            exportTableButton.setOnAction(e -> savePathTable());
+            exportTableButton.setOnAction(e -> saveTable());
             fitButton.setOnAction(e -> fitPeaks());
 
             borderPane.setTop(vBox);
@@ -234,10 +234,6 @@ public class ZZPlotTool {
         //Prepare XYChart.Series objects by setting data
         activeChart.getData().add(series);
         activeChart.autoScale(true);
-    }
-
-    public void updateTable(ObservableList<PeakFitPars> paths) {
-        tableView.getItems().setAll(paths);
     }
 
     private void updateRxn(ChoiceBox<RxModes> choiceBox) {
@@ -310,7 +306,7 @@ public class ZZPlotTool {
                 TableColumn<PeakFitPars, Number> col = new TableColumn<>(colName);
                 tableView.getColumns().add(col);
                 col.setCellValueFactory(p -> {
-                    // p.getValue() returns the Path instance for a particular TableView row
+                    // p.getValue() returns the PeakFitPars instance for a particular TableView row
 
                     if (p != null) {
                         boolean isErr = colName.endsWith(":Err");
@@ -363,10 +359,20 @@ public class ZZPlotTool {
             }
             keyEvent.consume();
         } else if ((code == KeyCode.BACK_SPACE) || (code == KeyCode.DELETE)) {
-            List<PeakFitPars> selPaths = getSelected();
+            List<PeakFitPars> selPeakFitPars = getSelected();
+            if (!selPeakFitPars.isEmpty() && GUIUtils.affirm("Unlink (remove) selected peaks and redo fit")) {
+                for (PeakFitPars peakFitPars : selPeakFitPars) {
+                    Peak peak = peakFitPars.peak();
+                    if (peak != null) {
+                        Collection<Peak> peakGroup = PeakLinker.getLinkedGroup(peak);
+                        for (Peak gPeak : peakGroup) {
+                            PeakList.unLinkPeak(gPeak);
+                        }
+                    }
+                }
+                fitPeaks();
+            }
         }
-
-
     }
 
     void fitPeaks() {
@@ -555,19 +561,14 @@ public class ZZPlotTool {
         }
     }
 
-    public void selectRow(PeakFitPars path) {
-        tableView.getSelectionModel().clearSelection();
-        tableView.getSelectionModel().select(path);
-    }
-
     List<PeakFitPars> getSelected() {
-        List<PeakFitPars> paths = new ArrayList<>();
+        List<PeakFitPars> peakFitParsList = new ArrayList<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         for (Integer index : selected) {
-            PeakFitPars path = tableView.getItems().get(index);
-            paths.add(path);
+            PeakFitPars peakFitPars = tableView.getItems().get(index);
+            peakFitParsList.add(peakFitPars);
         }
-        return paths;
+        return peakFitParsList;
     }
 
     void gotoPeak() {
@@ -584,21 +585,21 @@ public class ZZPlotTool {
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         activeChart.getData().clear();
         for (Integer index : selected) {
-            PeakFitPars peakFitPars = (PeakFitPars) tableView.getItems().get(index);
+            PeakFitPars peakFitPars = tableView.getItems().get(index);
             addZZFit(peakFitPars);
         }
     }
 
-    public void savePathTable() {
+    public void saveTable() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Table File");
         File file = fileChooser.showSaveDialog(null);
         if (file != null) {
-            savePathTable(file);
+            saveTable(file);
         }
     }
 
-    private void savePathTable(File file) {
+    private void saveTable(File file) {
         Charset charset = Charset.forName("US-ASCII");
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
             boolean first = true;
