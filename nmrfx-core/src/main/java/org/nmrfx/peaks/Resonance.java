@@ -17,6 +17,8 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.chemistry.Atom;
+
 import java.util.List;
 
 /**
@@ -25,11 +27,14 @@ import java.util.List;
 public interface Resonance {
 
     String getName();
-
+    public List<String> getNames();
     void setName(String name);
 
     void setName(List<String> names);
 
+    void setAtom(Atom atom);
+
+    Atom getAtom();
     void remove(PeakDim peakDim);
 
     List<PeakDim> getPeakDims();

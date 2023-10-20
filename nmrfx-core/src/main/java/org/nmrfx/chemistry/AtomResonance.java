@@ -106,10 +106,12 @@ public class AtomResonance extends SimpleResonance {
         }
     }
 
+    @Override
     public void setAtom(Atom atom) {
         this.atom = atom;
     }
 
+    @Override
     public Atom getAtom() {
         return atom;
     }
