@@ -74,7 +74,7 @@ public class ZZPlotTool {
 
     enum RxModes {
         AB("A <-> B", "[A]/([A]+[B])"),
-        BINDING("P + L <-> PL", "[P]/([P] + [L])");
+        BINDING("P + L <-> PL", "[P]/([P] + [PL])");
         final String text;
         final String popLabel;
 
