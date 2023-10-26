@@ -96,6 +96,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     Throwable processingThrowable;
 
     List<CheckMenuItem> atomCheckItems = new ArrayList<>();
+    List<CheckMenuItem> peakClassCheckItems = new ArrayList<>();
 
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     StackPane stackPane = new StackPane();
@@ -194,6 +195,18 @@ public class MolSceneController implements Initializable, StageBasedController, 
             menuItem.selectedProperty().addListener(
                     (ChangeListener<Boolean>) (a, b, c) -> updateAtoms());
         }
+        Menu peakClassMenu = new Menu("Peak Intensities");
+        modeMenuButton.getItems().add(peakClassMenu);
+        String[] peakClasses = {"s", "m", "w", "vw"};
+        for (String name : peakClasses) {
+            CheckMenuItem menuItem = new CheckMenuItem(name);
+            menuItem.setSelected(true);
+            peakClassCheckItems.add(menuItem);
+            peakClassMenu.getItems().add(menuItem);
+            menuItem.selectedProperty().addListener(
+                    (ChangeListener<Boolean>) (a, b, c) -> updatePeaks());
+        }
+
     }
 
     private void updateAtoms(String name, boolean selected) {
@@ -732,6 +745,13 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     void updatePeaks() {
+        Set<String> peakClasses = new HashSet<>();
+        for (var menuItem : peakClassCheckItems) {
+            if (menuItem.isSelected()) {
+                peakClasses.add(menuItem.getText());
+            }
+        }
+
         if (peakList != null) {
             List<String> constraintPairs = new ArrayList<>();
             boolean onlyFrozen = frozenCheckBox.isSelected();
@@ -751,7 +771,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
                         if (!name1.equals("") && !name2.equals("")) {
                             double intensity = peak.getIntensity();
                             double normIntensity = 100.0 * intensity / max;
-                            String intMode = "w";
+                            String intMode;
                             if (normIntensity > 10.0) {
                                 intMode = "s";
                             } else if (normIntensity > 1.5) {
@@ -761,9 +781,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
                             } else {
                                 intMode = "vw";
                             }
-                            constraintPairs.add(name1);
-                            constraintPairs.add(name2);
-                            constraintPairs.add(intMode);
+                            if (peakClasses.contains(intMode)) {
+                                constraintPairs.add(name1);
+                                constraintPairs.add(name2);
+                                constraintPairs.add(intMode);
+                            }
                         }
                     }
                 }
