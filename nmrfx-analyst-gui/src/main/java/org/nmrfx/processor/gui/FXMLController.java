@@ -346,6 +346,19 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
+    public void openFIDForDataset() {
+        Dataset dataset = (Dataset) getActiveChart().getDataset();
+        if (dataset != null) {
+            dataset.sourceFID().ifPresentOrElse(file -> {
+                if (file.exists()) {
+                    openFile(file.toString(), true, false);
+                } else {
+                    openAction(null);
+                }
+            }, () -> openAction(null));
+        }
+    }
+
     /**
      * Gets a NMRData object from the filepath.
      *
@@ -464,6 +477,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             getActiveChart().removeProjections();
             getActiveChart().layoutPlotChildren();
             statusBar.setMode(SpectrumStatusBar.DataMode.FID);
+            processorController.hideDatasetToolBar();
         } else {
             log.warn("Unable to add FID because controller can not be created.");
         }
@@ -484,6 +498,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         ProcessorController processorController = getActiveChart().getProcessorController();
         if (processorController != null) {
             processorController.viewingDataset(true);
+            if (processorController.chartProcessor.getNMRData() == null) {
+                processorController.showDatasetToolBar();
+            }
         }
         borderPane.setLeft(null);
         updateSpectrumStatusBarOptions(true);

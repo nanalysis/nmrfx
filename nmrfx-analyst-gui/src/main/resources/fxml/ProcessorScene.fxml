@@ -15,6 +15,7 @@
         <URL value="@/styles/Styles.css"/>
     </stylesheets>
     <top>
+        <ToolBar fx:id="datasetToolBar"/>
 
     </top>
     <center>
