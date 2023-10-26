@@ -589,7 +589,7 @@ public class PolyChart extends Region {
         // fixme add check for too small range
         min = center - range / 2.0;
         max = center + range / 2.0;
-        double[] limits = getAxes().getRange(0, min, max);
+        double[] limits = getAxes().getLimits(0, min, max);
 
         axes.getX().setMinMax(limits[0], limits[1]);
     }
@@ -614,7 +614,7 @@ public class PolyChart extends Region {
             center -= y / scale;
             min = center - range / 2.0;
             max = center + range / 2.0;
-            double[] limits = getAxes().getRange(1, min, max);
+            double[] limits = getAxes().getLimits(1, min, max);
             axes.getY().setMinMax(limits[0], limits[1]);
         }
     }
