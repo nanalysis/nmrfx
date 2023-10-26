@@ -343,7 +343,7 @@ public class BrukerData implements NMRData {
             int nDim = Integer.parseInt(name.substring(0, 1));
             if ((nDim > 0) && (nDim == (name.length() - 1))) {
                 result = true;
-                for (int i = 1; i < nDim; i++) {
+                for (int i = 1; i < name.length(); i++) {
                     if (name.charAt(i) != 'r') {
                         result = false;
                         break;

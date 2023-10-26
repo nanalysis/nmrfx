@@ -122,6 +122,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private TextField opTextField;
 
     @FXML
+    ToolBar datasetToolBar;
+    @FXML
     private ChoiceBox<String> dimChoice;
     @FXML
     private MenuItem autoGenerateScript;
@@ -1696,10 +1698,19 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         dimChoice.disableProperty().bind(viewMode.valueProperty().isEqualTo(DisplayMode.SPECTRUM));
 
         datasetFileButton.setOnAction(e -> datasetFileAction());
+        Button loadFIDForDatasetButton = new Button("Load FID");
+        loadFIDForDatasetButton.setOnAction(e -> chart.getFXMLController().openFIDForDataset());
+        datasetToolBar.getItems().add(loadFIDForDatasetButton);
 
         setupListeners();
     }
 
+    public void hideDatasetToolBar() {
+        mainBox.setTop(null);
+    }
+    public void showDatasetToolBar() {
+        mainBox.setTop(datasetToolBar);
+    }
     public Button getDatasetFileButton() {
         return datasetFileButton;
     }
