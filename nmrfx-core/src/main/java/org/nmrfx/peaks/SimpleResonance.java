@@ -56,7 +56,9 @@ public class SimpleResonance implements Resonance {
             names = new ArrayList<>();
         }
         names.clear();
-        names.addAll(newNames);
+        if (newNames != null) {
+            names.addAll(newNames);
+        }
     }
 
     @Override
