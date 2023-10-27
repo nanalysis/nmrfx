@@ -181,8 +181,10 @@ public class ScannerTool implements ControllerTool {
         processAndCombineItem.setOnAction(e -> processScanDirAndCombine());
         MenuItem processItem = new MenuItem("Process");
         processItem.setOnAction(e -> processScanDir());
+        MenuItem combineItem = new MenuItem("Combine");
+        combineItem.setOnAction(e -> combineDatasets());
         menu.getItems().addAll(loadRowFIDItem, processAndCombineItem,
-                processItem);
+                processItem, combineItem);
         return menu;
     }
 
@@ -257,6 +259,10 @@ public class ScannerTool implements ControllerTool {
     private void processScanDir() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
         scanTable.processScanDir(chartProcessor, false);
+    }
+
+    private void combineDatasets() {
+        scanTable.combineDatasets();
     }
 
     private void scanDirAction() {
