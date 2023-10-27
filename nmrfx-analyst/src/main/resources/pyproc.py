@@ -2489,7 +2489,10 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     muFinalReal = math.pow(10.0,-muFinal)
     process = process or getCurrentProcess()
     global fidInfo
-    skipIndices = fidInfo.fidObj.getSkipIndices()
+    if fidInfo == None or fidInfo.fidObj == None:
+        skipIndices = None
+    else:
+        skipIndices = fidInfo.fidObj.getSkipIndices()
 
 
     if alg == 'nesta':
