@@ -23,6 +23,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -71,30 +72,61 @@ public class ZZPlotTool {
     private static final Logger log = LoggerFactory.getLogger(ZZPlotTool.class);
     private final KeyCodeCombination copyKeyCodeCombination = new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN);
 
+    enum RxModes {
+        AB("A <-> B", "[A]/([A]+[B])"),
+        BINDING("P + L <-> PL", "[P]/([P] + [PL])");
+        final String text;
+        final String popLabel;
+
+        RxModes(String text, String popLabel) {
+            this.text = text;
+            this.popLabel = popLabel;
+        }
+
+        @Override
+        public String toString() {
+            return text;
+        }
+    }
+
     Stage stage = null;
     XYCanvasChart activeChart = null;
     BorderPane borderPane = new BorderPane();
     TableView<PeakFitPars> tableView;
     Scene stageScene = new Scene(borderPane, 500, 500);
-    List<String> colNamesFull;
-    List<String> colNamesRatio;
+    List<String> colNamesFullAB;
+    List<String> colNamesRatioAB;
+    List<String> colNamesFullPL;
+    List<String> colNamesRatioPL;
 
     List<String> colNames;
     CheckBox fitRatio;
+    ChoiceBox<RxModes> rxModesChoiceBox;
 
     boolean tableInRatioMode = false;
+    boolean tableInBindingMode = false;
 
-    SimpleDoubleProperty proteinConc = new SimpleDoubleProperty(0.0);
-    SimpleDoubleProperty ligandConc = new SimpleDoubleProperty(0.0);
+    SimpleDoubleProperty totalProtein = new SimpleDoubleProperty(0.0);
+    SimpleDoubleProperty totalLigand = new SimpleDoubleProperty(0.0);
     SimpleDoubleProperty kD = new SimpleDoubleProperty(0.0);
-    SimpleDoubleProperty freeLigandConc = new SimpleDoubleProperty(0.0);
+    SimpleDoubleProperty freeLigand = new SimpleDoubleProperty(0.0);
+    SimpleDoubleProperty popA = new SimpleDoubleProperty(0.0);
 
     PeakListTools.FitZZPeakRatioResult fitZZPeakRatioResult;
+    String[] addParNames = {"KA", "KAB", "KBA", "KK"};
+    String[] addParNamesAB = {"KAB", "KBA", "KK"};
+    String[] addParNamesPL = {"KA", "KAB", "KBA", "KK"};
+    Label popALabel;
+    TextField pValue;
+    TextField lValue;
+    TextField kdValue;
 
     public ZZPlotTool() {
-        colNamesFull = List.of("Peak", "Label", "I", "KAB", "KAB:Err", "KA", "KBA", "KBA:Err", "KK", "KK:Err", "R1A", "R1A:Err", "R1B", "R1B:Err", "P", "P:Err");
-        colNamesRatio = List.of("Peak", "Label", "KAB", "KAB:Err", "KA", "KBA", "KBA:Err", "KK", "KK:Err");
-        colNames = colNamesFull;
+        colNamesFullAB = List.of("Peak", "Label", "I", "KAB", "KAB:Err", "KBA", "KBA:Err", "KK", "KK:Err", "R1A", "R1A:Err", "R1B", "R1B:Err", "P", "P:Err");
+        colNamesRatioAB = List.of("Peak", "Label", "KAB", "KAB:Err", "KBA", "KBA:Err", "KK", "KK:Err");
+        colNamesFullPL = List.of("Peak", "Label", "I", "KAB", "KAB:Err", "KA", "KBA", "KBA:Err", "KK", "KK:Err", "R1A", "R1A:Err", "R1B", "R1B:Err", "P", "P:Err");
+        colNamesRatioPL = List.of("Peak", "Label", "KAB", "KAB:Err", "KA", "KBA", "KBA:Err", "KK", "KK:Err");
+        colNames = colNamesFullPL;
     }
 
     public void show(String xAxisName, String yAxisName) {
@@ -113,29 +145,43 @@ public class ZZPlotTool {
             Button fitButton = new Button("Fit ");
             fitRatio = new CheckBox("Fit Ratio");
 
+            rxModesChoiceBox = new ChoiceBox<>();
+            rxModesChoiceBox.getItems().addAll(RxModes.values());
+
             Button showPeakButton = new Button("Goto");
             showPeakButton.setOnAction(e -> gotoPeak());
 
-            toolBar.getItems().addAll(fileMenu, fitButton, fitRatio, showPeakButton, ToolBarUtils.makeFiller(15));
+            toolBar.getItems().addAll(fileMenu, new Label("Rxn Mode: "), rxModesChoiceBox, fitRatio, ToolBarUtils.makeFiller(15, 15),
+                    fitButton, ToolBarUtils.makeFiller(15), showPeakButton);
 
+            rxModesChoiceBox.setValue(RxModes.BINDING);
             Label pLabel = new Label("Protein");
             Label lLabel = new Label("Ligand");
             Label kdLabel = new Label("Kd");
             Label freeLigandLabel = new Label("Free Ligand");
-            TextField pValue = GUIUtils.getDoubleTextField(proteinConc);
+            popALabel = new Label("PopA");
+            pValue = GUIUtils.getDoubleTextField(totalProtein);
             pValue.setPrefWidth(70.0);
-            TextField lValue = GUIUtils.getDoubleTextField(ligandConc);
+            lValue = GUIUtils.getDoubleTextField(totalLigand);
             lValue.setPrefWidth(70.0);
-            TextField kdValue = GUIUtils.getDoubleTextField(kD);
+            kdValue = GUIUtils.getDoubleTextField(kD);
             kdValue.setPrefWidth(70.0);
-            TextField freeLigandTextField = GUIUtils.getDoubleTextField(freeLigandConc);
+            TextField freeLigandTextField = GUIUtils.getDoubleTextField(freeLigand);
             freeLigandTextField.setPrefWidth(70.0);
-            proteinConc.addListener(e -> updateLigandConc());
-            ligandConc.addListener(e -> updateLigandConc());
+            TextField popATextField = GUIUtils.getDoubleTextField(popA);
+            popATextField.setPrefWidth(70.0);
+            totalProtein.addListener(e -> updateLigandConc());
+            totalLigand.addListener(e -> updateLigandConc());
+
+            rxModesChoiceBox.valueProperty().addListener(e -> updateRxn(rxModesChoiceBox));
             kD.addListener(e -> updateLigandConc());
+            hBox.setAlignment(Pos.CENTER);
 
             hBox.getChildren().addAll(pLabel, pValue, ToolBarUtils.makeFiller(10, 15), lLabel, lValue,
-                    ToolBarUtils.makeFiller(10, 15), kdLabel, kdValue, ToolBarUtils.makeFiller(10, 15), freeLigandLabel, freeLigandTextField);
+                    ToolBarUtils.makeFiller(10, 15), kdLabel, kdValue,
+                    ToolBarUtils.makeFiller(10, 15), freeLigandLabel, freeLigandTextField,
+                    ToolBarUtils.makeFiller(10, 15), popALabel, popATextField
+            );
             vBox.getChildren().addAll(toolBar, hBox);
 
 
@@ -144,7 +190,7 @@ public class ZZPlotTool {
             activeChart = chartPane.getChart();
 
             exportSVGButton.setOnAction(e -> activeChart.exportSVG());
-            exportTableButton.setOnAction(e -> savePathTable());
+            exportTableButton.setOnAction(e -> saveTable());
             fitButton.setOnAction(e -> fitPeaks());
 
             borderPane.setTop(vBox);
@@ -155,6 +201,8 @@ public class ZZPlotTool {
             stage.setScene(stageScene);
             updateChart(xAxisName, yAxisName);
             initTable();
+            showPeakButton.disableProperty().bind(tableView.getSelectionModel().selectedItemProperty().isNull());
+            updateRxn(rxModesChoiceBox);
         }
         stage.show();
         stage.toFront();
@@ -188,28 +236,43 @@ public class ZZPlotTool {
         activeChart.autoScale(true);
     }
 
-    public void updateTable(ObservableList<PeakFitPars> paths) {
-        tableView.getItems().setAll(paths);
+    private void updateRxn(ChoiceBox<RxModes> choiceBox) {
+        RxModes rxMode = choiceBox.getValue();
+        popALabel.setText(rxMode.popLabel);
+        boolean textFieldState = rxMode != RxModes.BINDING;
+        pValue.setDisable(textFieldState);
+        lValue.setDisable(textFieldState);
+        kdValue.setDisable(textFieldState);
+
     }
 
     private void updateLigandConc() {
-        if ((proteinConc.get() > 1.0e-9) && (ligandConc.get() > 1.0e-9) && (kD.get() > 1.0e-9)) {
-            freeLigandConc.set(ligandConc.get() - BindingUtils.boundLigand(proteinConc.get(), ligandConc.get(), kD.get()));
+        double concLimit = 1.0e-9;
+        if ((totalProtein.get() > concLimit) && (totalLigand.get() > concLimit) && (kD.get() > concLimit)) {
+            freeLigand.set(totalLigand.get() - BindingUtils.boundLigand(totalProtein.get(), totalLigand.get(), kD.get()));
+            double boundLigand = totalLigand.get() - freeLigand.get();
+            double boundProtein = boundLigand;
+            double freeProtein = totalProtein.get() - boundProtein;
+            popA.set(freeProtein / totalProtein.get());
         }
     }
 
-    public double getLigandConc() {
-        return freeLigandConc.get();
+    public double getTotalLigand() {
+        return freeLigand.get();
     }
 
     void initTable() {
+        RxModes rxMode = rxModesChoiceBox.getValue();
         if (fitRatio.isSelected()) {
             tableInRatioMode = true;
-            colNames = colNamesRatio;
+            colNames = rxMode == RxModes.BINDING ? colNamesRatioPL : colNamesRatioAB;
         } else {
             tableInRatioMode = false;
-            colNames = colNamesFull;
+            colNames = rxMode == RxModes.BINDING ? colNamesFullPL : colNamesFullAB;
         }
+        tableInBindingMode = rxMode == RxModes.BINDING;
+        addParNames = rxMode == RxModes.BINDING ? addParNamesPL : addParNamesAB;
+
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         ListChangeListener selectionListener = (ListChangeListener.Change c) -> selectionChanged();
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
@@ -243,7 +306,7 @@ public class ZZPlotTool {
                 TableColumn<PeakFitPars, Number> col = new TableColumn<>(colName);
                 tableView.getColumns().add(col);
                 col.setCellValueFactory(p -> {
-                    // p.getValue() returns the Path instance for a particular TableView row
+                    // p.getValue() returns the PeakFitPars instance for a particular TableView row
 
                     if (p != null) {
                         boolean isErr = colName.endsWith(":Err");
@@ -296,23 +359,31 @@ public class ZZPlotTool {
             }
             keyEvent.consume();
         } else if ((code == KeyCode.BACK_SPACE) || (code == KeyCode.DELETE)) {
-            List<PeakFitPars> selPaths = getSelected();
+            List<PeakFitPars> selPeakFitPars = getSelected();
+            if (!selPeakFitPars.isEmpty() && GUIUtils.affirm("Unlink (remove) selected peaks and redo fit")) {
+                for (PeakFitPars peakFitPars : selPeakFitPars) {
+                    Peak peak = peakFitPars.peak();
+                    if (peak != null) {
+                        Collection<Peak> peakGroup = PeakLinker.getLinkedGroup(peak);
+                        for (Peak gPeak : peakGroup) {
+                            PeakList.unLinkPeak(gPeak);
+                        }
+                    }
+                }
+                fitPeaks();
+            }
         }
-
-
     }
 
     void fitPeaks() {
+        boolean tableOK = fitRatio.isSelected() == tableInRatioMode && (rxModesChoiceBox.getValue() == RxModes.BINDING) == tableInBindingMode;
 
+        if (!tableOK) {
+            initTable();
+        }
         if (fitRatio.isSelected()) {
-            if (!tableInRatioMode) {
-                initTable();
-            }
             simFitPeaks();
         } else {
-            if (tableInRatioMode) {
-                initTable();
-            }
             fitPeaksFull();
         }
     }
@@ -398,71 +469,106 @@ public class ZZPlotTool {
     }
 
     void addDerivedPars(PeakFitPars peakFitPars) {
-        String[] addParNames = {"KA", "KAB", "KBA", "KK"};
-        double lConc = getLigandConc();
-        for (String parName : addParNames) {
-            if (lConc < 1e-9) {
-                FitPar fitPar = new FitPar(parName, 0.0, 0.0);
-                peakFitPars.fitPars().put(parName, fitPar);
-                continue;
-            }
-            if (parName.equals("KA") && peakFitPars.fitPar("KAB") != null) {
-                double ka = peakFitPars.fitPar("KAB").value() / lConc;
+        double lConc = getTotalLigand();
+        double pA = popA.doubleValue();
+        double pB = 1.0 - pA;
 
+        boolean ligandValid = lConc > 1.0e-9;
+        boolean pAValid = pA > 1.0e-9;
+        boolean pBValid = pB > 1.0e-9;
+        for (String parName : addParNames) {
+            if (parName.equals("KA") && peakFitPars.hasPar("KAB")) {
+                double ka;
+                if (ligandValid) {
+                    ka = peakFitPars.fitPar("KAB").value() / lConc;
+                } else {
+                    ka = 0.0;
+                }
                 FitPar fitPar = new FitPar(parName, ka, 0.0);
                 peakFitPars.fitPars().put(parName, fitPar);
-            } else if (parName.equals("KK") && peakFitPars.fitPar("KK") == null) {
+            } else if (parName.equals("KK") && !peakFitPars.hasPar("KK") && peakFitPars.hasPars("KAB", "KBA")) {
                 double kab = peakFitPars.fitPar("KAB").value();
                 double kba = peakFitPars.fitPar("KBA").value();
                 double kk = kab * kba;
                 FitPar fitPar = new FitPar(parName, kk, 0.0);
                 peakFitPars.fitPars().put(parName, fitPar);
 
-            } else if (parName.equals("KA") && peakFitPars.fitPar("KK") != null) {
+            } else if (parName.equals("KA") && peakFitPars.hasPar("KK")) {
                 double kk = peakFitPars.fitPar("KK").value();
-                double kDVal = kD.get();
-                double k1sq = kk / (lConc * kDVal);
-                double k1 = Math.sqrt(k1sq);
+                double k1;
+                if (ligandValid) {
+                    double kDVal = kD.get();
+                    double k1sq = kk / (lConc * kDVal);
+                    k1 = Math.sqrt(k1sq);
+                } else {
+                    k1 = 0.0;
+                }
 
                 FitPar fitPar = new FitPar(parName, k1, 0.0);
                 peakFitPars.fitPars().put(parName, fitPar);
-            } else if (parName.equals("KAB") && peakFitPars.fitPar("KK") != null) {
+            } else if (parName.equals("KAB") && peakFitPars.hasPar("KK")) {
+                double kab;
                 double kk = peakFitPars.fitPar("KK").value();
-                double kDVal = kD.get();
-                double k1sq = kk / (lConc * kDVal);
-                double k1 = Math.sqrt(k1sq);
-                double ka = k1;
-                double kab = ka * lConc;
+                if (rxModesChoiceBox.getValue() == RxModes.BINDING) {
+                    if (ligandValid) {
+                        double kDVal = kD.get();
+                        double k1sq = kk / (lConc * kDVal);
+                        double k1 = Math.sqrt(k1sq);
+                        double ka = k1;
+                        kab = ka * lConc;
+                    } else {
+                        kab = 0.0;
+                    }
+                } else {
+                    // kAB * kBA = kk
+                    // popA = A/(A+B)
+                    // popB = 1.0 - popA
+                    // kAB * popA = kBA * popB
+                    // kAB / kBA = popB/popA
+                    // kAB = KBA * popB / popA
+                    // kBA = kAB * popA / popB
+
+                    // popB/popA * kBA * kBA = kk
+                    // kBA*kBA = kk*popA/popB
+                    // kBA = sqrt(kk*popA/popB)
+                    // kAB * kAB *popA/ popB = kk
+                    //  KAB *KAB = kk *popB/popA
+                    // KAB = sqrt(kk*popB/popA)
+                    kab = pAValid ? Math.sqrt(kk * pB / pA) : Double.POSITIVE_INFINITY;
+                }
 
                 FitPar fitPar = new FitPar(parName, kab, 0.0);
                 peakFitPars.fitPars().put(parName, fitPar);
-            } else if (parName.equals("KBA") && peakFitPars.fitPar("KK") != null) {
+            } else if (parName.equals("KBA") && peakFitPars.hasPar("KK")) {
+                double kBA;
                 double kk = peakFitPars.fitPar("KK").value();
-                double kDVal = kD.get();
-                double k1sq = kk / (lConc * kDVal);
-                double k1 = Math.sqrt(k1sq);
-                double k1p = k1 * lConc;
-                double kBA = kk / k1p;
-
+                if (rxModesChoiceBox.getValue() == RxModes.BINDING) {
+                    if (ligandValid) {
+                        double kDVal = kD.get();
+                        double k1sq = kk / (lConc * kDVal);
+                        double k1 = Math.sqrt(k1sq);
+                        double k1p = k1 * lConc;
+                        kBA = kk / k1p;
+                    } else {
+                        kBA = 0.0;
+                    }
+                } else {
+                    kBA = pBValid ? Math.sqrt(kk * pA / pB) : Double.POSITIVE_INFINITY;
+                }
                 FitPar fitPar = new FitPar(parName, kBA, 0.0);
                 peakFitPars.fitPars().put(parName, fitPar);
             }
         }
     }
 
-    public void selectRow(PeakFitPars path) {
-        tableView.getSelectionModel().clearSelection();
-        tableView.getSelectionModel().select(path);
-    }
-
     List<PeakFitPars> getSelected() {
-        List<PeakFitPars> paths = new ArrayList<>();
+        List<PeakFitPars> peakFitParsList = new ArrayList<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         for (Integer index : selected) {
-            PeakFitPars path = tableView.getItems().get(index);
-            paths.add(path);
+            PeakFitPars peakFitPars = tableView.getItems().get(index);
+            peakFitParsList.add(peakFitPars);
         }
-        return paths;
+        return peakFitParsList;
     }
 
     void gotoPeak() {
@@ -479,21 +585,21 @@ public class ZZPlotTool {
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         activeChart.getData().clear();
         for (Integer index : selected) {
-            PeakFitPars peakFitPars = (PeakFitPars) tableView.getItems().get(index);
+            PeakFitPars peakFitPars = tableView.getItems().get(index);
             addZZFit(peakFitPars);
         }
     }
 
-    public void savePathTable() {
+    public void saveTable() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Table File");
         File file = fileChooser.showSaveDialog(null);
         if (file != null) {
-            savePathTable(file);
+            saveTable(file);
         }
     }
 
-    private void savePathTable(File file) {
+    private void saveTable(File file) {
         Charset charset = Charset.forName("US-ASCII");
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
             boolean first = true;

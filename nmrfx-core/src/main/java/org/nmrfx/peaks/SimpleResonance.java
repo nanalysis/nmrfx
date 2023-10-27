@@ -17,6 +17,8 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.chemistry.Atom;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -54,7 +56,19 @@ public class SimpleResonance implements Resonance {
             names = new ArrayList<>();
         }
         names.clear();
-        names.addAll(newNames);
+        if (newNames != null) {
+            names.addAll(newNames);
+        }
+    }
+
+    @Override
+    public void setAtom(Atom atom) {
+
+    }
+
+    @Override
+    public Atom getAtom() {
+        return null;
     }
 
     public List<String> getNames() {

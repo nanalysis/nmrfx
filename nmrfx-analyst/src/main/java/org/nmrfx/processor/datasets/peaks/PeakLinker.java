@@ -66,8 +66,10 @@ public class PeakLinker {
         int ix = 0;
         int iy = 0;
         int ib = 1;
-        for (Peak peak:sortedPeaks) {
-            PeakList.unLinkPeak(peak);
+        if (getLinkedGroup(peaks).size() != 4) {
+            for (Peak peak : sortedPeaks) {
+                PeakList.unLinkPeak(peak);
+            }
         }
         for (int i = 1; i < sortedPeaks.size(); i++) {
             double xi = sortedPeaks.get(i).getPeakDim(0).getChemShiftValue();
@@ -107,6 +109,13 @@ public class PeakLinker {
         return abPeaks;
     }
 
+    public static Set<Peak> getLinkedGroup(Collection<Peak> peaks) {
+        Set<Peak> allPeaks = new HashSet<>();
+        for (Peak peak:peaks) {
+            allPeaks.addAll(getLinkedGroup(peak));
+        }
+        return allPeaks;
+    }
     public static Set<Peak> getLinkedGroup(Peak peak) {
         Set<Peak> startGroup = new HashSet<>();
         Set<Peak> peaks = new HashSet<>();
