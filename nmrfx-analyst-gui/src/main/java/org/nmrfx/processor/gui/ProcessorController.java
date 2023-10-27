@@ -221,7 +221,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         controller.nmrControlRightSidePane = nmrControlRightSidePane;
         fxmlController.processorCreated(controller.mainBox);
         nmrControlRightSidePane.addContent(controller);
-        if (chart.getDataset() == null) {
+        if ((chart.getDataset() == null) || (chart.getDataset().getName().equals("vec0"))) {
             controller.createSimulatorAccordion();
             controller.viewMode.setValue(DisplayMode.FID_OPS);
         }
@@ -343,7 +343,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
         HBox titleBox = new HBox();
         titleBox.setPadding(new Insets(0, 5, 0, 5));
-        //titleBox.setAlignment(Pos.CENTER);
         HBox.setHgrow(titleBox, Priority.ALWAYS);
         // Create Title
         Label label = new Label(titledPane.getText());
@@ -704,7 +703,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 opStrings.append("\n");
             }
             text.setText(opStrings.toString());
-            if (opString.length() == 0) {
+            if (opString.isEmpty()) {
                 popOver.hide();
             } else if (!popOver.isShowing()) {
                 final Point2D nodeCoord = textField.localToScreen(textField.getLayoutBounds().getMaxX(), textField.getLayoutBounds().getMaxY());
@@ -803,12 +802,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     public int getExpandedTitlePane() {
         int index = -1;
-        TitledPane activePane = null;
         int i = 0;
         for (var pane : accordion.getPanes()) {
             if (pane.isExpanded()) {
                 index = i;
-                activePane = pane;
             }
             i++;
         }
@@ -1090,19 +1087,19 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     private void addOperation(String opName) {
         List<ProcessingOperationInterface> ops = getOperationList();
-        if (opName.equals("AutoCorrect Baseline")) {
-            opName = "BCWHIT";
-        } else if (opName.equals("AutoPhase Dataset")) {
-            opName = "DPHASE";
-        } else if (opName.equals("APODIZE")) {
-            int nDim = 1;
-            if (getNMRData() != null) {
-                nDim = getNMRData().getNDim();
-            }
-            if (nDim == 1) {
-                opName = "EXPD";
-            } else {
-                opName = "SB";
+        switch (opName) {
+            case "AutoCorrect Baseline" -> opName = "BCWHIT";
+            case "AutoPhase Dataset" -> opName = "DPHASE";
+            case "APODIZE" -> {
+                int nDim = 1;
+                if (getNMRData() != null) {
+                    nDim = getNMRData().getNDim();
+                }
+                if (nDim == 1) {
+                    opName = "EXPD";
+                } else {
+                    opName = "SB";
+                }
             }
         }
         if (ApodizationGroup.opInGroup(opName)) {
@@ -1327,7 +1324,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         NUSGroup nusGroup = null;
         for (String line : lines) {
             line = line.trim();
-            if (line.equals("")) {
+            if (line.isEmpty()) {
                 continue;
             }
             if (line.charAt(0) == '#') {
@@ -1343,7 +1340,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 }
                 if (opName.equals("DIM")) {
                     String newDim = args;
-                    if (newDim.equals("")) {
+                    if (newDim.isEmpty()) {
                         newDim = "_ALL";
                     }
                     if (!newDim.equals(dimNum)) {
@@ -1743,9 +1740,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         opListListener = change -> updateAfterOperationListChanged();
         addOpListener();
 
-        dimListener = (observableValue, dimName, dimName2) -> {
-            chartProcessor.setVecDim(dimName2);
-        };
+        dimListener = (observableValue, dimName, dimName2) -> chartProcessor.setVecDim(dimName2);
         refDimListener = (observableValue, number, number2) -> {
             int vecDim = (Integer) number2;
             log.info("refdim {}", vecDim);
