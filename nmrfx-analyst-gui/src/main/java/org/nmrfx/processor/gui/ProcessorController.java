@@ -221,7 +221,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         controller.nmrControlRightSidePane = nmrControlRightSidePane;
         fxmlController.processorCreated(controller.mainBox);
         nmrControlRightSidePane.addContent(controller);
-        if (chart.getDataset() == null) {
+        System.out.println("create " + chart.getDataset());
+        if ((chart.getDataset() == null) || (chart.getDataset().getName().equals("vec0"))) {
             controller.createSimulatorAccordion();
             controller.viewMode.setValue(DisplayMode.FID_OPS);
         }
