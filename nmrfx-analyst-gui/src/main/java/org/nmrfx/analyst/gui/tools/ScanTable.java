@@ -548,21 +548,24 @@ public class ScanTable {
 
     public void combineDatasets() {
         List<Dataset> datasets = getDatasetAttributesList().stream().map(dAttr -> (Dataset) dAttr.getDataset()).toList();
-
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle(("Output File"));
-        File file = fileChooser.showSaveDialog(null);
-        if (file != null) {
-            DatasetMerger datasetMerger = new DatasetMerger();
-            try {
-                datasetMerger.mergeDatasets(datasets, file);
-            } catch (IOException| DatasetException e) {
-                ExceptionDialog exceptionDialog = new ExceptionDialog(e);
-                exceptionDialog.showAndWait();
-                return;
+        if (currentChart.getDatasetAttributes().size() < 2) {
+            GUIUtils.warn("Combine", "Need more than one dataset to combine");
+        } else {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle(("Output File"));
+            File file = fileChooser.showSaveDialog(null);
+            if (file != null) {
+                DatasetMerger datasetMerger = new DatasetMerger();
+                try {
+                    datasetMerger.mergeDatasets(datasets, file);
+                } catch (IOException | DatasetException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                    return;
+                }
+                AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(file, false, true);
+                loadFromDataset();
             }
-            AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(file, false, true);
-            loadFromDataset();
         }
     }
 
