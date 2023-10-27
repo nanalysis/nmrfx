@@ -23,6 +23,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.ZoomEvent;
 import org.apache.commons.lang3.SystemUtils;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PreferencesController;
 
 /**
  * @author Bruce Johnson
@@ -80,7 +81,17 @@ public class GestureBindings {
         } else if ((border == ChartBorder.LEFT || border == ChartBorder.BOTTOM) || (event.isAltDown() && border == ChartBorder.NONE)) {
             chart.zoom(scrollDirectionFactor * -dy / 50.0 + 1.0);
         } else {
-            chart.scaleY(scrollDirectionFactor * dy);
+            if ( PreferencesController.getUseNvjMouseMode()) {
+                if (event.isControlDown()) {
+                    chart.scaleY(scrollDirectionFactor * dy);
+                } else if (event.isShiftDown()) {
+                    chart.scroll(dx, 0.0);
+                } else {
+                    chart.scroll(0.0, scrollDirectionFactor * dy);
+                }
+            } else {
+                chart.scaleY(scrollDirectionFactor * dy);
+            }
         }
     }
 }
