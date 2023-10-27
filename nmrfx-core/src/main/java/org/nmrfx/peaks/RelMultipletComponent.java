@@ -14,6 +14,10 @@ public class RelMultipletComponent extends MultipletComponent {
         super(multiplet, offset, intensity, volume, lw);
     }
 
+    public RelMultipletComponent(Multiplet multiplet, RelMultipletComponent component) {
+        super(multiplet,component);
+    }
+
     public AbsMultipletComponent toAbsolute() {
         double center = multiplet.getPeakDim().getChemShiftValue();
         double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();

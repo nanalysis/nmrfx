@@ -57,7 +57,7 @@ public class NOEAssign {
         return result;
     }
 
-    public static MatchCriteria[] getMatchCriteria(PeakList peakList) throws NumberFormatException, IllegalArgumentException {
+    public static MatchCriteria[] getMatchCriteria(PeakList peakList) throws IllegalArgumentException {
         int nDim = peakList.nDim;
         MatchCriteria[] matchCriteria = new MatchCriteria[4];
         String[][] atomPats = new String[nDim][];
@@ -115,7 +115,7 @@ public class NOEAssign {
         int[] pDim = {-1, -1};
         for (int i = 0; i < 2; i++) {
             MatchCriteria mC = matchCriteria[i];
-            if (mC.getRelation().length() > 0) {
+            if (!mC.getRelation().isEmpty()) {
                 if ((mC.getRelation().charAt(0) != 'D') && (mC.getRelation().charAt(0) != 'd')) {
                     throw new IllegalArgumentException("Invalid relation " + mC.getRelation());
                 }
@@ -174,10 +174,8 @@ public class NOEAssign {
                         }
                         if (iPass == 0) {
                             if (nProtons == 2) {
-                                if (onlyFrozen) {
-                                    if (!peak.getFlag(atomIndex[0] + 8) || !peak.getFlag(atomIndex[1] + 8)) {
-                                        break;
-                                    }
+                                if ((onlyFrozen) && !peak.getPeakDim(0).isFrozen()) {
+                                    break;
                                 }
                                 nAssign++;
                             }
@@ -209,14 +207,14 @@ public class NOEAssign {
     // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
 
     public static AssignResult extractNoePeaks2(NoeSet noeSet, final PeakList peakList, final int maxAmbig,
-                                                final boolean strict, final int ppmSet)
+                                                final boolean strict, final int ppmSet, boolean onlyFrozen)
             throws InvalidMoleculeException, IllegalArgumentException {
         Optional<NoeSet> noeSetOpt = Optional.of(noeSet);
-        return extractNoePeaks2(noeSetOpt, peakList, maxAmbig, strict, ppmSet);
+        return extractNoePeaks2(noeSetOpt, peakList, maxAmbig, strict, ppmSet, onlyFrozen);
     }
 
     public static AssignResult extractNoePeaks2(Optional<NoeSet> noeSetOpt, final PeakList peakList, final int maxAmbig,
-                                                final boolean strict, final int ppmSet)
+                                                final boolean strict, final int ppmSet, boolean onlyFrozen)
             throws InvalidMoleculeException, IllegalArgumentException {
         Peak peak;
         double scale = 1.0;
@@ -238,6 +236,21 @@ public class NOEAssign {
         for (int i = 0; i < nPeaks; i++) {
             peak = peakList.getPeak(i);
             if ((peak != null) && (peak.getStatus() >= 0)) {
+                boolean frozenOK = true;
+                if (onlyFrozen) {
+                    for (MatchCriteria criteria : matchCriteria) {
+                        if (criteria != null) {
+                            PeakDim peakDim = peak.getPeakDim(criteria.getDim());
+                            if (!peakDim.isFrozen()) {
+                                frozenOK = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!frozenOK) {
+                    continue;
+                }
                 map.clear();
                 PeakDim peakDim = peak.getPeakDim(matchCriteria[0].getDim());
                 Float ppm = peakDim.getChemShift();
@@ -567,7 +580,7 @@ public class NOEAssign {
     // mode == 0  only extract contraints for peaks with one assignment
     // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
 
-    public static double findMax(PeakList peakList, int dim, double mult) throws InvalidMoleculeException, IllegalArgumentException {
+    public static double findMax(PeakList peakList, int dim, double mult, boolean onlyFrozen) throws InvalidMoleculeException, IllegalArgumentException {
         boolean strict = true;
         if (mult < 1.0e-6) {
             mult = peakList.getSpectralDim(dim).getIdTol() / 4.0;
@@ -582,7 +595,7 @@ public class NOEAssign {
             double tol = i * mult;
             peakList.getSpectralDim(dim).setIdTol(tol);
             Optional<NoeSet> emptyOpt = Optional.empty();
-            AssignResult result = extractNoePeaks2(emptyOpt, peakList, maxAmbig, strict, ppmSet);
+            AssignResult result = extractNoePeaks2(emptyOpt, peakList, maxAmbig, strict, ppmSet, onlyFrozen);
             if (result.nAssigned > bestScore) {
                 bestScore = result.nAssigned;
                 bestTol = tol;

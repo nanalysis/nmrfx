@@ -17,6 +17,8 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.chemistry.Atom;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -36,6 +38,14 @@ public class SimpleResonance implements Resonance {
         this.id = id;
     }
 
+    public SimpleResonance copy() {
+        SimpleResonance copy = new SimpleResonance(id);
+        copy.peakDims.addAll(peakDims);
+        copy.names.addAll(names);
+        copy.atomName = atomName;
+        return copy;
+    }
+
     public void clearPeakDims() {
         peakDims = null;
     }
@@ -46,9 +56,24 @@ public class SimpleResonance implements Resonance {
             names = new ArrayList<>();
         }
         names.clear();
-        names.addAll(newNames);
+        if (newNames != null) {
+            names.addAll(newNames);
+        }
     }
 
+    @Override
+    public void setAtom(Atom atom) {
+
+    }
+
+    @Override
+    public Atom getAtom() {
+        return null;
+    }
+
+    public List<String> getNames() {
+        return names;
+    }
     @Override
     public void remove(PeakDim peakDim) {
         peakDims.remove(peakDim);

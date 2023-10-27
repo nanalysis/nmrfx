@@ -57,14 +57,28 @@ public class AtomResonance extends SimpleResonance {
         super(id);
     }
 
+    public AtomResonance copy() {
+        AtomResonance copy = new AtomResonance(getID());
+        copy.getPeakDims().addAll(getPeakDims());
+        if (getNames() != null) {
+            copy.setName(getNames());
+            copy.setName(getName());
+        }
+        copy.setAtomName(getAtomName());
+        copy.atom = atom;
+        return copy;
+    }
+
     @Override
     public void setName(List<String> newNames) {
         super.setName(newNames);
         boolean valid = true;
-        for (var name : newNames) {
-            if (!isLabelValid(name)) {
-                valid = false;
-                break;
+        if (newNames != null) {
+            for (var name : newNames) {
+                if (!isLabelValid(name)) {
+                    valid = false;
+                    break;
+                }
             }
         }
         labelValid = valid;
@@ -94,10 +108,12 @@ public class AtomResonance extends SimpleResonance {
         }
     }
 
+    @Override
     public void setAtom(Atom atom) {
         this.atom = atom;
     }
 
+    @Override
     public Atom getAtom() {
         return atom;
     }

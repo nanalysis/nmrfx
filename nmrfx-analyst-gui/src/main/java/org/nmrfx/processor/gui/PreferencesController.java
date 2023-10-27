@@ -54,6 +54,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
     private static String location = null;
     private static Integer nProcesses = null;
     private static BooleanProperty useImmediateModeProp = null;
+    private static BooleanProperty useNVJMouseModeProp = null;
     private static IntegerProperty tickFontSizeProp = null;
     private static IntegerProperty labelFontSizeProp = null;
     private static IntegerProperty peakFontSizeProp = null;
@@ -132,6 +133,12 @@ public class PreferencesController implements Initializable, StageBasedControlle
                 },
                 getUseImmediateMode(), "Spectra", "UseImmediateMode", "Don't multi-thread drawing");
 
+        BooleanOperationItem useNvJMouseItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    useNVJMouseModeProp.setValue((Boolean) c);
+                    setBoolean("NVJ_SCROLL_MODE", (Boolean) c);
+                },
+                getUseNvjMouseMode(), "Spectra", "UseNvJMouseMode", "Use original NvJ scrolling modes");
         BooleanOperationItem fitPeakShapeItem = new BooleanOperationItem(prefSheet,
                 (a, b, c) -> {
                     fitPeakShapeProp.setValue((Boolean) c);
@@ -173,7 +180,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
                 getProjectSave(), "Project", "AutoSave", "Auto Save Project on changes");
 
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
-                nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem, useImmediateModeItem,
+                nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem, useImmediateModeItem, useNvJMouseItem,
                 fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem,
                 projectSaveItem, projectSaveIntervalItem);
     }
@@ -447,6 +454,10 @@ public class PreferencesController implements Initializable, StageBasedControlle
     public static Boolean getUseImmediateMode() {
         useImmediateModeProp = getBoolean(useImmediateModeProp, "IMMEDIATE_MODE", false);
         return useImmediateModeProp.getValue();
+    }
+    public static Boolean getUseNvjMouseMode() {
+        useNVJMouseModeProp = getBoolean(useNVJMouseModeProp, "NVJ_SCROLL_MODE", false);
+        return useNVJMouseModeProp.getValue();
     }
     public static Boolean getFitPeakShape() {
         fitPeakShapeProp = getBoolean(fitPeakShapeProp, "FIT_PEAK_SHAPE", false);

@@ -10,6 +10,7 @@ import javafx.scene.control.ToolBar;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.PeakGeneratorGUI;
+import org.nmrfx.analyst.gui.ZZPlotTool;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
@@ -75,11 +76,15 @@ public class PeakMenuActions extends MenuActions {
         MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
         runAboutMenuItem.setOnAction(e -> showRunAbout());
 
+        MenuItem zzMenuItem = new MenuItem("ZZ Fitting");
+        zzMenuItem.setOnAction(e -> showZZTool());
+
+
         assignCascade.getItems().addAll(assignOnPick,
                 atomBrowserMenuItem, runAboutMenuItem);
         menu.getItems().addAll(peakGeneratorMenuItem, linkPeakDimsMenuItem,
                 ligandScannerMenuItem,
-                noeTableMenuItem,
+                noeTableMenuItem, zzMenuItem,
                 assignCascade);
 
     }
@@ -191,6 +196,11 @@ public class PeakMenuActions extends MenuActions {
         }
         peakGeneratorGUI.show(300, 300);
     }
+    public void showZZTool() {
+        ZZPlotTool zzPlotTool = new ZZPlotTool();
+        zzPlotTool.show("Time", "Intensity");
+    }
+
 
 
 }

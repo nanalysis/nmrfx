@@ -185,7 +185,7 @@ public enum AtomProperty {
 
     public static String getElementName(int eNum) {
         if (eNum < 1 || eNum >= VALUES.size()) {
-            return null;
+            return "X";
         }
 
         return VALUES.get(eNum).name();

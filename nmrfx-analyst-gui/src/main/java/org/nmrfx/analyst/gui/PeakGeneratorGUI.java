@@ -433,31 +433,44 @@ public class PeakGeneratorGUI {
     }
 
     private void makeTocsy(PeakList peakList, int limit) {
+        peakList.getSpectralDim(0).setPattern("i.H*");
+        peakList.getSpectralDim(1).setPattern("i.H*");
         PeakGenerator peakGenerator = new PeakGenerator(ppmSetChoice.getValue(), refSetChoice.getValue());
         peakGenerator.generateTOCSY(peakList, limit);
     }
 
     private void makeHSQC(PeakList peakList, int parentElement) {
+        peakList.getSpectralDim(0).setPattern("i.H*");
+        String idPattern = parentElement == 6 ? "i.C*" : "i.N*";
+        peakList.getSpectralDim(1).setPattern(idPattern);
+        peakList.getSpectralDim(0).setRelation(peakList.getSpectralDim(1).getDimName());
         PeakGenerator peakGenerator = new PeakGenerator(ppmSetChoice.getValue(), refSetChoice.getValue());
         peakGenerator.generateHSQC(peakList, parentElement);
     }
 
     private void makeHMBC(PeakList peakList, int limit) {
+        peakList.getSpectralDim(0).setPattern("i.H*");
+        peakList.getSpectralDim(1).setPattern("i.H*");
         PeakGenerator peakGenerator = new PeakGenerator(ppmSetChoice.getValue(), refSetChoice.getValue());
         peakGenerator.generateHMBC(peakList, limit);
     }
 
     private void makeProton1D(PeakList peakList) {
+        peakList.getSpectralDim(0).setPattern("i.H*");
         PeakGenerator peakGenerator = new PeakGenerator(ppmSetChoice.getValue(), refSetChoice.getValue());
         peakGenerator.generate1DProton(peakList);
     }
 
     private void makeNOESY(PeakList peakList, double tol) throws InvalidMoleculeException {
+        peakList.getSpectralDim(0).setPattern("i.H*");
+        peakList.getSpectralDim(1).setPattern("j.H*");
         PeakGenerator peakGenerator = new PeakGenerator(ppmSetChoice.getValue(), refSetChoice.getValue());
         peakGenerator.generateNOESY(peakList, tol);
     }
 
     private void makeRNANOESYSecStr(Dataset dataset, PeakList peakList) {
+        peakList.getSpectralDim(0).setPattern("i.H*");
+        peakList.getSpectralDim(1).setPattern("j.H*");
         int useN = useNCheckBox.isSelected() ? 1 : 0;
         PeakGenerator peakGenerator = new PeakGenerator(ppmSetChoice.getValue(), refSetChoice.getValue());
         peakGenerator.generateRNANOESYSecStr(dataset, peakList, useN);

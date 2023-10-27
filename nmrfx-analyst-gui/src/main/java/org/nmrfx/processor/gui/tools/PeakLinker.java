@@ -22,6 +22,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -79,4 +80,8 @@ public class PeakLinker {
 
     }
 
+    public static void linkFourPeaks() throws  IllegalStateException{
+        List<Peak> peaks = getSelectedPeaks();
+        org.nmrfx.processor.datasets.peaks.PeakLinker.linkFourPeaks(peaks);
+    }
 }

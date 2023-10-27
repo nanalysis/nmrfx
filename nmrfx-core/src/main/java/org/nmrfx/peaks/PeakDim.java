@@ -17,6 +17,7 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.utilities.ConvUtil;
 import org.nmrfx.utilities.Format;
@@ -96,6 +97,13 @@ public class PeakDim {
         targetPeakDim.decayRateError = decayRateError;
         targetPeakDim.error = error.clone();
         targetPeakDim.user = user;
+        if (multiplet != null) {
+            Multiplet newMultiplet = new Multiplet(targetPeakDim);
+            multiplet.copyTo(newMultiplet);
+            newMultiplet.myPeakDim = targetPeakDim;
+            targetPeakDim.multiplet = newMultiplet;
+        }
+        targetPeakDim.resonance = resonance.copy();
     }
 
     public void restoreFrom(PeakDim peakDim) {
@@ -179,7 +187,11 @@ public class PeakDim {
 
     public void unLink() {
         resonance.remove(this);
+        var oldNames = resonance.getNames();
+        Atom atom = resonance.getAtom();
         initResonance();
+        resonance.setName(oldNames);
+        resonance.setAtom(atom);
         if (multiplet != null) {
             multiplet = new Multiplet(this);
         }

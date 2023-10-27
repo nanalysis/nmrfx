@@ -1281,6 +1281,8 @@ public class NMRStarWriter {
         }
 
         ResonanceFactory resFactory = PeakList.resFactory();
+        resFactory.clean();
+
 
         resFactory.writeResonancesSTAR3(chan);
         if (molecule != null) {

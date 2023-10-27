@@ -346,6 +346,19 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
+    public void openFIDForDataset() {
+        Dataset dataset = (Dataset) getActiveChart().getDataset();
+        if (dataset != null) {
+            dataset.sourceFID().ifPresentOrElse(file -> {
+                if (file.exists()) {
+                    openFile(file.toString(), true, false);
+                } else {
+                    openAction(null);
+                }
+            }, () -> openAction(null));
+        }
+    }
+
     /**
      * Gets a NMRData object from the filepath.
      *
@@ -464,6 +477,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             getActiveChart().removeProjections();
             getActiveChart().layoutPlotChildren();
             statusBar.setMode(SpectrumStatusBar.DataMode.FID);
+            processorController.hideDatasetToolBar();
         } else {
             log.warn("Unable to add FID because controller can not be created.");
         }
@@ -484,6 +498,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         ProcessorController processorController = getActiveChart().getProcessorController();
         if (processorController != null) {
             processorController.viewingDataset(true);
+            if (processorController.chartProcessor.getNMRData() == null) {
+                processorController.showDatasetToolBar();
+            }
         }
         borderPane.setLeft(null);
         updateSpectrumStatusBarOptions(true);
@@ -1370,10 +1387,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void undo() {
         undoManager.undo();
+        getActiveChart().refresh();
     }
 
     public void redo() {
         undoManager.redo();
+        getActiveChart().refresh();
     }
 
     @PluginAPI("parametric")
@@ -1647,11 +1666,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
         buttons.add(new Separator(Orientation.VERTICAL));
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(e -> undoManager.undo());
+        bButton.setOnAction(e -> undo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.undoable.not());
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REPEAT, "Redo", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(e -> undoManager.redo());
+        bButton.setOnAction(e -> redo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.redoable.not());
 
