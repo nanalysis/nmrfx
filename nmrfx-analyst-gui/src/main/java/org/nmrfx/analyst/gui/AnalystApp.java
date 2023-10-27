@@ -117,7 +117,11 @@ public class AnalystApp extends Application {
         analystApp = this;
         getFXMLControllerManager().newController(stage);
 
-        Platform.setImplicitExit(true);
+        if (isMac()) {
+            Platform.setImplicitExit(false);
+        } else {
+            Platform.setImplicitExit(true);
+        }
         hostServices = getHostServices();
         stage.setTitle(APP_NAME + " " + getVersion());
 
