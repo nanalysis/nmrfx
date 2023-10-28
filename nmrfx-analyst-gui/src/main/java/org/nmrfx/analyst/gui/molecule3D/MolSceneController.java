@@ -19,6 +19,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -41,11 +42,14 @@ import org.nmrfx.structure.chemistry.energy.RotationalDynamics;
 import org.nmrfx.structure.rna.RNAAnalysis;
 import org.nmrfx.structure.rna.RNALabels;
 import org.nmrfx.structure.rna.SSLayout;
+import org.nmrfx.structure.rna.SSPredictor;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
@@ -831,6 +835,43 @@ public class MolSceneController implements Initializable, StageBasedController, 
         to3D();
     }
 
+    @FXML
+    private void seqTo2D() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule != null) {
+            SSPredictor ssPredictor = new SSPredictor();
+            if (!ssPredictor.hasValidModelFile()) {
+                DirectoryChooser directoryChooser = new DirectoryChooser();
+                File file = directoryChooser.showDialog(null);
+                if (file == null) {
+                    return;
+                } else {
+                    ssPredictor.setModelFile(file.toString());
+                }
+            }
+            StringBuilder seqBuilder = new StringBuilder();
+            for (Polymer polymer : molecule.getPolymers()) {
+                if (polymer.isRNA()) {
+                    for (Residue residue: polymer.getResidues()) {
+                        seqBuilder.append(residue.getName());
+                    }
+                }
+            }
+            String sequence = seqBuilder.toString();
+            try {
+                String vienna = ssPredictor.predict(sequence);
+                vienna = ssPredictor.correctPredictions(sequence, vienna);
+                molecule.setDotBracket(vienna);
+                layoutSS();
+
+            } catch (IOException | IllegalArgumentException|InvalidMoleculeException e) {
+                ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                exceptionDialog.showAndWait();
+                return;
+            }
+
+        }
+    }
     @FXML
     private void activateBondAction() {
         Molecule molecule = Molecule.getActive();
