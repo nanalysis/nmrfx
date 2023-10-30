@@ -33,6 +33,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
@@ -49,7 +50,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
@@ -840,14 +840,21 @@ public class MolSceneController implements Initializable, StageBasedController, 
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             SSPredictor ssPredictor = new SSPredictor();
-            if (!ssPredictor.hasValidModelFile()) {
+            String rnModelDir = PreferencesController.getRNAModelDirectory();
+            if (rnModelDir.isEmpty()) {
                 DirectoryChooser directoryChooser = new DirectoryChooser();
                 File file = directoryChooser.showDialog(null);
                 if (file == null) {
                     return;
                 } else {
+                    PreferencesController.setRNAModelDirectory(file.toString());
                     ssPredictor.setModelFile(file.toString());
                 }
+            } else {
+                ssPredictor.setModelFile(rnModelDir);
+            }
+            if (!ssPredictor.hasValidModelFile()) {
+                return;
             }
             StringBuilder seqBuilder = new StringBuilder();
             for (Polymer polymer : molecule.getPolymers()) {
@@ -859,15 +866,15 @@ public class MolSceneController implements Initializable, StageBasedController, 
             }
             String sequence = seqBuilder.toString();
             try {
-                String vienna = ssPredictor.predict(sequence);
-                vienna = ssPredictor.correctPredictions(sequence, vienna);
-                molecule.setDotBracket(vienna);
+                ssPredictor.predict(sequence);
+                List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(0.4);
+                String dotBracket = ssPredictor.getDotBracket(basePairs);
+                molecule.setDotBracket(dotBracket);
                 layoutSS();
 
-            } catch (IOException | IllegalArgumentException|InvalidMoleculeException e) {
+            } catch (IllegalArgumentException | InvalidMoleculeException e) {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(e);
                 exceptionDialog.showAndWait();
-                return;
             }
 
         }
