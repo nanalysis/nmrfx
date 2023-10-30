@@ -924,6 +924,17 @@ public class PeakListTools {
         }
     }
 
+    public static void unifyWidths(Peak peak) {
+        PeakList peakList = peak.getPeakList();
+        int nDim = peakList.getNDim();
+        for (Peak targetPeak : peakList.peaks()) {
+            for (int i=0;i<nDim;i++) {
+                targetPeak.getPeakDim(i).setLineWidthValue(peak.getPeakDim(i).getLineWidthValue());
+                targetPeak.getPeakDim(i).setBoundsValue(peak.getPeakDim(i).getBoundsValue());
+            }
+        }
+    }
+
     final static class CenterRef {
 
         final int index;
