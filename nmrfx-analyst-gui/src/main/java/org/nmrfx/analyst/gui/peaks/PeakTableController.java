@@ -64,6 +64,7 @@ import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -165,6 +166,11 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         tableView.refresh();
     }
 
+    @Override
+    public Optional<Peak> getPeak() {
+        Peak peak = tableView.getSelectionModel().getSelectedItem();
+        return Optional.ofNullable(peak);
+    }
     @Override
     public PeakList getPeakList() {
         return peakList;

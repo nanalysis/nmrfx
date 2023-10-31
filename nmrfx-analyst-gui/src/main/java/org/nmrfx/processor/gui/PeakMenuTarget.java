@@ -1,6 +1,9 @@
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+
+import java.util.Optional;
 
 
 /**
@@ -21,4 +24,6 @@ public interface PeakMenuTarget {
     void deletePeaks();
 
     void restorePeaks();
+
+    Optional<Peak> getPeak();
 }
