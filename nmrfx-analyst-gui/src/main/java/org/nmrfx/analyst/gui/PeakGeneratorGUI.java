@@ -278,6 +278,7 @@ public class PeakGeneratorGUI {
                     hBox.setSpacing(10);
                     hBox.getChildren().add(label);
                     hBox.getChildren().add(distanceSlider);
+                    optionBox.getChildren().add(hBox);
                     optionBox.getChildren().add(useNCheckBox);
                     optionBox.getChildren().add(requireActiveCheckBox);
 
