@@ -1272,6 +1272,9 @@ public class NMRStarWriter {
         chan.write("    ######################################\n");
         chan.write("    # Saved " + date + " #\n");
         chan.write("    ######################################\n");
+        ResonanceFactory resFactory = PeakList.resFactory();
+        resFactory.clean();
+        
         MoleculeBase molecule = MoleculeFactory.getActive();
         if (molecule != null) {
             writeMoleculeSTAR3(chan, molecule, 1);
@@ -1283,9 +1286,6 @@ public class NMRStarWriter {
             PeakList peakList = iter.next();
             peakWriter.writePeaksSTAR3(chan, peakList);
         }
-
-        ResonanceFactory resFactory = PeakList.resFactory();
-        resFactory.clean();
 
 
         resFactory.writeResonancesSTAR3(chan);
