@@ -444,6 +444,9 @@ public class GUIScripter {
                 if (key.contains("Color")) {
                     value = GUIUtils.getColor(value.toString());
                 }
+                if (key.equals("peakLabelType")) {  // some .yaml files were incorrectly written with peakLabelType
+                    key = "labelType";
+                }
                 for (PeakListAttributes peakAttr : peakAttrs) {
                     String testName = peakAttr.getPeakListName();
                     if ((peakListNames == null) || peakListNames.contains(testName)) {
