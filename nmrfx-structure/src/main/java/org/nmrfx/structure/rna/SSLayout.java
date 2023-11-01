@@ -98,6 +98,7 @@ public class SSLayout implements MultivariateFunction {
         }
     }
 
+
     public static SSLayout createLayout(Molecule mol) throws InvalidMoleculeException {
         List<List<String>> sequences = setupSequence(mol);
         int[] seqLens = new int[sequences.size()];
