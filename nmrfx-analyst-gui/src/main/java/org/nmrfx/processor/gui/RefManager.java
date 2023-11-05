@@ -485,6 +485,7 @@ public class RefManager {
             case "Sequence" -> textField.setText(nmrData.getSequence());
             case "Temperature" -> textField.setText(String.valueOf(nmrData.getTempK()));
             case "Date" -> textField.setText(nmrData.getZonedDate().toString());
+            case "ZeroFreq" -> textField.setText(String.format("%.7f", nmrData.getZeroFreq()));
         }
         hBox.getChildren().addAll(label, textField);
         return hBox;
@@ -493,7 +494,7 @@ public class RefManager {
     public void updateReferencePane(NMRData nmrData, int nDim) {
         VBox vBox = new VBox();
         vBox.setSpacing(4);
-        String[] infoFields = {"Sequence", "Solvent", "Temperature", "Date"};
+        String[] infoFields = {"Sequence", "Solvent", "Temperature", "Date","ZeroFreq"};
         for (String infoField: infoFields) {
             vBox.getChildren().add(getParDisplay(nmrData, infoField));
         }
