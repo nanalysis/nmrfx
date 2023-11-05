@@ -20,10 +20,8 @@ package org.nmrfx.processor.datasets.vendor.bruker;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.nmrfx.datasets.DatasetLayout;
-import org.nmrfx.processor.datasets.AcquisitionType;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetGroupIndex;
-import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.processor.datasets.*;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -640,18 +638,21 @@ public class BrukerData implements NMRData {
             ref = Ref[iDim];
         } else {
             Double dpar;
-            // OFFSET from proc[n]s
-            if ((dpar = getParDouble("OFFSET," + (iDim + 1))) != null) {
+            var refOpt = getRefAtCenter(iDim);
+            if (refOpt.isPresent()) {
+                ref = refOpt.get();
+                // OFFSET from proc[n]s
+            } else if ((dpar = getParDouble("OFFSET," + (iDim + 1))) != null) {
                 double sw = getSW(iDim);
                 double sf = getSF(iDim);
                 ref = dpar - (sw / 2.0) / sf;
                 ref = Precision.round(ref, 5);
             } else if ((dpar = getParDouble("O1," + (iDim + 1))) != null) {
+                double sw = getSW(iDim);
                 double o1 = dpar;
-                if ((dpar = getParDouble("SFO1," + (iDim + 1))) != null) {
+                if ((dpar = getParDouble("BF1," + (iDim + 1))) != null) {
                     double sf = dpar;
-                    double sw = getSW(iDim);
-                    ref = Precision.round((o1 - sw / 2.0) / sf, 5);
+                    ref = o1 / sf;
                 }
             }
             setRef(iDim, ref);
@@ -659,9 +660,48 @@ public class BrukerData implements NMRData {
         return ref;
     }
 
+    Optional<Double> getRefAtCenter(int iDim) {
+        String nucleusName = getTN(iDim);
+
+        String nucName = Nuclei.findNuclei(nucleusName).getName();
+        Optional<Double> result = Optional.empty();
+        if ((iDim > 0) && ReferenceCalculator.hasRatio(nucName) && getTN(0).equals("1H")) {
+            double ref = ReferenceCalculator.refByRatio(getSF(0), getRef(0), getSF(iDim), nucName, getSolvent());
+            result = Optional.of(ref);
+        } else if (nucleusName.equals("1H")) {
+            Double refAtCenter = null;
+            double centerFreq = getSF(iDim);
+            double correctedBaseFreq = getCorrectedBaseFreq();
+            refAtCenter = ReferenceCalculator.calcRef(correctedBaseFreq, centerFreq);
+            result = Optional.ofNullable(refAtCenter);
+        }
+        return result;
+    }
+
+    double getCorrectedBaseFreq() {
+        String solvent = getSolvent();
+        boolean isAcqueous = ReferenceCalculator.isAcqueous(solvent);
+        Double actualLockRef = null;
+        if (isAcqueous) {
+            actualLockRef = ReferenceCalculator.getH2ORefPPM(getTempK());
+        }
+        Double baseFreq = getParDouble("BF1,1");
+        Double lockPPM = getParDouble("LOCKPPM,1");
+        if ((baseFreq != null) && (lockPPM != null) && (actualLockRef != null) ) {
+            return ReferenceCalculator.getCorrectedBaseFreq(baseFreq, lockPPM, actualLockRef);
+        } else {
+            return baseFreq;
+        }
+    }
+
+    @Override
+    public double getZeroFreq() {
+        return getCorrectedBaseFreq();
+    }
+
     @Override
     public double getRefPoint(int dim) {
-        return 1.0;
+        return getSize(dim) / 2;
     }
 
     @Override
@@ -1136,7 +1176,7 @@ public class BrukerData implements NMRData {
                         f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
                         break;
                 }
-                if (tdsize[i -1] < 2) {
+                if (tdsize[i - 1] < 2) {
                     complexDim[i - 1] = false;
                 }
             }

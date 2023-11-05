@@ -213,6 +213,13 @@ public interface NMRData {
      */
     double getSF(int dim);
 
+    default double getZeroFreq() {
+        double sf = getSF(0);
+        double ref = getRef(0);
+        double refHz = ref * sf;
+        return sf - refHz / 1.0e6;
+    }
+
     /**
      * Set the spectrometer frequency for the specified dimension. Used to
      * overwrite a value loaded by analysis of parameter files.
