@@ -71,7 +71,7 @@ public class Nuclei {
     public static void loadNuclei() {
         ClassLoader cl = ClassLoader.getSystemClassLoader();
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(cl.getResourceAsStream("FullNuclei.tsv")))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(cl.getResourceAsStream("nuclei_table.txt")))) {
             String line;
             boolean gotHeader = false;
             while ((line = reader.readLine()) != null) {
@@ -153,6 +153,23 @@ public class Nuclei {
         return freqRatio;
     }
 
+    /**
+     * Return the chemical shift reference ratio with TMS in CDCl3 = 0.0. Scale with H=100.0;
+     *
+     * @return the ratio
+     */
+    public double getRatio() {
+        return ratio;
+    }
+
+    /**
+     * Return the chemical shift reference ratio with DSS in H2O = 0.0. Scale with H=100.0;
+     *
+     * @return the ratio
+     */
+    public double getRatioAcqueous() {
+        return ratioAcq;
+    }
     /**
      * Return Unicode string for the isotope number in superscript format
      *

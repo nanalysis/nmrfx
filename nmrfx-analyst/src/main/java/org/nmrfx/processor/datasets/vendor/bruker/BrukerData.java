@@ -79,12 +79,12 @@ public class BrukerData implements NMRData {
     private final int arraysize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
     private final int maxSize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
     private double deltaPh0_2 = 0.0;
-    // fixme dynamically determine size
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
     private final Double[] Sf = new Double[MAXDIM];
     private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
 
+    private Double zeroFreq = null;
     private String text = null;
 
     private final String fpath;
@@ -624,6 +624,10 @@ public class BrukerData implements NMRData {
     @Override
     public void setRef(int iDim, double ref) {
         Ref[iDim] = ref;
+        if (iDim == 0) {
+            double sf0 = getSF(0);
+            zeroFreq = sf0 / (1.0 + ref * 1.0e-6);
+        }
     }
 
     @Override
@@ -662,16 +666,15 @@ public class BrukerData implements NMRData {
 
     Optional<Double> getRefAtCenter(int iDim) {
         String nucleusName = getTN(iDim);
-
-        String nucName = Nuclei.findNuclei(nucleusName).getName();
+        Nuclei nucleus = Nuclei.findNuclei(nucleusName);
         Optional<Double> result = Optional.empty();
-        if ((iDim > 0) && ReferenceCalculator.hasRatio(nucName) && getTN(0).equals("1H")) {
-            double ref = ReferenceCalculator.refByRatio(getSF(0), getRef(0), getSF(iDim), nucName, getSolvent());
+        if ((iDim > 0) && getTN(0).equals("1H")) {
+            double ref = ReferenceCalculator.refByRatio(getSF(0), getRef(0), getSF(iDim), nucleus, getSolvent());
             result = Optional.of(ref);
         } else if (nucleusName.equals("1H")) {
             Double refAtCenter = null;
             double centerFreq = getSF(iDim);
-            double correctedBaseFreq = getCorrectedBaseFreq();
+            double correctedBaseFreq = getZeroFreq();
             refAtCenter = ReferenceCalculator.calcRef(correctedBaseFreq, centerFreq);
             result = Optional.ofNullable(refAtCenter);
         }
@@ -696,7 +699,10 @@ public class BrukerData implements NMRData {
 
     @Override
     public double getZeroFreq() {
-        return getCorrectedBaseFreq();
+        if (zeroFreq == null) {
+            zeroFreq = getCorrectedBaseFreq();
+        }
+        return zeroFreq;
     }
 
     @Override

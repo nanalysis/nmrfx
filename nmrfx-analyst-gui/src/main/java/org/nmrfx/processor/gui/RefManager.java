@@ -56,6 +56,7 @@ public class RefManager {
     ProcessorController processorController;
     Map<DataProps, ToggleButton> toggleButtons = new HashMap<>();
     Map<String, SimpleObjectProperty> objectPropertyMap = new HashMap<>();
+    Map<String, TextField> parameterMap = new HashMap<>();
     VendorParsGUI vendorParsGUI = new VendorParsGUI();
     ComboBox<String> acqOrderCombo;
     ChoiceBox<Integer> acqArrayChoice;
@@ -459,6 +460,8 @@ public class RefManager {
             chartProcessor.execScriptList(true);
             chartProcessor.getChart().layoutPlotChildren();
         }
+        NMRData nmrData = getNMRData();
+        refreshParameters(nmrData);
     }
 
     private void updateDatasetChoice(DatasetType dataType) {
@@ -479,16 +482,26 @@ public class RefManager {
         TextField textField = new TextField();
         textField.setPrefWidth(200);
         textField.setEditable(false);
-
-        switch (field) {
-            case "Solvent" -> textField.setText(nmrData.getSolvent());
-            case "Sequence" -> textField.setText(nmrData.getSequence());
-            case "Temperature" -> textField.setText(String.valueOf(nmrData.getTempK()));
-            case "Date" -> textField.setText(nmrData.getZonedDate().toString());
-            case "ZeroFreq" -> textField.setText(String.format("%.7f", nmrData.getZeroFreq()));
-        }
+        parameterMap.put(field, textField);
         hBox.getChildren().addAll(label, textField);
         return hBox;
+    }
+
+    public void refreshParameters(NMRData nmrData) {
+        for (var entry : parameterMap.entrySet()) {
+            String field = entry.getKey();
+            TextField textField = entry.getValue();
+            switch (field) {
+                case "Solvent" -> textField.setText(nmrData.getSolvent());
+                case "Sequence" -> textField.setText(nmrData.getSequence());
+                case "Temperature" -> textField.setText(String.valueOf(nmrData.getTempK()));
+                case "Date" -> textField.setText(nmrData.getZonedDate().toString());
+                case "ZeroFreq" -> {
+                    textField.setText(String.format("%.7f", nmrData.getZeroFreq()));
+                }
+            }
+        }
+        System.out.println("refresh " + nmrData.getRef(0) + " " + nmrData.getZeroFreq());
     }
 
     public void updateReferencePane(NMRData nmrData, int nDim) {
@@ -498,6 +511,7 @@ public class RefManager {
         for (String infoField: infoFields) {
             vBox.getChildren().add(getParDisplay(nmrData, infoField));
         }
+        refreshParameters(nmrData);
 
         Label dataTypeLabel = new Label("Output Type");
         dataTypeLabel.setPrefWidth(100);

@@ -1,20 +1,12 @@
 package org.nmrfx.processor.datasets;
 
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
+import org.nmrfx.datasets.Nuclei;
 
 import java.util.Map;
 
 public class ReferenceCalculator {
-    static Map<String, Double> ratiosAcqueous = Map.of("C", 0.251449530, "N", 0.101329118, "P", 0.404808636,
-            "D", 0.15350608, "H", 1.0);
-    static Map<String, Double> ratiosNonAcqueous = Map.of("C", 0.25145020, "N", 0.10136767, "P", 0.40480742,
-            "D", 0.15350609, "H", 1.0);
 
-    static double DSS_rel_TMS = -0.074;
-
-    public static boolean hasRatio(String nucName) {
-        return ratiosAcqueous.containsKey(nucName);
-    }
     public static double getCorrectedBaseFreq(double baseFreq, double lockPPM, double actualLockPPM) {
         return baseFreq * (lockPPM + 1.0e6) / (actualLockPPM + 1.0e6);
     }
@@ -36,7 +28,6 @@ public class ReferenceCalculator {
         double a = -0.009552;
         double b = 5.011718;
         double refPPM2 =  a * tempC + b;
-        System.out.println(tempK + " " + tempC + " " + refPPM + " " + refPPM2);
         return refPPM;
 
     }
@@ -87,11 +78,10 @@ Then actual center of the spectrum in ppm:
 
      */
 
-    public static double refByRatio(double refSF, double refCenter, double sf, String nucleus, String solvent) {
+    public static double refByRatio(double refSF, double refCenter, double sf, Nuclei nucleus, String solvent) {
         boolean isAcqueous = isAcqueous(solvent);
         double refZero = refSF / (1.0 + refCenter / 1.0e6);
-        var map = isAcqueous ? ratiosAcqueous : ratiosNonAcqueous;
-        Double ratio = map.get(nucleus);
+        double ratio = isAcqueous ? nucleus.getRatioAcqueous() : nucleus.getRatio();
         double zeroC = refZero * ratio;
         return (sf -zeroC) * 1.0e6 / zeroC;
     }
