@@ -86,6 +86,7 @@ public class GUIProject extends ProjectBase {
         PreferencesController.saveRecentProjects(projectDir.toString());
         checkUserHomePath();
         gitManager = new GitManager(this);
+        setActive();
     }
 
     /***
@@ -151,14 +152,15 @@ public class GUIProject extends ProjectBase {
     }
 
     public void close() {
-        System.out.println("close project");
         clearAllMolecules();
         clearAllPeakLists();
         clearAllDatasets();
         AnalystApp.closeAll();
         // Clear the project directory or else a user may accidentally overwrite their previously closed project
         setProjectDir(null);
-        gitManager.close();
+        if (gitManager != null) {
+            gitManager.close();
+        }
         clearActive();
     }
 
@@ -171,9 +173,7 @@ public class GUIProject extends ProjectBase {
     }
 
     public void loadGUIProject(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {
-        ProjectBase currentProject = getActive();
         setActive();
-
 
         loadProject(projectDir, "datasets");
         gitManager = new GitManager(this);
@@ -226,7 +226,6 @@ public class GUIProject extends ProjectBase {
         gitManager.setProject(this);
         gitManager.gitOpen();
         PreferencesController.saveRecentProjects(projectDir.toString());
-        currentProject.setActive();
     }
 
     private File getSTAR3FileName() {
@@ -261,7 +260,6 @@ public class GUIProject extends ProjectBase {
         }
         gitManager.gitCommitOnThread();
         PreferencesController.saveRecentProjects(projectDir.toString());
-        currentProject.setActive();
         currentProject.setActive();
     }
 

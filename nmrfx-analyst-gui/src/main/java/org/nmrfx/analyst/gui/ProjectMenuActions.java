@@ -123,8 +123,7 @@ public class ProjectMenuActions extends MenuActions {
         if (directoryFile != null) {
             GUIProject activeProject = (GUIProject) AnalystApp.getActive();
             if (activeProject != null) {
-                GUIProject newProject = GUIProject.replace(AnalystApp.getAppName(), activeProject);
-
+                GUIProject newProject = GUIProject.replace(directoryFile.getName(), activeProject);
                 try {
                     newProject.createProject(directoryFile.toPath());
                     newProject.saveProject();

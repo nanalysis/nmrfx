@@ -18,7 +18,11 @@
 package org.nmrfx.analyst.gui.git;
 
 import java.io.File;
-import java.util.Date;
+
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 /**
@@ -28,18 +32,42 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 public class HistoryData {
 
-    int index;
     RevCommit commitInfo;
     String branchName;
+    private final StringProperty branch = new SimpleStringProperty();
+    private final StringProperty revision = new SimpleStringProperty();
+    private final StringProperty date = new SimpleStringProperty();
+    private final IntegerProperty index = new SimpleIntegerProperty();
+    private final StringProperty user = new SimpleStringProperty();
+    private final StringProperty parent = new SimpleStringProperty();
+    private final StringProperty message = new SimpleStringProperty();
+
 
     public HistoryData(RevCommit commitInfo, int index, String branchName) {
         this.commitInfo = commitInfo;
-        this.index = index;
         this.branchName = branchName;
+        setIndex(index);
+        setUser();
+        setParent();
+        setRevision();
+        setDate();
+        setBranchProperty();
+        setMessage();
     }
 
-    public int getIndex() {
+    public HistoryData(String branchName) {
+        this.branchName = branchName;
+        setBranchProperty();
+    }
+
+    public IntegerProperty indexProperty(){
         return index;
+    }
+    public int getIndex() {
+        return indexProperty().get();
+    }
+    public void setIndex(int value) {
+        indexProperty().set(value);
     }
     
     public String getBranch() {
@@ -52,20 +80,14 @@ public class HistoryData {
         return shortBranch;
     }
 
-    public Date getDate() {
-        return commitInfo.getCommitterIdent().getWhen();
+    public StringProperty userProperty() {
+        return user;
     }
-
-    public String getRevision() {
-        return commitInfo.getName();
-    }
-
     public String getUser() {
-        return commitInfo.getCommitterIdent().getName();
+        return userProperty().get();
     }
-
-    public String getMessage() {
-        return commitInfo.getFullMessage();
+    public void setUser() {
+        userProperty().set(commitInfo.getCommitterIdent().getName());
     }
     
     public String getParent() {
@@ -76,6 +98,54 @@ public class HistoryData {
         }
         return parent;
     }
+    public StringProperty revisionProperty(){
+        return revision;
+    }
+    public void setRevision() {
+        revisionProperty().set(commitInfo.getName());
+    }
+    public String getRevision() {
+        return revisionProperty().get();
+    }
+    public StringProperty dateProperty(){
+        return date;
+    }
+    public void setDate(){
+        dateProperty().set(commitInfo.getCommitterIdent().getWhen().toString());
+    }
+    public String getDate(){
+        return dateProperty().get();
+    }
+    public StringProperty branchProperty(){
+        return branch;
+    }
+    public void setBranchProperty(){
+        branchProperty().set(getShortBranch());
+    }
+    public StringProperty messageProperty() {
+        return message;
+    }
+    public void setMessage(){
+        messageProperty().set(commitInfo.getFullMessage());
+    }
+    public String getMessage(){
+        return messageProperty().get();
+    }
+    public StringProperty parentProperty(){
+        return parent;
+    }
+    public void setParent(){
+        String parentName = "";
+        int nParents = commitInfo.getParentCount();
+        if (nParents > 0) {
+            parentName = commitInfo.getParents()[nParents - 1].getName();
+        }
+        parentProperty().set(parentName);
+    }
+    public String getParentProperty(){
+        return parentProperty().get();
+    }
+
 
 }
 

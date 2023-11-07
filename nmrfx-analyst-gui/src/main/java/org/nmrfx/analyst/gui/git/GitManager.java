@@ -20,6 +20,7 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,15 +34,12 @@ import java.util.stream.Collectors;
 
 public class GitManager {
     private static final Logger log = LoggerFactory.getLogger(GitManager.class);
+    public static GitConflictController conflictController = null;
+    public static GitDiffController diffController = null;
+    protected static GitHistoryController historyController = null;
     private static boolean commitActive = false;
     GUIProject guiProject;
     Path projectDir;
-
-    protected static GitHistoryController historyController = null;
-    public static GitConflictController conflictController = null;
-    public static GitDiffController diffController = null;
-
-
     Git git;
 
     public GitManager(GUIProject guiProject) throws IllegalArgumentException {
@@ -58,21 +56,49 @@ public class GitManager {
         }
     }
 
+    public static GitConflictController getConflictController() {
+        return conflictController;
+    }
+
+    public static GitDiffController getDiffController() {
+        return diffController;
+    }
+
+    public static boolean isCommitting() {
+        return commitActive;
+    }
+
+    private static void listRepositoryContents(Repository repository) throws IOException {
+        Ref head = repository.findRef("HEAD");
+        RevWalk walk = new RevWalk(repository);
+        RevCommit commit = walk.parseCommit(head.getObjectId());
+        RevTree tree = commit.getTree();
+        System.out.println("tree: " + tree);
+        TreeWalk treeWalk = new TreeWalk(repository);
+        treeWalk.addTree(tree);
+        treeWalk.setRecursive(true);
+        while (treeWalk.next()) {
+            System.out.println("found: " + treeWalk.getPathString());
+        }
+    }
+
     public void close() {
         if (git != null) {
             git.close();
         }
         if (historyController != null) {
             historyController.close();
+            historyController = null;
         }
         if (diffController != null) {
             diffController.close();
+            diffController = null;
         }
         if (conflictController != null) {
             conflictController.close();
+            conflictController = null;
         }
     }
-
 
     @FXML
     public void showHistoryAction(ActionEvent event) {
@@ -80,6 +106,7 @@ public class GitManager {
             historyController = GitHistoryController.create(this);
         }
         if (historyController != null) {
+            guiProject = GUIProject.getActive();
             historyController.setProject(guiProject);
             if (guiProject.getProjectDir() != null) {
                 historyController.getStage().setTitle("Git History (Project = " + guiProject.getName() + ", Current Branch = " + guiProject.getGitManager().gitCurrentBranch() + ")");
@@ -104,7 +131,6 @@ public class GitManager {
         }
     }
 
-
     @FXML
     public void showDiffAction() {
         if (diffController == null) {
@@ -126,14 +152,6 @@ public class GitManager {
         }
     }
 
-    public static GitConflictController getConflictController() {
-        return conflictController;
-    }
-
-    public static GitDiffController getDiffController() {
-        return diffController;
-    }
-
     public void setProject(GUIProject guiProject) {
         this.guiProject = guiProject;
         Path currentDir = projectDir;
@@ -144,6 +162,10 @@ public class GitManager {
             }
             git = null;
             gitOpen();
+        }
+        if (historyController != null) {
+            historyController.setProject(guiProject);
+            historyController.updateHistory();
         }
     }
 
@@ -158,11 +180,19 @@ public class GitManager {
     }
 
     public boolean gitOpen() {
-        return git != null;
-    }
-
-    public static boolean isCommitting() {
-        return commitActive;
+        if (git == null) {
+            try {
+                git = Git.open(projectDir.toFile());
+            } catch (IOException ioE) {
+                GUIProject.checkUserHomePath();
+                git = createAndInitializeGitObject(projectDir.toFile());
+                if (git == null) {
+                    return false;
+                }
+                guiProject.writeIgnore();
+            }
+        }
+        return true;
     }
 
     public void gitCommitOnThread() {
@@ -217,6 +247,7 @@ public class GitManager {
                 actionMap.forEach(action -> sBuilder.append(action).append(","));
                 RevCommit commit = git.commit().setMessage(msg + " " + sBuilder).call();
                 didSomething = true;
+
             }
         } catch (GitAPIException ex) {
             log.error(ex.getMessage(), ex);
@@ -225,6 +256,11 @@ public class GitManager {
             git.close();
             git = null;
             commitActive = false;
+            Fx.runOnFxThread(() -> {
+                if (historyController != null) {
+                    historyController.updateHistory();
+                }
+            });
         }
         return didSomething;
     }
@@ -320,20 +356,6 @@ public class GitManager {
         return shortBranch;
     }
 
-    private static void listRepositoryContents(Repository repository) throws IOException {
-        Ref head = repository.findRef("HEAD");
-        RevWalk walk = new RevWalk(repository);
-        RevCommit commit = walk.parseCommit(head.getObjectId());
-        RevTree tree = commit.getTree();
-        System.out.println("tree: " + tree);
-        TreeWalk treeWalk = new TreeWalk(repository);
-        treeWalk.addTree(tree);
-        treeWalk.setRecursive(true);
-        while (treeWalk.next()) {
-            System.out.println("found: " + treeWalk.getPathString());
-        }
-    }
-
     private ObjectLoader gitFindFile(String branch, String fileName) throws IOException {
         ObjectLoader fileObject = null;
         Repository repository = git.getRepository();
@@ -427,9 +449,16 @@ public class GitManager {
         Optional<ButtonType> response = alert.showAndWait();
         if (response.isPresent() && (response.get() == ButtonType.YES)) {
             try {
+                Path oldProjectDir = projectDir;
+                guiProject.close();
                 git.revert().include(commit).call();
-            } catch (GitAPIException ex) {
+                guiProject.loadGUIProject(oldProjectDir);
+            } catch (GitAPIException | IOException | MoleculeIOException ex) {
                 log.error("Reverting commit", ex);
+                String errMessage = ex.getMessage();
+                if (errMessage.contains("Checkout conflict with files:")) {
+                    resolveFileConflicts(shortBranch, errMessage);
+                }
             }
         }
     }
@@ -450,8 +479,11 @@ public class GitManager {
             if (git == null) {
                 gitOpen();
             }
+            Path oldProjectDir = projectDir;
+            guiProject.close();
             git.checkout().setCreateBranch(true).setName(newBranch).setStartPoint(commitID).call();
-        } catch (GitAPIException ex) {
+            guiProject.loadGUIProject(oldProjectDir);
+        } catch (GitAPIException | IOException | MoleculeIOException ex) {
             log.error("Creating branch", ex);
             String message = ex.getMessage();
             if (message.contains("Checkout conflict with files:")) {
@@ -554,8 +586,10 @@ public class GitManager {
                 gitOpen();
             }
             Path oldProjectDir = projectDir;
+            String projectName = guiProject.getName();
             guiProject.close();
             git.checkout().setName(name).call();
+            GUIProject project = new GUIProject(projectName);
             guiProject.loadGUIProject(oldProjectDir);
         } catch (GitAPIException | IOException | MoleculeIOException ex) {
             log.error("Checkout", ex);
@@ -565,6 +599,8 @@ public class GitManager {
             }
         }
     }
+
+
 
     /**
      * Merge the original branch at the given commit into the destination branch.

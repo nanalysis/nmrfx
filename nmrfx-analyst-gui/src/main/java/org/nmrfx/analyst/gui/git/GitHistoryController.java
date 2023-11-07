@@ -17,6 +17,9 @@
  */
 package org.nmrfx.analyst.gui.git;
 
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -26,7 +29,6 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -54,22 +56,23 @@ public class GitHistoryController implements Initializable {
 
     static GitHistoryController controller = null;
     @FXML
-    TableView<HistoryData> historyTable = new TableView<>();
+    TreeTableView<HistoryData> historyTable = new TreeTableView<>();
     Stage stage;
-    GUIProject project = GUIProject.getActive();
+    GUIProject project;
     GitManager gitManager;
     @FXML
     MenuButton actionMenu = new MenuButton();
-    
+    @FXML
+    TextArea commitMessage = new TextArea();
+    @FXML
+    Button saveButton = new Button();
+
     private enum GitAction {
         DIFF("Diff to Selected Commit"),
-        LOAD("Load Selected Commit"),
         MERGE("Merge Selected Commit into Master Branch"),
-        RESET("Reset to Selected Commit"),
-        REVERT("Revert the Selected Commit"),
         NEW("Create New Branch from Selected Commit"),
-        DELETE("Delete Selected Branch"),
-        SWITCH("Switch to Selected Branch");
+        DELETE("Delete Selected Branch");
+
 
         private final String label;
 
@@ -85,11 +88,11 @@ public class GitHistoryController implements Initializable {
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        if (project != null) {
-            initializeHistory();
-            List<GitAction> choices = Arrays.asList(GitAction.values());
-            setUpMenu(actionMenu, choices);
-        }
+        project = GUIProject.getActive();
+        initializeHistory();
+        List<GitAction> choices = Arrays.asList(GitAction.values());
+        setUpMenu(actionMenu, choices);
+
     }
 
     /**
@@ -125,39 +128,57 @@ public class GitHistoryController implements Initializable {
             menu.getItems().add(menuItem);
             menuItem.setOnAction(e -> gitMenuAction(choice));
         }
+
+        saveButton.setOnAction(e -> {
+            try {
+                project.saveProject();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
     }
     
-    private void initializeHistory()  { 
-        if (controller != null && controller.stage != null) {
-            controller.stage.setTitle("Git History (Project = " + project.getName() + ", Current Branch = " + gitManager.gitCurrentBranch() + ")");
-        }
-        
-        TableColumn<HistoryData, String> indexColumn = new TableColumn<>("Commit Index");
-        TableColumn<HistoryData, String> branchColumn = new TableColumn<>("Branch");
-        TableColumn<HistoryData, String> dateColumn = new TableColumn<>("Date");
-        TableColumn<HistoryData, String> userColumn = new TableColumn<>("User");
-        TableColumn<HistoryData, String> revisionColumn = new TableColumn<>("Revision");
-        TableColumn<HistoryData, String> parentColumn = new TableColumn<>("Parent");
-        TableColumn<HistoryData, String> messageColumn = new TableColumn<>("Message");
-        
-        indexColumn.setCellValueFactory(new PropertyValueFactory<>("Index"));
-        branchColumn.setCellValueFactory(new PropertyValueFactory<>("ShortBranch"));
-        dateColumn.setCellValueFactory(new PropertyValueFactory<>("Date"));
-        userColumn.setCellValueFactory(new PropertyValueFactory<>("User"));
-        revisionColumn.setCellValueFactory(new PropertyValueFactory<>("Revision"));
-        parentColumn.setCellValueFactory(new PropertyValueFactory<>("Parent"));
-        messageColumn.setCellValueFactory(new PropertyValueFactory<>("Message"));
-        
-        indexColumn.setPrefWidth(100);
-        revisionColumn.setPrefWidth(100);
-        parentColumn.setPrefWidth(100);
+    private void initializeHistory()  {
+        TreeItem root = new TreeItem(new HistoryData("Branches"));
+        historyTable.setRoot(root);
+        historyTable.setShowRoot(false);
+
+        TreeTableColumn<HistoryData, String> branchColumn = new TreeTableColumn<>("Branch");
+        TreeTableColumn<HistoryData, String> indexColumn = new TreeTableColumn<>("Index");
+        TreeTableColumn<HistoryData, String> dateColumn = new TreeTableColumn<>("Date");
+        TreeTableColumn<HistoryData, String> userColumn = new TreeTableColumn<>("User");
+        TreeTableColumn<HistoryData, String> revisionColumn = new TreeTableColumn<>("Revision");
+        TreeTableColumn<HistoryData, String> parentColumn = new TreeTableColumn<>("Parent");
+        TreeTableColumn<HistoryData, String> messageColumn = new TreeTableColumn<>("Message");
+
+        branchColumn.setCellValueFactory(cellData -> cellData.getValue().getValue().branchProperty());
+        indexColumn.setCellValueFactory(cellData-> formatIndex(cellData.getValue().getValue().indexProperty()));
+        dateColumn.setCellValueFactory(cellData -> cellData.getValue().getValue().dateProperty());
+        userColumn.setCellValueFactory(cellData -> cellData.getValue().getValue().userProperty());
+        revisionColumn.setCellValueFactory(cellData -> cellData.getValue().getValue().revisionProperty());
+        parentColumn.setCellValueFactory(cellData -> cellData.getValue().getValue().parentProperty());
+        messageColumn.setCellValueFactory(cellData -> cellData.getValue().getValue().messageProperty());
+
+        branchColumn.setPrefWidth(150);
+        dateColumn.setPrefWidth(150);
+        messageColumn.setPrefWidth(150);
 
         historyTable.getColumns().clear();
-        historyTable.getColumns().addAll(indexColumn, branchColumn, dateColumn, messageColumn, userColumn, revisionColumn, parentColumn);
+        historyTable.getColumns().setAll(branchColumn, indexColumn, dateColumn, messageColumn, userColumn, revisionColumn, parentColumn);
+    }
+
+    private StringProperty formatIndex(IntegerProperty index) {
+        String formattedIndex;
+        if (index.get() == 0) {
+            formattedIndex = "";
+        } else {
+            formattedIndex = String.valueOf(index.get());
+        }
+        return new SimpleStringProperty(formattedIndex);
     }
 
     public HistoryData getSelectedItem() {
-        return historyTable.getSelectionModel().getSelectedItem();
+        return historyTable.getSelectionModel().getSelectedItem().getValue();
     }
 
     /**
@@ -167,32 +188,49 @@ public class GitHistoryController implements Initializable {
         if (controller != null && controller.stage != null) {
             controller.stage.setTitle("Git History (Project = " + project.getName() + ", Current Branch = " + gitManager.gitCurrentBranch() + ")");
         }
-        
-        ObservableList<HistoryData> data = FXCollections.observableArrayList();
+        String currentBranch = gitManager.gitCurrentBranch();
+
+        TreeItem root = historyTable.getRoot();
+        root.getChildren().clear();
+
         List<Ref> branches = gitManager.gitBranches();
         for (Ref branch : branches) {
+            ObservableList<TreeItem> data = FXCollections.observableArrayList();
             String branchName = branch.getName();
             List<RevCommit> gitLog = gitManager.gitLog(branchName);
+
+            TreeItem branchItem = new TreeItem(new HistoryData(branchName));
+            root.getChildren().add(branchItem);
+
             int idx = gitLog.size();
             for (RevCommit entry : gitLog) {
                 HistoryData historyData = new HistoryData(entry, idx, branchName);
-                data.addAll(historyData);
+                TreeItem rowItem = new TreeItem(historyData);
+                data.addAll(rowItem);
                 idx--;
             }
+            branchItem.getChildren().addAll(data);
         }
-        historyTable.setItems(data);
+
+        ObservableList<TreeItem> children = root.getChildren();
+        for (TreeItem<HistoryData> child : children) {
+            String childBranch = child.getValue().getShortBranch();
+            if (childBranch.equals(currentBranch)) {
+                child.setExpanded(true);
+            }
+        }
+
+        historyTable.refresh();
+        stage.show();
+        stage.toFront();
     }
     
     private void gitMenuAction(GitAction choice) {
         switch (choice) {
             case DIFF -> gitDiff();
-            case LOAD -> gitLoad();
             case MERGE -> gitMerge();
-            case RESET -> gitReset();
-            case REVERT -> gitRevert();
             case NEW -> gitCreateBranch();
             case DELETE -> gitDeleteBranch();
-            case SWITCH -> gitCheckoutCommit();
             default -> {
             }
         }
@@ -200,12 +238,11 @@ public class GitHistoryController implements Initializable {
     
     /**
      * Load the yaml file with the window information for the given commit.
-     * 
-     * @param iCommit int. The index of the commit.
+     *
      * @param branch String. The branch name of the commit.
      * @param currentBranch String. The name of the currently checked out branch.
      */
-    public void gitLoad(int iCommit, String branch, String currentBranch) {
+    public void gitLoad(String branch, String currentBranch) {
         String shortBranch = gitManager.gitShortBranch(branch);
         String shortCurrentBranch = gitManager.gitShortBranch(currentBranch);
         if (shortCurrentBranch.equals(shortBranch)) {
@@ -215,29 +252,15 @@ public class GitHistoryController implements Initializable {
         }
         
     }
-    
-    /**
-     * Load the selected commit.
-     */
-    public void gitLoad() {
-        HistoryData data = historyTable.getSelectionModel().getSelectedItem();
-        if (data != null) {
-            int idx = data.index;
-            String branch = data.getShortBranch();
-            String currentBranch = gitManager.gitCurrentBranch();
-            gitLoad(idx, branch, currentBranch);
-        } else {
-            alert("No commit selected");
-        }
-    }
-    
+
     /**
      * Perform a git commit.
      * 
      * @param event ActionEvent. The button click.
      */
     public void gitCommit(ActionEvent event) {
-        gitManager.gitCommit("");
+        String msg = commitMessage.getText();
+        gitManager.gitCommit(msg);
         updateHistory();
     }
     
@@ -245,9 +268,9 @@ public class GitHistoryController implements Initializable {
      * Reset to the selected commit. All subsequent commits will be deleted.
      */
     public void gitReset() {
-        HistoryData data = historyTable.getSelectionModel().getSelectedItem();
+        HistoryData data = historyTable.getSelectionModel().getSelectedItem().getValue();
         if (data != null) {
-            int idx = data.index;
+            int idx = data.getIndex();
             RevCommit commit = data.commitInfo;
             String branch = data.getBranch();
             String shortBranch = gitManager.gitShortBranch(branch);
@@ -256,7 +279,8 @@ public class GitHistoryController implements Initializable {
                 boolean reset = gitManager.gitResetToCommit(idx, commit, branch);
                 if (reset) {
                     updateHistory();
-                    gitLoad(idx, branch, currentBranch);
+                    // fixme
+                    //gitLoad(idx, branch, currentBranch);
                 }
             } else {
                 alert("Currently on the " + currentBranch + " branch. Cannot reset to a commit on the " + shortBranch + " branch.");
@@ -270,9 +294,9 @@ public class GitHistoryController implements Initializable {
      * Revert the selected commit. 
      */
     public void gitRevert() {
-        HistoryData data = historyTable.getSelectionModel().getSelectedItem();
+        HistoryData data = historyTable.getSelectionModel().getSelectedItem().getValue();
         if (data != null) {
-            int idx = data.index;
+            int idx = data.getIndex();
             RevCommit commit = data.commitInfo;
             String branch = data.getBranch();
             String shortBranch = gitManager.gitShortBranch(branch);
@@ -292,7 +316,7 @@ public class GitHistoryController implements Initializable {
      * Merge the selected commit into the master branch.
      */
     public void gitMerge() {
-        HistoryData data = historyTable.getSelectionModel().getSelectedItem();
+        HistoryData data = historyTable.getSelectionModel().getSelectedItem().getValue();
         if (data != null) {
             RevCommit commit = data.commitInfo;
             String branch = data.getShortBranch();
@@ -308,7 +332,7 @@ public class GitHistoryController implements Initializable {
      * Perform a git diff to get the changes from the selected commit.
      */
     public void gitDiff() {
-        HistoryData data = historyTable.getSelectionModel().getSelectedItem();
+        HistoryData data = historyTable.getSelectionModel().getSelectedItem().getValue();
         if (data != null) {
             String commit = data.getRevision();
             gitManager.gitDiff(commit);
@@ -321,7 +345,7 @@ public class GitHistoryController implements Initializable {
      * Create a new branch starting from the selected commit.
      */
     public void gitCreateBranch() {
-        HistoryData data = historyTable.getSelectionModel().getSelectedItem();
+        HistoryData data = historyTable.getSelectionModel().getSelectedItem().getValue();
         if (data != null) {
             String origBranch = data.getShortBranch();
             int idx = data.getIndex();
@@ -334,19 +358,20 @@ public class GitHistoryController implements Initializable {
                     gitManager.gitCreateBranch(origBranch, newBranch, commit, idx);
                     updateHistory();
                     String currentBranch = gitManager.gitCurrentBranch();
-                    gitLoad(idx, newBranch, currentBranch);
+                    gitLoad(newBranch, currentBranch);
                 }
             }
         } else {
             alert("No branch selected");
         }
+        stage.show();
     }
     
     /**
      * Delete the selected branch.
      */
     public void gitDeleteBranch() {
-        HistoryData data = historyTable.getSelectionModel().getSelectedItem();
+        HistoryData data = historyTable.getSelectionModel().getSelectedItem().getValue();
         if (data != null) {
             String branch = data.getShortBranch();
             gitManager.gitDeleteBranch(branch);
@@ -354,38 +379,33 @@ public class GitHistoryController implements Initializable {
         } else {
             alert("No branch selected");
         }
+        stage.show();
     }
     
     /**
      * Checkout to the selected branch.
      */
     public void gitCheckoutBranch() {
-        HistoryData data = historyTable.getSelectionModel().getSelectedItem();
+        HistoryData data = historyTable.getSelectionModel().getSelectedItem().getValue();
         if (data != null) {
             String branch = data.getShortBranch();
             gitManager.gitCheckout(branch);
             updateHistory();
-//            int idx = data.getIndex();
-//            String currentBranch = gitManager.gitCurrentBranch();
-//            gitLoad(idx, branch, currentBranch);
         } else {
             alert("No branch selected");
         }
     }
     /**
-     * Checkout to the selected branch.
+     * Checkout to the selected commit.
      */
     public void gitCheckoutCommit() {
-        HistoryData data = historyTable.getSelectionModel().getSelectedItem();
+        HistoryData data = historyTable.getSelectionModel().getSelectedItem().getValue();
         if (data != null) {
-            String branch = data.getRevision();
-            gitManager.gitCheckout(branch);
+            String revision = data.getRevision();
+            gitManager.gitCheckout(revision);
             updateHistory();
-//            int idx = data.getIndex();
-//            String currentBranch = gitManager.gitCurrentBranch();
-//            gitLoad(idx, branch, currentBranch);
         } else {
-            alert("No branch selected");
+            alert("No commit selected");
         }
     }
     private void alert(String message) {
