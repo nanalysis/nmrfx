@@ -61,7 +61,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     private final BooleanProperty drawPeaks = new SimpleBooleanProperty(this, DRAW_PEAKS, true);
     private final BooleanProperty simPeaks = new SimpleBooleanProperty(this, SIM_PEAKS, false);
     private final BooleanProperty drawLinks = new SimpleBooleanProperty(this, "drawLinks", false);
-    private final ObjectProperty<PeakDisplayParameters.LabelTypes> peakLabelType = new SimpleObjectProperty<>(this, "peakLabelType", Number);
+    private final ObjectProperty<PeakDisplayParameters.LabelTypes> labelType = new SimpleObjectProperty<>(this, LABEL_TYPE, PeakDisplayParameters.LabelTypes.Label);
     private final ObjectProperty<PeakDisplayParameters.DisplayTypes> displayType = new SimpleObjectProperty<>(this, DISPLAY_TYPE, DisplayTypes.Peak);
     private final ObjectProperty<PeakDisplayParameters.ColorTypes> colorType = new SimpleObjectProperty<>(this, "colorType", ColorTypes.Plane);
     private final StringProperty peakListName = new SimpleStringProperty(this, "peakListName", "");
@@ -152,7 +152,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
 
 
     public final ObjectProperty<PeakDisplayParameters.LabelTypes> labelTypeProperty() {
-        return this.peakLabelType;
+        return this.labelType;
     }
 
     public final PeakDisplayParameters.LabelTypes getLabelType() {
@@ -756,7 +756,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
 
     @Override
     public Collection<Property<?>> getPublicProperties() {
-        return Set.of(onColor, offColor, drawPeaks, nplanes, simPeaks, peakLabelType, displayType);
+        return Set.of(onColor, offColor, drawPeaks, nplanes, simPeaks, labelType, displayType);
     }
 
     /**

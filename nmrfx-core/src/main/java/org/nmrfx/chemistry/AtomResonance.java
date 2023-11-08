@@ -73,10 +73,12 @@ public class AtomResonance extends SimpleResonance {
     public void setName(List<String> newNames) {
         super.setName(newNames);
         boolean valid = true;
-        for (var name : newNames) {
-            if (!isLabelValid(name)) {
-                valid = false;
-                break;
+        if (newNames != null) {
+            for (var name : newNames) {
+                if (!isLabelValid(name)) {
+                    valid = false;
+                    break;
+                }
             }
         }
         labelValid = valid;
@@ -106,10 +108,12 @@ public class AtomResonance extends SimpleResonance {
         }
     }
 
+    @Override
     public void setAtom(Atom atom) {
         this.atom = atom;
     }
 
+    @Override
     public Atom getAtom() {
         return atom;
     }

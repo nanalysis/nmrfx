@@ -19,6 +19,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -32,6 +33,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
@@ -41,11 +43,13 @@ import org.nmrfx.structure.chemistry.energy.RotationalDynamics;
 import org.nmrfx.structure.rna.RNAAnalysis;
 import org.nmrfx.structure.rna.RNALabels;
 import org.nmrfx.structure.rna.SSLayout;
+import org.nmrfx.structure.rna.SSPredictor;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.net.URL;
 import java.util.*;
 
@@ -96,6 +100,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     Throwable processingThrowable;
 
     List<CheckMenuItem> atomCheckItems = new ArrayList<>();
+    List<CheckMenuItem> peakClassCheckItems = new ArrayList<>();
 
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     StackPane stackPane = new StackPane();
@@ -194,6 +199,18 @@ public class MolSceneController implements Initializable, StageBasedController, 
             menuItem.selectedProperty().addListener(
                     (ChangeListener<Boolean>) (a, b, c) -> updateAtoms());
         }
+        Menu peakClassMenu = new Menu("Peak Intensities");
+        modeMenuButton.getItems().add(peakClassMenu);
+        String[] peakClasses = {"s", "m", "w", "vw"};
+        for (String name : peakClasses) {
+            CheckMenuItem menuItem = new CheckMenuItem(name);
+            menuItem.setSelected(true);
+            peakClassCheckItems.add(menuItem);
+            peakClassMenu.getItems().add(menuItem);
+            menuItem.selectedProperty().addListener(
+                    (ChangeListener<Boolean>) (a, b, c) -> updatePeaks());
+        }
+
     }
 
     private void updateAtoms(String name, boolean selected) {
@@ -732,6 +749,13 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     void updatePeaks() {
+        Set<String> peakClasses = new HashSet<>();
+        for (var menuItem : peakClassCheckItems) {
+            if (menuItem.isSelected()) {
+                peakClasses.add(menuItem.getText());
+            }
+        }
+
         if (peakList != null) {
             List<String> constraintPairs = new ArrayList<>();
             boolean onlyFrozen = frozenCheckBox.isSelected();
@@ -751,7 +775,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
                         if (!name1.equals("") && !name2.equals("")) {
                             double intensity = peak.getIntensity();
                             double normIntensity = 100.0 * intensity / max;
-                            String intMode = "w";
+                            String intMode;
                             if (normIntensity > 10.0) {
                                 intMode = "s";
                             } else if (normIntensity > 1.5) {
@@ -761,9 +785,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
                             } else {
                                 intMode = "vw";
                             }
-                            constraintPairs.add(name1);
-                            constraintPairs.add(name2);
-                            constraintPairs.add(intMode);
+                            if (peakClasses.contains(intMode)) {
+                                constraintPairs.add(name1);
+                                constraintPairs.add(name2);
+                                constraintPairs.add(intMode);
+                            }
                         }
                     }
                 }
@@ -809,6 +835,50 @@ public class MolSceneController implements Initializable, StageBasedController, 
         to3D();
     }
 
+    @FXML
+    private void seqTo2D() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule != null) {
+            SSPredictor ssPredictor = new SSPredictor();
+            String rnModelDir = PreferencesController.getRNAModelDirectory();
+            if (rnModelDir.isEmpty()) {
+                DirectoryChooser directoryChooser = new DirectoryChooser();
+                File file = directoryChooser.showDialog(null);
+                if (file == null) {
+                    return;
+                } else {
+                    PreferencesController.setRNAModelDirectory(file.toString());
+                    ssPredictor.setModelFile(file.toString());
+                }
+            } else {
+                ssPredictor.setModelFile(rnModelDir);
+            }
+            if (!ssPredictor.hasValidModelFile()) {
+                return;
+            }
+            StringBuilder seqBuilder = new StringBuilder();
+            for (Polymer polymer : molecule.getPolymers()) {
+                if (polymer.isRNA()) {
+                    for (Residue residue: polymer.getResidues()) {
+                        seqBuilder.append(residue.getName());
+                    }
+                }
+            }
+            String sequence = seqBuilder.toString();
+            try {
+                ssPredictor.predict(sequence);
+                List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(0.3);
+                String dotBracket = ssPredictor.getDotBracket(basePairs);
+                molecule.setDotBracket(dotBracket);
+                layoutSS();
+
+            } catch (IllegalArgumentException | InvalidMoleculeException e) {
+                ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                exceptionDialog.showAndWait();
+            }
+
+        }
+    }
     @FXML
     private void activateBondAction() {
         Molecule molecule = Molecule.getActive();

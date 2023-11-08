@@ -113,6 +113,11 @@ public class PeakMenuBar {
         mirrorMenuItem.setOnAction(e -> mirror2DList());
         editMenu.getItems().add(mirrorMenuItem);
 
+
+        MenuItem unifyMenuItem = new MenuItem("Unify Widths");
+        unifyMenuItem.setOnAction(e -> unifyPeakWidths());
+        editMenu.getItems().add(unifyMenuItem);
+
         menuBar.getItems().add(editMenu);
 
         MenuButton clusterMenu = new MenuButton("Cluster");
@@ -271,6 +276,10 @@ public class PeakMenuBar {
                 }
             }
         }
+    }
+
+    void unifyPeakWidths() {
+        menuTarget.getPeak().ifPresent(peak -> PeakListTools.unifyWidths(peak));
     }
 
     void measureIntensities() {

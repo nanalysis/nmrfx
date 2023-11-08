@@ -5,6 +5,8 @@
  */
 package org.nmrfx.utils;
 
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
@@ -19,6 +21,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FormatStringConverter;
 
 import java.io.File;
@@ -26,6 +29,7 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.function.DoubleConsumer;
+import java.util.function.UnaryOperator;
 
 /**
  * @author brucejohnson
@@ -35,6 +39,37 @@ import java.util.function.DoubleConsumer;
 public class GUIUtils {
     static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, null, null));
     static final Background DEFAULT_BACKGROUND = new Background(new BackgroundFill(Color.WHITE, null, null));
+    public static class FixedDecimalFilter implements UnaryOperator<TextFormatter.Change> {
+
+        @Override
+        public TextFormatter.Change apply(TextFormatter.Change change) {
+            if (change.getControlNewText().matches("-?([0-9]+)?(\\.[0-9]*)?")) {
+                return change;
+            }
+            return null;
+        }
+    }
+    public static class FixedDecimalConverter extends DoubleStringConverter {
+
+        private final int decimalPlaces;
+
+        public FixedDecimalConverter(int decimalPlaces) {
+            this.decimalPlaces = decimalPlaces;
+        }
+
+        @Override
+        public String toString(Double value) {
+            return String.format("%." + decimalPlaces + "f", value);
+        }
+
+        @Override
+        public Double fromString(String valueString) {
+            if (valueString.isEmpty()) {
+                return 0d;
+            }
+            return super.fromString(valueString);
+        }
+    }
 
     private GUIUtils() {
     }
@@ -303,6 +338,13 @@ public class GUIUtils {
         slider.valueProperty().bindBidirectional(formatter.valueProperty());
     }
 
+    public static TextField getDoubleTextField(SimpleDoubleProperty prop) {
+        TextField textField = new TextField();
+        TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(2), 0.0, new FixedDecimalFilter());
+        textFormatter.valueProperty().bindBidirectional((Property) prop);
+        textField.setTextFormatter(textFormatter);
+        return textField;
+    }
     public static Color getColor(String colorString) {
         Color color = null;
         if (colorString != null && !colorString.isBlank()) {

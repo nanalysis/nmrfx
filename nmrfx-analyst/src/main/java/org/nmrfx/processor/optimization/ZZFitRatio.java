@@ -1,12 +1,13 @@
 package org.nmrfx.processor.optimization;
 
 import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 /**
  * @author brucejohnson
  */
-public class ZZFit extends FitEquation {
-    static final String[] parNames = {"I", "R1", "Kex", "P"};
+public class ZZFitRatio extends FitEquation {
+    static final String[] parNames = {"KK"};
 
     @Override
     public String[] parNames() {
@@ -15,7 +16,7 @@ public class ZZFit extends FitEquation {
 
     @Override
     public int nY() {
-        return 4;
+        return 1;
     }
 
     @Override
@@ -24,34 +25,30 @@ public class ZZFit extends FitEquation {
     }
 
     public Guesses guess() {
-        double yMax0 = FitUtils.getMaxValue(yValues[0]);
-        double yMax1 = FitUtils.getMaxValue(yValues[1]);
-        double midX = FitUtils.getMidY0(xValues[0], yValues[0]);
-        double midX2 = FitUtils.getMidY0(xValues[0], yValues[2]);
-        double intensity = yMax0 + yMax1;
-        double r1 = -Math.log(0.5) / midX;
-        double kEx = -Math.log(0.5) / midX2;
-        double pA = yMax0 / (yMax0 + yMax1);
-        double[] start = {intensity, r1, kEx, pA};
-        double[] lower = {intensity / 2.0, r1 / 2.0, kEx / 3.0, 0.0};
-        double[] upper = {intensity * 2.0, r1 * 2.0, kEx * 3.0, 1.0};
+
+        double xMax = FitUtils.getMaxValue(xValues[0]);
+        DescriptiveStatistics dStat = new DescriptiveStatistics();
+        for (int i=0;i<xValues[0].length;i++) {
+            double delay = xValues[0][i];
+            if (delay > xMax / 10.0) {
+                double v = yValues[0][i] / (delay * delay);
+                dStat.addValue(v);
+            }
+        }
+        double median = dStat.getPercentile(50);
+
+        double[] start = {median};
+        double[] lower = {0.0};
+        double[] upper = {median * 5.0};
         return new Guesses(start, lower, upper);
     }
 
     public double[] calcValue(double[] xA, double[] pars) {
         double delay = xA[0];
-        double intensity = pars[0];
-        double r1 = pars[1];
-        double kEx = pars[2];
-        double pA = pars[3];
-        double[] y = new double[4];
-        for (int iSig = 0; iSig < 4; iSig++) {
-            y[iSig] = intensity * LorentzGaussND.zzAmplitude(r1, pA, kEx, delay, iSig);
-        }
-        return y;
+        double kk = pars[0];
+        return new double[]{kk * delay * delay};
     }
 
-    @Override
     public PointValuePair fit() {
         Fitter2 fitter = Fitter2.getArrayFitter(this::value);
         fitter.setXYE(xValues, yValues, errValues);
@@ -63,6 +60,9 @@ public class ZZFit extends FitEquation {
             var errResult = fitter.bootstrap(result.getPoint(), 100);
             if (errResult.isPresent()) {
                 parErrs = errResult.get();
+                for (int i = 0; i < guesses.lower().length; i++) {
+                    System.out.printf("%.3f %.3f %.3f %.3f %.3f\n", guesses.lower()[i], guesses.start()[i], guesses.upper()[i], bestPars[i], parErrs[i]);
+                }
                 return result;
             }
         }

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.utilities.ConvUtil;
 import org.nmrfx.utilities.Format;
@@ -186,7 +187,11 @@ public class PeakDim {
 
     public void unLink() {
         resonance.remove(this);
+        var oldNames = resonance.getNames();
+        Atom atom = resonance.getAtom();
         initResonance();
+        resonance.setName(oldNames);
+        resonance.setAtom(atom);
         if (multiplet != null) {
             multiplet = new Multiplet(this);
         }

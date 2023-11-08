@@ -53,10 +53,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.PeakFitException;
-import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
-import org.nmrfx.processor.datasets.peaks.PeakListTools;
-import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
+import org.nmrfx.processor.datasets.peaks.*;
 import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
@@ -592,7 +589,7 @@ public class PolyChart extends Region {
         // fixme add check for too small range
         min = center - range / 2.0;
         max = center + range / 2.0;
-        double[] limits = getAxes().getRange(0, min, max);
+        double[] limits = getAxes().getLimits(0, min, max);
 
         axes.getX().setMinMax(limits[0], limits[1]);
     }
@@ -617,7 +614,7 @@ public class PolyChart extends Region {
             center -= y / scale;
             min = center - range / 2.0;
             max = center + range / 2.0;
-            double[] limits = getAxes().getRange(1, min, max);
+            double[] limits = getAxes().getLimits(1, min, max);
             axes.getY().setMinMax(limits[0], limits[1]);
         }
     }
@@ -2746,10 +2743,14 @@ public class PolyChart extends Region {
             try {
                 Set<Peak> peaks = peakListAttr.getSelectedPeaks();
                 if ((fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_SHAPE) || (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY)) {
+                    if (peaks.size() == 1) {
+                        Peak peak = peaks.stream().findFirst().get();
+                        peaks = PeakLinker.getLinkedGroup(peak);
+                    }
                     if (peaks.size() != 4) {
                         Alert alert = new Alert(Alert.AlertType.ERROR);
                         alert.setTitle("Peak ZZ fit");
-                        alert.setContentText("Must select exactly 4 peaks");
+                        alert.setContentText("Must select exactly 4 peaks or one linked group of 4");
                         alert.showAndWait();
                         return;
                     }
