@@ -208,6 +208,9 @@ class FIDInfo:
 
     def setFixDSP(self,value):
         self.fidObj.setFixDSP(value)
+
+    def setZeroFreq(self,value):
+        self.fidObj.setZeroFreq(value)
         
     def setSW(self,pars):
         self.checkParDim(pars)
@@ -413,6 +416,9 @@ def tdcomplex(*pars):
        </ul>
     '''
     fidInfo.setComplex(pars)
+
+def zerofreq(zf):
+    fidInfo.setZeroFreq(zf)
 
 def ref(*pars):
     ''' Reference position (in ppm) at center of spectrum to set for each dimension.<br>

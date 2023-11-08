@@ -220,6 +220,10 @@ public interface NMRData {
         return sf - refHz / 1.0e6;
     }
 
+    default void setZeroFreq(Double value) {
+
+    }
+
     /**
      * Set the spectrometer frequency for the specified dimension. Used to
      * overwrite a value loaded by analysis of parameter files.

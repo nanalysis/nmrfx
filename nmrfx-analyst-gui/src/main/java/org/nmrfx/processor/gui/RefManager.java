@@ -25,6 +25,8 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -39,6 +41,7 @@ import org.apache.commons.collections4.iterators.PermutationIterator;
 import org.controlsfx.control.textfield.CustomTextField;
 import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.datasets.ReferenceCalculator;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +63,8 @@ public class RefManager {
     VendorParsGUI vendorParsGUI = new VendorParsGUI();
     ComboBox<String> acqOrderCombo;
     ChoiceBox<Integer> acqArrayChoice;
+
+    SimpleDoubleProperty zeroFieldProp = new SimpleDoubleProperty(1.0);
 
 
     public static class PositiveIntegerFilter implements UnaryOperator<TextFormatter.Change> {
@@ -496,19 +501,15 @@ public class RefManager {
                 case "Sequence" -> textField.setText(nmrData.getSequence());
                 case "Temperature" -> textField.setText(String.valueOf(nmrData.getTempK()));
                 case "Date" -> textField.setText(nmrData.getZonedDate().toString());
-                case "ZeroFreq" -> {
-                    textField.setText(String.format("%.7f", nmrData.getZeroFreq()));
-                }
             }
         }
-        System.out.println("refresh " + nmrData.getRef(0) + " " + nmrData.getZeroFreq());
     }
 
     public void updateReferencePane(NMRData nmrData, int nDim) {
         VBox vBox = new VBox();
         vBox.setSpacing(4);
-        String[] infoFields = {"Sequence", "Solvent", "Temperature", "Date","ZeroFreq"};
-        for (String infoField: infoFields) {
+        String[] infoFields = {"Sequence", "Solvent", "Temperature", "Date"};
+        for (String infoField : infoFields) {
             vBox.getChildren().add(getParDisplay(nmrData, infoField));
         }
         refreshParameters(nmrData);
@@ -533,7 +534,7 @@ public class RefManager {
         acqOrderBox.setSpacing(10);
         acqOrderBox.setAlignment(Pos.CENTER_LEFT);
         acqArrayChoice = new ChoiceBox<>();
-        for (int i=0;i<32;i++) {
+        for (int i = 0; i < 32; i++) {
             acqArrayChoice.getItems().add(i);
         }
         acqArrayChoice.setValue(0);
@@ -541,8 +542,36 @@ public class RefManager {
         acqArrayChoice.valueProperty().addListener(e -> acqArrayChanged());
 
 
-
         vBox.getChildren().addAll(datatypeBox, acqOrderBox);
+
+        CustomTextField zeroFreqTextField = new CustomTextField();
+        zeroFreqTextField.setPrefWidth(150);
+        TextFormatter<Double> zFtextFormatter = new TextFormatter<>(new FixedDecimalConverter(7), 0.0, new FixedDecimalFilter());
+        zFtextFormatter.valueProperty().bindBidirectional((Property) zeroFieldProp);
+        nmrData.setZeroFreq(null);
+        zeroFieldProp.set(nmrData.getZeroFreq());
+        zeroFieldProp.addListener(e -> {
+            System.out.println("zf changed");
+            processorController.chartProcessor.setZeroFreq(zeroFieldProp.doubleValue());
+            invalidateScript();
+        });
+        zeroFreqTextField.setTextFormatter(zFtextFormatter);
+        Label zfLabel = new Label("ZeroFreq");
+        zfLabel.setPrefWidth(100);
+        HBox zfBox = new HBox();
+        zfBox.setSpacing(10);
+        zfBox.setAlignment(Pos.CENTER_LEFT);
+        MenuButton zfMenu = new MenuButton("Set");
+        zfMenu.setPrefWidth(50);
+        zfBox.getChildren().addAll(zfLabel, zeroFreqTextField, zfMenu);
+        zeroFreqTextField.setEditable(false);
+        MenuItem dssMenuItem = new MenuItem("Set from lock");
+        MenuItem inputMenuItem = new MenuItem("Input");
+        zfMenu.getItems().addAll(dssMenuItem, inputMenuItem);
+        dssMenuItem.setOnAction(e -> setZeroFreqFromLock(zeroFreqTextField));
+        inputMenuItem.setOnAction(e -> zeroFreqTextField.setEditable(true));
+
+        vBox.getChildren().add(zfBox);
 
         if ((nmrData != null) && nmrData.getVendor().equals("bruker")) {
             CheckBox checkBox = new CheckBox("Fix DSP");
@@ -620,7 +649,7 @@ public class RefManager {
                             referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));
                         }
                         referenceMenuTextField.getTextField().textProperty().bindBidirectional(prop);
-                        referenceMenuTextField.getTextField().textProperty().addListener(e -> invalidateScript());
+                        referenceMenuTextField.getTextField().textProperty().addListener(e -> updateReference(prop));
                         gridPane.add(referenceMenuTextField, i + start, row);
                     } else {
                         CustomTextField textField = new CustomTextField();
@@ -665,6 +694,43 @@ public class RefManager {
         vendorParsGUI.updateParTable(nmrData);
     }
 
+    private void setZeroFreqFromLock(CustomTextField textField) {
+        NMRData nmrData = getNMRData();
+        nmrData.setZeroFreq(null);
+        double z = nmrData.getZeroFreq();
+        zeroFieldProp.set(z);
+        processorController.chartProcessor.setZeroFreq(z);
+        textField.setEditable(false);
+        String labelText= ReferenceCalculator.isAcqueous(nmrData.getSolvent()) ? "DSS" : "TMS";
+        Label label = new Label(labelText);
+        textField.setRight(label);
+        invalidateScript();
+    }
+
+    private void updateReference(SimpleObjectProperty property) {
+        String refString = property.getValue().toString();
+        System.out.println("set ref " + refString);
+        NMRData nmrData = getNMRData();
+        double sf = nmrData.getSF(0);
+        double z;
+        if (refString.isEmpty()) {
+            nmrData.setZeroFreq(null);
+            z = nmrData.getZeroFreq();
+        } else if (refString.equals("H2O")) {
+            double ref = ReferenceCalculator.getH2ORefPPM(nmrData.getTempK());
+            z = sf / (1.0 + ref * 1.0e-6);
+        } else {
+            try {
+                double ref = Double.parseDouble(refString);
+                z = sf / (1.0 + ref * 1.0e-6);
+            } catch (NumberFormatException nfE) {
+                z = nmrData.getZeroFreq();
+            }
+        }
+        zeroFieldProp.set(z);
+        processorController.chartProcessor.setZeroFreq(z);
+        invalidateScript();
+    }
 
     public boolean getSkip(String iDim) {
         SimpleObjectProperty objectProp = objectPropertyMap.get(DataProps.SKIP.name() + iDim);
@@ -688,6 +754,13 @@ public class RefManager {
         sBuilder.append("fixdsp(");
         sBuilder.append(chartProcessor.getFixDSP() ? "True" : "False");
         sBuilder.append(")");
+        sBuilder.append(System.lineSeparator());
+        Double zeroFreq = chartProcessor.getZeroFreq();
+        if (zeroFreq != null) {
+            sBuilder.append("zerofreq(");
+            sBuilder.append(zeroFreq);
+            sBuilder.append(")");
+        }
         sBuilder.append(System.lineSeparator());
         for (DataProps dataProps : DataProps.values()) {
             if (!toggleButtons.get(dataProps).isSelected()) {
@@ -730,6 +803,7 @@ public class RefManager {
                     case "ACQORDER" -> chartProcessor.setAcqOrder(args);
                     case "ACQARRAY" -> chartProcessor.setArraySize(args);
                     case "FIXDSP" -> chartProcessor.setFixDSP(args.equals("True"));
+                    case "ZEROFREQ" -> chartProcessor.setZeroFreq(Double.parseDouble(args));
                     default -> {
                         DataProps dataProps = DataProps.valueOf(propName);
                         List<String> parValues = CSVLineParse.parseLine(args);

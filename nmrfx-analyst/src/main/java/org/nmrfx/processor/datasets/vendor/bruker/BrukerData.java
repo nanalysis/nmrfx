@@ -624,8 +624,11 @@ public class BrukerData implements NMRData {
     @Override
     public void setRef(int iDim, double ref) {
         Ref[iDim] = ref;
-        if (iDim == 0) {
-            double sf0 = getSF(0);
+        String nucleusName = getTN(iDim);
+        Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+
+        if (nucleus == Nuclei.H1) {
+            double sf0 = getSF(iDim);
             zeroFreq = sf0 / (1.0 + ref * 1.0e-6);
         }
     }
@@ -667,17 +670,10 @@ public class BrukerData implements NMRData {
     Optional<Double> getRefAtCenter(int iDim) {
         String nucleusName = getTN(iDim);
         Nuclei nucleus = Nuclei.findNuclei(nucleusName);
-        Optional<Double> result = Optional.empty();
-        if ((iDim > 0) && getTN(0).equals("1H")) {
-            double ref = ReferenceCalculator.refByRatio(getSF(0), getRef(0), getSF(iDim), nucleus, getSolvent());
-            result = Optional.of(ref);
-        } else if (nucleusName.equals("1H")) {
-            Double refAtCenter = null;
-            double centerFreq = getSF(iDim);
-            double correctedBaseFreq = getZeroFreq();
-            refAtCenter = ReferenceCalculator.calcRef(correctedBaseFreq, centerFreq);
-            result = Optional.ofNullable(refAtCenter);
-        }
+        double zf = getZeroFreq();
+        double ref = ReferenceCalculator.refByRatio(zf, getSF(iDim), nucleus, getSolvent());
+        Optional<Double> result = Optional.of(ref);
+        System.out.println("iref " + iDim + " " + ref);
         return result;
     }
 
@@ -688,13 +684,34 @@ public class BrukerData implements NMRData {
         if (isAcqueous) {
             actualLockRef = ReferenceCalculator.getH2ORefPPM(getTempK());
         }
-        Double baseFreq = getParDouble("BF1,1");
-        Double lockPPM = getParDouble("LOCKPPM,1");
-        if ((baseFreq != null) && (lockPPM != null) && (actualLockRef != null) ) {
-            return ReferenceCalculator.getCorrectedBaseFreq(baseFreq, lockPPM, actualLockRef);
-        } else {
-            return baseFreq;
+        int hDim = -1;
+        for (int i = 0;i<getNDim();i++) {
+            String nucleusName = getTN(i);
+            Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+            if (nucleus == Nuclei.H1) {
+                hDim = i;
+            }
         }
+        double calcBaseFreq;
+        if (hDim != -1) {
+            Double baseFreq = getParDouble("BF1," + (hDim +1));
+            Double lockPPM = getParDouble("LOCKPPM,1");
+            if (actualLockRef == null) {
+                actualLockRef = lockPPM;
+            }
+            calcBaseFreq =  ReferenceCalculator.getCorrectedBaseFreq(baseFreq, lockPPM, actualLockRef);
+        } else {
+            String nucleusName = getTN(0);
+            Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+            Double baseFreq = getParDouble("BF1,1");
+            double xRatio = nucleus.getRatio();
+            calcBaseFreq = baseFreq / (xRatio / 100.0);
+        }
+        return calcBaseFreq;
+    }
+
+    public void setZeroFreq(Double value) {
+        zeroFreq = value;
     }
 
     @Override

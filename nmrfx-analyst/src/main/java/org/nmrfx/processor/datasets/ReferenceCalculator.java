@@ -3,17 +3,20 @@ package org.nmrfx.processor.datasets;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.nmrfx.datasets.Nuclei;
 
-import java.util.Map;
-
 public class ReferenceCalculator {
 
+    private ReferenceCalculator() {
+
+    }
     public static double getCorrectedBaseFreq(double baseFreq, double lockPPM, double actualLockPPM) {
         return baseFreq * (lockPPM + 1.0e6) / (actualLockPPM + 1.0e6);
     }
+
     public static double calcRef(double baseFreq, double offset, double lockPPM, double actualLockPPM) {
         double correctedBaseFreq = getCorrectedBaseFreq(baseFreq, lockPPM, actualLockPPM);
         return 1.0e6 * (baseFreq + offset / 1.0e6 - correctedBaseFreq) / correctedBaseFreq;
     }
+
     public static double calcRef(double correctedBaseFreq, double centerFreq) {
         return 1.0e6 * (centerFreq - correctedBaseFreq) / correctedBaseFreq;
     }
@@ -24,17 +27,8 @@ public class ReferenceCalculator {
         PolynomialFunction h2OFunction = new PolynomialFunction(coefficients);
         PolynomialFunction dssFunction = new PolynomialFunction(dssCoef);
         double tempC = tempK - 273.15;
-        double refPPM = h2OFunction.value(tempC) - dssFunction.value(tempC);
-        double a = -0.009552;
-        double b = 5.011718;
-        double refPPM2 =  a * tempC + b;
-        return refPPM;
+        return h2OFunction.value(tempC) - dssFunction.value(tempC);
 
-    }
-
-    public static double calcRef(double baseFreq, double offset, double lockPPM, String solvent, double tempK) {
-        double actualLockPPM = getH2ORefPPM(tempK);
-        return calcRef(baseFreq, offset, lockPPM, actualLockPPM);
     }
 
      /*
@@ -67,30 +61,22 @@ Then actual center of the spectrum in ppm:
 1e6*(bf1+o1 - actual_bf1)/actual_bf1
      */
 
-    /*
-    def refByRatio(refSF,refCenter,sf,nucleus):
-    nucleus = nucleus.upper()
-    ratios = {'C':0.251449530, 'N':0.101329118, 'P':0.404808636, 'D':0.15306088, 'H':1.0}
-    refZero = refSF/(1.0+refCenter/1.0e6)
-    zeroC = refZero*ratios[nucleus]
-    refCenterC = (sf-zeroC)*1.0e6/zeroC
-    return refCenterC
-
-     */
-
     public static double refByRatio(double refSF, double refCenter, double sf, Nuclei nucleus, String solvent) {
-        boolean isAcqueous = isAcqueous(solvent);
         double refZero = refSF / (1.0 + refCenter / 1.0e6);
+        return refByRatio(refZero, sf, nucleus, solvent);
+    }
+
+    public static double refByRatio(double refZero, double sf, Nuclei nucleus, String solvent) {
+        boolean isAcqueous = isAcqueous(solvent);
         double ratio = isAcqueous ? nucleus.getRatioAcqueous() : nucleus.getRatio();
-        double zeroC = refZero * ratio;
-        return (sf -zeroC) * 1.0e6 / zeroC;
+        double zeroC = refZero * ratio / 100.0;
+        return (sf - zeroC) * 1.0e6 / zeroC;
     }
 
     public static boolean isAcqueous(String solvent) {
         solvent = solvent.toUpperCase();
-        return solvent.startsWith("H2O") || solvent.startsWith("D2O")
-                || solvent.substring(1).startsWith("H2O")
-                || solvent.substring(1).startsWith("D2O")
+        return solvent.indexOf("H2O") < 2
+                || solvent.indexOf("D2O") < 2
                 || solvent.contains("URINE")
                 || solvent.contains("JUICE");
     }
