@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
+import org.nmrfx.datasets.DatasetBase;
+
+import static org.nmrfx.peaks.io.PeakWriter.PIPEDIMS.D;
 
 /**
  * @author Bruce Johnson
@@ -523,4 +526,114 @@ public class PeakWriter {
             chan.write("\n");
         }
     }
+
+    public enum PIPEDIMS {
+        AXIS("_AXIS", "%9.3f"),
+        D("D", "%6.3f"),
+        PPM("_PPM", "%8.3f"),
+        HZ("_HZ", "%9.3f"),
+        W("W", "%7.3f"),
+        W_HZ("W_HZ", "%8.3f"),
+        ONE("1", "%4d"),
+        THREE("3", "%4d");
+        String label;
+        String format;
+
+        PIPEDIMS(String label, String format) {
+            this.label = label;
+            this.format = format;
+        }
+    }
+    public void writePeakstoNMRPipe(Writer chan, PeakList peakList) throws IOException, InvalidPeakException {
+        DatasetBase dataset = DatasetBase.getDataset(peakList.getDatasetName());
+        String[] labels = {"X", "Y", "Z", "A", "B", "C"};
+        int nDim = peakList.getNDim();
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            SpectralDim spectralDim = peakList.getSpectralDim(iDim);
+            int size = dataset.size(iDim);
+            double ppm0 = dataset.pointToPPM(iDim, 0);
+            double ppm1 = dataset.pointToPPM(iDim, size -1);
+            String dataLine = String.format("DATA %s_AXIS %s %d %d %8.3fppm %8.3fppm",
+                    labels[iDim], spectralDim.getDimName(),  1, size, ppm0, ppm1);
+            chan.write(dataLine + "\n");
+        }
+
+
+        /*
+        DATA  X_AXIS HN           1   659   10.297ppm    5.798ppm
+DATA  Y_AXIS 15N          1  1024  129.088ppm  107.091ppm
+DATA  Z_AXIS CA           1   512   69.128ppm   41.069ppm
+
+         */
+
+
+        /*
+        VARS   INDEX X_AXIS Y_AXIS Z_AXIS DX DY DZ X_PPM Y_PPM Z_PPM X_HZ Y_HZ Z_HZ XW YW ZW XW_HZ YW_HZ ZW_HZ X1 X3 Y1 Y3 Z1 Z3 HEIGHT DHEIGHT VOL PCHI2 TYPE ASS CLUSTID MEMCNT
+FORMAT %5d %9.3f %9.3f %9.3f %6.3f %6.3f %6.3f %8.3f %8.3f %8.3f %9.3f %9.3f %9.3f %7.3f %7.3f %7.3f %8.3f %8.3f %8.3f %4d %4d %4d %4d %4d %4d %+e %+e %+e %.5f %d %s %4d %4d
+
+         */
+        StringBuilder stringBuilder = new StringBuilder();
+        StringBuilder stringBuilderF = new StringBuilder();
+        stringBuilder.append("VARS  INDEX ");
+        stringBuilderF.append("FORMAT %5d ");
+        for (PIPEDIMS type: PIPEDIMS.values()) {
+            for (int i = 0; i < nDim; i++) {
+                if (type == D) {
+                    stringBuilder.append(type.label + labels[i] + " ");
+                } else {
+                    stringBuilder.append(labels[i] + type.label + " ");
+                }
+                stringBuilderF.append(type.format + " ");
+            }
+        }
+        stringBuilder.append("HEIGHT DHEIGHT VOL PCHI2 TYPE ASS CLUSTID MEMCNT");
+        stringBuilderF.append(" %+e %+e %+e %.5f %d %s %4d %4d");
+        chan.write(stringBuilder.toString() + "\n");
+        chan.write(stringBuilderF.toString()+"\n");
+        int nPeaks = peakList.size();
+        for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
+            Peak peak = peakList.getPeak(iPeak);
+
+            if (peak == null) {
+                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + iPeak);
+            }
+            StringBuilder sBuilderPeak = new StringBuilder();
+            sBuilderPeak.append(String.format("%d ", iPeak + 1));
+            for (PIPEDIMS type : PIPEDIMS.values()) {
+                for (int iDim = 0; iDim < nDim; iDim++) {
+                    PeakDim peakDim = peak.getPeakDim(iDim);
+                    double ppm = peakDim.getChemShiftValue();
+                    double pt = dataset.ppmToDPoint(iDim, ppm);
+                    double wHz = peakDim.getLineWidthHz();
+                    double wPt = dataset.hzWidthToPoints(iDim, wHz);
+                    double boundsHz = peakDim.getBoundsHz();
+                    double bWidth = dataset.hzWidthToPoints(iDim, boundsHz);
+                    double hz = dataset.pointToHz(iDim, pt);
+                    int one = (int) Math.floor(pt - bWidth / 2.0);
+                    int three = (int) Math.ceil(pt + bWidth / 2.0);
+                    String result = switch (type) {
+                        case AXIS -> String.format(type.format, pt);
+                        case D -> String.format(type.format, wPt);
+                        case PPM -> String.format(type.format, ppm);
+                        case HZ -> String.format(type.format, hz);
+                        case W -> String.format(type.format, wPt);
+                        case W_HZ -> String.format(type.format, wHz);
+                        case ONE -> String.format(type.format, one);
+                        case THREE -> String.format(type.format, three);
+                    };
+                    sBuilderPeak.append(result + " ");
+                }
+            }
+            sBuilderPeak.append(String.format("%+e ", peak.getIntensity()));
+            sBuilderPeak.append(String.format("%+e ", peak.getIntensity()));
+            sBuilderPeak.append(String.format("%+e ", peak.getVolume1()));
+            sBuilderPeak.append(String.format("%.5f ", 1.0));
+            sBuilderPeak.append(String.format("%d ", 1));
+            sBuilderPeak.append(String.format("%s ", "None"));
+            sBuilderPeak.append(String.format("%4d ", iPeak + 1));
+            sBuilderPeak.append(String.format("%4d", 1));
+            chan.write(sBuilderPeak.toString() + "\n");
+        }
+    }
+
 }
