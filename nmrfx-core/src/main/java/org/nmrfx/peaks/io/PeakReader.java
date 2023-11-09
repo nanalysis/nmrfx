@@ -659,6 +659,7 @@ public class PeakReader {
         Map<String, Integer> dataMap = new HashMap<>();
         PeakList peakList = null;
         List<String> dimNames = new ArrayList<>();
+        String[] nucTypes = {"H", "N", "P", "C"};
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             while (true) {
                 String line = fileReader.readLine();
@@ -691,7 +692,15 @@ public class PeakReader {
                         }
                         peakList = new PeakList(fileTail, nDim);
                         for (int i = 0; i < dimNames.size(); i++) {
-                            peakList.getSpectralDim(i).setDimName(dimNames.get(i));
+                            String dimName = dimNames.get(i);
+                            SpectralDim sDim = peakList.getSpectralDim(i);
+                            sDim.setDimName(dimNames.get(i));
+                            for (String nucType:nucTypes) {
+                                if (dimName.contains(nucType)) {
+                                    sDim.setNucleus(nucType);
+                                    break;
+                                }
+                            }
                         }
                     }
                 } else {
