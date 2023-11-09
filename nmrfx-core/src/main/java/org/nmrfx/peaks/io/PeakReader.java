@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 @PythonAPI("pscript")
 public class PeakReader {
 
-    Map<Long, List<PeakDim>> resMap = null;
+    Map<Long, List<PeakDim>> resMap;
     final boolean linkResonances;
 
     public PeakReader() {
@@ -81,20 +81,14 @@ public class PeakReader {
         Path path = Paths.get(fileName);
         PeakFileDetector detector = new PeakFileDetector();
         String type = detector.probeContentType(path);
-        switch (type) {
-            case "xpk2":
-                return readXPK2Peaks(fileName);
-            case "xpk":
-                return readXPKPeaks(fileName);
-            case "sparky_save":
-                return readSparkySaveFile(fileName, pMap);
-            case "sparky_assign":
-                return readSparkyAssignmentFile(fileName);
-            case "nmrpipe":
-                return readNMRPipePeaks(fileName);
-            default:
-                throw new IllegalArgumentException("Invalid file type " + fileName);
-        }
+        return switch (type) {
+            case "xpk2" -> readXPK2Peaks(fileName);
+            case "xpk" -> readXPKPeaks(fileName);
+            case "sparky_save" -> readSparkySaveFile(fileName, pMap);
+            case "sparky_assign" -> readSparkyAssignmentFile(fileName);
+            case "nmrpipe" -> readNMRPipePeaks(fileName);
+            default -> throw new IllegalArgumentException("Invalid file type " + fileName);
+        };
     }
 
     public PeakList readXPK2Peaks(String fileName) throws IOException {
@@ -105,7 +99,6 @@ public class PeakReader {
         String[] dataHeader = null;
         Map<String, Integer> dataMap = null;
         PeakList peakList = null;
-        String units = "ppm";
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             while (true) {
                 String line = fileReader.readLine();
@@ -113,7 +106,7 @@ public class PeakReader {
                     break;
                 }
                 String sline = line.trim();
-                if (sline.length() == 0) {
+                if (sline.isEmpty()) {
                     continue;
                 }
                 if (sline.charAt(0) == '#') {
@@ -125,7 +118,7 @@ public class PeakReader {
                         Map<String, Integer> map = headerMap(header);
                         String lineData = fileReader.readLine();
                         String[] data = lineData.split("\t", -1);
-                        int nDim = Integer.valueOf(data[map.get("ndim")]);
+                        int nDim = Integer.parseInt(data[map.get("ndim")]);
                         String listName = fileTail;
                         if (map.get("peaklist") != null) {
                             listName = data[map.get("peaklist")];
@@ -137,10 +130,11 @@ public class PeakReader {
                         if (map.get("condition") != null) {
                             peakList.setSampleConditionLabel(data[map.get("condition")]);
                         }
-                        for (String headerLabel : map.keySet()) {
+                        for (var entry : map.entrySet()) {
+                            String headerLabel = entry.getKey();
                             if (headerLabel.startsWith("prop:")) {
                                 String propName = headerLabel.substring(5);
-                                String propValue = data[map.get(headerLabel)];
+                                String propValue = data[entry.getValue()];
                                 peakList.setProperty(propName, propValue);
                             }
                         }
@@ -158,47 +152,21 @@ public class PeakReader {
                             for (String field : header) {
                                 String value = data[map.get(field)];
                                 switch (field) {
-                                    case "label":
-                                        sDim.setDimName(value);
-                                        break;
-                                    case "code":
-                                        sDim.setNucleus(value);
-                                        break;
-                                    case "sf":
-                                        sDim.setSf(Double.valueOf(value));
-                                        break;
-                                    case "sw":
-                                        sDim.setSw(Double.valueOf(value));
-                                        break;
-                                    case "fp":
-                                        sDim.setRef(Double.valueOf(value));
-                                        break;
-                                    case "idtol":
-                                        sDim.setIdTol(Double.valueOf(value));
-                                        break;
-                                    case "pattern":
-                                        sDim.setPattern(value);
-                                        break;
-                                    case "bonded":
-                                        sDim.setRelation(value);
-                                        break;
-                                    case "spatial":
-                                        sDim.setSpatialRelation(value);
-                                        break;
-                                    case "acqdim":
-                                        sDim.setAcqDim(Boolean.valueOf(value));
-                                        break;
-                                    case "abspos":
-                                        sDim.setAbsPosition(Boolean.valueOf(value));
-                                        break;
-                                    case "folding":
-                                        sDim.setNEFAliasing(value);
-                                        break;
-                                    case "units":
-                                        units = value;
-                                        break;
-                                    default:
-                                        throw new IllegalArgumentException("Unknown field " + field);
+                                    case "label" -> sDim.setDimName(value);
+                                    case "code" -> sDim.setNucleus(value);
+                                    case "sf" -> sDim.setSf(Double.parseDouble(value));
+                                    case "sw" -> sDim.setSw(Double.parseDouble(value));
+                                    case "fp" -> sDim.setRef(Double.parseDouble(value));
+                                    case "idtol" -> sDim.setIdTol(Double.parseDouble(value));
+                                    case "pattern" -> sDim.setPattern(value);
+                                    case "bonded" -> sDim.setRelation(value);
+                                    case "spatial" -> sDim.setSpatialRelation(value);
+                                    case "acqdim" -> sDim.setAcqDim(Boolean.parseBoolean(value));
+                                    case "abspos" -> sDim.setAbsPosition(Boolean.parseBoolean(value));
+                                    case "folding" -> sDim.setNEFAliasing(value);
+                                    case "units" -> {
+                                    }
+                                    default -> throw new IllegalArgumentException("Unknown field " + field);
                                 }
                             }
                         }
@@ -232,51 +200,36 @@ public class PeakReader {
                 if (dataIndex != null) {
                     String value = data[dataIndex];
                     switch (field) {
-                        case "L":
+                        case "L" -> {
                             List<String> labelList = Arrays.asList(value.split(" "));
                             peakDim.setLabel(labelList);
-                            break;
-                        case "P":
-                            peakDim.setChemShiftValue(Float.valueOf(value));
-                            break;
-                        case "W":
-                            peakDim.setLineWidthValue(Float.valueOf(value));
-                            break;
-                        case "WH":
-                            peakDim.setLineWidthValue(Float.valueOf(value) / (float) peakDim.getSpectralDimObj().getSf());
-                            break;
-                        case "B":
-                            peakDim.setBoundsValue(Float.valueOf(value));
-                            break;
-                        case "BH":
-                            peakDim.setBoundsValue(Float.valueOf(value) / (float) peakDim.getSpectralDimObj().getSf());
-                            break;
-                        case "J":
-                            // fixme
-                            break;
-                        case "M":
-                            // fixme
-                            break;
-                        case "m":
-                            // fixme
-                            break;
-                        case "E":
-                            peakDim.setError(value);
-                            break;
-                        case "F":
-                            peakDim.setFrozen(!value.equals("0"));
-                            break;
-                        case "U":
-                            peakDim.setUser(value);
-                            break;
-                        case "r":
-                            long resNum = Long.valueOf(value);
+                        }
+                        case "P" -> peakDim.setChemShiftValue(Float.parseFloat(value));
+                        case "W" -> peakDim.setLineWidthValue(Float.parseFloat(value));
+                        case "WH" ->
+                                peakDim.setLineWidthValue(Float.parseFloat(value) / (float) peakDim.getSpectralDimObj().getSf());
+                        case "B" -> peakDim.setBoundsValue(Float.parseFloat(value));
+                        case "BH" ->
+                                peakDim.setBoundsValue(Float.parseFloat(value) / (float) peakDim.getSpectralDimObj().getSf());
+                        case "J" -> {
+                        }
+                        // fixme
+                        case "M" -> {
+                        }
+                        // fixme
+                        case "m" -> {
+                        }
+                        // fixme
+                        case "E" -> peakDim.setError(value);
+                        case "F" -> peakDim.setFrozen(!value.equals("0"));
+                        case "U" -> peakDim.setUser(value);
+                        case "r" -> {
+                            long resNum = Long.parseLong(value);
                             if (linkResonances) {
                                 addResonance(resNum, peakDim);
                             }
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Unknown field " + field);
+                        }
+                        default -> throw new IllegalArgumentException("Unknown field " + field);
                     }
                 }
             } else {
@@ -294,46 +247,18 @@ public class PeakReader {
                             field = "flag";
                         }
                         switch (field) {
-                            case "id":
-                                peak.setIdNum(Integer.valueOf(value));
-                                break;
-                            case "int":
-                            case "intensity":
-                                peak.setIntensity(Float.valueOf(value));
-                                break;
-                            case "intensity_err":
-                                peak.setIntensityErr(Float.valueOf(value));
-                                break;
-                            case "vol":
-                            case "volume":
-                                peak.setVolume1(Float.valueOf(value));
-                                break;
-                            case "volume_err":
-                                peak.setVolume1Err(Float.valueOf(value));
-                                break;
-                            case "status":
-                                peak.setStatus(Integer.valueOf(value));
-                                break;
-                            case "stat":
-                                peak.setStatus(Integer.valueOf(value));
-                                break;
-                            case "type":
-                                peak.setType(Integer.valueOf(value));
-                                break;
-                            case "comment":
-                                peak.setComment(value);
-                                break;
-                            case "flags":
-                                peak.setFlag2(value);
-                                break;
-                            case "flag":
-                                peak.setFlag2(flagNum, value);
-                                break;
-                            case "color":
-                                peak.setColor(value);
-                                break;
-                            default:
-                                throw new IllegalArgumentException("Unknown field " + field);
+                            case "id" -> peak.setIdNum(Integer.parseInt(value));
+                            case "int", "intensity" -> peak.setIntensity(Float.parseFloat(value));
+                            case "intensity_err" -> peak.setIntensityErr(Float.parseFloat(value));
+                            case "vol", "volume" -> peak.setVolume1(Float.parseFloat(value));
+                            case "volume_err" -> peak.setVolume1Err(Float.parseFloat(value));
+                            case "status", "stat" -> peak.setStatus(Integer.parseInt(value));
+                            case "type" -> peak.setType(Integer.parseInt(value));
+                            case "comment" -> peak.setComment(value);
+                            case "flags" -> peak.setFlag2(value);
+                            case "flag" -> peak.setFlag2(flagNum, value);
+                            case "color" -> peak.setColor(value);
+                            default -> throw new IllegalArgumentException("Unknown field " + field);
                         }
 
                     } catch (NumberFormatException nfE) {
@@ -360,7 +285,7 @@ public class PeakReader {
                     break;
                 }
                 String sline = line.trim();
-                if (sline.length() == 0) {
+                if (sline.isEmpty()) {
                     continue;
                 }
                 if (sline.charAt(0) == '#') {
@@ -490,10 +415,8 @@ public class PeakReader {
         String fileTail = path.getFileName().toString();
         fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
         String listName = fileTail;
-        boolean gotHeader = false;
         String[] dataHeader = null;
         Map<String, Integer> dataMap = null;
-        String units = "ppm";
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             String line = fileReader.readLine();
             List<String> listFields = parseXPKLine(line);
@@ -511,15 +434,9 @@ public class PeakReader {
                         SpectralDim sDim = peakList.getSpectralDim(iDim);
                         String value = listMap.get(field).get(iDim);
                         switch (field) {
-                            case "label":
-                                sDim.setDimName(value);
-                                break;
-                            case "sf":
-                                sDim.setSf(Double.valueOf(value));
-                                break;
-                            case "sw":
-                                sDim.setSw(Double.valueOf(value));
-                                break;
+                            case "label" -> sDim.setDimName(value);
+                            case "sf" -> sDim.setSf(Double.parseDouble(value));
+                            case "sw" -> sDim.setSw(Double.parseDouble(value));
                         }
                     }
                 }
@@ -537,7 +454,7 @@ public class PeakReader {
                     break;
                 }
                 String sline = line.trim();
-                if (sline.length() == 0) {
+                if (sline.isEmpty()) {
                     continue;
                 }
                 if (sline.charAt(0) == '#') {
@@ -593,19 +510,19 @@ public class PeakReader {
                     store.add(curVal.toString().trim());
                     curVal = new StringBuilder();
                 } else {
-                    curVal.append((char) ch);
+                    curVal.append(ch);
                 }
             } else if ((ch == '\"') || (ch == '\'') || (ch == '{')) {
                 inquotes = true;
                 quoteChar = ch == '{' ? '}' : ch;
 
             } else if ((ch == ' ') || (ch == '\t')) {
-                if (curVal.length() != 0) {
+                if (!curVal.isEmpty()) {
                     store.add(curVal.toString().trim());
                     curVal = new StringBuilder();
                 }
             } else {
-                curVal.append((char) ch);
+                curVal.append(ch);
             }
         }
         store.add(curVal.toString().trim());
@@ -741,7 +658,6 @@ public class PeakReader {
         boolean gotHeader = false;
         Map<String, Integer> dataMap = new HashMap<>();
         PeakList peakList = null;
-        String units = "ppm";
         List<String> dimNames = new ArrayList<>();
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             while (true) {
@@ -750,7 +666,7 @@ public class PeakReader {
                     break;
                 }
                 line = line.trim();
-                if (line.length() == 0) {
+                if (line.isEmpty()) {
                     continue;
                 }
                 if (line.charAt(0) == '#') {
@@ -767,25 +683,22 @@ public class PeakReader {
                         //VARS   INDEX X_AXIS Y_AXIS Z_AXIS DX DY DZ X_PPM Y_PPM Z_PPM X_HZ Y_HZ Z_HZ XW YW ZW XW_HZ YW_HZ ZW_HZ X1 X3 Y1 Y3 Z1 Z3 HEIGHT DHEIGHT VOL PCHI2 TYPE ASS CLUSTID MEMCNT
                         String[] fields = line.split(" +", -1);
                         int nDim = 0;
-                        System.out.println(line + " " + fields + " " + fields.length);
                         for (int i = 1; i < fields.length; i++) {
-                            System.out.println(i + " " + fields[i]);
                             dataMap.put(fields[i], i - 1);
                             if (fields[i].endsWith("_AXIS")) {
                                 nDim++;
                             }
                         }
-                        String listName = fileTail;
-                        peakList = new PeakList(listName, nDim);
-                        System.out.println("DIMS " + nDim + " " + dimNames);
+                        peakList = new PeakList(fileTail, nDim);
                         for (int i = 0; i < dimNames.size(); i++) {
                             peakList.getSpectralDim(i).setDimName(dimNames.get(i));
                         }
-                    } else {
                     }
                 } else {
                     String[] data = line.split(" +", -1);
-                    processNMRPipeLine(peakList, dataMap, data);
+                    if (peakList != null) {
+                        processNMRPipeLine(peakList, dataMap, data);
+                    }
                 }
             }
         }
