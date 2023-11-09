@@ -656,9 +656,11 @@ public class PeakReader {
         String fileTail = path.getFileName().toString();
         fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
         boolean gotHeader = false;
+        boolean swSfSet = false;
         Map<String, Integer> dataMap = new HashMap<>();
         PeakList peakList = null;
         List<String> dimNames = new ArrayList<>();
+        List<double[]> ppmStarts = new ArrayList<>();
         String[] nucTypes = {"H", "N", "P", "C"};
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             while (true) {
@@ -678,6 +680,14 @@ public class PeakReader {
                     if (line.startsWith("DATA")) {
                         String[] fields = line.split(" +", -1);
                         dimNames.add(fields[2]);
+                        String ppmStartField = fields[5];
+                        String ppmEndField = fields[6];
+                        if (ppmStartField.endsWith("ppm")) {
+                            double ppmStart = Double.parseDouble(ppmStartField.substring(0,ppmStartField.indexOf("p")));
+                            double ppmEnd = Double.parseDouble(ppmEndField.substring(0,ppmEndField.indexOf("p")));
+                            double[] ppms = {ppmStart, ppmEnd};
+                            ppmStarts.add(ppms);
+                        }
                     } else if (line.startsWith("FORMAT")) {
                         gotHeader = true;
                     } else if (line.startsWith("VARS")) {
@@ -707,6 +717,10 @@ public class PeakReader {
                     String[] data = line.split(" +", -1);
                     if (peakList != null) {
                         processNMRPipeLine(peakList, dataMap, data);
+                        if (!swSfSet) {
+                            setSfSw(peakList, dataMap, data, ppmStarts);
+                            swSfSet = true;
+                        }
                     }
                 }
             }
@@ -722,6 +736,27 @@ public class PeakReader {
             result = Double.parseDouble(field);
         }
         return result;
+    }
+
+    private void setSfSw(PeakList peakList, Map<String, Integer> dataMap, String[] data, List<double[]> ppmStarts) {
+
+        int nDim = peakList.getNDim();
+        String[] labels = {"X", "Y", "Z", "A", "B", "C"};
+
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            String axis = labels[iDim];
+            Double shift = getPipeValue(dataMap, data, axis + "_PPM");
+            Double shiftHz = getPipeValue(dataMap, data, axis + "_HZ");
+            if ((shift != null)  && (shiftHz != null)) {
+                double[] ppms = ppmStarts.get(iDim);
+                double sf = Math.abs(shiftHz / (shift - ppms[0]));
+                peakList.getSpectralDim(iDim).setSf(sf);
+                double sw = (ppms[0] - ppms[1]) * sf;
+                sw = Math.round(sw * 100.0) / 100.0;
+                peakList.getSpectralDim(iDim).setSw(sw);
+            }
+
+        }
     }
 
     public void processNMRPipeLine(PeakList peakList, Map<String, Integer> dataMap, String[]
@@ -745,6 +780,11 @@ public class PeakReader {
             if (shift != null) {
                 peakDim.setChemShiftValue(shift.floatValue());
             }
+            Double shiftHz = getPipeValue(dataMap, data, axis + "_HZ");
+            if (shift != null) {
+                peakDim.setChemShiftValue(shift.floatValue());
+            }
+
             Double wHz = getPipeValue(dataMap, data, axis + "W_HZ");
             Double w = getPipeValue(dataMap, data, axis + "W");
             if (wHz != null) {
