@@ -17,11 +17,14 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.datasets.ReferenceCalculator;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -216,8 +219,7 @@ public interface NMRData {
     default double getZeroFreq() {
         double sf = getSF(0);
         double ref = getRef(0);
-        double refHz = ref * sf;
-        return sf - refHz / 1.0e6;
+        return  sf / (1.0 + ref / 1.0e6);
     }
 
     default void setZeroFreq(Double value) {
@@ -232,6 +234,22 @@ public interface NMRData {
      * @param value new value for spectrometer frequency in MHz
      */
     void setSF(int dim, double value);
+
+    default void setSF(int dim, int value) {
+        setSF(dim, (double) value);
+    }
+
+    default void setSF(int dim, String string) {
+        Double value = NMRDataUtil.parsePar(this, dim, string);
+        if (value == null) {
+            resetSF(dim);
+        } else {
+            if (getVendor().equals("rs2d")) {
+                value = value / 1.0e6;
+            }
+            setSF(dim, value);
+        }
+    }
 
     /**
      * Reset object so next call to getSF will return the spectrometer frequency
@@ -258,6 +276,20 @@ public interface NMRData {
      */
     void setSW(int dim, double value);
 
+    default void setSW(int dim, int value) {
+        setSW(dim, (double) value);
+    }
+
+    default void setSW(int dim, String string) {
+        Double value = NMRDataUtil.parsePar(this, dim, string);
+        if (value == null) {
+            resetSW(dim);
+        } else {
+            setSW(dim, value);
+        }
+
+    }
+
     /**
      * Reset object so next call to getSW will return the sweep width stored in
      * par file.
@@ -282,6 +314,38 @@ public interface NMRData {
      * @param ref new value for reference value
      */
     void setRef(int dim, double ref);
+
+    default void setRef(int dim, int ref) {
+        setRef(dim, (double) ref);
+    }
+
+    default void setRef(int dim, String string) {
+        Double value;
+        if (string != null) {
+            string = string.trim();
+        }
+        if ((string == null) || string.isBlank()) {
+            value = null;
+        } else if (NumberUtils.isCreatable(string)) {
+            value = Double.parseDouble(string);
+        } else {
+            if (string.equalsIgnoreCase("H2O")) {
+                value = ReferenceCalculator.getH2ORefPPM(getTempK());
+            } else if ("NCPDH".contains(string)) {
+                double refZero = getZeroFreq();
+                Nuclei nuclei = Nuclei.findNuclei(getTN(dim));
+                value = ReferenceCalculator.refByRatio(refZero, getSF(dim), nuclei, getSolvent());
+            } else {
+                value = null;
+            }
+        }
+        if (value == null) {
+            resetRef(dim);
+        } else {
+            setRef(dim, value);
+        }
+    }
+
 
     /**
      * Reset object so next call to getRef will return the reference value
@@ -417,8 +481,8 @@ public interface NMRData {
     /**
      * Set the symbolic coefficients for the specified dimension
      *
-     * @param dim   data dimension index
-     * @param coef  symbolic coefficients name
+     * @param dim  data dimension index
+     * @param coef symbolic coefficients name
      */
     void setUserSymbolicCoefs(int dim, AcquisitionType coef);
 
@@ -426,6 +490,7 @@ public interface NMRData {
         AcquisitionType acqType = AcquisitionType.fromLabel(mode);
         setUserSymbolicCoefs(i, acqType);
     }
+
     /**
      * Return the name of the vendor of instrument used to collect data.
      *

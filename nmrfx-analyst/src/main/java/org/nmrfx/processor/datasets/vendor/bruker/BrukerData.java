@@ -673,7 +673,6 @@ public class BrukerData implements NMRData {
         double zf = getZeroFreq();
         double ref = ReferenceCalculator.refByRatio(zf, getSF(iDim), nucleus, getSolvent());
         Optional<Double> result = Optional.of(ref);
-        System.out.println("iref " + iDim + " " + ref);
         return result;
     }
 
@@ -1447,7 +1446,6 @@ public class BrukerData implements NMRData {
         if (groupDelay > 0) {
             // fixme which is correct (use ceil or not)
             shiftAmount = (int) Math.round(groupDelay);
-            System.out.println(iVec + " " + groupDelay + " " + shiftAmount);
         }
         if (dvec.isComplex()) {
             if (dvec.useApache()) {
@@ -1748,7 +1746,6 @@ public class BrukerData implements NMRData {
 
     private void dspPhase(Vec vec) {
         if (dspph != 0.0) {  // check DMX flag?
-            System.out.println("  BrukerData dspPhase=" + dspph);
             vec.checkPowerOf2(); // resize
             vec.fft();
             vec.phase(0.0, dspph, false, false);

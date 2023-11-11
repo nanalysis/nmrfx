@@ -39,10 +39,12 @@ import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.collections4.iterators.PermutationIterator;
 import org.controlsfx.control.textfield.CustomTextField;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.ReferenceCalculator;
 import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,7 +144,7 @@ public class RefManager {
                 ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(nmrData.getLabelNames()[iDim]);
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(value);
             }
 
@@ -159,7 +161,7 @@ public class RefManager {
                 ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSize(iDim));
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(Integer.parseInt(value));
             }
 
@@ -176,7 +178,7 @@ public class RefManager {
                 ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSize(iDim));
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(Integer.parseInt(value));
             }
 
@@ -193,8 +195,12 @@ public class RefManager {
                 ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSF(iDim));
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
-                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(Double.parseDouble(value));
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
+                Double dValue = NMRDataUtil.parsePar(nmrData, iDim, value);
+                if (dValue == null) {
+                    dValue = nmrData.getSF(iDim);
+                }
+                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(dValue);
             }
 
             SimpleObjectProperty<Double> getObjectProperty() {
@@ -210,8 +216,12 @@ public class RefManager {
                 ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSW(iDim));
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
-                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(Double.parseDouble(value));
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
+                Double dValue = NMRDataUtil.parsePar(nmrData, iDim, value);
+                if (dValue == null) {
+                    dValue = nmrData.getSW(iDim);
+                }
+                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(dValue);
             }
 
             SimpleObjectProperty<Double> getObjectProperty() {
@@ -239,7 +249,7 @@ public class RefManager {
                 ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(getDataValue(nmrData, iDim));
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(value);
             }
 
@@ -256,7 +266,7 @@ public class RefManager {
                 ((SimpleObjectProperty<Boolean>) objectPropertyMap.get(name() + iDim)).set(false);
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 ((SimpleObjectProperty<Boolean>) objectPropertyMap.get(name() + iDim)).set(Boolean.parseBoolean(value.toLowerCase()));
             }
 
@@ -275,7 +285,7 @@ public class RefManager {
                 ((SimpleObjectProperty<AcquisitionType>) objectPropertyMap.get(name() + iDim)).set(modeType);
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 AcquisitionType modeType = getMode(value);
                 ((SimpleObjectProperty<AcquisitionType>) objectPropertyMap.get(name() + iDim)).set(modeType);
             }
@@ -297,7 +307,7 @@ public class RefManager {
 
         abstract void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim);
 
-        abstract void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim);
+        abstract void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim);
 
         abstract SimpleObjectProperty getObjectProperty();
 
@@ -649,7 +659,9 @@ public class RefManager {
                             referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));
                         }
                         referenceMenuTextField.getTextField().textProperty().bindBidirectional(prop);
-                        referenceMenuTextField.getTextField().textProperty().addListener(e -> updateReference(prop));
+                        if (i == 0) {
+                            referenceMenuTextField.getTextField().textProperty().addListener(e -> updateReference(prop));
+                        }
                         gridPane.add(referenceMenuTextField, i + start, row);
                     } else {
                         CustomTextField textField = new CustomTextField();
@@ -701,7 +713,7 @@ public class RefManager {
         zeroFieldProp.set(z);
         processorController.chartProcessor.setZeroFreq(z);
         textField.setEditable(false);
-        String labelText= ReferenceCalculator.isAcqueous(nmrData.getSolvent()) ? "DSS" : "TMS";
+        String labelText = ReferenceCalculator.isAcqueous(nmrData.getSolvent()) ? "DSS" : "TMS";
         Label label = new Label(labelText);
         textField.setRight(label);
         invalidateScript();
@@ -712,6 +724,8 @@ public class RefManager {
         System.out.println("set ref " + refString);
         NMRData nmrData = getNMRData();
         double sf = nmrData.getSF(0);
+        String tn = nmrData.getTN(0);
+        Nuclei nuclei = Nuclei.findNuclei(tn);
         double z;
         if (refString.isEmpty()) {
             nmrData.setZeroFreq(null);
@@ -723,6 +737,7 @@ public class RefManager {
             try {
                 double ref = Double.parseDouble(refString);
                 z = sf / (1.0 + ref * 1.0e-6);
+                z /= nuclei.getRatio() / 100.0;
             } catch (NumberFormatException nfE) {
                 z = nmrData.getZeroFreq();
             }
@@ -809,7 +824,7 @@ public class RefManager {
                         List<String> parValues = CSVLineParse.parseLine(args);
                         int dim = 0;
                         for (String parValue : parValues) {
-                            dataProps.setObjectValue(objectPropertyMap, parValue, dim);
+                            dataProps.setObjectValue(objectPropertyMap, nmrData, parValue, dim);
                             if (dataProps == DataProps.ACQMODE) {
                                 chartProcessor.setAcqMode(dim, parValue.toUpperCase());
                             }

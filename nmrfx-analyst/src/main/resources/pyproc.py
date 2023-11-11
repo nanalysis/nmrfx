@@ -215,68 +215,17 @@ class FIDInfo:
     def setSW(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.sw[i] = par
-            elif isinstance(par,int):
-                self.sw[i] = float(par)
-            else:
-                if (par == ''):
-                    self.fidObj.resetSW(i)
-                    continue
-                value = self.fidObj.getParDouble(par)
-                if isinstance(value,float):
-                    self.sw[i] = value
-            self.fidObj.setSW(i,self.sw[i])
+            self.fidObj.setSW(i,par)
 
     def setSF(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.sf[i] = par
-            elif isinstance(par,int):
-                self.sf[i] = float(par)
-            else:
-                if (par == ''):
-                    self.fidObj.resetSF(i)
-                    continue
-                value = self.fidObj.getParDouble(par)
-                if self.fidObj.getVendor() == "rs2d":
-                    value = value / 1.0e6
-                if isinstance(value,float):
-                    self.sf[i] = value
-            self.fidObj.setSF(i,self.sf[i])
+            self.fidObj.setSF(i,par)
 
     def setRef(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.ref[i] = par
-            elif isinstance(par,int):
-                self.ref[i] = float(par)
-            else:
-                par = par.upper().strip()
-                if (par == ''):
-                    self.fidObj.resetRef(i)
-                    self.ref[i] = self.fidObj.getRef(i)
-                    continue
-                if (par == 'H2O'):
-                    temp = self.fidObj.getTempK()
-                    self.ref[i] = getWaterPPM(temp)
-                elif (par.find('@') != -1):
-                    (refValue,sfValue) = par.split('@')
-                    refValue = float(refValue)
-                    sfValue = float(sfValue)
-                    self.ref[i] = (self.sf[i]-sfValue)*1.e6/sfValue+refValue
-                elif ((i > 0) and (par in ('N','C','P','D','H'))):
-                    self.ref[i] = refByRatio(self.sf[0],self.ref[0],self.sf[i],par)
-                else:
-                    doubleValue = self.fidObj.getParDouble(par)
-                    if doubleValue == None:
-                        raise Exception("Cannot convert par "+par)
-                    self.ref[i] = doubleValue;
-            if self.size[i] != 0:
-                delRef = (self.size[i]/2) * self.sw[i] / self.sf[i] / self.size[i];
-                self.fidObj.setRef(i,self.ref[i])
+            self.fidObj.setRef(i, par)
 
     def setLabel(self,pars):
         self.checkParDim(pars)

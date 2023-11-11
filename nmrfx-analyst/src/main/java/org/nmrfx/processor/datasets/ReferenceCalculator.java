@@ -8,6 +8,7 @@ public class ReferenceCalculator {
     private ReferenceCalculator() {
 
     }
+
     public static double getCorrectedBaseFreq(double baseFreq, double lockPPM, double actualLockPPM) {
         return baseFreq * (lockPPM + 1.0e6) / (actualLockPPM + 1.0e6);
     }
@@ -28,7 +29,6 @@ public class ReferenceCalculator {
         PolynomialFunction dssFunction = new PolynomialFunction(dssCoef);
         double tempC = tempK - 273.15;
         return h2OFunction.value(tempC) - dssFunction.value(tempC);
-
     }
 
      /*
@@ -75,8 +75,8 @@ Then actual center of the spectrum in ppm:
 
     public static boolean isAcqueous(String solvent) {
         solvent = solvent.toUpperCase();
-        return solvent.indexOf("H2O") < 2
-                || solvent.indexOf("D2O") < 2
+        return ((solvent.indexOf("H2O") >= 0) && (solvent.indexOf("H2O") < 2))
+                || ((solvent.indexOf("D2O") >= 0) && (solvent.indexOf("D2O") < 2))
                 || solvent.contains("URINE")
                 || solvent.contains("JUICE");
     }
