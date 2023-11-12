@@ -131,12 +131,16 @@ public class DatasetParameterFile {
                 Entry entry = (Entry) obj;
                 pStream.printf("%s %s %s\n", "property", entry.getKey(), entry.getValue());
             }
-            Path dFile = dataset.getFile().toPath();
+            Path dFile = dataset.getFile().getCanonicalFile().toPath();
             dataset.sourceFID().ifPresent(fidFile -> {
-                Path fPath = fidFile.toPath();
-                Path rPath = dFile.relativize(fPath);
-                pStream.printf("%s %s\n", "fid_rel", rPath);
-                pStream.printf("%s %s\n", "fid_abs", fidFile);
+                try {
+                    Path fPath = fidFile.getCanonicalFile().toPath();
+                    Path rPath = dFile.relativize(fPath);
+                    pStream.printf("%s %s\n", "fid_rel", rPath);
+                    pStream.printf("%s %s\n", "fid_abs", fPath.toString());
+                } catch (IOException ioE1) {
+
+                }
             });
         } catch (IOException ioE) {
             System.out.println("error " + ioE.getMessage());
