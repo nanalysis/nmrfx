@@ -1,7 +1,9 @@
 import os
 from pyproc import *
-FID(FIDHOME+'jcamp/TESTFID.DX')
-CREATE(TMPHOME+'tst_jcamp_1d.nv')
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'jcamp/TESTFID.DX'))
+CREATE(os.path.join(TMPHOME,'tst_jcamp_1d.nv'))
+
 acqOrder()
 skip(0)
 label('1H')

@@ -4098,4 +4098,28 @@ def parseFileArgs():
     datasetInfo = CREATE(datasetName)
     return fidInfo,datasetInfo
 
+def setTestLocations(fidHome, tmpHome):
+    global FIDHOME
+    global TMPHOME
+    FIDHOME = fidHome
+    TMPHOME = tmpHome
+
+def getTestLocations():
+    global FIDHOME
+    global TMPHOME
+    try:
+        fidHome = FIDHOME
+        tmpHome = TMPHOME
+    except NameError:
+        fidHome = os.getenv("FIDHOME")
+        tmpHome = os.getenv("TMPHOME")
+        if fidHome == None:
+            fidHome = "../../nmrfx-test-data/testfids"
+        if tmpHome == None:
+            tmpHome = "../../nmrfx-test-data-gen"
+            if not os.path.exists(tmpHome):
+                tmpHome = None
+        
+    return (fidHome, tmpHome)
+
 dataInfo = DataInfo()

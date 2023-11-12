@@ -1,8 +1,10 @@
 import os
 from pyproc import *
 procOpts(nprocess=6)
-FID(FIDHOME+'bruker/hnconus/7')
-CREATE(TMPHOME+'tst_hnconus_skip3.nv')
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'bruker/hnconus/7'))
+CREATE(os.path.join(TMPHOME,'tst_hnconus_skip3.nv'))
+
 acqOrder('321')
 skip(0,0,1)
 label('1H','15N','13C')
