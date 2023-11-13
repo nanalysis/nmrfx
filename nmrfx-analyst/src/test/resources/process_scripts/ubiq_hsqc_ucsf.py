@@ -1,7 +1,10 @@
 from pyproc import *
 procOpts(nprocess=1)
-FID(FIDHOME+'agilent/15Nhsqc.fid')
-CREATE(TMPHOME+'tst_ubiq_hsqc_sf.ucsf')
+
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'agilent/15Nhsqc.fid'))
+CREATE(os.path.join(TMPHOME,'tst_ubiq_hsqc_sf.ucsf'))
+
 label('1H','15N')
 sf('sfrq','dfrq2')
 sw('sw','sw1')

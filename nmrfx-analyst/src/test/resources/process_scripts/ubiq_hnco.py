@@ -1,7 +1,8 @@
 from pyproc import *
-
-FID(FIDHOME+'agilent/hnco3d.fid')
-CREATE(TMPHOME+'tst_ubiq_hnco.nv')
+import os
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'agilent/hnco3d.fid'))
+CREATE(os.path.join(TMPHOME,'tst_ubiq_hnco.nv'))
 sw('sw','sw1','sw2')
 sf('sfrq','dfrq','dfrq2')
 ref(7.3168,'C','N')
