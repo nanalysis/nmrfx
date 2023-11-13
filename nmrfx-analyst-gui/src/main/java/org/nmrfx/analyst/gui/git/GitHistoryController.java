@@ -17,12 +17,8 @@
  */
 package org.nmrfx.analyst.gui.git;
 
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -121,6 +117,12 @@ public class GitHistoryController implements Initializable {
         return controller;
 
     }
+
+    public String getCommitMessage(){
+        String msg = commitMessage.getText();
+        commitMessage.clear();
+        return msg;
+    }
     
     private void setUpMenu(MenuButton menu, List<GitAction> values) {
         for (var choice:values) {
@@ -144,7 +146,7 @@ public class GitHistoryController implements Initializable {
         historyTable.setShowRoot(false);
 
         TreeTableColumn<HistoryData, String> branchColumn = new TreeTableColumn<>("Branch");
-        TreeTableColumn<HistoryData, String> indexColumn = new TreeTableColumn<>("Index");
+        TreeTableColumn<HistoryData, Integer> indexColumn = new TreeTableColumn<>("Index");
         TreeTableColumn<HistoryData, String> dateColumn = new TreeTableColumn<>("Date");
         TreeTableColumn<HistoryData, String> userColumn = new TreeTableColumn<>("User");
         TreeTableColumn<HistoryData, String> revisionColumn = new TreeTableColumn<>("Revision");
@@ -152,7 +154,7 @@ public class GitHistoryController implements Initializable {
         TreeTableColumn<HistoryData, String> messageColumn = new TreeTableColumn<>("Message");
 
         branchColumn.setCellValueFactory(cellData -> cellData.getValue().getValue().branchProperty());
-        indexColumn.setCellValueFactory(cellData-> formatIndex(cellData.getValue().getValue().indexProperty()));
+        indexColumn.setCellValueFactory(cellData -> cellData.getValue().getValue().indexProperty().asObject());
         dateColumn.setCellValueFactory(cellData -> cellData.getValue().getValue().dateProperty());
         userColumn.setCellValueFactory(cellData -> cellData.getValue().getValue().userProperty());
         revisionColumn.setCellValueFactory(cellData -> cellData.getValue().getValue().revisionProperty());
@@ -162,19 +164,12 @@ public class GitHistoryController implements Initializable {
         branchColumn.setPrefWidth(150);
         dateColumn.setPrefWidth(150);
         messageColumn.setPrefWidth(150);
+        userColumn.setPrefWidth(75);
+        revisionColumn.setPrefWidth(75);
+        parentColumn.setPrefWidth(75);
 
         historyTable.getColumns().clear();
         historyTable.getColumns().setAll(branchColumn, indexColumn, dateColumn, messageColumn, userColumn, revisionColumn, parentColumn);
-    }
-
-    private StringProperty formatIndex(IntegerProperty index) {
-        String formattedIndex;
-        if (index.get() == 0) {
-            formattedIndex = "";
-        } else {
-            formattedIndex = String.valueOf(index.get());
-        }
-        return new SimpleStringProperty(formattedIndex);
     }
 
     public HistoryData getSelectedItem() {
@@ -186,9 +181,12 @@ public class GitHistoryController implements Initializable {
      */
     public void updateHistory() {
         if (controller != null && controller.stage != null) {
-            controller.stage.setTitle("Git History (Project = " + project.getName() + ", Current Branch = " + gitManager.gitCurrentBranch() + ")");
+            String currentBranch = gitManager.gitCurrentBranch();
+            if (currentBranch.length() == 40) {
+                currentBranch = currentBranch.substring(0,8);
+            }
+            controller.stage.setTitle("Git History (Project = " + project.getName() + ", Current Branch = " + currentBranch + ")");
         }
-        String currentBranch = gitManager.gitCurrentBranch();
 
         TreeItem root = historyTable.getRoot();
         root.getChildren().clear();
@@ -215,7 +213,7 @@ public class GitHistoryController implements Initializable {
         ObservableList<TreeItem> children = root.getChildren();
         for (TreeItem<HistoryData> child : children) {
             String childBranch = child.getValue().getShortBranch();
-            if (childBranch.equals(currentBranch)) {
+            if (childBranch.equals(gitManager.gitCurrentBranch())) {
                 child.setExpanded(true);
             }
         }
@@ -253,16 +251,6 @@ public class GitHistoryController implements Initializable {
         
     }
 
-    /**
-     * Perform a git commit.
-     * 
-     * @param event ActionEvent. The button click.
-     */
-    public void gitCommit(ActionEvent event) {
-        String msg = commitMessage.getText();
-        gitManager.gitCommit(msg);
-        updateHistory();
-    }
     
     /**
      * Reset to the selected commit. All subsequent commits will be deleted.

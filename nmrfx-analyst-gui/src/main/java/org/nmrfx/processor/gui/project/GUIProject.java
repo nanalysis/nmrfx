@@ -258,6 +258,7 @@ public class GUIProject extends ProjectBase {
         if (currentProject == this) {
             saveWindows(projectDir);
         }
+
         gitManager.gitCommitOnThread();
         PreferencesController.saveRecentProjects(projectDir.toString());
         currentProject.setActive();

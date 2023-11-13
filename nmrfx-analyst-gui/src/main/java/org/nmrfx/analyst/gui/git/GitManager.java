@@ -196,10 +196,16 @@ public class GitManager {
     }
 
     public void gitCommitOnThread() {
+        String msg;
+        if (historyController != null) {
+            msg = historyController.getCommitMessage();
+        } else {
+            msg = "";
+        }
         Task<Boolean> task = new Task<>() {
             @Override
             protected Boolean call() {
-                return gitCommit("");
+                return gitCommit(msg);
             }
         };
         Thread th = new Thread(task);
@@ -245,7 +251,7 @@ public class GitManager {
                     git.rm().addFilepattern(missingFile).call();
                 }
                 actionMap.forEach(action -> sBuilder.append(action).append(","));
-                RevCommit commit = git.commit().setMessage(msg + " " + sBuilder).call();
+                git.commit().setMessage(msg + " " + sBuilder).call();
                 didSomething = true;
 
             }
@@ -449,10 +455,14 @@ public class GitManager {
         Optional<ButtonType> response = alert.showAndWait();
         if (response.isPresent() && (response.get() == ButtonType.YES)) {
             try {
+                GitHistoryController hold = historyController;
                 Path oldProjectDir = projectDir;
                 guiProject.close();
                 git.revert().include(commit).call();
                 guiProject.loadGUIProject(oldProjectDir);
+                if (hold != null) {
+                    historyController = hold;
+                }
             } catch (GitAPIException | IOException | MoleculeIOException ex) {
                 log.error("Reverting commit", ex);
                 String errMessage = ex.getMessage();
@@ -479,10 +489,14 @@ public class GitManager {
             if (git == null) {
                 gitOpen();
             }
+            GitHistoryController hold = historyController;
             Path oldProjectDir = projectDir;
             guiProject.close();
             git.checkout().setCreateBranch(true).setName(newBranch).setStartPoint(commitID).call();
             guiProject.loadGUIProject(oldProjectDir);
+            if (hold != null) {
+                historyController = hold;
+            }
         } catch (GitAPIException | IOException | MoleculeIOException ex) {
             log.error("Creating branch", ex);
             String message = ex.getMessage();
@@ -585,12 +599,16 @@ public class GitManager {
             if (git == null) {
                 gitOpen();
             }
+            GitHistoryController hold = historyController;
             Path oldProjectDir = projectDir;
             String projectName = guiProject.getName();
             guiProject.close();
             git.checkout().setName(name).call();
             GUIProject project = new GUIProject(projectName);
             guiProject.loadGUIProject(oldProjectDir);
+            if (hold != null) {
+                historyController = hold;
+            }
         } catch (GitAPIException | IOException | MoleculeIOException ex) {
             log.error("Checkout", ex);
             String message = ex.getMessage();
