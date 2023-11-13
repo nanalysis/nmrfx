@@ -1,7 +1,10 @@
 import os
 from pyproc import *
-FID(FIDHOME+'agilent/cnoesqc.fid')
-CREATE(TMPHOME+'tst_ubiq_cnoesqc.nv')
+
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'agilent/cnoesqc.fid'))
+CREATE(os.path.join(TMPHOME,'tst_ubiq_cnoesqc.nv'))
+
 acqOrder('12')
 skip(0,0,0)
 label('1H','1H_2','13C')
