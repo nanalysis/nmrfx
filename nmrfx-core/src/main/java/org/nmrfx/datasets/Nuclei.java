@@ -55,6 +55,8 @@ public class Nuclei {
 
     final double ratio;
 
+    final boolean standard;
+
     final double ratioAcq;
 
     private Nuclei(final String name, final int num, final String spin, final double abundance,
@@ -66,6 +68,11 @@ public class Nuclei {
         this.freqRatio = freqRatio;
         this.ratio = ratio;
         this.ratioAcq = ratioAcq;
+        boolean isStandard = true;
+        if ((name.equals("N") && (num != 15)) || (name.equals("H") && (num != 1))) {
+            isStandard = false;
+        }
+        standard = isStandard;
     }
 
     public static void loadNuclei() {
@@ -221,7 +228,10 @@ public class Nuclei {
         if (result == null) {
             result = numberNameMap.get(test);
             if (result == null) {
-                var foundNuc = nameNumberMap.values().stream().filter(n -> test.equals(n.getName())).findFirst();
+                var foundNuc = nameNumberMap.values().stream()
+                        .filter(n -> test.equals(n.getName()))
+                        .filter(n -> n.standard)
+                        .findFirst();
                 result = foundNuc.orElse(H1);
             }
         }
