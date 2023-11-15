@@ -333,7 +333,7 @@ public interface NMRData {
                 value = ReferenceCalculator.getH2ORefPPM(getTempK());
             } else if ("NCPDH".contains(string)) {
                 double refZero = getZeroFreq();
-                Nuclei nuclei = Nuclei.findNuclei(getTN(dim));
+                Nuclei nuclei = Nuclei.findNuclei(string);
                 value = ReferenceCalculator.refByRatio(refZero, getSF(dim), nuclei, getSolvent());
             } else {
                 value = null;
