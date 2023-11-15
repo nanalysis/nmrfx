@@ -167,9 +167,6 @@ StdCoefs={
 
 class FIDInfo:
     size=[]
-    sw=[]
-    sf=[]
-    ref=[]
     refpt=[]
     label=[]
     mapToFIDList=[]
@@ -186,13 +183,10 @@ class FIDInfo:
             raise Exception("Number of parameters must be < "+str(nd))
 
     def printInfo(self):
-        print "  sw",    self.sw
-        print "  sf",    self.sf
         print "  size",  self.size
         print "  useSize", self.useSize
         print "  acqArray", self.acqArray
         print "  label", self.label
-        print "  ref",   self.ref
         print "  refpt", self.refpt
         print "  flags", self.flags
         print "  acqOrder", self.acqOrder
@@ -744,7 +738,6 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
 
     fidInfo.solvent = fidObj.getSolvent()
     fidInfo.nd = fidObj.getNDim()
-    fidInfo.sw = []
     fidInfo.sf = []
     fidInfo.ref = []
     fidInfo.refpt = []
@@ -758,10 +751,6 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
 
     j = 0
     for i in range(fidInfo.nd):
-        fidInfo.sw.append(fidObj.getSW(i))
-        fidInfo.sf.append(fidObj.getSF(i))
-        fidInfo.ref.append(fidObj.getRef(i))
-        fidInfo.refpt.append(fidObj.getSize(i)/2)
         fidInfo.label.append('D'+str(i))
         fidInfo.maxSize.append(fidObj.getMaxSize(i))
         fidInfo.acqArray.append(0)
@@ -877,13 +866,10 @@ def setDataInfo(dSize):
         for iDim in range(nDim):
             fidDim = fidInfo.mapToFID0(iDim)
             if fidDim != -1:
-                if fidInfo.ref:
-                    dataset.setRefValue(iDim,fidInfo.ref[fidDim])
-                    dataset.setRefValue_r(iDim,fidInfo.ref[fidDim])
-                if fidInfo.sw:
-                    dataset.setSw(iDim,fidInfo.sw[fidDim])
-                if fidInfo.sf:
-                    dataset.setSf(iDim,fidInfo.sf[fidDim])
+                dataset.setRefValue(iDim,fidInfo.fidObj.getRef(fidDim))
+                dataset.setRefValue_r(iDim,fidInfo.fidObj.getRef(fidDim))
+                dataset.setSw(iDim,fidInfo.fidObj.getSW(fidDim))
+                dataset.setSf(iDim,fidInfo.fidObj.getSF(fidDim))
                 if fidInfo.label:
                     dataset.setLabel(iDim,fidInfo.label[fidDim])
         if fidInfo.label:
