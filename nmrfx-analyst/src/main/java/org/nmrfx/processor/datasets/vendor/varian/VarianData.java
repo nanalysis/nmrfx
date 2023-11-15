@@ -623,6 +623,12 @@ public class VarianData implements NMRData {
     @Override
     public void setRef(int iDim, double ref) {
         Ref[iDim] = ref;
+        String nucleusName = getTN(iDim);
+        Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+        if (nucleus == Nuclei.H1) {
+            double sf0 = getSF(iDim);
+            zeroFreq = sf0 / (1.0 + ref * 1.0e-6);
+        }
     }
 
     @Override
