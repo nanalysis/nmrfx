@@ -655,7 +655,6 @@ public class BrukerData implements NMRData {
                 ref = dpar - (sw / 2.0) / sf;
                 ref = Precision.round(ref, 5);
             } else if ((dpar = getParDouble("O1," + (iDim + 1))) != null) {
-                double sw = getSW(iDim);
                 double o1 = dpar;
                 if ((dpar = getParDouble("BF1," + (iDim + 1))) != null) {
                     double sf = dpar;
@@ -672,8 +671,7 @@ public class BrukerData implements NMRData {
         Nuclei nucleus = Nuclei.findNuclei(nucleusName);
         double zf = getZeroFreq();
         double ref = ReferenceCalculator.refByRatio(zf, getSF(iDim), nucleus, getSolvent());
-        Optional<Double> result = Optional.of(ref);
-        return result;
+        return Optional.of(ref);
     }
 
     double getCorrectedBaseFreq() {
@@ -709,6 +707,7 @@ public class BrukerData implements NMRData {
         return calcBaseFreq;
     }
 
+    @Override
     public void setZeroFreq(Double value) {
         zeroFreq = value;
     }
@@ -723,7 +722,7 @@ public class BrukerData implements NMRData {
 
     @Override
     public double getRefPoint(int dim) {
-        return getSize(dim) / 2;
+        return (double) getSize(dim) / 2;
     }
 
     @Override
@@ -1222,41 +1221,41 @@ public class BrukerData implements NMRData {
         for (Object key : flags.keySet()) {
             boolean value = (boolean) flags.get(key);
             switch (key.toString()) {
-                case "fixdsp":
+                case "fixdsp" -> {
                     if (value) {
                         setFixDSPOn();
                     } else {
                         setFixDSPOff();
                     }
-                    break;
-                case "shiftdsp":
+                }
+                case "shiftdsp" -> {
                     if (value) {
                         setDSPShiftOn();
                     } else {
                         setDSPShiftOff();
                     }
-                    break;
-                case "exchangeXY":
+                }
+                case "exchangeXY" -> {
                     if (value) {
                         setExchangeOn();
                     } else {
                         setExchangeOff();
                     }
-                    break;
-                case "negatePairs":
+                }
+                case "negatePairs" -> {
                     if (value) {
                         setNegatePairsOn();
                     } else {
                         setNegatePairsOff();
                     }
-                    break;
-                case "swapBits":
+                }
+                case "swapBits" -> {
                     if (value) {
                         setSwapBitsOn();
                     } else {
                         setSwapBitsOff();
                     }
-                    break;
+                }
             }
         }
     }

@@ -561,7 +561,6 @@ public class RefManager {
         nmrData.setZeroFreq(null);
         zeroFieldProp.set(nmrData.getZeroFreq());
         zeroFieldProp.addListener(e -> {
-            System.out.println("zf changed");
             processorController.chartProcessor.setZeroFreq(zeroFieldProp.doubleValue());
             invalidateScript();
         });
@@ -721,7 +720,6 @@ public class RefManager {
 
     private void updateReference(SimpleObjectProperty property) {
         String refString = property.getValue().toString();
-        System.out.println("set ref " + refString);
         NMRData nmrData = getNMRData();
         double sf = nmrData.getSF(0);
         String tn = nmrData.getTN(0);
