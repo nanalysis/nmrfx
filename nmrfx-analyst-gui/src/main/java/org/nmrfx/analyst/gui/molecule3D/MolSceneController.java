@@ -879,6 +879,17 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
         }
     }
+
+    @FXML
+    private void zoomIn() {
+        ssViewer.zoom(1.05);
+    }
+
+    @FXML
+    private void zoomOut() {
+        ssViewer.zoom(0.95);
+
+    }
     @FXML
     private void activateBondAction() {
         Molecule molecule = Molecule.getActive();
