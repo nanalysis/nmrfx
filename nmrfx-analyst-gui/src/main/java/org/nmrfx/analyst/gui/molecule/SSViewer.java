@@ -174,10 +174,14 @@ public class SSViewer extends Pane {
     }
 
     public void zoom(double factor) {
+        double h = scrollPane.getHvalue();
+        double v = scrollPane.getVvalue();
         superScale *= factor;
         superScale = Math.max(0.9, superScale);
         updateScale();
         layoutChildren();
+        scrollPane.setHvalue(h);
+        scrollPane.setVvalue(v);
     }
 
 
