@@ -1461,6 +1461,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
             }
+            refManager.refreshParameters(getNMRData());
             setSaveState(dataset);
         }
         viewDatasetInApp(dataset);
