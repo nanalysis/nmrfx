@@ -2,11 +2,14 @@ package org.nmrfx.analyst.gui.molecule;
 
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.event.Event;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ZoomEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -37,6 +40,7 @@ public class SSViewer extends Pane {
     Group drawingGroup;
     Group infoGroup;
     Pane pane;
+    ScrollPane scrollPane;
     SSLayout ssLayout;
 
     ArrayList<Point2D> points = new ArrayList<>();
@@ -64,7 +68,11 @@ public class SSViewer extends Pane {
     double paneCenterY;
     double paneWidth;
     double paneHeight;
+    double scrollPaneWidth;
+    double scrollPaneHeight;
     double scale = 10.0;
+
+    double superScale = 1.0;
 
     public SSViewer() {
         initScene();
@@ -72,8 +80,8 @@ public class SSViewer extends Pane {
 
     @Override
     public void layoutChildren() {
-        pane.setPrefWidth(this.getWidth());
-        pane.setPrefHeight(this.getHeight());
+        scrollPane.setPrefWidth(this.getWidth());
+        scrollPane.setPrefHeight(this.getHeight());
         super.layoutChildren();
         drawSS();
     }
@@ -101,6 +109,7 @@ public class SSViewer extends Pane {
     }
 
     public final void initScene() {
+        scrollPane = new ScrollPane();
         pane = new Pane();
         drawingGroup = new Group();
         infoGroup = new Group();
@@ -108,11 +117,20 @@ public class SSViewer extends Pane {
         pane.setPrefSize(boxDim, boxDim);
         pane.getChildren().add(drawingGroup);
         pane.getChildren().add(infoGroup);
-        this.getChildren().add(pane);
+        scrollPane.setContent(pane);
+        this.getChildren().add(scrollPane);
         drawNumbersProp.addListener(e -> drawSS());
         showActiveProp.addListener(e -> drawSS());
         constraintTypeProp.addListener(e -> drawSS());
         drawSS();
+        scrollPane.widthProperty().addListener(e -> updateScale());
+        scrollPane.heightProperty().addListener(e -> updateScale());
+        pane.setOnZoom((Event event) -> {
+            ZoomEvent rEvent = (ZoomEvent) event;
+            double zoom = rEvent.getZoomFactor();
+            zoom(zoom);
+        });
+
     }
 
     public void drawSS() {
@@ -125,8 +143,12 @@ public class SSViewer extends Pane {
     }
 
     void updateScale() {
-        paneWidth = pane.getWidth();
-        paneHeight = pane.getHeight();
+        scrollPaneWidth = scrollPane.getWidth();
+        scrollPaneHeight = scrollPane.getHeight();
+        paneWidth = scrollPaneWidth * superScale;
+        paneHeight = scrollPaneHeight * superScale;
+        pane.setPrefWidth(paneWidth);
+        pane.setPrefHeight(paneHeight);
         paneCenterX = paneWidth / 2.0;
         paneCenterY = paneHeight / 2.0;
         double minX = Double.MAX_VALUE;
@@ -145,11 +167,23 @@ public class SSViewer extends Pane {
         centerY = (maxY + minY) / 2.0;
         double widthX = maxX - minX;
         double widthY = maxY - minY;
-        double scaleX = paneWidth / widthX;
+        double scaleX = paneWidth  / widthX;
         double scaleY = paneHeight / widthY;
         scale = Math.min(scaleX, scaleY);
         scale *= (0.85 - N_ATOMS * 0.02);
     }
+
+    public void zoom(double factor) {
+        double h = scrollPane.getHvalue();
+        double v = scrollPane.getVvalue();
+        superScale *= factor;
+        superScale = Math.max(0.9, superScale);
+        updateScale();
+        layoutChildren();
+        scrollPane.setHvalue(h);
+        scrollPane.setVvalue(v);
+    }
+
 
     Node drawLabelledCircle(double width, String text, int fontSize, Color color, double x, double y) {
         StackPane stack = new StackPane();
