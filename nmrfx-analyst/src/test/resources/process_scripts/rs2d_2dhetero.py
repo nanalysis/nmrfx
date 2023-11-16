@@ -1,8 +1,11 @@
 import os
 from pyproc import *
 procOpts(nprocess=7)
-FID(FIDHOME+'rs2d/2Dhetero/688/data.dat')
-CREATE(TMPHOME+'tst_rs2d_2dhetero/Proc/1/data.dat')
+
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'rs2d/2Dhetero/688/data.dat'))
+CREATE(os.path.join(TMPHOME,'tst_rs2d_2dhetero/Proc/1/data.dat'))
+
 acqOrder('1')
 acqarray(0,0)
 fixdsp(True)

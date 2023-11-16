@@ -44,6 +44,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.nmrfx.datasets.Nuclei.*;
+
 /**
  * @author brucejohnson
  */
@@ -412,10 +414,10 @@ public class PeakPicker {
         double tol = minTol;
         Nuclei nuc = dataset.getNucleus(dDim);
         if (null != nuc) {
-            tol = switch (nuc) {
-                case H1 -> 0.05;
-                case C13 -> 0.6;
-                case N15 -> 0.2;
+            tol = switch (nuc.getNameNumber()) {
+                case "H1" -> 0.05;
+                case "C13" -> 0.6;
+                case "N15" -> 0.2;
                 default -> minTol;
             };
         }
@@ -843,7 +845,7 @@ public class PeakPicker {
             threshold = max / maxRatio;
         }
         if (threshold < sdRatio * sDev) {
-            if (dataset.getNucleus(0) == Nuclei.H1) {
+            if (dataset.getNucleus(0) == H1) {
                 threshold = sdRatio * sDev;
             } else {
                 threshold = sdRatio / 3.0 * sDev;

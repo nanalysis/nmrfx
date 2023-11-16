@@ -1,8 +1,11 @@
 import os
 from pyproc import *
 procOpts(nprocess=4)
-FID(FIDHOME+'agilent/hnca3d.fid')
-CREATE(TMPHOME+'tst_ubiq_hnca.nv')
+
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'agilent/hnca3d.fid'))
+CREATE(os.path.join(TMPHOME,'tst_ubiq_hnca.nv'))
+
 acqOrder('21')
 acqarray(0,0,0)
 skip(0,0,0)

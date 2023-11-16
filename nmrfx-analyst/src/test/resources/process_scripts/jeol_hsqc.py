@@ -1,8 +1,11 @@
 import os
 from pyproc import *
 procOpts(nprocess=7)
-FID(FIDHOME+'jeol/indanone_HSQC-1-1.jdf')
-CREATE(TMPHOME+'tst_jeol_hsqc.nv')
+
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'jeol/indanone_HSQC-1-1.jdf'))
+CREATE(os.path.join(TMPHOME,'tst_jeol_hsqc.nv'))
+
 fixdsp(True)
 label('1H','13C')
 sf('X_FREQ','Y_FREQ')
@@ -21,4 +24,3 @@ ZF()
 FT()
 PHASE(ph0=0.0,ph1=0.0)
 run()
-
