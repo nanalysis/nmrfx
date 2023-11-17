@@ -49,6 +49,8 @@ public class PeakPickParameters {
     public int posNeg = 1;
     public double noiseLimit = 0.0;
 
+    public boolean useNoise = false;
+
     public PeakPickParameters(Dataset dataset, String listName) {
         this.theFile = dataset;
         this.listName = listName;

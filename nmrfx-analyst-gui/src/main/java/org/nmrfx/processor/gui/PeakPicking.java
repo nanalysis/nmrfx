@@ -72,6 +72,23 @@ public class PeakPicking {
         if (peakPickPar.listName == null) {
             peakPickPar.listName = getListName(chart, dataAttr);
         }
+        if ((peakPickPar.useNoise) && (peakPickPar.noiseLimit > 0.001)) {
+            if (!peakPickPar.theFile.sliceRMSDValid()) {
+                if ((peakPickPar.theFile.getNDim() < 3) || GUIUtils.affirm("Measure slice RMS (can be slow)")) {
+                    for (int iDim = 0; iDim < peakPickPar.theFile.getNDim(); iDim++) {
+                        try {
+                            peakPickPar.theFile.measureSliceRMSD(iDim);
+                        } catch (IOException e) {
+                            ExceptionDialog dialog = new ExceptionDialog(e);
+                            dialog.showAndWait();
+                            return null;
+                        }
+                    }
+                } else {
+                    return null;
+                }
+            }
+        }
         PeakList testList = PeakList.get(peakPickPar.listName);
         if (testList != null) {
             if (chart.is1D() && (testList.getNDim() != 1)) {

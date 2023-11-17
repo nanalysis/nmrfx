@@ -5,6 +5,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
+import org.nmrfx.utils.GUIUtils;
 
 public class PeakPickController {
     FXMLController fxmlController;
@@ -15,13 +16,16 @@ public class PeakPickController {
 
     ChoiceBox<String> modeChoiceBox;
     ChoiceBox<String> regionChoiceBox;
-
     ChoiceBox<String> thicknessChoiceBox;
+
+    CheckBox noiseCheckBox;
+    Slider noiseRatioSlider;
 
     public void setup(FXMLController fxmlController, TitledPane annoPane) {
         this.fxmlController = fxmlController;
         this.chart = fxmlController.getActiveChart();
         VBox vBox = new VBox();
+        vBox.setSpacing(10);
         annoPane.setContent(vBox);
         ToolBar toolBar = new ToolBar();
         vBox.getChildren().add(toolBar);
@@ -74,10 +78,22 @@ public class PeakPickController {
         thicknessBox.setAlignment(Pos.CENTER_LEFT);
         thicknessBox.setSpacing(10);
 
+        HBox noiseBox = new HBox();
+        Label noiseRatioLabel = new Label("Local Noise");
+        noiseCheckBox = new CheckBox();
+        noiseRatioSlider = new Slider(0, 40, 10.0);
+        TextField noiseField = new TextField();
+        noiseField.setPrefWidth(40);
+        GUIUtils.bindSliderField(noiseRatioSlider, noiseField,"0.#");
+        noiseRatioSlider.setShowTickLabels(true);
+        noiseRatioLabel.setPrefWidth(prefWidth);
+        noiseBox.getChildren().addAll(noiseRatioLabel, noiseCheckBox, noiseRatioSlider, noiseField);
+        noiseBox.setAlignment(Pos.CENTER_LEFT);
+        noiseBox.setSpacing(10);
 
 
 
-        vBox.getChildren().addAll(nameBox, regionBox, modeBox, thicknessBox);
+        vBox.getChildren().addAll(nameBox, regionBox, modeBox, thicknessBox, noiseBox);
     }
 
     void peakPick() {
@@ -89,6 +105,8 @@ public class PeakPickController {
         peakPickParameters.listName = name;
         peakPickParameters.region = region;
         peakPickParameters.mode = mode;
+        peakPickParameters.useNoise = noiseCheckBox.isSelected();
+        peakPickParameters.noiseLimit(noiseRatioSlider.getValue());
         if (thicknessStr.equals("All")) {
             peakPickParameters.thickness = 0;
             peakPickParameters.useAll = true;

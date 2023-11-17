@@ -700,7 +700,7 @@ public class PeakPicker {
             if (checkForPeak(checkValue, checkPoint, dim, findMax, peakPickPar.fixedPick,
                     peakPickPar.regionWidth, peakPickPar.nPeakDim, sign)) {
                 boolean aboveNoise = true;
-                if (peakPickPar.noiseLimit > 0.001) {
+                if (peakPickPar.useNoise && (peakPickPar.noiseLimit > 0.001)) {
                     double noiseRatio = dataset.checkNoiseLevel(checkValue, checkPoint, dim);
                     if (noiseRatio < peakPickPar.noiseLimit) {
                         aboveNoise = false;
