@@ -85,7 +85,6 @@ public class SpectrumStatusBar {
     private final ToolBar secondaryToolbar = new ToolBar();
     private final MenuButton toolButton = new MenuButton("Tools");
     private final List<ButtonBase> specialButtons = new ArrayList<>();
-    private final Button peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
     private final ToggleButton phaserButton = new ToggleButton("Phasing");
 
     private boolean arrayMode = false;
@@ -98,7 +97,6 @@ public class SpectrumStatusBar {
 
     // can't be called from constructor: relies on controller.getActiveChart(), which returns null at construction
     public void init() {
-        peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
         tableButton.setOnAction(e -> controller.updateScannerTool(tableButton));
         initCursorButtonGroup();
         setupTools();
@@ -657,8 +655,6 @@ public class SpectrumStatusBar {
         }
         if (currentMode == DataMode.DATASET_1D) {
             nodes.addAll(specialButtons);
-        } else if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
-            nodes.add(peakPickButton);
         }
 
         nodes.add(ToolBarUtils.makeFiller(10));

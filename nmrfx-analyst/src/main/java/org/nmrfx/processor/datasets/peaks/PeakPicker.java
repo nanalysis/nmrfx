@@ -558,7 +558,7 @@ public class PeakPicker {
         boolean alreadyPeaksInRegion = false;
         if (listExists) {
             alreadyPeaksInRegion = anyPeaksInRegion();
-            if (alreadyPeaksInRegion) {
+            if (alreadyPeaksInRegion && mode.startsWith("replace")) {
                 removeExistingPeaks();
                 peakList.compress();
                 peakList.reNumber();
