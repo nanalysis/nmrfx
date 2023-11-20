@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,8 @@ public class PeakPickParameters {
     private static final Logger log = LoggerFactory.getLogger(PeakPickParameters.class);
     public Dataset theFile = null;
     public String listName = null;
+    public PeakList filterList = null;
+    public boolean filter = false;
     public String mode = "new";
     public String region = "box";
     public boolean useCrossHairs;

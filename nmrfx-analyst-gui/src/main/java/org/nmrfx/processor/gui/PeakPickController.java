@@ -4,7 +4,9 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.utils.GUIUtils;
 
 public class PeakPickController {
@@ -21,6 +23,9 @@ public class PeakPickController {
     CheckBox noiseCheckBox;
     Slider noiseRatioSlider;
 
+    CheckBox filterCheckBox = null;
+    ChoiceBox<PeakList> filterListChoiceBox;
+
     public void setup(FXMLController fxmlController, TitledPane annoPane) {
         this.fxmlController = fxmlController;
         this.chart = fxmlController.getActiveChart();
@@ -31,8 +36,8 @@ public class PeakPickController {
         vBox.getChildren().add(toolBar);
         Button peakPickButton = new Button("Pick");
         Label listName = new Label("List Name");
-        double prefWidth = 100.0;
-        listName.setPrefWidth(prefWidth);
+        double labelWidth = 100.0;
+        listName.setPrefWidth(labelWidth);
         autoNameCheckBox = new CheckBox("AutoName");
         nameField = new TextField();
         autoNameCheckBox.setSelected(true);
@@ -59,21 +64,21 @@ public class PeakPickController {
 
         HBox regionBox = new HBox();
         Label regionLabel = new Label("Region");
-        regionLabel.setPrefWidth(prefWidth);
+        regionLabel.setPrefWidth(labelWidth);
         regionBox.getChildren().addAll(regionLabel, regionChoiceBox);
         regionBox.setAlignment(Pos.CENTER_LEFT);
         regionBox.setSpacing(10);
 
         HBox modeBox = new HBox();
         Label modeLabel = new Label("Mode");
-        modeLabel.setPrefWidth(prefWidth);
+        modeLabel.setPrefWidth(labelWidth);
         modeBox.getChildren().addAll(modeLabel, modeChoiceBox);
         modeBox.setAlignment(Pos.CENTER_LEFT);
         modeBox.setSpacing(10);
 
         HBox thicknessBox = new HBox();
         Label thicknessLabel = new Label("Thickness");
-        thicknessLabel.setPrefWidth(prefWidth);
+        thicknessLabel.setPrefWidth(labelWidth);
         thicknessBox.getChildren().addAll(thicknessLabel, thicknessChoiceBox);
         thicknessBox.setAlignment(Pos.CENTER_LEFT);
         thicknessBox.setSpacing(10);
@@ -86,16 +91,30 @@ public class PeakPickController {
         noiseField.setPrefWidth(40);
         GUIUtils.bindSliderField(noiseRatioSlider, noiseField,"0.#");
         noiseRatioSlider.setShowTickLabels(true);
-        noiseRatioLabel.setPrefWidth(prefWidth);
+        noiseRatioLabel.setPrefWidth(labelWidth);
         noiseBox.getChildren().addAll(noiseRatioLabel, noiseCheckBox, noiseRatioSlider, noiseField);
         noiseBox.setAlignment(Pos.CENTER_LEFT);
         noiseBox.setSpacing(10);
 
+        HBox filterBox = new HBox();
+        Label filterLabel = new Label("Filter List");
+        filterLabel.setPrefWidth(labelWidth);
+        filterCheckBox = new CheckBox();
+        filterListChoiceBox = new ChoiceBox<>();
+        filterListChoiceBox.getItems().addAll(GUIProject.getActive().getPeakLists());
+        filterBox.getChildren().addAll(filterLabel, filterCheckBox, filterListChoiceBox);
+        filterBox.setAlignment(Pos.CENTER_LEFT);
+        filterBox.setSpacing(10);
+        filterListChoiceBox.setOnShowing(e -> updateFilterChoices());
+       // GUIProject.getActive().addPeakListListener((MapChangeListener) e -> updateFilterChoices());
 
-
-        vBox.getChildren().addAll(nameBox, regionBox, modeBox, thicknessBox, noiseBox);
+        vBox.getChildren().addAll(nameBox, regionBox, modeBox, thicknessBox, noiseBox, filterBox);
     }
 
+    void updateFilterChoices() {
+        filterListChoiceBox.getItems().clear();
+        filterListChoiceBox.getItems().addAll(GUIProject.getActive().getPeakLists());
+    }
     void peakPick() {
         String name = autoNameCheckBox.isSelected() ? null : nameField.getText();
         String mode = modeChoiceBox.getValue().toLowerCase();
@@ -114,6 +133,8 @@ public class PeakPickController {
             peakPickParameters.thickness = Integer.parseInt(thicknessStr);
             peakPickParameters.useAll = false;
         }
+        peakPickParameters.filterList = filterListChoiceBox.getValue();
+        peakPickParameters.filter = filterCheckBox.isSelected();
 
         PeakPicking.peakPickActive(fxmlController, peakPickParameters);
 
