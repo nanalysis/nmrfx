@@ -13,8 +13,8 @@
         <ScrollPane fx:id="toolScrollPane" fitToHeight="true" fitToWidth="true">
             <Accordion fx:id="toolAccordion">
                 <panes>
-                    <TitledPane fx:id="annoPane" text="Annotations">
-                    </TitledPane>
+                    <TitledPane fx:id="peakPickPane" text="PeakPicker"/>
+                    <TitledPane fx:id="annoPane" text="Annotations"/>
                 </panes>
             </Accordion>
         </ScrollPane>
