@@ -23,6 +23,7 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 /**
@@ -89,20 +90,13 @@ public class HistoryData {
     public void setUser() {
         userProperty().set(commitInfo.getCommitterIdent().getName());
     }
-    
-    public String getParent() {
-        String parent = "";
-        int nParents = commitInfo.getParentCount();
-        if (nParents > 0) {
-            parent = commitInfo.getParents()[nParents - 1].getName();
-        }
-        return parent;
-    }
+
     public StringProperty revisionProperty(){
         return revision;
     }
     public void setRevision() {
-        revisionProperty().set(commitInfo.getName());
+        ObjectId objectId = ObjectId.fromString(commitInfo.getName());
+        revisionProperty().set(objectId.abbreviate(8).name());
     }
     public String getRevision() {
         return revisionProperty().get();
@@ -135,14 +129,16 @@ public class HistoryData {
         return parent;
     }
     public void setParent(){
-        String parentName = "";
+        String parent = "";
         int nParents = commitInfo.getParentCount();
         if (nParents > 0) {
-            parentName = commitInfo.getParents()[nParents - 1].getName();
+            parent = commitInfo.getParents()[nParents - 1].getName();
+            ObjectId objectId = ObjectId.fromString(parent);
+            parent = objectId.abbreviate(8).name();
         }
-        parentProperty().set(parentName);
+        parentProperty().set(parent);
     }
-    public String getParentProperty(){
+    public String getParent(){
         return parentProperty().get();
     }
 

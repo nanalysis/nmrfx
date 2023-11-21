@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import java.net.URL?>
 <?import javafx.scene.control.TextArea?>
-<BorderPane id="AnchorPane" prefHeight="200.0" prefWidth="600.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.analyst.gui.git.GitHistoryController">
+<BorderPane id="AnchorPane" prefHeight="200.0" prefWidth="800.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.analyst.gui.git.GitHistoryController">
     <stylesheets>
         <URL value="@/styles/consolescene.css"/>
     </stylesheets>
@@ -24,12 +24,12 @@
         </VBox>
     </top>
     <center>
-        <TreeTableView fx:id="historyTable" prefHeight="800" minHeight="400.0" prefWidth="700" VBox.vgrow="ALWAYS"/>
+        <TreeTableView fx:id="historyTable" prefHeight="800" minHeight="400.0" prefWidth="800" VBox.vgrow="ALWAYS"/>
     </center>
     <bottom>
         <HBox spacing="10" prefHeight="75" alignment="CENTER_LEFT">
             <TextArea fx:id="commitMessage" wrapText="true" promptText="Enter commit message here"/>
-            <Button fx:id="saveButton" text="Save" onAction="#gitCommit"/>
+            <Button fx:id="saveButton" text="Save"/>
         </HBox>
     </bottom>
 </BorderPane>
