@@ -161,6 +161,21 @@ public class SSPredictor {
         return bps;
     }
 
+    public List<BasePairProbability> getAllBasePairs(double pLimit) {
+        double[][] predicted = predictions;
+        int n = rnaSequence.length();
+        List<BasePairProbability> bps = new ArrayList<>();
+        for (int r = 0; r < n; r++) {
+            for (int c = r + 2; c < n; c++) {
+                if (predicted[r][c] > pLimit) {
+                    BasePairProbability bp = new BasePairProbability(r, c, predicted[r][c]);
+                    bps.add(bp);
+                }
+            }
+        }
+        return bps;
+    }
+
     Map<BasePairProbability, Integer> findCrossings(List<BasePairProbability> basePairs) {
         Map<BasePairProbability, Integer> crossings = new HashMap<>();
         for (BasePairProbability basePair1 : basePairs) {

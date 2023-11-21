@@ -92,6 +92,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     CheckMenuItem frozenCheckBox = new CheckMenuItem("Frozen");
     CheckMenuItem activeCheckBox = new CheckMenuItem("Active");
     CheckMenuItem numbersCheckBox = new CheckMenuItem("Numbers");
+    CheckMenuItem probabilitiesCheckBox = new CheckMenuItem("Probabilities");
     ToggleGroup predictionTypeGroup = new ToggleGroup();
 
     @FXML
@@ -109,6 +110,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     PeakList peakList = null;
     int itemIndex = 0;
     private StructureCalculator structureCalculator = new StructureCalculator();
+    SSPredictor ssPredictor = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -119,6 +121,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         stackPane.getChildren().addAll(molViewer, twoDPane);
         molBorderPane.setCenter(stackPane);
         ssViewer.getDrawNumbersProp().bind(numbersCheckBox.selectedProperty());
+        ssViewer.getDrawProbabilitiesProp().bind(probabilitiesCheckBox.selectedProperty());
         ssViewer.getShowActiveProp().bind(activeCheckBox.selectedProperty());
         dotBracketField.setEditable(true);
         dotBracketField.textProperty().addListener(e -> {
@@ -148,6 +151,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         Project.getActive().addPeakListListener(mapChangeListener);
         updatePeakListMenu();
         modeMenuButton.getItems().add(numbersCheckBox);
+        modeMenuButton.getItems().add(probabilitiesCheckBox);
         modeMenuButton.getItems().add(activeCheckBox);
         modeMenuButton.getItems().add(frozenCheckBox);
         Menu predictionMenu = new Menu("Predictions");
@@ -210,6 +214,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
             menuItem.selectedProperty().addListener(
                     (ChangeListener<Boolean>) (a, b, c) -> updatePeaks());
         }
+
+    }
+
+    private void selectedResidue(MouseEvent event) {
 
     }
 
@@ -839,7 +847,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     private void seqTo2D() {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
-            SSPredictor ssPredictor = new SSPredictor();
+            ssPredictor = new SSPredictor();
             String rnModelDir = PreferencesController.getRNAModelDirectory();
             if (rnModelDir.isEmpty()) {
                 DirectoryChooser directoryChooser = new DirectoryChooser();
@@ -867,6 +875,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             String sequence = seqBuilder.toString();
             try {
                 ssPredictor.predict(sequence);
+                ssViewer.setSsPredictor(ssPredictor);
                 List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(0.3);
                 String dotBracket = ssPredictor.getDotBracket(basePairs);
                 molecule.setDotBracket(dotBracket);

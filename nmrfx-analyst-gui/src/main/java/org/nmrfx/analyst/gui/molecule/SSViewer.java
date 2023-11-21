@@ -24,6 +24,7 @@ import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.predict.RNAStats;
 import org.nmrfx.structure.rna.SSLayout;
+import org.nmrfx.structure.rna.SSPredictor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,12 +52,14 @@ public class SSViewer extends Pane {
     ArrayList<String> constraintPairs = new ArrayList<>();
     Map<String, AtomCoord> atomMap = new HashMap<>();
     AtomCoord[] deltaCoords = null;
+    SSPredictor ssPredictor = null;
 
     // if true, draw lines connecting bases in sequence
     boolean seqState = true;
     boolean basePairState = true;
     boolean constraintPairState = true;
     private final SimpleBooleanProperty drawNumbersProp = new SimpleBooleanProperty(false);
+    private final SimpleBooleanProperty drawProbabilitiesProp = new SimpleBooleanProperty(false);
     private final SimpleBooleanProperty showActiveProp = new SimpleBooleanProperty(true);
     private final SimpleStringProperty constraintTypeProp = new SimpleStringProperty("All");
     private final List<String> displayAtomTypes = new ArrayList<>();
@@ -73,6 +76,7 @@ public class SSViewer extends Pane {
     double scale = 10.0;
 
     double superScale = 1.0;
+    int selectedResidue = -1;
 
     public SSViewer() {
         initScene();
@@ -88,6 +92,9 @@ public class SSViewer extends Pane {
 
     public SimpleBooleanProperty getDrawNumbersProp() {
         return drawNumbersProp;
+    }
+    public SimpleBooleanProperty getDrawProbabilitiesProp() {
+        return drawProbabilitiesProp;
     }
 
     public SimpleBooleanProperty getShowActiveProp() {
@@ -199,6 +206,11 @@ public class SSViewer extends Pane {
 
     }
 
+    public void selectResidue(int iRes) {
+        selectedResidue = iRes;
+        layoutChildren();
+    }
+
     Node drawLabelledNode(int iRes, String resName, String text, double x, double y) {
         double width = scale * 0.5;
         if (width < 12) {
@@ -213,12 +225,31 @@ public class SSViewer extends Pane {
             case "U", "T" -> Color.LIGHTBLUE;
             default -> Color.WHITE;
         };
-        String label;
-        if (drawNumbersProp.get()) {
+        String label = text;
+        if (drawProbabilitiesProp.get() && selectedResidue != -1) {
+            if (ssPredictor != null) {
+                double pLimit = 0.1;
+                label = "0.00";
+                int res1;
+                int res2;
+                for (SSPredictor.BasePairProbability bp : ssPredictor.getAllBasePairs(pLimit)) {
+                    if (selectedResidue > iRes) {
+                        res1 = bp.j();
+                        res2 = bp.i();
+                    } else {
+                        res1 = bp.i();
+                        res2 = bp.j();
+                    }
+                    if (res1 == selectedResidue && res2 == iRes ) {
+                        System.out.println(selectedResidue + " " + iRes + " " + bp.i() + " " + bp.j() + " " + bp.probability());
+                        label = String.format("%.2f", bp.probability());
+                    }
+                }
+                fontSize /= 2;
+            }
+        } else if (drawNumbersProp.get()) {
             label = resName.substring(1);
             fontSize /= 2;
-        } else {
-            label = text;
         }
 
         atomMap.put(iRes + "", new AtomCoord(x, y));
@@ -676,6 +707,7 @@ public class SSViewer extends Pane {
             }
         }
         int iRes = 0;
+
         for (Point2D point : points) {
             String resName = sequence.get(iRes);
             char resChar = resName.charAt(0);
@@ -684,6 +716,8 @@ public class SSViewer extends Pane {
             x = toX(x);
             y = toY(y);
             Node node = drawLabelledNode(iRes, resName, String.valueOf(resChar), x, y);
+            int finalIRes = iRes;
+            node.setOnMousePressed(e -> selectResidue(finalIRes));
             group.getChildren().add(node);
             iRes++;
         }
@@ -834,5 +868,9 @@ public class SSViewer extends Pane {
         this.constraintPairs.clear();
         this.constraintPairs.addAll(constraintPairs);
         constraintPairState = true;
+    }
+
+    public void setSsPredictor(SSPredictor ssPredictor) {
+        this.ssPredictor = ssPredictor;
     }
 }
