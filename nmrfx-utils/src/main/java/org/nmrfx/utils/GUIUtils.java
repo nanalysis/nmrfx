@@ -37,6 +37,13 @@ import java.util.function.UnaryOperator;
 //TODO add annotations once core and utils are merged
 // @PluginAPI({"parametric", "ring"})
 public class GUIUtils {
+    public enum AlertRespones {
+        YES,
+        NO,
+        CANCEL,
+        DELETE,
+        APPEND;
+    }
     static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, null, null));
     static final Background DEFAULT_BACKGROUND = new Background(new BackgroundFill(Color.WHITE, null, null));
     public static class FixedDecimalFilter implements UnaryOperator<TextFormatter.Change> {
@@ -88,6 +95,20 @@ public class GUIUtils {
         Optional<ButtonType> response = alert.showAndWait();
         if (response.isPresent() && (response.get() == ButtonType.YES)) {
             result = true;
+        }
+        return result;
+    }
+
+    public static AlertRespones deleteAppendCancel(String message) {
+        ButtonType deleteType = new ButtonType("Delete");
+        ButtonType appendType = new ButtonType("Append");
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.CANCEL, deleteType, appendType);
+        AlertRespones result = AlertRespones.CANCEL;
+        Optional<ButtonType> response = alert.showAndWait();
+        if (response.isPresent() && (response.get() == deleteType)) {
+            result = AlertRespones.DELETE;
+        } else if (response.isPresent() && (response.get() == appendType)) {
+            result = AlertRespones.APPEND;
         }
         return result;
     }

@@ -134,6 +134,14 @@ public class SSViewer extends Pane {
 
     }
 
+    public void clear() {
+        points.clear();
+        if (drawingGroup != null) {
+            drawingGroup.getChildren().clear();
+            infoGroup.getChildren().clear();
+        }
+    }
+
     public void drawSS() {
         drawingGroup.getChildren().clear();
         try {
@@ -610,7 +618,7 @@ public class SSViewer extends Pane {
                 } else {
                     text = "1";
                 }
-                if (!text.equals("")) {
+                if (!text.isEmpty()) {
                     boolean active = true;
                     if (showActiveProp.get()) {
                         active = false;
