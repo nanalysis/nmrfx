@@ -67,9 +67,9 @@ public class MoleculeMenuActions extends MenuActions {
         seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(app));
 
         MenuItem atomsMenuItem = new MenuItem("Atom Table...");
-        atomsMenuItem.setOnAction(e -> showAtoms(e));
+        atomsMenuItem.setOnAction(this::showAtoms);
         MenuItem sequenceMenuItem = new MenuItem("Sequence Viewer...");
-        sequenceMenuItem.setOnAction(e -> showSequence(e));
+        sequenceMenuItem.setOnAction(this::showSequence);
 
         MenuItem molMenuItem = new MenuItem("Viewer");
         molMenuItem.setOnAction(e -> showMols());
@@ -78,7 +78,7 @@ public class MoleculeMenuActions extends MenuActions {
         rdcMenuItem.setOnAction(e -> showRDCGUI());
 
         MenuItem rnaPeakGenMenuItem = new MenuItem("Show RNA Label Scheme");
-        rnaPeakGenMenuItem.setOnAction(e -> showRNAPeakGenerator(e));
+        rnaPeakGenMenuItem.setOnAction(this::showRNAPeakGenerator);
 
         menu.getItems().addAll(seqGUIMenuItem, atomsMenuItem,
                 sequenceMenuItem, molMenuItem, rdcMenuItem, rnaPeakGenMenuItem);
@@ -102,12 +102,8 @@ public class MoleculeMenuActions extends MenuActions {
         if (molController == null) {
             molController = MolSceneController.create();
         }
-        if (molController != null) {
-            molController.getStage().show();
-            molController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make molController");
-        }
+        molController.getStage().show();
+        molController.getStage().toFront();
     }
 
 
@@ -115,24 +111,16 @@ public class MoleculeMenuActions extends MenuActions {
         if (seqDisplayController == null) {
             seqDisplayController = SeqDisplayController.create();
         }
-        if (seqDisplayController != null) {
-            seqDisplayController.getStage().show();
-            seqDisplayController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make seqDisplayController");
-        }
+        seqDisplayController.getStage().show();
+        seqDisplayController.getStage().toFront();
     }
 
     private void showAtoms(ActionEvent event) {
         if (atomController == null) {
             atomController = AtomController.create();
         }
-        if (atomController != null) {
-            atomController.getStage().show();
-            atomController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make atom controller");
-        }
+        atomController.getStage().show();
+        atomController.getStage().toFront();
     }
 
     void showRDCGUI() {
@@ -172,52 +160,36 @@ public class MoleculeMenuActions extends MenuActions {
         if (file != null) {
             try {
                 switch (type) {
-                    case "pdb": {
+                    case "pdb" -> {
                         PDBFile pdbReader = new PDBFile();
                         pdbReader.readSequence(file.toString(), false, 0);
-                        System.out.println("read mol: " + file.toString());
-                        break;
                     }
-                    case "pdbx": {
+                    case "pdbx" -> {
                         PDBFile pdbReader = new PDBFile();
                         pdbReader.read(file.toString(), false);
-                        System.out.println("read mol: " + file.toString());
-                        break;
                     }
-                    case "pdb xyz":
+                    case "pdb xyz" -> {
                         PDBFile pdb = new PDBFile();
                         pdb.readCoordinates(file.getPath(), 0, false, true);
                         Molecule mol = Molecule.getActive();
                         mol.updateAtomArray();
-                        System.out.println("read mol: " + file.toString());
-                        break;
-                    case "sdf":
-                    case "mol":
-                        SDFile.read(file.toString(), null);
-                        break;
-                    case "mol2":
-                        Mol2File.read(file.toString(), null);
-                        break;
-                    case "seq":
+                    }
+                    case "sdf", "mol" -> SDFile.read(file.toString(), null);
+                    case "mol2" -> Mol2File.read(file.toString(), null);
+                    case "seq" -> {
                         Sequence seq = new Sequence();
                         seq.read(file.toString());
-                        break;
-                    case "mmcif": {
-                        MMcifReader.read(file);
-                        System.out.println("read mol: " + file.toString());
-                        break;
                     }
-                    default:
-                        break;
+                    case "mmcif" -> MMcifReader.read(file);
+                    default -> {
+                    }
                 }
                 showMols();
             } catch (Exception ex) {
                 var mol = MoleculeFactory.getActive();
-                if (mol != null) {
-                    if (mol != currentMol) {
-                        MoleculeFactory.removeMolecule(mol.getName());
-                        MoleculeFactory.setActive(currentMol);
-                    }
+                if ((mol != null) && (mol != currentMol)) {
+                    MoleculeFactory.removeMolecule(mol.getName());
+                    MoleculeFactory.setActive(currentMol);
                 }
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.setTitle("Error reading molecule file");
@@ -232,12 +204,8 @@ public class MoleculeMenuActions extends MenuActions {
         if (rnaPeakGenController == null) {
             rnaPeakGenController = RNAPeakGeneratorSceneController.create();
         }
-        if (rnaPeakGenController != null) {
-            rnaPeakGenController.getStage().show();
-            rnaPeakGenController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make rnaPeakGenController ");
-        }
+        rnaPeakGenController.getStage().show();
+        rnaPeakGenController.getStage().toFront();
     }
 
     public static boolean checkForExisting() {

@@ -618,7 +618,7 @@ public class SSViewer extends Pane {
                 } else {
                     text = "1";
                 }
-                if (!text.equals("")) {
+                if (!text.isEmpty()) {
                     boolean active = true;
                     if (showActiveProp.get()) {
                         active = false;
