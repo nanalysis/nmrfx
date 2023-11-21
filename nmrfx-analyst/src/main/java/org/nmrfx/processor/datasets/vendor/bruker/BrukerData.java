@@ -20,10 +20,8 @@ package org.nmrfx.processor.datasets.vendor.bruker;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.nmrfx.datasets.DatasetLayout;
-import org.nmrfx.processor.datasets.AcquisitionType;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetGroupIndex;
-import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.processor.datasets.*;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -81,12 +79,12 @@ public class BrukerData implements NMRData {
     private final int arraysize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
     private final int maxSize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
     private double deltaPh0_2 = 0.0;
-    // fixme dynamically determine size
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
     private final Double[] Sf = new Double[MAXDIM];
     private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
 
+    private Double zeroFreq = null;
     private String text = null;
 
     private final String fpath;
@@ -626,6 +624,13 @@ public class BrukerData implements NMRData {
     @Override
     public void setRef(int iDim, double ref) {
         Ref[iDim] = ref;
+        String nucleusName = getTN(iDim);
+        Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+
+        if (nucleus == Nuclei.H1) {
+            double sf0 = getSF(iDim);
+            zeroFreq = sf0 / (1.0 + ref * 1.0e-6);
+        }
     }
 
     @Override
@@ -640,18 +645,20 @@ public class BrukerData implements NMRData {
             ref = Ref[iDim];
         } else {
             Double dpar;
-            // OFFSET from proc[n]s
-            if ((dpar = getParDouble("OFFSET," + (iDim + 1))) != null) {
+            var refOpt = getRefAtCenter(iDim);
+            if (refOpt.isPresent()) {
+                ref = refOpt.get();
+                // OFFSET from proc[n]s
+            } else if ((dpar = getParDouble("OFFSET," + (iDim + 1))) != null) {
                 double sw = getSW(iDim);
                 double sf = getSF(iDim);
                 ref = dpar - (sw / 2.0) / sf;
                 ref = Precision.round(ref, 5);
             } else if ((dpar = getParDouble("O1," + (iDim + 1))) != null) {
                 double o1 = dpar;
-                if ((dpar = getParDouble("SFO1," + (iDim + 1))) != null) {
+                if ((dpar = getParDouble("BF1," + (iDim + 1))) != null) {
                     double sf = dpar;
-                    double sw = getSW(iDim);
-                    ref = Precision.round((o1 - sw / 2.0) / sf, 5);
+                    ref = o1 / sf;
                 }
             }
             setRef(iDim, ref);
@@ -659,9 +666,63 @@ public class BrukerData implements NMRData {
         return ref;
     }
 
+    Optional<Double> getRefAtCenter(int iDim) {
+        String nucleusName = getTN(iDim);
+        Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+        double zf = getZeroFreq();
+        double ref = ReferenceCalculator.refByRatio(zf, getSF(iDim), nucleus, getSolvent());
+        return Optional.of(ref);
+    }
+
+    double getCorrectedBaseFreq() {
+        String solvent = getSolvent();
+        boolean isAcqueous = ReferenceCalculator.isAcqueous(solvent);
+        Double actualLockRef = null;
+        if (isAcqueous) {
+            actualLockRef = ReferenceCalculator.getH2ORefPPM(getTempK());
+        }
+        int hDim = -1;
+        for (int i = 0;i<getNDim();i++) {
+            String nucleusName = getTN(i);
+            Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+            if (nucleus == Nuclei.H1) {
+                hDim = i;
+            }
+        }
+        double calcBaseFreq;
+        if (hDim != -1) {
+            Double baseFreq = getParDouble("BF1," + (hDim +1));
+            Double lockPPM = getParDouble("LOCKPPM,1");
+            if (actualLockRef == null) {
+                actualLockRef = lockPPM;
+            }
+            calcBaseFreq =  ReferenceCalculator.getCorrectedBaseFreq(baseFreq, lockPPM, actualLockRef);
+        } else {
+            String nucleusName = getTN(0);
+            Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+            Double baseFreq = getParDouble("BF1,1");
+            double xRatio = nucleus.getRatio();
+            calcBaseFreq = baseFreq / (xRatio / 100.0);
+        }
+        return calcBaseFreq;
+    }
+
+    @Override
+    public void setZeroFreq(Double value) {
+        zeroFreq = value;
+    }
+
+    @Override
+    public double getZeroFreq() {
+        if (zeroFreq == null) {
+            zeroFreq = getCorrectedBaseFreq();
+        }
+        return zeroFreq;
+    }
+
     @Override
     public double getRefPoint(int dim) {
-        return 1.0;
+        return (double) getSize(dim) / 2;
     }
 
     @Override
@@ -1136,7 +1197,7 @@ public class BrukerData implements NMRData {
                         f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
                         break;
                 }
-                if (tdsize[i -1] < 2) {
+                if (tdsize[i - 1] < 2) {
                     complexDim[i - 1] = false;
                 }
             }
@@ -1160,41 +1221,41 @@ public class BrukerData implements NMRData {
         for (Object key : flags.keySet()) {
             boolean value = (boolean) flags.get(key);
             switch (key.toString()) {
-                case "fixdsp":
+                case "fixdsp" -> {
                     if (value) {
                         setFixDSPOn();
                     } else {
                         setFixDSPOff();
                     }
-                    break;
-                case "shiftdsp":
+                }
+                case "shiftdsp" -> {
                     if (value) {
                         setDSPShiftOn();
                     } else {
                         setDSPShiftOff();
                     }
-                    break;
-                case "exchangeXY":
+                }
+                case "exchangeXY" -> {
                     if (value) {
                         setExchangeOn();
                     } else {
                         setExchangeOff();
                     }
-                    break;
-                case "negatePairs":
+                }
+                case "negatePairs" -> {
                     if (value) {
                         setNegatePairsOn();
                     } else {
                         setNegatePairsOff();
                     }
-                    break;
-                case "swapBits":
+                }
+                case "swapBits" -> {
                     if (value) {
                         setSwapBitsOn();
                     } else {
                         setSwapBitsOff();
                     }
-                    break;
+                }
             }
         }
     }
@@ -1384,7 +1445,6 @@ public class BrukerData implements NMRData {
         if (groupDelay > 0) {
             // fixme which is correct (use ceil or not)
             shiftAmount = (int) Math.round(groupDelay);
-            System.out.println(iVec + " " + groupDelay + " " + shiftAmount);
         }
         if (dvec.isComplex()) {
             if (dvec.useApache()) {
@@ -1685,7 +1745,6 @@ public class BrukerData implements NMRData {
 
     private void dspPhase(Vec vec) {
         if (dspph != 0.0) {  // check DMX flag?
-            System.out.println("  BrukerData dspPhase=" + dspph);
             vec.checkPowerOf2(); // resize
             vec.fft();
             vec.phase(0.0, dspph, false, false);

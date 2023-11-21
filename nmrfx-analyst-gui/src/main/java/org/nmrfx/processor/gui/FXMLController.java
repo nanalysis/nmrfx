@@ -62,6 +62,7 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
@@ -1315,7 +1316,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
         DatasetAttributes activeAttr = firstAttributes.get();
         // any peak lists created just for alignmnent should be deleted
-        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, null, false, "refList");
+        PeakPickParameters peakPickParameters = new PeakPickParameters();
+        peakPickParameters.listName = "refList";
+        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, null, peakPickParameters);
         if (refList == null) {
             return;
         }
@@ -1335,7 +1338,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrList) {
                 if (dataAttr != activeAttr) {
-                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, false, false, null, false, "movingList");
+                    PeakPickParameters peakPickParametersM = new PeakPickParameters();
+                    peakPickParametersM.listName = "movingList";
+                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, null, peakPickParametersM);
                     movingList.unLinkPeaks();
                     movingList.clearSearchDims();
                     movingList.addSearchDim(dimName1, 0.05);

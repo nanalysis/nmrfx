@@ -105,6 +105,8 @@ public class ChartProcessor {
      * beginning of FID.
      */
     private boolean fixDSP = true;
+
+    private Double zeroFreq = null;
     /**
      * How many vectors are present in data file for each unique combination of
      * indirect acquisition times. Typically, 2 for 2D, 4 for 3D etc.
@@ -341,6 +343,13 @@ public class ChartProcessor {
 
     public void setFixDSP(boolean value) {
         fixDSP = value;
+    }
+    public Double getZeroFreq() {
+        return zeroFreq;
+    }
+
+    public void setZeroFreq(Double value) {
+        zeroFreq = value;
     }
 
     private VecIndex getNextIndex(NMRData nmrData, int[] rows) {

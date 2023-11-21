@@ -31,10 +31,14 @@ public class ToolController implements Initializable, NmrControlRightSideContent
     Accordion attributesAccordion;
     @FXML
     TitledPane annoPane;
+    @FXML
+    TitledPane peakPickPane;
     PolyChart chart;
     PolyChart boundChart = null;
     FXMLController fxmlController;
     AnnotationController annotationController;
+
+    PeakPickController peakPickController;
     @FXML
     private VBox attributesVBox;
 
@@ -44,6 +48,8 @@ public class ToolController implements Initializable, NmrControlRightSideContent
         controller.fxmlController = fxmlController;
         controller.annotationController = new AnnotationController();
         controller.annotationController.setup(fxmlController, controller.annoPane);
+        controller.peakPickController = new PeakPickController();
+        controller.peakPickController.setup(fxmlController,controller.peakPickPane);
         controller.setChart(fxmlController.getActiveChart());
         return controller;
     }
@@ -67,6 +73,9 @@ public class ToolController implements Initializable, NmrControlRightSideContent
     }
     public AnnotationController getAnnotationController(){
         return annotationController;
+    }
+    public PeakPickController getPeakPickController(){
+        return peakPickController;
     }
 
 

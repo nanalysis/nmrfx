@@ -796,9 +796,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 String datasetName = peakList.getDatasetName();
                 if ((datasetName != null) && !datasetName.equals("") && (Molecule.getActive() != null)) {
                     Dataset dataset = Dataset.getDataset(datasetName);
-                    String labelScheme = dataset.getProperty("labelScheme");
-                    RNALabels rnaLabels = new RNALabels();
-                    rnaLabels.parseSelGroups(Molecule.getActive(), labelScheme);
+                    if (dataset != null) {
+                        String labelScheme = dataset.getProperty("labelScheme");
+                        RNALabels rnaLabels = new RNALabels();
+                        rnaLabels.parseSelGroups(Molecule.getActive(), labelScheme);
+                    }
                 }
             }
             ssViewer.setConstraintPairs(constraintPairs);
@@ -878,6 +880,17 @@ public class MolSceneController implements Initializable, StageBasedController, 
             }
 
         }
+    }
+
+    @FXML
+    private void zoomIn() {
+        ssViewer.zoom(1.05);
+    }
+
+    @FXML
+    private void zoomOut() {
+        ssViewer.zoom(0.95);
+
     }
     @FXML
     private void activateBondAction() {
