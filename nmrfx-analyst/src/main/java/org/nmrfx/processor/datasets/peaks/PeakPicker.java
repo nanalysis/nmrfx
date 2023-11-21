@@ -382,7 +382,7 @@ public class PeakPicker {
 
             peak.peakDims[peakDim].setLineWidthValue((float) dataset.ptWidthToPPM(dataDim, width));
 
-            if (peak.peakDims[peakDim].getLineWidthValue() == 0.0) {
+            if (peak.peakDims[peakDim].getLineWidthValue() < 1.0e-6) {
                 peak.peakDims[peakDim].setLineWidthValue((float) (peak.peakDims[peakDim].getBoundsValue() * 0.7));
             }
 
