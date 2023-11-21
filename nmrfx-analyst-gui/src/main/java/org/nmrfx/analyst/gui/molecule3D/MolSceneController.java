@@ -306,6 +306,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
         }
     }
 
+    public void clearSS() {
+        dotBracketPane.getChildren().clear();
+        ssViewer.clear();
+        dotBracketField.clear();
+    }
     @FXML
     void layoutSS() throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();

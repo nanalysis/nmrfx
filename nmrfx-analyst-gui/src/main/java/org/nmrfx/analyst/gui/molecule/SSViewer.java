@@ -134,6 +134,14 @@ public class SSViewer extends Pane {
 
     }
 
+    public void clear() {
+        points.clear();
+        if (drawingGroup != null) {
+            drawingGroup.getChildren().clear();
+            infoGroup.getChildren().clear();
+        }
+    }
+
     public void drawSS() {
         drawingGroup.getChildren().clear();
         try {

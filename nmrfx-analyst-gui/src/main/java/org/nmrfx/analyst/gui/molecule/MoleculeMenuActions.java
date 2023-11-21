@@ -13,6 +13,7 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.io.*;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
 
@@ -52,7 +53,11 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem readMol2Item = new MenuItem("Read Mol2...");
         readMol2Item.setOnAction(e -> readMolecule("mol2"));
         molFileMenu.getItems().add(readMol2Item);
-        menu.getItems().add(molFileMenu);
+
+        MenuItem clearAllItem = new MenuItem("Clear Molecules...");
+        clearAllItem.setOnAction(e -> clearExisting());
+
+        menu.getItems().addAll(molFileMenu, clearAllItem);
 
     }
 
@@ -77,6 +82,19 @@ public class MoleculeMenuActions extends MenuActions {
 
         menu.getItems().addAll(seqGUIMenuItem, atomsMenuItem,
                 sequenceMenuItem, molMenuItem, rdcMenuItem, rnaPeakGenMenuItem);
+    }
+
+    void clearExisting() {
+        if (GUIUtils.affirm("Clear all molecules?")) {
+            MoleculeFactory.clearAllMolecules();
+            if (atomController != null) {
+                atomController.refreshAtomTable();
+            }
+            if (molController != null) {
+                molController.removeAll();
+                molController.clearSS();
+            }
+        }
     }
 
     @FXML
@@ -144,6 +162,10 @@ public class MoleculeMenuActions extends MenuActions {
     }
 
     public void readMolecule(String type) {
+        if (!checkForExisting()) {
+            return;
+        }
+
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
         var currentMol = MoleculeFactory.getActive();
@@ -216,6 +238,19 @@ public class MoleculeMenuActions extends MenuActions {
         } else {
             System.out.println("Couldn't make rnaPeakGenController ");
         }
+    }
+
+    public static boolean checkForExisting() {
+        if (MoleculeFactory.getActive() != null) {
+            var result = GUIUtils.deleteAppendCancel("Molecule exists");
+            if (result == GUIUtils.AlertRespones.CANCEL) {
+                return false;
+            }
+            if (result == GUIUtils.AlertRespones.DELETE) {
+                MoleculeFactory.clearAllMolecules();
+            }
+        }
+        return true;
     }
 
 }

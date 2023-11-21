@@ -85,6 +85,9 @@ public class SequenceGUI {
     }
 
     void addEntity() {
+        if (!MoleculeMenuActions.checkForExisting()) {
+            return;
+        }
         String type = polymerType.getValue();
         if ((type == null) || (type.equals(""))) {
             GUIUtils.warn("Polymer", "Please select a polymer type");
