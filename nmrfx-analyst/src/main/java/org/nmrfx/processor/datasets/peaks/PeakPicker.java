@@ -655,7 +655,7 @@ public class PeakPicker {
         int[] filtPkToData = null;
         if (filterMode) {
             filtPkToData = peakPickPar.filterList.getDimsForDataset(dataset, true);
-            cIter =  (new PeakDimCounter(dataset, peakPickPar.filterList.peaks(), dimOrder, filtPkToData, pt)).iterator();
+            cIter =  (new PeakDimCounter(dataset, peakPickPar.filterList.peaks(), dimOrder, filtPkToData, pt, peakPickPar.filterWidth)).iterator();
         } else {
             cIter = (new DimCounter(counterSizes)).iterator();
         }

@@ -2,6 +2,7 @@ package org.nmrfx.processor.gui;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.nmrfx.peaks.PeakList;
@@ -25,6 +26,7 @@ public class PeakPickController {
 
     CheckBox filterCheckBox = null;
     ChoiceBox<PeakList> filterListChoiceBox;
+    Slider filterWidthSlider;
 
     public void setup(FXMLController fxmlController, TitledPane annoPane) {
         this.fxmlController = fxmlController;
@@ -96,17 +98,33 @@ public class PeakPickController {
         noiseBox.setAlignment(Pos.CENTER_LEFT);
         noiseBox.setSpacing(10);
 
-        HBox filterBox = new HBox();
+        GridPane filterBox = new GridPane();
         Label filterLabel = new Label("Filter List");
         filterLabel.setPrefWidth(labelWidth);
         filterCheckBox = new CheckBox();
         filterListChoiceBox = new ChoiceBox<>();
+        filterListChoiceBox.setPrefWidth(100);
         filterListChoiceBox.getItems().addAll(GUIProject.getActive().getPeakLists());
-        filterBox.getChildren().addAll(filterLabel, filterCheckBox, filterListChoiceBox);
+        filterWidthSlider = new Slider(0.5, 4.0, 1.0);
+        TextField filterWidthText = new TextField();
+        filterWidthText.setPrefWidth(40);
+        GUIUtils.bindSliderField(filterWidthSlider, filterWidthText,"0.#");
+        Label filterWidthLabel = new Label("Filter Width");
+        filterWidthLabel.setPrefWidth(labelWidth);
+
+        filterWidthSlider.setValue(1.0);
+
+        filterBox.add(filterLabel, 0, 0);
+        filterBox.add(filterCheckBox, 1, 0);
+        filterBox.add(filterListChoiceBox, 2, 0);
+        filterBox.add(filterWidthLabel, 0, 1);
+        filterBox.add(filterWidthSlider, 1, 1, 2, 1);
+        filterBox.add(filterWidthText, 3,1);
+
         filterBox.setAlignment(Pos.CENTER_LEFT);
-        filterBox.setSpacing(10);
+        filterBox.setHgap(10);
+        filterBox.setVgap(10);
         filterListChoiceBox.setOnShowing(e -> updateFilterChoices());
-       // GUIProject.getActive().addPeakListListener((MapChangeListener) e -> updateFilterChoices());
 
         vBox.getChildren().addAll(nameBox, regionBox, modeBox, thicknessBox, noiseBox, filterBox);
     }
@@ -135,6 +153,7 @@ public class PeakPickController {
         }
         peakPickParameters.filterList = filterListChoiceBox.getValue();
         peakPickParameters.filter = filterCheckBox.isSelected();
+        peakPickParameters.filterWidth = filterWidthSlider.getValue();
 
         PeakPicking.peakPickActive(fxmlController, peakPickParameters);
 

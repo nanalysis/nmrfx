@@ -22,12 +22,15 @@ public class PeakDimCounter  {
     int[][] fullBounds;
     int[] pSize;
 
-    public PeakDimCounter(Dataset dataset, List<Peak> peaks, int[] dimOrder, int[] pkToData, int[][] fullBounds) {
+    double filterWidth;
+
+    public PeakDimCounter(Dataset dataset, List<Peak> peaks, int[] dimOrder, int[] pkToData, int[][] fullBounds, double filterWidth) {
         this.dataset = dataset;
         this.peaks = peaks;
         this.dimOrder = dimOrder;
         this.pkToData = pkToData;
         this.fullBounds = fullBounds;
+        this.filterWidth = filterWidth;
         int nDim = dataset.getNDim();
         cpt = new int[nDim];
         width = new double[nDim];
@@ -57,7 +60,7 @@ public class PeakDimCounter  {
         void newCounter() {
             index++;
             peak = peaks.get(index);
-            peak.getPeakRegion(dataset, pkToData, peakBounds, cpt, width, null);
+            peak.getPeakRegion(dataset, pkToData, peakBounds, cpt, width, null, filterWidth);
             for (int i=0;i<dimOrder.length;i++) {
                 int dDim = dimOrder[i];
                 int pDim = dataToPk[dDim];

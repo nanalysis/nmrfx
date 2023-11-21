@@ -33,6 +33,7 @@ public class PeakPickParameters {
     public String listName = null;
     public PeakList filterList = null;
     public boolean filter = false;
+    public double filterWidth;
     public String mode = "new";
     public String region = "box";
     public boolean useCrossHairs;
