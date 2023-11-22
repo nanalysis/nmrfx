@@ -70,6 +70,12 @@ public class OpenChemLibConverter {
             double z = stereoMolecule.getAtomZ(i);
             Point3 pt = new Point3(x, y, z);
             atom.setPoint(structureNumber, pt);
+            String name = stereoMolecule.getAtomCustomLabel(i);
+            if (name.isEmpty()) {
+                atom.setName(aName + (i + 1));
+            } else {
+                atom.setName(name);
+            }
             compound.addAtom(atom);
         }
         int nBonds = stereoMolecule.getAllBonds();
@@ -113,19 +119,22 @@ public class OpenChemLibConverter {
         };
     }
 
-    public static StereoMolecule convertToStereoMolecule(Molecule molecule) {
+    public static StereoMolecule convertToStereoMolecule(AtomContainer molecule) {
         var stereoMolecule = new StereoMolecule();
         int structureNumber = 0;
         HashMap<Atom, Integer> atomHash = new HashMap<>();
-        for (Atom atom : molecule.getAtomArray()) {
+        for (var  atomI : molecule.atoms()) {
+            Atom atom = (Atom) atomI;
             int iAtom = stereoMolecule.addAtom(atom.getAtomicNumber());
+            stereoMolecule.setAtomCustomLabel(iAtom, atom.getName());
             Point3 pt = atom.getPoint(structureNumber);
             stereoMolecule.setAtomX(iAtom, pt.getX());
             stereoMolecule.setAtomY(iAtom, pt.getY());
             stereoMolecule.setAtomZ(iAtom, pt.getZ());
             atomHash.put(atom, iAtom);
         }
-        for (Bond bond : molecule.getBondList()) {
+        for (IBond bondI : molecule.bonds()) {
+            Bond bond = (Bond) bondI;
             Atom atom1 = bond.begin;
             Atom atom2 = bond.end;
             int order = bond.order.getOrderNum();
@@ -141,14 +150,13 @@ public class OpenChemLibConverter {
 
     public static void to3D(Molecule molecule) {
         var ligands = molecule.getLigands();
-        if (!ligands.isEmpty()) {
-            StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(molecule);
+        for (var ligand: molecule.getLigands()) {
+            StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(ligand);
             ConformerGenerator cg = new ConformerGenerator();
             var conf = cg.getOneConformer(sMol);
-            var mol3D = conf.toMolecule();
+            var mol3D = conf.toMolecule(sMol);
             ConformerGenerator.addHydrogenAtoms(mol3D);
-            Compound compound = ligands.get(0);
-            OpenChemLibConverter.convertFromStereoMolecule(mol3D, compound);
+            OpenChemLibConverter.convertFromStereoMolecule(mol3D, ligand);
         }
     }
 }
