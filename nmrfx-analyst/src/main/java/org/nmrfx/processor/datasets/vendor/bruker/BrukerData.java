@@ -995,11 +995,15 @@ public class BrukerData implements NMRData {
             }
             tdsize[0] = np / 2 - shiftAmount; // tcl line 348, lines 448-459
         }
+        boolean nusMode = false;
+        if ((ipar = getParInt("FnTYPE,1")) != null) {
+            nusMode = ipar == 2;
+        }
         boolean gotSchedule = false;
         if (nusFile == null) {
             nusFile = new File(fpath + File.separator + "nuslist");
         }
-        if (nusFile.exists()) {
+        if (nusMode && nusFile.exists()) {
             readSampleSchedule(nusFile.getPath(), false);
             if (sampleSchedule.getTotalSamples() == 0) {
                 throw new IOException("nuslist file exists, but is empty");
