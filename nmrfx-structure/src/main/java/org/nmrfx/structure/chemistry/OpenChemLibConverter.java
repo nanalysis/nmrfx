@@ -71,7 +71,7 @@ public class OpenChemLibConverter {
             Point3 pt = new Point3(x, y, z);
             atom.setPoint(structureNumber, pt);
             String name = stereoMolecule.getAtomCustomLabel(i);
-            if (name.isEmpty()) {
+            if ((name == null) || name.isEmpty()) {
                 atom.setName(aName + (i + 1));
             } else {
                 atom.setName(name);
