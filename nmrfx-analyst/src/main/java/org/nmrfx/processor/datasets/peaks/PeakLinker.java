@@ -17,25 +17,24 @@ import java.util.*;
  */
 public class PeakLinker {
 
-    public void linkAllPeakListsByLabel() {
-        linkPeakListsByLabel(ProjectBase.getActive().getPeakLists());
+    public void linkAllPeakListsByLabel(String sampleCondition) {
+        linkPeakListsByLabel(ProjectBase.getActive().getPeakLists(), sampleCondition);
     }
 
-    public void linkPeakListsByLabel(Collection<PeakList> peakLists) {
+    public void linkPeakListsByLabel(Collection<PeakList> peakLists, String sampleCondition) {
         Map<String, List<PeakDim>> peakDimMap = new HashMap<>();
         peakLists.forEach((peakList) -> {
-            if (peakList.valid()) {
+            if (peakList.valid() && (sampleCondition.isBlank() || sampleCondition.equals(peakList.getSampleConditionLabel()))) {
                 peakList.peaks().forEach((peak) -> {
                     for (PeakDim peakDim : peak.getPeakDims()) {
                         String label = peakDim.getLabel().trim();
-                        if (!label.equals("")) {
+                        if (!label.isBlank()) {
                             List<PeakDim> dimList = peakDimMap.get(label);
                             if (dimList == null) {
                                 dimList = new ArrayList<>();
                                 peakDimMap.put(label, dimList);
                             }
                             dimList.add(peakDim);
-                            System.out.println("add " + label + " " + dimList.size() + " " + peakDim);
                         }
                     }
 
@@ -49,11 +48,11 @@ public class PeakLinker {
                 for (int i = 1, n = dimList.size(); i < n; i++) {
                     PeakDim linkDim = dimList.get(i);
                     PeakList.linkPeakDims(rootDim, linkDim);
-                    System.out.println("link " + rootDim.getPeak().getName() + " " + linkDim.getPeak().getName());
                 }
             }
         });
     }
+
     public static List<Peak> linkFourPeaks(Collection<Peak> peaks) {
         if (peaks.size() != 4) {
             throw new IllegalStateException("Need four selected peaks");
@@ -111,11 +110,12 @@ public class PeakLinker {
 
     public static Set<Peak> getLinkedGroup(Collection<Peak> peaks) {
         Set<Peak> allPeaks = new HashSet<>();
-        for (Peak peak:peaks) {
+        for (Peak peak : peaks) {
             allPeaks.addAll(getLinkedGroup(peak));
         }
         return allPeaks;
     }
+
     public static Set<Peak> getLinkedGroup(Peak peak) {
         Set<Peak> startGroup = new HashSet<>();
         Set<Peak> peaks = new HashSet<>();
