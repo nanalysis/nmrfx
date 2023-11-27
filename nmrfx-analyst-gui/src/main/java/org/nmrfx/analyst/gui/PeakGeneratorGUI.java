@@ -16,6 +16,7 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -439,6 +440,9 @@ public class PeakGeneratorGUI {
                 case Proton_1D -> makeProton1D(newPeakList);
             }
             statusLabel.setText(String.format("Created %d peaks", newPeakList.size()));
+            PeakLinker linker = new PeakLinker();
+            linker.linkAllPeakListsByLabel("sim");
+            newPeakList.setSlideable(true);
         }
     }
 
