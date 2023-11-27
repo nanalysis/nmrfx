@@ -230,8 +230,13 @@ public class MoleculeMenuActions extends MenuActions {
         if (!smileString.isBlank()) {
             String molName = GUIUtils.input("Molecule Name");
             if (!molName.isBlank()) {
-                Molecule molecule = OpenChemLibConverter.parseSmiles("mol", smileString);
-                molecule.setActive();
+                try {
+                    Molecule molecule = OpenChemLibConverter.parseSmiles("mol", smileString);
+                    molecule.setActive();
+                } catch (IllegalArgumentException iaE) {
+                    GUIUtils.warn("SMILES Parser", iaE.getMessage());
+                    return;
+                }
                 resetAtomController();
             }
         }

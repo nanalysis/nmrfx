@@ -39,9 +39,13 @@ public class OpenChemLibConverter {
         molecules.clear();
     }
 
-    public static Molecule parseSmiles(String molName, String smilesString) {
+    public static Molecule parseSmiles(String molName, String smilesString) throws IllegalArgumentException {
         SmilesParser smilesParser = new SmilesParser();
         StereoMolecule mol = smilesParser.parseMolecule(smilesString);
+        if (mol == null) {
+            throw new IllegalArgumentException("Invalid SMILES string");
+        }
+        ConformerGenerator.addHydrogenAtoms(mol);
         return convertFromStereoMolecule(mol, molName);
     }
 
@@ -95,9 +99,9 @@ public class OpenChemLibConverter {
             Order bondOrder = Order.getOrder(order);
             Atom.addBond(atomStart, atomEnd, bondOrder, stereo, false);
         }
+        compound.molecule.invalidateAtomArray();
         compound.molecule.updateAtomArray();
         compound.molecule.updateBondArray();
-
     }
 
     private static int toBondType(int order, int stereo) {
@@ -149,7 +153,6 @@ public class OpenChemLibConverter {
     }
 
     public static void to3D(Molecule molecule) {
-        var ligands = molecule.getLigands();
         for (var ligand: molecule.getLigands()) {
             StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(ligand);
             ConformerGenerator cg = new ConformerGenerator();
@@ -158,5 +161,8 @@ public class OpenChemLibConverter {
             ConformerGenerator.addHydrogenAtoms(mol3D);
             OpenChemLibConverter.convertFromStereoMolecule(mol3D, ligand);
         }
+        molecule.inactivateAtoms();
+        molecule.updateAtomArray();
+        molecule.updateBondArray();
     }
 }
