@@ -1037,7 +1037,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void linkPeakDims() {
         PeakLinker linker = new PeakLinker();
-        linker.linkAllPeakListsByLabel();
+        linker.linkAllPeakListsByLabel("");
     }
 
     public void removeChart(PolyChart chart) {
