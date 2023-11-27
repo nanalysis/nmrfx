@@ -442,6 +442,7 @@ public class PeakGeneratorGUI {
             statusLabel.setText(String.format("Created %d peaks", newPeakList.size()));
             PeakLinker linker = new PeakLinker();
             linker.linkAllPeakListsByLabel("sim");
+            newPeakList.setSlideable(true);
         }
     }
 
