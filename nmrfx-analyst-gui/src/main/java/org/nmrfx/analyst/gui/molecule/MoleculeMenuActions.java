@@ -17,6 +17,7 @@ import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
+import java.util.List;
 
 public class MoleculeMenuActions extends MenuActions {
     private MolSceneController molController;
@@ -54,6 +55,9 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem readMol2Item = new MenuItem("Read Mol2...");
         readMol2Item.setOnAction(e -> readMolecule("mol2"));
         molFileMenu.getItems().add(readMol2Item);
+        MenuItem readSMILESItem = new MenuItem("Read SMILES...");
+        readSMILESItem.setOnAction(e -> readMolecule("smiles"));
+        molFileMenu.getItems().add(readSMILESItem);
 
         MenuItem clearAllItem = new MenuItem("Clear Molecules...");
         clearAllItem.setOnAction(e -> clearExisting());
@@ -185,6 +189,12 @@ public class MoleculeMenuActions extends MenuActions {
                         seq.read(file.toString());
                     }
                     case "mmcif" -> MMcifReader.read(file);
+                    case "smiles" -> {
+                        List<Molecule> molecules = OpenChemLibConverter.readSMILES(file);
+                        if (!molecules.isEmpty()) {
+                            molecules.get(0).setActive();
+                        }
+                    }
                     default -> {
                     }
                 }

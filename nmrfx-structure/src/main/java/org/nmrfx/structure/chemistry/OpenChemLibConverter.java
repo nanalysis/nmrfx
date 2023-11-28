@@ -7,9 +7,18 @@ package org.nmrfx.structure.chemistry;
 import com.actelion.research.chem.SmilesParser;
 import com.actelion.research.chem.StereoMolecule;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.chemistry.io.SDFile;
 import org.openmolecules.chem.conf.gen.ConformerGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static org.nmrfx.chemistry.Bond.*;
 
@@ -17,6 +26,7 @@ import static org.nmrfx.chemistry.Bond.*;
  * @author brucejohnson
  */
 public class OpenChemLibConverter {
+    private static final Logger log = LoggerFactory.getLogger(OpenChemLibConverter.class);
 
     static final HashMap<String, AtomContainer> molecules = new HashMap<>();
 
@@ -48,6 +58,61 @@ public class OpenChemLibConverter {
         ConformerGenerator.addHydrogenAtoms(mol);
         return convertFromStereoMolecule(mol, molName);
     }
+
+    public static String getMolName(String fileName) {
+        String molName;
+        File file = new File(fileName);
+
+        String fileTail = file.getName();
+        String fileRoot;
+        int dot = fileTail.indexOf(".");
+
+        if (dot != -1) {
+            fileRoot = fileTail.substring(0, dot);
+        } else {
+            fileRoot = fileTail;
+        }
+        return fileRoot;
+    }
+
+    public static List<Molecule> readSMILES(File file) {
+        List<Molecule> molecules = new ArrayList<>();
+        Path path = file.toPath();
+        String rootName = getMolName(file.getName());
+        int i = 1;
+        try {
+            List<String> lines = Files.readAllLines(path);
+            for (String line : lines) {
+                String[] fields = line.split("\t");
+                String molName;
+                String smileString;
+                if (fields.length == 2) {
+                    molName = fields[0];
+                    smileString = fields[1];
+                } else {
+                    if (lines.size() > 1) {
+                        molName = rootName + "_" + i;
+                    } else {
+                        molName = rootName;
+                    }
+                    smileString = fields[0];
+                }
+                smileString = smileString.trim();
+                if (!smileString.isEmpty()) {
+                    try {
+                        Molecule molecule = parseSmiles(molName, smileString);
+                        molecules.add(molecule);
+                        i++;
+                    } catch (IllegalArgumentException iAE) {
+                        log.error("Can't parse SMILES", iAE);
+                    }
+                }
+            }
+        } catch (IOException ioE) {
+        }
+        return molecules;
+    }
+
 
     public static Molecule convertFromStereoMolecule(StereoMolecule stereoMolecule, String molName) {
         Molecule molecule = new Molecule(molName);
@@ -127,7 +192,7 @@ public class OpenChemLibConverter {
         var stereoMolecule = new StereoMolecule();
         int structureNumber = 0;
         HashMap<Atom, Integer> atomHash = new HashMap<>();
-        for (var  atomI : molecule.atoms()) {
+        for (var atomI : molecule.atoms()) {
             Atom atom = (Atom) atomI;
             int iAtom = stereoMolecule.addAtom(atom.getAtomicNumber());
             stereoMolecule.setAtomCustomLabel(iAtom, atom.getName());
@@ -153,7 +218,7 @@ public class OpenChemLibConverter {
     }
 
     public static void to3D(Molecule molecule) {
-        for (var ligand: molecule.getLigands()) {
+        for (var ligand : molecule.getLigands()) {
             StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(ligand);
             ConformerGenerator cg = new ConformerGenerator();
             var conf = cg.getOneConformer(sMol);
