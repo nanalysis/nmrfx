@@ -567,6 +567,9 @@ public class MoleculeBase implements Serializable, ITree {
         entity.setHasEquivalentAtoms(true);
     }
 
+    public List<SpatialSet> selectedSpatialSets() {
+        return globalSelected;
+    }
     public static Atom getAtomByName(String name) throws IllegalArgumentException {
         MoleculeBase molecule = MoleculeFactory.getActive();
 
