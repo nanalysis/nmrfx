@@ -7,13 +7,12 @@ package org.nmrfx.structure.chemistry;
 import com.actelion.research.chem.SmilesParser;
 import com.actelion.research.chem.StereoMolecule;
 import org.nmrfx.chemistry.*;
-import org.nmrfx.chemistry.io.MoleculeIOException;
-import org.nmrfx.chemistry.io.SDFile;
 import org.openmolecules.chem.conf.gen.ConformerGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -30,10 +29,7 @@ public class OpenChemLibConverter {
 
     static final HashMap<String, AtomContainer> molecules = new HashMap<>();
 
-    /**
-     * Creates a new instance of OpenChemLibConverter
-     */
-    public OpenChemLibConverter() {
+    private OpenChemLibConverter() {
     }
 
     public static AtomContainer getMolecule(String name) {
@@ -60,7 +56,6 @@ public class OpenChemLibConverter {
     }
 
     public static String getMolName(String fileName) {
-        String molName;
         File file = new File(fileName);
 
         String fileTail = file.getName();
@@ -75,40 +70,37 @@ public class OpenChemLibConverter {
         return fileRoot;
     }
 
-    public static List<Molecule> readSMILES(File file) {
+    public static List<Molecule> readSMILES(File file) throws IOException {
         List<Molecule> molecules = new ArrayList<>();
         Path path = file.toPath();
         String rootName = getMolName(file.getName());
         int i = 1;
-        try {
-            List<String> lines = Files.readAllLines(path);
-            for (String line : lines) {
-                String[] fields = line.split("\t");
-                String molName;
-                String smileString;
-                if (fields.length == 2) {
-                    molName = fields[0];
-                    smileString = fields[1];
+        List<String> lines = Files.readAllLines(path);
+        for (String line : lines) {
+            String[] fields = line.split("\t");
+            String molName;
+            String smileString;
+            if (fields.length == 2) {
+                molName = fields[0];
+                smileString = fields[1];
+            } else {
+                if (lines.size() > 1) {
+                    molName = rootName + "_" + i;
                 } else {
-                    if (lines.size() > 1) {
-                        molName = rootName + "_" + i;
-                    } else {
-                        molName = rootName;
-                    }
-                    smileString = fields[0];
+                    molName = rootName;
                 }
-                smileString = smileString.trim();
-                if (!smileString.isEmpty()) {
-                    try {
-                        Molecule molecule = parseSmiles(molName, smileString);
-                        molecules.add(molecule);
-                        i++;
-                    } catch (IllegalArgumentException iAE) {
-                        log.error("Can't parse SMILES", iAE);
-                    }
+                smileString = fields[0];
+            }
+            smileString = smileString.trim();
+            if (!smileString.isEmpty()) {
+                try {
+                    Molecule molecule = parseSmiles(molName, smileString);
+                    molecules.add(molecule);
+                    i++;
+                } catch (IllegalArgumentException iAE) {
+                    log.error("Can't parse SMILES", iAE);
                 }
             }
-        } catch (IOException ioE) {
         }
         return molecules;
     }
@@ -177,7 +169,6 @@ public class OpenChemLibConverter {
                     com.actelion.research.chem.Molecule.cBondTypeUp;
             case STEREO_BOND_DOWN -> com.actelion.research.chem.Molecule.cBondTypeDown;
             default -> switch (order) {
-                case 1 -> com.actelion.research.chem.Molecule.cBondTypeSingle;
                 case 2 -> com.actelion.research.chem.Molecule.cBondTypeDouble;
                 case 3 -> com.actelion.research.chem.Molecule.cBondTypeTriple;
                 case 4 -> com.actelion.research.chem.Molecule.cBondTypeDelocalized;
