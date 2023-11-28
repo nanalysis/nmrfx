@@ -309,6 +309,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public int pick(GraphicsContextInterface gC, double x, double y) {
+        validate();
         return genSpheres(gC, true, x, y);
     }
 
@@ -417,6 +418,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public void draw(GraphicsContextInterface gC, double[][] canvasBounds, double[][] worldBounds) {
+        validate();
         x1 = xPosType.transform(bx1, canvasBounds[0], worldBounds[0]);
         x2 = xPosType.transform(bx2, canvasBounds[0], worldBounds[0]);
         y1 = yPosType.transform(by1, canvasBounds[1], worldBounds[1]);
@@ -434,6 +436,36 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
     }
 
+    void validate() {
+        Molecule molecule = null;
+        if (molName != null) {
+            molecule = Molecule.get(molName);
+        }
+
+        boolean ok = true;
+        if (molecule != null) {
+            int nSpheres = molecule.getSphereCount(iStructure);
+            if (molPrims.nSpheres != nSpheres) {
+                ok = false;
+            }
+            if (ok) {
+                int nLines = molecule.getLineCount(iStructure);
+                if (molPrims.nLines != nLines) {
+                    ok = false;
+                }
+            }
+            if (ok) {
+                int nLabels = molecule.getLineCount(iStructure);
+                if (molPrims.nLabels != nLabels) {
+                    ok = false;
+                }
+            }
+            if (!ok) {
+                setMolName(molName, iStructure);
+            }
+        }
+
+        }
     public void paintShape(GraphicsContextInterface g2) {
         boolean drawSpheres = true;
         boolean drawLines = true;

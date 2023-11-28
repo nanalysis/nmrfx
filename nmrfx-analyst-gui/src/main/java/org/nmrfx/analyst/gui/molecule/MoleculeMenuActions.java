@@ -13,9 +13,11 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.io.*;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
+import java.util.List;
 
 public class MoleculeMenuActions extends MenuActions {
     private MolSceneController molController;
@@ -53,11 +55,17 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem readMol2Item = new MenuItem("Read Mol2...");
         readMol2Item.setOnAction(e -> readMolecule("mol2"));
         molFileMenu.getItems().add(readMol2Item);
+        MenuItem readSMILESItem = new MenuItem("Read SMILES...");
+        readSMILESItem.setOnAction(e -> readMolecule("smiles"));
+        molFileMenu.getItems().add(readSMILESItem);
 
         MenuItem clearAllItem = new MenuItem("Clear Molecules...");
         clearAllItem.setOnAction(e -> clearExisting());
 
-        menu.getItems().addAll(molFileMenu, clearAllItem);
+        MenuItem smileItem = new MenuItem("Input SMILE...");
+        smileItem.setOnAction(e -> getSMILEMolecule());
+
+        menu.getItems().addAll(molFileMenu, smileItem, clearAllItem);
 
     }
 
@@ -181,6 +189,12 @@ public class MoleculeMenuActions extends MenuActions {
                         seq.read(file.toString());
                     }
                     case "mmcif" -> MMcifReader.read(file);
+                    case "smiles" -> {
+                        List<Molecule> molecules = OpenChemLibConverter.readSMILES(file);
+                        if (!molecules.isEmpty()) {
+                            molecules.get(0).setActive();
+                        }
+                    }
                     default -> {
                     }
                 }
@@ -221,4 +235,20 @@ public class MoleculeMenuActions extends MenuActions {
         return true;
     }
 
+    void getSMILEMolecule() {
+        String smileString = GUIUtils.input("SMILE String");
+        if (!smileString.isBlank()) {
+            String molName = GUIUtils.input("Molecule Name");
+            if (!molName.isBlank()) {
+                try {
+                    Molecule molecule = OpenChemLibConverter.parseSmiles("mol", smileString);
+                    molecule.setActive();
+                } catch (IllegalArgumentException iaE) {
+                    GUIUtils.warn("SMILES Parser", iaE.getMessage());
+                    return;
+                }
+                resetAtomController();
+            }
+        }
+    }
 }
