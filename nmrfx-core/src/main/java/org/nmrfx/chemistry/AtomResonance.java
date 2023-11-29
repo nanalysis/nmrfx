@@ -19,7 +19,6 @@ package org.nmrfx.chemistry;
 
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
@@ -165,14 +164,6 @@ public class AtomResonance {
             List<String> atomIDColumn = loop.getColumnAsList("Atom_ID");
             for (int i = 0, n = resSetIDColumn.size(); i < n; i++) {
                 String value;
-                long idNum = 0;
-                if ((value = NvUtil.getColumnValue(resSetIDColumn, i)) != null) {
-                    idNum = NvUtil.toLong(value);
-                } else {
-                    continue;
-                }
-                String atomName;
-                String iRes;
                 String entityAssemblyID = "";
                 String entityID;
                 if ((value = NvUtil.getColumnValue(entityAssemblyIDColumn, i)) != null) {
@@ -186,11 +177,13 @@ public class AtomResonance {
                 } else {
                     throw new ParseException("No entity ID");
                 }
+                String iRes;
                 if ((value = NvUtil.getColumnValue(compIdxIDColumn, i)) != null) {
                     iRes = value;
                 } else {
                     throw new ParseException("No compound ID");
                 }
+                String atomName;
                 if ((value = NvUtil.getColumnValue(atomIDColumn, i)) != null) {
                     atomName = value;
                 } else {
@@ -372,7 +365,7 @@ public class AtomResonance {
         double sum = 0.0;
         double sumsq = 0.0;
         int n = 0;
-        Double result = null;
+        Double result;
         for (PeakDim peakDim : peakDims) {
             if (peakDim == null) {
                 continue;
@@ -389,7 +382,11 @@ public class AtomResonance {
                 n++;
             }
         }
-        if (n > 1) {
+        if (n == 0) {
+            result = null;
+        } else if (n == 1) {
+            result = 0.0;
+        } else if (n > 1) {
             double mean = sum / n;
             double devsq = sumsq / n - mean * mean;
             if (devsq > 0.0) {
@@ -397,8 +394,8 @@ public class AtomResonance {
             } else {
                 result = 0.0;
             }
-        } else if (n == 1) {
-            result = 0.0;
+        } else {
+            result = null;
         }
 
         return result;
