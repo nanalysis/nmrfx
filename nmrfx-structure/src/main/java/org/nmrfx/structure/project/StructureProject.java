@@ -71,15 +71,10 @@ public class StructureProject extends ProjectBase {
         loadStructureProject(Paths.get(projectDir));
     }
 
-    public void loadStructureProject(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {
-        ProjectBase currentProject = getActive();
-        setActive();
-
-        loadProject(projectDir, "datasets");
-        FileSystem fileSystem = FileSystems.getDefault();
-
+    public void loadStructureSubDirs(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {
         String[] subDirTypes = {"star", "peaks", "molecules", "shifts", "refshifts"};
         if (projectDir != null) {
+            FileSystem fileSystem = FileSystems.getDefault();
             boolean readSTAR3 = false;
             for (String subDir : subDirTypes) {
                 System.out.println("read " + subDir + " " + readSTAR3);
@@ -117,17 +112,25 @@ public class StructureProject extends ProjectBase {
 
             }
         }
+    }
+    public void loadStructureProject(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {
+        ProjectBase currentProject = getActive();
+        setActive();
+
+        loadProject(projectDir, "datasets");
+        loadStructureSubDirs(projectDir);
+
         setProjectDir(projectDir);
         currentProject.setActive();
     }
 
-    private File getSTAR3FileName() {
+    public File getSTAR3FileName() {
         File directory = FileSystems.getDefault().getPath(projectDir.toString(), "star").toFile();
         Path starFile = FileSystems.getDefault().getPath(directory.toString(), projectDir.getFileName().toString() + ".str");
         return starFile.toFile();
     }
 
-    private File getSTAR3FileName(Path directory) {
+    public File getSTAR3FileName(Path directory) {
         Path starFile = FileSystems.getDefault().getPath(directory.toString(), projectDir.getFileName().toString() + ".str");
         return starFile.toFile();
 
@@ -150,7 +153,7 @@ public class StructureProject extends ProjectBase {
         currentProject.setActive();
     }
 
-    boolean loadSTAR3(Path directory) throws IOException {
+    public boolean loadSTAR3(Path directory) throws IOException {
         File starFile = getSTAR3FileName(directory);
         boolean result = false;
         if (starFile.exists()) {
@@ -164,7 +167,7 @@ public class StructureProject extends ProjectBase {
         return result;
     }
 
-    void loadMolecules(Path directory) throws MoleculeIOException {
+    public void loadMolecules(Path directory) throws MoleculeIOException {
         Path sstructPath = null;
         if (Files.isDirectory(directory)) {
             try (DirectoryStream<Path> fileStream = Files.newDirectoryStream(directory)) {
@@ -196,7 +199,7 @@ public class StructureProject extends ProjectBase {
         }
     }
 
-    void loadSecondaryStructure(Molecule molecule, List<String> fileContent) {
+    public void loadSecondaryStructure(Molecule molecule, List<String> fileContent) {
         // fixme use yaml ?
         for (String s : fileContent) {
             if (s.contains(("vienna"))) {
@@ -206,7 +209,6 @@ public class StructureProject extends ProjectBase {
                 }
             }
         }
-
     }
 
     public static void loadMolecule(Path file) throws MoleculeIOException {
@@ -225,10 +227,10 @@ public class StructureProject extends ProjectBase {
         if (MoleculeFactory.getActive() == null) {
             throw new MoleculeIOException("Couldn't open any molecules");
         }
-        System.out.println("active mol " + MoleculeFactory.getActive().getName());
+        log.info("active mol {}", MoleculeFactory.getActive().getName());
     }
 
-    void loadMoleculeEntities(Path directory) throws MoleculeIOException, IOException {
+    public void loadMoleculeEntities(Path directory) throws MoleculeIOException, IOException {
         String molName = directory.getFileName().toString();
         Molecule mol = (Molecule) MoleculeFactory.newMolecule(molName);
         PDBFile pdbReader = new PDBFile();
@@ -243,7 +245,6 @@ public class StructureProject extends ProjectBase {
                             String fileName = path.getFileName().toString();
                             Matcher matcher = pattern.matcher(fileName);
                             String baseName = matcher.group(1);
-                            System.out.println("read mol: " + pathName);
 
                             try {
                                 if (fileName.endsWith(".seq")) {
@@ -269,7 +270,7 @@ public class StructureProject extends ProjectBase {
         }
     }
 
-    void loadShiftFiles(Path directory, boolean refMode) throws IOException {
+    public void loadShiftFiles(Path directory, boolean refMode) throws IOException {
         Molecule mol = activeMol();
         Pattern pattern = Pattern.compile("(.+)\\.(txt|ppm)");
         Predicate<String> predicate = pattern.asPredicate();
@@ -287,7 +288,7 @@ public class StructureProject extends ProjectBase {
         }
     }
 
-    void saveShifts(boolean refMode) throws IOException {
+   public void saveShifts(boolean refMode) throws IOException {
         Molecule mol = activeMol();
         if (mol == null) {
             return;

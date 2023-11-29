@@ -17,7 +17,6 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.project.Project;
 
 import java.util.Collection;
 import java.util.List;
@@ -98,9 +97,9 @@ public class PeakMenuActions extends MenuActions {
             peakTableController = PeakTableController.create();
         }
         if (peakList == null) {
-            List<String> names = Project.getActive().getPeakListNames();
+            List<String> names = ProjectBase.getActive().getPeakListNames();
             if (!names.isEmpty()) {
-                peakList = Project.getActive().getPeakList(names.get(0));
+                peakList = ProjectBase.getActive().getPeakList(names.get(0));
             }
         }
         if (peakTableController != null) {
