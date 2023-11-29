@@ -48,15 +48,15 @@ public class ResonanceFactory implements FreezeListener {
         PeakList.registerFreezeListener(this);
     }
 
-    public Resonance build() {
+    public AtomResonance build() {
         while (map.get(lastID++) != null) ;
         AtomResonance resonance = new AtomResonance(lastID);
         map.put(lastID, resonance);
         return resonance;
     }
 
-    public Resonance build(long id) {
-        AtomResonance resonance = (AtomResonance) get(id);
+    public AtomResonance build(long id) {
+        AtomResonance resonance = get(id);
         if (resonance == null) {
             resonance = new AtomResonance(id);
             map.put(id, resonance);
@@ -64,7 +64,7 @@ public class ResonanceFactory implements FreezeListener {
         return resonance;
     }
 
-    public Resonance get(long id) {
+    public AtomResonance get(long id) {
         return map.get(id);
     }
 
@@ -87,7 +87,7 @@ public class ResonanceFactory implements FreezeListener {
     public synchronized HashMap<String, ArrayList<AtomResonance>> getLabelMap() {
         clean();
         HashMap<String, ArrayList<AtomResonance>> labelMap = new HashMap<>();
-        map.values().forEach((resonance) -> {
+        map.values().forEach(resonance -> {
             String label = resonance.getName();
             if ((label != null) && (label.length() != 0)) {
                 label = label.trim().toUpperCase();
@@ -277,7 +277,7 @@ public class ResonanceFactory implements FreezeListener {
         for (Map.Entry<Long, AtomResonance> entry : map.entrySet()) {
             AtomResonance resonance = entry.getValue();
             if (resonance == null) {
-                throw new IOException("Resonance.writeResonances: resonance null at ");
+                throw new IOException("AtomResonance.writeResonances: resonance null at ");
             }
             chan.write(resonance.toSTARResonanceString() + "\n");
         }

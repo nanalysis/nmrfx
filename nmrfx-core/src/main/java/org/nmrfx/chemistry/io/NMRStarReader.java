@@ -542,7 +542,7 @@ public class NMRStarReader {
     public void addMissingResonances() {
         ResonanceFactory resFactory = PeakList.resFactory();
         peakDimsWithoutResonance.forEach((peakDim) -> {
-            Resonance resonance = resFactory.build();
+            AtomResonance resonance = resFactory.build();
             resonance.add(peakDim);
         });
     }
@@ -895,7 +895,7 @@ public class NMRStarReader {
                         Peak peak = peakList.getPeakByID(idNum);
                         PeakDim peakDim = peak.getPeakDim(sDim);
                         if (resonanceID != -1L) {
-                            Resonance resonance = resFactory.build(resonanceID);
+                            AtomResonance resonance = resFactory.build(resonanceID);
                             resonance.add(peakDim);
                         } else {
                             peakDimsWithoutResonance.add(peakDim);

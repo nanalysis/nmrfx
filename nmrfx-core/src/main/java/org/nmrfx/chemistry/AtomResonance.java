@@ -19,22 +19,22 @@ package org.nmrfx.chemistry;
 
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.utilities.NvUtil;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.ResonanceFactory;
-import org.nmrfx.peaks.SimpleResonance;
+import org.nmrfx.peaks.*;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author Bruce Johnson
  */
-public class AtomResonance extends SimpleResonance {
+public class AtomResonance {
 
     private static final Logger log = LoggerFactory.getLogger(AtomResonance.class);
 
@@ -45,16 +45,21 @@ public class AtomResonance extends SimpleResonance {
             "_Resonance.Resonance_set_ID",
             "_Resonance.Spin_system_ID ",
             "_Resonance.Resonance_linker_list_ID ",};
-    public final static String[] resonanceCovalentLinkStrings = {
+    public static final String[] resonanceCovalentLinkStrings = {
             "_Resonance_covalent_link.Resonance_ID_1",
             "_Resonance_covalent_link.Resonance_ID_2",};
 
     Object resonanceSet = null;
     Object ssID = null;
     boolean labelValid = true;
+    String atomName = "";
+    List<PeakDim> peakDims = new ArrayList<>();
+    private List<String> names;
+    private long id;
 
     public AtomResonance(long id) {
-        super(id);
+        this.names = null;
+        this.id = id;
     }
 
     public AtomResonance copy() {
@@ -69,9 +74,14 @@ public class AtomResonance extends SimpleResonance {
         return copy;
     }
 
-    @Override
     public void setName(List<String> newNames) {
-        super.setName(newNames);
+        if (names == null) {
+            names = new ArrayList<>();
+        }
+        names.clear();
+        if (newNames != null) {
+            names.addAll(newNames);
+        }
         boolean valid = true;
         if (newNames != null) {
             for (var name : newNames) {
@@ -94,26 +104,22 @@ public class AtomResonance extends SimpleResonance {
         return result;
     }
 
-    @Override
     public boolean isLabelValid() {
         return labelValid;
     }
 
-    @Override
     public String getAtomName() {
         if (atom != null) {
             return atom.getFullName();
         } else {
-            return super.getAtomName();
+            return atomName;
         }
     }
 
-    @Override
     public void setAtom(Atom atom) {
         this.atom = atom;
     }
 
-    @Override
     public Atom getAtom() {
         return atom;
     }
@@ -254,4 +260,187 @@ public class AtomResonance extends SimpleResonance {
         return result.toString();
     }
 
+    public void clearPeakDims() {
+        peakDims = null;
+    }
+
+    public List<String> getNames() {
+        return names;
+    }
+
+    public void remove(PeakDim peakDim) {
+        peakDims.remove(peakDim);
+    }
+
+    public String getName() {
+        String result = "";
+        if (names != null) {
+            if (names.size() == 1) {
+                result = names.get(0);
+            } else if (names.size() > 1) {
+                StringBuilder builder = new StringBuilder();
+                for (String name : names) {
+                    if (builder.length() > 0) {
+                        builder.append(" ");
+                    }
+                    builder.append(name);
+                }
+                result = builder.toString();
+            }
+        }
+        return result;
+    }
+
+    public void setName(String name) {
+        setName(List.of(name));
+    }
+
+    public void setAtomName(String aName) {
+        atomName = aName;
+    }
+
+    public String getIDString() {
+        return String.valueOf(id);
+
+    }
+
+    public void setID(long value) {
+        id = value;
+    }
+
+    public long getID() {
+        return id;
+    }
+
+    public static void merge(AtomResonance resA, AtomResonance resB) {
+        resA.merge(resB);
+    }
+    public void merge(AtomResonance resB) {
+        if (resB != this) {
+            Collection<PeakDim> peakDimsB = resB.getPeakDims();
+            int sizeA = peakDims.size();
+            int sizeB = peakDimsB.size();
+            for (PeakDim peakDim : peakDimsB) {
+                peakDim.setResonance(this);
+                if (!peakDims.contains(peakDim)) {
+                    peakDims.add(peakDim);
+                }
+            }
+            peakDimsB.clear();
+        }
+
+    }
+
+    public List<PeakDim> getPeakDims() {
+        // fixme should be unmodifiable or copy
+        return peakDims;
+    }
+
+    public void add(PeakDim peakDim) {
+        peakDim.setResonance(this);
+        if (!peakDims.contains(peakDim)) {
+            peakDims.add(peakDim);
+        }
+    }
+
+    public Double getPPMAvg(String condition) {
+        double sum = 0.0;
+        int n = 0;
+        Double result = null;
+        for (PeakDim peakDim : peakDims) {
+            if (peakDim == null) {
+                continue;
+            }
+            if ((condition != null) && (condition.length() > 0)) {
+                String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
+                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                    continue;
+                }
+            }
+            if (peakDim.getChemShift() != null) {
+                sum += peakDim.getChemShift();
+                n++;
+            }
+        }
+        if (n > 0) {
+            result = sum / n;
+        }
+        return result;
+    }
+
+    public Double getWidthAvg(String condition) {
+        double sum = 0.0;
+        int n = 0;
+        Double result = null;
+        for (PeakDim peakDim : peakDims) {
+            if (peakDim == null) {
+                continue;
+            }
+            if ((condition != null) && (condition.length() > 0)) {
+                String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
+                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                    continue;
+                }
+            }
+            Float lw = peakDim.getLineWidth();
+            if (lw != null) {
+                sum += lw;
+                n++;
+            }
+        }
+        if (n > 0) {
+            result = sum / n;
+        }
+        return result;
+    }
+
+    public Double getPPMDev(String condition) {
+        double sum = 0.0;
+        double sumsq = 0.0;
+        int n = 0;
+        Double result = null;
+        for (PeakDim peakDim : peakDims) {
+            if (peakDim == null) {
+                continue;
+            }
+            if ((condition != null) && (condition.length() > 0)) {
+                String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
+                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                    continue;
+                }
+            }
+            if (peakDim.getChemShift() != null) {
+                sum += peakDim.getChemShift();
+                sumsq += peakDim.getChemShift() * peakDim.getChemShift();
+                n++;
+            }
+        }
+        if (n > 1) {
+            double mean = sum / n;
+            double devsq = sumsq / n - mean * mean;
+            if (devsq > 0.0) {
+                result = Math.sqrt(devsq);
+            } else {
+                result = 0.0;
+            }
+        } else if (n == 1) {
+            result = 0.0;
+        }
+
+        return result;
+    }
+
+    public int getPeakCount(String condition) {
+        int n = 0;
+        for (PeakDim peakDim : peakDims) {
+            if ((condition != null) && (condition.length() > 0)) {
+                String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
+                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                    continue;
+                }
+            }
+            n++;
+        }
+        return n;
+    }
 }
