@@ -18,6 +18,7 @@
 package org.nmrfx.peaks.io;
 
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.peaks.*;
 
 import java.io.FileWriter;
@@ -343,7 +344,7 @@ public class PeakWriter {
             }
             PeakDim[] peakDims = peak.getPeakDims();
             for (PeakDim peakDim : peakDims) {
-                Resonance resonance = peakDim.getResonance();
+                AtomResonance resonance = peakDim.getResonance();
                 if (resonance != null) {
                     long resID = resonance.getID();
                     chan.write(peakDim.toSTAR3LoopAssignedPeakChemShiftString(iContrib++, resID) + "\n");

@@ -540,9 +540,9 @@ public class NMRStarReader {
     }
 
     public void addMissingResonances() {
-        ResonanceFactory resFactory = PeakList.resFactory();
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         peakDimsWithoutResonance.forEach((peakDim) -> {
-            Resonance resonance = resFactory.build();
+            AtomResonance resonance = resFactory.build();
             resonance.add(peakDim);
         });
     }
@@ -563,7 +563,7 @@ public class NMRStarReader {
             if (saveframe.getCategoryName().equals("resonance_linker")) {
                 hasResonances = true;
                 log.debug("process resonances {}", saveframe.getName());
-                AtomResonance.processSTAR3ResonanceList(this, saveframe, compoundMap);
+                AtomResonance.processSTAR3ResonanceList(saveframe, compoundMap);
             }
         }
     }
@@ -615,7 +615,7 @@ public class NMRStarReader {
     }
 
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
-        ResonanceFactory resFactory = PeakList.resFactory();
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
         String id = saveframe.getValue("_Spectral_peak_list", "ID");
         String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
@@ -895,7 +895,7 @@ public class NMRStarReader {
                         Peak peak = peakList.getPeakByID(idNum);
                         PeakDim peakDim = peak.getPeakDim(sDim);
                         if (resonanceID != -1L) {
-                            Resonance resonance = resFactory.build(resonanceID);
+                            AtomResonance resonance = resFactory.build(resonanceID);
                             resonance.add(peakDim);
                         } else {
                             peakDimsWithoutResonance.add(peakDim);
@@ -1033,7 +1033,7 @@ public class NMRStarReader {
             List<String> valErrColumn = loop.getColumnAsList("Val_err");
             List<String> resColumn = loop.getColumnAsList("Resonance_ID");
             List<Integer> ambigColumn = loop.getColumnAsIntegerList("Ambiguity_code", -1);
-            ResonanceFactory resFactory = PeakList.resFactory();
+            ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
             for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
                 String iEntity = entityIDColumn.get(i);
                 String entityAssemblyID = entityAssemblyIDColumn.get(i);
@@ -1684,7 +1684,7 @@ public class NMRStarReader {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
         log.debug("nSave " + star3.getSaveFrameNames());
-        ResonanceFactory resFactory = PeakList.resFactory();
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         if (argv.length == 0) {
             hasResonances = false;
             var compoundMap = MoleculeBase.compoundMap();

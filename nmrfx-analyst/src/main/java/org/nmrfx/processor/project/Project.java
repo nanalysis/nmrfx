@@ -21,30 +21,14 @@ import java.util.Map;
  * @author Bruce Johnson
  */
 public class Project extends ProjectBase {
-    public ResonanceFactory resFactory;
 
     public Project(String name) {
         super(name);
         this.datasetMap = new HashMap<>();
-        this.resFactory = getNewResFactory();
+        this.resFactory = new ResonanceFactory();
         this.resFactory.init();
         peakLists = new HashMap<>();
 
         setActive();
-    }
-
-    private ResonanceFactory getNewResFactory() {
-        ResonanceFactory resFact;
-        try {
-            Class c = Class.forName("org.nmrfx.processor.datasets.peaks.AtomResonanceFactory");
-            try {
-                resFact = (ResonanceFactory) c.newInstance();
-            } catch (InstantiationException | IllegalAccessException ex) {
-                resFact = new ResonanceFactory();
-            }
-        } catch (ClassNotFoundException ex) {
-            resFact = new ResonanceFactory();
-        }
-        return resFact;
     }
 }

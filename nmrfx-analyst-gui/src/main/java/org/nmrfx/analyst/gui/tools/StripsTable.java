@@ -155,19 +155,17 @@ public class StripsTable {
     public Integer getResidue(PeakDim peakDim) {
         Integer result = Integer.MIN_VALUE;
         var resonance = peakDim.getResonance();
-        if (resonance instanceof AtomResonance atomResonance) {
-            Atom atom = atomResonance.getAtom();
-            if (atom != null) {
-                Entity entity = atom.getEntity();
-                if (entity instanceof Residue residue) {
-                    result = residue.getResNum();
-                }
-            } else {
-                String label = peakDim.getLabel();
-                Optional<PeakLabeller.ChainResAtomSpecifier> optionalChainResAtomSpecifier = PeakLabeller.parse(label);
-                if (optionalChainResAtomSpecifier.isPresent()) {
-                    result = optionalChainResAtomSpecifier.get().resNum();
-                }
+        Atom atom = resonance.getAtom();
+        if (atom != null) {
+            Entity entity = atom.getEntity();
+            if (entity instanceof Residue residue) {
+                result = residue.getResNum();
+            }
+        } else {
+            String label = peakDim.getLabel();
+            Optional<PeakLabeller.ChainResAtomSpecifier> optionalChainResAtomSpecifier = PeakLabeller.parse(label);
+            if (optionalChainResAtomSpecifier.isPresent()) {
+                result = optionalChainResAtomSpecifier.get().resNum();
             }
         }
         return result;
@@ -176,16 +174,14 @@ public class StripsTable {
     public String getAtomName(PeakDim peakDim) {
         String result = "";
         var resonance = peakDim.getResonance();
-        if (resonance instanceof AtomResonance atomResonance) {
-            Atom atom = atomResonance.getAtom();
-            if (atom != null) {
-                result = atom.getName();
-            } else {
-                String label = peakDim.getLabel();
-                Optional<PeakLabeller.ChainResAtomSpecifier> optionalChainResAtomSpecifier = PeakLabeller.parse(label);
-                if (optionalChainResAtomSpecifier.isPresent()) {
-                    result = optionalChainResAtomSpecifier.get().atomName();
-                }
+        Atom atom = resonance.getAtom();
+        if (atom != null) {
+            result = atom.getName();
+        } else {
+            String label = peakDim.getLabel();
+            Optional<PeakLabeller.ChainResAtomSpecifier> optionalChainResAtomSpecifier = PeakLabeller.parse(label);
+            if (optionalChainResAtomSpecifier.isPresent()) {
+                result = optionalChainResAtomSpecifier.get().atomName();
             }
         }
         return result;

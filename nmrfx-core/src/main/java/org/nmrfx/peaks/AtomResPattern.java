@@ -176,7 +176,7 @@ public class AtomResPattern {
             AtomResPattern arPat = atomResPatterns.atomResPatterns.get(0);
             if (!arPat.bondedDim.isBlank()) {
 
-                AtomResonance atomRes = (AtomResonance) activeDim.getResonance();
+                AtomResonance atomRes = activeDim.getResonance();
                 Atom atom = atomRes.getPossibleAtom();
                 if (atom != null) {
                     Atom parent = atom.getParent();
