@@ -15,6 +15,7 @@ import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.PeakPaths;
+import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.star.*;
@@ -57,6 +58,8 @@ public class ProjectBase {
     protected Map<String, Compound> compoundMap = new HashMap<>();
     protected Map<String, MoleculeBase> molecules = new HashMap<>();
     protected MoleculeBase activeMol = null;
+
+    public ResonanceFactory resFactory;
 
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
     protected List<DatasetBase> datasets = new ArrayList<>();
@@ -125,6 +128,15 @@ public class ProjectBase {
         }
     }
 
+    public static ResonanceFactory activeResonanceFactory() {
+        return getActive().resonanceFactory();
+    }
+    public ResonanceFactory resonanceFactory() {
+        if (resFactory == null) {
+            resFactory = new ResonanceFactory();
+        }
+        return resFactory;
+    }
     public String getName() {
         return name;
     }

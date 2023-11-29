@@ -27,7 +27,6 @@ import static java.util.Comparator.comparing;
 @PluginAPI("ring")
 public class PeakList {
 
-    private static final ResonanceFactory resFactory = new ResonanceFactory();
     /**
      *
      */
@@ -108,10 +107,6 @@ public class PeakList {
     @Override
     public String toString() {
         return listName;
-    }
-
-    public static ResonanceFactory resFactory() {
-        return resFactory;
     }
 
     /**

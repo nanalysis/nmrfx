@@ -21,6 +21,7 @@ import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.ResonanceFactory;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
@@ -136,7 +137,7 @@ public class AtomResonance {
         }
         List<String> idColumn = loop.getColumnAsList("ID");
         List<String> nameColumn = loop.getColumnAsList("Name");
-        ResonanceFactory resFactory = PeakList.resFactory();
+        ResonanceFactory resFactory = ProjectBase.getActive().resonanceFactory();
         for (int i = 0, n = idColumn.size(); i < n; i++) {
             String value;
             long idNum;

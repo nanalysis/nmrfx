@@ -1272,7 +1272,7 @@ public class NMRStarWriter {
         chan.write("    ######################################\n");
         chan.write("    # Saved " + date + " #\n");
         chan.write("    ######################################\n");
-        ResonanceFactory resFactory = PeakList.resFactory();
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         resFactory.clean();
         
         MoleculeBase molecule = MoleculeFactory.getActive();

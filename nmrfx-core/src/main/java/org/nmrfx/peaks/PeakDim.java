@@ -19,6 +19,7 @@ package org.nmrfx.peaks;
 
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomResonance;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.utilities.ConvUtil;
 import org.nmrfx.utilities.Format;
@@ -146,7 +147,8 @@ public class PeakDim {
     }
 
     public void initResonance() {
-        resonance = PeakList.resFactory().build();
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
+        resonance = resFactory.build();
         resonance.add(this);
     }
 
@@ -208,7 +210,8 @@ public class PeakDim {
 
     public void setResonance(long resID) {
         remove();
-        resonance = PeakList.resFactory().get(resID);
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
+        resonance = resFactory.get(resID);
     }
 
     public void setResonance(AtomResonance newResonance) {
