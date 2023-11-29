@@ -17,9 +17,10 @@
  */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.utilities.NvUtil;
-import org.nmrfx.peaks.*;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
@@ -39,16 +40,6 @@ public class AtomResonance {
     private static final Logger log = LoggerFactory.getLogger(AtomResonance.class);
 
     Atom atom = null;
-    public final static String[] resonanceLoopStrings = {
-            "_Resonance.ID",
-            "_Resonance.Name",
-            "_Resonance.Resonance_set_ID",
-            "_Resonance.Spin_system_ID ",
-            "_Resonance.Resonance_linker_list_ID ",};
-    public static final String[] resonanceCovalentLinkStrings = {
-            "_Resonance_covalent_link.Resonance_ID_1",
-            "_Resonance_covalent_link.Resonance_ID_2",};
-
     Object resonanceSet = null;
     Object ssID = null;
     boolean labelValid = true;
@@ -138,20 +129,13 @@ public class AtomResonance {
         }
     }
 
-    public static void processSTAR3ResonanceList(final NMRStarReader nmrStar,
-                                                 Saveframe saveframe, Map<String, Compound> compoundMap) throws ParseException {
-        // fixme unused String listName = saveframe.getValue(interp,"_Resonance_linker_list","Sf_framecode");
-        // FIXME String details = saveframe.getValue(interp,"_Resonance_linker_list","Details");
-
-        //  FIXME Should have Resonance lists PeakList peakList = new PeakList(listName,nDim);
+    public static void processSTAR3ResonanceList(Saveframe saveframe, Map<String, Compound> compoundMap) throws ParseException {
         Loop loop = saveframe.getLoop("_Resonance");
         if (loop == null) {
             throw new ParseException("No \"_Resonance\" loop");
         }
         List<String> idColumn = loop.getColumnAsList("ID");
         List<String> nameColumn = loop.getColumnAsList("Name");
-        List<String> resSetColumn = loop.getColumnAsList("Resonance_set_ID");
-        // fixme unused ArrayList ssColumn = loop.getColumnAsList("Spin_system_ID");
         ResonanceFactory resFactory = PeakList.resFactory();
         for (int i = 0, n = idColumn.size(); i < n; i++) {
             String value;
@@ -162,9 +146,9 @@ public class AtomResonance {
                 continue;
             }
 
-            AtomResonance resonance = (AtomResonance) resFactory.get(idNum);
+            AtomResonance resonance = resFactory.get(idNum);
             if (resonance == null) {
-                resonance = (AtomResonance) resFactory.build(idNum);
+                resonance = resFactory.build(idNum);
             }
             if ((value = NvUtil.getColumnValue(nameColumn, i)) != null) {
                 resonance.setName(value);
@@ -177,9 +161,7 @@ public class AtomResonance {
             List<String> entityAssemblyIDColumn = loop.getColumnAsList("Entity_assembly_ID");
             List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
             List<String> compIdxIDColumn = loop.getColumnAsList("Comp_index_ID");
-            List<String> compIDColumn = loop.getColumnAsList("Comp_ID");
             List<String> atomIDColumn = loop.getColumnAsList("Atom_ID");
-            // fixme unused ArrayList atomSetIDColumn = loop.getColumnAsList("Atom_set_ID");
             for (int i = 0, n = resSetIDColumn.size(); i < n; i++) {
                 String value;
                 long idNum = 0;
@@ -188,14 +170,14 @@ public class AtomResonance {
                 } else {
                     continue;
                 }
-                String atomName = "";
-                String iRes = "";
+                String atomName;
+                String iRes;
                 String entityAssemblyID = "";
-                String entityID = "";
+                String entityID;
                 if ((value = NvUtil.getColumnValue(entityAssemblyIDColumn, i)) != null) {
                     entityAssemblyID = value;
                 }
-                if (entityAssemblyID.equals("")) {
+                if (entityAssemblyID.isEmpty()) {
                     entityAssemblyID = "1";
                 }
                 if ((value = NvUtil.getColumnValue(entityIDColumn, i)) != null) {
@@ -213,9 +195,6 @@ public class AtomResonance {
                 } else {
                     throw new ParseException("No atom ID");
                 }
-                // fixme if ((value = NvUtil.getColumnValue(atomSetIDColumn,i)) != null) {
-                // fixme unused atomSetNum = NvUtil.toLong(interp,value);
-                //}
 
                 String mapID = entityAssemblyID + "." + entityID + "." + iRes;
                 Compound compound = compoundMap.get(mapID);
@@ -224,14 +203,11 @@ public class AtomResonance {
                     continue;
                 }
                 Atom atom = compound.getAtomLoose(atomName);
-                if (atom == null) {
-                    if (atomName.equals("H")) {
-                        atom = compound.getAtom(atomName + "1");
-                    }
+                if ((atom == null) && atomName.equals("H")) {
+                    atom = compound.getAtom(atomName + "1");
                 }
                 if (atom == null) {
                     log.warn("invalid atom in assignments saveframe \"{}.{}\"", mapID, atomName);
-                } else {
                 }
             }
         }
@@ -241,7 +217,7 @@ public class AtomResonance {
         StringBuilder result = new StringBuilder();
         String sep = " ";
         char stringQuote = '"';
-        result.append(String.valueOf(getID())).append(sep);
+        result.append(getID()).append(sep);
         result.append(stringQuote);
         result.append(getName());
         result.append(stringQuote);
@@ -280,7 +256,7 @@ public class AtomResonance {
             } else if (names.size() > 1) {
                 StringBuilder builder = new StringBuilder();
                 for (String name : names) {
-                    if (builder.length() > 0) {
+                    if (!builder.isEmpty()) {
                         builder.append(" ");
                     }
                     builder.append(name);
@@ -318,8 +294,6 @@ public class AtomResonance {
     public void merge(AtomResonance resB) {
         if (resB != this) {
             Collection<PeakDim> peakDimsB = resB.getPeakDims();
-            int sizeA = peakDims.size();
-            int sizeB = peakDimsB.size();
             for (PeakDim peakDim : peakDimsB) {
                 peakDim.setResonance(this);
                 if (!peakDims.contains(peakDim)) {
@@ -332,7 +306,6 @@ public class AtomResonance {
     }
 
     public List<PeakDim> getPeakDims() {
-        // fixme should be unmodifiable or copy
         return peakDims;
     }
 
@@ -351,9 +324,9 @@ public class AtomResonance {
             if (peakDim == null) {
                 continue;
             }
-            if ((condition != null) && (condition.length() > 0)) {
+            if ((condition != null) && (!condition.isEmpty())) {
                 String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
-                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                if ((!condition.equals(peakCondition))) {
                     continue;
                 }
             }
@@ -376,9 +349,9 @@ public class AtomResonance {
             if (peakDim == null) {
                 continue;
             }
-            if ((condition != null) && (condition.length() > 0)) {
+            if ((condition != null) && (!condition.isEmpty())) {
                 String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
-                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                if ((!condition.equals(peakCondition))) {
                     continue;
                 }
             }
@@ -403,9 +376,9 @@ public class AtomResonance {
             if (peakDim == null) {
                 continue;
             }
-            if ((condition != null) && (condition.length() > 0)) {
+            if ((condition != null) && (!condition.isEmpty())) {
                 String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
-                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                if ((!condition.equals(peakCondition))) {
                     continue;
                 }
             }
@@ -433,9 +406,9 @@ public class AtomResonance {
     public int getPeakCount(String condition) {
         int n = 0;
         for (PeakDim peakDim : peakDims) {
-            if ((condition != null) && (condition.length() > 0)) {
+            if ((condition != null) && (!condition.isEmpty())) {
                 String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
-                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                if ((!condition.equals(peakCondition))) {
                     continue;
                 }
             }

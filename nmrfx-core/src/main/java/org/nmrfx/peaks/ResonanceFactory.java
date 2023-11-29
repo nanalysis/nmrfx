@@ -25,24 +25,25 @@ import org.nmrfx.peaks.events.FreezeListener;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
-import static org.nmrfx.chemistry.AtomResonance.resonanceLoopStrings;
 
 /**
  * @author Bruce Johnson
  */
 public class ResonanceFactory implements FreezeListener {
+    private static final String[] resonanceLoopStrings = {
+            "_Resonance.ID",
+            "_Resonance.Name",
+            "_Resonance.Resonance_set_ID",
+            "_Resonance.Spin_system_ID ",
+            "_Resonance.Resonance_linker_list_ID ",};
+    private static final String[] resonanceCovalentLinkStrings = {
+            "_Resonance_covalent_link.Resonance_ID_1",
+            "_Resonance_covalent_link.Resonance_ID_2",};
 
     Map<Long, AtomResonance> map = new HashMap<>();
     private long lastID = -1;
-    private Long[] arrayView = null;
-
-    public ResonanceFactory() {
-    }
 
     public void init() {
         PeakList.registerFreezeListener(this);
@@ -69,11 +70,11 @@ public class ResonanceFactory implements FreezeListener {
     }
 
     public void clean() {
-        Map<Long, AtomResonance> resonancesNew = new TreeMap<Long, AtomResonance>();
+        Map<Long, AtomResonance> resonancesNew = new TreeMap<>();
         long resID = 0;
         for (Map.Entry<Long, AtomResonance> entry : map.entrySet()) {
             AtomResonance resonance = entry.getValue();
-            if (((resonance.getPeakDims() != null) && (resonance.getPeakDims().size() != 0))) {
+            if (((resonance.getPeakDims() != null) && (!resonance.getPeakDims().isEmpty()))) {
                 resonance.setID(resID);
                 resonancesNew.put(resID, resonance);
                 resID++;
@@ -81,24 +82,19 @@ public class ResonanceFactory implements FreezeListener {
         }
         map.clear();
         map = resonancesNew;
-        arrayView = null;
     }
 
-    public synchronized HashMap<String, ArrayList<AtomResonance>> getLabelMap() {
+    public synchronized Map<String, List<AtomResonance>> getLabelMap() {
         clean();
-        HashMap<String, ArrayList<AtomResonance>> labelMap = new HashMap<>();
+        Map<String, List<AtomResonance>> labelMap = new HashMap<>();
         map.values().forEach(resonance -> {
             String label = resonance.getName();
-            if ((label != null) && (label.length() != 0)) {
+            if ((label != null) && (!label.isEmpty())) {
                 label = label.trim().toUpperCase();
                 if ((label.length() > 1) && Character.isLetter(label.charAt(0)) && Character.isDigit(label.charAt(1))) {
                     label = label.substring(1);
                 }
-                ArrayList resList = labelMap.get(label);
-                if (resList == null) {
-                    resList = new ArrayList<>();
-                    labelMap.put(label, resList);
-                }
+                List<AtomResonance> resList = labelMap.computeIfAbsent(label, k -> new ArrayList<>());
 
                 resList.add(resonance);
             }
@@ -113,7 +109,6 @@ public class ResonanceFactory implements FreezeListener {
         // FIXME  should we also test if they have names assigned and the names are different
         if ((resonanceA.getAtom() != null) && (resonanceB.getAtom() != null)) {
             if (resonanceA.getAtom() != resonanceB.getAtom()) {
-                System.out.println("resonance merge:  both resonances have atoms");
                 return null;
             }
         }
@@ -121,7 +116,7 @@ public class ResonanceFactory implements FreezeListener {
             AtomResonance hold = resonanceA;
             resonanceA = resonanceB;
             resonanceB = hold;
-        } else if (resonanceA.getName().equals("") && !resonanceB.getName().equals("")) {
+        } else if (resonanceA.getName().isEmpty() && !resonanceB.getName().isEmpty()) {
             AtomResonance hold = resonanceA;
             resonanceA = resonanceB;
             resonanceB = hold;
@@ -132,25 +127,22 @@ public class ResonanceFactory implements FreezeListener {
         }
         resonanceB.clearPeakDims();
         map.remove(resonanceB.getID());
-        arrayView = null;
         return resonanceA;
     }
 
     public synchronized void merge(String condition, double tol) {
-        HashMap<String, ArrayList<AtomResonance>> labelMap = getLabelMap();
-        for (String label : labelMap.keySet()) {
-            ArrayList<AtomResonance> resList = labelMap.get(label);
+        Map<String, List<AtomResonance>> labelMap = getLabelMap();
+        for (var entry : labelMap.entrySet()) {
+            List<AtomResonance> resList = entry.getValue();
             // find res with atom
             // if none find res closest to mean
             // or resonance with most peaks    
             // merge remaining
             AtomResonance refRes = null;
             for (AtomResonance res : resList) {
-                if (res.getPeakCount(condition) > 0) {
-                    if (res.getAtom() != null) {
-                        refRes = res;
-                        break;
-                    }
+                if ((res.getPeakCount(condition) > 0) && (res.getAtom() != null)) {
+                    refRes = res;
+                    break;
                 }
             }
             if (refRes == null) {
@@ -187,24 +179,20 @@ public class ResonanceFactory implements FreezeListener {
                 }
             }
         }
-        arrayView = null;
     }
 
     public void assignFrozenAtoms(String condition) {
         for (AtomResonance res : map.values()) {
             for (PeakDim peakDim : res.getPeakDims()) {
-                if (peakDim.getPeak().getPeakList().getSampleConditionLabel().equals(condition)) {
-                    if (peakDim.isFrozen()) {
-                        Double ppmAvg = res.getPPMAvg(condition);
-                        Atom atom = MoleculeBase.getAtomByName(peakDim.getLabel());
-                        if (atom != null) {
-                            atom.setPPM(ppmAvg);
-                            res.setAtomName(atom.getFullName());
-                            break;
-                        }
+                if (peakDim.getPeak().getPeakList().getSampleConditionLabel().equals(condition) && peakDim.isFrozen()) {
+                    Double ppmAvg = res.getPPMAvg(condition);
+                    Atom atom = MoleculeBase.getAtomByName(peakDim.getLabel());
+                    if (atom != null) {
+                        atom.setPPM(ppmAvg);
+                        res.setAtomName(atom.getFullName());
+                        break;
                     }
                 }
-
             }
 
         }
@@ -228,10 +216,9 @@ public class ResonanceFactory implements FreezeListener {
 
     @Override
     public void freezeHappened(Peak peak, boolean state) {
-        System.out.println("freeze " + peak.getName() + " " + state);
         for (PeakDim peakDim : peak.peakDims) {
             String condition = peak.getPeakList().getSampleConditionLabel();
-            AtomResonance res = (AtomResonance) peakDim.getResonance();
+            AtomResonance res = peakDim.getResonance();
             Double ppmAvg = res.getPPMAvg(condition);
             Atom atom = null;
             if (MoleculeFactory.getActive() != null) {
@@ -268,10 +255,9 @@ public class ResonanceFactory implements FreezeListener {
         chan.write(".\n");
 
         chan.write("\n");
-        String[] loopStrings = resonanceLoopStrings;
         chan.write("loop_\n");
-        for (int j = 0; j < loopStrings.length; j++) {
-            chan.write(loopStrings[j] + "\n");
+        for (String loopString : resonanceLoopStrings) {
+            chan.write(loopString + "\n");
         }
         chan.write("\n");
         for (Map.Entry<Long, AtomResonance> entry : map.entrySet()) {

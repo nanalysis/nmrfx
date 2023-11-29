@@ -563,7 +563,7 @@ public class NMRStarReader {
             if (saveframe.getCategoryName().equals("resonance_linker")) {
                 hasResonances = true;
                 log.debug("process resonances {}", saveframe.getName());
-                AtomResonance.processSTAR3ResonanceList(this, saveframe, compoundMap);
+                AtomResonance.processSTAR3ResonanceList(saveframe, compoundMap);
             }
         }
     }
