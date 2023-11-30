@@ -67,14 +67,13 @@ def processYamlData(yamlFile, inputData, createNewStage):
     data = yaml.load(inputData)
     print(data)
     if createNewStage > 0:
-        nw.new()
         pathComps = os.path.split(yamlFile)
         title = pathComps[1]
         if title.endswith('_fav.yaml'):
             title = title[0:-9]
         elif title.endswith('.yaml'):
-            title = title[0:-5]
-        nw.setTitle(title)
+            title = "NMRFx Spectra " + title[0:-5]
+        nw.new(title)
     if 'geometry' in data:
         (x,y,w,h) = data['geometry']
         nw.geometry(x,y,w,h)

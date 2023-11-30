@@ -49,8 +49,8 @@ class NMRFxWindowScripting:
     def bindKeys(self, keyStr, actionStr):
         self.cmd.bindKeys(keyStr, actionStr)
 
-    def new(self):
-        self.cmd.newStage()
+    def new(self, title=None):
+        self.cmd.newStage(title)
         return self
 
     def geometry(self, x=None, y=None, width=None, height=None):
