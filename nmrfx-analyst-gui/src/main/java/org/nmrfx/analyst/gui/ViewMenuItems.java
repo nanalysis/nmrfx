@@ -7,6 +7,7 @@ import javafx.scene.control.MenuItem;
 import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.processor.gui.DatasetsController;
 import org.nmrfx.processor.gui.project.GUIProject;
+import org.nmrfx.project.ProjectBase;
 
 public class ViewMenuItems extends MenuActions {
 

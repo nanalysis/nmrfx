@@ -48,7 +48,7 @@ public class CustomNumberTextField extends CustomTextField {
     }
 
     public CustomNumberTextField() {
-        this(new Double(0.0));
+        this(Double.valueOf(0.0));
     }
 
     public CustomNumberTextField(Double value) {

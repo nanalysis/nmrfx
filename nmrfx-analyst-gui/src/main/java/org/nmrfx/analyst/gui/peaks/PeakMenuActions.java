@@ -17,6 +17,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.project.ProjectBase;
 
 import java.util.Collection;
 import java.util.List;

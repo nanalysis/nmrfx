@@ -18,6 +18,7 @@ import org.eclipse.jgit.util.FS;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PreferencesController;
@@ -193,6 +194,7 @@ public class GUIProject extends StructureProject {
         currentProject.setActive();
     }
 
+    @Override
     public void saveProject() throws IOException {
         ProjectBase currentProject = getActive();
         setActive();
@@ -211,7 +213,7 @@ public class GUIProject extends StructureProject {
     void gitCommitOnThread() {
         Task<Boolean> task = new Task<Boolean>() {
             @Override
-            protected Boolean call() throws Exception {
+            protected Boolean call() {
                 return gitCommit();
             }
         };
@@ -268,7 +270,7 @@ public class GUIProject extends StructureProject {
                     actionMap.add(action);
                     git.rm().addFilepattern(missingFile).call();
                 }
-                actionMap.stream().forEach(action -> sBuilder.append(action).append(","));
+                actionMap.forEach(action -> sBuilder.append(action).append(","));
                 RevCommit commit = git.commit().setMessage(sBuilder.toString()).call();
                 didSomething = true;
             }
@@ -308,13 +310,14 @@ public class GUIProject extends StructureProject {
     }
 
     public void addPeakListListener(Object mapChangeListener) {
-        ObservableMap obsMap = (ObservableMap) peakLists;
+        ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
         obsMap.addListener((MapChangeListener<String, PeakList>) mapChangeListener);
     }
 
+    @Override
     public void addDatasetListListener(Object mapChangeListener) {
-        ObservableMap obsMap = (ObservableMap) datasetMap;
-        obsMap.addListener((MapChangeListener<String, Dataset>) mapChangeListener);
+        ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
+        obsMap.addListener((MapChangeListener<String, DatasetBase>) mapChangeListener);
     }
 
     public void checkSubDirs(Path projectDir) throws IOException {

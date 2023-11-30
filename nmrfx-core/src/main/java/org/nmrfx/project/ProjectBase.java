@@ -276,7 +276,7 @@ public class ProjectBase {
     }
 
     /**
-     * Return an Optional containing the PeakList with lowest id number or an
+     * Return an Optional containing the PeakList with the lowest id number or an
      * empty value if no PeakLists are present.
      *
      * @return Optional containing first peakList if any peak lists present or

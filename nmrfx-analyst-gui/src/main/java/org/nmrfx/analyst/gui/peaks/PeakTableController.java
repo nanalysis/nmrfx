@@ -56,6 +56,7 @@ import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakMenuBar;
 import org.nmrfx.processor.gui.PeakMenuTarget;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.TableUtils;
 
 import java.net.URL;

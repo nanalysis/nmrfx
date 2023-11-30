@@ -47,20 +47,9 @@ public class StructureProject extends ProjectBase {
         return activeProject;
     }
 
+    @Override
     public Molecule getMolecule(String name) {
         return (Molecule) molecules.get(name);
-    }
-
-    public void putMolecule(Molecule molecule) {
-        molecules.put(molecule.getName(), molecule);
-    }
-
-    public void clearAllMolecules() {
-        molecules.clear();
-    }
-
-    public void removeMolecule(String name) {
-        molecules.remove(name);
     }
 
     public Molecule activeMol() {
@@ -77,36 +66,29 @@ public class StructureProject extends ProjectBase {
             FileSystem fileSystem = FileSystems.getDefault();
             boolean readSTAR3 = false;
             for (String subDir : subDirTypes) {
-                System.out.println("read " + subDir + " " + readSTAR3);
                 Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
                 if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
                     switch (subDir) {
-                        case "star":
-                            readSTAR3 = loadSTAR3(subDirectory);
-                            break;
-                        case "molecules":
+                        case "star" -> readSTAR3 = loadSTAR3(subDirectory);
+                        case "molecules" -> {
                             if (!readSTAR3) {
                                 loadMolecules(subDirectory);
                             }
-                            break;
-                        case "peaks":
+                        }
+                        case "peaks" -> {
                             if (!readSTAR3) {
-                                System.out.println("readpeaks");
                                 loadProject(projectDir, "peaks");
                             } else {
                                 loadProject(projectDir, "mpk2");
                             }
-                            break;
-                        case "shifts":
+                        }
+                        case "shifts" -> {
                             if (!readSTAR3) {
                                 loadShiftFiles(subDirectory, false);
                             }
-                            break;
-                        case "refshifts":
-                            loadShiftFiles(subDirectory, true);
-                            break;
-                        default:
-                            throw new IllegalStateException("Invalid subdir type");
+                        }
+                        case "refshifts" -> loadShiftFiles(subDirectory, true);
+                        default -> throw new IllegalStateException("Invalid subdir type");
                     }
                 }
 
@@ -136,6 +118,7 @@ public class StructureProject extends ProjectBase {
 
     }
 
+    @Override
     public void saveProject() throws IOException {
         ProjectBase currentProject = getActive();
         setActive();
@@ -215,7 +198,6 @@ public class StructureProject extends ProjectBase {
         if (file.toString().endsWith(".pdb")) {
             PDBFile pdbReader = new PDBFile();
             pdbReader.readSequence(file.toString(), false, 0);
-            System.out.println("read mol: " + file.toString());
         } else if (file.toString().endsWith(".sdf")) {
             SDFile.read(file.toString(), null);
         } else if (file.toString().endsWith(".mol")) {
@@ -281,7 +263,7 @@ public class StructureProject extends ProjectBase {
                         forEach(path -> {
                             String fileName = path.getFileName().toString();
                             Optional<Integer> fileNum = getIndex(fileName);
-                            int ppmSet = fileNum.isPresent() ? fileNum.get() : 0;
+                            int ppmSet = fileNum.orElse(0);
                             PPMFiles.readPPM(mol, path, ppmSet, refMode);
                         });
             }
@@ -300,13 +282,11 @@ public class StructureProject extends ProjectBase {
         }
         int nSets = refMode ? mol.getRefPPMSetCount() : mol.getPPMSetCount();
         for (int ppmSet = 0; ppmSet < nSets; ppmSet++) {
-            String fileName = "ppm_" + String.valueOf(ppmSet) + ".txt";
+            String fileName = "ppm_" + ppmSet + ".txt";
             String subDir = refMode ? "refshifts" : "shifts";
             Path peakFilePath = fileSystem.getPath(projectDir.toString(), subDir, fileName);
-            // fixme should only write if file doesn't already exist or peaklist changed since read
             try (FileWriter writer = new FileWriter(peakFilePath.toFile())) {
                 PPMFiles.writePPM(mol, writer, ppmSet, refMode);
-                writer.close();
             } catch (IOException ioE) {
                 throw ioE;
             }
