@@ -115,7 +115,8 @@ public class AnalystApp extends Application {
             startInAdvanced = false;
         }
         analystApp = this;
-        getFXMLControllerManager().newController(stage);
+        String title = APP_NAME + " " + getVersion();
+        getFXMLControllerManager().newController(stage, title);
 
         if (isMac()) {
             Platform.setImplicitExit(false);
@@ -123,7 +124,6 @@ public class AnalystApp extends Application {
             Platform.setImplicitExit(true);
         }
         hostServices = getHostServices();
-        stage.setTitle(APP_NAME + " " + getVersion());
 
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(APP_NAME);

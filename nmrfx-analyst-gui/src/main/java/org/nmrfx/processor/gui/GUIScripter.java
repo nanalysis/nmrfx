@@ -557,8 +557,8 @@ public class GUIScripter {
         return future.get();
     }
 
-    public void newStage() {
-        controller = AnalystApp.getFXMLControllerManager().newController();
+    public void newStage(String title) {
+        controller = AnalystApp.getFXMLControllerManager().newController(title);
         PolyChart chartActive = controller.getCharts().get(0);
         controller.setActiveChart(chartActive);
     }
