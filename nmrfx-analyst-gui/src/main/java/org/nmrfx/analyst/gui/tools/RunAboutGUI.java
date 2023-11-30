@@ -49,7 +49,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.seqassign.*;
 import org.nmrfx.structure.seqassign.FragmentScoring.AAScore;
@@ -352,7 +352,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         MapChangeListener<String, PeakList> peakmapChangeListener =
                 (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakTableView();
 
-        Project.getActive().addPeakListListener(peakmapChangeListener);
+        ProjectBase.getActive().addPeakListListener(peakmapChangeListener);
 
         Button configureButton = new Button("Inspector");
         configureButton.setOnAction(e -> inspectPeakList());
@@ -603,7 +603,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         });
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
 
-        Project.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(mapChangeListener);
 
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
@@ -1266,7 +1266,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             peakListMenuButton.getItems().add(spinSysMenuItem);
         }
 
-        for (String peakListName : Project.getActive().getPeakListNames()) {
+        for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 RunAboutGUI.this.setPeakList(peakListName);

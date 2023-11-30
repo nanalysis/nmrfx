@@ -31,7 +31,7 @@ import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 
 import java.io.File;
 import java.io.IOException;
@@ -541,7 +541,7 @@ public class NMRViewData implements NMRData {
         System.out.println("open data file " + datapath);
         File file = new File(datapath);
 
-        List<DatasetBase> currentDatasets = Project.getActive().getDatasetsWithFile(file);
+        List<DatasetBase> currentDatasets = ProjectBase.getActive().getDatasetsWithFile(file);
         if (!currentDatasets.isEmpty()) {
             System.out.println("already open");
             dataset = (Dataset) currentDatasets.get(0);

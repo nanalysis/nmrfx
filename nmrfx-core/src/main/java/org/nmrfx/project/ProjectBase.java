@@ -59,7 +59,7 @@ public class ProjectBase {
     protected Map<String, MoleculeBase> molecules = new HashMap<>();
     protected MoleculeBase activeMol = null;
 
-    public ResonanceFactory resFactory;
+    private ResonanceFactory resFactory;
 
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
     protected List<DatasetBase> datasets = new ArrayList<>();
@@ -276,7 +276,7 @@ public class ProjectBase {
     }
 
     /**
-     * Return an Optional containing the PeakList with lowest id number or an
+     * Return an Optional containing the PeakList with the lowest id number or an
      * empty value if no PeakLists are present.
      *
      * @return Optional containing first peakList if any peak lists present or
@@ -404,18 +404,15 @@ public class ProjectBase {
             Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
             if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
                 switch (subDir) {
-                    case "datasets":
-                        loadDatasets(subDirectory);
-                        break;
-                    case "peaks":
+                    case "datasets" -> loadDatasets(subDirectory);
+                    case "peaks" -> {
                         if (mpk2Mode) {
                             loadMPKs(subDirectory);
                         } else {
                             loadPeaks(subDirectory);
                         }
-                        break;
-                    default:
-                        throw new IllegalStateException("Invalid subdir type");
+                    }
+                    default -> throw new IllegalStateException("Invalid subdir type");
                 }
             }
 
