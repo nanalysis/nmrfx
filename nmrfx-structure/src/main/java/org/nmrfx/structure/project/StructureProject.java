@@ -212,7 +212,7 @@ public class StructureProject extends ProjectBase {
         log.info("active mol {}", MoleculeFactory.getActive().getName());
     }
 
-    public void loadMoleculeEntities(Path directory) throws MoleculeIOException, IOException {
+    public void loadMoleculeEntities(Path directory) throws IOException {
         String molName = directory.getFileName().toString();
         Molecule mol = (Molecule) MoleculeFactory.newMolecule(molName);
         PDBFile pdbReader = new PDBFile();
