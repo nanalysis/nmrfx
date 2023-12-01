@@ -35,6 +35,7 @@ import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
@@ -272,7 +273,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     @FXML
-    void drawMol(ActionEvent event) throws InvalidMoleculeException {
+    void drawMol(ActionEvent event) throws InvalidMoleculeException, MissingCoordinatesException {
         molViewer.drawMol();
     }
 
