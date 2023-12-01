@@ -18,7 +18,6 @@
 package org.nmrfx.processor.gui.spectra;
 
 import javafx.event.Event;
-import javafx.scene.input.RotateEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.ZoomEvent;
 import org.apache.commons.lang3.SystemUtils;
@@ -56,7 +55,7 @@ public class GestureBindings {
         } else if ((border == ChartBorder.LEFT || border == ChartBorder.BOTTOM) || (event.isAltDown() && border == ChartBorder.NONE)) {
             chart.zoom(scrollDirectionFactor * -dy / 50.0 + 1.0);
         } else {
-            if ( PreferencesController.getUseNvjMouseMode()) {
+            if (Boolean.TRUE.equals(PreferencesController.getUseNvjMouseMode())) {
                 if (event.isControlDown()) {
                     chart.scaleY(scrollDirectionFactor * dy);
                 } else if (event.isShiftDown()) {
