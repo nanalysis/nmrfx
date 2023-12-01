@@ -106,8 +106,6 @@ public class Phaser {
             slider.setShowTickMarks(true);
             slider.setShowTickLabels(true);
             slider.setOrientation(orientation);
-            slider.valueProperty().addListener(e -> handlePh(phMode));
-            slider.setOnMouseReleased(e -> handlePhReset(phMode));
             sliders[iPh] = slider;
             if (orientation == Orientation.VERTICAL) {
                 VBox.setVgrow(slider, Priority.ALWAYS);
@@ -117,6 +115,9 @@ public class Phaser {
             phLabels[iPh] = new TextField();
             phLabels[iPh].setPrefWidth(50);
             GUIUtils.bindSliderField(slider, phLabels[iPh], "##0.0", 45.0 * scales[iPh]);
+            slider.valueProperty().addListener(e -> handlePh(phMode));
+            slider.setOnMouseReleased(e -> handlePhReset(phMode));
+            phLabels[iPh].setOnAction(e -> handlePhReset(phMode));
             layoutPane.getChildren().addAll(label, slider, phLabels[iPh]);
             if ((iPh == 0) && (orientation == Orientation.VERTICAL)) {
                 Pane filler = new Pane();
