@@ -35,31 +35,6 @@ public class GestureBindings {
         this.chart = chart;
     }
 
-    public void rotate(RotateEvent rEvent) {
-        if (chart.hasData() && chart.getFXMLController().isPhaseSliderVisible()) {
-            double angle = rEvent.getAngle();
-            chart.setPh0(chart.getPh0() + angle);
-            double sliderPH0 = chart.getPh0() + chart.getDataPH0();
-            double sliderPH1 = chart.getPh1() + chart.getDataPH1();
-            chart.getFXMLController().getPhaser().setPhaseLabels(sliderPH0, sliderPH1);
-            chart.refresh();
-        }
-    }
-
-    public void rotationFinished(RotateEvent rEvent) {
-        if (chart.hasData() && chart.getFXMLController().isPhaseSliderVisible()) {
-            double angle = rEvent.getAngle();
-            chart.setPh0(chart.getPh0() + angle);
-            chart.getFXMLController().getPhaser().setPhaseLabels(chart.getPh0(), chart.getPh1());
-            // use properties??
-            if (rEvent.getEventType() == RotateEvent.ROTATION_FINISHED) {
-                double sliderPH0 = chart.getPh0() + chart.getDataPH0();
-                chart.getFXMLController().getPhaser().handlePh0Reset(sliderPH0);
-            }
-            chart.refresh();
-        }
-    }
-
     public void zoom(Event event) {
         ZoomEvent rEvent = (ZoomEvent) event;
         double zoom = rEvent.getZoomFactor();
