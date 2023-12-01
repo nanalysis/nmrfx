@@ -33,6 +33,7 @@ import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.operations.Util;
 import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,7 @@ public class Phaser {
     FXMLController controller;
     Slider[] sliders = new Slider[2];
     TextField[] phLabels = new TextField[2];
-    double[] scales = {1, 8};
+    double[] scales = {1, 4};
     SimpleStringProperty phaseChoice = new SimpleStringProperty("X");
     ChoiceBox<String> xyPhaseChoice;
     List<MenuItem> processorMenuItems = new ArrayList<>();
@@ -105,8 +106,6 @@ public class Phaser {
             slider.setShowTickMarks(true);
             slider.setShowTickLabels(true);
             slider.setOrientation(orientation);
-            slider.valueProperty().addListener(e -> handlePh(phMode));
-            slider.setOnMouseReleased(e -> handlePhReset(phMode));
             sliders[iPh] = slider;
             if (orientation == Orientation.VERTICAL) {
                 VBox.setVgrow(slider, Priority.ALWAYS);
@@ -115,6 +114,10 @@ public class Phaser {
             }
             phLabels[iPh] = new TextField();
             phLabels[iPh].setPrefWidth(50);
+            GUIUtils.bindSliderField(slider, phLabels[iPh], "##0.0", 45.0 * scales[iPh]);
+            slider.valueProperty().addListener(e -> handlePh(phMode));
+            slider.setOnMouseReleased(e -> handlePhReset(phMode));
+            phLabels[iPh].setOnAction(e -> handlePhReset(phMode));
             layoutPane.getChildren().addAll(label, slider, phLabels[iPh]);
             if ((iPh == 0) && (orientation == Orientation.VERTICAL)) {
                 Pane filler = new Pane();
@@ -281,7 +284,6 @@ public class Phaser {
     private void handlePh0() {
         double sliderPH0 = sliders[0].getValue();
         sliderPH0 = Math.round(sliderPH0 * 10) / 10.0;
-        phLabels[0].setText(String.format("%.1f", sliderPH0));
         double deltaPH0 = 0.0;
         PolyChart chart = controller.getActiveChart();
         if (controller.getActiveChart().hasData()) {
@@ -318,9 +320,6 @@ public class Phaser {
             deltaPH1 = sliderPH1 - chart.getDataPH1();
         }
 
-        phLabels[0].setText(String.format("%.1f", sliderPH0));
-        phLabels[1].setText(String.format("%.1f", sliderPH1));
-
         if (chart.is1D()) {
             chart.setPh0(deltaPH0);
             chart.setPh1(deltaPH1);
@@ -351,17 +350,9 @@ public class Phaser {
         sliders[0].setMax(end);
         sliders[0].setBlockIncrement(0.1);
         sliders[0].setValue(ph0);
-        phLabels[0].setText(String.format("%.1f", ph0));
         if (updateOp) {
             setPhaseOp();
         }
-    }
-
-    public void setPhaseLabels(double ph0, double ph1) {
-        ph0 = Math.round(ph0 * 10) / 10.0;
-        ph1 = Math.round(ph1 * 10) / 10.0;
-        phLabels[0].setText(String.format("%.1f", ph0));
-        phLabels[1].setText(String.format("%.1f", ph1));
     }
 
     private void handlePh1Reset() {
@@ -380,7 +371,6 @@ public class Phaser {
         sliders[1].setMin(start);
         sliders[1].setMax(end);
         sliders[1].setValue(ph1);
-        phLabels[1].setText(String.format("%.1f", ph1));
         if (updateOp) {
             setPhaseOp();
         }
