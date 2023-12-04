@@ -228,18 +228,25 @@ public class GRINSOp extends MatrixOperation {
     }
 
     public Operation evalNUSMatrix(MatrixType matrix) {
+        MatrixND matrixND = (MatrixND) matrix;
+        SampleSchedule schedule;
         if (sampleSchedule == null) {
+            schedule = matrixND.schedule();
+        } else {
+            schedule = sampleSchedule;
+        }
+
+        if (schedule == null) {
             throw new ProcessingException("No sample schedule");
         }
 
         try {
-            MatrixND matrixND = (MatrixND) matrix;
             matrixND.zeroFill(zfFactor);
             for (int i = 0; i < matrixND.getNDim(); i++) {
                 matrixND.setVSizes(matrixND.getSizes());
             }
-            int[] zeroList = IstMatrix.genZeroList(sampleSchedule, matrixND);
-            int[] srcTargetMap = genSrcTargetMap(sampleSchedule, matrixND);
+            int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
+            int[] srcTargetMap = genSrcTargetMap(schedule, matrixND);
             String logFile = null;
             if (logHome != null) {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
