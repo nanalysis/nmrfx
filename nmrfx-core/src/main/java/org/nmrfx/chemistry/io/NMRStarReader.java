@@ -21,11 +21,8 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.constraints.*;
-import org.nmrfx.chemistry.relax.OrderPar;
-import org.nmrfx.chemistry.relax.RelaxationData;
-import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
-import org.nmrfx.chemistry.relax.RelaxationRex;
-import org.nmrfx.chemistry.relax.ResonanceSource;
+import org.nmrfx.chemistry.relax.*;
+import org.nmrfx.chemistry.relax.RelaxTypes;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.io.PeakPathReader;
@@ -326,7 +323,7 @@ public class NMRStarReader {
         }
     }
 
-    public void buildRelaxation(relaxTypes expType) throws ParseException {
+    public void buildRelaxation(RelaxTypes expType) throws ParseException {
         String expName = expType.getName().toUpperCase();
         if (expName.equals("R1")) {
             expName = "T1";
@@ -1200,6 +1197,9 @@ public class NMRStarReader {
         List<String> atom2Column = loop.getColumnAsList("Atom_ID_2");
         List<String> valColumn = loop.getColumnAsList("Val");
         List<String> errColumn = loop.getColumnAsList("Val_err");
+        double fieldValue = Double.valueOf(field);
+        double temperature = 25.0;
+        RelaxationSet relaxationSet = new RelaxationSet(frameName, RelaxTypes.NOE, fieldValue, temperature, extras);
 
         for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
             String iEntity = entityIDColumn.get(i);
@@ -1222,8 +1222,6 @@ public class NMRStarReader {
             if (!errColumn.get(i).equals(".")) {
                 error = Double.parseDouble(errColumn.get(i));
             }
-
-            double temperature = 25.0;
 
             if (entityAssemblyID.equals(".")) {
                 entityAssemblyID = "1";
@@ -1251,12 +1249,12 @@ public class NMRStarReader {
 
             ResonanceSource resSource = new ResonanceSource(atom, atom2);
 
-            RelaxationData relaxData = new RelaxationData(frameName, relaxTypes.NOE, resSource, Double.parseDouble(field), temperature, value, error, extras);
-            atom.addRelaxationData(frameName, relaxData);
+            RelaxationData relaxData = new RelaxationData(relaxationSet, resSource, value, error);
+            atom.addRelaxationData(relaxationSet, relaxData);
         }
     }
 
-    public void processRelaxation(Saveframe saveframe, relaxTypes expType) throws ParseException {
+    public void processRelaxation(Saveframe saveframe, RelaxTypes expType) throws ParseException {
         String catName = saveframe.getCategoryName();
         String frameName = saveframe.getName().substring(5);
         for (String cat : saveframe.getCategories()) {
@@ -1294,12 +1292,14 @@ public class NMRStarReader {
         List<String> errColumn = loop.getColumnAsListIfExists("Val_err");
         List<String> RexValColumn = loop.getColumnAsListIfExists("Rex_val");
         List<String> RexErrColumn = loop.getColumnAsListIfExists("Rex_err");
-        if (expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO)) {
+        if (expType.equals(RelaxTypes.R2) || expType.equals(RelaxTypes.R1RHO)) {
             valColumn = loop.getColumnAsList(expName + "_val");
             errColumn = loop.getColumnAsList(expName + "_val_err");
         }
 
+        double fieldValue = Double.valueOf(field);
         double temperature = 25.0;
+        RelaxationSet relaxationSet = new RelaxationSet(frameName, expType, fieldValue, temperature, extras);
 
         for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
             String iEntity = entityIDColumn.get(i);
@@ -1319,7 +1319,7 @@ public class NMRStarReader {
             if (!errColumn.get(i).equals(".")) {
                 error = Double.parseDouble(errColumn.get(i));
             }
-            if ((expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO))
+            if ((expType.equals(RelaxTypes.R2) || expType.equals(RelaxTypes.R1RHO))
                     && (RexValColumn != null)) {
                 if (!RexValColumn.get(i).equals(".")) {
                     RexValue = Double.parseDouble(RexValColumn.get(i));
@@ -1348,12 +1348,12 @@ public class NMRStarReader {
             }
             ResonanceSource resSource = new ResonanceSource(atom);
 
-            if (expType.equals(relaxTypes.R1)) {
-                RelaxationData relaxData = new RelaxationData(frameName, expType, resSource, field, temperature, value, error, extras);
-                atom.addRelaxationData(frameName, relaxData);
+            if (expType.equals(RelaxTypes.R1)) {
+                RelaxationData relaxData = new RelaxationData(relaxationSet, resSource, value, error);
+                atom.addRelaxationData(relaxationSet, relaxData);
             } else {
-                RelaxationRex relaxData = new RelaxationRex(frameName, expType, resSource, field, temperature, value, error, RexValue, RexError, extras);
-                atom.addRelaxationData(frameName, relaxData);
+                RelaxationRex relaxData = new RelaxationRex(relaxationSet, resSource,  value, error, RexValue, RexError);
+                atom.addRelaxationData(relaxationSet, relaxData);
             }
         }
     }
@@ -1428,6 +1428,8 @@ public class NMRStarReader {
                 errColumns.put(parName, column);
             }
         }
+        OrderParSet orderParSet = new OrderParSet(frameName);
+
         var modelfreeErrorColumn = loop.getColumnAsDoubleList("Model_free_sum_squared_errs", null);
         var modelfreeNValuesColumn = loop.getColumnAsIntegerList("Model_free_n_values", null);
         var modelfreeNParsColumn = loop.getColumnAsIntegerList("Model_free_n_pars", null);
@@ -1442,7 +1444,7 @@ public class NMRStarReader {
                 Integer modelNPars = modelfreeNParsColumn.get(i);
                 String modelName = modelNameColumn.get(i);
                 ResonanceSource resSource = new ResonanceSource(atomOpt.get());
-                OrderPar orderPar = new OrderPar(resSource, modelSSErr, modelNValues, modelNPars, modelName);
+                OrderPar orderPar = new OrderPar(orderParSet, resSource, modelSSErr, modelNValues, modelNPars, modelName);
                 for (var parName : valueColumns.keySet()) {
                     var valueColumn = valueColumns.get(parName);
                     var errColumn = errColumns.get(parName);
@@ -1452,7 +1454,7 @@ public class NMRStarReader {
                         orderPar = orderPar.set(parName, value, err);
                     }
                 }
-                atomOpt.get().addOrderPar(frameName, orderPar);
+                atomOpt.get().addOrderPar(orderParSet, orderPar);
             }
         }
     }
@@ -1708,8 +1710,8 @@ public class NMRStarReader {
             buildRDCConstraints();
             log.debug("process NOE");
             buildNOE();
-            for (var relaxType : relaxTypes.values()) {
-                if ((relaxType != relaxTypes.NOE) && (relaxType != relaxTypes.S2)) {
+            for (var relaxType : RelaxTypes.values()) {
+                if ((relaxType != RelaxTypes.NOE) && (relaxType != RelaxTypes.S2)) {
                     log.debug("process {}", relaxType);
                     buildRelaxation(relaxType);
                 }
