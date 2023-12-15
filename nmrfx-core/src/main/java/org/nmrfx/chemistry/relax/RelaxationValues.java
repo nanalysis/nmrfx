@@ -31,8 +31,6 @@ public interface RelaxationValues {
 
     String[] getParNames();
 
-    String getName();
-
     Double getValue(String name);
 
     Double getError(String name);
