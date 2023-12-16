@@ -43,6 +43,7 @@ public class XYCanvasBarChart extends XYCanvasChart {
         super(canvas, AXIS);
         xAxis = AXIS[0];
         yAxis = AXIS[1];
+        xAxis.setIntegerAxis(true);
         widthProperty().addListener(e -> drawChart());
         heightProperty().addListener(e -> drawChart());
         data.addListener((ListChangeListener) (e -> seriesChanged()));

@@ -63,6 +63,7 @@
      private double yOrigin = 800.0;
      private double labelFontSize = 16;
      private double ticFontSize = 12;
+     private boolean integerAxis = false;
      private final double lineWidth = 1.0;
      private Color color = Color.BLACK;
      private final String fontFamily = "Liberation Sans";
@@ -315,6 +316,14 @@
          return calcScale();
      }
 
+     public boolean getIntegerAxis() {
+         return integerAxis;
+     }
+
+     public void setIntegerAxis(boolean value) {
+         integerAxis = value;
+     }
+
      public void setTickFontSize(double size) {
          ticFontSize = size;
          ticFont = new Font(fontFamily, ticFontSize);
@@ -352,10 +361,60 @@
      private void getTickPositions() {
          double length = VERTICAL == getOrientation() ? getHeight() : getWidth();
          tInfo = getTickInfo(getLowerBound(), getUpperBound(), length);
-         ticFormatString = "%." + tInfo.nDecimals + "f";
+         ticFormatString = integerAxis ? "%d" : "%." + tInfo.nDecimals + "f";
+     }
+
+     private TickInfo getIntegerAxisInfo(double lower, double upper, double length) {
+         TickInfo tf = new TickInfo();
+         if (length > 0) {
+             double nTic1 = length / TARGET_PIX;
+             double range = upper - lower;
+             double scale = range / nTic1;
+             double logScale = Math.log10(scale);
+             double floorScale = Math.floor(logScale);
+             int nDecimals = 0;
+             tf.nDecimals = nDecimals;
+             double normalizedScale = scale / Math.pow(10.0, floorScale);
+             double minDelta = Double.MAX_VALUE;
+             double[] targetValues = {1.0, 2.0, 5.0, 10.0};
+             double selValue = 1.0;
+             for (double targetValue : targetValues) {
+                 double delta = Math.abs(normalizedScale - targetValue);
+                 if (delta < minDelta) {
+                     minDelta = delta;
+                     selValue = targetValue;
+                 }
+             }
+             double incValue = Math.round(selValue * Math.pow(10.0, floorScale));
+
+             tf.incr = incValue;
+             if ((lower + 1.2 * incValue) > upper) {
+                 tf.majorSpace = incValue;
+                 tf.minorSpace = incValue;
+                 tf.minorStart = (lower + upper) / 2.0;
+                 tf.majorStart = tf.minorStart;
+                 tf.centerMode = true;
+             } else {
+                 tf.majorSpace = incValue;
+                 tf.minorSpace = incValue;
+                 tf.minorStart = Math.ceil(lower / tf.minorSpace) * tf.minorSpace;
+                 tf.majorStart = Math.ceil(lower / tf.majorSpace) * tf.majorSpace;
+                 int nTicks = (int) Math.floor((upper - lower) / tf.majorSpace);
+                 tf.majorEnd = tf.majorStart + tf.majorSpace * nTicks;
+             }
+         } else {
+             tf.majorSpace = upper - lower;
+             tf.minorSpace = tf.majorSpace;
+             tf.minorStart = lower;
+             tf.majorStart = tf.minorStart;
+         }
+         return tf;
      }
 
      private TickInfo getTickInfo(double lower, double upper, double length) {
+         if (integerAxis) {
+             return getIntegerAxisInfo(lower, upper, length);
+         }
          TickInfo tf = new TickInfo();
          tf.centerMode = false;
          if (length > 0) {
@@ -478,7 +537,7 @@
                  double y1 = yOrigin;
                  double delta = Math.abs(value - Math.round(value / tInfo.majorSpace) * tInfo.majorSpace);
                  if (tInfo.centerMode || (delta < (tInfo.minorSpace / 10.0))) {
-                     String ticString = String.format(ticFormatString, value);
+                     String ticString = integerAxis ? String.format(ticFormatString, (int) value) :String.format(ticFormatString, value);
                      double y2 = yOrigin + ticSize;
                      gC.strokeLine(x, y1, x, y2);
                      if (tickLabelsVisible) {
@@ -542,7 +601,7 @@
                  double x1 = xOrigin;
                  double delta = Math.abs(value - Math.round(value / tInfo.majorSpace) * tInfo.majorSpace);
                  if (tInfo.centerMode || (delta < (tInfo.minorSpace / 10.0))) {
-                     String ticString = String.format(ticFormatString, value);
+                     String ticString = integerAxis ? String.format(ticFormatString, (int) value) :String.format(ticFormatString, value);
                      if (ticString.length() > ticStringLen) {
                          ticStringLen = ticString.length();
                      }
