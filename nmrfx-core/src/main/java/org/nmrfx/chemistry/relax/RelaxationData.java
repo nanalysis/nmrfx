@@ -34,61 +34,41 @@ import java.util.stream.Collectors;
 @PluginAPI("ring")
 public class RelaxationData implements RelaxationValues {
 
-    public enum relaxTypes {
-        R1("R1"), R2("R2"), T1RHO("T1rho"),
-        NOE("NOE"), S2("S2"),
-        RQ("RQ"), RAP("RAP");
-
-        private final String name;
-
-        relaxTypes(final String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
-    private final String id;
-    private final relaxTypes expType;
+    private final RelaxationSet relaxationSet;
     private final ResonanceSource resSource;
-    private final double field;
-    private final double temperature;
     private final Double value;
     private final Double error;
-    private final Map<String, String> extras;
     private final String key;
 
-    public RelaxationData(String id, relaxTypes expType, ResonanceSource resSource, double field, double temperature,
-                          Double value, Double error, Map<String, String> extras) {
+    public RelaxationData(RelaxationSet relaxationSet, ResonanceSource resSource,
+                          Double value, Double error) {
 
-        this.id = id;
-        this.expType = expType;
+        this.relaxationSet = relaxationSet;
         this.resSource = resSource;
-        this.field = field;
-        this.temperature = temperature;
         this.value = value;
         this.error = error;
-        this.extras = extras;
         this.key = toKey();
+        relaxationSet.add(this);
     }
 
     @Override
     public String toString() {
-        return "RelaxationData{" + "ID=" + getId() + ", expType=" + getExpType()
-                + ", atom=" + getResonanceSource().toString() + ", field=" + getField()
-                + ", temperature=" + getTemperature()
+        String name = relaxationSet.name();
+        double field = relaxationSet.field();
+        double temperature = relaxationSet.temperature();
+        return "RelaxationData{" + "ID=" + name + ", expType=" + relaxationSet.relaxType().getName()
+                + ", atom=" + getResonanceSource().toString() + ", field=" + field
+                + ", temperature=" + temperature
                 + ", value=" + getValue() + ", error=" + getError() + '}';
     }
 
     private String toKey() {
         char sepChar = ':';
         var stringBuilder = new StringBuilder();
-        stringBuilder.append(getId()).append(sepChar).
-                append(getExpType().getName()).append(sepChar).
-                append(Math.round(getField())).append(sepChar).
-                append(Math.round(getTemperature()));
+        stringBuilder.append(relaxationSet.name()).append(sepChar).
+                append(relaxationSet.relaxType().getName()).append(sepChar).
+                append(Math.round(relaxationSet.field())).append(sepChar).
+                append(Math.round(relaxationSet.temperature()));
         return stringBuilder.toString();
 
     }
@@ -97,46 +77,30 @@ public class RelaxationData implements RelaxationValues {
         return key;
     }
 
-    public static void add(String id, String type, ResonanceSource resSource, double field, double value, double error) {
-        type = type.toUpperCase();
-        if (type.equals("T1")) {
-            type = "R1";
-        } else if (type.equals("T2")) {
-            type = "R2";
-        }
-        relaxTypes relaxType = relaxTypes.valueOf(type.toUpperCase());
-        RelaxationData rData = new RelaxationData(id, relaxType, resSource,
-                field,
-                25.0, value, error, Collections.emptyMap());
-        resSource.getAtom().addRelaxationData(id, rData);
+    public static void add(RelaxationSet relaxationSet, ResonanceSource resSource,  double value, double error) {
+        RelaxationData rData = new RelaxationData(relaxationSet, resSource,
+                value, error);
+        resSource.getAtom().addRelaxationData(relaxationSet, rData);
     }
 
-    public String getId() {
-        return id;
+    public RelaxationSet getRelaxationSet() {
+        return relaxationSet;
     }
 
-    @Override
-    public String getName() {
-        return getExpType().getName();
-    }
 
     @Override
     public ResonanceSource getResonanceSource() {
         return resSource;
     }
 
-    public relaxTypes getExpType() {
-        return expType;
-    }
-
     @Override
     public String[] getParNames() {
-        return new String[]{getExpType().getName()};
+        return new String[]{relaxationSet.relaxType().getName()};
     }
 
     @Override
     public Double getValue(String name) {
-        if (name.equals(getExpType().getName())) {
+        if (name.equals(relaxationSet.relaxType().getName())) {
             return getValue();
         } else {
             return null;
@@ -145,19 +109,11 @@ public class RelaxationData implements RelaxationValues {
 
     @Override
     public Double getError(String name) {
-        if (name.equals(getExpType().getName())) {
+        if (name.equals(relaxationSet.relaxType().getName())) {
             return getError();
         } else {
             return null;
         }
-    }
-
-    public double getField() {
-        return field;
-    }
-
-    public double getTemperature() {
-        return temperature;
     }
 
     @Override
@@ -170,24 +126,20 @@ public class RelaxationData implements RelaxationValues {
         return error;
     }
 
-    public Map<String, String> getExtras() {
-        return extras;
-    }
-
-    public static Map<Long, EnumMap<relaxTypes, RelaxationData>> assembleAtomData(Atom atom) {
+    public static Map<Long, EnumMap<RelaxTypes, RelaxationData>> assembleAtomData(Atom atom) {
         var relaxData = atom.getRelaxationData();
-        Map<Long, EnumMap<relaxTypes, RelaxationData>> dataMap = new HashMap<>();
+        Map<Long, EnumMap<RelaxTypes, RelaxationData>> dataMap = new HashMap<>();
         Set<Long> fields = new HashSet<>();
         for (var entry : relaxData.entrySet()) {
-            RelaxationData data = entry.getValue();
-            fields.add(Math.round(data.getField()));
+            fields.add(Math.round(entry.getKey().field()));
         }
         for (var field : fields) {
-            EnumMap<relaxTypes, RelaxationData> values = new EnumMap<>(relaxTypes.class);
+            EnumMap<RelaxTypes, RelaxationData> values = new EnumMap<>(RelaxTypes.class);
             for (var entry : relaxData.entrySet()) {
                 RelaxationData data = entry.getValue();
-                if (Math.round(data.getField()) == field && !data.getExpType().getName().startsWith("S") && data.getValue() != null) {
-                    values.put(data.getExpType(), data);
+                RelaxationSet relaxationSet = entry.getKey();
+                if (Math.round(relaxationSet.field()) == field && !relaxationSet.relaxType().getName().startsWith("S") && data.getValue() != null) {
+                    values.put(relaxationSet.relaxType(), data);
                 }
             }
             if (!values.isEmpty()) {
@@ -197,12 +149,12 @@ public class RelaxationData implements RelaxationValues {
         return dataMap;
     }
 
-    private static String toFileString(Map<relaxTypes, RelaxationData> values, List<relaxTypes> types) {
+    private static String toFileString(Map<RelaxTypes, RelaxationData> values, List<RelaxTypes> types) {
         StringBuilder sBuilder = new StringBuilder();
         for (var type : types) {
             var data = values.get(type);
             if ((sBuilder.length() == 0) && (data != null)) {
-                sBuilder.append(String.format("%.2f", data.getField()));
+                sBuilder.append(String.format("%.2f", data.getRelaxationSet().field()));
             }
             Double value = data != null ? data.getValue() : null;
             Double error = data != null ? data.getError() : null;
@@ -215,19 +167,19 @@ public class RelaxationData implements RelaxationValues {
     public static void writeToFile(File file) throws IOException {
         MoleculeBase moleculeBase = MoleculeFactory.getActive();
         List<Atom> atoms = moleculeBase.getAtomArray();
-        Set<relaxTypes> typesUsed = EnumSet.noneOf(relaxTypes.class);
+        Set<RelaxTypes> typesUsed = EnumSet.noneOf(RelaxTypes.class);
 
 
         // figure out what relaxtypes are used so header can be setup
         for (Atom atom : atoms) {
             var dataMap = assembleAtomData(atom);
             for (var relaxData : dataMap.values()) {
-                for (var relaxType : relaxData.values()) {
-                    typesUsed.add(relaxType.getExpType());
+                for (var relaxType : relaxData.entrySet()) {
+                    typesUsed.add(relaxType.getKey());
                 }
             }
         }
-        List<relaxTypes> typeList = Arrays.stream(relaxTypes.values())
+        List<RelaxTypes> typeList = Arrays.stream(RelaxTypes.values())
                 .filter(typesUsed::contains).collect(Collectors.toList());
 
         try (FileWriter fileWriter = new FileWriter(file)) {
@@ -252,15 +204,15 @@ public class RelaxationData implements RelaxationValues {
         }
     }
 
-    public static Map<String, List<RelaxationData>> getRelaxationData(List<Atom> atoms) {
-        var relaxationData = new HashMap<String, List<RelaxationData>>();
+    public static Map<RelaxationSet, List<RelaxationData>> getRelaxationData(List<Atom> atoms) {
+        var relaxationData = new HashMap<RelaxationSet, List<RelaxationData>>();
         atoms.forEach(atom -> {
             for (var relaxEntry : atom.getRelaxationData().entrySet()) {
-                String relaxKey = relaxEntry.getValue().getKey();
-                List<RelaxationData> relaxList = relaxationData.get(relaxKey);
-                if (!relaxationData.containsKey(relaxKey)) {
+                RelaxationSet relaxationSet = relaxEntry.getKey();
+                List<RelaxationData> relaxList = relaxationData.get(relaxationSet);
+                if (!relaxationData.containsKey(relaxationSet)) {
                     relaxList = new ArrayList<>();
-                    relaxationData.put(relaxKey, relaxList);
+                    relaxationData.put(relaxationSet, relaxList);
                 }
                 relaxList.add(relaxEntry.getValue());
             }
