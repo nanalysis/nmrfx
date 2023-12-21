@@ -62,6 +62,7 @@ import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
 import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings.MOUSE_ACTION;
 import org.nmrfx.processor.gui.undo.*;
 import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.processing.ProcessingSection;
 import org.nmrfx.processor.project.ProjectText;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
@@ -999,16 +1000,16 @@ public class PolyChart extends Region {
     }
 
     protected void setPhaseDim(int phaseDim) {
-        String vecDimName = "";
+        ProcessingSection section = null;
         if ((controller.getChartProcessor() != null) && controller.isProcessControllerVisible()) {
-            vecDimName = controller.getChartProcessor().getVecDimName();
+            section = controller.getChartProcessor().getCurrentProcessingSection();
             datasetPhaseDim = controller.getChartProcessor().mapToDataset(phaseDim);
         } else {
             datasetPhaseDim = getFirstDatasetAttributes().map(attr -> attr.dim[phaseDim]).orElse(phaseDim);
         }
 
         phaseAxis = PolyChartAxes.X_INDEX;
-        if (is1D() || vecDimName.equals("D1")) {
+        if (is1D() || section.getFirstDimension() == 0) {
             phaseAxis = PolyChartAxes.X_INDEX;
         } else if (phaseDim > 0) {
             phaseAxis = PolyChartAxes.Y_INDEX;
@@ -1126,7 +1127,7 @@ public class PolyChart extends Region {
             return 0.0;
         }
 
-        String vecDimName = controller.getChartProcessor().getVecDimName();
+        ProcessingSection section = controller.getChartProcessor().getCurrentProcessingSection();
         int vecDim = controller.getChartProcessor().getVecDim();
         double position;
         double ppmPosition;
@@ -1134,7 +1135,7 @@ public class PolyChart extends Region {
         double refPPM;
         int size;
         double centerPPM;
-        if (is1D() || vecDimName.equals("D1")) {
+        if (is1D() || section.getFirstDimension()  == 0) {
             position = axes.getMode(0).getIndex(datasetAttributes, 0, crossHairs.getPosition(0, Orientation.VERTICAL));
             size = dataset.getSizeReal(datasetAttributes.dim[0]);
             refPoint = dataset.getRefPt(datasetAttributes.dim[0]);
@@ -1162,14 +1163,14 @@ public class PolyChart extends Region {
         if (dataset == null || datasetAttributes == null || controller.getChartProcessor() == null) {
             return Optional.empty();
         }
-        String vecDimName = controller.getChartProcessor().getVecDimName();
+        ProcessingSection section = controller.getChartProcessor().getCurrentProcessingSection();
         int vecDim = controller.getChartProcessor().getVecDim();
         double pt0;
         double pt1;
         double ppm0;
         double ppm1;
         int size;
-        if (is1D() || vecDimName.equals("D1")) {
+        if (is1D() || section.getFirstDimension() == 0) {
             ppm0 = crossHairs.getPosition(0, Orientation.VERTICAL);
             ppm1 = crossHairs.getPosition(1, Orientation.VERTICAL);
             pt0 = axes.getMode(0).getIndex(datasetAttributes, 0, ppm0);
@@ -1191,7 +1192,7 @@ public class PolyChart extends Region {
             pt0 = 0.0;
         }
         if (offsetByExtractRegion) {
-            int[] currentRegion = controller.getExtractRegion(vecDimName, size);
+            int[] currentRegion = controller.getExtractRegion(section, size);
             pt0 += currentRegion[0];
             pt1 += currentRegion[0];
         }
@@ -3445,11 +3446,11 @@ public class PolyChart extends Region {
         DatasetAttributes datasetAttributes = getFirstDatasetAttributes().orElse(null);
         DatasetBase dataset = getDataset();
         if (datasetAttributes != null && dataset != null) {
-            String vecDimName = "";
+            ProcessingSection section = null;
             if ((controller.getChartProcessor() != null) && controller.isProcessControllerVisible()) {
-                vecDimName = controller.getChartProcessor().getVecDimName();
+                section = controller.getChartProcessor().getCurrentProcessingSection();
             }
-            if (is1D() || vecDimName.equals("D1")) {
+            if (is1D() || section.getFirstDimension() == 0) {
                 int datasetDim = datasetAttributes.dim[0];
                 if (pivot == null) {
                     pivotPosition[datasetDim] = null;

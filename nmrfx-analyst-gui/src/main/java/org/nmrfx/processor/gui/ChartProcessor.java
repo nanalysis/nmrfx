@@ -87,8 +87,8 @@ public class ChartProcessor {
      * Map of lists of operations with key being the dimension the operations
      * apply to
      */
-    private Map<String, List<ProcessingOperationInterface>> backingMap = new TreeMap<>(new DimensionComparator());
-    protected ObservableMap<String, List<ProcessingOperationInterface>> mapOpLists = FXCollections.observableMap(backingMap);
+    private final Map<ProcessingSection, List<ProcessingOperationInterface>> backingMap = new LinkedHashMap<>();
+    protected ObservableMap<ProcessingSection, List<ProcessingOperationInterface>> mapOpLists = FXCollections.observableMap(backingMap);
     /**
      * Which Vec of the list of vectors should currently be displayed
      */
@@ -125,7 +125,7 @@ public class ChartProcessor {
      * processing. Is a string because it could refer to multiple dimensions
      * (for IST matrix processing, for example).
      */
-    private String vecDimName = "D1";
+    private ProcessingSection currentProcessingSection = null;
     /**
      * The name of the datasetFile that will be created when whole data file is
      * processed.
@@ -344,6 +344,7 @@ public class ChartProcessor {
     public void setFixDSP(boolean value) {
         fixDSP = value;
     }
+
     public Double getZeroFreq() {
         return zeroFreq;
     }
@@ -422,7 +423,7 @@ public class ChartProcessor {
         return result;
     }
 
-    private int[] loadVectors(int ... rows) {
+    private int[] loadVectors(int... rows) {
         NMRData nmrData = getNMRData();
         int nPoints = nmrData.getNPoints();
         if (vecDim != 0) {
@@ -459,7 +460,7 @@ public class ChartProcessor {
                 nmrData.readVector(vecDim, index + j, newVec);
                 if (nmrData.getGroupSize(vecDim) > 1) {
                     AcquisitionType type = acqMode[vecDim];
-                    if(type == null) {
+                    if (type == null) {
                         newVec.hcCombine();
                     } else {
                         newVec.eaCombine(type.getCoefficients());
@@ -527,8 +528,8 @@ public class ChartProcessor {
         }
     }
 
-    public List<ProcessingOperationInterface> getOperations(String dimName) {
-        return mapOpLists.get(dimName);
+    public List<ProcessingOperationInterface> getOperations(ProcessingSection section) {
+        return mapOpLists.get(section);
     }
 
     public void clearAllOperations() {
@@ -537,10 +538,10 @@ public class ChartProcessor {
         }
     }
 
-    public Map<String, List<ProcessingOperationInterface>> getScriptList() {
-        Map<String, List<ProcessingOperationInterface>> copyOfMapOpLists = new TreeMap<>(new DimensionComparator());
+    public Map<ProcessingSection, List<ProcessingOperationInterface>> getScriptList() {
+        Map<ProcessingSection, List<ProcessingOperationInterface>> copyOfMapOpLists = new LinkedHashMap<>();
         if (mapOpLists != null) {
-            for (Map.Entry<String, List<ProcessingOperationInterface>> entry : mapOpLists.entrySet()) {
+            for (Map.Entry<ProcessingSection, List<ProcessingOperationInterface>> entry : mapOpLists.entrySet()) {
                 List<ProcessingOperationInterface> newList = new ArrayList<>();
                 if (entry.getValue() != null) {
                     newList.addAll(entry.getValue());
@@ -551,7 +552,7 @@ public class ChartProcessor {
         return copyOfMapOpLists;
     }
 
-    public void setScripts(List<String> newHeaderList, Map<String, List<ProcessingOperationInterface>> opMap) {
+    public void setScripts(List<String> newHeaderList, Map<ProcessingSection, List<ProcessingOperationInterface>> opMap) {
         if (opMap == null || opMap.size() == 0) {
             return;
         }
@@ -579,9 +580,9 @@ public class ChartProcessor {
     }
 
     public void updateOpList() {
-       scriptValid = false;
+        scriptValid = false;
         List<ProcessingOperationInterface> newList = new ArrayList<>(processorController.getOperationList());
-        boolean clearedOperations = newList.isEmpty() && processorController.getActiveDimPane().orElse("").equals("D1");
+        boolean clearedOperations = newList.isEmpty() && processorController.getDefaultSection().equals(processorController.getActiveSection().orElse(null));
         areOperationListsValid.set(!clearedOperations);
         ProcessorController pController = processorController;
         if (pController.isViewingDataset() && pController.autoProcess.isSelected()) {
@@ -591,31 +592,30 @@ public class ChartProcessor {
         }
     }
 
-    public String getVecDimName() {
-        return vecDimName;
+    public ProcessingSection getCurrentProcessingSection() {
+        return currentProcessingSection;
     }
 
     public int getVecDim() {
         return vecDim;
     }
 
-    public void setVecDim(String dimName) {
+    public void setVecDim(ProcessingSection section) {
         int value;
         boolean isDim;
-        if (dimName.isBlank()) {
+        if (section == null) {
             value = 0;
             isDim = false;
         } else {
             try {
-                value = Integer.parseInt(dimName.substring(1));
-                value--;
+                value = section.getFirstDimension();
                 isDim = true;
             } catch (NumberFormatException nFE) {
                 value = 0;
                 isDim = false;
             }
         }
-        vecDimName = dimName;
+        currentProcessingSection = section;
         vecDim = value;
 
         updateAcqModeFromTdComb();
@@ -910,34 +910,29 @@ public class ChartProcessor {
         StringBuilder scriptBuilder = new StringBuilder();
         int nDatasetDims = 0;
         mapToDataset = new int[nDim];
-        for (Map.Entry<String, List<ProcessingOperationInterface>> entry : mapOpLists.entrySet()) {
-            if (entry.getValue() != null) {
-                String dimMode = entry.getKey().substring(0, 1);
-                String parDim = entry.getKey().substring(1);
-                if (dimMode.equals("D")) {
-                    int dimNum = -1;
-                    boolean parseInt = !parDim.isEmpty() && !parDim.contains(",") && !parDim.contains("_ALL");
-                    if (parseInt) {
-                        try {
-                            parDim = parDim.substring(0,1);
-                            dimNum = Integer.parseInt(parDim) - 1;
-                            if (dimNum >= nDim) {
-                                break;
-                            }
-                            mapToDataset[dimNum] = -1;
-                        } catch (NumberFormatException nFE) {
-                            log.warn("Unable to parse dimension number.", nFE);
-                        }
-                    }
-                    if (!processorController.refManager.getSkip(parDim) && dimNum != -1) {
+        Arrays.fill(mapToDataset, -1);
+        for (var entry : mapOpLists.entrySet()) {
+            ProcessingSection processingSection = entry.getKey();
+            if (processingSection.is1D()) {
+                int dimNum = processingSection.getFirstDimension();
+                if (dimNum >= nDim) {
+                    continue;
+                }
+                if (mapToDataset[dimNum] == -1) {
+                    String dimStr = String.valueOf(dimNum);
+                    if (!processorController.refManager.getSkip(dimStr) && dimNum != -1) {
                         mapToDataset[dimNum] = nDatasetDims++;
                     }
                 }
+            }
+        }
+        for (Map.Entry<ProcessingSection, List<ProcessingOperationInterface>> entry : mapOpLists.entrySet()) {
+            if (entry.getValue() != null) {
+                ProcessingSection processingSection = entry.getKey();
+                int group = processingSection.order();
                 List<ProcessingOperationInterface> scriptList = entry.getValue();
                 if ((scriptList != null) && (!scriptList.isEmpty())) {
-                    if (parDim.equals("_ALL")) {
-                        parDim = "";
-                    }
+                    String parDim = processingSection.dimString();
                     scriptBuilder.append(indent).append("DIM(").append(parDim).append(")");
                     scriptBuilder.append(lineSep);
                     for (ProcessingOperationInterface processingOperation : scriptList) {
@@ -1030,13 +1025,13 @@ public class ChartProcessor {
         acqMode = new AcquisitionType[nDim];
         processorController.removeOpListener();
         mapOpLists.clear();
-        Map<String, List<ProcessingOperationInterface>> listOfScripts = getScriptList();
+        Map<ProcessingSection, List<ProcessingOperationInterface>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>(headerList);
 
         // when setting data reset vecdim back to 0 as it could have been set to
         // a value higher than the number of dimensions
         vecDim = 0;
-        vecDimName = "D1";
+        currentProcessingSection = processorController.getDefaultSection();
         boolean[] complex = new boolean[nDim];
         for (int iDim = 0; iDim < nDim; iDim++) {
             complex[iDim] = data.getGroupSize(iDim) == 2;
@@ -1099,7 +1094,7 @@ public class ChartProcessor {
     }
 
     public void execScriptList(boolean reloadData) {
-        if (vecDimName.startsWith("D") && (vecDimName.indexOf(',') == -1)) {
+        if (currentProcessingSection.is1D()) {
             execScript(processorController.getScript(), true, reloadData);
         }
     }
