@@ -932,15 +932,62 @@ public class MatrixND implements MatrixType {
         return l1Norm;
     }
 
-    public double calcRealL1AndGradient(double mu) {
+    public record MatrixNorms(double l1, double l2, double sparse) {};
+    public MatrixNorms calcRealL1AndGradient(double mu) {
         double l1Norm = 0.0;
+        double l2Norm = 0.0;
+        double sumD = 0.0;
+        double max = 0.0;
+
         for (int i = 0; i < data.length; i++) {
             double absValue = FastMath.abs(data[i]);
             l1Norm += absValue;
+            l2Norm += absValue * absValue;
             double divisor = absValue < mu ? mu : absValue;  // Equation 3.1 in NESTA paper
             data[i] /= divisor;
+            sumD += data[i];
+            max = Math.max(absValue, max);
         }
-        return l1Norm;
+        l2Norm = Math.sqrt(l2Norm);
+        l1Norm /= max;
+
+        double sparse = l1Norm / l2Norm;
+        return new MatrixNorms(l1Norm, l2Norm, sparse);
+    }
+
+    public MatrixNorms calcSparse(double p, double q, double alpha, double beta, double eta) {
+        double lP = 0.0;
+        double lQ = 0.0;
+        for (int i = 0; i < data.length; i++) {
+            double x = data[i];
+            lP += Math.pow(x * x + alpha * alpha, p / 2.0) - Math.pow(alpha, p);
+            lQ += Math.pow(x, q);
+        }
+        lP = Math.pow(lP, 1.0 / p);
+        lQ = Math.pow(Math.pow(eta, q) + lQ, 1.0 / q);
+        double sparse = Math.log(Math.pow(lP + Math.pow(beta, p), 1.0 / p) / lQ);
+      //  double sparse = lP / lQ;
+        return new MatrixNorms(lP, lQ, sparse);
+    }
+    public MatrixNorms calcSparseGradient(double lP, double lQ, double sparse,  double q, double p, double alpha, double beta) {
+
+        double sumD = 0.0;
+        int nPos = 0;
+        for (int i = 0; i < data.length; i++) {
+            double x = data[i];
+            double ax = Math.abs(x);
+
+            double dlQ = q * Math.signum(x) * Math.pow(ax, q-1.0);
+            double dlP = p * (x * Math.pow(x*x + alpha * alpha, p/2.0 - 1.0));
+            double d1 = (1.0 / p) * dlP / (lP + Math.pow(beta, p));
+            double d2 = (1.0 / q) * (dlQ / lQ);
+            data[i] =  -(d1 - d2);
+            if (data[i] > 0.0) {
+                nPos++;
+            }
+            sumD += -(d1 -d2);
+        }
+        return new MatrixNorms(lP, lQ, sparse);
     }
 
     public SummaryStatistics calcRealStats() {

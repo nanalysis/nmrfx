@@ -35,6 +35,7 @@ public class NESTAMath {
     final double threshold;
     double tolFinal;
     double muFinal;
+    double muScale;
     final MatrixND matrix;
     final int[] zeroList;
     final double[] phase;
@@ -44,13 +45,14 @@ public class NESTAMath {
     double finalL1Norm = 0.0;
     FileWriter fileWriter = null;
 
-    public NESTAMath(MatrixND matrix, int[] zeroList, int iterations, int innerIterations, double tolFinal, double muFinal, double[] phase, boolean zeroAtStart, double threshold, String logFileName) {
+    public NESTAMath(MatrixND matrix, int[] zeroList, int iterations, int innerIterations, double tolFinal, double muFinal, double muScale, double[] phase, boolean zeroAtStart, double threshold, String logFileName) {
         this.matrix = matrix;
         this.zeroList = zeroList;
         this.outerIterations = iterations;
         this.innerIterations = innerIterations;
         this.tolFinal = tolFinal;
         this.muFinal = muFinal;
+        this.muScale = muScale;
         this.phase = phase;
         this.zeroAtStart = zeroAtStart;
         this.threshold = threshold;
@@ -95,8 +97,11 @@ public class NESTAMath {
         double[] yValues = new double[n];  // yk of page 5
         double[] wValues = new double[n];  // cumulative gradient
         double[] xPlug = new double[n];    // matrix values at beginning of inner loop
+        double[] tempX = new double[n];    // matrix values at beginning of inner loop
+
 
         double muStart = maxAbs * 0.9;  // based on page 11 of NESTA paper
+        double mu2Start = 2.5;
         // fixme  good value for muFinal?/ should this be an argument?
         // or should it be set automatically from data (fraction of largest value accounting for dynamic range)
         //   or based on noise
@@ -108,31 +113,32 @@ public class NESTAMath {
         if (tolFinal < 0.0) {
             tolFinal = 1.0 / initialL1Norm;
         }
-        if (muStart < muFinal) {
-            muStart = muFinal;
-        }
         if (tolStart < tolFinal) {
             tolStart = tolFinal;
         }
 
-        double muMult = FastMath.pow(muFinal / muStart, 1.0 / outerIterations);
+        double muMult = FastMath.pow(muFinal, 1.0 / outerIterations);
+        double mu2Mult = FastMath.pow(muScale, 1.0 / outerIterations);
         double tolMult = FastMath.pow(tolFinal / tolStart, 1.0 / outerIterations);
         DescriptiveStatistics dStats = new DescriptiveStatistics(statWinSize);
 
         totalIterations = 0;
         double mu = muStart;
+        double mu2 = mu2Start;
         double tol = tolStart;
         matrix.copyDataTo(xPlug);
 
         // Outer iterations are the so-called Continuation Steps of the NESTA paper
         for (int oIter = 0; oIter < outerIterations; oIter++) {
             mu *= muMult;
+            mu2 *= mu2Mult;
             tol *= tolMult;
             Arrays.fill(wValues, 0.0);
             dStats.clear();
             if (fileWriter != null) {
                 fileWriter.write(String.format("iter %5d mu %7.3f tol %9.7f\n", oIter, mu, tol));
             }
+            double bestNorm = Double.MAX_VALUE;
 
             for (int iIter = 0; iIter < innerIterations; iIter++) {
                 totalIterations++;
@@ -142,23 +148,48 @@ public class NESTAMath {
                 // fixme think about the fact that mu used in this method (multiplying gradient) is time domain data
                 // whereas in calcRealL1AndGradient its used on frequency domain data
                 // should it be scaled in some way?
-                double l1Norm = gradMatrix.calcRealL1AndGradient(mu);
-                // Convergence criterion Section 3.5 of NESTAMath Paper
+                double q = 2;
+                double p = 0.75;
+                double alphaS = 1.0e-5;
+                double beta = 3.0e-3;
+                double eta = 1.0e-1;
+                MatrixND.MatrixNorms norms;
+                if (true) {
+//                    norms = gradMatrix.calcSparse(1.0, 2.0, 0.0, 0.0, 0.0);
+//                    norms = gradMatrix.calcSparseGradient(norms.l1(),norms.l2(), norms.sparse(),
+//                            q, p, alphaS, beta);
+                   norms =  gradMatrix.calcRealL1AndGradient(mu);
+                } else {
+                    norms = gradMatrix.calcSparse(p, q, alphaS, beta, eta);
+                    norms = gradMatrix.calcSparseGradient(norms.l1(),norms.l2(), norms.sparse(),
+                             q, p, alphaS, beta);
+                }
+
+                    // Convergence criterion Section 3.5 of NESTAMath Paper
                 // changed to require at least statWinSize innerIterations
-                finalL1Norm = l1Norm;
+                double l1Norm = norms.l1();
+                double l2Norm = norms.l2();
+               // double l1l2Ratio = l1Norm / l2Norm;
+                double norm = norms.l1();
+                finalL1Norm = norm;
                 int minIter = 3;
+//                System.out.printf("tIter %4d iIter %4d mu %9.5f tol %9.7f l1 %9.5f l2 %9.5f l1/l2 %9.5f\n",
+//                        totalIterations, iIter, mu, tol, l1Norm, l2Norm, norm);
                 if (iIter >= minIter) {
                     double mean = dStats.getMean();
-                    double delta = FastMath.abs(l1Norm - mean) / mean;
+                    double delta = (norm - mean) / mean;
+                    double absDelta = Math.abs(delta);
                     if (fileWriter != null) {
                         fileWriter.write(String.format("tIter %4d iIter %4d mean %9.5f delta %9.7f l1 %9.5f\n", totalIterations, iIter, mean, delta, l1Norm));
                     }
-                    if ((iIter > minIter) && (delta < tol)) {
+
+                    if ((iIter > minIter) && (absDelta < tol)) {
+                        System.arraycopy(tempX, 0, xPlug, 0, xPlug.length);
                         break;
                     }
                 }
 
-                dStats.addValue(l1Norm);
+                dStats.addValue(norm);
                 gradMatrix.doHIFT(0.5);
 
                 // values for alpha and tau shown on bottom of page 5 of NESTA paper
@@ -173,14 +204,18 @@ public class NESTAMath {
                 for (int i = 0; i < n; i++) {
                     double mValue = matrix.getValueAtIndex(i);
                     double gValue = gradMatrix.getValueAtIndex(i);
-                    yValues[i] = mValue - mu * gValue; // compare to q of eq 3.7
+                    yValues[i] = mValue -  mu2 * gValue; // compare to q of eq 3.7
                     wValues[i] += alpha * gValue;
-                    zValues[i] = xPlug[i] - mu * wValues[i];  // compare to q of eq 3.12
+                    zValues[i] = xPlug[i] - mu2 * wValues[i];  // compare to q of eq 3.12
                 }
                 for (int i : zeroList) {
                     matrix.setValueAtIndex(i, tau * zValues[i] + (1.0 - tau) * yValues[i]);
                 }
+                if (norm < bestNorm) {
+                    matrix.copyDataTo(tempX);
+                }
             }
+            matrix.copyDataFrom(tempX);
             matrix.copyDataTo(xPlug);
         }
         if (fileWriter != null) {

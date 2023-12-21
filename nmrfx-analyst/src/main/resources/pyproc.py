@@ -2451,7 +2451,7 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     return op
 
 
-def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=False, zeroAtStart=True, threshold=0.0, disabled=False, vector=None, process=None):
+def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6, muScale=2, phase=None, logToFile=False, zeroAtStart=True, threshold=0.0, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for NUS processing.  This version
     requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
    
@@ -2472,9 +2472,14 @@ def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=Fa
         amax : 10
         Final tolerance for inner iterations is 10 raised to the negative of this number.  For example, 5 gives 1.0e-5.
     muFinal : real
-        amin : -2
-        min : -2
-        max : 9
+        amin : 1
+        min : 1
+        max : 7
+        Final mu value is 10 raised to the negative of this number.  For example, 5 gives 1.0e-5.
+    muScale : real
+        amin : -2 
+        min : -2 
+        max : 5
         Final mu value is 10 raised to the negative of this number.  For example, 5 gives 1.0e-5.
     phase : []
         Array of phase values, 2 per indirect dimension.
@@ -2496,6 +2501,7 @@ def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=Fa
             phaseList.add(float(value))
     tolFinalReal = math.pow(10.0,-tolFinal)
     muFinalReal = math.pow(10.0,-muFinal)
+    muScaleReal = math.pow(10.0,-muScale)
     process = process or getCurrentProcess()
     global fidInfo
     logFileName = None
@@ -2510,7 +2516,7 @@ def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=Fa
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
-    op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, schedule, phaseList, zeroAtStart, threshold, logFileName)
+    op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, muScaleReal, schedule, phaseList, zeroAtStart, threshold, logFileName)
 
     if (vector != None):
         op.eval(vector)
@@ -2802,6 +2808,10 @@ def PRINT(disabled=False, vector=None, process=None):
 
 def WRITE(index=-1, dimag=True, isabled=False, disabled=False, vector=None, process=None):
     '''Write vector to dataset (normally done automatically).
+    Parameters
+    ---------
+    index : int
+        Index of vector to write (-1 means default) 
     dimag : bool
         Discard imaginary values (make vector real).
 '''
