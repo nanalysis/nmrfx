@@ -200,7 +200,7 @@ public class ChartProcessor {
             int nDimChars = 0;
             for (int i = 0; i < acqOrderArray.length; i++) {
                 acqOrderArray[i] = acqOrderArray[i].trim();
-                if (acqOrderArray[i].length() == 0) {
+                if (acqOrderArray[i].isEmpty()) {
                     continue;
                 }
                 if (acqOrderArray[i].charAt(0) == '\'') {
@@ -254,31 +254,35 @@ public class ChartProcessor {
 
         if (nmrData != null) {
             acqOrder = nmrData.getAcqOrderShort();
-            if (!acqOrder.equals("")) {
+            if (!acqOrder.isEmpty()) {
                 if (useQuotes) {
                     acqOrder = "'" + acqOrder + "'";
                 }
             } else {
                 String[] acqOrderArray = nmrData.getAcqOrder();
                 if (acqOrderArray != null) {
-                    StringBuilder sBuilder = new StringBuilder();
-                    for (int i = 0; i < acqOrderArray.length; i++) {
-                        if (i != 0) {
-                            sBuilder.append(',');
-                        }
-                        if (useQuotes) {
-                            sBuilder.append("'");
-                        }
-                        sBuilder.append(acqOrderArray[i]);
-                        if (useQuotes) {
-                            sBuilder.append("'");
-                        }
-                    }
-                    acqOrder = sBuilder.toString();
+                    acqOrder = buildAcqOrder(useQuotes, acqOrderArray);
                 }
             }
         }
         return acqOrder;
+    }
+
+    private static String buildAcqOrder(boolean useQuotes, String[] acqOrderArray) {
+        StringBuilder sBuilder = new StringBuilder();
+        for (int i = 0; i < acqOrderArray.length; i++) {
+            if (i != 0) {
+                sBuilder.append(',');
+            }
+            if (useQuotes) {
+                sBuilder.append("'");
+            }
+            sBuilder.append(acqOrderArray[i]);
+            if (useQuotes) {
+                sBuilder.append("'");
+            }
+        }
+        return sBuilder.toString();
     }
 
     public String getArraySizes() {
@@ -308,7 +312,7 @@ public class ChartProcessor {
             int iDim = -1;
             for (String sizeArg : arraySizeArray) {
                 iDim++;
-                if (sizeArg.length() == 0) {
+                if (sizeArg.isEmpty()) {
                     continue;
                 }
                 try {
@@ -359,21 +363,17 @@ public class ChartProcessor {
             index = rows[0];
         }
         VecIndex vecIndex = null;
-        if (vecDim == 0) {
-            if (multiVecCounter != null) {
-                if (rows.length == 1) {
-                    vecIndex = multiVecCounter.getNextGroup(index);
-                } else {
-                    index = multiVecCounter.findOutGroup(rows);
-                    vecIndex = multiVecCounter.getNextGroup(index);
+        if ((vecDim == 0) && (multiVecCounter != null)) {
+            if (rows.length != 1) {
+                index = multiVecCounter.findOutGroup(rows);
+            }
+            vecIndex = multiVecCounter.getNextGroup(index);
+            if (nmrData.getSampleSchedule() != null) {
+                vecIndex = nmrData.getSampleSchedule().convertToNUSGroup(vecIndex, index);
+                if (vecIndex == null) {
+                    log.info("No vec");
                 }
-                if (nmrData.getSampleSchedule() != null) {
-                    vecIndex = nmrData.getSampleSchedule().convertToNUSGroup(vecIndex, index);
-                    if (vecIndex == null) {
-                        log.info("No vec");
-                    }
 
-                }
             }
         }
         return vecIndex;
@@ -423,6 +423,36 @@ public class ChartProcessor {
         return result;
     }
 
+    private void prepDirectVec(NMRData nmrData, VecIndex vecIndex, int[] fileIndices, Vec newVec, int j) {
+        if (vecIndex == null) {
+            fileIndices[j] = -1;
+            nmrData.readVector(0, newVec);
+            if (nmrData.getSampleSchedule() != null) {
+                newVec.zeros();
+            }
+        } else {
+            fileIndices[j] = vecIndex.getInVec(j);
+            nmrData.readVector(vecIndex.getInVec(j), newVec);
+        }
+    }
+
+    private void prepIndirectVec(NMRData nmrData, int[] rows, int[] fileIndices, Vec newVec, int j) {
+        int index = 0;
+        if (rows.length > 0) {
+            index = rows[0];
+        }
+        fileIndices[j] = index + j;
+        nmrData.readVector(vecDim, index + j, newVec);
+        if (nmrData.getGroupSize(vecDim) > 1) {
+            AcquisitionType type = acqMode[vecDim];
+            if (type == null) {
+                newVec.hcCombine();
+            } else {
+                newVec.eaCombine(type.getCoefficients());
+            }
+        }
+    }
+
     private int[] loadVectors(int... rows) {
         NMRData nmrData = getNMRData();
         int nPoints = nmrData.getNPoints();
@@ -439,37 +469,14 @@ public class ChartProcessor {
         for (int j = 0; j < nVectors; j++) {
             Vec newVec = new Vec(nPoints, nmrData.isComplex(vecDim));
             Vec saveVec = new Vec(nPoints, nmrData.isComplex(vecDim));
-
             if (vecDim == 0) {
-                if (vecIndex == null) {
-                    fileIndices[j] = -1;
-                    nmrData.readVector(0, newVec);
-                    if (nmrData.getSampleSchedule() != null) {
-                        newVec.zeros();
-                    }
-                } else {
-                    fileIndices[j] = vecIndex.getInVec(j);
-                    nmrData.readVector(vecIndex.getInVec(j), newVec);
-                }
+                prepDirectVec(nmrData, vecIndex, fileIndices, newVec, j);
             } else {
-                int index = 0;
-                if (rows.length > 0) {
-                    index = rows[0];
-                }
-                fileIndices[j] = index + j;
-                nmrData.readVector(vecDim, index + j, newVec);
-                if (nmrData.getGroupSize(vecDim) > 1) {
-                    AcquisitionType type = acqMode[vecDim];
-                    if (type == null) {
-                        newVec.hcCombine();
-                    } else {
-                        newVec.eaCombine(type.getCoefficients());
-                    }
-                }
+                prepIndirectVec(nmrData, rows, fileIndices, newVec, j);
             }
-
             newVec.setPh0(0.0);
             newVec.setPh1(0.0);
+
             newVec.copy(saveVec);
             int[][] pt = new int[1][2];
             int[] dim = new int[1];
@@ -553,7 +560,7 @@ public class ChartProcessor {
     }
 
     public void setScripts(List<String> newHeaderList, Map<ProcessingSection, List<ProcessingOperationInterface>> opMap) {
-        if (opMap == null || opMap.size() == 0) {
+        if (opMap == null || opMap.isEmpty()) {
             return;
         }
         mapOpLists.clear();
@@ -602,17 +609,13 @@ public class ChartProcessor {
 
     public void setVecDim(ProcessingSection section) {
         int value;
-        boolean isDim;
         if (section == null) {
             value = 0;
-            isDim = false;
         } else {
             try {
                 value = section.getFirstDimension();
-                isDim = true;
             } catch (NumberFormatException nFE) {
                 value = 0;
-                isDim = false;
             }
         }
         currentProcessingSection = section;
@@ -786,7 +789,7 @@ public class ChartProcessor {
     }
 
     protected String removeDatasetName(String script) {
-        return script.replaceFirst("CREATE\\([^\\)]++\\)", "CREATE(_DATASET_)");
+        return script.replaceFirst("CREATE\\([^)]++\\)", "CREATE(_DATASET_)");
     }
 
     protected Optional<String> fixDatasetName(String script) {
@@ -905,9 +908,7 @@ public class ChartProcessor {
         return !mapOpLists.isEmpty();
     }
 
-    private String getScriptCmds(int nDim, String indent) {
-        String lineSep = System.lineSeparator();
-        StringBuilder scriptBuilder = new StringBuilder();
+    void setupMapToDataset(int nDim) {
         int nDatasetDims = 0;
         mapToDataset = new int[nDim];
         Arrays.fill(mapToDataset, -1);
@@ -920,36 +921,27 @@ public class ChartProcessor {
                 }
                 if (mapToDataset[dimNum] == -1) {
                     String dimStr = String.valueOf(dimNum);
-                    if (!processorController.refManager.getSkip(dimStr) && dimNum != -1) {
+                    if (!processorController.refManager.getSkip(dimStr)) {
                         mapToDataset[dimNum] = nDatasetDims++;
                     }
                 }
             }
         }
+    }
+
+    private String getScriptCmds(int nDim, String indent) {
+        String lineSep = System.lineSeparator();
+        StringBuilder scriptBuilder = new StringBuilder();
+        setupMapToDataset(nDim);
         for (Map.Entry<ProcessingSection, List<ProcessingOperationInterface>> entry : mapOpLists.entrySet()) {
             if (entry.getValue() != null) {
                 ProcessingSection processingSection = entry.getKey();
-                int group = processingSection.order();
                 List<ProcessingOperationInterface> scriptList = entry.getValue();
-                if ((scriptList != null) && (!scriptList.isEmpty())) {
+                if (!scriptList.isEmpty()) {
                     String parDim = processingSection.dimString();
                     scriptBuilder.append(indent).append("DIM(").append(parDim).append(")");
                     scriptBuilder.append(lineSep);
-                    for (ProcessingOperationInterface processingOperation : scriptList) {
-                        if (processingOperation instanceof ProcessingOperation op) {
-                            scriptBuilder.append(indent).append(op);
-                            scriptBuilder.append(lineSep);
-                        } else if (processingOperation instanceof ProcessingOperationGroup groupOp) {
-                            if (!groupOp.isDisabled()) {
-                                for (var op : groupOp.getProcessingOperationList()) {
-                                    if (!op.isDisabled()) {
-                                        scriptBuilder.append(indent).append(op);
-                                        scriptBuilder.append(lineSep);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    addOpLines(indent, scriptList, scriptBuilder, lineSep);
                 }
             }
         }
@@ -957,18 +949,31 @@ public class ChartProcessor {
         return scriptBuilder.toString();
     }
 
+    private static void addOpLines(String indent, List<ProcessingOperationInterface> scriptList, StringBuilder scriptBuilder, String lineSep) {
+        for (ProcessingOperationInterface processingOperation : scriptList) {
+            if (processingOperation instanceof ProcessingOperation op) {
+                scriptBuilder.append(indent).append(op);
+                scriptBuilder.append(lineSep);
+            } else if ((processingOperation instanceof ProcessingOperationGroup groupOp) && !groupOp.isDisabled()) {
+                for (var op : groupOp.getProcessingOperationList()) {
+                    if (!op.isDisabled()) {
+                        scriptBuilder.append(indent).append(op);
+                        scriptBuilder.append(lineSep);
+                    }
+                }
+            }
+        }
+    }
+
     private void setFlags(Map<String, Boolean> flags) {
         getNMRData().setFidFlags(flags);
     }
 
-    private void updateCounter() {
-        NMRData nmrData = getNMRData();
-        String[] acqOrder = nmrData.getAcqOrder();
-
-        int nDim = nmrData.getNDim();
+    private int getArraySize(NMRData nmrData, String[] acqOrder) {
         int nArray = 0;
+        int nDim = nmrData.getNDim();
         for (String acqOrderElem : acqOrder) {
-            if ((acqOrderElem.length() > 0) && (acqOrderElem.charAt(0) == 'a')) {
+            if ((!acqOrderElem.isEmpty()) && (acqOrderElem.charAt(0) == 'a')) {
                 nArray++;
             }
         }
@@ -980,6 +985,15 @@ public class ChartProcessor {
                 }
             }
         }
+        return nArray;
+    }
+
+    private void updateCounter() {
+        NMRData nmrData = getNMRData();
+        String[] acqOrder = nmrData.getAcqOrder();
+
+        int nDim = nmrData.getNDim();
+        int nArray = getArraySize(nmrData, acqOrder);
 
         int[] tdSizes = new int[nDim + nArray];
         boolean[] complex = new boolean[nDim + nArray];
@@ -1099,6 +1113,89 @@ public class ChartProcessor {
         }
     }
 
+    void processException(ProcessOps process, Exception pE) {
+        if (pE instanceof PyException pyE) {
+            if (pyE.getCause() == null) {
+                if (pE.getLocalizedMessage() != null) {
+                    processorController.setProcessingStatus("pyerror " + pE.getLocalizedMessage(), false, pE);
+                } else {
+                    processorController.setProcessingStatus("pyerror " + pyE.type.toString(), false, pE);
+                }
+            } else {
+                processorController.setProcessingStatus(pyE.getCause().getMessage(), false, pE);
+            }
+            log.warn(pyE.getMessage(), pyE);
+        } else {
+            processorController.setProcessingStatus("error " + pE.getMessage(), false, pE);
+        }
+        int j = 0;
+        for (Vec saveVec : saveVectors) {
+            Vec loadVec = vectors.get(j);
+            saveVec.copy(loadVec);
+            process.addVec(loadVec);
+            j++;
+        }
+    }
+
+    private void execProcess(ProcessOps process) {
+        if (!vectors.isEmpty()) {
+            process.clearVectors();
+            int i = 0;
+            for (Vec saveVec : saveVectors) {
+                Vec loadVec = vectors.get(i);
+                saveVec.copy(loadVec);
+                process.addVec(loadVec);
+                i++;
+            }
+            try {
+                processorController.clearProcessingTextLabel();
+                process.exec();
+            } catch (IncompleteProcessException e) {
+                log.warn("error message: {}", e.getMessage(), e);
+                processorController.setProcessingStatus(e.op + " " + e.index + ": " + e.getMessage(), false, e);
+                log.warn(e.getMessage(), e);
+                int j = 0;
+                for (Vec saveVec : saveVectors) {
+                    Vec loadVec = vectors.get(j);
+                    saveVec.copy(loadVec);
+                    process.addVec(loadVec);
+                    j++;
+                }
+            } catch (Exception pE) {
+                processorController.setProcessingStatus(pE.getMessage(), false, pE);
+            }
+        }
+    }
+
+    boolean setupProcess(NMRData nmrData, String script, boolean reloadData) {
+        if (nmrData != null) {
+            NMRDataUtil.setCurrentData(nmrData);
+        }
+        AnalystPythonInterpreter.exec("useLocal()");
+        if (nmrData != null) {
+            AnalystPythonInterpreter.exec("fidInfo = makeFIDInfo()");
+        }
+        if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
+            return false;
+        }
+        if (processorController.refManager == null) {
+            log.info("null ref manager");
+            return false;
+        }
+        processorController.clearProcessingTextLabel();
+        if (nmrData != null) {
+            String parString = processorController.refManager.getScriptReferenceLines(nmrData.getNDim(), "");
+            AnalystPythonInterpreter.exec(parString);
+        }
+        if (reloadData) {
+            loadVectors(0);
+        }
+        if (processorController.isViewingFID()) {
+            AnalystPythonInterpreter.exec(script);
+        }
+        return true;
+    }
+
     public void execScript(String script, boolean doProcess, boolean reloadData) {
         Processor.getProcessor().clearProcessorError();
         ProcessOps process = getProcess();
@@ -1114,96 +1211,23 @@ public class ChartProcessor {
         NMRData nmrData = getNMRData();
         Processor.getProcessor().addDataset(nmrData);
         try {
-            if (nmrData != null) {
-                NMRDataUtil.setCurrentData(nmrData);
-            }
-            AnalystPythonInterpreter.exec("useLocal()");
-            if (nmrData != null) {
-                AnalystPythonInterpreter.exec("fidInfo = makeFIDInfo()");
-            }
-            if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
+            if (!setupProcess(nmrData, script, reloadData)) {
                 return;
-            }
-            if (processorController.refManager == null) {
-                log.info("null ref manager");
-                return;
-            }
-            processorController.clearProcessingTextLabel();
-            if (nmrData != null) {
-                String parString = processorController.refManager.getScriptReferenceLines(nmrData.getNDim(), "");
-                AnalystPythonInterpreter.exec(parString);
-            }
-            if (reloadData) {
-                loadVectors(0);
-            }
-            if (processorController.isViewingFID()) {
-                AnalystPythonInterpreter.exec(script);
             }
         } catch (Exception pE) {
-            if (pE instanceof IncompleteProcessException) {
-                processorController.setProcessingStatus(pE.getMessage(), false, pE);
-            } else if (pE instanceof PyException pyE) {
-                if (pyE.getCause() == null) {
-                    if (pE.getLocalizedMessage() != null) {
-                        processorController.setProcessingStatus("pyerror " + pE.getLocalizedMessage(), false, pE);
-                    } else {
-                        processorController.setProcessingStatus("pyerror " + pyE.type.toString(), false, pE);
-                    }
-                } else {
-                    processorController.setProcessingStatus(pyE.getCause().getMessage(), false, pE);
-                }
-                log.warn(pyE.getMessage(), pyE);
-            } else {
-                processorController.setProcessingStatus("error " + pE.getMessage(), false, pE);
-            }
-            int j = 0;
-            for (Vec saveVec : saveVectors) {
-                Vec loadVec = vectors.get(j);
-                saveVec.copy(loadVec);
-                process.addVec(loadVec);
-                j++;
-            }
+            processException(process, pE);
             return;
         }
         if (doProcess) {
-            if (!vectors.isEmpty()) {
-                process.clearVectors();
-                int i = 0;
-                for (Vec saveVec : saveVectors) {
-                    Vec loadVec = vectors.get(i);
-                    saveVec.copy(loadVec);
-                    process.addVec(loadVec);
-                    i++;
+            execProcess(process);
+            if (!processorController.isViewingDataset() && !vectors.isEmpty()) {
+                Vec loadVec = vectors.get(0);
+                if (loadVec.getFreqDomain() != lastWasFreqDomain) {
+                    chart.autoScale();
+                } else {
+                    chart.refresh();
                 }
-                try {
-                    processorController.clearProcessingTextLabel();
-                    process.exec();
-                } catch (IncompleteProcessException e) {
-                    log.warn("error message: {}", e.getMessage(), e);
-                    processorController.setProcessingStatus(e.op + " " + e.index + ": " + e.getMessage(), false, e);
-                    log.warn(e.getMessage(), e);
-                    int j = 0;
-                    for (Vec saveVec : saveVectors) {
-                        Vec loadVec = vectors.get(j);
-                        saveVec.copy(loadVec);
-                        process.addVec(loadVec);
-                        j++;
-                    }
-                } catch (Exception pE) {
-                    processorController.setProcessingStatus(pE.getMessage(), false, pE);
-
-                }
-            }
-            if (!processorController.isViewingDataset()) {
-                if (!vectors.isEmpty()) {
-                    Vec loadVec = vectors.get(0);
-                    if (loadVec.getFreqDomain() != lastWasFreqDomain) {
-                        chart.autoScale();
-                    } else {
-                        chart.refresh();
-                    }
-                    lastWasFreqDomain = loadVec.getFreqDomain();
-                }
+                lastWasFreqDomain = loadVec.getFreqDomain();
             }
         }
     }
@@ -1247,7 +1271,7 @@ public class ChartProcessor {
         return scriptBuilder.toString();
     }
 
-    record VecIndexScore(VecIndex vecIndex, int maxIndex, double score) implements Comparable<VecIndexScore> {
+    public record VecIndexScore(VecIndex vecIndex, int maxIndex, double score) implements Comparable<VecIndexScore> {
         @Override
         public int compareTo(VecIndexScore o) {
             // compare on score first
