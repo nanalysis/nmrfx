@@ -208,7 +208,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     Map<ProcessingSection, PhaserAndPane> phasersPanes = new HashMap<>();
     ScriptGUI scriptGUI = new ScriptGUI();
 
-    ProcessingSection processingSection1 = new ProcessingSection(1, new int[1], "D");
+    ProcessingSection processingSection1;
 
 
     public static ProcessorController create(FXMLController fxmlController, NmrControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
@@ -219,6 +219,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         chart.setProcessorController(controller);
         controller.chartProcessor.setChart(chart);
         controller.chartProcessor.setFxmlController(fxmlController);
+        controller.processingSection1 = controller.chartProcessor.getProcessingSection(1, new int[1], "D");
         controller.nmrControlRightSidePane = nmrControlRightSidePane;
         fxmlController.processorCreated(controller.mainBox);
         nmrControlRightSidePane.addContent(controller);
@@ -408,7 +409,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         dimChoice.getSelectionModel().selectedItemProperty().removeListener(dimListener);
         dimensionPanes.clear();
         dimAccordion.getPanes().clear();
-        currentSection = new ProcessingSection(1, new int[1], "SIMULATION");
+        currentSection = chartProcessor.getProcessingSection(1, new int[1], "SIMULATION");
         var titledPane = addTitlePane(currentSection, "SIMULATION");
         titledPane.setExpanded(true);
         accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentSection).getContent();
@@ -417,12 +418,13 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     public ProcessingSection getDefaultSection() {
         return processingSection1;
     }
+
     protected void updateDimChoice(boolean[] complex) {
         dimensionPanes.clear();
         dimAccordion.getPanes().clear();
         int nDim = complex.length;
         dimAccordion.getPanes().add(referencePane);
-        ProcessingSection referenceSection = new ProcessingSection(0, null, "D1-REF");
+        ProcessingSection referenceSection = chartProcessor.getProcessingSection(0, null, "D1-REF");
         referencePane.expandedProperty().addListener(c -> setActivePane(referenceSection, referencePane));
 
         refManager.updateReferencePane(getNMRData(), nDim);
@@ -434,18 +436,20 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             if (i == 1) {
                 section = processingSection1;
             } else {
-                section = new ProcessingSection(1, dims, "D");
+                section = chartProcessor.getProcessingSection(1, dims, "D");
             }
             addTitlePane(section, "DIMENSION " + i);
             dimList.add(section);
-            if ((i == 1) && (nDim == 2)) {
-                int[] adims = new int[nDim];
-                for (int j = 1; j <= nDim; j++) {
-                    adims[j - 1] = j - 1;
+            if (false) {
+                if ((i == 1) && (nDim == 2)) {
+                    int[] adims = new int[nDim];
+                    for (int j = 1; j <= nDim; j++) {
+                        adims[j - 1] = j - 1;
+                    }
+                    ProcessingSection sectionI = chartProcessor.getProcessingSection(1, adims, "I");
+                    addTitlePane(sectionI, "INDIRECT MATRIX");
+                    dimList.add(sectionI);
                 }
-                ProcessingSection sectionI = new ProcessingSection(1, adims, "I");
-                addTitlePane(sectionI, "INDIRECT MATRIX");
-                dimList.add(sectionI);
             }
 
             if ((i == 1) && (nDim > 2)) {
@@ -454,19 +458,19 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 for (int j = 3; j <= nDim; j++) {
                     adims[j - 2] = j - 1;
                 }
-                ProcessingSection sectionI = new ProcessingSection(1, adims, "I");
+                ProcessingSection sectionI = chartProcessor.getProcessingSection(1, adims, "I");
                 addTitlePane(sectionI, "INDIRECT MATRIX");
                 dimList.add(sectionI);
             }
         }
         if (nDim > 1) {
-            ProcessingSection section = new ProcessingSection(1, new int[0], "D");
+            ProcessingSection section = chartProcessor.getProcessingSection(1, new int[0], "D");
 
             addTitlePane(section, "FULL DATASET");
 
             for (int i = 1; i <= nDim; i++) {
                 int[] dims = {i - 1};
-                ProcessingSection sectionP = new ProcessingSection(2, dims, "D");
+                ProcessingSection sectionP = chartProcessor.getProcessingSection(2, dims, "D");
                 addTitlePane(sectionP, "DIMENSION " + i + " (post processing)");
             }
         }
@@ -1054,10 +1058,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     public void updateAccordion(ProcessingSection section, List<ProcessingOperationInterface> processingOperations) {
         var titledPane = dimensionPanes.get(section);
-        System.out.println(section + " se " + section.hashCode());
-        for (var key:dimensionPanes.keySet()) {
-            System.out.println(key + " tp " + key.hashCode());
-        }
         if (titledPane == null) {
             return;
         }
@@ -1354,6 +1354,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         ApodizationGroup apodizationGroup = null;
         BaselineGroup baselineGroup = null;
         NUSGroup nusGroup = null;
+        int order = 1;
         for (String line : lines) {
             line = line.trim();
             if (line.isEmpty()) {
@@ -1392,9 +1393,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                         } else {
                             dimName = "I";
                         }
-                        ProcessingSection section = new ProcessingSection(1, dimNums, dimName);
+                        ProcessingSection section = chartProcessor.getProcessingSection(order, dimNums, dimName);
                         if (mapOpLists.containsKey(section)) {
-                            section = new ProcessingSection(2, dimNums, "D");
+                            order++;
+                            section = chartProcessor.getProcessingSection(order, dimNums, "D");
                         }
                         mapOpLists.put(section, dimList);
 

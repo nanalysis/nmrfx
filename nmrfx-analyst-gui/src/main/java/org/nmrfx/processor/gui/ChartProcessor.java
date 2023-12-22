@@ -136,11 +136,17 @@ public class ChartProcessor {
      */
     private MultiVecCounter multiVecCounter;
 
+    private Map<ProcessingSection, ProcessingSection> processingSectionMap = new HashMap<>();
+
     public ChartProcessor(ProcessorController processorController) {
         this.processorController = processorController;
         this.pyDocs = AnalystPythonInterpreter.eval("getDocs()", ArrayList.class);
     }
 
+    public ProcessingSection getProcessingSection(int order, int[] dimensions, String name) {
+        ProcessingSection testSection = new ProcessingSection(order, dimensions, name);
+        return processingSectionMap.computeIfAbsent(testSection, k -> k);
+    }
     public SimpleObjectProperty<NMRData> nmrDataProperty() {
         if (nmrDataObj == null) {
             nmrDataObj = new SimpleObjectProperty<>(null);
