@@ -50,6 +50,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import javafx.stage.PopupWindow;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
@@ -180,7 +181,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     ProcessingSection currentSection = null;
     TitledPane referencePane;
     NavigatorGUI navigatorGUI;
-    private Button datasetFileButton = new Button("File...");
+    private final Button datasetFileButton = new Button("File...");
 
     CheckBox genLSCatalog;
     TextField nLSCatFracField;
@@ -202,7 +203,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     String currentText = "";
 
     private final ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
-    private AtomicBoolean needToFireEvent = new AtomicBoolean(false);
+    private final AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     private final AtomicReference<Dataset> saveObject = new AtomicReference<>();
     ScheduledFuture futureUpdate = null;
     Map<ProcessingSection, PhaserAndPane> phasersPanes = new HashMap<>();
@@ -288,11 +289,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     synchronized void startTimer() {
-        if (schedExecutor != null) {
-            if (needToFireEvent.get() || (futureUpdate == null) || futureUpdate.isDone()) {
-                UpdateTask updateTask = new UpdateTask();
-                futureUpdate = schedExecutor.schedule(updateTask, 2000, TimeUnit.MILLISECONDS);
-            }
+        if (needToFireEvent.get() || (futureUpdate == null) || futureUpdate.isDone()) {
+            UpdateTask updateTask = new UpdateTask();
+            futureUpdate = schedExecutor.schedule(updateTask, 2000, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -440,7 +439,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             }
             addTitlePane(section, "DIMENSION " + i);
             dimList.add(section);
-            if (false) {
+            boolean add2DIndirect = false;  // used in development
+            if (add2DIndirect) {
                 if ((i == 1) && (nDim == 2)) {
                     int[] adims = new int[nDim];
                     for (int j = 1; j <= nDim; j++) {
@@ -737,7 +737,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             } else if (!popOver.isShowing()) {
                 final Point2D nodeCoord = textField.localToScreen(textField.getLayoutBounds().getMaxX(), textField.getLayoutBounds().getMaxY());
                 popOver.setArrowLocation(PopOver.ArrowLocation.BOTTOM_LEFT);
-                popOver.setAnchorLocation(PopOver.AnchorLocation.WINDOW_BOTTOM_RIGHT);
+                popOver.setAnchorLocation(PopupWindow.AnchorLocation.WINDOW_BOTTOM_RIGHT);
                 popOver.show(textField, nodeCoord.getX(), nodeCoord.getY());
             }
         }
@@ -951,7 +951,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     String addBaselineRegion(List<Double> values, double f1, double f2, boolean clear) {
-        TreeSet<SpecRegion> regions = new TreeSet(new SpecRegion());
+        TreeSet<SpecRegion> regions = new TreeSet<>(new SpecRegion());
         for (int i = 0; i < values.size(); i += 2) {
             SpecRegion region = new SpecRegion(values.get(i), values.get(i + 1));
             regions.add(region);
@@ -1019,9 +1019,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         propertyManager.setupItem(opPropertySheet, op.getName());
         ObservableList<PropertySheet.Item> propItems = propertyManager.getItems();
         for (PropertySheet.Item item : propItems) {
-            if (item == null) {
-                System.out.println("item null");
-            } else if (!item.getName().equals("disabled")) {
+            if ((item != null) && !item.getName().equals("disabled")) {
                 boolean foundIt = false;
                 for (ProcessingOperation.OperationParameter parameter : op.getParameters()) {
                     if (item.getName().equals(parameter.name())) {
@@ -1066,28 +1064,30 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         int i = 0;
         currentSection = section;
         for (var processingOperation : processingOperations) {
-            ModifiableAccordionScrollPane.ModifiableTitlePane pane = newTitledPane(accordionPane, processingOperation, i++);
+            newTitledPane(accordionPane, processingOperation, i++);
+        }
+    }
+
+    private void updateTitledPane(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane) {
+        titledPane.setDetailedTitle(detailButton.isSelected());
+        if (titledPane.getContent() instanceof VBox vBox) {
+            if (!vBox.getChildren().isEmpty() && vBox.getChildren().get(0) instanceof ModifiableAccordionScrollPane spane) {
+                for (var pane2 : spane.getPanes()) {
+                    if (pane2 instanceof ModifiableAccordionScrollPane.ModifiableTitlePane titledPane2) {
+                        titledPane2.setDetailedTitle(detailButton.isSelected());
+                    }
+                }
+            }
         }
     }
 
     private void updateAllAccordionTitles() {
         for (var dimensionPane : dimensionPanes.values()) {
             var content = dimensionPane.getContent();
-            if (content instanceof ModifiableAccordionScrollPane accordion) {
-                for (var pane : accordion.getPanes()) {
+            if (content instanceof ModifiableAccordionScrollPane accordionScrollPane) {
+                for (var pane : accordionScrollPane.getPanes()) {
                     if (pane instanceof ModifiableAccordionScrollPane.ModifiableTitlePane titledPane) {
-                        titledPane.setDetailedTitle(detailButton.isSelected());
-                        if (titledPane.getContent() instanceof VBox vBox) {
-                            if (!vBox.getChildren().isEmpty()) {
-                                if (vBox.getChildren().get(0) instanceof ModifiableAccordionScrollPane spane) {
-                                    for (var pane2 : spane.getPanes()) {
-                                        if (pane2 instanceof ModifiableAccordionScrollPane.ModifiableTitlePane titledPane2) {
-                                            titledPane2.setDetailedTitle(detailButton.isSelected());
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        updateTitledPane(titledPane);
                     }
                 }
             }
@@ -1105,7 +1105,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         accordion.getPanes().clear();
         int i = 0;
         for (var processingOperation : getOperationList()) {
-            ModifiableAccordionScrollPane.ModifiableTitlePane pane = newTitledPane(accordion, processingOperation, i++);
+            newTitledPane(accordion, processingOperation, i++);
         }
     }
 
@@ -1381,11 +1381,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     } else {
                         dimNums = new int[fields.length];
                         for (int i = 0; i < fields.length; i++) {
-                            dimNums[i] = Integer.valueOf(fields[i]) - 1;
+                            dimNums[i] = Integer.parseInt(fields[i]) - 1;
                         }
                     }
                     if (!newDim.equals(dimNum)) {
-                        dimList = new ArrayList<>();
                         dimList = new ArrayList<>();
                         final String dimName;
                         if ((dimNums.length == 0) || (dimNums.length == 1)) {
