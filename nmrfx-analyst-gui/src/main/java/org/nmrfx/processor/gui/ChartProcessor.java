@@ -632,10 +632,7 @@ public class ChartProcessor {
             reloadData();
         }
         fxmlController.setPhaseDimChoice(vecDim);
-        if (!processorController.isViewingDataset()) {
-            chart.full();
-            chart.autoScale();
-        }
+        processorController.updateSection();
     }
 
     public DatasetType getDatasetType() {

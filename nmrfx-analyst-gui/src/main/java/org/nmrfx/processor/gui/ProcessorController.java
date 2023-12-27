@@ -211,6 +211,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     ProcessingSection processingSection1;
 
+    ScriptParser scriptParser;
+
 
     public static ProcessorController create(FXMLController fxmlController, NmrControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
         Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml");
@@ -229,6 +231,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             controller.viewMode.setValue(DisplayMode.FID_OPS);
         }
         controller.navigatorGUI = NavigatorGUI.create(controller);
+        controller.scriptParser = new ScriptParser(controller.chartProcessor, controller.navigatorGUI);
 
         return controller;
     }
@@ -312,9 +315,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     private void setActivePane(ProcessingSection section, TitledPane titledPane) {
-        if (!titledPane.isExpanded() && (currentSection == null || (section.name().equals(currentSection.name())))) {
-            currentSection = null;
-        } else if (titledPane.isExpanded() && (currentSection == null || !currentSection.name().equals(section.name()))) {
+        System.out.println(titledPane.getText() + " " + titledPane.isExpanded() + " " + currentSection + " " + section);
+
+        if (titledPane.isExpanded() && (currentSection == null || (currentSection != section))) {
+            System.out.println("Update");
             currentSection = section;
             if (section.isRef()) {
                 currentSection = processingSection1;
@@ -325,14 +329,20 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 }
                 if (currentSection.is1D()) {
                     dimChoice.setValue(currentSection);
-                    updatePhaser();
                     chartProcessor.setVecDim(currentSection);
-                    if (!isViewingDataset()) {
-                        chartProcessor.execScriptList(false);
-                        chart.full();
-                        chart.autoScale();
-                    }
+                    updatePhaser();
                 }
+                updateSection();
+            }
+        }
+    }
+
+    void updateSection() {
+        if ((currentSection != null) && currentSection.is1D()) {
+            if (!isViewingDataset()) {
+                chartProcessor.execScriptList(false);
+                chart.full();
+                chart.autoScale();
             }
         }
     }
@@ -1329,125 +1339,14 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     public void parseScript(String scriptString) {
         boolean autoProcessState = autoProcess.isSelected();
         setAutoProcess(false);
-        HashSet<String> refOps = new HashSet<>();
-        refOps.add("skip");
-        refOps.add("sw");
-        refOps.add("sf");
-        refOps.add("ref");
-        refOps.add("label");
-        refOps.add("acqOrder");
-        refOps.add("acqarray");
-        refOps.add("acqmode");
-        refOps.add("acqsize");
-        refOps.add("tdsize");
-        refOps.add("fixdsp");
         if (!scriptString.equals(currentText)) {
             scriptGUI.replaceText(scriptString);
             currentText = scriptString;
         }
-        String[] lines = scriptString.split("\n");
-        List<String> headerList = new ArrayList<>();
-        List<ProcessingOperationInterface> dimList = null;
-        Map<ProcessingSection, List<ProcessingOperationInterface>> mapOpLists = new LinkedHashMap<>();
 
-        String dimNum = "";
-        ApodizationGroup apodizationGroup = null;
-        BaselineGroup baselineGroup = null;
-        NUSGroup nusGroup = null;
-        int order = 1;
-        for (String line : lines) {
-            line = line.trim();
-            if (line.isEmpty()) {
-                continue;
-            }
-            if (line.charAt(0) == '#') {
-                continue;
-            }
-            int index = line.indexOf('(');
-            boolean lastIsClosePar = line.charAt(line.length() - 1) == ')';
-            if ((index != -1) && lastIsClosePar) {
-                String opName = line.substring(0, index);
-                String args = line.substring(index + 1, line.length() - 1);
-                if (opName.equals("run")) {
-                    continue;
-                }
-                if (opName.equals("DIM")) {
-                    String newDim = args;
-                    String[] fields = args.split(",");
-                    int[] dimNums;
-                    if (newDim.isBlank()) {
-                        dimNums = new int[0];
-                        newDim = "_ALL";
-                    } else {
-                        dimNums = new int[fields.length];
-                        for (int i = 0; i < fields.length; i++) {
-                            dimNums[i] = Integer.parseInt(fields[i]) - 1;
-                        }
-                    }
-                    if (!newDim.equals(dimNum)) {
-                        dimList = new ArrayList<>();
-                        final String dimName;
-                        if ((dimNums.length == 0) || (dimNums.length == 1)) {
-                            dimName = "D";
-                        } else {
-                            dimName = "I";
-                        }
-                        ProcessingSection section = chartProcessor.getProcessingSection(order, dimNums, dimName);
-                        if (mapOpLists.containsKey(section)) {
-                            order++;
-                            section = chartProcessor.getProcessingSection(order, dimNums, "D");
-                        }
-                        mapOpLists.put(section, dimList);
+        scriptParser.parseScript(scriptString);
 
-                        dimNum = newDim;
-                        apodizationGroup = null;
-                        baselineGroup = null;
-                        nusGroup = null;
-                    }
-                } else if (dimList != null) {
-                    if (opName.equals("BaselineGroup")) {
-                        if (baselineGroup == null) {
-                            baselineGroup = new BaselineGroup();
-                            dimList.add(baselineGroup);
-                        }
-                        baselineGroup.update("BCWHIT", "BCWHIT()");
-                        baselineGroup.disabled(true);
-                    } else if (opName.equals("NUSGroup")) {
-                        if (nusGroup == null) {
-                            nusGroup = new NUSGroup();
-                            dimList.add(nusGroup);
-                        }
-                        nusGroup.update("NESTA", "NESTA()");
-                        nusGroup.disabled(false);
-                    } else if (ApodizationGroup.opInGroup(opName)) {
-                        if (apodizationGroup == null) {
-                            apodizationGroup = new ApodizationGroup();
-                            dimList.add(apodizationGroup);
-                        }
-                        apodizationGroup.update(opName, line);
-                    } else if (BaselineGroup.opInGroup(opName)) {
-                        if (baselineGroup == null) {
-                            baselineGroup = new BaselineGroup();
-                            dimList.add(baselineGroup);
-                        }
-                        baselineGroup.update(opName, line);
-                    } else if (NUSGroup.opInGroup(opName)) {
-                        if (nusGroup == null) {
-                            nusGroup = new NUSGroup();
-                            dimList.add(nusGroup);
-                        }
-                        nusGroup.update(opName, line);
-                    } else {
-                        dimList.add(new ProcessingOperation(line));
-                    }
-                } else if (refOps.contains(opName)) {
-                    headerList.add(line);
-                } else if (opName.equals("markrows")) {
-                    navigatorGUI.parseMarkRows(args);
-                }
-            }
-        }
-        chartProcessor.setScripts(headerList, mapOpLists);
+
         String script = getFullScript();
         if (!script.equals(currentText)) {
             scriptGUI.replaceText(script);
