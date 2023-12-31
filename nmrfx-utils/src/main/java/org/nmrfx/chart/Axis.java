@@ -25,7 +25,6 @@
  import javafx.scene.text.Font;
  import javafx.scene.text.TextAlignment;
  import org.nmrfx.graphicsio.GraphicsContextInterface;
- import org.nmrfx.graphicsio.GraphicsIOException;
  import org.nmrfx.graphicsio.StyledCanvasText;
 
  import java.io.InputStream;
@@ -143,9 +142,7 @@
          double length = orientation == VERTICAL ? height : width;
          double offset = orientation == VERTICAL ? yOrigin - height : xOrigin;
          displayPosition -= offset;
-         if (isReversed() && (getOrientation() == Orientation.HORIZONTAL)) {
-             displayPosition = length - displayPosition;
-         } else if (!isReversed() && (getOrientation() == Orientation.VERTICAL)) {
+         if ((isReversed() && (getOrientation() == Orientation.HORIZONTAL)) || (!isReversed() && (getOrientation() == Orientation.VERTICAL))) {
              displayPosition = length - displayPosition;
          }
          return ((displayPosition) / scaleValue) + getLowerBound();
@@ -364,6 +361,21 @@
          ticFormatString = integerAxis ? "%d" : "%." + tInfo.nDecimals + "f";
      }
 
+     private double calcTicSpacing(double scale, double floorScale) {
+         double normalizedScale = scale / Math.pow(10.0, floorScale);
+         double minDelta = Double.MAX_VALUE;
+         double[] targetValues = {1.0, 2.0, 5.0, 10.0};
+         double selValue = 1.0;
+         for (double targetValue : targetValues) {
+             double delta = Math.abs(normalizedScale - targetValue);
+             if (delta < minDelta) {
+                 minDelta = delta;
+                 selValue = targetValue;
+             }
+         }
+         return selValue;
+     }
+
      private TickInfo getIntegerAxisInfo(double lower, double upper, double length) {
          TickInfo tf = new TickInfo();
          if (length > 0) {
@@ -372,19 +384,8 @@
              double scale = range / nTic1;
              double logScale = Math.log10(scale);
              double floorScale = Math.floor(logScale);
-             int nDecimals = 0;
-             tf.nDecimals = nDecimals;
-             double normalizedScale = scale / Math.pow(10.0, floorScale);
-             double minDelta = Double.MAX_VALUE;
-             double[] targetValues = {1.0, 2.0, 5.0, 10.0};
-             double selValue = 1.0;
-             for (double targetValue : targetValues) {
-                 double delta = Math.abs(normalizedScale - targetValue);
-                 if (delta < minDelta) {
-                     minDelta = delta;
-                     selValue = targetValue;
-                 }
-             }
+             tf.nDecimals = 0;
+             double selValue = calcTicSpacing(scale, floorScale);
              double incValue = Math.round(selValue * Math.pow(10.0, floorScale));
 
              tf.incr = incValue;
@@ -430,17 +431,7 @@
                  nDecimals = 10;
              }
              tf.nDecimals = nDecimals;
-             double normalizedScale = scale / Math.pow(10.0, floorScale);
-             double minDelta = Double.MAX_VALUE;
-             double[] targetValues = {1.0, 2.0, 5.0, 10.0};
-             double selValue = 1.0;
-             for (double targetValue : targetValues) {
-                 double delta = Math.abs(normalizedScale - targetValue);
-                 if (delta < minDelta) {
-                     minDelta = delta;
-                     selValue = targetValue;
-                 }
-             }
+             double selValue = calcTicSpacing(scale, floorScale);
              double incValue = selValue * Math.pow(10.0, floorScale);
              tf.incr = incValue;
              if ((lower + 1.2 * incValue) > upper) {
@@ -466,7 +457,7 @@
          return tf;
      }
 
-     public void draw(GraphicsContextInterface gC) throws GraphicsIOException {
+     public void draw(GraphicsContextInterface gC) {
          gC.setTextAlign(TextAlignment.CENTER);
          gC.setTextBaseline(VPos.TOP);
          gC.setFill(color);
@@ -537,7 +528,7 @@
                  double y1 = yOrigin;
                  double delta = Math.abs(value - Math.round(value / tInfo.majorSpace) * tInfo.majorSpace);
                  if (tInfo.centerMode || (delta < (tInfo.minorSpace / 10.0))) {
-                     String ticString = integerAxis ? String.format(ticFormatString, (int) value) :String.format(ticFormatString, value);
+                     String ticString = integerAxis ? String.format(ticFormatString, (int) value) : String.format(ticFormatString, value);
                      double y2 = yOrigin + ticSize;
                      gC.strokeLine(x, y1, x, y2);
                      if (tickLabelsVisible) {
@@ -569,7 +560,7 @@
                  value += tInfo.minorSpace;
              }
          }
-         if (labelVisible && (label != null) && (label.length() != 0)) {
+         if (labelVisible && (label != null) && (!label.isEmpty())) {
              gC.setTextBaseline(VPos.TOP);
              gC.setFont(labelFont);
              double labelTop = yOrigin;
@@ -601,7 +592,7 @@
                  double x1 = xOrigin;
                  double delta = Math.abs(value - Math.round(value / tInfo.majorSpace) * tInfo.majorSpace);
                  if (tInfo.centerMode || (delta < (tInfo.minorSpace / 10.0))) {
-                     String ticString = integerAxis ? String.format(ticFormatString, (int) value) :String.format(ticFormatString, value);
+                     String ticString = integerAxis ? String.format(ticFormatString, (int) value) : String.format(ticFormatString, value);
                      if (ticString.length() > ticStringLen) {
                          ticStringLen = ticString.length();
                      }
@@ -635,7 +626,7 @@
                  value += tInfo.minorSpace;
              }
          }
-         if (labelVisible && (label != null) && (label.length() != 0)) {
+         if (labelVisible && (label != null) && (!label.isEmpty())) {
              gC.setFont(labelFont);
 
              gC.setTextBaseline(VPos.TOP);

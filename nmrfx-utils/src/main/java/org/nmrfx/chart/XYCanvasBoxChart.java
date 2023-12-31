@@ -77,36 +77,32 @@ public class XYCanvasBoxChart extends XYCanvasChart {
         double height = getHeight();
         List<String> names = data.stream().map(x -> x.getName()).collect(Collectors.toList());
         gC.save();
-        try {
-            xAxis.setTickFontSize(10);
-            xAxis.setLabelFontSize(12);
+        xAxis.setTickFontSize(10);
+        xAxis.setLabelFontSize(12);
 
-            yAxis.setTickFontSize(10);
-            yAxis.setLabelFontSize(12);
-            double[] borders = getUseBorders();
-            leftBorder = borders[0];
-            rightBorder = borders[1];
-            bottomBorder = borders[2];
-            topBorder = borders[3];
+        yAxis.setTickFontSize(10);
+        yAxis.setLabelFontSize(12);
+        double[] borders = getUseBorders();
+        leftBorder = borders[0];
+        rightBorder = borders[1];
+        bottomBorder = borders[2];
+        topBorder = borders[3];
 
-            xAxis.setWidth(width - leftBorder - rightBorder);
-            xAxis.setHeight(bottomBorder);
-            xAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
+        xAxis.setWidth(width - leftBorder - rightBorder);
+        xAxis.setHeight(bottomBorder);
+        xAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
 
-            yAxis.setHeight(height - bottomBorder - topBorder);
-            yAxis.setWidth(leftBorder);
-            yAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
-            gC.setStroke(Color.BLACK);
-            xAxis.draw(gC);
-            yAxis.draw(gC);
-            gC.setLineWidth(xAxis.getLineWidth());
-            gC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
-            gC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
-            gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+        yAxis.setHeight(height - bottomBorder - topBorder);
+        yAxis.setWidth(leftBorder);
+        yAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
+        gC.setStroke(Color.BLACK);
+        xAxis.draw(gC);
+        yAxis.draw(gC);
+        gC.setLineWidth(xAxis.getLineWidth());
+        gC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
+        gC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
+        gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
 
-        } catch (GraphicsIOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
         gC.clip();
         gC.beginPath();
         annotate(gC);
