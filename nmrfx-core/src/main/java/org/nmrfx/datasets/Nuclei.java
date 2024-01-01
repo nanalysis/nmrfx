@@ -279,7 +279,10 @@ public class Nuclei {
         if (foundNuc.isPresent()) {
             return foundNuc;
         }
-        foundNuc = nameNumberMap.values().stream().filter(n -> labelTest.contains(n.getName())).findFirst();
+        foundNuc = nameNumberMap.values().stream()
+                .filter(n -> labelTest.contains(n.getName()))
+                .filter(n -> n.standard)
+                .findFirst();
 
         return foundNuc;
     }
