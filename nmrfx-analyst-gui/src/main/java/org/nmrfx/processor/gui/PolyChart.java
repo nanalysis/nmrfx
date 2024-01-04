@@ -1009,7 +1009,7 @@ public class PolyChart extends Region {
         }
 
         phaseAxis = PolyChartAxes.X_INDEX;
-        if (is1D() || section.getFirstDimension() == 0) {
+        if (is1D() || ((section != null) && (section.getFirstDimension() == 0))) {
             phaseAxis = PolyChartAxes.X_INDEX;
         } else if (phaseDim > 0) {
             phaseAxis = PolyChartAxes.Y_INDEX;
@@ -3450,7 +3450,7 @@ public class PolyChart extends Region {
             if ((controller.getChartProcessor() != null) && controller.isProcessControllerVisible()) {
                 section = controller.getChartProcessor().getCurrentProcessingSection();
             }
-            if (is1D() || section.getFirstDimension() == 0) {
+            if (is1D() || ((section != null) && (section.getFirstDimension() == 0))) {
                 int datasetDim = datasetAttributes.dim[0];
                 if (pivot == null) {
                     pivotPosition[datasetDim] = null;
