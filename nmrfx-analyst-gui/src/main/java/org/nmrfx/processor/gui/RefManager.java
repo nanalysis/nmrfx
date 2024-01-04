@@ -313,8 +313,13 @@ public class RefManager {
 
         String getString(Map<String, SimpleObjectProperty> objectPropertyMap, int iDim) {
             SimpleObjectProperty field = objectPropertyMap.get(name() + iDim);
-            Object value = field.getValue();
+            Object value = field == null ? null : field.getValue();
             return value == null ? "" : value.toString();
+        }
+
+        boolean isDefault(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim) {
+            String dataString = getDataValue(nmrData, iDim);
+            return dataString == null || dataString.equals(getString(objectPropertyMap, iDim));
         }
     }
 
@@ -622,6 +627,9 @@ public class RefManager {
                 } else {
                     prop = dataProp.getObjectProperty();
                 }
+                if (!dataProp.isDefault(objectPropertyMap, nmrData, i)) {
+                    toggleButton.setSelected(false);
+                }
                 objectPropertyMap.put(dataProp.name() + i, prop);
                 if (dataProp == DataProps.SKIP) {
                     if (i > 0) {
@@ -669,10 +677,12 @@ public class RefManager {
                         textField.setOnKeyPressed(e -> invalidateScript());
                         gridPane.add(textField, i + start, row);
                         if (prop.get() instanceof Double dValue) {
+                            int decimalPlaces = dataProp == DataProps.SF ? 7 : 2;
                             if (currentProp == null) {
                                 prop.set(Double.parseDouble(dataProp.getDataValue(nmrData, i)));
                             }
-                            TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(2), 0.0, new FixedDecimalFilter());
+                            TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(decimalPlaces),
+                                    0.0, new FixedDecimalFilter());
                             textFormatter.valueProperty().bindBidirectional(prop);
                             textField.setTextFormatter(textFormatter);
                         } else if (prop.get() instanceof Integer dValue) {

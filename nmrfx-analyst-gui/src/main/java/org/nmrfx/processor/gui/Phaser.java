@@ -33,6 +33,7 @@ import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.operations.Util;
 import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
+import org.nmrfx.processor.processing.ProcessingSection;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -423,10 +424,12 @@ public class Phaser {
         PolyChart chart = controller.getActiveChart();
         double ph0 = sliders[0].getValue();
         double ph1 = sliders[1].getValue();
-        String phaseDim = String.valueOf(chart.getPhaseDim() + 1);
+        int phaseDim = chart.getPhaseDim();
         if (chart.hasData() && (controller.getChartProcessor() != null)) {
             if (chart.is1D()) {
-                List<ProcessingOperationInterface> listItems = controller.getChartProcessor().getOperations("D" + phaseDim);
+                int[] dims = {chart.getPhaseDim()};
+                ProcessingSection processingSection = new ProcessingSection(1, dims, "D");
+                List<ProcessingOperationInterface> listItems = controller.getChartProcessor().getOperations(processingSection);
                 if (listItems != null) {
                     for (ProcessingOperationInterface processingOperation : listItems) {
                         if (processingOperation.getName().equals("AUTOPHASE")) {
@@ -449,7 +452,7 @@ public class Phaser {
                 chart.setPh0(0.0);
                 chart.setPh1(0.0);
                 chart.layoutPlotChildren();
-            } else if (phaseDim.equals(controller.getChartProcessor().getVecDimName().substring(1))) {
+            } else if (controller.getChartProcessor().getCurrentProcessingSection().getFirstDimension() == phaseDim) {
                 double deltaPH0 = ph0 - chart.getDataPH0();
                 double deltaPH1 = ph1 - chart.getDataPH1();
 
@@ -482,7 +485,10 @@ public class Phaser {
         }
         String phaseDim = "D" + (chart.getPhaseDim() + 1);
         if (controller.getChartProcessor() != null) {
-            List<ProcessingOperationInterface> listItems = controller.getChartProcessor().getOperations(phaseDim);
+            int[] dims = {chart.getPhaseDim()};
+            ProcessingSection processingSection = new ProcessingSection(1, dims, "D");
+
+            List<ProcessingOperationInterface> listItems = controller.getChartProcessor().getOperations(processingSection);
             if (listItems != null) {
                 Map<String, String> values = null;
                 if (processingOperation != null) {
