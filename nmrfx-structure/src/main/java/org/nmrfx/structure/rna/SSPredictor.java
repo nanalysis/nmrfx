@@ -92,7 +92,12 @@ public class SSPredictor {
     }
 
     public List<BasePairProbability> getBasePairs(double pLimit) {
-        List<BasePairProbability> basePairs = getBasePairs(predictions, pLimit);
+        int n = predictions.length;
+        double[][] predicted = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            predicted[i] = Arrays.copyOf(predictions[i], n);
+        }
+        List<BasePairProbability> basePairs = getBasePairs(predicted, pLimit);
         filterAllCrossings(basePairs);
         return basePairs;
     }

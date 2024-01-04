@@ -875,7 +875,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             String sequence = seqBuilder.toString();
             try {
                 ssPredictor.predict(sequence);
-                ssViewer.setSsPredictor(ssPredictor);
+                ssViewer.setSSPredictor(ssPredictor);
                 List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(0.3);
                 String dotBracket = ssPredictor.getDotBracket(basePairs);
                 molecule.setDotBracket(dotBracket);

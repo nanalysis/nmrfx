@@ -76,7 +76,7 @@ public class SSViewer extends Pane {
     double scale = 10.0;
 
     double superScale = 1.0;
-    int selectedResidue = -1;
+    HashMap<Integer, NodeRecord> nodeRecordHashMap = new HashMap<>();
 
     public SSViewer() {
         initScene();
@@ -87,7 +87,6 @@ public class SSViewer extends Pane {
         scrollPane.setPrefWidth(this.getWidth());
         scrollPane.setPrefHeight(this.getHeight());
         super.layoutChildren();
-        drawSS();
     }
 
     public SimpleBooleanProperty getDrawNumbersProp() {
@@ -113,6 +112,7 @@ public class SSViewer extends Pane {
         displayAtomTypes.clear();
         displayAtomTypes.addAll(atomNames);
         layoutChildren();
+        drawSS();
     }
 
     public final void initScene() {
@@ -124,14 +124,15 @@ public class SSViewer extends Pane {
         pane.setPrefSize(boxDim, boxDim);
         pane.getChildren().add(drawingGroup);
         pane.getChildren().add(infoGroup);
+        pane.setOnMousePressed(e -> revertToOriginal());
         scrollPane.setContent(pane);
         this.getChildren().add(scrollPane);
         drawNumbersProp.addListener(e -> drawSS());
         showActiveProp.addListener(e -> drawSS());
         constraintTypeProp.addListener(e -> drawSS());
         drawSS();
-        scrollPane.widthProperty().addListener(e -> updateScale());
-        scrollPane.heightProperty().addListener(e -> updateScale());
+        scrollPane.widthProperty().addListener(e -> resizeWindow());
+        scrollPane.heightProperty().addListener(e -> resizeWindow());
         pane.setOnZoom((Event event) -> {
             ZoomEvent rEvent = (ZoomEvent) event;
             double zoom = rEvent.getZoomFactor();
@@ -180,6 +181,12 @@ public class SSViewer extends Pane {
         scale *= (0.85 - N_ATOMS * 0.02);
     }
 
+    void resizeWindow() {
+        updateScale();
+        layoutChildren();
+        drawSS();
+    }
+
     public void zoom(double factor) {
         double h = scrollPane.getHvalue();
         double v = scrollPane.getVvalue();
@@ -189,10 +196,11 @@ public class SSViewer extends Pane {
         layoutChildren();
         scrollPane.setHvalue(h);
         scrollPane.setVvalue(v);
+        drawSS();
     }
 
 
-    Node drawLabelledCircle(double width, String text, int fontSize, Color color, double x, double y) {
+    NodeRecord drawLabelledCircle(double width, String text, int fontSize, Color color, double x, double y) {
         StackPane stack = new StackPane();
         Circle circle = new Circle(width / 2.0, color);
         Text textItem = new Text(text);
@@ -202,16 +210,62 @@ public class SSViewer extends Pane {
         stack.setAlignment(Pos.CENTER);     // Right-justify nodes in stack
         stack.setTranslateX(x - width / 2 + 1);
         stack.setTranslateY(y - width / 2 + 1);
-        return stack;
+        NodeRecord nodeRecord = new NodeRecord(circle, textItem, stack, text, color, fontSize);
+        return nodeRecord;
 
     }
 
-    public void selectResidue(int iRes) {
-        selectedResidue = iRes;
-        layoutChildren();
+    record NodeRecord(Circle circle, Text text, Node node, String label, Color color, int fontSize){}
+
+    public void selectResidue(int selectedResidue) {
+        revertToOriginal();
+        if (drawProbabilitiesProp.get()) {
+            for (var entry : nodeRecordHashMap.entrySet()) {
+                NodeRecord nodeRecord = entry.getValue();
+                int iRes = entry.getKey();
+                Circle circle = nodeRecord.circle;
+                Text text = nodeRecord.text;
+                if (iRes != selectedResidue) {
+                    circle.setFill(Color.GRAY);
+                }
+
+                if (ssPredictor != null) {
+                    double pLimit = 0.1;
+                    for (SSPredictor.BasePairProbability bp : ssPredictor.getAllBasePairs(pLimit)) {
+                        int res1 = bp.i();
+                        int res2 = bp.j();
+                        if (selectedResidue > iRes) {
+                            res1 = bp.j();
+                            res2 = bp.i();
+                        }
+                        if (res1 == selectedResidue && res2 == iRes) {
+                            String label = String.format("%.2f", bp.probability());
+                            circle.setFill(Color.YELLOW);
+                            double fontSize = text.getFont().getSize();
+                            if (!drawNumbersProp.get()) {
+                                fontSize /= 2;
+                            }
+                            text.setText(label);
+                            text.setFont(Font.font(fontSize));
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    Node drawLabelledNode(int iRes, String resName, String text, double x, double y) {
+    void revertToOriginal(){
+        for (var entry : nodeRecordHashMap.entrySet()){
+            NodeRecord nodeRecord = entry.getValue();
+            Circle circle = nodeRecord.circle;
+            Text text = nodeRecord.text;
+            circle.setFill(nodeRecord.color);
+            text.setText(nodeRecord.label);
+            text.setFont(Font.font(nodeRecord.fontSize));
+        }
+    }
+
+    NodeRecord drawLabelledNode(int iRes, String resName, String text, double x, double y) {
         double width = scale * 0.5;
         if (width < 12) {
             width = 12.0;
@@ -226,28 +280,7 @@ public class SSViewer extends Pane {
             default -> Color.WHITE;
         };
         String label = text;
-        if (drawProbabilitiesProp.get() && selectedResidue != -1) {
-            if (ssPredictor != null) {
-                double pLimit = 0.1;
-                label = "0.00";
-                int res1;
-                int res2;
-                for (SSPredictor.BasePairProbability bp : ssPredictor.getAllBasePairs(pLimit)) {
-                    if (selectedResidue > iRes) {
-                        res1 = bp.j();
-                        res2 = bp.i();
-                    } else {
-                        res1 = bp.i();
-                        res2 = bp.j();
-                    }
-                    if (res1 == selectedResidue && res2 == iRes ) {
-                        System.out.println(selectedResidue + " " + iRes + " " + bp.i() + " " + bp.j() + " " + bp.probability());
-                        label = String.format("%.2f", bp.probability());
-                    }
-                }
-                fontSize /= 2;
-            }
-        } else if (drawNumbersProp.get()) {
+        if (drawNumbersProp.get()) {
             label = resName.substring(1);
             fontSize /= 2;
         }
@@ -271,12 +304,12 @@ public class SSViewer extends Pane {
         if (!active) {
             color = Color.LIGHTGRAY;
         }
-        Node node = drawLabelledCircle(width, text, fontSize, color, x, y);
-        node.setOnMousePressed(e -> showInfo(e, resNum, text));
+        NodeRecord nodeRecord = drawLabelledCircle(width, text, fontSize, color, x, y);
+        nodeRecord.node().setOnMousePressed(e -> showInfo(e, resNum, text));
 
         atomMap.put(resNum + "." + "H" + text, new AtomCoord(x, y));
 
-        return node;
+        return nodeRecord.node;
     }
 
     void hideInfo() {
@@ -715,10 +748,14 @@ public class SSViewer extends Pane {
             double y = point.getY();
             x = toX(x);
             y = toY(y);
-            Node node = drawLabelledNode(iRes, resName, String.valueOf(resChar), x, y);
+            NodeRecord nodeRecord = drawLabelledNode(iRes, resName, String.valueOf(resChar), x, y);
             int finalIRes = iRes;
-            node.setOnMousePressed(e -> selectResidue(finalIRes));
-            group.getChildren().add(node);
+            group.getChildren().add(nodeRecord.node);
+            nodeRecord.node.setOnMousePressed(e -> {
+                e.consume();
+                selectResidue(finalIRes);
+            });
+            nodeRecordHashMap.put(iRes, nodeRecord);
             iRes++;
         }
         getVectors();
@@ -870,7 +907,7 @@ public class SSViewer extends Pane {
         constraintPairState = true;
     }
 
-    public void setSsPredictor(SSPredictor ssPredictor) {
+    public void setSSPredictor(SSPredictor ssPredictor) {
         this.ssPredictor = ssPredictor;
     }
 }
