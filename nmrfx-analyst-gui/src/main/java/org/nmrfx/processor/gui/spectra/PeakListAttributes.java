@@ -633,13 +633,22 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         double[] ctr = {0.0, 0.0};
         double[] bou = {0.0, 0.0};
         int[] peakDim = getPeakDim();
+        boolean ok = true;
+        for (int i=0;i<2;i++) {
+            int pDim = peakDim[i];
+            if ((pDim >= 0) && (pDim < peak.peakDims.length)) {
+                bou[i] = peak.peakDims[pDim].getBoundsValue();
+                ctr[i] = peak.peakDims[pDim].getChemShiftValue();
+                ctr[i] = foldShift(i, ctr[i]);
+            } else {
+                ok = false;
+                break;
+            }
+        }
+        if (!ok) {
+            return false;
+        }
 
-        bou[0] = peak.peakDims[peakDim[0]].getBoundsValue();
-        bou[1] = peak.peakDims[peakDim[1]].getBoundsValue();
-        ctr[0] = peak.peakDims[peakDim[0]].getChemShiftValue();
-        ctr[1] = peak.peakDims[peakDim[1]].getChemShiftValue();
-        ctr[0] = foldShift(0, ctr[0]);
-        ctr[1] = foldShift(1, ctr[1]);
         Rectangle box = getBox(ctr, bou);
         boolean result = box.contains(x, y);
 

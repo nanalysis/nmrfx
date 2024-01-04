@@ -688,7 +688,7 @@ public class Processor {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("First process using DIM(1)");
         }
-        if (dataset.getNDim() < 3 || dims.length < 2) {
+        if (dataset.getNDim() < 2 || dims.length < 2) {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("Number of dimensions must be greater than two.");
         }
@@ -1108,18 +1108,24 @@ public class Processor {
         } else {
             // zerofill matrix size for processing and writing
             int[][] writePt = calcPt(dim);
-            int[] matrixSizes = new int[pt.length - 1];
+            int matrixDim = pt.length - 1;
+            if (dim[0] == 0) {
+                matrixDim++;
+            }
+            int[] matrixSizes = new int[matrixDim];
             // size in points of valid data (used for apodizatin etc.)
-            int[] vSizes = new int[pt.length - 1];
-            for (int i = 0; i < pt.length - 1; i++) {
+            int[] vSizes = new int[matrixDim];
+            for (int i = 0; i < matrixDim; i++) {
                 matrixSizes[i] = pt[i][1] + 1;
                 vSizes[i] = (pt[i][1] + 1);
             }
-            for (int i = 0; i < pt.length - 1; i++) {
+            for (int i = 0; i < matrixDim; i++) {
                 writePt[i][1] = matrixSizes[i] - 1;
             }
-            writePt[pt.length - 1][0] = matrixCount;
-            pt[pt.length - 1][0] = matrixCount;
+            if (matrixDim < nDim) {
+                writePt[matrixDim][0] = matrixCount;
+                pt[matrixDim][0] = matrixCount;
+            }
             try {
                 matrix = new MatrixND(writePt, dim, matrixSizes);
                 matrix.setVSizes(vSizes);

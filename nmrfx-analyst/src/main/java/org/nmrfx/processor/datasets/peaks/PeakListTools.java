@@ -1580,7 +1580,7 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
                 }
             }
 
-            peak.getPeakRegion(theFile, pdim, p1, cpt[iPeak], width[iPeak], meanDimWidth);
+            peak.getPeakRegion(theFile, pdim, p1, cpt[iPeak], width[iPeak], meanDimWidth, 1.0);
 
             double intensity = (double) peak.getIntensity();
             GuessValue gValue;

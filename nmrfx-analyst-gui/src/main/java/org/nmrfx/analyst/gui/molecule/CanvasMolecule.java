@@ -13,11 +13,16 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.MoleculePrimitives;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -309,6 +314,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public int pick(GraphicsContextInterface gC, double x, double y) {
+        validate();
         return genSpheres(gC, true, x, y);
     }
 
@@ -322,9 +328,57 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
         if (selectMode && selectable) {
             selected = true;
+            assignPeak(molecule);
         }
     }
 
+    void assignPeak(PeakDim peakDim, List<Atom> atoms) {
+        Atom currentAtom = peakDim.getResonance().getAtom();
+        if (!atoms.isEmpty() && ((currentAtom == null) || (GUIUtils.affirm("Already assigned, change assignment?")))) {
+            for (Atom atom: atoms) {
+                peakDim.getResonance().setAtom(atom);
+                peakDim.setLabel(atom.getShortName());
+                atom.setPPM(peakDim.getChemShiftValue());
+                chart.clearSelectedMultiplets();
+            }
+        }
+
+    }
+    void assignPeak(Molecule molecule) {
+        var selectedSpatialSets = molecule.selectedSpatialSets();
+        var peaks = chart.getSelectedPeaks();
+        if (peaks.size() == 1 && selectedSpatialSets.size() == 1) {
+            Peak peak = peaks.get(0);
+            PeakList peakList = peak.getPeakList();
+            SpectralDim spectralDim = peakList.getSpectralDim(0);
+            String nucNumberName = spectralDim.getNucleus();
+            if (peak.getPeakList().getNDim() == 1) {
+                PeakDim peakDim = peak.getPeakDim(0);
+                boolean nucOK;
+                List<Atom> atoms = new ArrayList<>();
+                Atom selectedAtom = selectedSpatialSets.get(0).getAtom();
+                if (nucNumberName.equals("1H")) {
+                    nucOK = selectedAtom.getAtomicNumber() == 1;
+                    if (nucOK) {
+                        atoms.add(selectedAtom);
+                    } else {
+                        List<Atom> children = selectedAtom.getChildren();
+                        for (var child : children) {
+                            if (child.getAtomicNumber() == 1) {
+                                atoms.add(child);
+                            }
+                        }
+                    }
+                } else if (nucNumberName.equals("13C")) {
+                    nucOK = selectedAtom.getAtomicNumber() == 6;
+                    if (nucOK) {
+                        atoms.add(selectedAtom);
+                    }
+                }
+                assignPeak(peakDim, atoms);
+            }
+        }
+    }
     void selectMolecule(boolean selectMode) {
         Molecule molecule = Molecule.get(molName);
         if (!molecule.globalSelected.isEmpty()) {
@@ -417,6 +471,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public void draw(GraphicsContextInterface gC, double[][] canvasBounds, double[][] worldBounds) {
+        validate();
         x1 = xPosType.transform(bx1, canvasBounds[0], worldBounds[0]);
         x2 = xPosType.transform(bx2, canvasBounds[0], worldBounds[0]);
         y1 = yPosType.transform(by1, canvasBounds[1], worldBounds[1]);
@@ -434,6 +489,36 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
     }
 
+    void validate() {
+        Molecule molecule = null;
+        if (molName != null) {
+            molecule = Molecule.get(molName);
+        }
+
+        boolean ok = true;
+        if (molecule != null) {
+            int nSpheres = molecule.getSphereCount(iStructure);
+            if (molPrims.nSpheres != nSpheres) {
+                ok = false;
+            }
+            if (ok) {
+                int nLines = molecule.getLineCount(iStructure);
+                if (molPrims.nLines != nLines) {
+                    ok = false;
+                }
+            }
+            if (ok) {
+                int nLabels = molecule.getLineCount(iStructure);
+                if (molPrims.nLabels != nLabels) {
+                    ok = false;
+                }
+            }
+            if (!ok) {
+                setMolName(molName, iStructure);
+            }
+        }
+
+        }
     public void paintShape(GraphicsContextInterface g2) {
         boolean drawSpheres = true;
         boolean drawLines = true;

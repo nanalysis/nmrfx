@@ -77,6 +77,6 @@ public class AtomTriplets {
         }
 
         iValue++;
-        tripletMap.put(aTriplet, new Integer(iValue));
+        tripletMap.put(aTriplet,  Integer.valueOf(iValue));
     }
 }

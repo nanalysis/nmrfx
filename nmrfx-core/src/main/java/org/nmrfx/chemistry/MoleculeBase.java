@@ -3,6 +3,8 @@ package org.nmrfx.chemistry;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.io.Sequence;
+import org.nmrfx.chemistry.relax.OrderParSet;
+import org.nmrfx.chemistry.relax.RelaxationSet;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
 import org.nmrfx.project.ProjectBase;
@@ -326,6 +328,8 @@ public class MoleculeBase implements Serializable, ITree {
     protected HashMap<String, String> propertyMap = new HashMap<String, String>();
     MolecularConstraints molecularConstraints = new MolecularConstraints(this);
     List<SecondaryStructure> secondaryStructure = new ArrayList<>();
+    Map<String, RelaxationSet> relaxationSetMap = new HashMap<>();
+    Map<String, OrderParSet> orderParSetMap = new HashMap<>();
 
     public MoleculeBase(String name) {
         this.name = name;
@@ -567,6 +571,9 @@ public class MoleculeBase implements Serializable, ITree {
         entity.setHasEquivalentAtoms(true);
     }
 
+    public List<SpatialSet> selectedSpatialSets() {
+        return globalSelected;
+    }
     public static Atom getAtomByName(String name) throws IllegalArgumentException {
         MoleculeBase molecule = MoleculeFactory.getActive();
 
@@ -1667,5 +1674,12 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public void addNonStandardResidue(Sequence sequence, Residue residue) {
+    }
+
+    public Map<String, RelaxationSet> relaxationSetMap() {
+        return relaxationSetMap;
+    }
+    public Map<String, OrderParSet> orderParSetMap() {
+        return orderParSetMap;
     }
 }

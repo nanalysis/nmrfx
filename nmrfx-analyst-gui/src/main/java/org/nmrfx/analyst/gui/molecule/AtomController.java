@@ -54,6 +54,7 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
@@ -199,13 +200,13 @@ public class AtomController implements Initializable, StageBasedController, Free
         );
         MenuItem getPPMItem = new MenuItem("Get Frozen PPM");
         getPPMItem.setOnAction(e -> {
-                    PeakList.resFactory().assignFrozenAtoms("sim");
+                    ProjectBase.activeResonanceFactory().assignFrozenAtoms("sim");
                     atomTableView.refresh();
                 }
         );
         MenuItem getAllPPMItem = new MenuItem("Get PPM");
         getAllPPMItem.setOnAction(e -> {
-                    PeakList.resFactory().assignFromPeaks(null);
+                    ProjectBase.activeResonanceFactory().assignFromPeaks(null);
                     atomTableView.refresh();
                 }
         );

@@ -22,9 +22,8 @@ import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.ResonanceFactory;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
@@ -290,7 +289,7 @@ public class NMRNEFReader {
             List<String> atomColumn = loop.getColumnAsList("atom_name");
             List<String> valColumn = loop.getColumnAsList("value");
             List<String> valErrColumn = loop.getColumnAsList("value_uncertainty");
-            ResonanceFactory resFactory = PeakList.resFactory();
+            ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
             for (int i = 0; i < chainCodeColumn.size(); i++) {
                 String sequenceCode = (String) sequenceCodeColumn.get(i);
                 String chainCode = (String) chainCodeColumn.get(i);

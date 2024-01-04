@@ -22,6 +22,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.tools.PeakLinker;
@@ -144,7 +145,10 @@ public class SpectrumMenu extends ChartMenu {
         peakFitMenu.getItems().add(fitZZIntensityItem);
 
         MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
-        fitLSItem.setOnAction((ActionEvent e) -> PeakPicking.peakPickActive(chart.getFXMLController(), true, null));
+        PeakPickParameters peakPickParameters = new PeakPickParameters();
+        peakPickParameters.refineLS = true;
+
+        fitLSItem.setOnAction((ActionEvent e) -> PeakPicking.peakPickActive(chart.getFXMLController(), peakPickParameters));
         peakFitMenu.getItems().add(fitLSItem);
 
         Menu refMenu = new Menu("Reference");

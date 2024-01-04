@@ -19,6 +19,8 @@ package org.nmrfx.processor.operations;
 
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
@@ -27,7 +29,7 @@ import org.nmrfx.processor.processing.SampleSchedule;
  * @author johnsonb
  */
 @PythonAPI("pyproc")
-public class Schedule extends Operation {
+public class Schedule extends MatrixOperation {
 
     private static SampleSchedule schedule = null;
     private final double fraction;
@@ -72,14 +74,24 @@ public class Schedule extends Operation {
         return this;
     }
 
+    @Override
+    public Operation evalMatrix(MatrixType matrix) {
+        if ((fileName != null) && !fileName.isEmpty()) {
+            if (schedule == null) {
+                schedule = new SampleSchedule(fileName, false);
+            }
+            MatrixND matrixND = (MatrixND) matrix;
+            matrixND.schedule(schedule);
+        }
+        return this;
+    }
+
     /**
      * Calculate inverse list of SampleSchedule. For 2D only.
      *
      * @param vsize
-     * @see Ist#zero_samples
      * @see SampleSchedule
      * @see SampleSchedule#getSamples
-     * @see SampleSchedule#v_samples
      */
     private void calcZeroes(int vsize) {
         int[][] samples = schedule.getSamples();
@@ -103,7 +115,6 @@ public class Schedule extends Operation {
     /**
      * Zero (or rezero) a vector with inverse samples.
      *
-     * @param input
      * @see Vec
      * @see #calcZeroes
      */

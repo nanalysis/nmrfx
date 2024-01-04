@@ -62,6 +62,7 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
@@ -78,6 +79,7 @@ import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
 import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
+import org.nmrfx.processor.processing.ProcessingSection;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
@@ -1036,7 +1038,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void linkPeakDims() {
         PeakLinker linker = new PeakLinker();
-        linker.linkAllPeakListsByLabel();
+        linker.linkAllPeakListsByLabel("");
     }
 
     public void removeChart(PolyChart chart) {
@@ -1315,7 +1317,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
         DatasetAttributes activeAttr = firstAttributes.get();
         // any peak lists created just for alignmnent should be deleted
-        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, null, false, "refList");
+        PeakPickParameters peakPickParameters = new PeakPickParameters();
+        peakPickParameters.listName = "refList";
+        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, null, peakPickParameters);
         if (refList == null) {
             return;
         }
@@ -1335,7 +1339,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrList) {
                 if (dataAttr != activeAttr) {
-                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, false, false, null, false, "movingList");
+                    PeakPickParameters peakPickParametersM = new PeakPickParameters();
+                    peakPickParametersM.listName = "movingList";
+                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, null, peakPickParametersM);
                     movingList.unLinkPeaks();
                     movingList.clearSearchDims();
                     movingList.addSearchDim(dimName1, 0.05);
@@ -1463,7 +1469,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         phaser.setPhaseDim(phaseDim);
     }
 
-    protected int[] getExtractRegion(String vecDimName, int size) {
+    protected int[] getExtractRegion(ProcessingSection vecDimName, int size) {
         int start = 0;
         int end = size - 1;
         if (chartProcessor != null) {
@@ -1494,11 +1500,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return new int[]{start, end};
     }
 
-    protected ArrayList<Double> getBaselineRegions(String vecDimName) {
+    protected ArrayList<Double> getBaselineRegions(ProcessingSection section) {
         ArrayList<Double> fracs = new ArrayList<>();
         if (chartProcessor != null) {
             int currentIndex = chartProcessor.getProcessorController().getPropertyManager().getCurrentIndex();
-            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(vecDimName);
+            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(section);
             if (listItems != null) {
                 log.info("curr ind {}", currentIndex);
                 Map<String, String> values = null;

@@ -34,7 +34,8 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PreferencesController;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
+import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
@@ -148,7 +149,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             updatePeakListMenu();
         };
 
-        Project.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(mapChangeListener);
         updatePeakListMenu();
         modeMenuButton.getItems().add(numbersCheckBox);
         modeMenuButton.getItems().add(probabilitiesCheckBox);
@@ -280,7 +281,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     @FXML
-    void drawMol(ActionEvent event) throws InvalidMoleculeException {
+    void drawMol(ActionEvent event) throws InvalidMoleculeException, MissingCoordinatesException {
         molViewer.drawMol();
     }
 
@@ -314,6 +315,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
         }
     }
 
+    public void clearSS() {
+        dotBracketPane.getChildren().clear();
+        ssViewer.clear();
+        dotBracketField.clear();
+    }
     @FXML
     void layoutSS() throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
@@ -738,7 +744,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : Project.getActive().getPeakListNames()) {
+        for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 PeakList peakList = PeakList.get(peakListName);
@@ -804,9 +810,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 String datasetName = peakList.getDatasetName();
                 if ((datasetName != null) && !datasetName.equals("") && (Molecule.getActive() != null)) {
                     Dataset dataset = Dataset.getDataset(datasetName);
-                    String labelScheme = dataset.getProperty("labelScheme");
-                    RNALabels rnaLabels = new RNALabels();
-                    rnaLabels.parseSelGroups(Molecule.getActive(), labelScheme);
+                    if (dataset != null) {
+                        String labelScheme = dataset.getProperty("labelScheme");
+                        RNALabels rnaLabels = new RNALabels();
+                        rnaLabels.parseSelGroups(Molecule.getActive(), labelScheme);
+                    }
                 }
             }
             ssViewer.setConstraintPairs(constraintPairs);

@@ -20,6 +20,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomSpecifier;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.predict.RNAStats;
@@ -139,6 +140,14 @@ public class SSViewer extends Pane {
             zoom(zoom);
         });
 
+    }
+
+    public void clear() {
+        points.clear();
+        if (drawingGroup != null) {
+            drawingGroup.getChildren().clear();
+            infoGroup.getChildren().clear();
+        }
     }
 
     public void drawSS() {
@@ -673,7 +682,7 @@ public class SSViewer extends Pane {
                 } else {
                     text = "1";
                 }
-                if (!text.equals("")) {
+                if (!text.isEmpty()) {
                     boolean active = true;
                     if (showActiveProp.get()) {
                         active = false;
@@ -774,14 +783,6 @@ public class SSViewer extends Pane {
         }
     }
 
-    String getResNum(String atom) {
-        return atom.substring(0, atom.indexOf("."));
-    }
-
-    String getAtomName(String atom) {
-        return atom.substring(atom.indexOf(".") + 1);
-    }
-
     int getAtomIndex(String aName) {
         char c1 = aName.charAt(1);
         if ((aName.length() == 3) && (aName.charAt(2) == '\'')) {
@@ -802,10 +803,15 @@ public class SSViewer extends Pane {
         if (width < 4) {
             width = 4.0;
         }
-        String r1 = getResNum(a1);
-        String r2 = getResNum(a2);
-        int r1Num = Integer.parseInt(r1);
-        int r2Num = Integer.parseInt(r2);
+        AtomSpecifier atomSpecifier1 = AtomSpecifier.parseString(a1);
+        AtomSpecifier atomSpecifier2 = AtomSpecifier.parseString(a2);
+        int r1Num = atomSpecifier1.getResNum();
+        int r2Num = atomSpecifier2.getResNum();
+        String aName1 = atomSpecifier1.getAtomName();
+        String aName2 = atomSpecifier2.getAtomName();
+        String resAtom1 = atomSpecifier1.getResNumString() + "." + aName1;
+        String resAtom2 = atomSpecifier2.getResNumString() + "." + aName2;
+
 
         boolean allOK = constraintTypeProp.getValue().equals("All");
         boolean intraOK = constraintTypeProp.getValue().equals("Intraresidue") && (r1Num == r2Num);
@@ -814,24 +820,20 @@ public class SSViewer extends Pane {
         if (!allOK && !intraOK && !interOK) {
             return;
         }
-        String aName1 = getAtomName(a1);
-        String aName2 = getAtomName(a2);
         if ((getAtomIndex(aName1) >= N_ATOMS) || (getAtomIndex(aName2) >= N_ATOMS)) {
             return;
         }
-        if ((r1Num > r2Num) || (a1.compareTo(a2) > 0)) {
-            String hold = a2;
-            a2 = a1;
-            a1 = hold;
-            r1 = getResNum(a1);
-            r2 = getResNum(a2);
+        if ((r1Num > r2Num) || (aName1.compareTo(aName2) > 0)) {
+            String hold = resAtom2;
+            resAtom2 = resAtom1;
+            resAtom1 = hold;
         }
         width *= 0.4;
-        AtomCoord c1 = atomMap.get(a1);
-        AtomCoord c2 = atomMap.get(a2);
+        AtomCoord c1 = atomMap.get(resAtom1);
+        AtomCoord c2 = atomMap.get(resAtom2);
         if ((c1 != null) && (c2 != null)) {
             double div = 5.0;
-            if (r1.equals(r2)) {
+            if (r1Num == r2Num) {
                 div = 1.0;
             }
             double dX = c2.x - c1.x;

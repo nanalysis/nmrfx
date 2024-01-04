@@ -115,7 +115,8 @@ public class AnalystApp extends Application {
             startInAdvanced = false;
         }
         analystApp = this;
-        getFXMLControllerManager().newController(stage);
+        String title = APP_NAME + " " + getVersion();
+        getFXMLControllerManager().newController(stage, title);
 
         if (isMac()) {
             Platform.setImplicitExit(false);
@@ -123,7 +124,6 @@ public class AnalystApp extends Application {
             Platform.setImplicitExit(true);
         }
         hostServices = getHostServices();
-        stage.setTitle(APP_NAME + " " + getVersion());
 
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(APP_NAME);
@@ -338,7 +338,7 @@ public class AnalystApp extends Application {
     }
 
     private void showMailingListAction(ActionEvent event) {
-        hostServices.showDocument("https://groups.google.com/forum/#!forum/nmrfx-processor");
+        hostServices.showDocument("https://groups.io/g/NMRFx");
     }
 
     private void showOpenSourceAction(ActionEvent event) {

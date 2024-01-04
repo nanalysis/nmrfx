@@ -92,4 +92,10 @@ public class MoleculeFactory {
         }
         return moleculeBase;
     }
+
+    public static void renameMolecule(MoleculeBase molecule, String newName) {
+        removeMolecule(molecule.getName());
+        molecule.name = newName;
+        putMolecule(molecule);
+    }
 }
