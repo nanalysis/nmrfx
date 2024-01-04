@@ -338,7 +338,7 @@ public class AnalystApp extends Application {
     }
 
     private void showMailingListAction(ActionEvent event) {
-        hostServices.showDocument("https://groups.google.com/forum/#!forum/nmrfx-processor");
+        hostServices.showDocument("https://groups.io/g/NMRFx");
     }
 
     private void showOpenSourceAction(ActionEvent event) {
