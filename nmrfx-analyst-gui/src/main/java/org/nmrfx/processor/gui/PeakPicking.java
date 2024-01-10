@@ -8,6 +8,7 @@ package org.nmrfx.processor.gui;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.Peak;
@@ -99,14 +100,15 @@ public class PeakPicking {
                 return null;
             }
         }
-
         if (peakPickPar.level == null) {
             peakPickPar.level = dataAttr.getLvl();
             if (nDim == 1) {
-                if (chart.getCrossHairs().getState(0, Orientation.HORIZONTAL)) {
+                if (chart.getCrossHairs().getState(0, Orientation.HORIZONTAL) && chart.getCrossHairs().isVisible(0, Orientation.HORIZONTAL)) {
                     peakPickPar.level = chart.getCrossHairs().getPosition(0, Orientation.HORIZONTAL);
                 } else {
-                    peakPickPar.level /= 10.0;
+                    Analyzer analyzer = new Analyzer(peakPickPar.theFile);
+                    analyzer.calculateThreshold();
+                    peakPickPar.level = analyzer.getThreshold();
                 }
             }
         }
