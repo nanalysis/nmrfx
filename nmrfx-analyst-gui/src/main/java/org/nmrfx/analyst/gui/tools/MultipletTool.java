@@ -257,7 +257,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     public Analyzer getAnalyzer() {
         Dataset dataset = (Dataset) chart.getDataset();
-        if ((dataset == null) || (dataset.getNDim() > 1)) {
+        if ((dataset == null) || (dataset.getNFreqDims() > 1)) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("Chart must have a 1D dataset");
             alert.showAndWait();
