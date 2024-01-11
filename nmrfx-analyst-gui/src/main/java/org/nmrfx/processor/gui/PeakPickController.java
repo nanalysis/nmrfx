@@ -53,7 +53,7 @@ public class PeakPickController {
 
         thicknessChoiceBox = new ChoiceBox<>();
         thicknessChoiceBox.getItems().addAll("All", "0", "1", "2", "3", "4", "5");
-        thicknessChoiceBox.setValue("All");
+        thicknessChoiceBox.setValue("0");
 
         peakPickButton.setOnAction(e -> peakPick());
         toolBar.getItems().addAll(peakPickButton);
