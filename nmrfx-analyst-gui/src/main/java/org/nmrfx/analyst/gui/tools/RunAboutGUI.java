@@ -131,12 +131,20 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         return navigatorToolBar;
     }
 
+    public FXMLController getController() {
+        return controller;
+    }
+
     public void close() {
         closeAction.accept(this);
     }
 
     public TabPane getTabPane() {
         return tabPane;
+    }
+
+    public String getArrangement() {
+        return currentArrangement;
     }
 
     class SeqPane extends Pane {
@@ -1824,7 +1832,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
-    void genWin(String arrangeName) {
+    public void genWin(String arrangeName) {
         if (runAbout.isActive()) {
             currentArrangement = arrangeName;
             RunAboutArrangement arrangement = runAboutArrangements.getArrangements().get(arrangeName);

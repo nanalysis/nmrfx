@@ -54,18 +54,19 @@ def genYamlData():
     strips = nw.strips2()
     if (strips != None) and ("peaklist" in strips):
         win['strips'] = strips
+    runabout = nw.runabout()
+    if (runabout != None) and ("arrangement" in runabout):
+        win['runabout'] = runabout
 
     yamlDump = yaml.dump(win)
     return yamlDump
 
 def loadYamlWin(yamlFile, yamlContents, createNewStage=0):
-    print(yamlContents)
     processYamlData(yamlFile, yamlContents,  createNewStage)
 
 def processYamlData(yamlFile, inputData, createNewStage):
     yaml = Yaml()
     data = yaml.load(inputData)
-    print(data)
     if createNewStage > 0:
         pathComps = os.path.split(yamlFile)
         title = pathComps[1]
@@ -85,7 +86,6 @@ def processYamlData(yamlFile, inputData, createNewStage):
         nw.sconfig(sconfig)
     spectra = data['spectra']
     for v in spectra :
-        print v
         datasets = v['datasets']
         if 'grid' in v:
             (iRow, iCol) = v['grid']
@@ -93,17 +93,14 @@ def processYamlData(yamlFile, inputData, createNewStage):
             iRow = 0
             iCol = 0
         activeWin = iRow*cols+iCol
-        print 'g',iRow,iCol,activeWin
         nw.active(activeWin)
         if 'cconfig' in v:
             cconfig = v['cconfig']
             nw.cconfig(cconfig)
         datasetValues = []
         for dataset in datasets:
-            print dataset
             name = dataset['name']
             datasetValues.append(formatStringForJava(name))
-        print 'dv',datasetValues
         nw.cmd.datasets(datasetValues)
         if 'lim' in v:
             lim = v['lim']
@@ -121,10 +118,8 @@ def processYamlData(yamlFile, inputData, createNewStage):
             peakLists = v['peaklists']
             peakListValues = []
             for peakList in peakLists:
-                print peakList
                 name = peakList['name']
                 peakListValues.append(formatStringForJava(name))
-            print 'dv',peakListValues
             nw.cmd.peakLists(peakListValues)
             for peakList in peakLists:
                 name = peakList['name']
@@ -133,11 +128,13 @@ def processYamlData(yamlFile, inputData, createNewStage):
                     nw.pconfig(peakLists=[name],pars=cfg)
         if 'annotations' in v:
             annotations = v['annotations']
-            print(annotations)
             nw.loadAnnotations(annotations)
         nw.drawAll()
     if 'strips' in data:
         strips = data['strips']
         nw.strips2(strips["peaklist"], strips["xdim"], strips["zdim"])
+    if 'runabout' in data:
+        runabout = data['runabout']
+        nw.runabout(runabout["arrangement"])
 
 nw = gscript_adv.NMRFxWindowAdvScripting()
