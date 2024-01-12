@@ -1,6 +1,5 @@
 package org.nmrfx.processor.gui.annotations;
 
-import javafx.geometry.Pos;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +19,6 @@ public class AnnoLine extends AnnoSimpleLine {
     double startX2;
     double startY2;
     double width;
-    int activeHandle = -1;
-
     public AnnoLine() {
 
     }
@@ -198,18 +195,6 @@ public class AnnoLine extends AnnoSimpleLine {
         thetaTrig[0] = cosTheta;
         thetaTrig[1] = sinTheta;
         return thetaTrig;
-    }
-
-    @Override
-    public int hitHandle(double x, double y) {
-        if (hitHandle(x, y, Pos.CENTER, xp1, yp1)) {
-            activeHandle = 0;
-        } else if (hitHandle(x, y, Pos.CENTER, xp2, yp2)) {
-            activeHandle = 1;
-        } else {
-            activeHandle = -1;
-        }
-        return activeHandle;
     }
 
     @Override
