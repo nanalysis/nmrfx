@@ -5,17 +5,9 @@ import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AnnoLine extends AnnoShape {
+public class AnnoLine extends AnnoSimpleLine {
     private static final Logger log = LoggerFactory.getLogger(AnnoLine.class);
     private static final int PTS_IN_ARROW = 6;
-    double x1;
-    double y1;
-    double x2;
-    double y2;
-    double xp1;
-    double yp1;
-    double xp2;
-    double yp2;
     double[] xCPoints;
     double[] yCPoints;
     boolean arrowFirst = false;
@@ -35,10 +27,7 @@ public class AnnoLine extends AnnoShape {
     }
 
     public AnnoLine(double x1, double y1, double x2, double y2) {
-        this.x1 = x1;
-        this.y1 = y1;
-        this.x2 = x2;
-        this.y2 = y2;
+        super(x1, y1, x2, y2);
     }
 
     public AnnoLine(double x1, double y1, double x2, double y2, boolean arrowFirst, boolean arrowLast,
@@ -68,38 +57,6 @@ public class AnnoLine extends AnnoShape {
 
     public void setArrowLast(boolean arrowLast) {
         this.arrowLast = arrowLast;
-    }
-
-    public double getX1() {
-        return x1;
-    }
-
-    public void setX1(double x1) {
-        this.x1 = x1;
-    }
-
-    public double getY1() {
-        return y1;
-    }
-
-    public void setY1(double y1) {
-        this.y1 = y1;
-    }
-
-    public double getX2() {
-        return x2;
-    }
-
-    public void setX2(double x2) {
-        this.x2 = x2;
-    }
-
-    public double getY2() {
-        return y2;
-    }
-
-    public void setY2(double y2) {
-        this.y2 = y2;
     }
 
     double getDistance(double x1, double x2, double y1, double y2) {
@@ -244,12 +201,6 @@ public class AnnoLine extends AnnoShape {
     }
 
     @Override
-    public void drawHandles(GraphicsContextInterface gC) {
-        drawHandle(gC, xp1, yp1, Pos.CENTER);
-        drawHandle(gC, xp2, yp2, Pos.CENTER);
-    }
-
-    @Override
     public int hitHandle(double x, double y) {
         if (hitHandle(x, y, Pos.CENTER, xp1, yp1)) {
             activeHandle = 0;
@@ -278,22 +229,4 @@ public class AnnoLine extends AnnoShape {
             y2 = xPosType.move(startY2, dy, bounds[1], world[1]);
         }
     }
-
-    public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
-        double x1Pix = xPosType.transform(x1, bounds, world);
-        double x2Pix = xPosType.transform(x2, bounds, world);
-        x1 = newType.itransform(x1Pix, bounds, world);
-        x2 = newType.itransform(x2Pix, bounds, world);
-        xPosType = newType;
-    }
-
-    public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
-        double y1Pix = yPosType.transform(y1, bounds, world);
-        double y2Pix = yPosType.transform(y2, bounds, world);
-        y1 = newType.itransform(y1Pix, bounds, world);
-        y2 = newType.itransform(y2Pix, bounds, world);
-        yPosType = newType;
-    }
-
-
 }
