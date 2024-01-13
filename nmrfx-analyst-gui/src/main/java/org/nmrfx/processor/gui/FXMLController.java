@@ -1944,4 +1944,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
+    public void setSplitPaneDivider(double f) {
+        splitPane.setDividerPosition(0, f);
+    }
+
+    public double getSplitPaneDivider() {
+        return splitPane.getDividerPositions()[0];
+    }
+
 }

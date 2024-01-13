@@ -38,6 +38,16 @@ public class AnnoSimpleLine extends AnnoShape {
     double yp2;
     int activeHandle = -1;
 
+    public AnnoSimpleLine() {
+
+    }
+    public AnnoSimpleLine(double x1, double y1, double x2, double y2) {
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
+    }
+
     public AnnoSimpleLine(double x1, double y1, double x2, double y2,
                           POSTYPE xPosType, POSTYPE yPosType) {
         this.x1 = x1;
@@ -46,6 +56,38 @@ public class AnnoSimpleLine extends AnnoShape {
         this.y2 = y2;
         this.xPosType = xPosType;
         this.yPosType = yPosType;
+    }
+
+    public double getX1() {
+        return x1;
+    }
+
+    public void setX1(double x1) {
+        this.x1 = x1;
+    }
+
+    public double getY1() {
+        return y1;
+    }
+
+    public void setY1(double y1) {
+        this.y1 = y1;
+    }
+
+    public double getX2() {
+        return x2;
+    }
+
+    public void setX2(double x2) {
+        this.x2 = x2;
+    }
+
+    public double getY2() {
+        return y2;
+    }
+
+    public void setY2(double y2) {
+        this.y2 = y2;
     }
 
     @Override
@@ -88,6 +130,7 @@ public class AnnoSimpleLine extends AnnoShape {
         }
         return activeHandle;
     }
+
     public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
         double x1Pix = xPosType.transform(x1, bounds, world);
         double x2Pix = xPosType.transform(x2, bounds, world);
@@ -95,6 +138,7 @@ public class AnnoSimpleLine extends AnnoShape {
         x2 = newType.itransform(x2Pix, bounds, world);
         xPosType = newType;
     }
+
     public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
         double y1Pix = yPosType.transform(y1, bounds, world);
         double y2Pix = yPosType.transform(y2, bounds, world);
