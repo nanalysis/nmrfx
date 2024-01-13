@@ -18,11 +18,11 @@
 package org.nmrfx.processor.gui.spectra;
 
 import javafx.event.Event;
-import javafx.scene.input.RotateEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.ZoomEvent;
 import org.apache.commons.lang3.SystemUtils;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PreferencesController;
 
 /**
  * @author Bruce Johnson
@@ -32,31 +32,6 @@ public class GestureBindings {
 
     public GestureBindings(PolyChart chart) {
         this.chart = chart;
-    }
-
-    public void rotate(RotateEvent rEvent) {
-        if (chart.hasData() && chart.getFXMLController().isPhaseSliderVisible()) {
-            double angle = rEvent.getAngle();
-            chart.setPh0(chart.getPh0() + angle);
-            double sliderPH0 = chart.getPh0() + chart.getDataPH0();
-            double sliderPH1 = chart.getPh1() + chart.getDataPH1();
-            chart.getFXMLController().getPhaser().setPhaseLabels(sliderPH0, sliderPH1);
-            chart.refresh();
-        }
-    }
-
-    public void rotationFinished(RotateEvent rEvent) {
-        if (chart.hasData() && chart.getFXMLController().isPhaseSliderVisible()) {
-            double angle = rEvent.getAngle();
-            chart.setPh0(chart.getPh0() + angle);
-            chart.getFXMLController().getPhaser().setPhaseLabels(chart.getPh0(), chart.getPh1());
-            // use properties??
-            if (rEvent.getEventType() == RotateEvent.ROTATION_FINISHED) {
-                double sliderPH0 = chart.getPh0() + chart.getDataPH0();
-                chart.getFXMLController().getPhaser().handlePh0Reset(sliderPH0);
-            }
-            chart.refresh();
-        }
     }
 
     public void zoom(Event event) {
@@ -80,7 +55,17 @@ public class GestureBindings {
         } else if ((border == ChartBorder.LEFT || border == ChartBorder.BOTTOM) || (event.isAltDown() && border == ChartBorder.NONE)) {
             chart.zoom(scrollDirectionFactor * -dy / 50.0 + 1.0);
         } else {
-            chart.scaleY(scrollDirectionFactor * dy);
+            if (Boolean.TRUE.equals(PreferencesController.getUseNvjMouseMode())) {
+                if (event.isControlDown()) {
+                    chart.scaleY(scrollDirectionFactor * dy);
+                } else if (event.isShiftDown()) {
+                    chart.scroll(dx, 0.0);
+                } else {
+                    chart.scroll(0.0, scrollDirectionFactor * dy);
+                }
+            } else {
+                chart.scaleY(scrollDirectionFactor * dy);
+            }
         }
     }
 }

@@ -25,6 +25,8 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -37,9 +39,12 @@ import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.collections4.iterators.PermutationIterator;
 import org.controlsfx.control.textfield.CustomTextField;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.datasets.ReferenceCalculator;
 import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,9 +61,12 @@ public class RefManager {
     ProcessorController processorController;
     Map<DataProps, ToggleButton> toggleButtons = new HashMap<>();
     Map<String, SimpleObjectProperty> objectPropertyMap = new HashMap<>();
+    Map<String, TextField> parameterMap = new HashMap<>();
     VendorParsGUI vendorParsGUI = new VendorParsGUI();
     ComboBox<String> acqOrderCombo;
     ChoiceBox<Integer> acqArrayChoice;
+
+    SimpleDoubleProperty zeroFieldProp = new SimpleDoubleProperty(1.0);
 
 
     public static class PositiveIntegerFilter implements UnaryOperator<TextFormatter.Change> {
@@ -104,7 +112,7 @@ public class RefManager {
         }
     }
 
-    public class FixedDecimalConverter extends DoubleStringConverter {
+    public static class FixedDecimalConverter extends DoubleStringConverter {
 
         private final int decimalPlaces;
 
@@ -136,7 +144,7 @@ public class RefManager {
                 ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(nmrData.getLabelNames()[iDim]);
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(value);
             }
 
@@ -153,7 +161,7 @@ public class RefManager {
                 ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSize(iDim));
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(Integer.parseInt(value));
             }
 
@@ -170,7 +178,7 @@ public class RefManager {
                 ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSize(iDim));
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 ((SimpleObjectProperty<Integer>) objectPropertyMap.get(name() + iDim)).set(Integer.parseInt(value));
             }
 
@@ -187,8 +195,12 @@ public class RefManager {
                 ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSF(iDim));
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
-                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(Double.parseDouble(value));
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
+                Double dValue = NMRDataUtil.parsePar(nmrData, iDim, value);
+                if (dValue == null) {
+                    dValue = nmrData.getSF(iDim);
+                }
+                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(dValue);
             }
 
             SimpleObjectProperty<Double> getObjectProperty() {
@@ -204,8 +216,12 @@ public class RefManager {
                 ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(nmrData.getSW(iDim));
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
-                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(Double.parseDouble(value));
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
+                Double dValue = NMRDataUtil.parsePar(nmrData, iDim, value);
+                if (dValue == null) {
+                    dValue = nmrData.getSW(iDim);
+                }
+                ((SimpleObjectProperty<Double>) objectPropertyMap.get(name() + iDim)).set(dValue);
             }
 
             SimpleObjectProperty<Double> getObjectProperty() {
@@ -233,7 +249,7 @@ public class RefManager {
                 ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(getDataValue(nmrData, iDim));
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 ((SimpleObjectProperty<String>) objectPropertyMap.get(name() + iDim)).set(value);
             }
 
@@ -250,7 +266,7 @@ public class RefManager {
                 ((SimpleObjectProperty<Boolean>) objectPropertyMap.get(name() + iDim)).set(false);
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 ((SimpleObjectProperty<Boolean>) objectPropertyMap.get(name() + iDim)).set(Boolean.parseBoolean(value.toLowerCase()));
             }
 
@@ -269,7 +285,7 @@ public class RefManager {
                 ((SimpleObjectProperty<AcquisitionType>) objectPropertyMap.get(name() + iDim)).set(modeType);
             }
 
-            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim) {
+            void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim) {
                 AcquisitionType modeType = getMode(value);
                 ((SimpleObjectProperty<AcquisitionType>) objectPropertyMap.get(name() + iDim)).set(modeType);
             }
@@ -291,14 +307,19 @@ public class RefManager {
 
         abstract void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim);
 
-        abstract void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, String value, int iDim);
+        abstract void setObjectValue(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, String value, int iDim);
 
         abstract SimpleObjectProperty getObjectProperty();
 
         String getString(Map<String, SimpleObjectProperty> objectPropertyMap, int iDim) {
             SimpleObjectProperty field = objectPropertyMap.get(name() + iDim);
-            Object value = field.getValue();
+            Object value = field == null ? null : field.getValue();
             return value == null ? "" : value.toString();
+        }
+
+        boolean isDefault(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim) {
+            String dataString = getDataValue(nmrData, iDim);
+            return dataString == null || dataString.equals(getString(objectPropertyMap, iDim));
         }
     }
 
@@ -459,6 +480,8 @@ public class RefManager {
             chartProcessor.execScriptList(true);
             chartProcessor.getChart().layoutPlotChildren();
         }
+        NMRData nmrData = getNMRData();
+        refreshParameters(nmrData);
     }
 
     private void updateDatasetChoice(DatasetType dataType) {
@@ -479,24 +502,32 @@ public class RefManager {
         TextField textField = new TextField();
         textField.setPrefWidth(200);
         textField.setEditable(false);
-
-        switch (field) {
-            case "Solvent" -> textField.setText(nmrData.getSolvent());
-            case "Sequence" -> textField.setText(nmrData.getSequence());
-            case "Temperature" -> textField.setText(String.valueOf(nmrData.getTempK()));
-            case "Date" -> textField.setText(nmrData.getZonedDate().toString());
-        }
+        parameterMap.put(field, textField);
         hBox.getChildren().addAll(label, textField);
         return hBox;
+    }
+
+    public void refreshParameters(NMRData nmrData) {
+        for (var entry : parameterMap.entrySet()) {
+            String field = entry.getKey();
+            TextField textField = entry.getValue();
+            switch (field) {
+                case "Solvent" -> textField.setText(nmrData.getSolvent());
+                case "Sequence" -> textField.setText(nmrData.getSequence());
+                case "Temperature" -> textField.setText(String.valueOf(nmrData.getTempK()));
+                case "Date" -> textField.setText(nmrData.getZonedDate().toString());
+            }
+        }
     }
 
     public void updateReferencePane(NMRData nmrData, int nDim) {
         VBox vBox = new VBox();
         vBox.setSpacing(4);
         String[] infoFields = {"Sequence", "Solvent", "Temperature", "Date"};
-        for (String infoField: infoFields) {
+        for (String infoField : infoFields) {
             vBox.getChildren().add(getParDisplay(nmrData, infoField));
         }
+        refreshParameters(nmrData);
 
         Label dataTypeLabel = new Label("Output Type");
         dataTypeLabel.setPrefWidth(100);
@@ -518,7 +549,7 @@ public class RefManager {
         acqOrderBox.setSpacing(10);
         acqOrderBox.setAlignment(Pos.CENTER_LEFT);
         acqArrayChoice = new ChoiceBox<>();
-        for (int i=0;i<32;i++) {
+        for (int i = 0; i < 32; i++) {
             acqArrayChoice.getItems().add(i);
         }
         acqArrayChoice.setValue(0);
@@ -526,8 +557,35 @@ public class RefManager {
         acqArrayChoice.valueProperty().addListener(e -> acqArrayChanged());
 
 
-
         vBox.getChildren().addAll(datatypeBox, acqOrderBox);
+
+        CustomTextField zeroFreqTextField = new CustomTextField();
+        zeroFreqTextField.setPrefWidth(150);
+        TextFormatter<Double> zFtextFormatter = new TextFormatter<>(new FixedDecimalConverter(7), 0.0, new FixedDecimalFilter());
+        zFtextFormatter.valueProperty().bindBidirectional((Property) zeroFieldProp);
+        nmrData.setZeroFreq(null);
+        zeroFieldProp.set(nmrData.getZeroFreq());
+        zeroFieldProp.addListener(e -> {
+            processorController.chartProcessor.setZeroFreq(zeroFieldProp.doubleValue());
+            invalidateScript();
+        });
+        zeroFreqTextField.setTextFormatter(zFtextFormatter);
+        Label zfLabel = new Label("ZeroFreq");
+        zfLabel.setPrefWidth(100);
+        HBox zfBox = new HBox();
+        zfBox.setSpacing(10);
+        zfBox.setAlignment(Pos.CENTER_LEFT);
+        MenuButton zfMenu = new MenuButton("Set");
+        zfMenu.setPrefWidth(50);
+        zfBox.getChildren().addAll(zfLabel, zeroFreqTextField, zfMenu);
+        zeroFreqTextField.setEditable(false);
+        MenuItem dssMenuItem = new MenuItem("Set from lock");
+        MenuItem inputMenuItem = new MenuItem("Input");
+        zfMenu.getItems().addAll(dssMenuItem, inputMenuItem);
+        dssMenuItem.setOnAction(e -> setZeroFreqFromLock(zeroFreqTextField));
+        inputMenuItem.setOnAction(e -> zeroFreqTextField.setEditable(true));
+
+        vBox.getChildren().add(zfBox);
 
         if ((nmrData != null) && nmrData.getVendor().equals("bruker")) {
             CheckBox checkBox = new CheckBox("Fix DSP");
@@ -569,6 +627,9 @@ public class RefManager {
                 } else {
                     prop = dataProp.getObjectProperty();
                 }
+                if (!dataProp.isDefault(objectPropertyMap, nmrData, i)) {
+                    toggleButton.setSelected(false);
+                }
                 objectPropertyMap.put(dataProp.name() + i, prop);
                 if (dataProp == DataProps.SKIP) {
                     if (i > 0) {
@@ -605,7 +666,9 @@ public class RefManager {
                             referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));
                         }
                         referenceMenuTextField.getTextField().textProperty().bindBidirectional(prop);
-                        referenceMenuTextField.getTextField().textProperty().addListener(e -> invalidateScript());
+                        if (i == 0) {
+                            referenceMenuTextField.getTextField().textProperty().addListener(e -> updateReference(prop));
+                        }
                         gridPane.add(referenceMenuTextField, i + start, row);
                     } else {
                         CustomTextField textField = new CustomTextField();
@@ -614,10 +677,12 @@ public class RefManager {
                         textField.setOnKeyPressed(e -> invalidateScript());
                         gridPane.add(textField, i + start, row);
                         if (prop.get() instanceof Double dValue) {
+                            int decimalPlaces = dataProp == DataProps.SF ? 7 : 2;
                             if (currentProp == null) {
                                 prop.set(Double.parseDouble(dataProp.getDataValue(nmrData, i)));
                             }
-                            TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(2), 0.0, new FixedDecimalFilter());
+                            TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(decimalPlaces),
+                                    0.0, new FixedDecimalFilter());
                             textFormatter.valueProperty().bindBidirectional(prop);
                             textField.setTextFormatter(textFormatter);
                         } else if (prop.get() instanceof Integer dValue) {
@@ -650,6 +715,45 @@ public class RefManager {
         vendorParsGUI.updateParTable(nmrData);
     }
 
+    private void setZeroFreqFromLock(CustomTextField textField) {
+        NMRData nmrData = getNMRData();
+        nmrData.setZeroFreq(null);
+        double z = nmrData.getZeroFreq();
+        zeroFieldProp.set(z);
+        processorController.chartProcessor.setZeroFreq(z);
+        textField.setEditable(false);
+        String labelText = ReferenceCalculator.isAcqueous(nmrData.getSolvent()) ? "DSS" : "TMS";
+        Label label = new Label(labelText);
+        textField.setRight(label);
+        invalidateScript();
+    }
+
+    private void updateReference(SimpleObjectProperty property) {
+        String refString = property.getValue().toString();
+        NMRData nmrData = getNMRData();
+        double sf = nmrData.getSF(0);
+        String tn = nmrData.getTN(0);
+        Nuclei nuclei = Nuclei.findNuclei(tn);
+        double z;
+        if (refString.isEmpty()) {
+            nmrData.setZeroFreq(null);
+            z = nmrData.getZeroFreq();
+        } else if (refString.equals("H2O")) {
+            double ref = ReferenceCalculator.getH2ORefPPM(nmrData.getTempK());
+            z = sf / (1.0 + ref * 1.0e-6);
+        } else {
+            try {
+                double ref = Double.parseDouble(refString);
+                z = sf / (1.0 + ref * 1.0e-6);
+                z /= nuclei.getRatio() / 100.0;
+            } catch (NumberFormatException nfE) {
+                z = nmrData.getZeroFreq();
+            }
+        }
+        zeroFieldProp.set(z);
+        processorController.chartProcessor.setZeroFreq(z);
+        invalidateScript();
+    }
 
     public boolean getSkip(String iDim) {
         SimpleObjectProperty objectProp = objectPropertyMap.get(DataProps.SKIP.name() + iDim);
@@ -673,6 +777,13 @@ public class RefManager {
         sBuilder.append("fixdsp(");
         sBuilder.append(chartProcessor.getFixDSP() ? "True" : "False");
         sBuilder.append(")");
+        sBuilder.append(System.lineSeparator());
+        Double zeroFreq = chartProcessor.getZeroFreq();
+        if (zeroFreq != null) {
+            sBuilder.append("zerofreq(");
+            sBuilder.append(zeroFreq);
+            sBuilder.append(")");
+        }
         sBuilder.append(System.lineSeparator());
         for (DataProps dataProps : DataProps.values()) {
             if (!toggleButtons.get(dataProps).isSelected()) {
@@ -715,12 +826,13 @@ public class RefManager {
                     case "ACQORDER" -> chartProcessor.setAcqOrder(args);
                     case "ACQARRAY" -> chartProcessor.setArraySize(args);
                     case "FIXDSP" -> chartProcessor.setFixDSP(args.equals("True"));
+                    case "ZEROFREQ" -> chartProcessor.setZeroFreq(Double.parseDouble(args));
                     default -> {
                         DataProps dataProps = DataProps.valueOf(propName);
                         List<String> parValues = CSVLineParse.parseLine(args);
                         int dim = 0;
                         for (String parValue : parValues) {
-                            dataProps.setObjectValue(objectPropertyMap, parValue, dim);
+                            dataProps.setObjectValue(objectPropertyMap, nmrData, parValue, dim);
                             if (dataProps == DataProps.ACQMODE) {
                                 chartProcessor.setAcqMode(dim, parValue.toUpperCase());
                             }

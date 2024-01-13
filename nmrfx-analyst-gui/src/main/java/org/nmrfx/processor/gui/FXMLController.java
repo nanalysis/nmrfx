@@ -42,6 +42,7 @@ import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -61,6 +62,7 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
@@ -77,6 +79,7 @@ import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
 import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
+import org.nmrfx.processor.processing.ProcessingSection;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
@@ -132,6 +135,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private double widthScale = 10.0;
     private Phaser phaser;
     private AttributesController attributesController;
+    private ToolController toolController;
     private ContentController contentController;
     private AnalyzerBar analyzerBar = null;
     @FXML
@@ -344,6 +348,19 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
+    public void openFIDForDataset() {
+        Dataset dataset = (Dataset) getActiveChart().getDataset();
+        if (dataset != null) {
+            dataset.sourceFID().ifPresentOrElse(file -> {
+                if (file.exists()) {
+                    openFile(file.toString(), true, false);
+                } else {
+                    openAction(null);
+                }
+            }, () -> openAction(null));
+        }
+    }
+
     /**
      * Gets a NMRData object from the filepath.
      *
@@ -462,6 +479,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             getActiveChart().removeProjections();
             getActiveChart().layoutPlotChildren();
             statusBar.setMode(SpectrumStatusBar.DataMode.FID);
+            processorController.hideDatasetToolBar();
         } else {
             log.warn("Unable to add FID because controller can not be created.");
         }
@@ -482,6 +500,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         ProcessorController processorController = getActiveChart().getProcessorController();
         if (processorController != null) {
             processorController.viewingDataset(true);
+            if (processorController.chartProcessor.getNMRData() == null) {
+                processorController.showDatasetToolBar();
+            }
         }
         borderPane.setLeft(null);
         updateSpectrumStatusBarOptions(true);
@@ -786,6 +807,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             }
             chartDrawingLayers.getGrid().requestLayout();
         });
+        SplitPane.setResizableWithParent(bottomBox, false);
 
         statusBar.setMode(SpectrumStatusBar.DataMode.DATASET_1D);
         for (int iCross = 0; iCross < 2; iCross++) {
@@ -797,6 +819,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         nmrControlRightSidePane.addContentListener(this::updateStageSize);
         cursorProperty.addListener(e -> setCursor());
         attributesController = AttributesController.create(this);
+        toolController = ToolController.create(this);
 
         contentController = ContentController.create(this);
     }
@@ -809,11 +832,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         // Note processor button is already created, just needs to have action listener and style setup
         ToggleButton attributesButton = new ToggleButton("Attributes");
         ToggleButton contentButton = new ToggleButton("Content");
-        SegmentedButton groupButton = new SegmentedButton(processorButton, contentButton, attributesButton);
+        ToggleButton toolButton = new ToggleButton("Tools");
+        SegmentedButton groupButton = new SegmentedButton(processorButton, contentButton, attributesButton, toolButton);
         groupButton.getButtons().forEach(button -> {
             // need to listen to property instead of action so toggle method is triggered when setSelected is called.
             button.selectedProperty().addListener((obs, oldValue, newValue) ->
-                    toggleNmrControlRightSideContent(attributesButton, contentButton, processorButton));
+                    toggleNmrControlRightSideContent(attributesButton, contentButton, processorButton, toolButton));
             button.getStyleClass().add("toolButton");
         });
         processorButton.disableProperty().addListener((observable, oldValue, newValue) -> {
@@ -854,8 +878,33 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         stage.maximizedProperty().addListener(this::adjustSizeAfterMaximize);
     }
 
+    public void initStageGeometry() {
+        boolean firstStage = AnalystApp.getFXMLControllerManager().getControllers().size() == 1;
+        var bounds = Screen.getPrimary().getBounds();
+        double scale = 0.8;
+        double width = bounds.getWidth() - 500.0;  // allow for expanded right pane
+        double height = bounds.getHeight() * scale;
+        double xPos = 20.0;
+        double yPos = 50.0;
+        // make later stages smaller and approximately centered
+        if (!firstStage) {
+            width = width * 0.75;
+            height = height * 0.75;
+            xPos = Math.max((bounds.getWidth() - 500.0 - width) / 2.0, 20);
+            yPos = (bounds.getHeight() - height) / 2.0;
+        }
+        stage.setWidth(width);
+        stage.setHeight(height);
+        stage.setX(xPos);
+        stage.setY(yPos);
+    }
+
     public BorderPane getMainBox() {
         return mainBox;
+    }
+
+    public ToolController getToolController() {
+        return toolController;
     }
 
     public Cursor getCurrentCursor() {
@@ -906,6 +955,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             peakNavigator.removePeakList();
             bottomBox.getChildren().remove(peakNavigator.getToolBar());
             peakNavigator = null;
+            if (bottomBox.getChildren().isEmpty()) {
+                splitPane.setDividerPosition(0, 1.0);
+            }
         }
     }
 
@@ -936,6 +988,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (spectrumComparator != null) {
             bottomBox.getChildren().remove(spectrumComparator.getToolBar());
             spectrumComparator = null;
+            if (bottomBox.getChildren().isEmpty()) {
+                splitPane.setDividerPosition(0, 1.0);
+            }
         }
     }
 
@@ -955,6 +1010,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private void removeSpectrumMeasureBar(Object o) {
         if (measureBar != null) {
             bottomBox.getChildren().remove(measureBar.getToolBar());
+            if (bottomBox.getChildren().isEmpty()) {
+                splitPane.setDividerPosition(0, 1.0);
+            }
             measureBar = null;
         }
     }
@@ -971,13 +1029,16 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private void removeAnalyzerBar(Object o) {
         if (analyzerBar != null) {
             bottomBox.getChildren().remove(analyzerBar.getToolBar());
+            if (bottomBox.getChildren().isEmpty()) {
+                splitPane.setDividerPosition(0, 1.0);
+            }
             analyzerBar = null;
         }
     }
 
     public void linkPeakDims() {
         PeakLinker linker = new PeakLinker();
-        linker.linkAllPeakListsByLabel();
+        linker.linkAllPeakListsByLabel("");
     }
 
     public void removeChart(PolyChart chart) {
@@ -1256,7 +1317,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
         DatasetAttributes activeAttr = firstAttributes.get();
         // any peak lists created just for alignmnent should be deleted
-        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, null, false, "refList");
+        PeakPickParameters peakPickParameters = new PeakPickParameters();
+        peakPickParameters.listName = "refList";
+        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, null, peakPickParameters);
         if (refList == null) {
             return;
         }
@@ -1276,7 +1339,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrList) {
                 if (dataAttr != activeAttr) {
-                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, false, false, null, false, "movingList");
+                    PeakPickParameters peakPickParametersM = new PeakPickParameters();
+                    peakPickParametersM.listName = "movingList";
+                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, null, peakPickParametersM);
                     movingList.unLinkPeaks();
                     movingList.clearSearchDims();
                     movingList.addSearchDim(dimName1, 0.05);
@@ -1327,10 +1392,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void undo() {
         undoManager.undo();
+        getActiveChart().refresh();
     }
 
     public void redo() {
         undoManager.redo();
+        getActiveChart().refresh();
     }
 
     @PluginAPI("parametric")
@@ -1373,6 +1440,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             if (tool.getClass() == classType) {
                 result = true;
                 tools.remove(tool);
+                if (bottomBox.getChildren().isEmpty()) {
+                    splitPane.setDividerPosition(0, 1.0);
+                }
                 break;
             }
         }
@@ -1399,7 +1469,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         phaser.setPhaseDim(phaseDim);
     }
 
-    protected int[] getExtractRegion(String vecDimName, int size) {
+    protected int[] getExtractRegion(ProcessingSection vecDimName, int size) {
         int start = 0;
         int end = size - 1;
         if (chartProcessor != null) {
@@ -1430,11 +1500,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return new int[]{start, end};
     }
 
-    protected ArrayList<Double> getBaselineRegions(String vecDimName) {
+    protected ArrayList<Double> getBaselineRegions(ProcessingSection section) {
         ArrayList<Double> fracs = new ArrayList<>();
         if (chartProcessor != null) {
             int currentIndex = chartProcessor.getProcessorController().getPropertyManager().getCurrentIndex();
-            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(vecDimName);
+            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(section);
             if (listItems != null) {
                 log.info("curr ind {}", currentIndex);
                 Map<String, String> values = null;
@@ -1488,7 +1558,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
      * @param contentButton The content toggle button.
      * @param processorButton The processor toggle button.
      */
-    private void toggleNmrControlRightSideContent(ToggleButton attributesButton, ToggleButton contentButton, ToggleButton processorButton) {
+    private void toggleNmrControlRightSideContent(ToggleButton attributesButton, ToggleButton contentButton,
+                                                  ToggleButton processorButton, ToggleButton toolButton) {
         if (attributesButton.isSelected()) {
             nmrControlRightSidePane.addContent(attributesController);
             attributesController.setAttributeControls();
@@ -1496,6 +1567,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         } else if (contentButton.isSelected()) {
             nmrControlRightSidePane.addContent(contentController);
             contentController.update();
+            viewProcessorControllerIfPossible = false;
+        } else if (toolButton.isSelected()) {
+            nmrControlRightSidePane.addContent(toolController);
+            toolController.update();
             viewProcessorControllerIfPossible = false;
         } else if (processorButton.isSelected()) {
             boolean dataIsFID = false;
@@ -1596,11 +1671,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
         buttons.add(new Separator(Orientation.VERTICAL));
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(e -> undoManager.undo());
+        bButton.setOnAction(e -> undo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.undoable.not());
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REPEAT, "Redo", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(e -> undoManager.redo());
+        bButton.setOnAction(e -> redo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.redoable.not());
 
@@ -1830,15 +1905,15 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void showScannerTool() {
-        if (getBottomBox().getChildren().isEmpty()) {
-            BorderPane vBox;
-            if (scannerTool != null) {
-                vBox = scannerTool.getBox();
-            } else {
-                vBox = new BorderPane();
-                scannerTool = new ScannerTool(this);
-                scannerTool.initialize(vBox);
-            }
+        BorderPane vBox;
+        if (scannerTool != null) {
+            vBox = scannerTool.getBox();
+        } else {
+            vBox = new BorderPane();
+            scannerTool = new ScannerTool(this);
+            scannerTool.initialize(vBox);
+        }
+        if (!getBottomBox().getChildren().contains(vBox)) {
             splitPane.setDividerPosition(0, scannerTool.getSplitPanePosition());
             getBottomBox().getChildren().add(vBox);
             addTool(scannerTool);
@@ -1848,19 +1923,33 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void hideScannerTool() {
         if (scannerTool != null) {
             removeScannerTool();
-            splitPane.setDividerPosition(0, 1.0);
         }
     }
 
 
     public void removeScannerTool() {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(ScannerTool.class);
         double[] dividerPositions = controller.splitPane.getDividerPositions();
+        controller.removeTool(ScannerTool.class);
         if (scannerTool != null) {
             scannerTool.setSplitPanePosition(dividerPositions[0]);
-            controller.getBottomBox().getChildren().remove(scannerTool.getBox());
+            removeBottomBoxNode(scannerTool.getBox());
         }
+    }
+
+    public void removeBottomBoxNode(Node node) {
+        getBottomBox().getChildren().remove(node);
+        if (getBottomBox().getChildren().isEmpty()) {
+            splitPane.setDividerPosition(0, 1.0);
+        }
+    }
+
+    public void setSplitPaneDivider(double f) {
+        splitPane.setDividerPosition(0, f);
+    }
+
+    public double getSplitPaneDivider() {
+        return splitPane.getDividerPositions()[0];
     }
 
 }

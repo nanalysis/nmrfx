@@ -17,6 +17,9 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomResonance;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.utilities.ConvUtil;
 import org.nmrfx.utilities.Format;
@@ -43,7 +46,7 @@ public class PeakDim {
     private char[] error = {'+', '+'};
     private String user = "";
     private Peak myPeak = null;
-    private Resonance resonance;
+    private AtomResonance resonance;
     private boolean frozen = false;
     private boolean linksDrawn = false;  // used in drawing link lines
 
@@ -56,6 +59,10 @@ public class PeakDim {
     public PeakDim(Peak peak, int iDim) {
         myPeak = peak;
         setSpectralDim(iDim);
+    }
+    @Override
+    public String toString() {
+        return myPeak.getName() + "." + spectralDim;
     }
 
     public PeakDim copy(Peak peak) {
@@ -92,6 +99,13 @@ public class PeakDim {
         targetPeakDim.decayRateError = decayRateError;
         targetPeakDim.error = error.clone();
         targetPeakDim.user = user;
+        if (multiplet != null) {
+            Multiplet newMultiplet = new Multiplet(targetPeakDim);
+            multiplet.copyTo(newMultiplet);
+            newMultiplet.myPeakDim = targetPeakDim;
+            targetPeakDim.multiplet = newMultiplet;
+        }
+        targetPeakDim.resonance = resonance.copy();
     }
 
     public void restoreFrom(PeakDim peakDim) {
@@ -119,8 +133,8 @@ public class PeakDim {
     }
 
     public void copyLabels(PeakDim newPeakDim) {
-        Resonance resOld = getResonance();
-        Resonance resNew = newPeakDim.getResonance();
+        AtomResonance resOld = getResonance();
+        AtomResonance resNew = newPeakDim.getResonance();
         resNew.setName(resOld.getName());
     }
 
@@ -133,11 +147,12 @@ public class PeakDim {
     }
 
     public void initResonance() {
-        resonance = PeakList.resFactory().build();
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
+        resonance = resFactory.build();
         resonance.add(this);
     }
 
-    public Resonance getResonance() {
+    public AtomResonance getResonance() {
         return resonance;
     }
 
@@ -175,7 +190,11 @@ public class PeakDim {
 
     public void unLink() {
         resonance.remove(this);
+        var oldNames = resonance.getNames();
+        Atom atom = resonance.getAtom();
         initResonance();
+        resonance.setName(oldNames);
+        resonance.setAtom(atom);
         if (multiplet != null) {
             multiplet = new Multiplet(this);
         }
@@ -191,10 +210,11 @@ public class PeakDim {
 
     public void setResonance(long resID) {
         remove();
-        resonance = PeakList.resFactory().get(resID);
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
+        resonance = resFactory.get(resID);
     }
 
-    public void setResonance(Resonance newResonance) {
+    public void setResonance(AtomResonance newResonance) {
         resonance = newResonance;
     }
 

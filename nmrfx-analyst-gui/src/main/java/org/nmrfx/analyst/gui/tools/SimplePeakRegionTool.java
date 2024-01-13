@@ -26,6 +26,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.utils.FileUtils;
@@ -219,10 +220,8 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             return;
         }
 
-        if (hasRegions()) {
-            if (!clearAnalysis(true)) {
-                return;
-            }
+        if (hasRegions() && !clearAnalysis(true)) {
+            return;
         }
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
@@ -314,7 +313,9 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             if ((regions == null) || regions.isEmpty()) {
                 analyzer.calculateThreshold();
                 double threshold = analyzer.getThreshold();
-                PeakPicking.peakPickActive(controller, threshold);
+                PeakPickParameters peakPickParameters = new PeakPickParameters();
+                peakPickParameters.level(threshold);
+                PeakPicking.peakPickActive(controller, peakPickParameters);
                 analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
             } else {
                 analyzer.peakPickRegions();
@@ -405,7 +406,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 removeJournalFormatOnChart();
             } else {
                 peakList.registerPeakChangeListener(this);
-                AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 0.9, 100,
+                AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 300,
                         CanvasAnnotation.POSTYPE.FRACTION,
                         CanvasAnnotation.POSTYPE.PIXEL,
                         peakList.getName());

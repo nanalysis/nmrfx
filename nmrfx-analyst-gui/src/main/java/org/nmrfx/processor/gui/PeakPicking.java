@@ -8,6 +8,7 @@ package org.nmrfx.processor.gui;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.Peak;
@@ -39,15 +40,14 @@ public class PeakPicking {
         onSinglePeakSelected = action;
     }
 
-    public static void peakPickActive(FXMLController fxmlController, double level) {
-        peakPickActive(fxmlController, false, level);
-    }
-
-    public static void peakPickActive(FXMLController fxmlController, boolean refineLS, Double level) {
+    public static void peakPickActive(FXMLController fxmlController, PeakPickParameters peakPickPar) {
         PolyChart chart = fxmlController.getActiveChart();
         ObservableList<DatasetAttributes> dataList = chart.getDatasetAttributes();
+        peakPickPar.useCrossHairs = peakPickPar.useCrossHairs && chart.getCrossHairs().hasRegion();
         dataList.stream().filter(dataAttr -> !dataAttr.isProjection())
-                .forEach((DatasetAttributes dataAttr) -> peakPickActive(chart, dataAttr, chart.getCrossHairs().hasRegion(), refineLS, level, false, null));
+                .filter(DatasetAttributes::getPos)
+                .forEach((DatasetAttributes dataAttr)
+                        -> peakPickActive(chart, dataAttr, null, peakPickPar));
         chart.refresh();
     }
 
@@ -66,26 +66,31 @@ public class PeakPicking {
         return listName;
     }
 
-    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean useCrossHairs, boolean refineLS,
-                                          Double level, boolean saveFile, String listName) {
-        return peakPickActive(chart, dataAttr, null, useCrossHairs, refineLS, level, saveFile, listName);
-    }
-
-    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, double[][] region,
-                                          Double level) {
-        chart.getPeakListAttributes().clear();
-        return peakPickActive(chart, dataAttr, region, false, false, level, false, null);
-    }
-
-    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, double[][] region, boolean useCrossHairs, boolean refineLS,
-                                          Double level, boolean saveFile, String listName) {
+    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, double[][] region, PeakPickParameters peakPickPar) {
         DatasetBase datasetBase = dataAttr.getDataset();
-        Dataset dataset = (Dataset) datasetBase;
-        int nDim = dataset.getNDim();
-        if (listName == null) {
-            listName = getListName(chart, dataAttr);
+        peakPickPar.theFile = (Dataset) datasetBase;
+        int nDim = peakPickPar.theFile.getNDim();
+        if (peakPickPar.listName == null) {
+            peakPickPar.listName = getListName(chart, dataAttr);
         }
-        PeakList testList = PeakList.get(listName);
+        if ((peakPickPar.useNoise) && (peakPickPar.noiseLimit > 0.001)) {
+            if (!peakPickPar.theFile.sliceRMSDValid()) {
+                if ((peakPickPar.theFile.getNDim() < 3) || GUIUtils.affirm("Measure slice RMS (can be slow)")) {
+                    for (int iDim = 0; iDim < peakPickPar.theFile.getNDim(); iDim++) {
+                        try {
+                            peakPickPar.theFile.measureSliceRMSD(iDim);
+                        } catch (IOException e) {
+                            ExceptionDialog dialog = new ExceptionDialog(e);
+                            dialog.showAndWait();
+                            return null;
+                        }
+                    }
+                } else {
+                    return null;
+                }
+            }
+        }
+        PeakList testList = PeakList.get(peakPickPar.listName);
         if (testList != null) {
             if (chart.is1D() && (testList.getNDim() != 1)) {
                 GUIUtils.warn("Peak Picking", "Peak list exists and is not 1D");
@@ -95,24 +100,16 @@ public class PeakPicking {
                 return null;
             }
         }
-
-        if (level == null) {
-            level = dataAttr.getLvl();
-            if (nDim == 1) {
-                if (chart.getCrossHairs().getState(0, Orientation.HORIZONTAL)) {
-                    level = chart.getCrossHairs().getPosition(0, Orientation.HORIZONTAL);
-                } else {
-                    level /= 10.0;
-                }
-            }
+        if (peakPickPar.mode == null) {
+            peakPickPar.mode = "appendregion";
         }
-        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendregion");
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.calcRange();
         peakPickPar.convolve(PreferencesController.getConvolutionPickPar());
+        int nFreqDim = datasetBase.getNFreqDims();
         for (int iDim = 0; iDim < nDim; iDim++) {
             int jDim = dataAttr.getDim(iDim);
-            if (iDim < 2) {
+            if ((iDim < 2) && (iDim < nFreqDim)) {
                 if (region != null) {
                     if (region.length > iDim) {
                         peakPickPar.limit(jDim, region[iDim][0], region[iDim][1]);
@@ -124,7 +121,7 @@ public class PeakPicking {
                         }
                         peakPickPar.limit(jDim, row, row);
                     }
-                } else if (useCrossHairs) {
+                } else if (peakPickPar.useCrossHairs) {
                     Orientation orientation = iDim == 0 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
                     peakPickPar.limit(jDim,
                             chart.getCrossHairs().getPosition(0, orientation),
@@ -143,18 +140,32 @@ public class PeakPicking {
                 }
             }
         }
+
+        if (peakPickPar.level == null) {
+            peakPickPar.level = dataAttr.getLvl();
+            if (chart.is1D()) {
+                if (chart.getCrossHairs().getState(0, Orientation.HORIZONTAL) && chart.getCrossHairs().isVisible(0, Orientation.HORIZONTAL)) {
+                    peakPickPar.level = chart.getCrossHairs().getPosition(0, Orientation.HORIZONTAL);
+                } else {
+                    Analyzer analyzer = new Analyzer(peakPickPar.theFile);
+                    analyzer.calculateThreshold();
+                    peakPickPar.level = analyzer.getThreshold();
+                }
+            }
+        }
+
         PeakPicker picker = new PeakPicker(peakPickPar);
         PeakList peakList = null;
         try {
-            if (refineLS) {
+            if (peakPickPar.refineLS) {
                 peakList = picker.refinePickWithLSCat();
             } else {
                 peakList = picker.peakPick();
             }
             if (peakList != null) {
                 chart.setupPeakListAttributes(peakList);
-                if (saveFile) {
-                    String canonFileName = dataset.getCanonicalFile();
+                if (peakPickPar.saveFile) {
+                    String canonFileName = peakPickPar.theFile.getCanonicalFile();
                     int lastDot = canonFileName.lastIndexOf(".");
                     String listFileName = lastDot < 0 ? canonFileName + ".xpk2"
                             : canonFileName.substring(0, lastDot) + ".xpk2";
@@ -164,7 +175,7 @@ public class PeakPicking {
                     }
                 }
             }
-        } catch (IOException | InvalidPeakException ioE) {
+        } catch (IOException | InvalidPeakException | IllegalArgumentException ioE) {
             ExceptionDialog dialog = new ExceptionDialog(ioE);
             dialog.showAndWait();
         }
@@ -206,7 +217,18 @@ public class PeakPicking {
                 peakPickPar.limit(jDim, pos, pos);
             } else {
                 if (chart.getAxes().getMode(iDim) == DatasetAttributes.AXMODE.PTS) {
-                    peakPickPar.limit(jDim, (int) chart.getAxes().get(iDim).getLowerBound(), (int) chart.getAxes().get(iDim).getUpperBound());
+                    int index = dataAttr.getDrawListIndex(0);
+                    int lB = (int) chart.getAxes().get(iDim).getLowerBound();
+                    int uB = (int) chart.getAxes().get(iDim).getUpperBound();
+                    if (lB != uB) {
+                        if (index != -1) {
+                            peakPickPar.limit(jDim, index, index);
+                        } else {
+                            peakPickPar.limit(jDim, lB, lB);
+                        }
+                    } else {
+                        peakPickPar.limit(jDim, lB, lB);
+                    }
                 } else {
                     peakPickPar.limit(jDim, chart.getAxes().get(iDim).getLowerBound(), chart.getAxes().get(iDim).getUpperBound());
                 }

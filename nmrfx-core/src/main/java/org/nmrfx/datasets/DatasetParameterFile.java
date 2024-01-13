@@ -131,12 +131,16 @@ public class DatasetParameterFile {
                 Entry entry = (Entry) obj;
                 pStream.printf("%s %s %s\n", "property", entry.getKey(), entry.getValue());
             }
-            Path dFile = dataset.getFile().toPath();
+            Path dFile = dataset.getFile().getCanonicalFile().toPath();
             dataset.sourceFID().ifPresent(fidFile -> {
-                Path fPath = fidFile.toPath();
-                Path rPath = dFile.relativize(fPath);
-                pStream.printf("%s %s\n", "fid_rel", rPath);
-                pStream.printf("%s %s\n", "fid_abs", fidFile);
+                try {
+                    Path fPath = fidFile.getCanonicalFile().toPath();
+                    Path rPath = dFile.relativize(fPath);
+                    pStream.printf("%s %s\n", "fid_rel", rPath);
+                    pStream.printf("%s %s\n", "fid_abs", fPath);
+                } catch (IOException ioE1) {
+
+                }
             });
         } catch (IOException ioE) {
             System.out.println("error " + ioE.getMessage());
@@ -153,7 +157,7 @@ public class DatasetParameterFile {
                     String line;
                     while ((line = br.readLine()) != null) {
                         line = line.trim();
-                        if (line.length() == 0) {
+                        if (line.isEmpty()) {
                             continue;
                         }
                         if (line.charAt(0) == '#') {
@@ -192,114 +196,95 @@ public class DatasetParameterFile {
             return;
         }
         switch (fields[0]) {
-            case "complex": {
+            case "complex" -> {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 int value = Integer.parseInt(fields[2]);
                 dataset.setComplex(iDim, value == 1);
-                break;
             }
-            case "fdomain": {
+            case "fdomain" -> {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 int value = Integer.parseInt(fields[2]);
                 dataset.setFreqDomain(iDim, value == 1);
-                break;
             }
-
-            case "nucleus": {
+            case "nucleus" -> {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 dataset.setNucleus(iDim, fields[2]);
-                break;
             }
-            case "label": {
+            case "label" -> {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 dataset.setLabel(iDim, fields[2]);
-                break;
             }
-            case "dlabel": {
+            case "dlabel" -> {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 Matcher matcher = DLABEL_PAT.matcher(line);
                 if (matcher.matches()) {
                     String dLabel = matcher.group(1).trim();
                     dataset.setDlabel(iDim, dLabel);
                 }
-                break;
             }
-            case "sw": {
+            case "sw" -> {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 double value = Double.parseDouble(fields[2]);
                 dataset.setSw(iDim, value);
-                break;
             }
-            case "sf": {
+            case "sf" -> {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 double value = Double.parseDouble(fields[2]);
                 dataset.setSf(iDim, value);
-                break;
             }
-            case "lvl": {
+            case "lvl" -> {
                 double value = Double.parseDouble(fields[1]);
                 dataset.setLvl(value);
-                break;
             }
-            case "scale": {
+            case "scale" -> {
                 double value = Double.parseDouble(fields[1]);
                 dataset.setScale(value);
-                break;
             }
-            case "norm": {
+            case "norm" -> {
                 double value = Double.parseDouble(fields[1]);
                 dataset.setNorm(value);
-                break;
             }
-            case "noise": {
+            case "noise" -> {
                 double value = Double.parseDouble(fields[1]);
                 dataset.setNoiseLevel(value);
-                break;
             }
-            case "rdims": {
+            case "rdims" -> {
                 int value = Integer.parseInt(fields[1]);
                 dataset.setNFreqDims(value);
-                break;
             }
-            case "datatype": {
+            case "datatype" -> {
                 int value = Integer.parseInt(fields[1]);
                 dataset.setDataType(value);
-                break;
             }
-            case "byteorder": {
+            case "byteorder" -> {
                 int value = Integer.parseInt(fields[1]);
                 if (value == 0) {
                     dataset.setLittleEndian();
                 } else {
                     dataset.setBigEndian();
                 }
-                break;
             }
-            case "poscolor": {
+            case "poscolor" -> {
                 dataset.setPosColor(fields[1]);
-                break;
             }
-            case "negcolor": {
+            case "negcolor" -> {
                 dataset.setNegColor(fields[1]);
-                break;
             }
-            case "posneg": {
+            case "posneg" -> {
                 int value = Integer.parseInt(fields[1]);
                 if (value == 0) {
                     value = 1;
                 }
                 dataset.setPosneg(value);
-                break;
             }
-            case "ref": {
+            case "ref" -> {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 double value = Double.parseDouble(fields[2]);
                 double pt = Double.parseDouble(fields[3]);
                 dataset.setRefPt(iDim, pt - 1);
                 dataset.setRefValue(iDim, value);
-                break;
             }
-            case "dim": {
+            case "dim" -> {
                 int nDim = Integer.parseInt(fields[1]);
                 if (fields.length != (nDim * 2 + 2)) {
                     throw new IllegalArgumentException("invalid par line " + line);
@@ -334,10 +319,8 @@ public class DatasetParameterFile {
                     }
                     layout.dimDataset();
                 }
-                break;
             }
-
-            case "property": {
+            case "property" -> {
                 String propName = fields[1];
                 if (fields.length == 2) {
                     dataset.addProperty(propName, "");
@@ -346,23 +329,20 @@ public class DatasetParameterFile {
                     String propValue = line.substring(index).trim();
                     dataset.addProperty(propName, propValue);
                 }
-                break;
             }
-            case "fid_rel": {
+            case "fid_rel" -> {
                 int spacePos = line.indexOf(" ");
                 if (spacePos != -1) {
                     relativeFIDPath = line.substring(spacePos).trim();
                 }
-                break;
             }
-            case "fid_abs": {
+            case "fid_abs" -> {
                 int spacePos = line.indexOf(" ");
                 if (spacePos != -1) {
                     absoluteFIDPath = line.substring(spacePos).trim();
                 }
-                break;
             }
-            case "values": {
+            case "values" -> {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 double[] values = new double[fields.length - 2];
                 for (int i = 2; i < fields.length; i++) {
@@ -370,7 +350,6 @@ public class DatasetParameterFile {
                     values[i - 2] = value;
                 }
                 dataset.setValues(iDim, values);
-                break;
             }
         }
 

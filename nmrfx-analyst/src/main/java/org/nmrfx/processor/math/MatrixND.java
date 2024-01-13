@@ -26,6 +26,7 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.math.Bessel;
 import org.nmrfx.processor.processing.ProcessingException;
+import org.nmrfx.processor.processing.SampleSchedule;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -48,12 +49,16 @@ public class MatrixND implements MatrixType {
     private double[] phases1;
     final int nDim;
     private int nElems;
+
     /**
      * Output point to write matrix.
      */
     private int[][] pt = null;
 
     private int[] dim = null;
+
+    public SampleSchedule schedule = null;
+
 
     public MatrixND(int... sizes) {
         this.sizes = sizes.clone();
@@ -1118,4 +1123,14 @@ public class MatrixND implements MatrixType {
         }
         return peaks;
     }
+
+    public SampleSchedule schedule() {
+        return schedule;
+    }
+
+    public void schedule(SampleSchedule sampleSchedule) {
+        schedule = sampleSchedule;
+    }
+
+
 }

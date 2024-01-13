@@ -67,10 +67,7 @@ import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public class AnalystApp extends Application {
     private static final Logger log = LoggerFactory.getLogger(AnalystApp.class);
@@ -115,11 +112,15 @@ public class AnalystApp extends Application {
             startInAdvanced = false;
         }
         analystApp = this;
-        getFXMLControllerManager().newController(stage);
+        String title = APP_NAME + " " + getVersion();
+        getFXMLControllerManager().newController(stage, title);
 
-        Platform.setImplicitExit(true);
+        if (isMac()) {
+            Platform.setImplicitExit(false);
+        } else {
+            Platform.setImplicitExit(true);
+        }
         hostServices = getHostServices();
-        stage.setTitle(APP_NAME + " " + getVersion());
 
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(APP_NAME);
@@ -334,7 +335,7 @@ public class AnalystApp extends Application {
     }
 
     private void showMailingListAction(ActionEvent event) {
-        hostServices.showDocument("https://groups.google.com/forum/#!forum/nmrfx-processor");
+        hostServices.showDocument("https://groups.io/g/NMRFx");
     }
 
     private void showOpenSourceAction(ActionEvent event) {
@@ -523,15 +524,24 @@ public class AnalystApp extends Application {
     }
 
     public void showRunAboutTool() {
-        System.out.println("show runabout");
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         if (!controller.containsTool(RunAboutGUI.class)) {
             TabPane tabPane = new TabPane();
             controller.getBottomBox().getChildren().add(tabPane);
+            tabPane.setMinHeight(200);
             RunAboutGUI runaboutTool = new RunAboutGUI(controller, this::removeRunaboutTool);
-            System.out.println("init");
             runaboutTool.initialize(tabPane);
             controller.addTool(runaboutTool);
+        }
+    }
+
+    public Optional<RunAboutGUI> getRunAboutTool() {
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
+        ControllerTool tool = controller.getTool(RunAboutGUI.class);
+        if (tool instanceof RunAboutGUI runAboutGUI) {
+            return Optional.of(runAboutGUI);
+        } else {
+            return Optional.empty();
         }
     }
 
@@ -550,50 +560,50 @@ public class AnalystApp extends Application {
     public void removePeakPathTool(PathTool pathTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(PathTool.class);
-        controller.getBottomBox().getChildren().remove(pathTool.getBox());
+        controller.removeBottomBoxNode(pathTool.getBox());
     }
 
     public void removePeakAssignTool(PeakAssignTool peakAssignTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(PeakAssignTool.class);
-        controller.getBottomBox().getChildren().remove(peakAssignTool.getBox());
+        controller.removeBottomBoxNode(peakAssignTool.getBox());
     }
 
     public void removePeakSlider(PeakSlider peakSlider) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(PeakSlider.class);
-        controller.getBottomBox().getChildren().remove(peakSlider.getBox());
+        controller.removeBottomBoxNode(peakSlider.getBox());
         peakSlider.removeListeners();
     }
 
     public void removeMolSim(SimMolController simMolController) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(SimMolController.class);
-        controller.getBottomBox().getChildren().remove(simMolController.getToolBar());
+        controller.removeBottomBoxNode(simMolController.getToolBar());
     }
 
     public void removeMolFitter(SimFitMolController simMolController) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(SimFitMolController.class);
-        controller.getBottomBox().getChildren().remove(simMolController.getBox());
+        controller.removeBottomBoxNode(simMolController.getBox());
     }
 
     public void removeScannerTool(ScannerTool scannerTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(ScannerTool.class);
-        controller.getBottomBox().getChildren().remove(scannerTool.getBox());
+        controller.removeBottomBoxNode(scannerTool.getBox());
     }
 
     public void removeRunaboutTool(RunAboutGUI runaboutTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(RunAboutGUI.class);
-        controller.getBottomBox().getChildren().remove(runaboutTool.getTabPane());
+        controller.removeBottomBoxNode(runaboutTool.getTabPane());
     }
 
     public void removeStripsBar(StripController stripsController) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(StripController.class);
-        controller.getBottomBox().getChildren().remove(stripsController.getBox());
+        controller.removeBottomBoxNode(stripsController.getBox());
     }
 
     public void readMolecule(String type) {

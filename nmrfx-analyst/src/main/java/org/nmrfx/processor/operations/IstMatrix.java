@@ -346,7 +346,7 @@ public class IstMatrix extends MatrixOperation {
         while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
-            if (skipList.isEmpty() || !isInSkipList(skipList, counts)) {
+            if ((skipList == null) ||skipList.isEmpty() || !isInSkipList(skipList, counts)) {
                 int offset = matrixND.getOffset(counts);
                 validPositions[offset] = true;
             }

@@ -27,48 +27,73 @@ import java.util.List;
  * @author Bruce Johnson
  */
 public class DatasetMerger {
+    Dataset outputDataset = null;
+    Vec inVec = null;
+    int[] indices = null;
+    int nDim = 0;
 
-    public void merge(List<String> fileNames, String outFileName) throws IOException, DatasetException {
-        Dataset outputDataset = null;
-        int nInputFiles = fileNames.size();
+    void openOutput(Dataset inputDataset, int nInputFiles, File outFile) throws DatasetException {
+        nDim = inputDataset.getNDim();
+        int[] dimSizes = new int[nDim + 1];
+        for (int i = 0; i < nDim; i++) {
+            dimSizes[i] = inputDataset.getSizeTotal(i);
+        }
+        dimSizes[nDim] = nInputFiles;
+        outputDataset = Dataset.createDataset(outFile.toString(), outFile.getName(), outFile.getName(), dimSizes, false, true);
+        for (int i = 0; i < outputDataset.getNDim(); i++) {
+            outputDataset.setComplex(i, false);
+            outputDataset.syncPars(i);
+        }
+        outputDataset.setNFreqDims(nDim);
+        inVec = new Vec(inputDataset.getSizeTotal(0));
+        indices = new int[nDim];
+    }
+
+    void readInput(Dataset inputDataset, int iFile) throws IOException {
+        if (nDim == 1) {
+            inputDataset.readVector(inVec, 0, 0);
+            indices[0] = iFile;
+            outputDataset.writeVector(inVec, indices, 0);
+        } else if (nDim == 2) {
+            int nRows = inputDataset.getSizeTotal(1);
+            for (int iRow = 0; iRow < nRows; iRow++) {
+                inputDataset.readVector(inVec, iRow, 0);
+                indices[0] = iRow;
+                indices[1] = iFile;
+                outputDataset.writeVector(inVec, indices, 0);
+            }
+            inputDataset.copyHeader(outputDataset, 0);
+            inputDataset.copyHeader(outputDataset, 1);
+        }
+
+    }
+
+    public void mergeFiles(List<String> fileNames, File outFile) throws IOException, DatasetException {
         int iFile = 0;
-        Vec inVec = null;
-        int[] indices = null;
-        int nDim = 0;
+        int nInput = fileNames.size();
         for (String fileName : fileNames) {
             Dataset inputDataset = new Dataset(fileName, fileName, false, true);
             if (outputDataset == null) {
-                nDim = inputDataset.getNDim();
-                File outFile = new File(outFileName);
-                int[] dimSizes = new int[nDim + 1];
-                for (int i = 0; i < nDim; i++) {
-                    dimSizes[i] = inputDataset.getSizeTotal(i);
-                }
-                dimSizes[nDim] = nInputFiles;
-                outputDataset = Dataset.createDataset(outFileName, outFile.getName(), outFile.getName(), dimSizes, false, true);
-                for (int i = 0; i < outputDataset.getNDim(); i++) {
-                    outputDataset.setComplex(i, false);
-                    outputDataset.syncPars(i);
-                }
-                outputDataset.setNFreqDims(nDim);
-                inVec = new Vec(inputDataset.getSizeTotal(0));
-                indices = new int[nDim];
+                openOutput(inputDataset, nInput, outFile);
             }
-            if (nDim == 1) {
-                inputDataset.readVector(inVec, 0, 0);
-                indices[0] = iFile;
-                outputDataset.writeVector(inVec, indices, 0);
-            } else if (nDim == 2) {
-                int nRows = inputDataset.getSizeTotal(1);
-                for (int iRow = 0; iRow < nRows; iRow++) {
-                    inputDataset.readVector(inVec, iRow, 0);
-                    indices[0] = iRow;
-                    indices[1] = iFile;
-                    outputDataset.writeVector(inVec, indices, 0);
-                }
-                inputDataset.copyHeader(outputDataset, 0);
-                inputDataset.copyHeader(outputDataset, 1);
+            readInput(inputDataset, iFile);
+            iFile++;
+        }
+        if (outputDataset != null) {
+            outputDataset.writeHeader();
+            outputDataset.writeParFile();
+            outputDataset.close();
+        }
+    }
+
+    public void mergeDatasets(List<Dataset> inputDatasets, File outFile) throws IOException, DatasetException {
+        int iFile = 0;
+        int nInput = inputDatasets.size();
+        for (Dataset inputDataset : inputDatasets) {
+            if (outputDataset == null) {
+                openOutput(inputDataset, nInput, outFile);
             }
+            readInput(inputDataset, iFile);
             iFile++;
         }
         if (outputDataset != null) {

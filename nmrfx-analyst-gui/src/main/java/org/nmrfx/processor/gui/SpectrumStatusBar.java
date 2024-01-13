@@ -85,7 +85,6 @@ public class SpectrumStatusBar {
     private final ToolBar secondaryToolbar = new ToolBar();
     private final MenuButton toolButton = new MenuButton("Tools");
     private final List<ButtonBase> specialButtons = new ArrayList<>();
-    private final Button peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
     private final ToggleButton phaserButton = new ToggleButton("Phasing");
 
     private boolean arrayMode = false;
@@ -98,7 +97,6 @@ public class SpectrumStatusBar {
 
     // can't be called from constructor: relies on controller.getActiveChart(), which returns null at construction
     public void init() {
-        peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
         tableButton.setOnAction(e -> controller.updateScannerTool(tableButton));
         initCursorButtonGroup();
         setupTools();
@@ -145,8 +143,10 @@ public class SpectrumStatusBar {
                         e -> spinner.setUserData(e.isShiftDown()));
                 planeListeners[i][j] = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
                     if (newValue != null && !newValue.equals(oldValue)) {
-                        Boolean shiftValue = (Boolean) spinner.getUserData();
-                        updatePlane(iDim, iSpin, newValue, shiftValue);
+                        updatePlane(iDim, iSpin, newValue, iSpin == 1);
+                        if (iSpin == 1) {
+                            setPlaneRange(iDim);
+                        }
                     }
                 };
                 SpinnerValueFactory<Integer> planeFactory = planeSpinner[i][j].getValueFactory();
@@ -370,7 +370,6 @@ public class SpectrumStatusBar {
             }
         });
     }
-
     private void updateSpinner(int iDim) {
         for (int j = 0; j < 2; j++) {
             SpinnerValueFactory<Integer> planeFactory = planeSpinner[iDim - 2][j].getValueFactory();
@@ -507,13 +506,37 @@ public class SpectrumStatusBar {
 
     private void setPlaneRanges(int iDim, int max) {
         for (int j = 0; j < 2; j++) {
-            SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][j].getValueFactory();
-            planeFactory.valueProperty().removeListener(planeListeners[iDim - 2][j]);
-            planeFactory.setMin(1);
-            planeFactory.setMax(max);
-            planeFactory.valueProperty().addListener(planeListeners[iDim - 2][j]);
+            setPlaneRange(iDim, j, max);
         }
     }
+
+    private void setPlaneRange(int iDim, int iSpin, int max) {
+        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][iSpin].getValueFactory();
+        planeFactory.valueProperty().removeListener(planeListeners[iDim - 2][iSpin]);
+        planeFactory.setMin(1);
+        planeFactory.setMax(max);
+        planeFactory.valueProperty().addListener(planeListeners[iDim - 2][iSpin]);
+    }
+
+    private void setPlaneRange(int iDim) {
+        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory0 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][0].getValueFactory();
+        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory1 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][1].getValueFactory();
+        int delta = planeFactory1.getValue() - planeFactory0.getValue();
+        int max0;
+        int min0;
+        planeFactory0.valueProperty().removeListener(planeListeners[iDim - 2][0]);
+        if (delta < 0) {
+            min0 = -delta + 1;
+            max0 = planeFactory1.getMax();
+        } else {
+            min0 = 1;
+            max0 = planeFactory1.getMax() - delta;
+        }
+        planeFactory0.setMin(min0);
+        planeFactory0.setMax(max0);
+        planeFactory0.valueProperty().addListener(planeListeners[iDim - 2][0]);
+    }
+
 
     public void set1DArray(int nDim, int nRows) {
         arrayMode = true;
@@ -657,8 +680,6 @@ public class SpectrumStatusBar {
         }
         if (currentMode == DataMode.DATASET_1D) {
             nodes.addAll(specialButtons);
-        } else if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
-            nodes.add(peakPickButton);
         }
 
         nodes.add(ToolBarUtils.makeFiller(10));

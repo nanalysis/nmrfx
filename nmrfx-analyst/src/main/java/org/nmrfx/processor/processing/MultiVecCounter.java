@@ -295,6 +295,10 @@ public class MultiVecCounter {
         try {
             for (int i = 0; i < groupSize; i++) {
                 int[] counts;
+                int index = groupSize * vecNum + i;
+                if (index >= outCounter.getSize()) {
+                    return null;
+                }
                 counts = outCounter.getCounts(groupSize * vecNum + i);
                 int[] iCounts = outToInCounter(counts);
                 inVecs[i] = inCounter.getCount(iCounts);

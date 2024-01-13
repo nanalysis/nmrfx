@@ -15,9 +15,9 @@ public class AnnoJournalFormat extends AnnoText {
     String journalName = "JMedCh";
     JournalFormat format = null;
 
-    public AnnoJournalFormat(double x1, double y1, double x2, double y2,
+    public AnnoJournalFormat(double x1, double y1, double width,
                              POSTYPE xPosType, POSTYPE yPosType, String peakListName) {
-        super(x1, y1, x2, y2, xPosType, yPosType, "");
+        super(x1, y1, width, "", 12.0, xPosType, yPosType);
 
         this.text = "";
         this.peakListName = peakListName;

@@ -102,14 +102,14 @@ public interface CanvasAnnotation {
         return switch (pos.getHpos()) {
             case LEFT -> HANDLE_WIDTH;
             case RIGHT -> -HANDLE_WIDTH;
-            case CENTER -> HANDLE_WIDTH / 2;
+            case CENTER -> -HANDLE_WIDTH / 2;
         };
     }
 
     private static double getVOffset(Pos pos) {
         return switch (pos.getVpos()) {
             case TOP -> HANDLE_WIDTH;
-            case CENTER -> HANDLE_WIDTH / 2;
+            case CENTER -> -HANDLE_WIDTH / 2;
             case BOTTOM, BASELINE -> -HANDLE_WIDTH;
         };
     }
@@ -121,10 +121,12 @@ public interface CanvasAnnotation {
         gC.strokeRect(x + hOffset, y + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
     }
 
-    public POSTYPE getXPosType();
+    POSTYPE getXPosType();
 
-    public POSTYPE getYPosType();
+    POSTYPE getYPosType();
 
+    void setXPosType(POSTYPE yPosType);
+    void setYPosType(POSTYPE yPosType);
     /**
      * Get the separation limit between two handles converted to POSTYPE.
      *
@@ -147,8 +149,6 @@ public interface CanvasAnnotation {
 
     boolean isSelectable();
 
-    void setSelectable(boolean state);
-
     int hitHandle(double x, double y);
 
     default boolean hitHandle(double x, double y, Pos pos, double handleX, double handleY) {
@@ -157,5 +157,7 @@ public interface CanvasAnnotation {
         Rectangle2D rect = new Rectangle2D(handleX + hOffset, handleY + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
         return rect.contains(x, y);
     }
+    void updateXPosType(CanvasAnnotation.POSTYPE type, double[] bounds, double[] world);
+    void updateYPosType(CanvasAnnotation.POSTYPE type, double[] bounds, double[] world);
 
 }

@@ -2,11 +2,14 @@ package org.nmrfx.analyst.gui.molecule;
 
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.event.Event;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ZoomEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -17,6 +20,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomSpecifier;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.predict.RNAStats;
@@ -37,6 +41,7 @@ public class SSViewer extends Pane {
     Group drawingGroup;
     Group infoGroup;
     Pane pane;
+    ScrollPane scrollPane;
     SSLayout ssLayout;
 
     ArrayList<Point2D> points = new ArrayList<>();
@@ -64,7 +69,11 @@ public class SSViewer extends Pane {
     double paneCenterY;
     double paneWidth;
     double paneHeight;
+    double scrollPaneWidth;
+    double scrollPaneHeight;
     double scale = 10.0;
+
+    double superScale = 1.0;
 
     public SSViewer() {
         initScene();
@@ -72,8 +81,8 @@ public class SSViewer extends Pane {
 
     @Override
     public void layoutChildren() {
-        pane.setPrefWidth(this.getWidth());
-        pane.setPrefHeight(this.getHeight());
+        scrollPane.setPrefWidth(this.getWidth());
+        scrollPane.setPrefHeight(this.getHeight());
         super.layoutChildren();
         drawSS();
     }
@@ -101,6 +110,7 @@ public class SSViewer extends Pane {
     }
 
     public final void initScene() {
+        scrollPane = new ScrollPane();
         pane = new Pane();
         drawingGroup = new Group();
         infoGroup = new Group();
@@ -108,11 +118,28 @@ public class SSViewer extends Pane {
         pane.setPrefSize(boxDim, boxDim);
         pane.getChildren().add(drawingGroup);
         pane.getChildren().add(infoGroup);
-        this.getChildren().add(pane);
+        scrollPane.setContent(pane);
+        this.getChildren().add(scrollPane);
         drawNumbersProp.addListener(e -> drawSS());
         showActiveProp.addListener(e -> drawSS());
         constraintTypeProp.addListener(e -> drawSS());
         drawSS();
+        scrollPane.widthProperty().addListener(e -> updateScale());
+        scrollPane.heightProperty().addListener(e -> updateScale());
+        pane.setOnZoom((Event event) -> {
+            ZoomEvent rEvent = (ZoomEvent) event;
+            double zoom = rEvent.getZoomFactor();
+            zoom(zoom);
+        });
+
+    }
+
+    public void clear() {
+        points.clear();
+        if (drawingGroup != null) {
+            drawingGroup.getChildren().clear();
+            infoGroup.getChildren().clear();
+        }
     }
 
     public void drawSS() {
@@ -125,8 +152,12 @@ public class SSViewer extends Pane {
     }
 
     void updateScale() {
-        paneWidth = pane.getWidth();
-        paneHeight = pane.getHeight();
+        scrollPaneWidth = scrollPane.getWidth();
+        scrollPaneHeight = scrollPane.getHeight();
+        paneWidth = scrollPaneWidth * superScale;
+        paneHeight = scrollPaneHeight * superScale;
+        pane.setPrefWidth(paneWidth);
+        pane.setPrefHeight(paneHeight);
         paneCenterX = paneWidth / 2.0;
         paneCenterY = paneHeight / 2.0;
         double minX = Double.MAX_VALUE;
@@ -145,11 +176,23 @@ public class SSViewer extends Pane {
         centerY = (maxY + minY) / 2.0;
         double widthX = maxX - minX;
         double widthY = maxY - minY;
-        double scaleX = paneWidth / widthX;
+        double scaleX = paneWidth  / widthX;
         double scaleY = paneHeight / widthY;
         scale = Math.min(scaleX, scaleY);
         scale *= (0.85 - N_ATOMS * 0.02);
     }
+
+    public void zoom(double factor) {
+        double h = scrollPane.getHvalue();
+        double v = scrollPane.getVvalue();
+        superScale *= factor;
+        superScale = Math.max(0.9, superScale);
+        updateScale();
+        layoutChildren();
+        scrollPane.setHvalue(h);
+        scrollPane.setVvalue(v);
+    }
+
 
     Node drawLabelledCircle(double width, String text, int fontSize, Color color, double x, double y) {
         StackPane stack = new StackPane();
@@ -575,7 +618,7 @@ public class SSViewer extends Pane {
                 } else {
                     text = "1";
                 }
-                if (!text.equals("")) {
+                if (!text.isEmpty()) {
                     boolean active = true;
                     if (showActiveProp.get()) {
                         active = false;
@@ -669,14 +712,6 @@ public class SSViewer extends Pane {
         }
     }
 
-    String getResNum(String atom) {
-        return atom.substring(0, atom.indexOf("."));
-    }
-
-    String getAtomName(String atom) {
-        return atom.substring(atom.indexOf(".") + 1);
-    }
-
     int getAtomIndex(String aName) {
         char c1 = aName.charAt(1);
         if ((aName.length() == 3) && (aName.charAt(2) == '\'')) {
@@ -697,10 +732,15 @@ public class SSViewer extends Pane {
         if (width < 4) {
             width = 4.0;
         }
-        String r1 = getResNum(a1);
-        String r2 = getResNum(a2);
-        int r1Num = Integer.parseInt(r1);
-        int r2Num = Integer.parseInt(r2);
+        AtomSpecifier atomSpecifier1 = AtomSpecifier.parseString(a1);
+        AtomSpecifier atomSpecifier2 = AtomSpecifier.parseString(a2);
+        int r1Num = atomSpecifier1.getResNum();
+        int r2Num = atomSpecifier2.getResNum();
+        String aName1 = atomSpecifier1.getAtomName();
+        String aName2 = atomSpecifier2.getAtomName();
+        String resAtom1 = atomSpecifier1.getResNumString() + "." + aName1;
+        String resAtom2 = atomSpecifier2.getResNumString() + "." + aName2;
+
 
         boolean allOK = constraintTypeProp.getValue().equals("All");
         boolean intraOK = constraintTypeProp.getValue().equals("Intraresidue") && (r1Num == r2Num);
@@ -709,24 +749,20 @@ public class SSViewer extends Pane {
         if (!allOK && !intraOK && !interOK) {
             return;
         }
-        String aName1 = getAtomName(a1);
-        String aName2 = getAtomName(a2);
         if ((getAtomIndex(aName1) >= N_ATOMS) || (getAtomIndex(aName2) >= N_ATOMS)) {
             return;
         }
-        if ((r1Num > r2Num) || (a1.compareTo(a2) > 0)) {
-            String hold = a2;
-            a2 = a1;
-            a1 = hold;
-            r1 = getResNum(a1);
-            r2 = getResNum(a2);
+        if ((r1Num > r2Num) || (aName1.compareTo(aName2) > 0)) {
+            String hold = resAtom2;
+            resAtom2 = resAtom1;
+            resAtom1 = hold;
         }
         width *= 0.4;
-        AtomCoord c1 = atomMap.get(a1);
-        AtomCoord c2 = atomMap.get(a2);
+        AtomCoord c1 = atomMap.get(resAtom1);
+        AtomCoord c2 = atomMap.get(resAtom2);
         if ((c1 != null) && (c2 != null)) {
             double div = 5.0;
-            if (r1.equals(r2)) {
+            if (r1Num == r2Num) {
                 div = 1.0;
             }
             double dX = c2.x - c1.x;

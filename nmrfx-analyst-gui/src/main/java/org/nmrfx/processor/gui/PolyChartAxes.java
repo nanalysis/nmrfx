@@ -208,6 +208,23 @@ public class PolyChartAxes {
         return limits;
     }
 
+    public double[] getLimits(int axis, double min, double max) {
+        double[] limits = getRange(axis);
+        double range = max -min;
+        if (min > limits[0]) {
+            limits[0] = min;
+        } else {
+            max = limits[0] + range;
+        }
+        if (max < limits[1]) {
+            limits[1] = max;
+        } else {
+            limits[0] = limits[1] - range;
+        }
+        return limits;
+    }
+
+
     /**
      * Checks the current axis is within provided range.
      *

@@ -13,11 +13,16 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.MoleculePrimitives;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,14 +31,13 @@ import java.util.List;
 
 public class CanvasMolecule implements CanvasAnnotation {
     private static final Logger log = LoggerFactory.getLogger(CanvasMolecule.class);
-
-    PolyChart chart = null;
-    ChartMenu menu = null;
     private static final int BY_ATOM = 0;
     private static final int BY_VALUE = 1;
     private static final int CIRCLE_SHAPE = 0;
     private static final int SQUARE_SHAPE = 1;
     private static final int TRIANGLE_SHAPE = 2;
+    PolyChart chart = null;
+    ChartMenu menu = null;
     float radius = 0.4f;
     float valueScale = 10.0f;
     float valueZero = 0.0f;
@@ -113,9 +117,17 @@ public class CanvasMolecule implements CanvasAnnotation {
         return xPosType;
     }
 
+    public void setXPosType(POSTYPE xPosType) {
+        this.xPosType = xPosType;
+    }
+
     @Override
     public POSTYPE getYPosType() {
         return yPosType;
+    }
+
+    public void setYPosType(POSTYPE yPosType) {
+        this.yPosType = yPosType;
     }
 
     void calcBounds() {
@@ -302,6 +314,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public int pick(GraphicsContextInterface gC, double x, double y) {
+        validate();
         return genSpheres(gC, true, x, y);
     }
 
@@ -315,9 +328,57 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
         if (selectMode && selectable) {
             selected = true;
+            assignPeak(molecule);
         }
     }
 
+    void assignPeak(PeakDim peakDim, List<Atom> atoms) {
+        Atom currentAtom = peakDim.getResonance().getAtom();
+        if (!atoms.isEmpty() && ((currentAtom == null) || (GUIUtils.affirm("Already assigned, change assignment?")))) {
+            for (Atom atom: atoms) {
+                peakDim.getResonance().setAtom(atom);
+                peakDim.setLabel(atom.getShortName());
+                atom.setPPM(peakDim.getChemShiftValue());
+                chart.clearSelectedMultiplets();
+            }
+        }
+
+    }
+    void assignPeak(Molecule molecule) {
+        var selectedSpatialSets = molecule.selectedSpatialSets();
+        var peaks = chart.getSelectedPeaks();
+        if (peaks.size() == 1 && selectedSpatialSets.size() == 1) {
+            Peak peak = peaks.get(0);
+            PeakList peakList = peak.getPeakList();
+            SpectralDim spectralDim = peakList.getSpectralDim(0);
+            String nucNumberName = spectralDim.getNucleus();
+            if (peak.getPeakList().getNDim() == 1) {
+                PeakDim peakDim = peak.getPeakDim(0);
+                boolean nucOK;
+                List<Atom> atoms = new ArrayList<>();
+                Atom selectedAtom = selectedSpatialSets.get(0).getAtom();
+                if (nucNumberName.equals("1H")) {
+                    nucOK = selectedAtom.getAtomicNumber() == 1;
+                    if (nucOK) {
+                        atoms.add(selectedAtom);
+                    } else {
+                        List<Atom> children = selectedAtom.getChildren();
+                        for (var child : children) {
+                            if (child.getAtomicNumber() == 1) {
+                                atoms.add(child);
+                            }
+                        }
+                    }
+                } else if (nucNumberName.equals("13C")) {
+                    nucOK = selectedAtom.getAtomicNumber() == 6;
+                    if (nucOK) {
+                        atoms.add(selectedAtom);
+                    }
+                }
+                assignPeak(peakDim, atoms);
+            }
+        }
+    }
     void selectMolecule(boolean selectMode) {
         Molecule molecule = Molecule.get(molName);
         if (!molecule.globalSelected.isEmpty()) {
@@ -410,6 +471,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public void draw(GraphicsContextInterface gC, double[][] canvasBounds, double[][] worldBounds) {
+        validate();
         x1 = xPosType.transform(bx1, canvasBounds[0], worldBounds[0]);
         x2 = xPosType.transform(bx2, canvasBounds[0], worldBounds[0]);
         y1 = yPosType.transform(by1, canvasBounds[1], worldBounds[1]);
@@ -427,6 +489,36 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
     }
 
+    void validate() {
+        Molecule molecule = null;
+        if (molName != null) {
+            molecule = Molecule.get(molName);
+        }
+
+        boolean ok = true;
+        if (molecule != null) {
+            int nSpheres = molecule.getSphereCount(iStructure);
+            if (molPrims.nSpheres != nSpheres) {
+                ok = false;
+            }
+            if (ok) {
+                int nLines = molecule.getLineCount(iStructure);
+                if (molPrims.nLines != nLines) {
+                    ok = false;
+                }
+            }
+            if (ok) {
+                int nLabels = molecule.getLineCount(iStructure);
+                if (molPrims.nLabels != nLabels) {
+                    ok = false;
+                }
+            }
+            if (!ok) {
+                setMolName(molName, iStructure);
+            }
+        }
+
+        }
     public void paintShape(GraphicsContextInterface g2) {
         boolean drawSpheres = true;
         boolean drawLines = true;
@@ -881,10 +973,10 @@ public class CanvasMolecule implements CanvasAnnotation {
         return selectable;
     }
 
-    @Override
-    public void setSelectable(boolean state) {
-        selectable = state;
-    }
+    //@Override
+    //public void setSelectable(boolean state) {
+     //   selectable = state;
+    //}
 
     @Override
     public int hitHandle(double x, double y) {
@@ -900,6 +992,22 @@ public class CanvasMolecule implements CanvasAnnotation {
             activeHandle = -1;
         }
         return activeHandle;
+    }
+
+    public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double x1Pix = xPosType.transform(x1, bounds, world);
+        double x2Pix = xPosType.transform(x2, bounds, world);
+        x1 = newType.itransform(x1Pix, bounds, world);
+        x2 = newType.itransform(x2Pix, bounds, world);
+        xPosType = newType;
+    }
+
+    public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
+        double y1Pix = yPosType.transform(y1, bounds, world);
+        double y2Pix = yPosType.transform(y2, bounds, world);
+        y1 = newType.itransform(y1Pix, bounds, world);
+        y2 = newType.itransform(y2Pix, bounds, world);
+        yPosType = newType;
     }
 
 }

@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,28 +29,38 @@ import java.util.Arrays;
 public class PeakPickParameters {
 
     private static final Logger log = LoggerFactory.getLogger(PeakPickParameters.class);
-    public Dataset theFile;
-    public String listName;
+    public Dataset theFile = null;
+    public String listName = null;
+    public PeakList filterList = null;
+    public boolean filter = false;
+    public double filterWidth;
     public String mode = "new";
     public String region = "box";
+    public boolean useCrossHairs;
+    public boolean refineLS = false;
+    public boolean saveFile = false;
     public boolean fixedPick = false;
     public int[][] pt = null;
     public int[][] ptMax;
     public double[] cpt;
     public int[] dim;
-    public double level;
+    public Double level = null;
     public double regionWidth = 0;
     public int thickness = 0;
-    boolean useAll = false;
+    public boolean useAll = false;
     public double sDevN = 0.0;
     public int nPeakDim = 0;
     public int posNeg = 1;
     public double noiseLimit = 0.0;
     ConvolutionPickPar convolutionPickPar = null;
 
+    public boolean useNoise = false;
+
     public PeakPickParameters(Dataset dataset, String listName) {
         this.theFile = dataset;
         this.listName = listName;
+    }
+    public PeakPickParameters() {
     }
 
     public PeakPickParameters mode(String mode) {

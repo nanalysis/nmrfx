@@ -53,8 +53,7 @@ public class ProcessTest {
         Path path = Path.of(scriptHome, fileName + ".py");
         PythonInterpreter interp = new PythonInterpreter();
         interp.exec("from pyproc import *");
-        interp.exec("FIDHOME='" + fidHome + "'");
-        interp.exec("TMPHOME='" + tmpHome + "'");
+        interp.exec("setTestLocations('" + fidHome + "','" + tmpHome + "')");
         interp.exec("useProcessor()");  // necessary to reset between processing multiple files
         interp.execfile(path.toString());
     }

@@ -23,11 +23,11 @@ public class DimCounter implements Iterable<int[]> {
     private final int nDim;
     private final int counterSize;
 
-    public class Iterator implements java.util.Iterator<int[]> {
+    public class Iterator<T> implements java.util.Iterator<int[]> {
 
         private final int[] counter = new int[nDim];
 
-        Iterator() {
+        public Iterator() {
             counter[0] = -1;
         }
 
@@ -72,7 +72,7 @@ public class DimCounter implements Iterable<int[]> {
     }
 
     @Override
-    public Iterator iterator() {
+    public Iterator<int[]> iterator() {
         return new Iterator();
     }
 

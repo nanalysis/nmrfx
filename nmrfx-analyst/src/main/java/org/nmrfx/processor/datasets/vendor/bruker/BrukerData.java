@@ -20,10 +20,8 @@ package org.nmrfx.processor.datasets.vendor.bruker;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.nmrfx.datasets.DatasetLayout;
-import org.nmrfx.processor.datasets.AcquisitionType;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetGroupIndex;
-import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.processor.datasets.*;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -81,12 +79,12 @@ public class BrukerData implements NMRData {
     private final int arraysize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
     private final int maxSize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
     private double deltaPh0_2 = 0.0;
-    // fixme dynamically determine size
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
     private final Double[] Sf = new Double[MAXDIM];
     private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
 
+    private Double zeroFreq = null;
     private String text = null;
 
     private final String fpath;
@@ -343,7 +341,7 @@ public class BrukerData implements NMRData {
             int nDim = Integer.parseInt(name.substring(0, 1));
             if ((nDim > 0) && (nDim == (name.length() - 1))) {
                 result = true;
-                for (int i = 1; i < nDim; i++) {
+                for (int i = 1; i < name.length(); i++) {
                     if (name.charAt(i) != 'r') {
                         result = false;
                         break;
@@ -626,6 +624,13 @@ public class BrukerData implements NMRData {
     @Override
     public void setRef(int iDim, double ref) {
         Ref[iDim] = ref;
+        String nucleusName = getTN(iDim);
+        Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+
+        if (nucleus == Nuclei.H1) {
+            double sf0 = getSF(iDim);
+            zeroFreq = sf0 / (1.0 + ref * 1.0e-6);
+        }
     }
 
     @Override
@@ -640,18 +645,20 @@ public class BrukerData implements NMRData {
             ref = Ref[iDim];
         } else {
             Double dpar;
-            // OFFSET from proc[n]s
-            if ((dpar = getParDouble("OFFSET," + (iDim + 1))) != null) {
+            var refOpt = getRefAtCenter(iDim);
+            if (refOpt.isPresent()) {
+                ref = refOpt.get();
+                // OFFSET from proc[n]s
+            } else if ((dpar = getParDouble("OFFSET," + (iDim + 1))) != null) {
                 double sw = getSW(iDim);
                 double sf = getSF(iDim);
                 ref = dpar - (sw / 2.0) / sf;
                 ref = Precision.round(ref, 5);
             } else if ((dpar = getParDouble("O1," + (iDim + 1))) != null) {
                 double o1 = dpar;
-                if ((dpar = getParDouble("SFO1," + (iDim + 1))) != null) {
+                if ((dpar = getParDouble("BF1," + (iDim + 1))) != null) {
                     double sf = dpar;
-                    double sw = getSW(iDim);
-                    ref = Precision.round((o1 - sw / 2.0) / sf, 5);
+                    ref = o1 / sf;
                 }
             }
             setRef(iDim, ref);
@@ -659,9 +666,63 @@ public class BrukerData implements NMRData {
         return ref;
     }
 
+    Optional<Double> getRefAtCenter(int iDim) {
+        String nucleusName = getTN(iDim);
+        Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+        double zf = getZeroFreq();
+        double ref = ReferenceCalculator.refByRatio(zf, getSF(iDim), nucleus, getSolvent());
+        return Optional.of(ref);
+    }
+
+    double getCorrectedBaseFreq() {
+        String solvent = getSolvent();
+        boolean isAcqueous = ReferenceCalculator.isAcqueous(solvent);
+        Double actualLockRef = null;
+        if (isAcqueous) {
+            actualLockRef = ReferenceCalculator.getH2ORefPPM(getTempK());
+        }
+        int hDim = -1;
+        for (int i = 0;i<getNDim();i++) {
+            String nucleusName = getTN(i);
+            Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+            if (nucleus == Nuclei.H1) {
+                hDim = i;
+            }
+        }
+        double calcBaseFreq;
+        if (hDim != -1) {
+            Double baseFreq = getParDouble("BF1," + (hDim +1));
+            Double lockPPM = getParDouble("LOCKPPM,1");
+            if (actualLockRef == null) {
+                actualLockRef = lockPPM;
+            }
+            calcBaseFreq =  ReferenceCalculator.getCorrectedBaseFreq(baseFreq, lockPPM, actualLockRef);
+        } else {
+            String nucleusName = getTN(0);
+            Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+            Double baseFreq = getParDouble("BF1,1");
+            double xRatio = nucleus.getRatio();
+            calcBaseFreq = baseFreq / (xRatio / 100.0);
+        }
+        return calcBaseFreq;
+    }
+
+    @Override
+    public void setZeroFreq(Double value) {
+        zeroFreq = value;
+    }
+
+    @Override
+    public double getZeroFreq() {
+        if (zeroFreq == null) {
+            zeroFreq = getCorrectedBaseFreq();
+        }
+        return zeroFreq;
+    }
+
     @Override
     public double getRefPoint(int dim) {
-        return 1.0;
+        return (double) getSize(dim) / 2;
     }
 
     @Override
@@ -885,7 +946,7 @@ public class BrukerData implements NMRData {
                 log.warn(ex.getMessage(), ex);
             }
         }
-        String[] listTypes = {"vd", "vc", "vp", "fq3"};
+        String[] listTypes = {"vd", "vc", "vp", "fq2", "fq3"};
         for (String listType : listTypes) {
             Path listPath = parDirFile.toPath().resolve(listType + "list");
             if (Files.exists(listPath)) {
@@ -934,11 +995,15 @@ public class BrukerData implements NMRData {
             }
             tdsize[0] = np / 2 - shiftAmount; // tcl line 348, lines 448-459
         }
+        boolean nusMode = false;
+        if ((ipar = getParInt("FnTYPE,1")) != null) {
+            nusMode = ipar == 2;
+        }
         boolean gotSchedule = false;
         if (nusFile == null) {
             nusFile = new File(fpath + File.separator + "nuslist");
         }
-        if (nusFile.exists()) {
+        if (nusMode && nusFile.exists()) {
             readSampleSchedule(nusFile.getPath(), false);
             if (sampleSchedule.getTotalSamples() == 0) {
                 throw new IOException("nuslist file exists, but is empty");
@@ -991,7 +1056,7 @@ public class BrukerData implements NMRData {
 
     private void adjustTDForComplex() {
         for (int j = 1; j < tdsize.length; j++) {
-            if (isComplex(j)) {
+            if (isComplex(j) && (tdsize[j] > 1)) {
                 tdsize[j] /= 2;
             }
             maxSize[j] = tdsize[j];
@@ -1003,7 +1068,7 @@ public class BrukerData implements NMRData {
         // kluge  find smallest dimension.  This is the most likely one to use an array of values
         int smallDim = getMinDim();
         if (parMap != null) {
-            String[] listTypes = {"vd", "vc", "vp", "fq3"};
+            String[] listTypes = {"vd", "vc", "vp", "fq2", "fq3"};
 
             for (String listType : listTypes) {
                 String parValue;
@@ -1013,16 +1078,16 @@ public class BrukerData implements NMRData {
                         List<String> sList = Arrays.asList(sValues);
                         int dimSize = getSize(smallDim);
                         if (listType.startsWith("fq")) {
-                            System.out.println(listType + " " + getSequence());
-                            // first line of fqlist can start with value like "bf ppm", so remove that line
                             if (getSequence().contains("cest")) {
-                                System.out.println("is cest");
                                 sList.set(0, "0.0");
-                                System.out.println(sList.toString());
                             }
                         }
 
                         for (String sValue : sList) {
+                            // first line of fqlist can start with value like "bf ppm", so remove that line
+                            if (sValue.startsWith("bf")) {
+                                continue;
+                            }
                             try {
                                 double scale = 1.0;
                                 if (sValue.endsWith("m")) {
@@ -1102,6 +1167,16 @@ public class BrukerData implements NMRData {
                         f1coefS[i - 1] = AcquisitionType.HYPER_R.getLabel();
                         break;
                     case 0:
+                        complexDim[i - 1] = getValues(i - 1).isEmpty();
+                        if (complexDim[i - 1]) {
+                            f1coef[i - 1] = AcquisitionType.HYPER.getCoefficients();
+                            f1coefS[i - 1] = AcquisitionType.HYPER.getLabel();
+                            complexDim[i - 1] = true;
+                            fttype[i - 1] = "negate";
+                        } else {
+                            f1coefS[i - 1] = AcquisitionType.ARRAY.getLabel();
+                        }
+                        break;
                     case 5:
                         f1coef[i - 1] = AcquisitionType.HYPER.getCoefficients();
                         f1coefS[i - 1] = AcquisitionType.HYPER.getLabel();
@@ -1126,6 +1201,9 @@ public class BrukerData implements NMRData {
                         f1coefS[i - 1] = AcquisitionType.SEP.getLabel();
                         break;
                 }
+                if (tdsize[i - 1] < 2) {
+                    complexDim[i - 1] = false;
+                }
             }
         }
     }
@@ -1147,41 +1225,41 @@ public class BrukerData implements NMRData {
         for (Object key : flags.keySet()) {
             boolean value = (boolean) flags.get(key);
             switch (key.toString()) {
-                case "fixdsp":
+                case "fixdsp" -> {
                     if (value) {
                         setFixDSPOn();
                     } else {
                         setFixDSPOff();
                     }
-                    break;
-                case "shiftdsp":
+                }
+                case "shiftdsp" -> {
                     if (value) {
                         setDSPShiftOn();
                     } else {
                         setDSPShiftOff();
                     }
-                    break;
-                case "exchangeXY":
+                }
+                case "exchangeXY" -> {
                     if (value) {
                         setExchangeOn();
                     } else {
                         setExchangeOff();
                     }
-                    break;
-                case "negatePairs":
+                }
+                case "negatePairs" -> {
                     if (value) {
                         setNegatePairsOn();
                     } else {
                         setNegatePairsOff();
                     }
-                    break;
-                case "swapBits":
+                }
+                case "swapBits" -> {
                     if (value) {
                         setSwapBitsOn();
                     } else {
                         setSwapBitsOff();
                     }
-                    break;
+                }
             }
         }
     }
@@ -1371,7 +1449,6 @@ public class BrukerData implements NMRData {
         if (groupDelay > 0) {
             // fixme which is correct (use ceil or not)
             shiftAmount = (int) Math.round(groupDelay);
-            System.out.println(iVec + " " + groupDelay + " " + shiftAmount);
         }
         if (dvec.isComplex()) {
             if (dvec.useApache()) {
@@ -1672,7 +1749,6 @@ public class BrukerData implements NMRData {
 
     private void dspPhase(Vec vec) {
         if (dspph != 0.0) {  // check DMX flag?
-            System.out.println("  BrukerData dspPhase=" + dspph);
             vec.checkPowerOf2(); // resize
             vec.fft();
             vec.phase(0.0, dspph, false, false);

@@ -18,6 +18,7 @@ import java.util.Set;
  */
 public class FXMLControllerManager {
     // The active controller is the last one created, or the one that has focus
+    private static int nControllers = 0;
     private final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
 
     // A collection of all known controllers.
@@ -113,8 +114,16 @@ public class FXMLControllerManager {
      *
      * @return the newly created controller.
      */
+    public FXMLController newController(Stage stage) {
+        return newController(stage, null);
+    }
+
     public FXMLController newController() {
-        return newController(new Stage(StageStyle.DECORATED));
+        return newController(new Stage(StageStyle.DECORATED), null);
+    }
+
+    public FXMLController newController(String title) {
+        return newController(new Stage(StageStyle.DECORATED), title);
     }
 
 
@@ -124,7 +133,11 @@ public class FXMLControllerManager {
      * @param stage the stage used to display the scene associated with this controller
      * @return the newly created controller.
      */
-    public FXMLController newController(Stage stage) {
+    public FXMLController newController(Stage stage, String title) {
+        nControllers++;
+        if (title == null) {
+            title = "NMRFx Spectra " + nControllers;
+        }
         FXMLController controller = Fxml.load(FXMLControllerManager.class, "NMRScene.fxml")
                 .withStage(stage)
                 .getController();
@@ -138,6 +151,8 @@ public class FXMLControllerManager {
             closeController(controller);
             AnalystApp.removeStage(stage);
         });
+        controller.initStageGeometry();
+        stage.setTitle(title);
         stage.show();
 
         return controller;

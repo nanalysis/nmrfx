@@ -19,6 +19,7 @@ package org.nmrfx.processor.gui.annotations;
 
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.CanvasAnnotation;
+import org.nmrfx.utils.GUIUtils;
 
 /**
  * @author brucejohnson
@@ -30,15 +31,15 @@ public abstract class AnnoShape implements CanvasAnnotation {
     double lineWidth = 1.0;
     boolean clipInAxes = false;
     boolean selected = false;
-    boolean selectable = false;
-    POSTYPE xPosType;
-    POSTYPE yPosType;
+    boolean selectable = true;
+    POSTYPE xPosType = POSTYPE.WORLD;
+    POSTYPE yPosType = POSTYPE.WORLD;
 
     /**
      * @return the stroke
      */
-    public Color getStroke() {
-        return stroke;
+    public String getStroke() {
+        return stroke == null ? "" : stroke.toString();
     }
 
     /**
@@ -48,11 +49,19 @@ public abstract class AnnoShape implements CanvasAnnotation {
         this.stroke = stroke;
     }
 
+    public void setStroke(String stroke) {
+        this.stroke = GUIUtils.getColor(stroke);
+    }
+
+    public Color getStrokeColor() {
+        return this.stroke;
+    }
+
     /**
      * @return the fill
      */
-    public Color getFill() {
-        return fill;
+    public String getFill() {
+        return fill == null ? "" : fill.toString();
     }
 
     /**
@@ -60,6 +69,14 @@ public abstract class AnnoShape implements CanvasAnnotation {
      */
     public void setFill(Color fill) {
         this.fill = fill;
+    }
+
+    public void setFill(String fill) {
+        this.fill = GUIUtils.getColor(fill);
+    }
+
+    public Color getFillColor() {
+        return this.fill;
     }
 
     /**
@@ -81,9 +98,25 @@ public abstract class AnnoShape implements CanvasAnnotation {
         return xPosType;
     }
 
+    public void setXPosType(POSTYPE xPosType) {
+        this.xPosType = xPosType;
+    }
+
+    public void setXPosType(String xPosType) {
+        this.xPosType = POSTYPE.valueOf(xPosType);
+    }
+
     @Override
     public POSTYPE getYPosType() {
         return yPosType;
+    }
+
+    public void setYPosType(POSTYPE yPosType) {
+        this.yPosType = yPosType;
+    }
+
+    public void setYPosType(String yPosType) {
+        this.yPosType = POSTYPE.valueOf(yPosType);
     }
 
     @Override
@@ -104,10 +137,4 @@ public abstract class AnnoShape implements CanvasAnnotation {
     public boolean isSelectable() {
         return selected;
     }
-
-    @Override
-    public void setSelectable(boolean state) {
-        selectable = state;
-    }
-
 }

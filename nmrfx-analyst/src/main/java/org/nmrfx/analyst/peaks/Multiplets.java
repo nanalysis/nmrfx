@@ -580,8 +580,8 @@ public class Multiplets {
             int[] nValues = new int[couplingData.couplingItems.size()];
             int i = 0;
             for (CouplingItem item : couplingData.couplingItems) {
-                values[i] = item.getCoupling();
-                nValues[i] = item.getNSplits();
+                values[i] = item.coupling();
+                nValues[i] = item.nSplits();
                 i++;
             }
             double[] sin2thetas = new double[values.length];
@@ -723,7 +723,7 @@ public class Multiplets {
                 break;
             }
         }
-        couplings.sort(comparing(p -> p.getCoupling(), reverseOrder()));
+        couplings.sort(comparing(p -> p.coupling(), reverseOrder()));
         System.out.println("end");
         return new CouplingData(couplings, ppmCenter, nComps);
     }

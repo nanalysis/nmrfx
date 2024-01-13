@@ -42,14 +42,14 @@ import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.annotations.AnnoLine;
+import org.nmrfx.processor.gui.annotations.AnnoSimpleLine;
 import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.seqassign.*;
 import org.nmrfx.structure.seqassign.FragmentScoring.AAScore;
@@ -131,12 +131,20 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         return navigatorToolBar;
     }
 
+    public FXMLController getController() {
+        return controller;
+    }
+
     public void close() {
         closeAction.accept(this);
     }
 
     public TabPane getTabPane() {
         return tabPane;
+    }
+
+    public String getArrangement() {
+        return currentArrangement;
     }
 
     class SeqPane extends Pane {
@@ -352,7 +360,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         MapChangeListener<String, PeakList> peakmapChangeListener =
                 (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakTableView();
 
-        Project.getActive().addPeakListListener(peakmapChangeListener);
+        ProjectBase.getActive().addPeakListListener(peakmapChangeListener);
 
         Button configureButton = new Button("Inspector");
         configureButton.setOnAction(e -> inspectPeakList());
@@ -603,7 +611,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         });
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
 
-        Project.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(mapChangeListener);
 
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
@@ -1266,7 +1274,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             peakListMenuButton.getItems().add(spinSysMenuItem);
         }
 
-        for (String peakListName : Project.getActive().getPeakListNames()) {
+        for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 RunAboutGUI.this.setPeakList(peakListName);
@@ -1795,12 +1803,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     PeakDim peakDim = peak.getPeakDim(dataLabel);
                     if (peakDim != null) {
                         double ppm = peakDim.getChemShiftValue();
-                        AnnoLine annoLine = iDim == 0 ?
-                                new AnnoLine(ppm, 0.0, ppm, 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.FRACTION) :
-                                new AnnoLine(0.0, ppm, 1.0, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
+                        AnnoSimpleLine annoSimpleLine = iDim == 0 ?
+                                new AnnoSimpleLine(ppm, 0.0, ppm, 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.FRACTION) :
+                                new AnnoSimpleLine(0.0, ppm, 1.0, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
                         var color = Color.BLUE;
-                        annoLine.setStroke(color);
-                        chart.addAnnotation(annoLine);
+                        annoSimpleLine.setStroke(color);
+                        chart.addAnnotation(annoSimpleLine);
                     }
                 }
                 chart.refresh();
@@ -1824,7 +1832,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
-    void genWin(String arrangeName) {
+    public void genWin(String arrangeName) {
         if (runAbout.isActive()) {
             currentArrangement = arrangeName;
             RunAboutArrangement arrangement = runAboutArrangements.getArrangements().get(arrangeName);
@@ -2005,9 +2013,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 }
 
                 double ppm = spinSystem.getValue(isIntra ? 1 : 0, atomIndex);
-                AnnoLine annoLine = new AnnoLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
-                annoLine.setStroke(color);
-                chart.addAnnotation(annoLine);
+                AnnoSimpleLine annoSimpleLine = new AnnoSimpleLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
+                annoSimpleLine.setStroke(color);
+                chart.addAnnotation(annoSimpleLine);
             }
         }
     }
@@ -2032,17 +2040,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     if (!typePresent.isIntraResidue()) {
                         text = text.toLowerCase();
                     }
-                    AnnoText annoText = new AnnoText(x, -8, x + delta, -8, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, text);
+                    AnnoText annoText = new AnnoText(x, -8, delta, text, 12.0, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
                     annoText.setFont(font);
                     chart.addAnnotation(annoText);
                     Color presentColor = typePresent.isPresent() ? Color.LIGHTGREEN : Color.RED;
-                    AnnoLine annoLine2 = new AnnoLine(x, -2, x + textWidth, -2, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
-                    annoLine2.setStroke(presentColor);
-                    annoLine2.setLineWidth(6);
-                    chart.addAnnotation(annoLine2);
+                    AnnoSimpleLine annoSimpleLine2 = new AnnoSimpleLine(x, -2, x + textWidth, -2, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
+                    annoSimpleLine2.setStroke(presentColor);
+                    annoSimpleLine2.setLineWidth(6);
+                    chart.addAnnotation(annoSimpleLine2);
                     x += delta;
                 }
-                AnnoText annoText = new AnnoText(x, -8, x + textWidth, -8, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, String.valueOf(nPeaks - nExpected));
+                AnnoText annoText = new AnnoText(x, -8, textWidth, String.valueOf(nPeaks - nExpected), 12.0, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
                 annoText.setFont(font);
                 chart.addAnnotation(annoText);
             }
@@ -2071,17 +2079,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     chart.moveTo(i, pos, widths[iChart][i]);
                 }
                 if (i == 0) {
-                    AnnoLine annoLine = new AnnoLine(ppms[0], 0.0, ppms[0], 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.
+                    AnnoSimpleLine annoSimpleLine = new AnnoSimpleLine(ppms[0], 0.0, ppms[0], 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.
                             FRACTION);
-                    annoLine.setStroke(Color.BLUE);
-                    annoLine.setLineWidth(0.0);
-                    chart.addAnnotation(annoLine);
+                    annoSimpleLine.setStroke(Color.BLUE);
+                    annoSimpleLine.setLineWidth(0.0);
+                    chart.addAnnotation(annoSimpleLine);
                 } else if (i == 1) {
-                    AnnoLine annoLine = new AnnoLine(0.0, ppms[1], 1.0, ppms[1], CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.
+                    AnnoSimpleLine annoSimpleLine = new AnnoSimpleLine(0.0, ppms[1], 1.0, ppms[1], CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.
                             WORLD);
-                    annoLine.setStroke(Color.BLUE);
-                    annoLine.setLineWidth(0.0);
-                    chart.addAnnotation(annoLine);
+                    annoSimpleLine.setStroke(Color.BLUE);
+                    annoSimpleLine.setLineWidth(0.0);
+                    chart.addAnnotation(annoSimpleLine);
                 }
             } else {
                 chart.full(i);

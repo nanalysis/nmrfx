@@ -14,7 +14,7 @@
         <ScrollPane fx:id="contentScrollPane" fitToHeight="true" fitToWidth="true">
             <Accordion fx:id="contentAccordion">
                 <panes>
-                    <TitledPane text="Datasets">
+                    <TitledPane fx:id="datasetTitledPane" text="Datasets">
                         <VBox>
                             <children>
                                 <ListSelectionView fx:id="datasetView" orientation="VERTICAL" minHeight="250"
@@ -22,7 +22,7 @@
                             </children>
                         </VBox>
                     </TitledPane>
-                    <TitledPane text="Peaks">
+                    <TitledPane fx:id="peakTitledPane" text="Peaks">
                         <VBox>
                             <children>
                                 <ListSelectionView fx:id="peakView" orientation="VERTICAL" minHeight="250"

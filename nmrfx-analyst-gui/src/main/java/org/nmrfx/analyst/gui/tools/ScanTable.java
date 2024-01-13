@@ -139,7 +139,7 @@ public class ScanTable {
         ensureAllDatasetsAdded();
         selectionChanged();
     };
-    ListChangeListener<? super DatasetAttributes> datasetListener = c -> loadFromDataset();
+    ListChangeListener<? super DatasetAttributes> datasetListener = c -> datasetsInChartChanged();
 
     ListChangeListener<Integer> selectionListener;
     PolyChart currentChart;
@@ -150,6 +150,7 @@ public class ScanTable {
     public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
         this.scannerTool = controller;
         this.tableView = tableView;
+        currentChart = controller.getChart();
         init();
     }
 
@@ -176,11 +177,18 @@ public class ScanTable {
         columnTypes.put(DATASET_COLUMN_NAME, "S");
         columnTypes.put(ETIME_COLUMN_NAME, "I");
         columnTypes.put(GROUP_COLUMN_NAME, "I");
+        if (currentChart != null) {
+            currentChart.getDatasetAttributes().addListener(datasetListener);
+        }
+
 
     }
 
     public void refresh() {
         tableView.refresh();
+    }
+
+    private void datasetsInChartChanged() {
     }
 
     private void ensureAllDatasetsAdded() {
@@ -327,9 +335,24 @@ public class ScanTable {
             }
             Double curLvl = null;
 
-            setDatasetVisibility(showRows, curLvl);
-            refresh();
-            chart.refresh();
+            boolean hasDataset = false;
+            for (var item : showRows) {
+                if (!item.getDatasetName().isBlank()) {
+                    hasDataset = true;
+                    break;
+                }
+            }
+
+            if (hasDataset) {
+                setDatasetVisibility(showRows, curLvl);
+                refresh();
+                chart.refresh();
+            } else {
+                openSelectedListFile();
+                chart.refresh();
+            }
+        } else {
+            openSelectedListFile();
         }
     }
 
@@ -442,6 +465,9 @@ public class ScanTable {
 
         PolyChart chart = scannerTool.getChart();
         processingTable = true;
+        tableView.getSelectionModel().getSelectedIndices().removeListener(selectionListener);
+        tableView.getItems().removeListener(filterItemListener);
+
         try (PythonInterpreter processInterp = new PythonInterpreter()) {
             List<String> fileNames = new ArrayList<>();
 
@@ -475,10 +501,9 @@ public class ScanTable {
                 // merge datasets into single pseudo-nd dataset
                 DatasetMerger merger = new DatasetMerger();
                 File mergedFile = new File(scanOutputDir, combineFileName);
-                String mergedFilepath = mergedFile.getAbsolutePath();
                 try {
                     // merge all the 1D files into a pseudo 2D file
-                    merger.merge(fileNames, mergedFilepath);
+                    merger.mergeFiles(fileNames, mergedFile);
                     // After merging, remove the 1D files
                     for (String fileName : fileNames) {
                         File file = new File(fileName);
@@ -511,7 +536,36 @@ public class ScanTable {
             scannerTool.miner.setDisableSubMenus(!combineFileMode);
 
         } finally {
+            tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
+            tableView.getItems().addListener(filterItemListener);
+            getGroups();
+            ensureAllDatasetsAdded();
+            selectionChanged();
             processingTable = false;
+            refresh();
+        }
+    }
+
+    public void combineDatasets() {
+        List<Dataset> datasets = getDatasetAttributesList().stream().map(dAttr -> (Dataset) dAttr.getDataset()).toList();
+        if (currentChart.getDatasetAttributes().size() < 2) {
+            GUIUtils.warn("Combine", "Need more than one dataset to combine");
+        } else {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle(("Output File"));
+            File file = fileChooser.showSaveDialog(null);
+            if (file != null) {
+                DatasetMerger datasetMerger = new DatasetMerger();
+                try {
+                    datasetMerger.mergeDatasets(datasets, file);
+                } catch (IOException | DatasetException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                    return;
+                }
+                AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(file, false, true);
+                loadFromDataset();
+            }
         }
     }
 
@@ -611,9 +665,16 @@ public class ScanTable {
 
     public void loadFromDataset() {
         PolyChart chart = scannerTool.getChart();
-        if ((chart.getDatasetAttributes().size() > 1) || !chart.is1D()) {
+        if (chart.getDatasetAttributes().size() > 1) {
             loadMultipleDatasets();
             return;
+        } else if (!chart.getDatasetAttributes().isEmpty()){
+            Dataset dataset = (Dataset) chart.getDataset();
+            if (!chart.is1D()  && ((dataset.getNDim() > 1) && (dataset.getNDim() == dataset.getNFreqDims()))) {
+                loadMultipleDatasets();
+                return;
+            }
+
         }
         DatasetBase dataset = chart.getDataset();
         if (dataset == null) {
@@ -621,7 +682,7 @@ public class ScanTable {
             return;
         }
         if (dataset.getNDim() < 2) {
-            log.warn("Unable to load dataset, dataset only has 1 dimension.");
+            loadMultipleDatasets();
             return;
         }
         scanDir = null;
@@ -630,9 +691,10 @@ public class ScanTable {
         tableView.getSelectionModel().getSelectedIndices().removeListener(selectionListener);
         tableView.getItems().removeListener(filterItemListener);
         fileListItems.clear();
-        int nRows = dataset.getSizeTotal(1);
+        int nDim = dataset.getNDim();
+        int nRows = dataset.getSizeTotal(nDim - 1);
         HashMap<String, String> fieldMap = new HashMap<>();
-        double[] values = dataset.getValues(1);
+        double[] values = dataset.getValues(nDim - 1);
         for (int iRow = 0; iRow < nRows; iRow++) {
             double value = 0;
             if ((values != null) && (iRow < values.length)) {
@@ -1107,6 +1169,7 @@ public class ScanTable {
         posDrawOnCol.setEditable(true);
         posDrawOnCol.setCellValueFactory(e -> new SimpleBooleanProperty(e.getValue().getPos()));
         TableUtils.addCheckBoxEditor(posDrawOnCol, (item, b) -> {
+            System.out.println("set item " + b);
             item.setPos(b);
             scannerTool.getChart().refresh();
         });
@@ -1398,8 +1461,8 @@ public class ScanTable {
            }
            chart.getDatasetAttributes().addListener(datasetListener);
            currentChart = chart;
+           loadFromDataset();
         }
-        loadFromDataset();
         updateFilter();
     }
 
@@ -1556,6 +1619,8 @@ public class ScanTable {
                 datasetAttributes.setLvl(dataAttr0.getLvl());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1570,6 +1635,8 @@ public class ScanTable {
                 datasetAttributes.setClm(dataAttr0.getClm());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1584,6 +1651,8 @@ public class ScanTable {
                 datasetAttributes.setNlvls(dataAttr0.getNlvls());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1598,6 +1667,8 @@ public class ScanTable {
                 datasetAttributes.setOffset(dataAttr0.getOffset());
             });
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 
@@ -1617,6 +1688,8 @@ public class ScanTable {
                 }
             }
             tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
         });
     }
 

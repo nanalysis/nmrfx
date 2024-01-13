@@ -20,10 +20,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Bond;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.rdc.AlignmentCalc;
@@ -60,6 +57,10 @@ public class MolViewer extends Pane {
     Affine transTransform = new Affine();
     List<LabelNode> labelNodes = new ArrayList<>();
     Pane twoDPane;
+
+    Molecule currentMolecule = null;
+    double cornerDistance = 100.0;
+    double defaultScale = 1.0;
 
     ArrayList<MolSelectionListener> selectionListeners = new ArrayList<>();
 
@@ -133,7 +134,7 @@ public class MolViewer extends Pane {
         twoDPane.setMouseTransparent(true);
         try {
             drawMol();
-        } catch (InvalidMoleculeException ex) {
+        } catch (InvalidMoleculeException | MissingCoordinatesException ex) {
             log.warn(ex.getMessage(), ex);
         }
         return subScene;
@@ -154,10 +155,10 @@ public class MolViewer extends Pane {
             KeyCode keycode = event.getCode();
             //Step 2c: Add Zoom controls
             if (keycode == KeyCode.W) {
-                camera.setTranslateZ(camera.getTranslateZ() + change);
+                setCameraZ(camera.getTranslateZ() + change);
             }
             if (keycode == KeyCode.S) {
-                camera.setTranslateZ(camera.getTranslateZ() - change);
+                setCameraZ(camera.getTranslateZ() - change);
             }
 
         });
@@ -248,7 +249,7 @@ public class MolViewer extends Pane {
                 } else if (me.isSecondaryButtonDown()) {
                     double z = camera.getTranslateZ();
                     double newZ = z + mouseDeltaX * modifierFactor * modifier;
-                    camera.setTranslateZ(newZ);
+                    setCameraZ(newZ);
                 }
                 showLabels();
             }
@@ -257,11 +258,25 @@ public class MolViewer extends Pane {
             double zoom = zoomEvent.getZoomFactor();
             double z = camera.getTranslateZ();
             double newZ = z * zoom;
-            camera.setTranslateZ(newZ);
+            setCameraZ(newZ);
         });
 
     }
 
+    Molecule getCurrentMolecule()  {
+        if (currentMolecule != Molecule.getActive()) {
+            currentMolecule = Molecule.getActive();
+            if (currentMolecule != null) {
+                try {
+                    var vec3Ds = currentMolecule.getCorner(0);
+                    cornerDistance = vec3Ds[0].distance(vec3Ds[1]);
+                } catch (MissingCoordinatesException mE) {
+                    cornerDistance = 100.0;
+                }
+            }
+        }
+        return currentMolecule;
+    }
     public void showLabels() {
         twoDPane.getChildren().clear();
         for (LabelNode labelNode : labelNodes) {
@@ -330,16 +345,18 @@ public class MolViewer extends Pane {
         }
     }
 
-    void drawMol() throws InvalidMoleculeException {
-        Molecule molecule = Molecule.getActive();
+    void drawMol() throws InvalidMoleculeException, MissingCoordinatesException {
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
+        setCameraZ(-defaultScale * cornerDistance);
         if (!molecule.getPolymers().isEmpty()) {
             createItems("tube");
         } else {
             createItems("lines");
         }
+        resetTransform();
     }
 
     class MolPrimitives {
@@ -361,7 +378,7 @@ public class MolViewer extends Pane {
 
     private void createItems(String type) throws InvalidMoleculeException {
         int iStructure = 0;
-        Molecule molecule = Molecule.getActive();
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
@@ -393,7 +410,7 @@ public class MolViewer extends Pane {
     }
 
     public void centerOnSelection() {
-        Molecule molecule = Molecule.getActive();
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
@@ -410,7 +427,7 @@ public class MolViewer extends Pane {
     }
 
     public void addSpheres(int iStructure, double sphereRadius, String tag) {
-        Molecule molecule = Molecule.getActive();
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
@@ -426,7 +443,7 @@ public class MolViewer extends Pane {
     }
 
     public void addLines(int iStructure, String tag) {
-        Molecule molecule = Molecule.getActive();
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
@@ -444,7 +461,7 @@ public class MolViewer extends Pane {
     }
 
     public void addCyls(int iStructure, double cylRadius, double sphereRadius, String tag) {
-        Molecule molecule = Molecule.getActive();
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
@@ -474,7 +491,7 @@ public class MolViewer extends Pane {
      * @throws InvalidMoleculeException
      */
     public void addBox(int iStructure, double radius, String tag) throws InvalidMoleculeException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -532,7 +549,7 @@ public class MolViewer extends Pane {
      * @throws InvalidMoleculeException
      */
     public void addAxes(int iStructure, double radius, String tag, String type) throws InvalidMoleculeException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -586,7 +603,7 @@ public class MolViewer extends Pane {
     }
 
     public void rotateSVDRDC(String type) {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -614,7 +631,7 @@ public class MolViewer extends Pane {
     }
 
     public void addTube(int iStructure, double sphereRadius, String tag) throws InvalidMoleculeException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -637,7 +654,7 @@ public class MolViewer extends Pane {
     }
 
     public void addOrientationSphere(int iStructure, int n, double sphereRadius, int orient, String tag) throws InvalidMoleculeException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -666,7 +683,7 @@ public class MolViewer extends Pane {
     }
 
     public void addOrientationCyls(int iStructure, int n, double sphereRadius, int orient, String tag) throws InvalidMoleculeException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -690,9 +707,9 @@ public class MolViewer extends Pane {
         double cylRadius = 0.2;
         double[] begin = new double[3];
         double[] end = new double[3];
-        String tag = Molecule.getActive().getName();
+        String tag = getCurrentMolecule().getName();
         Color color = Color.GREEN;
-        String molName = Molecule.getActive().getName();
+        String molName = getCurrentMolecule().getName();
         if (type.equals("molspheres")) {
             MolSpheres spheres = new MolSpheres(molName, atoms, atomSpheres, sphereRadius, true, tag);
             molGroup.getChildren().add(spheres);
@@ -762,7 +779,12 @@ public class MolViewer extends Pane {
         rotTransform.setToIdentity();
         rotTransform.appendRotation(180.0, 0.0, 0.0, 0.0, new Point3D(1.0, 0.0, 0.0));
         updateView();
-        camera.setTranslateZ(-cameraDistance);
+        Molecule molecule = getCurrentMolecule();
+        if (molecule != null) {
+                setCameraZ(-defaultScale * cornerDistance);
+        } else {
+            camera.setTranslateZ(-cameraDistance);
+        }
         updateView();
     }
 
@@ -778,6 +800,12 @@ public class MolViewer extends Pane {
         }
         rotTransform.prependRotation(delta, 0.0, 0.0, 0.0, dy, -dx, 0.0);
         updateView();
+    }
+
+    void setCameraZ(double z) {
+        z = Math.min(-10, z);
+        z= Math.max(-cornerDistance * 4, z);
+        camera.setTranslateZ(z);
     }
 
     void updateView() {

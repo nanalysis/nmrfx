@@ -61,7 +61,23 @@ public class Multiplet implements PeakOrMulti, Comparable {
         max = peakDim.getPeak().getIntensity();
     }
 
-    @Override
+    public void copyTo(Multiplet multiplet) {
+        multiplet.intensity = intensity;
+        multiplet.max = max;
+        multiplet.myPeakDim = myPeakDim;
+        if (coupling != null) {
+            multiplet.coupling = coupling.copy(multiplet);
+        }
+    }
+
+    public void restoreFrom(Multiplet multiplet) {
+        intensity = multiplet.intensity;
+        max = multiplet.max;
+        myPeakDim = multiplet.myPeakDim;
+        coupling = multiplet.coupling.copy(this);
+    }
+
+        @Override
     public int getStatus() {
         int status = -1;
         if (myPeakDim != null) {

@@ -608,9 +608,9 @@ public class PeakFitter {
                 double[] sin2Thetas = new double[cplItems2.length];
                 int nComp = 1;
                 for (int iCoup = 0; iCoup < couplings.length; iCoup++) {
-                    couplings[iCoup] = theFile.ptWidthToHz(0, cplItems2[iCoup].getCoupling());
-                    sin2Thetas[iCoup] = cplItems2[iCoup].getSin2Theta();
-                    nComp *= cplItems2[iCoup].getNSplits();
+                    couplings[iCoup] = theFile.ptWidthToHz(0, cplItems2[iCoup].coupling());
+                    sin2Thetas[iCoup] = cplItems2[iCoup].sin2Theta();
+                    nComp *= cplItems2[iCoup].nSplits();
                 }
                 double amp = signal.getAmplitude();
                 double volume = nComp * amp * sigWidthPPM * (Math.PI / 2.0) / 1.05;

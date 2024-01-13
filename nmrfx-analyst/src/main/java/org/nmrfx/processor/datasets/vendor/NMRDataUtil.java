@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
@@ -331,7 +332,7 @@ public final class NMRDataUtil {
         protected void handleVisit(Path file, BasicFileAttributes attr) {
             String name = file.getFileName().toString();
             Matcher m = pattern.matcher(file.toString());
-            if (m.find() || BrukerData.isProcessedFile(name) ) {
+            if (m.find() || BrukerData.isProcessedFile(name)) {
                 fileList.add(file.toString());
             }
         }
@@ -407,5 +408,17 @@ public final class NMRDataUtil {
         winSize = Math.min(64, winSize);
         double[] phases = vec.autoPhase(true, winSize, 25.0, 2, 360.0, 50.0);
         return phases;
+    }
+
+    public static Double parsePar(NMRData nmrData, int dim, String string) {
+        Double value;
+        if ((string == null) || string.isBlank()) {
+            value = null;
+        } else if (NumberUtils.isCreatable(string)) {
+            value = Double.parseDouble(string);
+        } else {
+            value = nmrData.getParDouble(string);
+        }
+        return value;
     }
 }

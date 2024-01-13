@@ -34,6 +34,12 @@ public class ComplexCoupling extends Coupling {
 
     List<RelMultipletComponent> components = new ArrayList<>();
 
+   @Override
+   public ComplexCoupling copy(Multiplet multiplet) {
+        ComplexCoupling newCoupling = new ComplexCoupling(this, multiplet);
+        return newCoupling;
+    }
+
     @Override
     public String getMultiplicity() {
         return "m";
@@ -42,6 +48,14 @@ public class ComplexCoupling extends Coupling {
     @Override
     public boolean isCoupled() {
         return true;
+    }
+
+    public ComplexCoupling(ComplexCoupling complexCoupling, Multiplet multiplet) {
+        this.multiplet = multiplet;
+        components = new ArrayList<>();
+        for (var comp:complexCoupling.components) {
+                components.add(new RelMultipletComponent(multiplet, comp));
+        }
     }
 
     public ComplexCoupling(final Multiplet multiplet, List<AbsMultipletComponent> absComponents) {

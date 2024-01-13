@@ -10,13 +10,14 @@ import javafx.scene.control.ToolBar;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.PeakGeneratorGUI;
+import org.nmrfx.analyst.gui.ZZPlotTool;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 
 import java.util.Collection;
 import java.util.List;
@@ -75,11 +76,15 @@ public class PeakMenuActions extends MenuActions {
         MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
         runAboutMenuItem.setOnAction(e -> showRunAbout());
 
+        MenuItem zzMenuItem = new MenuItem("ZZ Fitting");
+        zzMenuItem.setOnAction(e -> showZZTool());
+
+
         assignCascade.getItems().addAll(assignOnPick,
                 atomBrowserMenuItem, runAboutMenuItem);
         menu.getItems().addAll(peakGeneratorMenuItem, linkPeakDimsMenuItem,
                 ligandScannerMenuItem,
-                noeTableMenuItem,
+                noeTableMenuItem, zzMenuItem,
                 assignCascade);
 
     }
@@ -93,9 +98,9 @@ public class PeakMenuActions extends MenuActions {
             peakTableController = PeakTableController.create();
         }
         if (peakList == null) {
-            List<String> names = Project.getActive().getPeakListNames();
+            List<String> names = ProjectBase.getActive().getPeakListNames();
             if (!names.isEmpty()) {
-                peakList = Project.getActive().getPeakList(names.get(0));
+                peakList = ProjectBase.getActive().getPeakList(names.get(0));
             }
         }
         if (peakTableController != null) {
@@ -191,6 +196,11 @@ public class PeakMenuActions extends MenuActions {
         }
         peakGeneratorGUI.show(300, 300);
     }
+    public void showZZTool() {
+        ZZPlotTool zzPlotTool = new ZZPlotTool();
+        zzPlotTool.show("Time", "Intensity");
+    }
+
 
 
 }

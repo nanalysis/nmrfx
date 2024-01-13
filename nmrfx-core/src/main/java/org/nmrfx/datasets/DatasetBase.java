@@ -1547,17 +1547,9 @@ public class DatasetBase {
             } else if ((labelTest.charAt(0) == 'D') && (labelTest.length() == 2) && (Character.isDigit(labelTest.charAt(1)))) {
                 nucleus = Nuclei.findNuclei(sf);
             } else {
-                for (Nuclei nucValue : Nuclei.values()) {
-                    if (labelTest.contains(nucValue.getNameNumber())) {
-                        nucleus[iDim] = nucValue;
-                        break;
-                    } else if (labelTest.contains(nucValue.getNumberName())) {
-                        nucleus[iDim] = nucValue;
-                        break;
-                    } else if (labelTest.contains(nucValue.getName())) {
-                        nucleus[iDim] = nucValue;
-                        break;
-                    }
+                var foundNuc = Nuclei.findNucleusInLabel(labelTest);
+                if (foundNuc.isPresent()) {
+                    nucleus[iDim] = foundNuc.get();
                 }
             }
         }

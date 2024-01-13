@@ -24,6 +24,8 @@ public abstract class Coupling {
 
     Multiplet multiplet;
 
+    abstract Coupling copy(Multiplet multiplet);
+
     abstract String getMultiplicity();
 
     abstract List<AbsMultipletComponent> getAbsComponentList();

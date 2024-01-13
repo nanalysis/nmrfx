@@ -4,6 +4,7 @@ import javafx.scene.input.MouseEvent;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
@@ -66,8 +67,12 @@ public class PeakPickHandler extends MouseHandler {
                     double yLim0 = yAxis.getValueForDisplay(mouseBindings.dragStart[1]).doubleValue();
                     double yLim1 = yAxis.getValueForDisplay(y).doubleValue();
                     double[][] region = {{xLim0, xLim1}, {yLim0, yLim1}};
+                    PeakPickParameters peakPickParameters = new PeakPickParameters();
+                    peakPickParameters.level(chart.getDatasetAttributes().get(0).getLvl());
+                    peakPickParameters.mode = "appendif";
+
                     PeakList peaklist = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0),
-                            region, chart.getDatasetAttributes().get(0).getLvl());
+                            region, peakPickParameters);
                     completed = peaklist != null;
                 }
                 PeakList.remove("tmpList");
@@ -133,13 +138,18 @@ public class PeakPickHandler extends MouseHandler {
         threshold = Math.max(datasetThreshold, threshold);
 
         double[][] region = {{xLim0, xLim1}};
-        PeakList peakList = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0), region, false,
-                false, threshold, false, listName);
-        if (peakList != null) {
-            if (displayList == null) {
-                displayList = peakList;
-            }
+        PeakPickParameters peakPickParameters = new PeakPickParameters();
+        peakPickParameters.level(threshold);
+        peakPickParameters.listName = listName;
+        peakPickParameters.mode = "appendregion";
+
+        PeakList peakList = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0),
+                region, peakPickParameters);
+
+        if ((peakList != null) && (displayList == null)) {
+            displayList = peakList;
         }
+
         return peakList;
     }
 }

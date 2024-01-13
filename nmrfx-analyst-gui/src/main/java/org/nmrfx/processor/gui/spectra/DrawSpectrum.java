@@ -25,8 +25,6 @@ package org.nmrfx.processor.gui.spectra;
 
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
@@ -191,7 +189,7 @@ public class DrawSpectrum {
                         int[][] cells = new int[z.length][z[0].length];
                         for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
                             Contour contour = contours[iPosNeg];
-                            if (!setContext(contour, fileData, iPosNeg)) {
+                            if (!setContext(contour, fileData, iPosNeg, iChunk)) {
                                 continue;
                             }
                             contour.xOffset = xOff;
@@ -717,19 +715,25 @@ public class DrawSpectrum {
         return dataAttr.readMatrix(dataAttr.mChunk, chunkLabel.toString(), apt, z);
     }
 
-    private static boolean setContext(Contour contour, DatasetAttributes dataAttr, int iPosNeg) throws GraphicsIOException {
+    private static boolean setContext(Contour contour, DatasetAttributes dataAttr, int iPosNeg, int iChunk) throws GraphicsIOException {
         final boolean ok;
         if (iPosNeg == 0) {
             ok = dataAttr.getPos();
         } else {
             ok = dataAttr.getNeg();
         }
-        double widthScale = dataAttr.isSelected() ? 3.0 : 1.0;
+        int index = -1;
+        if (!dataAttr.drawList.isEmpty()) {
+            index = dataAttr.getDrawListIndex(iChunk);
+        }
+        double widthScale = dataAttr.isSelected(index) ? 3.0 : 1.0;
         if (ok) {
             if (iPosNeg == 0) {
-                contour.setAttributes(dataAttr.posWidthProperty().get() * widthScale, dataAttr.getPosColor());
+                Color posColor = dataAttr.getPosColor(index);
+                contour.setAttributes(dataAttr.posWidthProperty().get() * widthScale, posColor);
             } else {
-                contour.setAttributes(dataAttr.negWidthProperty().get() * widthScale, dataAttr.getNegColor());
+                Color negColor = dataAttr.getNegColor();
+                contour.setAttributes(dataAttr.negWidthProperty().get() * widthScale, negColor);
             }
         }
         return ok;
@@ -1019,7 +1023,7 @@ public class DrawSpectrum {
                                     break;
                                 }
                                 Contour contour = new Contour(fileData.ptd, pix);
-                                if (!setContext(contour, fileData, iPosNeg)) {
+                                if (!setContext(contour, fileData, iPosNeg, iChunk)) {
                                     continue;
                                 }
                                 contour.xOffset = xOff;

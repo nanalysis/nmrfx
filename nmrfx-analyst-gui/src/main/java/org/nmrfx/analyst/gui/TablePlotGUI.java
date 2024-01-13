@@ -236,39 +236,41 @@ public class TablePlotGUI {
             activeChart.setShowLegend(false);
 
             if ((xElem != null) && !yElems.isEmpty()) {
-                String yElem = yElems.get(0);
-                xAxis.setLabel(xElem);
-                yAxis.setLabel(yElem);
-                xAxis.setZeroIncluded(true);
-                yAxis.setZeroIncluded(false);
-                xAxis.setAutoRanging(true);
-                yAxis.setAutoRanging(true);
-                activeChart.getData().clear();
-                //Prepare XYChart.Series objects by setting data
-                var groups = getGroups();
-                int iValue = 0;
-                for (var groupEntry : groups.entrySet()) {
-                    int groupNum = groupEntry.getKey();
-                    var items = groupEntry.getValue();
-                    DataSeries series = new DataSeries();
-                    series.setFill(ScanTable.getGroupColor(groupNum));
+                Optional<String> yElemOpt = yElems.stream().filter(e -> nameMap.containsKey(e)).findFirst();
+                yElemOpt.ifPresent(yElem -> {
+                    xAxis.setLabel(xElem);
+                    yAxis.setLabel(yElem);
+                    xAxis.setZeroIncluded(true);
+                    yAxis.setZeroIncluded(false);
+                    xAxis.setAutoRanging(true);
+                    yAxis.setAutoRanging(true);
+                    activeChart.getData().clear();
+                    //Prepare XYChart.Series objects by setting data
+                    var groups = getGroups();
+                    int iValue = 0;
+                    for (var groupEntry : groups.entrySet()) {
+                        int groupNum = groupEntry.getKey();
+                        var items = groupEntry.getValue();
+                        DataSeries series = new DataSeries();
+                        series.setFill(ScanTable.getGroupColor(groupNum));
 
-                    series.clear();
-                    double[] ddata = new double[items.size()];
-                    int i = 0;
-                    for (FileTableItem item : items) {
-                        double y = item.getDouble(nameMap.get(yElem));
-                        ddata[i++] = y;
+                        series.clear();
+                        double[] ddata = new double[items.size()];
+                        int i = 0;
+                        for (FileTableItem item : items) {
+                            double y = item.getDouble(nameMap.get(yElem));
+                            ddata[i++] = y;
+                        }
+                        BoxPlotData fiveNum = new BoxPlotData(ddata);
+                        XYValue xy = new XYValue(iValue + 1.0, 0.0);
+                        xy.setExtraValue(fiveNum);
+                        series.add(xy);
+                        iValue++;
+
+                        activeChart.getData().add(series);
+                        activeChart.autoScale(true);
                     }
-                    BoxPlotData fiveNum = new BoxPlotData(ddata);
-                    XYValue xy = new XYValue(iValue + 1.0, 0.0);
-                    xy.setExtraValue(fiveNum);
-                    series.add(xy);
-                    iValue++;
-
-                    activeChart.getData().add(series);
-                    activeChart.autoScale(true);
-                }
+                });
             }
         }
     }

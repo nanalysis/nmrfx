@@ -148,6 +148,10 @@ public class CrossHairs {
         return getCrossHairLine(index, orientation).isActive();
     }
 
+    public boolean isVisible(int index, Orientation orientation) {
+        return getCrossHairLine(index, orientation).isDisplayed();
+    }
+
     public void refresh() {
         SpectrumStatusBar statusBar = getController().getStatusBar();
         for (int index = 0; index < 2; index++) {

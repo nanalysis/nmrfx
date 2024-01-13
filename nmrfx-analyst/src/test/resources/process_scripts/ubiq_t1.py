@@ -1,8 +1,10 @@
 import os
 from pyproc import *
 procOpts(nprocess=7)
-FID(FIDHOME+'bruker/ubiq_t1/3')
-CREATE(TMPHOME+'tst_ubiq_t1.nv')
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'bruker/ubiq_t1/3'))
+CREATE(os.path.join(TMPHOME,'tst_ubiq_t1.nv'))
+
 acqOrder('312')
 label('1H','15N','1H_3')
 sf('SFO1,1','SFO1,2','SFO1,3')

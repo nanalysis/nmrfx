@@ -10,19 +10,19 @@ from javafx.scene.control import ToolBar
 import argparse
 import dscript
 
-dimNames = ['x','y','z','a','b','c','d']
+dimNames = ['x', 'y', 'z', 'a', 'b', 'c', 'd']
 
 
 class NMRFxWindowScripting:
-    def __init__(self,winName=None):
-        if winName==None:
+    def __init__(self, winName=None):
+        if winName == None:
             self.cmd = GUIScripter()
         else:
             self.cmd = GUIScripter(winName)
 
     def getDAttrs(self):
         activeController = self.cmd.getController()
-        chart=activeController.getActiveChart()
+        chart = activeController.getActiveChart()
         dAttrs = chart.getDatasetAttributes()
         return dAttrs
 
@@ -31,7 +31,7 @@ class NMRFxWindowScripting:
 
     def getActiveChart(self):
         activeController = self.cmd.getController()
-        chart=activeController.getActiveChart()
+        chart = activeController.getActiveChart()
         return chart
 
     def getActiveController(self):
@@ -46,15 +46,15 @@ class NMRFxWindowScripting:
     def setTitle(self, title):
         self.cmd.setTitle(title)
 
-    def bindKeys(self, keyStr, actionStr) :
+    def bindKeys(self, keyStr, actionStr):
         self.cmd.bindKeys(keyStr, actionStr)
 
-    def new(self):
-        self.cmd.newStage()
+    def new(self, title=None):
+        self.cmd.newStage(title)
         return self
 
     def geometry(self, x=None, y=None, width=None, height=None):
-        if (x==None and y==None and width==None and height==None):
+        if (x == None and y == None and width == None and height == None):
             return self.cmd.geometry()
         else:
             self.cmd.geometry(x, y, width, height)
@@ -85,7 +85,7 @@ class NMRFxWindowScripting:
         else:
             datasetNames = []
             for dataset in datasets:
-                if isinstance(dataset,basestring):
+                if isinstance(dataset, basestring):
                     datasetNames.append(dataset)
                 else:
                     datasetNames.append(dataset.getName())
@@ -100,9 +100,9 @@ class NMRFxWindowScripting:
         else:
             self.cmd.peakLists(peakListNames)
 
-    def config(self, datasets=None, pars=None,  **kwargs):
+    def config(self, datasets=None, pars=None, **kwargs):
         if datasets != None:
-            if not isinstance(datasets,list):
+            if not isinstance(datasets, list):
                 datasets = [datasets]
         if len(kwargs) == 0 and pars == None:
             return self.cmd.config(datasets)
@@ -112,11 +112,11 @@ class NMRFxWindowScripting:
                 configData.update(pars)
             if len(kwargs) != 0:
                 configData.update(kwargs)
-            self.cmd.config(datasets,configData)
+            self.cmd.config(datasets, configData)
 
-    def pconfig(self, peakLists=None, pars=None,  **kwargs):
+    def pconfig(self, peakLists=None, pars=None, **kwargs):
         if peakLists != None:
-            if not isinstance(peakLists,list):
+            if not isinstance(peakLists, list):
                 peakLists = [peakLists]
         if len(kwargs) == 0 and pars == None:
             return self.cmd.pconfig(peakLists)
@@ -126,9 +126,9 @@ class NMRFxWindowScripting:
                 configData.update(pars)
             if len(kwargs) != 0:
                 configData.update(kwargs)
-            self.cmd.pconfig(peakLists,configData)
+            self.cmd.pconfig(peakLists, configData)
 
-    def cconfig(self, pars=None,  **kwargs):
+    def cconfig(self, pars=None, **kwargs):
         if len(kwargs) == 0 and pars == None:
             return self.cmd.cconfig()
         else:
@@ -139,7 +139,7 @@ class NMRFxWindowScripting:
                 configData.update(kwargs)
             self.cmd.cconfig(configData)
 
-    def sconfig(self, pars=None,  **kwargs):
+    def sconfig(self, pars=None, **kwargs):
         if len(kwargs) == 0 and pars == None:
             return self.cmd.sconfig()
         else:
@@ -150,7 +150,13 @@ class NMRFxWindowScripting:
                 configData.update(kwargs)
             self.cmd.sconfig(configData)
 
-    def getDims(self,dataset):
+    def getAnnotations(self):
+        return self.cmd.getAnnotations()
+
+    def loadAnnotations(self, yamlData):
+        self.cmd.loadAnnotations(yamlData)
+
+    def getDims(self, dataset):
         if dataset != None:
             return self.cmd.getDims(dataset)
         else:
@@ -163,11 +169,11 @@ class NMRFxWindowScripting:
                 iDims = []
                 for dim in dims:
                     if isinstance(dim, int):
-                       iDims.append(dim)
+                        iDims.append(dim)
                     else:
-                       iDim = dataObj.getDim(dim)
-                       iDims.append(iDim)
-            self.cmd.setDims(dataset,iDims)
+                        iDim = dataObj.getDim(dim)
+                        iDims.append(iDim)
+            self.cmd.setDims(dataset, iDims)
 
     def colors(self, indices, colorName, dataset=None):
         self.cmd.colorMap(dataset, indices, colorName)
@@ -177,49 +183,49 @@ class NMRFxWindowScripting:
         self.cmd.offsetMap(dataset, indices, offset)
         self.cmd.draw()
 
-    def rows(self, indices,  dataset=None):
+    def rows(self, indices, dataset=None):
         self.cmd.rows(dataset, indices)
         self.cmd.draw()
 
-    def lim(self,pars=None,**kwargs):
-        if (pars==None) and (len(kwargs) == 0):
+    def lim(self, pars=None, **kwargs):
+        if (pars == None) and (len(kwargs) == 0):
             return self.cmd.limit()
         else:
             if pars != None:
                 for elem in pars:
                     value = pars[elem]
-                    if isinstance(value, (float,int)):
+                    if isinstance(value, (float, int)):
                         v1 = value
                         v2 = value
                     elif len(value) == 1:
                         v1 = value[0]
                         v2 = v1
                     else:
-                        (v1,v2) = value 
+                        (v1, v2) = value
                     self.cmd.limit(elem, v1, v2)
             for elem in kwargs:
-                    value = kwargs[elem]
-                    if isinstance(value, (float,int)):
-                        v1 = value
-                        v2 = value
-                    elif len(value) == 1:
-                        v1 = value[0]
-                        v2 = v1
-                    else:
-                        (v1,v2) = value 
-                    self.cmd.limit(elem, v1, v2)
+                value = kwargs[elem]
+                if isinstance(value, (float, int)):
+                    v1 = value
+                    v2 = value
+                elif len(value) == 1:
+                    v1 = value[0]
+                    v2 = v1
+                else:
+                    (v1, v2) = value
+                self.cmd.limit(elem, v1, v2)
         self.cmd.draw()
 
     def axlim(self, axis, v1, v2):
         self.cmd.limit(axis, v1, v2)
         self.cmd.draw()
 
-    def configOld(self,datasets=None, **kwargs):
+    def configOld(self, datasets=None, **kwargs):
         dAttrs = self.getDAttrs()
         if datasets == None:
             useDAttrs = dAttrs
         else:
-            if not isinstance(datasets,list):
+            if not isinstance(datasets, list):
                 datasets = [datasets]
             useDAttrs = []
             for dAttr in dAttrs:
@@ -232,16 +238,16 @@ class NMRFxWindowScripting:
         else:
             for elem in kwargs:
                 for dAttr in useDAttrs:
-                    dAttr.config(elem,kwargs[elem])
+                    dAttr.config(elem, kwargs[elem])
         chart = self.getActiveChart()
         chart.draw()
 
     def center(self, *pArgs, **dimArgs):
-        pos=[]
+        pos = []
         nUsed = 0
-        for dimName,pArg in zip(dimNames,pArgs):
+        for dimName, pArg in zip(dimNames, pArgs):
             dimArgs[dimName] = pArg
-      
+
         for dim in dimNames:
             if dim in dimArgs:
                 pos.append(dimArgs[dim])
@@ -249,17 +255,17 @@ class NMRFxWindowScripting:
             else:
                 pos.append(None)
             if nUsed == len(dimArgs):
-                break         
+                break
         pos = pos[:nUsed]
         self.cmd.center(pos)
 
     def zoom(self, factor=1.2):
-       self.cmd.zoom(factor)
+        self.cmd.zoom(factor)
 
     def expand(self):
         self.cmd.expand()
 
-    def full(self, dimName = ""):
+    def full(self, dimName=""):
         dimNum = -1
         if dimName in dimNames:
             dimNum = dimNames.index(dimName)
@@ -289,7 +295,7 @@ class NMRFxWindowScripting:
         self.strips(datasets, x, xwidth, dims=dims, row=row, z=z)
 
     def stripTool(self):
-        aC=self.getActiveController() 
+        aC = self.getActiveController()
         tool = aC.getTool("rg.nmrfx.processor.gui.StripController")
         return tool
 
@@ -302,18 +308,18 @@ class NMRFxWindowScripting:
         else:
             nColumns = nX * nDatasets
             nRepeats = nDatasets
-        nRows = row+1
+        nRows = row + 1
         self.grid(rows=nRows, columns=nColumns)
         for iChart in range(nColumns):
             self.active(iChart + row * nColumns)
-            dataset = datasets[iChart % nDatasets ]
+            dataset = datasets[iChart % nDatasets]
             self.datasets([dataset])
             if dims != None:
-                self.setDims( dataset, dims=dims)
+                self.setDims(dataset, dims=dims)
             xVal = x[iChart / nRepeats]
-            x0 = xVal - xwidth/2.0
-            x1 = xVal + xwidth/2.0
-            self.lim(x=[x0,x1])
+            x0 = xVal - xwidth / 2.0
+            x1 = xVal + xwidth / 2.0
+            self.lim(x=[x0, x1])
             yValue = None
             for elem in kwargs:
                 if elem == 'y':
@@ -321,7 +327,7 @@ class NMRFxWindowScripting:
                 else:
                     values = kwargs[elem]
                     value = values[iChart / nRepeats]
-                    self.axlim(elem,value, value)
+                    self.axlim(elem, value, value)
             if yValue == None:
                 self.full('y')
             else:
@@ -349,39 +355,60 @@ class NMRFxWindowScripting:
         cntrl = self.cmd.getController()
         box = cntrl.getBottomBox()
         box.getChildren().remove(toolBar)
-   
+
     def addTool(self, toolBar):
         cntrl = self.cmd.getController()
         box = cntrl.getBottomBox()
         box.getChildren().add(toolBar)
 
     def addPolyLine(self, x, y, color="black", width=1.0):
-        self.cmd.addPolyLine(x , y, color, width)
+        self.cmd.addPolyLine(x, y, color, width)
+
+    def addRectangle(self, x1, y1, x2, y2, stroke="black", fill=None, width=1.0):
+        self.cmd.addRectangle(x1, y1, x2, y2, stroke, fill, width)
+
+    def addOval(self, x1, y1, x2, y2, stroke="black", fill=None, width=1.0):
+        self.cmd.addOval(x1, y1, x2, y2, stroke, fill, width)
+
+    def addPolygon(self, x, y, stroke="black", fill=None, width=1.0):
+        self.cmd.addPolygon(x, y, stroke, fill, width)
+
+    def addArrowLine(self, x1, y1, x2, y2, arrowFirst, arrowLast, stroke="black", fill=None, width=1.0):
+        self.cmd.addArrowLine(x1, y1, x2, y2, arrowFirst, arrowLast, stroke, fill, width)
+
+    def addLineText(self, x1, y1, x2, y2, text, fontSize=12.0, stroke="black", fill=None, width=1.0):
+        self.cmd.addLineText(x1, y1, x2, y2, text, fontSize, stroke, fill, width)
+
+    def addText(self, x1, y1, x2, y2, text, fontSize=12.0):
+        self.cmd.addText(x1, y1, x2, y2, text, fontSize)
 
     def export(self, fileName):
         self.cmd.export(fileName)
 
+
 def parseArgs(argv):
     nw = NMRFxWindowScripting()
     parser = argparse.ArgumentParser(description="Evaluate NMRFx Command Line Args")
-    parser.add_argument("-r", dest="rows",default='1', help="Number of chart rows")
-    parser.add_argument("-c", dest="columns",default='1', help="Number of chart columns")
-    #parser.add_argument("-g", dest="groupList",default='', help="Residues to fit in groups")
-    parser.add_argument("fileNames",nargs="*")
+    parser.add_argument("-r", dest="rows", default='1', help="Number of chart rows")
+    parser.add_argument("-c", dest="columns", default='1', help="Number of chart columns")
+    # parser.add_argument("-g", dest="groupList",default='', help="Residues to fit in groups")
+    parser.add_argument("fileNames", nargs="*")
     args = parser.parse_args(args=argv)
     rows = int(args.rows)
     columns = int(args.columns)
-    nw.grid(rows,columns)
-    nWins = rows*columns
+    nw.grid(rows, columns)
+    nWins = rows * columns
     if (nWins > 1) and len(args.fileNames) != nWins:
-        print "Number of files must equal number of windows if using a grid"
+        print
+        "Number of files must equal number of windows if using a grid"
         exit(1)
     if len(args.fileNames) == 1 and (args.fileNames[0].endswith('ser') or args.fileNames[0].endswith('fid')):
         nw.openFID(args.fileNames[0])
     else:
-        for i,fileName in enumerate(args.fileNames):
-           dataset = dscript.nd.open(fileName)
-           iWin = i % nWins
-           nw.active(iWin).cmd.addDataset(dataset)
-       
+        for i, fileName in enumerate(args.fileNames):
+            dataset = dscript.nd.open(fileName)
+            iWin = i % nWins
+            nw.active(iWin).cmd.addDataset(dataset)
+
+
 nw = NMRFxWindowScripting()

@@ -18,9 +18,11 @@
 package org.nmrfx.processor.datasets.vendor.varian;
 
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.datasets.ReferenceCalculator;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -76,6 +78,8 @@ public class VarianData implements NMRData {
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
     private final Double[] Sf = new Double[MAXDIM];
+
+    private Double zeroFreq = null;
     private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
     private String text = null;
     private SampleSchedule sampleSchedule = null;
@@ -428,6 +432,31 @@ public class VarianData implements NMRData {
         return name;
     }
 
+    double getCorrectedBaseFreq() {
+        Double reffrq = null;
+        Nuclei nuclei = Nuclei.findNuclei(getTN(0));
+        if ((reffrq = getParDouble("reffrq")) == null) {
+            double rfl = getParDouble("rfl");
+            double rfp = getParDouble("rfp");
+            reffrq = getSF(0) * 1e6 - getSW(0) / 2.0 + rfl - rfp;
+            reffrq = reffrq / 1.0e6;
+        }
+        return reffrq / (nuclei.getRatio() / 100.0);
+
+    }
+
+    public void setZeroFreq(Double value) {
+        zeroFreq = value;
+    }
+
+    @Override
+    public double getZeroFreq() {
+        if (zeroFreq == null) {
+            zeroFreq = getCorrectedBaseFreq();
+        }
+        return zeroFreq;
+    }
+
     @Override
     public double getSW(int iDim) {
         double sw = 1.0;
@@ -594,6 +623,12 @@ public class VarianData implements NMRData {
     @Override
     public void setRef(int iDim, double ref) {
         Ref[iDim] = ref;
+        String nucleusName = getTN(iDim);
+        Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+        if (nucleus == Nuclei.H1) {
+            double sf0 = getSF(iDim);
+            zeroFreq = sf0 / (1.0 + ref * 1.0e-6);
+        }
     }
 
     @Override
@@ -607,26 +642,40 @@ public class VarianData implements NMRData {
         if (Ref[iDim] != null) {
             ref = Ref[iDim];
         } else {
-            Double rfp;
-            String ext = "";
-            if (iDim > 0) {
-                ext += iDim;
-            }
-            if ((rfp = getParDouble("rfl" + ext)) != null) {
-                double rfl = rfp;
-                if ((rfp = getParDouble("rfp" + ext)) != null) {
-                    double sf = getSF(iDim);
-                    double sw = getSW(iDim);
-                    double dppm = sw / sf;
-                    double reffrac = (sw - rfl) / sw;
-                    ref = rfp / sf + dppm * reffrac - dppm / 2.0;
-                    //ref = (sw - rfl + rfp) / sf;
-                    // see vnmr.tcl line 805; use reffrq, reffrq1 instead of sfrq, dfrq?
+            var refOpt = getRefAtCenter(iDim);
+            if (refOpt.isPresent()) {
+                ref = refOpt.get();
+                // OFFSET from proc[n]s
+            } else {
+                String ext = "";
+                if (iDim > 0) {
+                    ext += iDim;
+                }
+                Double rfp;
+                if ((rfp = getParDouble("rfl" + ext)) != null) {
+                    double rfl = rfp;
+                    if ((rfp = getParDouble("rfp" + ext)) != null) {
+                        double sf = getSF(iDim);
+                        double sw = getSW(iDim);
+                        double dppm = sw / sf;
+                        double reffrac = (sw - rfl) / sw;
+                        ref = rfp / sf + dppm * reffrac - dppm / 2.0;
+                        //ref = (sw - rfl + rfp) / sf;
+                        // see vnmr.tcl line 805; use reffrq, reffrq1 instead of sfrq, dfrq?
+                    }
                 }
             }
             setRef(iDim, ref);
         }
         return ref;
+    }
+    Optional<Double> getRefAtCenter(int iDim) {
+        String nucleusName = getTN(iDim);
+        Nuclei nucleus = Nuclei.findNuclei(nucleusName);
+        double zf = getZeroFreq();
+        double ref = ReferenceCalculator.refByRatio(zf, getSF(iDim), nucleus, getSolvent());
+        Optional<Double> result = Optional.of(ref);
+        return result;
     }
 
     @Override

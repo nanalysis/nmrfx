@@ -167,9 +167,6 @@ StdCoefs={
 
 class FIDInfo:
     size=[]
-    sw=[]
-    sf=[]
-    ref=[]
     refpt=[]
     label=[]
     mapToFIDList=[]
@@ -186,13 +183,10 @@ class FIDInfo:
             raise Exception("Number of parameters must be < "+str(nd))
 
     def printInfo(self):
-        print "  sw",    self.sw
-        print "  sf",    self.sf
         print "  size",  self.size
         print "  useSize", self.useSize
         print "  acqArray", self.acqArray
         print "  label", self.label
-        print "  ref",   self.ref
         print "  refpt", self.refpt
         print "  flags", self.flags
         print "  acqOrder", self.acqOrder
@@ -208,72 +202,24 @@ class FIDInfo:
 
     def setFixDSP(self,value):
         self.fidObj.setFixDSP(value)
+
+    def setZeroFreq(self,value):
+        self.fidObj.setZeroFreq(value)
         
     def setSW(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.sw[i] = par
-            elif isinstance(par,int):
-                self.sw[i] = float(par)
-            else:
-                if (par == ''):
-                    self.fidObj.resetSW(i)
-                    continue
-                value = self.fidObj.getParDouble(par)
-                if isinstance(value,float):
-                    self.sw[i] = value
-            self.fidObj.setSW(i,self.sw[i])
+            self.fidObj.setSW(i,par)
 
     def setSF(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.sf[i] = par
-            elif isinstance(par,int):
-                self.sf[i] = float(par)
-            else:
-                if (par == ''):
-                    self.fidObj.resetSF(i)
-                    continue
-                value = self.fidObj.getParDouble(par)
-                if self.fidObj.getVendor() == "rs2d":
-                    value = value / 1.0e6
-                if isinstance(value,float):
-                    self.sf[i] = value
-            self.fidObj.setSF(i,self.sf[i])
+            self.fidObj.setSF(i,par)
 
     def setRef(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.ref[i] = par
-            elif isinstance(par,int):
-                self.ref[i] = float(par)
-            else:
-                par = par.upper().strip()
-                if (par == ''):
-                    self.fidObj.resetRef(i)
-                    self.ref[i] = self.fidObj.getRef(i)
-                    continue
-                if (par == 'H2O'):
-                    temp = self.fidObj.getTempK()
-                    self.ref[i] = getWaterPPM(temp)
-                elif (par.find('@') != -1):
-                    (refValue,sfValue) = par.split('@')
-                    refValue = float(refValue)
-                    sfValue = float(sfValue)
-                    self.ref[i] = (self.sf[i]-sfValue)*1.e6/sfValue+refValue
-                elif ((i > 0) and (par in ('N','C','P','D','H'))):
-                    self.ref[i] = refByRatio(self.sf[0],self.ref[0],self.sf[i],par)
-                else:
-                    doubleValue = self.fidObj.getParDouble(par)
-                    if doubleValue == None:
-                        raise Exception("Cannot convert par "+par)
-                    self.ref[i] = doubleValue;
-            if self.size[i] != 0:
-                delRef = (self.size[i]/2) * self.sw[i] / self.sf[i] / self.size[i];
-                self.fidObj.setRef(i,self.ref[i])
+            self.fidObj.setRef(i, par)
 
     def setLabel(self,pars):
         self.checkParDim(pars)
@@ -413,6 +359,9 @@ def tdcomplex(*pars):
        </ul>
     '''
     fidInfo.setComplex(pars)
+
+def zerofreq(zf):
+    fidInfo.setZeroFreq(zf)
 
 def ref(*pars):
     ''' Reference position (in ppm) at center of spectrum to set for each dimension.<br>
@@ -789,7 +738,6 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
 
     fidInfo.solvent = fidObj.getSolvent()
     fidInfo.nd = fidObj.getNDim()
-    fidInfo.sw = []
     fidInfo.sf = []
     fidInfo.ref = []
     fidInfo.refpt = []
@@ -803,10 +751,6 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
 
     j = 0
     for i in range(fidInfo.nd):
-        fidInfo.sw.append(fidObj.getSW(i))
-        fidInfo.sf.append(fidObj.getSF(i))
-        fidInfo.ref.append(fidObj.getRef(i))
-        fidInfo.refpt.append(fidObj.getSize(i)/2)
         fidInfo.label.append('D'+str(i))
         fidInfo.maxSize.append(fidObj.getMaxSize(i))
         fidInfo.acqArray.append(0)
@@ -922,13 +866,10 @@ def setDataInfo(dSize):
         for iDim in range(nDim):
             fidDim = fidInfo.mapToFID0(iDim)
             if fidDim != -1:
-                if fidInfo.ref:
-                    dataset.setRefValue(iDim,fidInfo.ref[fidDim])
-                    dataset.setRefValue_r(iDim,fidInfo.ref[fidDim])
-                if fidInfo.sw:
-                    dataset.setSw(iDim,fidInfo.sw[fidDim])
-                if fidInfo.sf:
-                    dataset.setSf(iDim,fidInfo.sf[fidDim])
+                dataset.setRefValue(iDim,fidInfo.fidObj.getRef(fidDim))
+                dataset.setRefValue_r(iDim,fidInfo.fidObj.getRef(fidDim))
+                dataset.setSw(iDim,fidInfo.fidObj.getSW(fidDim))
+                dataset.setSf(iDim,fidInfo.fidObj.getSF(fidDim))
                 if fidInfo.label:
                     dataset.setLabel(iDim,fidInfo.label[fidDim])
         if fidInfo.label:
@@ -2489,7 +2430,10 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     muFinalReal = math.pow(10.0,-muFinal)
     process = process or getCurrentProcess()
     global fidInfo
-    skipIndices = fidInfo.fidObj.getSkipIndices()
+    if fidInfo == None or fidInfo.fidObj == None:
+        skipIndices = None
+    else:
+        skipIndices = fidInfo.fidObj.getSkipIndices()
 
 
     if alg == 'nesta':
@@ -4094,5 +4038,29 @@ def parseFileArgs():
     fidInfo = FID(fidDir)
     datasetInfo = CREATE(datasetName)
     return fidInfo,datasetInfo
+
+def setTestLocations(fidHome, tmpHome):
+    global FIDHOME
+    global TMPHOME
+    FIDHOME = fidHome
+    TMPHOME = tmpHome
+
+def getTestLocations():
+    global FIDHOME
+    global TMPHOME
+    try:
+        fidHome = FIDHOME
+        tmpHome = TMPHOME
+    except NameError:
+        fidHome = os.getenv("FIDHOME")
+        tmpHome = os.getenv("TMPHOME")
+        if fidHome == None:
+            fidHome = "../../nmrfx-test-data/testfids"
+        if tmpHome == None:
+            tmpHome = "../../nmrfx-test-data-gen"
+            if not os.path.exists(tmpHome):
+                tmpHome = None
+        
+    return (fidHome, tmpHome)
 
 dataInfo = DataInfo()

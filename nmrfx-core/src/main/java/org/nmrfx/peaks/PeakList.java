@@ -4,6 +4,7 @@ import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.math.Clusters;
@@ -26,7 +27,6 @@ import static java.util.Comparator.comparing;
 @PluginAPI("ring")
 public class PeakList {
 
-    private static final ResonanceFactory resFactory = new ResonanceFactory();
     /**
      *
      */
@@ -109,10 +109,6 @@ public class PeakList {
         return listName;
     }
 
-    public static ResonanceFactory resFactory() {
-        return resFactory;
-    }
-
     /**
      * Returns an Optional containing the PeakList that has the specified id
      * number or empty value if no PeakList with that id exists.
@@ -190,12 +186,17 @@ public class PeakList {
      * @param peak
      * @return
      */
-    public static List getLinks(Peak peak) {
-        List peakDims = getLinkedPeakDims(peak, 0);
-        ArrayList peaks = new ArrayList(peakDims.size());
-        for (int i = 0; i < peakDims.size(); i++) {
-            PeakDim peakDim = (PeakDim) peakDims.get(i);
-            peaks.add(peakDim.getPeak());
+    public static List<Peak> getLinks(Peak peak) {
+        List<Peak> peaks = new ArrayList<>();
+        for (int iDim = 0; iDim < peak.getNDim(); iDim++) {
+            List<PeakDim> peakDims = getLinkedPeakDims(peak, iDim);
+            for (int i = 0; i < peakDims.size(); i++) {
+                PeakDim peakDim = peakDims.get(i);
+                Peak lPeak = peakDim.getPeak();
+                if (!peaks.contains(lPeak)) {
+                    peaks.add(lPeak);
+                }
+            }
         }
         return peaks;
     }
@@ -248,10 +249,10 @@ public class PeakList {
      * @param peakDimB
      */
     public static void linkPeakDims(PeakDim peakDimA, PeakDim peakDimB) {
-        Resonance resonanceA = peakDimA.getResonance();
-        Resonance resonanceB = peakDimB.getResonance();
+        AtomResonance resonanceA = peakDimA.getResonance();
+        AtomResonance resonanceB = peakDimB.getResonance();
 
-        Resonance.merge(resonanceA, resonanceB);
+        AtomResonance.merge(resonanceA, resonanceB);
 
         peakDimA.peakDimUpdated();
         peakDimB.peakDimUpdated();
@@ -262,10 +263,10 @@ public class PeakList {
      * @param peakDimB
      */
     public static void couplePeakDims(PeakDim peakDimA, PeakDim peakDimB) {
-        Resonance resonanceA = peakDimA.getResonance();
-        Resonance resonanceB = peakDimB.getResonance();
+        AtomResonance resonanceA = peakDimA.getResonance();
+        AtomResonance resonanceB = peakDimB.getResonance();
 
-        Resonance.merge(resonanceA, resonanceB);
+        AtomResonance.merge(resonanceA, resonanceB);
 
         Multiplet.merge(peakDimA, peakDimB);
         peakDimA.peakDimUpdated();

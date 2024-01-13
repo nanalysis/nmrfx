@@ -8,6 +8,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.ListSelectionView;
@@ -29,6 +30,10 @@ public class ContentController implements NmrControlRightSideContent {
     ScrollPane contentScrollPane;
     @FXML
     Accordion contentAccordion;
+    @FXML
+    TitledPane datasetTitledPane;
+    @FXML
+    TitledPane peakTitledPane;
     @FXML
     ListSelectionView<String> datasetView;
     @FXML
@@ -64,6 +69,8 @@ public class ContentController implements NmrControlRightSideContent {
         peakView.getTargetItems().addListener(peakTargetListener);
         ProjectBase.getActive().addDatasetListListener(mapChangeListener);
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
+        peakTitledPane.expandedProperty().addListener(e -> update());
+        datasetTitledPane.expandedProperty().addListener(e -> update());
     }
 
     public Pane getPane() {
@@ -80,10 +87,12 @@ public class ContentController implements NmrControlRightSideContent {
         if (getPane().isVisible()) {
             Platform.runLater(() -> {
                 chart = fxmlController.getActiveChart();
-                chart.setChartDisabled(true);
-                datasetViewController.updateDatasetView();
-                updatePeakView();
-                chart.setChartDisabled(false);
+                if (chart != null) {
+                    chart.setChartDisabled(true);
+                    datasetViewController.updateDatasetView();
+                    updatePeakView();
+                    chart.setChartDisabled(false);
+                }
             });
         }
     }

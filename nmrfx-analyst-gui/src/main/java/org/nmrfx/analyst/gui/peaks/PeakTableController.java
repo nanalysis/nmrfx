@@ -56,7 +56,7 @@ import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakMenuBar;
 import org.nmrfx.processor.gui.PeakMenuTarget;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.TableUtils;
 
 import java.net.URL;
@@ -64,6 +64,7 @@ import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -121,13 +122,13 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             updatePeakListMenu();
         };
 
-        Project.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(mapChangeListener);
     }
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : Project.getActive().getPeakListNames()) {
+        for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 setPeakList(PeakList.get(peakListName));
@@ -165,6 +166,11 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         tableView.refresh();
     }
 
+    @Override
+    public Optional<Peak> getPeak() {
+        Peak peak = tableView.getSelectionModel().getSelectedItem();
+        return Optional.ofNullable(peak);
+    }
     @Override
     public PeakList getPeakList() {
         return peakList;

@@ -1935,6 +1935,18 @@ public class Molecule extends MoleculeBase {
         return (selected);
     }
 
+    public double guessMolecularWeight() {
+        updateAtomArray();
+        double weight = 0.0;
+        for (Atom atom:atoms) {
+            if (atom.getAtomicNumber() == 1) {
+                weight += 1.0;
+            } else {
+                weight += atom.getAtomicNumber() * 2.0;
+            }
+        }
+        return weight;
+    }
     public List<Atom> getAtoms() {
         List<Atom> atomVector = new ArrayList<>(32);
         updateAtomArray();

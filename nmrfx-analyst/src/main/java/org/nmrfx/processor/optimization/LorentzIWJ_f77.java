@@ -98,7 +98,7 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
         for (int i = 0; i < cplItems.length; i++) {
             jSplittings(cplItems[i], freqs[i]);
             for (int j = 0; j < cplItems[i].length; j++) {
-                System.out.print("coup " + cplItems[i][j].getCoupling());
+                System.out.print("coup " + cplItems[i][j].coupling());
             }
 
             System.out.println("");
@@ -146,13 +146,13 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
 
             int nFreqs = 1;
 
-            if ((cplItems[i].length == 1) && (cplItems[i][0].getNSplits() < 0)) { // generic multiplet
-                nFreqs = -cplItems[i][0].getNSplits();
+            if ((cplItems[i].length == 1) && (cplItems[i][0].nSplits() < 0)) { // generic multiplet
+                nFreqs = -cplItems[i][0].nSplits();
                 start += nFreqs;
                 nFit += nFreqs;
             } else {
                 for (int j = 0; j < cplItems[i].length; j++) {
-                    nFreqs = nFreqs * cplItems[i][j].getNSplits();
+                    nFreqs = nFreqs * cplItems[i][j].nSplits();
                 }
 
                 start += (cplItems[i].length + 1);
@@ -339,7 +339,7 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
     public double calculateOneSig(double[] a, int iSig, double x) {
         int start = sigStarts[iSig];
         for (int i = 0; i < cplItems[iSig].length; i++) {
-            cplItems[iSig][i] = new CouplingItem(a[start++], cplItems[iSig][i].getNSplits());
+            cplItems[iSig][i] = new CouplingItem(a[start++], cplItems[iSig][i].nSplits());
         }
 
         freqs[iSig][0] = a[start];
@@ -396,9 +396,9 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
             int start = sigStarts[iSig];
             lw[iSig] = Math.abs(aCalc[start++]);
 
-            if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].getNSplits() < 0)) { // generic multiplet
+            if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].nSplits() < 0)) { // generic multiplet
 
-                int nFreqs = -cplItems[iSig][0].getNSplits();
+                int nFreqs = -cplItems[iSig][0].nSplits();
                 double sum = 0.0;
 
                 for (int i = 0; i < nFreqs; i++) {
@@ -411,7 +411,7 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
                 freqs[iSig][0] = cfreqs[iSig] = aCalc[start++];
 
                 for (int i = 0; i < cplItems[iSig].length; i++) {
-                    cplItems[iSig][i] = new CouplingItem(aCalc[start++], cplItems[iSig][i].getNSplits());
+                    cplItems[iSig][i] = new CouplingItem(aCalc[start++], cplItems[iSig][i].nSplits());
                 }
 
                 jSplittings(cplItems[iSig], freqs[iSig]);
@@ -612,7 +612,7 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
             ampMap = new int[nCols];
             for (int iSig = 0; iSig < xy_nsig; iSig++) {
                 int nSplits = cplItems[iSig].length;
-                if ((nSplits > 1) && (cplItems[iSig][nSplits - 1].getNSplits() == 2)) {
+                if ((nSplits > 1) && (cplItems[iSig][nSplits - 1].nSplits() == 2)) {
                     for (int j = 0; j < freqs[iSig].length; j += 2) {
                         lwfrSorter.lwfrs[jCol + j].freq2 = lwfrSorter.lwfrs[jCol + j + 1].freq1;
                         lwfrSorter.lwfrs[jCol + j + 1].inActive = true;
@@ -630,9 +630,9 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
 
     private int splitToFreqList(int start, double[] a, int iSig) {
 
-        if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].getNSplits() < 0)) {
+        if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].nSplits() < 0)) {
             // generic multiplet
-            int nFreqs = -cplItems[iSig][0].getNSplits();
+            int nFreqs = -cplItems[iSig][0].nSplits();
 
             for (int i = 0; i < nFreqs; i++) {
                 freqs[iSig][i] = a[start++];
@@ -641,7 +641,7 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
             freqs[iSig][0] = a[start++];
 
             for (int i = 0; i < cplItems[iSig].length; i++) {
-                cplItems[iSig][i] = new CouplingItem(a[start++], cplItems[iSig][i].getNSplits());
+                cplItems[iSig][i] = new CouplingItem(a[start++], cplItems[iSig][i].nSplits());
             }
 
             jSplittings(cplItems[iSig], freqs[iSig]);
@@ -674,18 +674,18 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
         Arrays.sort(cplItem);
 
         for (int i = 0; i < nCouplings; i++) {
-            int last = (cplItem[i].getNSplits() * current) - 1;
+            int last = (cplItem[i].nSplits() * current) - 1;
 
             for (int j = 0; j < current; j++) {
-                double offset = cplItem[i].getCoupling() * ((cplItem[i].getNSplits() / 2.0) - 0.5);
+                double offset = cplItem[i].coupling() * ((cplItem[i].nSplits() / 2.0) - 0.5);
 
-                for (int k = 0; k < cplItem[i].getNSplits(); k++) {
+                for (int k = 0; k < cplItem[i].nSplits(); k++) {
                     freqs[last--] = freqs[current - j - 1] + offset;
-                    offset -= cplItem[i].getCoupling();
+                    offset -= cplItem[i].coupling();
                 }
             }
 
-            current *= cplItem[i].getNSplits();
+            current *= cplItem[i].nSplits();
         }
     }
 

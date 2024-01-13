@@ -102,7 +102,6 @@ public class ScannerTool implements ControllerTool {
         this.borderPane = borderPane;
         scannerBar = new ToolBar();
         tableView = new TableView<>();
-        tableView.setPrefHeight(250.0);
         borderPane.setCenter(tableView);
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> controller.hideScannerMenus());
@@ -113,13 +112,15 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeScoreMenu());
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
+        Button reloadButton = new Button("Reload");
+        reloadButton.setOnAction(e -> loadFromDataset());
         scanTable = new ScanTable(this, tableView);
         tableSelectionChoice.getItems().addAll(TableSelectionMode.values());
         tableSelectionChoice.setValue(TableSelectionMode.HIGHLIGHT);
         tableSelectionChoice.valueProperty().addListener(e -> scanTable.selectionChanged());
         VBox vBox = new VBox();
         Label label = new Label("Sel. Mode:");
-        vBox.getChildren().addAll(label, tableSelectionChoice);
+        vBox.getChildren().addAll(reloadButton, label, tableSelectionChoice);
         borderPane.setLeft(vBox);
         loadFromDataset();
     }
@@ -180,8 +181,10 @@ public class ScannerTool implements ControllerTool {
         processAndCombineItem.setOnAction(e -> processScanDirAndCombine());
         MenuItem processItem = new MenuItem("Process");
         processItem.setOnAction(e -> processScanDir());
+        MenuItem combineItem = new MenuItem("Combine");
+        combineItem.setOnAction(e -> combineDatasets());
         menu.getItems().addAll(loadRowFIDItem, processAndCombineItem,
-                processItem);
+                processItem, combineItem);
         return menu;
     }
 
@@ -256,6 +259,10 @@ public class ScannerTool implements ControllerTool {
     private void processScanDir() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
         scanTable.processScanDir(chartProcessor, false);
+    }
+
+    private void combineDatasets() {
+        scanTable.combineDatasets();
     }
 
     private void scanDirAction() {

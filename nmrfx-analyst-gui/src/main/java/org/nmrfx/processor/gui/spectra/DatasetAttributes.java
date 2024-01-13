@@ -553,6 +553,13 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return (Dataset.getDataset(theFile.getFileName()) != null) && ((theFile.getVec() != null) || theFile.hasDataFile());
     }
 
+    public int getDrawListIndex(int i) {
+        if (drawList.isEmpty() || i >= drawList.size()) {
+            return 0;
+        } else {
+            return drawList.get(i);
+        }
+    }
     public void setDrawListSize(final int size) {
         drawList.clear();
     }
@@ -1569,7 +1576,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
 
     public boolean isSelected(int iElem) {
         boolean value;
-        if (!selectionSet.isEmpty()) {
+        if ((iElem >= 0) && !selectionSet.isEmpty()) {
             value = selectionSet.contains(iElem);
         } else {
             value = selected;

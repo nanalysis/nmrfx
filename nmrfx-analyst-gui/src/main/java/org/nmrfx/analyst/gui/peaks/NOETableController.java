@@ -93,6 +93,7 @@ public class NOETableController implements Initializable, StageBasedController {
     MolecularConstraints molConstr = null;
     PropertySheet propertySheet;
     CheckBox detailsCheckBox;
+    CheckBox onlyFrozenCheckBox;
     DoubleRangeOperationItem refDistanceItem;
     DoubleRangeOperationItem expItem;
     DoubleRangeOperationItem minDisItem;
@@ -183,7 +184,8 @@ public class NOETableController implements Initializable, StageBasedController {
         noeSetMenuItem = new MenuButton("NoeSets");
         peakListMenuButton = new MenuButton("PeakLists");
         detailsCheckBox = new CheckBox("Details");
-        toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton, calibrateButton, detailsCheckBox);
+        onlyFrozenCheckBox = new CheckBox("Only Frozen");
+        toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton, calibrateButton, onlyFrozenCheckBox, detailsCheckBox);
         updateNoeSetMenu();
     }
 
@@ -381,17 +383,18 @@ public class NOETableController implements Initializable, StageBasedController {
             GUIUtils.warn("Extract Peaks", "Peak list " + peakList.getName() + " doesn't have two proton dimensions");
             return;
         }
+        boolean onlyFrozen = onlyFrozenCheckBox.isSelected();
         int nDim = peakList.nDim;
         try {
             for (int i = 0; i < nDim; i++) {
-                NOEAssign.findMax(peakList, i, 0);
+                NOEAssign.findMax(peakList, i, 0, onlyFrozen);
             }
             Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
             if (noeSetOpt.isEmpty()) {
                 noeSet = molConstr.newNOESet("default");
                 noeSetOpt = Optional.of(noeSet);
             }
-            NOEAssign.extractNoePeaks2(noeSetOpt, peakList, 2, false, 0);
+            NOEAssign.extractNoePeaks2(noeSetOpt, peakList, 2, false, 0, onlyFrozen);
             NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
             noeCalibrator.updateContributions(false, false);
             noeSet = noeSetOpt.get();

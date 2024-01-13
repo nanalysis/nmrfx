@@ -2,8 +2,6 @@ package org.nmrfx.processor.optimization;
 
 import org.apache.commons.math3.optim.PointValuePair;
 
-import java.util.Arrays;
-
 /**
  * @author brucejohnson
  */
@@ -13,33 +11,6 @@ public abstract class FitEquation {
     double[][] errValues;
     double[] bestPars;
     double[] parErrs;
-
-    record Guesses(double[] start, double[] lower, double[] upper) {
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Guesses guesses = (Guesses) o;
-            return Arrays.equals(start, guesses.start) && Arrays.equals(lower, guesses.lower) && Arrays.equals(upper, guesses.upper);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = Arrays.hashCode(start);
-            result = 31 * result + Arrays.hashCode(lower);
-            result = 31 * result + Arrays.hashCode(upper);
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return "Guesses{" +
-                    "start=" + Arrays.toString(start) +
-                    "\nlower=" + Arrays.toString(lower) +
-                    "\nupper=" + Arrays.toString(upper) +
-                    '}';
-        }
-    }
 
     public abstract String[] parNames();
 
@@ -107,7 +78,7 @@ public abstract class FitEquation {
         Fitter2 fitter = Fitter2.getArrayFitter(this::value);
         fitter.setXYE(xValues, yValues, errValues);
         var guesses = guess();
-        var optResult = fitter.fit(guesses.start, guesses.lower, guesses.upper, 10.0);
+        var optResult = fitter.fit(guesses.start(), guesses.lower(), guesses.upper(), 10.0);
         if (optResult.isPresent()) {
             PointValuePair result = optResult.get();
             bestPars = result.getPoint();
