@@ -9,11 +9,14 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.LineShapes;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 public class ConvolutionFitter {
     static Random rand = new Random();
-    static final int SQUASH_AT = 20;
+    int SQUASH_AT = 10;
     final double[][] psf;
     double psfMax;
     double[] widths;
@@ -22,6 +25,9 @@ public class ConvolutionFitter {
     boolean[] skip;
     double squash = 0.625;
     double threshold = 0.0;
+    int start = 0;
+
+    List<CPeak> cPeakList;
 
     public ConvolutionFitter(int n0, int width, double shapeFactor) {
         int[] n = {n0};
@@ -35,11 +41,15 @@ public class ConvolutionFitter {
         this.widths = widths.clone();
     }
 
+    public void setSquash(int squash) {
+        SQUASH_AT = squash;
+    }
+
     double[][] makePSF(int[] n, double[] width, double shapeFactor) {
         int nDim = n.length;
         double[][] yValues = new double[nDim][];
         double max = 0.0;
-        for (int iDim=0;iDim<nDim;iDim++) {
+        for (int iDim = 0; iDim < nDim; iDim++) {
             yValues[iDim] = new double[n[iDim]];
             double sum = 0.0;
             for (int i = 0; i < n[iDim]; i++) {
@@ -60,12 +70,12 @@ public class ConvolutionFitter {
 
     // used from Python for testing
     public void signalVector(int n) {
-         signal = new double[n];
+        signal = new double[n];
     }
 
     // used from Python for testing
     public void addSignal(double[] vec, double amplitude, double center, double width, double shapeFactor) {
-        for (int i = 0;i<vec.length;i++ ) {
+        for (int i = 0; i < vec.length; i++) {
             double y = LineShapes.G_LORENTZIAN.calculate(i, amplitude, center, width, shapeFactor);
             vec[i] += y;
         }
@@ -73,7 +83,7 @@ public class ConvolutionFitter {
 
     // used from Python for testing
     public void addNoise(double[] vec, double scale) {
-        for (int i = 0;i<vec.length;i++ ) {
+        for (int i = 0; i < vec.length; i++) {
             vec[i] += rand.nextGaussian() * scale;
         }
     }
@@ -91,6 +101,10 @@ public class ConvolutionFitter {
         return signal;
     }
 
+    public double psfMax() {
+        return psfMax;
+    }
+
     public boolean[] skipVector() {
         return skip;
     }
@@ -105,7 +119,7 @@ public class ConvolutionFitter {
         int size = values.length;
         int end = size - psfSize;
         if ((sim == null) || (sim.length != size)) {
-             sim = new double[size];
+            sim = new double[size];
         }
         for (int i = nh; i < end; i++) {
             double sum = 0.0;
@@ -115,7 +129,7 @@ public class ConvolutionFitter {
                     sum += values[index] * psf[0][k];
                 }
             }
-            sim[i] = sum ;
+            sim[i] = sum;
         }
     }
 
@@ -140,6 +154,7 @@ public class ConvolutionFitter {
                 double oldValue = values[j];
                 values[j] = values[j] * sum;
                 double delta = values[j] - oldValue;
+                // System.out.println(j + " " + delta + " " + sum + " " + nSum + " " + psfSize + " " + oldValue + " " + threshold);
                 sumDelta += delta * delta;
                 nDelta++;
             } else {
@@ -149,19 +164,80 @@ public class ConvolutionFitter {
         return nDelta > 0 ? Math.sqrt(sumDelta / nDelta) : 0.0;
     }
 
-    void squashNeighbors(double[] values, boolean[] skip) {
-        int half = (int) Math.ceil(widths[0] * squash);
+    boolean isHigherThanNeighbor(double[] values, int i, int searchWidth) {
+        boolean higher = true;
+        for (int j = -searchWidth; j <= searchWidth; j++) {
+            int k = i + j;
+            if ((j != 0) && (values[i] < values[k])) {
+                higher = false;
+            }
+        }
+        return higher;
+    }
+
+    record CPeak(int position, double height) {
+
+    }
+    void findPeaks(double[] values, boolean[] skip) {
+        int half = (int) Math.ceil(widths[0] * squash) / 2;
+        cPeakList = new ArrayList<>();
         for (int i = half; i < values.length - half; i++) {
             if (Math.abs(values[i]) < threshold) {
                 skip[i] = true;
                 continue;
             }
-            for (int j = -half; j <= half; j++) {
-                if ((i != j) && (values[i] < values[i + j])) {
-                    skip[i] = true;
-                    break;
+            if (!skip[i]) {
+                boolean highest = isHigherThanNeighbor(values, i, half);
+                if (highest) {
+                    CPeak cPeak = new CPeak(i, values[i]);
+                    cPeakList.add(cPeak);
                 }
             }
+        }
+    }
+
+    public void squashPeaks(double[] values, boolean[] skip) {
+        int half = (int) Math.ceil(widths[0] * squash);
+
+        List<CPeak> newPeaks = new ArrayList<>();
+
+        for (int i = 0;i<cPeakList.size();i++) {
+            CPeak cPeak1 = cPeakList.get(i);
+            int center1 = cPeak1.position;
+            int center0 = Math.max(0, center1 - half);
+            int center2 = Math.min(values.length - 1, center1 + half);
+
+            if (i > 0) {
+                CPeak cPeak0 = cPeakList.get(i - 1);
+                if ((cPeak0.position + half) > center0) {
+                    center0 = (cPeak0.position + center1) / 2;
+                }
+            }
+            if (i < cPeakList.size() - 1) {
+                CPeak cPeak2 = cPeakList.get(i + 1);
+                if ((cPeak2.position - half) < center2) {
+                    center2 = (cPeak2.position + center1) / 2;
+                }
+            }
+            double sumHeight = 0.0;
+            for (int k=center0;k<=center2;k++) {
+                int j = center1 - k;
+                int ipsf = psf[0].length - psf[0].length / 2 + j;
+                if ((ipsf > 0) && (ipsf < psf[0].length)) {
+                    sumHeight += values[k] * psf[0][ipsf] / psfMax;
+                }
+                values[k] = 0.0;
+                skip[k] = true;
+            }
+            newPeaks.add(new CPeak(cPeak1.position, sumHeight));
+            values[center1] = sumHeight;
+            skip[center1] = false;
+        }
+        Arrays.fill(values, 0.0);
+        Arrays.fill(skip, true);
+        for (CPeak cPeak:newPeaks) {
+            values[cPeak.position] = cPeak.height;
+            skip[cPeak.position] = false;
         }
     }
 
@@ -187,19 +263,18 @@ public class ConvolutionFitter {
             }
         }
         for (int i = 0; i < iterations; i++) {
-            if (i == SQUASH_AT) {
-                squashNeighbors(values, skip);
-            }
             double rms = lrIteration(values);
             if ((i > SQUASH_AT) && (rms < 1.0e-6)) {
-                break;
+                 break;
             }
         }
+        findPeaks(values, skip);
+        squashPeaks(values, skip);
         convolve(values, skip);
         return values;
     }
 
-    public double[] lr(Vec vec,  double threshold, int iterations) {
+    public double[] lr(Vec vec, double threshold, int iterations) {
         signal = new double[vec.getSize()];
         for (int i = 0; i < signal.length; i++) {
             signal[i] = vec.getReal(i);
@@ -216,12 +291,13 @@ public class ConvolutionFitter {
         Vec vec = dataset.readVector(0, 0);
         var regions = dataset.getReadOnlyRegions();
         if (regions.isEmpty()) {
+            regions = new ArrayList<>();
             double ppm1 = dataset.pointToPPM(0, 0);
             double ppm2 = dataset.pointToPPM(0, dataset.getSizeReal(0) - 1.0);
             DatasetRegion region = new DatasetRegion(ppm1, ppm2);
             regions.add(region);
         }
-        for (DatasetRegion region:regions) {
+        for (DatasetRegion region : regions) {
             int pt1 = dataset.ppmToPoint(0, region.getRegionStart(0));
             int pt2 = dataset.ppmToPoint(0, region.getRegionEnd(0));
             if (pt1 > pt2) {
@@ -238,14 +314,14 @@ public class ConvolutionFitter {
                 signal[i + psfSize] = vec.getReal(i + pt1);
             }
 
+            start = pt1 - psfSize;
             double[] result = lr(threshold, iterations);
-            int start = pt1 - psfSize;
             for (int i = 0; i < result.length; i++) {
                 if (!skip[i]) {
                     double x1 = vec.pointToPPM(start + i - widths[0] / 2.0);
                     double x2 = vec.pointToPPM(start + i + widths[0] / 2.0);
                     double dx = Math.abs(x2 - x1);
-                    double intensity = result[i] / psfMax;
+                    double intensity = result[i] * psfMax;
                     double volume = intensity * dx * (Math.PI / 2.0) / 1.05;
                     if (Double.isFinite(result[i])) {
                         Peak peak = peakList.getNewPeak();
