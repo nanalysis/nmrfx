@@ -1,6 +1,7 @@
 package org.nmrfx.processor.math;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -19,6 +20,7 @@ public class ConvolutionFitter {
     int SQUASH_AT = 10;
     final double[][] psf;
     double psfMax;
+    int psfTotalSize;
     double[] widths;
     double[] sim;
     double[] signal;
@@ -26,6 +28,8 @@ public class ConvolutionFitter {
     double squash = 0.625;
     double threshold = 0.0;
     int start = 0;
+
+    MultidimensionalCounter counter;
 
     List<CPeak> cPeakList;
 
@@ -49,8 +53,10 @@ public class ConvolutionFitter {
         int nDim = n.length;
         double[][] yValues = new double[nDim][];
         double max = 0.0;
+        int totalSize = 1;
         for (int iDim = 0; iDim < nDim; iDim++) {
             yValues[iDim] = new double[n[iDim]];
+            totalSize *= n[iDim];
             double sum = 0.0;
             for (int i = 0; i < n[iDim]; i++) {
                 double x = -(n[iDim] - 1) / 2.0 + i;
@@ -64,7 +70,9 @@ public class ConvolutionFitter {
                 }
             }
         }
+        psfTotalSize = totalSize;
         psfMax = max;
+        counter = new MultidimensionalCounter(n);
         return yValues;
     }
 
@@ -113,6 +121,37 @@ public class ConvolutionFitter {
         this.squash = value;
     }
 
+    public double[] getValueArray(int[] start) {
+        var iterator = counter.iterator();
+        double[] vArray = new double[psfTotalSize];
+        MatrixND matrixND = new MatrixND();
+        int i = 0;
+        while(iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            for (int j=0;j<counts.length;j++) {
+                counts[j] += start[j];
+            }
+            vArray[i] = matrixND.getValue(counts);
+            i++;
+        }
+        return vArray;
+    }
+    public void putValueArray(int[] start, double[] vArray) {
+        var iterator = counter.iterator();
+        MatrixND matrixND = new MatrixND();
+        int i = 0;
+        while(iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            for (int j=0;j<counts.length;j++) {
+                counts[j] += start[j];
+            }
+            matrixND.setValue(vArray[i], counts);
+            i++;
+        }
+    }
+
     public void convolve(double[] values, boolean[] skip) {
         int psfSize = psf[0].length;
         int nh = psfSize / 2;
@@ -121,15 +160,15 @@ public class ConvolutionFitter {
         if ((sim == null) || (sim.length != size)) {
             sim = new double[size];
         }
+        Arrays.fill(sim, 0.0);
         for (int i = nh; i < end; i++) {
-            double sum = 0.0;
+            double scale = values[i];
             for (int k = 0; k < psfSize; k++) {
                 int index = i - nh + k;
                 if (!skip[index]) {
-                    sum += values[index] * psf[0][k];
+                    sim[index] += scale * psf[0][k];
                 }
             }
-            sim[i] = sum;
         }
     }
 
@@ -178,6 +217,7 @@ public class ConvolutionFitter {
     record CPeak(int position, double height) {
 
     }
+
     void findPeaks(double[] values, boolean[] skip) {
         int half = (int) Math.ceil(widths[0] * squash) / 2;
         cPeakList = new ArrayList<>();
@@ -201,7 +241,7 @@ public class ConvolutionFitter {
 
         List<CPeak> newPeaks = new ArrayList<>();
 
-        for (int i = 0;i<cPeakList.size();i++) {
+        for (int i = 0; i < cPeakList.size(); i++) {
             CPeak cPeak1 = cPeakList.get(i);
             int center1 = cPeak1.position;
             int center0 = Math.max(0, center1 - half);
@@ -220,7 +260,7 @@ public class ConvolutionFitter {
                 }
             }
             double sumHeight = 0.0;
-            for (int k=center0;k<=center2;k++) {
+            for (int k = center0; k <= center2; k++) {
                 int j = center1 - k;
                 int ipsf = psf[0].length - psf[0].length / 2 + j;
                 if ((ipsf > 0) && (ipsf < psf[0].length)) {
@@ -235,7 +275,7 @@ public class ConvolutionFitter {
         }
         Arrays.fill(values, 0.0);
         Arrays.fill(skip, true);
-        for (CPeak cPeak:newPeaks) {
+        for (CPeak cPeak : newPeaks) {
             values[cPeak.position] = cPeak.height;
             skip[cPeak.position] = false;
         }
@@ -265,7 +305,7 @@ public class ConvolutionFitter {
         for (int i = 0; i < iterations; i++) {
             double rms = lrIteration(values);
             if ((i > SQUASH_AT) && (rms < 1.0e-6)) {
-                 break;
+                break;
             }
         }
         findPeaks(values, skip);
