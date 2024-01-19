@@ -32,8 +32,11 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
+import org.nmrfx.peaks.events.PeakEvent;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PreferencesController;
+import org.nmrfx.processor.gui.utils.AtomUpdater;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
@@ -55,7 +58,7 @@ import java.util.*;
 
 import static org.nmrfx.analyst.gui.molecule3D.MolSceneController.StructureCalculator.StructureMode.*;
 
-public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater {
+public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater, PeakListener {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
@@ -222,6 +225,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     private void updateAtoms(String name, boolean selected) {
+        System.out.println("update atoms");
         if (name.equals("Ribose")) {
             for (var menuItem : atomCheckItems) {
                 if (menuItem.getText().endsWith("'")) {
@@ -337,6 +341,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
                 ssViewer.loadCoordinates(ssLayout);
                 ssViewer.drawSS();
+
+                AtomUpdater atomUpdater = new AtomUpdater(Molecule.getActive());
+                Molecule.getActive().registerUpdater(atomUpdater);
+                Molecule.getActive().registerAtomChangeListener(this);
             }
         }
     }
@@ -876,7 +884,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             try {
                 ssPredictor.predict(sequence);
                 ssViewer.setSSPredictor(ssPredictor);
-                List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(0.3);
+                List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(0.30);
                 String dotBracket = ssPredictor.getDotBracket(basePairs);
                 molecule.setDotBracket(dotBracket);
                 layoutSS();
@@ -886,6 +894,15 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 exceptionDialog.showAndWait();
             }
 
+        }
+    }
+    private void get2D(double pLimit) throws InvalidMoleculeException {
+        Molecule molecule = Molecule.getActive();
+        if (molecule != null && ssPredictor != null) {
+            List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(pLimit);
+            String dotBracket = ssPredictor.getDotBracket(basePairs);
+            molecule.setDotBracket(dotBracket);
+            layoutSS();
         }
     }
 
@@ -1134,6 +1151,15 @@ public class MolSceneController implements Initializable, StageBasedController, 
     public void clearProcessingTextLabel() {
         statusBar.setText("");
         statusCircle.setFill(Color.GREEN);
+    }
+    public void peakListChanged(PeakEvent e){
+        System.out.println("listener.peakListChanged() in MolSceneController");
+        for (CheckMenuItem menu : atomCheckItems) {
+            if (menu.isSelected()) {
+                System.out.println(menu.getText()+ " " + menu.isSelected());
+                updateAtoms(menu.getText(),menu.isSelected());
+            }
+        }
     }
 
 }
