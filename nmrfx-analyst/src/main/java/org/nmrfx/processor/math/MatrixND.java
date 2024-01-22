@@ -38,6 +38,7 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MatrixND implements MatrixType {
 
@@ -290,6 +291,8 @@ public class MatrixND implements MatrixType {
                 offset += index[k++] * strides[i];
             }
         }
+        Arrays.fill(riVec[0], 0.0);
+        Arrays.fill(riVec[1], 0.0);
         int n = sizes[axis] / 2;
         for (int i = 0; i < n; i++) {
             riVec[0][i] = data[offset];
@@ -576,7 +579,7 @@ public class MatrixND implements MatrixType {
             iterator.next();
             int[] counts = iterator.getCounts();
             getVectorRI(axis, riVec, counts);
-            kaiser(riVec, vSizes[axis]);
+            kaiser(riVec, vSizes[axis] / 2);
             putVectorRI(axis, riVec, counts);
         }
     }

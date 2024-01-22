@@ -44,6 +44,8 @@ public class DGRINSOp extends DatasetOperation {
     private final double scale;
     private final double[] phase;
 
+    private final double shapeFactor = 0.5;
+
     public DGRINSOp(SampleSchedule schedule, double noise, double scale) {
         this.schedule = schedule;
         this.noise = noise;
@@ -68,7 +70,7 @@ public class DGRINSOp extends DatasetOperation {
             MatrixND matrix = getMatrixNDFromFile(dataset, dim, i);
             int[] zeroList = IstMatrix.genZeroList(schedule, matrix);
             int[] srcTargetMap = genSrcTargetMap(schedule, matrix);
-            GRINS smile = new GRINS(matrix, noise, scale, phase, true, false, zeroList, srcTargetMap, null);
+            GRINS smile = new GRINS(matrix, noise, scale,128, shapeFactor, false, phase, true, false, zeroList, srcTargetMap, null);
             smile.exec();
             try {
                 dataset.writeMatrixNDToDatasetFile(dim, matrix);

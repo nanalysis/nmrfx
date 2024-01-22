@@ -48,7 +48,13 @@ public class Kaiser extends Apodization implements Invertible {
         if (matrix instanceof MatrixND) {
             MatrixND matrixND = (MatrixND) matrix;
             int[] vSizes = matrixND.getVSizes();
-            apply(matrixND, dim, vSizes[dim]);
+            if (dim == 0) {
+                for (int dim =0;dim < matrixND.getNDim();dim++) {
+                    apply(matrixND, dim, vSizes[dim]);
+                }
+            } else {
+                apply(matrixND, dim, vSizes[dim]);
+            }
         }
         return this;
     }

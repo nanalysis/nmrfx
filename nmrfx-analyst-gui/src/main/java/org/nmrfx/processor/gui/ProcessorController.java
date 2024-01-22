@@ -420,8 +420,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         dimAccordion.getPanes().clear();
         currentSection = chartProcessor.getProcessingSection(1, new int[1], "SIMULATION");
         var titledPane = addTitlePane(currentSection, "SIMULATION");
-        titledPane.setExpanded(true);
         accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentSection).getContent();
+        chartProcessor.setVecDim(currentSection);
+        titledPane.setExpanded(true);
     }
 
     public ProcessingSection getDefaultSection() {
@@ -1309,6 +1310,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     propertyManager.addOp(processingOperation, currentOps, 9999);
                 });
             }
+            updateAfterOperationListChanged();
         }
     }
 

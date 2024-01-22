@@ -21,6 +21,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.nmrfx.processor.datasets.peaks.LineShapes;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,25 +44,31 @@ public class GRINS {
     final double noise;
     final boolean preserve;
     final boolean synthetic;
+
+    final boolean apodize;
     final int[] zeroList;
     final int[] srcTargetMap;
     final double scale;
+
+    final int iterations;
     final double[] phase;
     final String logFileName;
+    final double shapeFactor;
 
-    boolean calcLorentz = true;
-    boolean calcGauss = false;
-    double fracLorentz = 1.0;
+    boolean residual = false;
     /**
      * Calculate statistics.
      */
     boolean calcStats = true;
     boolean tdMode = false;  // only freq mode is currently functional
 
-    public GRINS(MatrixND matrix, double noise, double scale, double[] phase, boolean preserve, boolean synthetic, int[] zeroList, int[] srcTargetMap, String logFileName) {
+    public GRINS(MatrixND matrix, double noise, double scale, int iterations, double shapeFactor, boolean apodize, double[] phase, boolean preserve, boolean synthetic, int[] zeroList, int[] srcTargetMap, String logFileName) {
         this.matrix = matrix;
         this.noise = noise;
         this.scale = scale;
+        this.iterations = iterations;
+        this.shapeFactor = shapeFactor;
+        this.apodize = apodize;
         this.phase = phase;
         this.preserve = preserve;
         this.synthetic = synthetic;
@@ -72,7 +79,6 @@ public class GRINS {
 
     public void exec() {
         try (FileWriter fileWriter = logFileName == null ? null : new FileWriter(logFileName)) {
-            int iterations = 16;
             matrix.zeroValues(zeroList);
             double preValue = 0.0;
             double postValue = 0.0;
@@ -92,6 +98,9 @@ public class GRINS {
                 matrix.phase(phase);
             }
 
+            if (apodize) {
+                matrix.apodize();
+            }
             // could just copy the actually sample values to vector
             MatrixND matrixCopy = new MatrixND(matrix);
             double[] addBuffer = new double[matrix.getNElems()];
@@ -125,7 +134,7 @@ public class GRINS {
                 }
                 lastThreshold = globalThreshold;
                 double noiseThreshold = noiseValue * NOISE_SCALE;
-                if (globalThreshold < noiseThreshold) {
+                if (max < noiseThreshold) {
                     break;
                 }
                 ArrayList<MatrixPeak> peaks = matrix.peakPick(globalThreshold, noiseThreshold, true, false, scale);
@@ -156,10 +165,12 @@ public class GRINS {
                     doPeaks(peaks, matrix);
                 }
             }
-            if (preserve) {
-                matrix.addDataFrom(addBuffer);
-            } else {
-                matrix.copyDataFrom(addBuffer);
+            if (!residual) {
+                if (preserve) {
+                    matrix.addDataFrom(addBuffer);
+                } else {
+                    matrix.copyDataFrom(addBuffer);
+                }
             }
             if (calcStats) {
                 postValue = matrix.calcSumAbs();
@@ -172,8 +183,10 @@ public class GRINS {
                 String outLine = String.format("%4d %4d %10.3f %10.3f %10.3f\n", (iteration + 1), nPeaks, preValue, postValue, deltaToOrig);
                 fileWriter.write(outLine);
             }
-            if (!synthetic) {
-                matrix.copyValuesFrom(matrixCopy, srcTargetMap);
+            if (!residual) {
+                if (!synthetic) {
+                    matrix.copyValuesFrom(matrixCopy, srcTargetMap);
+                }
             }
 
         } catch (IOException ioE) {
@@ -316,24 +329,9 @@ public class GRINS {
             int jDim = iDim + 1;
             double lw = widths[jDim];
             double freq = freqs[jDim];
-            y *= lShape(positions[iDim], lw, freq);
+            y *= LineShapes.G_LORENTZIAN.calculate(positions[iDim], 1.0, freq, lw, shapeFactor);
         }
         y *= amplitude;
         return y;
-    }
-
-    public double lShape(double x, double b, double freq) {
-        double yL = 0.0;
-        double yG = 0.0;
-        if (calcLorentz) {
-            b *= 0.5;
-            yL = fracLorentz * ((b * b) / ((b * b) + ((x - freq) * (x - freq))));
-        }
-        if (calcGauss) {
-            double dX = (x - freq);
-            yG = (1.0 - fracLorentz) * Math.exp(-dX * dX / b);
-        }
-
-        return yL + yG;
     }
 }

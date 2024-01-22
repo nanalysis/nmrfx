@@ -2411,6 +2411,8 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     logToFile=False
     zeroAtStart=True
     threshold=0.0
+    nGrins=128
+    shapeFactor = 0.5
 
     noise = 0.0
     phase = None
@@ -2439,7 +2441,7 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     if alg == 'nesta':
         op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor, skipIndices)
     elif alg == 'grins':
-        op = GRINSOp(noise, scale, factor, phaseList, preserve, skipIndices)
+        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  false, phaseList, preserve, skipIndices)
     else:
         raise Exception("Invalid algorithm for EXTEND: " + alg)
 
@@ -2959,7 +2961,7 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
     return op
 
 
-def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
+def GRINS(noise=0.0, scale=0.5, zf=0, iterations=256, shapeFactor=0.5, apodize=False, phase=None, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
@@ -2980,6 +2982,20 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
         max : 2
         amax : 2
         Zero fill factor 
+    iterations : int
+        amin : 1
+        min : 1
+        max : 256
+        amax : 512
+        Iterations 
+    shapeFactor : real
+        amin : 0.0
+        min : 0.0
+        max : 1.0
+        amax : 1.0
+        Lineshape factor 
+    apodize : bool
+        Do Kaiser apodization during GRINS
     phase : []
         Array of phase values, 2 per indirect dimension.
     preserve : bool
@@ -3016,7 +3032,7 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
 
     process = process or getCurrentProcess()
 
-    op = GRINSOp(noise, scale, zf, phaseList, preserve, synthetic, schedule, logFileName)
+    op = GRINSOp(noise, scale, zf, iterations, shapeFactor, apodize, phaseList, preserve, synthetic, schedule, logFileName)
 
     if (dataset != None):
         op.eval(dataset)
@@ -3811,6 +3827,8 @@ def genScript(arrayed=False):
                 multiDim += ',' + str(mDim+1)
             multiDim += ')'
             script += multiDim + '\n'
+            for mDim in range(2,fidInfo.nd):
+                script += 'KAISER(dim=' + str(mDim) + ')\n'
             script += 'NESTA()\n'
     for iDim in range(2,fidInfo.nd+1):
         if fidInfo.size[iDim-1] < 2:
