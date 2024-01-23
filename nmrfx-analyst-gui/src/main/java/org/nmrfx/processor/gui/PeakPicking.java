@@ -44,10 +44,16 @@ public class PeakPicking {
         PolyChart chart = fxmlController.getActiveChart();
         ObservableList<DatasetAttributes> dataList = chart.getDatasetAttributes();
         peakPickPar.useCrossHairs = peakPickPar.useCrossHairs && chart.getCrossHairs().hasRegion();
+        boolean setListName = peakPickPar.listName == null;
         dataList.stream().filter(dataAttr -> !dataAttr.isProjection())
                 .filter(DatasetAttributes::getPos)
-                .forEach((DatasetAttributes dataAttr)
-                        -> peakPickActive(chart, dataAttr, null, peakPickPar));
+                .forEach(dataAttr -> {
+                    if (setListName) {
+                        peakPickPar.listName = getListName(chart, dataAttr);
+                    }
+                    peakPickActive(chart, dataAttr, null, peakPickPar);
+
+                });
         chart.refresh();
     }
 
