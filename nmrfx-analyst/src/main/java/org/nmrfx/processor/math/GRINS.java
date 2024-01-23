@@ -35,10 +35,11 @@ import java.util.Collections;
  * @author Bruce Johnson
  */
 public class GRINS {
+    public static boolean residual = false;
     private static final Logger log = LoggerFactory.getLogger(GRINS.class);
 
     private static final double THRESHOLD_SCALE = 0.8;
-    private static final double NOISE_SCALE = 5.0;
+    private static final double NOISE_SCALE = 3.0;
 
     final MatrixND matrix;
     final double noise;
@@ -55,7 +56,6 @@ public class GRINS {
     final String logFileName;
     final double shapeFactor;
 
-    boolean residual = false;
     /**
      * Calculate statistics.
      */
@@ -86,6 +86,7 @@ public class GRINS {
             boolean calcNoise = noise < 1.0e-6;
             double noiseValue = noise;
             boolean doPhase = false;
+            int maxPeaks = 20;
             if (phase != null) {
                 for (double phaseVal : phase) {
                     if (Math.abs(phaseVal) > 1.0e-6) {
@@ -140,7 +141,7 @@ public class GRINS {
                 ArrayList<MatrixPeak> peaks = matrix.peakPick(globalThreshold, noiseThreshold, true, false, scale);
                 Collections.sort(peaks, (a, b) -> Double.compare(Math.abs(b.height), Math.abs(a.height)));
                 if (peaks.size() > 1) {
-                    peaks = filterPeaks(peaks);
+                    peaks = filterPeaks(peaks, maxPeaks);
                 }
                 int nPeaksTemp = peaks.size();
                 nPeaks += peaks.size();
@@ -195,7 +196,7 @@ public class GRINS {
 
     }
 
-    ArrayList<MatrixPeak> filterPeaks(ArrayList<MatrixPeak> peaks) {
+    ArrayList<MatrixPeak> filterPeaks(ArrayList<MatrixPeak> peaks, int maxPeaks) {
         int nPeaks = peaks.size();
         ArrayList<MatrixPeak> keepPeaks = new ArrayList<>();
         for (MatrixPeak iPeak : peaks) {
@@ -209,7 +210,9 @@ public class GRINS {
             if (ok) {
                 keepPeaks.add(iPeak);
             }
-
+            if (keepPeaks.size() > maxPeaks) {
+                break;
+            }
         }
         return keepPeaks;
     }
