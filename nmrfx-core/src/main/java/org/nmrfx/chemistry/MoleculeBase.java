@@ -5,9 +5,6 @@ import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.io.Sequence;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.events.PeakEvent;
-import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.Updater;
 import org.slf4j.Logger;
@@ -51,8 +48,10 @@ public class MoleculeBase implements Serializable, ITree {
     public static final int LABEL_NONHC = 19;
     private static final String ATOM_MATCH_WARN_MSG_TEMPLATE = "null spatialset while matching atom {} in coordset {}";
     public AtomicBoolean atomUpdated = new AtomicBoolean(false);
+    public AtomicBoolean atomTableUpdated = new AtomicBoolean(false);
     Updater atomUpdater = null;
-    PeakListener atomChangeListener;
+    MoleculeListener atomChangeListener;
+    MoleculeListener atomTableListener;
 
     public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, MoleculeBase molecule) {
         ArrayList<Atom> selected = new ArrayList<>(32);
@@ -1248,18 +1247,24 @@ public class MoleculeBase implements Serializable, ITree {
         changed = true;
         if (atomUpdater != null) {
             atomUpdater.update(atom);
-            System.out.println("atomUpdater.update()");
         }
     }
     public void registerUpdater(Updater atomUpdater) {
         this.atomUpdater = atomUpdater;
     }
-    public void registerAtomChangeListener(PeakListener newListener){
-        atomChangeListener = newListener;
+    public void registerAtomChangeListener(MoleculeListener newListener){
+        this.atomChangeListener = newListener;
+    }
+
+    public void registerAtomTableListener(MoleculeListener newListener){
+        this.atomTableListener = newListener;
     }
 
     public void notifyAtomChangeListener() {
-        atomChangeListener.peakListChanged(new PeakEvent("*"));
+        atomChangeListener.moleculeChanged(new MoleculeEvent("*"));
+    }
+    public void notifyAtomTableListener() {
+        atomTableListener.moleculeChanged(new MoleculeEvent("*"));
     }
 
     public void clearChanged() {

@@ -293,7 +293,7 @@ public class SSViewer extends Pane {
         String aType = hydrogenPredictionProp.get() ? ".H" : ".C";
         String atomSpec = resNum + aType + aName;
         Atom atom = MoleculeBase.getAtomByName(atomSpec);
-        Color color = Color.SEASHELL;
+        Color color = Color.LIGHTGRAY;
         if (atom!= null) {
             Double ppm = atom.getPPM();
             Double refPPM = atom.getRefPPM();
@@ -301,9 +301,9 @@ public class SSViewer extends Pane {
             if (ppm != null && refPPM != null) {
                 double delta = Math.abs(ppm - refPPM) / stdDev;
                 if (delta <= 1.0) {
-                    color = Color.rgb(18,90,86);
+                    color = Color.FORESTGREEN;
                 } else if (delta <= 3.0) {
-                    color = Color.rgb(157,204,239);
+                    color = Color.YELLOWGREEN;
                 } else {
                     color = Color.ORANGERED;
                 }
@@ -319,11 +319,7 @@ public class SSViewer extends Pane {
         }
 
         int fontSize = (int) Math.round(width);
-        Color color = switch (text) {
-            case "5''", "5'", "4'", "3'", "2'", "1'" -> colorCodeAtom(resNum, text);
-            case "8", "6", "5", "2" -> colorCodeAtom(resNum, text);
-            default -> Color.WHITE;
-        };
+        Color color = colorCodeAtom(resNum, text);
         if (!active) {
             color = Color.LIGHTGRAY;
         }
@@ -786,7 +782,6 @@ public class SSViewer extends Pane {
         if (constraintPairState) {
             drawConstraints(group);
         }
-
     }
 
     void drawConstraints(Group group) {

@@ -3,7 +3,6 @@ package org.nmrfx.processor.gui.utils;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utilities.Updater;
 
-import java.util.EventObject;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -17,7 +16,7 @@ public class AtomUpdater implements Updater {
     static Molecule molecule;
 
     public AtomUpdater(Molecule molecule) {
-        this.molecule = molecule;
+        AtomUpdater.molecule = molecule;
     }
 
     @Override
@@ -30,9 +29,9 @@ public class AtomUpdater implements Updater {
     @Override
     public void update(Object object) {
         molecule.atomUpdated.set(true);
+        molecule.atomTableUpdated.set(true);
         atomUpdated.set(true);
         startTimer();
-        System.out.println("timer started, atom updated: " + atomUpdated);
     }
 
     class UpdateTask implements Runnable {
@@ -66,9 +65,11 @@ public class AtomUpdater implements Updater {
     static void checkForUpdates(){
         if (molecule != null) {
             if (molecule.atomUpdated.get()) {
-                System.out.println("notifyAtomChangeListener in AtomUpdater");
                 molecule.atomUpdated.set(false);
-                molecule.notifyAtomChangeListener();
+                molecule.notifyAtomChangeListener();}
+            if (molecule.atomTableUpdated.get()) {
+                molecule.atomTableUpdated.set(false);
+                molecule.notifyAtomTableListener();
             }
         }
     }

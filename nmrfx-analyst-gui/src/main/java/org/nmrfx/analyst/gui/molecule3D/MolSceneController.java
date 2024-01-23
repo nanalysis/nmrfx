@@ -32,8 +32,6 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
-import org.nmrfx.peaks.events.PeakEvent;
-import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.utils.AtomUpdater;
@@ -58,7 +56,7 @@ import java.util.*;
 
 import static org.nmrfx.analyst.gui.molecule3D.MolSceneController.StructureCalculator.StructureMode.*;
 
-public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater, PeakListener {
+public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater, MoleculeListener {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
@@ -225,7 +223,6 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     private void updateAtoms(String name, boolean selected) {
-        System.out.println("update atoms");
         if (name.equals("Ribose")) {
             for (var menuItem : atomCheckItems) {
                 if (menuItem.getText().endsWith("'")) {
@@ -341,11 +338,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
                 ssViewer.loadCoordinates(ssLayout);
                 ssViewer.drawSS();
-
-                AtomUpdater atomUpdater = new AtomUpdater(Molecule.getActive());
-                Molecule.getActive().registerUpdater(atomUpdater);
-                Molecule.getActive().registerAtomChangeListener(this);
             }
+            AtomUpdater atomUpdater = new AtomUpdater(Molecule.getActive());
+            Molecule.getActive().registerUpdater(atomUpdater);
+            Molecule.getActive().registerAtomChangeListener(this);
         }
     }
 
@@ -1152,14 +1148,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
         statusBar.setText("");
         statusCircle.setFill(Color.GREEN);
     }
-    public void peakListChanged(PeakEvent e){
-        System.out.println("listener.peakListChanged() in MolSceneController");
-        for (CheckMenuItem menu : atomCheckItems) {
-            if (menu.isSelected()) {
-                System.out.println(menu.getText()+ " " + menu.isSelected());
-                updateAtoms(menu.getText(),menu.isSelected());
-            }
-        }
+    public void moleculeChanged(MoleculeEvent e){
+        Fx.runOnFxThread(ssViewer::drawSS);
     }
 
 }
