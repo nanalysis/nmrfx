@@ -53,7 +53,7 @@ public class Kaiser extends Apodization implements Invertible {
                     apply(matrixND, dim, vSizes[dim]);
                 }
             } else {
-                apply(matrixND, dim, vSizes[dim]);
+                apply(matrixND, dim - 1, vSizes[dim - 1]);
             }
         }
         return this;
