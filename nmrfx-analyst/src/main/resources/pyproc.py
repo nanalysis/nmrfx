@@ -2985,7 +2985,7 @@ def GRINS(noise=0.0, scale=0.5, zf=0, iterations=256, shapeFactor=0.5, apodize=F
     iterations : int
         amin : 1
         min : 1
-        max : 256
+        max : 512
         amax : 512
         Iterations 
     shapeFactor : real
@@ -3025,7 +3025,9 @@ def GRINS(noise=0.0, scale=0.5, zf=0, iterations=256, shapeFactor=0.5, apodize=F
         schedule = fidInfo.fidObj.getSampleSchedule()
         if logToFile:
             rootdir = fidInfo.fidObj.getFilePath()
-            logDir = os.path.join(rootdir,"nesta")
+            if not os.path.isdir(rootdir):
+                rootdir = os.path.dirname(rootdir)
+            logDir = os.path.join(rootdir,"grins_log")
             if not os.path.exists(logDir):
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
@@ -3385,8 +3387,8 @@ def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False
         min : 0
         max : size
         Size of apodization window.  Default 0f 0 uses entire FID.
-    dim : {1,2,3,4,5,6}
-        Dataset dimension to apodize. Only applicable for matrix operations.
+    dim : {0,1,2,3,4,5,6}
+        Dataset dimension to apodize. Only applicable for matrix operations. 0:do all dimensions
     '''
     if disabled:
         return None
