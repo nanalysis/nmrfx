@@ -140,7 +140,8 @@ public class SSViewer extends Pane {
             zoom(zoom);
         });
 
-    }
+        }
+
 
     public void clear() {
         points.clear();
@@ -219,8 +220,7 @@ public class SSViewer extends Pane {
         stack.setAlignment(Pos.CENTER);     // Right-justify nodes in stack
         stack.setTranslateX(x - width / 2 + 1);
         stack.setTranslateY(y - width / 2 + 1);
-        NodeRecord nodeRecord = new NodeRecord(circle, textItem, stack, text, color, fontSize);
-        return nodeRecord;
+        return new NodeRecord(circle, textItem, stack, text, color, fontSize);
 
     }
 
@@ -298,6 +298,29 @@ public class SSViewer extends Pane {
         return drawLabelledCircle(width, label, fontSize, color, x, y);
     }
 
+    Color colorCodeAtom(String resNum, String aName) {
+        String aType = hydrogenPredictionProp.get() ? ".H" : ".C";
+        String atomSpec = resNum + aType + aName;
+        Atom atom = MoleculeBase.getAtomByName(atomSpec);
+        Color color = Color.LIGHTGRAY;
+        if (atom!= null) {
+            Double ppm = atom.getPPM();
+            Double refPPM = atom.getRefPPM();
+            Double stdDev = atom.getSDevRefPPM();
+            if (ppm != null && refPPM != null) {
+                double delta = Math.abs(ppm - refPPM) / stdDev;
+                if (delta <= 1.0) {
+                    color = Color.FORESTGREEN;
+                } else if (delta <= 3.0) {
+                    color = Color.YELLOWGREEN;
+                } else {
+                    color = Color.ORANGERED;
+                }
+            }
+        }
+        return color;
+    }
+
     Node drawAtom(String resNum, String text, double x, double y, boolean active) {
         double width = scale * 0.2;
         if (width < 4) {
@@ -305,11 +328,7 @@ public class SSViewer extends Pane {
         }
 
         int fontSize = (int) Math.round(width);
-        Color color = switch (text) {
-            case "5''", "5'", "4'", "3'", "2'", "1'" -> Color.SALMON;
-            case "8", "6", "5", "2" -> Color.RED;
-            default -> Color.WHITE;
-        };
+        Color color = colorCodeAtom(resNum, text);
         if (!active) {
             color = Color.LIGHTGRAY;
         }
@@ -772,7 +791,6 @@ public class SSViewer extends Pane {
         if (constraintPairState) {
             drawConstraints(group);
         }
-
     }
 
     void drawConstraints(Group group) {
@@ -912,4 +930,6 @@ public class SSViewer extends Pane {
     public void setSSPredictor(SSPredictor ssPredictor) {
         this.ssPredictor = ssPredictor;
     }
+
+
 }

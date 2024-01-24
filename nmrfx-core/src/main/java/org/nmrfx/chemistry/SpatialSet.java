@@ -320,6 +320,7 @@ public class SpatialSet {
         }
         refPPMV.setValid(true, atom);
         refPPMVs.set(structureNum, refPPMV);
+        atom.changed();
     }
 
     public void setRefError(int structureNum, double value) {
