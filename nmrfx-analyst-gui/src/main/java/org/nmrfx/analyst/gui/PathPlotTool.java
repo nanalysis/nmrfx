@@ -144,15 +144,21 @@ public class PathPlotTool {
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         for (String colName : colNames) {
-            TableColumn<PeakPath, Number> col = new TableColumn<>(colName);
             if (colName.equals("Peak")) {
+                TableColumn<PeakPath, Number> col = new TableColumn<>(colName);
                 col.setCellValueFactory(new PropertyValueFactory<>(colName));
+                tableView.getColumns().add(col);
+            } else if (colName.equals("Atom")) {
+                TableColumn<PeakPath, String> atomCol = new TableColumn<>(colName);
+                atomCol.setCellValueFactory(new PropertyValueFactory<>(colName));
+                tableView.getColumns().add(atomCol);
             } else {
+                TableColumn<PeakPath, Number> col = new TableColumn<>(colName);
                 col.setCellValueFactory(new Callback<CellDataFeatures<PeakPath, Number>, ObservableValue<Number>>() {
                     public ObservableValue<Number> call(CellDataFeatures<PeakPath, Number> p) {
                         // p.getValue() returns the Path instance for a particular TableView row
                         int iProp = colNames.indexOf(colName);
-                        iProp--;  // account for Peak column
+                        iProp -= 2;  // account for Peak and Atom column
                         boolean isErr = iProp % 2 == 1;
                         iProp /= 2;  // account for Dev columns
                         if (p.getValue().hasPars()) {
@@ -176,10 +182,8 @@ public class PathPlotTool {
                         }
                     }
                 });
+                tableView.getColumns().add(col);
             }
-
-            tableView.getColumns().add(col);
-
         }
 
         tableView.setOnKeyPressed(e
@@ -202,7 +206,7 @@ public class PathPlotTool {
         List<PeakPath> paths = new ArrayList<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         for (Integer index : selected) {
-            PeakPath path = (PeakPath) tableView.getItems().get(index);
+            PeakPath path = tableView.getItems().get(index);
             paths.add(path);
         }
         return paths;
@@ -213,7 +217,7 @@ public class PathPlotTool {
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         int iSeries = 0;
         for (Integer index : selected) {
-            PeakPath path = (PeakPath) tableView.getItems().get(index);
+            PeakPath path = tableView.getItems().get(index);
             Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
             pathTool.showXYPath(path, color);
             iSeries++;
