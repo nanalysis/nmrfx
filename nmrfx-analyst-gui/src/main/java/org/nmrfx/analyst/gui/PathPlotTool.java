@@ -186,6 +186,11 @@ public class PathPlotTool {
             }
         }
 
+        tableView.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                gotoSelection();
+            }
+        });
         tableView.setOnKeyPressed(e
                         -> {
                     if ((e.getCode() == KeyCode.BACK_SPACE) || (e.getCode() == KeyCode.DELETE)) {
@@ -197,6 +202,9 @@ public class PathPlotTool {
         );
     }
 
+    public void clearSelection() {
+        tableView.getSelectionModel().clearSelection();
+    }
     public void selectRow(PeakPath path) {
         tableView.getSelectionModel().clearSelection();
         tableView.getSelectionModel().select(path);
@@ -221,6 +229,14 @@ public class PathPlotTool {
             Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
             pathTool.showXYPath(path, color);
             iSeries++;
+        }
+    }
+
+    final protected void gotoSelection() {
+        PeakPath peakPath = tableView.getSelectionModel().getSelectedItem();
+        if (peakPath != null) {
+            int peakID = peakPath.getPeak();
+            pathTool.peakNavigator.gotoPeakId(peakID);
         }
     }
 
