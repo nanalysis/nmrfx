@@ -37,7 +37,6 @@ import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.processor.gui.utils.AtomUpdater;
-import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
