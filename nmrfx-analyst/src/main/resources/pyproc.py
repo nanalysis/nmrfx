@@ -2965,7 +2965,7 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
     return op
 
 
-def GRINS(noise=0.0, scale=0.5, zf=0, iterations=256, shapeFactor=0.5, apodize=False, phase=None, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
+def GRINS(noise=0.0, scale=0.5, zf=1, iterations=64, shapeFactor=0.5, apodize=True, phase=None, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
