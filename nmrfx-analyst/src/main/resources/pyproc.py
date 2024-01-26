@@ -2802,8 +2802,12 @@ def PRINT(disabled=False, vector=None, process=None):
         process.addOperation(op)
     return op
 
-def WRITE(index=-1, dimag=True, isabled=False, disabled=False, vector=None, process=None):
+def WRITE(index=-1, dimag=True, disabled=False, vector=None, process=None):
     '''Write vector to dataset (normally done automatically).
+    Parameters
+    ---------
+    index : int
+        Index of vector to write.  A value of -1 uses index stored in vector.
     dimag : bool
         Discard imaginary values (make vector real).
 '''
