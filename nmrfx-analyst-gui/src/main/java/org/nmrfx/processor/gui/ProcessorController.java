@@ -332,6 +332,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     dimChoice.setValue(currentSection);
                     chartProcessor.setVecDim(currentSection);
                     updatePhaser();
+                } else {
+                    chartProcessor.setCurrentProcessingSection(currentSection);
                 }
                 updateSection();
             }
