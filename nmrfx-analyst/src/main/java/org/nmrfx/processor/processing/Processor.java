@@ -709,7 +709,8 @@ public class Processor {
 
         this.pt = calcPt(dim);
 
-        totalMatrices.set(pt[pt.length - 1][1] + 1);
+        int n = dims.length == dim.length ? 1 : pt[pt.length - 1][1] + 1;
+        totalMatrices.set(n);
         itemsToWrite = totalMatrices.get();
         itemsToRead = itemsToWrite;
         this.vectorSize = 1 + pt[0][1] - pt[0][0];
