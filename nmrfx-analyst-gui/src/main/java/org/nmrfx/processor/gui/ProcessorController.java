@@ -98,6 +98,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACTP", "AutoCorrect Baseline"};
     private static final AtomicBoolean aListUpdated = new AtomicBoolean(false);
     public static final int GROUP_SCALE = 1000;
+    public static boolean add2DIndirect = false;  // used in development
 
     private enum DisplayMode {
         FID("FID"),
@@ -450,7 +451,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             }
             addTitlePane(section, "DIMENSION " + i);
             dimList.add(section);
-            boolean add2DIndirect = false;  // used in development
             if (add2DIndirect) {
                 if ((i == 1) && (nDim == 2)) {
                     int[] adims = new int[nDim];
