@@ -128,16 +128,11 @@ public class GRINS {
 
                 double[] measure = matrix.measure(false, 0.0, Double.MAX_VALUE);
                 double max = Math.max(FastMath.abs(measure[0]), FastMath.abs(measure[1]));
-                // fixme threshold based on abs value
-                double globalThreshold = max * THRESHOLD_SCALE;
-                if (globalThreshold > lastThreshold * THRESHOLD_SCALE) {
-                    globalThreshold = lastThreshold * THRESHOLD_SCALE;
-                }
-                lastThreshold = globalThreshold;
                 double noiseThreshold = noiseValue * NOISE_SCALE;
                 if (max < noiseThreshold) {
                     break;
                 }
+                double globalThreshold = max * THRESHOLD_SCALE;
                 ArrayList<MatrixPeak> peaks = matrix.peakPick(globalThreshold, noiseThreshold, true, false, scale);
                 Collections.sort(peaks, (a, b) -> Double.compare(Math.abs(b.height), Math.abs(a.height)));
                 if (peaks.size() > 1) {
