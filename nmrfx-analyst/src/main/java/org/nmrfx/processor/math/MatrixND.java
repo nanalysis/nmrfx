@@ -112,6 +112,10 @@ public class MatrixND implements MatrixType {
         return vSizes.clone();
     }
 
+    public int getVSize(int iDim) {
+        return vSizes[iDim];
+    }
+
     @Override
     public String exportData(String rootName, String suffix) throws IOException {
         return exportData(rootName, suffix, false);
