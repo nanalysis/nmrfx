@@ -18,6 +18,8 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -33,38 +35,36 @@ public class SinebellApod extends Apodization implements Invertible {
     final double c;
     final int apodSize;
 
+    final int dim;
+
     @Override
     public SinebellApod eval(Vec vector) throws ProcessingException {
         sb(vector);
         return this;
     }
 
-    public SinebellApod(double offset, double end, double power, double c, int apodSize) {
-        this(offset, end, power, c, apodSize, false);
+    public SinebellApod(double offset, double end, double power, double c, int apodSize, int dim) {
+        this(offset, end, power, c, apodSize, dim, false);
     }
 
-    public SinebellApod(double offset, double end, double power, double c, int apodSize, boolean inverse) {
+    public SinebellApod(double offset, double end, double power, double c, int apodSize, int dim, boolean inverse) {
         this.offset = offset;
         this.end = end;
         this.power = power;
         this.c = c;
         this.apodSize = apodSize;
+        this.dim = dim;
         this.invertOp = inverse;
     }
 
-    public void sb(Vec vector) {
-        vector.makeApache();
-        int apodSize = this.apodSize;
-        if (this.apodSize > vector.getSize()) {
-            apodSize = vector.getSize();
-        }
+    private void setupApod(int size, int vStart) {
+        int apodSize = Math.min(this.apodSize, size);
         if (apodSize == 0) {
-            apodSize = vector.getSize();
+            apodSize = size;
         }
 
-        if (apodVec == null || vector.getSize() != apodVec.length) {
+        if (apodVec == null || size != apodVec.length) {
             resize(apodSize);
-            int vStart = vector.getStart();
             initApod(vStart);
 
             double start = offset * Math.PI;
@@ -84,10 +84,34 @@ public class SinebellApod extends Apodization implements Invertible {
 
             apodVec[vStart] *= c;
         }
+    }
+    public void sb(Vec vector) {
+        vector.makeApache();
+        setupApod(vector.getSize(), vector.getStart());
         if (invertOp) {
             invertApod(vector);
         } else {
             applyApod(vector);
         }
     }
+
+    @Override
+    public Operation evalMatrix(MatrixType matrix) {
+        if (matrix instanceof MatrixND matrixND) {
+            int[] vSizes = matrixND.getVSizes();
+            if (dim == -1) {
+                for (int dim = 0; dim < matrixND.getNDim(); dim++) {
+                    apply(matrixND, dim, vSizes[dim] / 2);
+                }
+            } else {
+                apply(matrixND, dim, vSizes[dim] / 2);
+            }
+        }
+        return this;
+    }
+    private void apply(MatrixND matrix, int axis, int mApodSize) {
+        setupApod(mApodSize, 0);
+        matrix.applyApod(axis, apodVec);
+    }
+
 }

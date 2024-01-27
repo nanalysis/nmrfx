@@ -2441,7 +2441,7 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     if alg == 'nesta':
         op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor, skipIndices)
     elif alg == 'grins':
-        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  false, phaseList, preserve, skipIndices)
+        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  False, phaseList, preserve, skipIndices)
     else:
         raise Exception("Invalid algorithm for EXTEND: " + alg)
 
@@ -3280,7 +3280,7 @@ def SIGN(mode='i', disabled=False, process=None, vector=None):
         process.addOperation(op)
     return op
 
-def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None, process=None):
+def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,dim=0, disabled=False, vector=None, process=None):
     '''Sine Bell Apodization
     Parameters
     ---------
@@ -3311,6 +3311,8 @@ def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=Fal
         min : 0
         max : size
         Size of apodization window.  Default 0f 0 uses entire FID.
+    dim : {0,1,2,3,4,5,6}
+        Dataset dimension to apodize. Only applicable for matrix operations. 0:do all dimensions
     '''
     if disabled:
         return None
