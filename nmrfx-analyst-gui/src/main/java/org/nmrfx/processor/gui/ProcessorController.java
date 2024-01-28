@@ -98,6 +98,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private static final String[] COMMON_OPS = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACTP", "AutoCorrect Baseline"};
     private static final AtomicBoolean aListUpdated = new AtomicBoolean(false);
     public static final int GROUP_SCALE = 1000;
+    public static boolean add2DIndirect = false;  // used in development
 
     private enum DisplayMode {
         FID("FID"),
@@ -331,6 +332,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     dimChoice.setValue(currentSection);
                     chartProcessor.setVecDim(currentSection);
                     updatePhaser();
+                } else {
+                    chartProcessor.setCurrentProcessingSection(currentSection);
                 }
                 updateSection();
             }
@@ -420,8 +423,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         dimAccordion.getPanes().clear();
         currentSection = chartProcessor.getProcessingSection(1, new int[1], "SIMULATION");
         var titledPane = addTitlePane(currentSection, "SIMULATION");
-        titledPane.setExpanded(true);
         accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentSection).getContent();
+        chartProcessor.setVecDim(currentSection);
+        titledPane.setExpanded(true);
     }
 
     public ProcessingSection getDefaultSection() {
@@ -449,7 +453,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             }
             addTitlePane(section, "DIMENSION " + i);
             dimList.add(section);
-            boolean add2DIndirect = false;  // used in development
             if (add2DIndirect) {
                 if ((i == 1) && (nDim == 2)) {
                     int[] adims = new int[nDim];
@@ -1309,6 +1312,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     propertyManager.addOp(processingOperation, currentOps, 9999);
                 });
             }
+            updateAfterOperationListChanged();
         }
     }
 

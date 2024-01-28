@@ -281,6 +281,7 @@ public class VecUtil {
         }
         FastFourierTransformer.transformInPlace(x, DftNormalization.STANDARD, TransformType.INVERSE);
         x[0][0] = x[0][0] * fpMul;
+        x[1][0] = x[1][0] * fpMul;
         int outSize = newSize / 2;
         for (int i = outSize; i < newSize; i++) {
             x[0][i] = 0.0;
