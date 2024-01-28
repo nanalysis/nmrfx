@@ -177,8 +177,8 @@ public class GRINSOp extends MatrixOperation {
                 matrixND.setValue(vector.getReal(i), i * 2);
                 matrixND.setValue(vector.getImag(i), i * 2 + 1);
             }
-            matrixND.zeroFill(zfFactor);
             matrixND.setVSizes(matrixND.getSize(0));
+            matrixND.zeroFill(zfFactor);
             SampleSchedule schedule;
             String logFile = null;
             if (sampleSchedule == null) {
