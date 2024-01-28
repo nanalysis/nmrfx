@@ -96,7 +96,7 @@ public class GRINSOp extends MatrixOperation {
         if (!phaseList.isEmpty()) {
             this.phase = new double[phaseList.size()];
             for (int i = 0; i < phaseList.size(); i++) {
-                this.phase[i] = (Double) phaseList.get(i);
+                this.phase[i] = phaseList.get(i);
             }
         } else {
             phase = null;
@@ -195,7 +195,6 @@ public class GRINSOp extends MatrixOperation {
 
             GRINS grins = new GRINS(matrixND, noise, scale, iterations, shapeFactor, apodize, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
             grins.exec();
-           // vector.resize(matrixND.getSize(0) / 2, true);
 
             for (int i = 0; i < vector.getSize(); i++) {
                 double real = matrixND.getValue(i * 2);
@@ -212,11 +211,9 @@ public class GRINSOp extends MatrixOperation {
     public Operation evalExtendMatrix(MatrixType matrix) {
         try {
             MatrixND matrixND = (MatrixND) matrix;
-            int[] origSizes = new int[((MatrixND) matrix).getNDim()];
             int[] vSizes = new int[((MatrixND) matrix).getNDim()];
             int[] newSizes = new int[((MatrixND) matrix).getNDim()];
             for (int i = 0; i < matrixND.getNDim(); i++) {
-                origSizes[i] = matrixND.getSize(i);
                 vSizes[i] = matrixND.getVSizes()[i]; //assumes complex
                 newSizes[i] = NESTANMR.getZfSize(vSizes[i], zfFactor);
             }

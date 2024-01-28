@@ -58,25 +58,25 @@ public class SinebellApod extends Apodization implements Invertible {
     }
 
     private void setupApod(int size, int vStart) {
-        int apodSize = Math.min(this.apodSize, size);
-        if (apodSize == 0) {
-            apodSize = size;
+        int localApodSize = Math.min(this.apodSize, size);
+        if (localApodSize == 0) {
+            localApodSize = size;
         }
 
         if (apodVec == null || size != apodVec.length) {
-            resize(apodSize);
+            resize(localApodSize);
             initApod(vStart);
 
             double start = offset * Math.PI;
-            double delta = ((end - offset) * Math.PI) / (apodSize - vStart - 1);
+            double delta = ((end - offset) * Math.PI) / (localApodSize - vStart - 1);
 
             if (power != 1.0) {
-                for (int i = vStart; i < apodSize; i++) {
+                for (int i = vStart; i < localApodSize; i++) {
                     double deltaPos = i - vStart;
                     apodVec[i] = Math.pow(Math.sin(start + (deltaPos * delta)), power);
                 }
             } else {
-                for (int i = vStart; i < apodSize; i++) {
+                for (int i = vStart; i < localApodSize; i++) {
                     double deltaPos = i - vStart;
                     apodVec[i] = Math.sin(start + (deltaPos * delta));
                 }
@@ -100,8 +100,8 @@ public class SinebellApod extends Apodization implements Invertible {
         if (matrix instanceof MatrixND matrixND) {
             int[] vSizes = matrixND.getVSizes();
             if (dim == -1) {
-                for (int dim = 0; dim < matrixND.getNDim(); dim++) {
-                    apply(matrixND, dim, vSizes[dim] / 2);
+                for (int iDim = 0; iDim < matrixND.getNDim(); iDim++) {
+                    apply(matrixND, iDim, vSizes[iDim] / 2);
                 }
             } else {
                 apply(matrixND, dim, vSizes[dim] / 2);
