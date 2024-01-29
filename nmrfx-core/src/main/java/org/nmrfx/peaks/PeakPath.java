@@ -1,6 +1,8 @@
 package org.nmrfx.peaks;
 
 
+import org.nmrfx.chemistry.Atom;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -168,6 +170,10 @@ public class PeakPath implements Comparable<PeakPath> {
 
     public int getPeak() {
         return firstPeak.getIdNum();
+    }
+
+    public String getAtom() {
+        return firstPeak.getPeakDim(0).getLabel();
     }
 
     public double getPar(int i) {
