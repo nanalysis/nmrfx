@@ -329,7 +329,7 @@ public class Atom implements IAtom, Comparable<Atom> {
 
     public void changed() {
         if (entity != null) {
-            entity.changed();
+            entity.changed(this);
         }
     }
 

@@ -92,7 +92,12 @@ public class SSPredictor {
     }
 
     public List<BasePairProbability> getBasePairs(double pLimit) {
-        List<BasePairProbability> basePairs = getBasePairs(predictions, pLimit);
+        int n = predictions.length;
+        double[][] predicted = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            predicted[i] = Arrays.copyOf(predictions[i], n);
+        }
+        List<BasePairProbability> basePairs = getBasePairs(predicted, pLimit);
         filterAllCrossings(basePairs);
         return basePairs;
     }
@@ -148,6 +153,21 @@ public class SSPredictor {
 
     List<BasePairProbability> getBasePairs(double[][] predicted, double pLimit) {
         findRCMax(predicted);
+        int n = rnaSequence.length();
+        List<BasePairProbability> bps = new ArrayList<>();
+        for (int r = 0; r < n; r++) {
+            for (int c = r + 2; c < n; c++) {
+                if (predicted[r][c] > pLimit) {
+                    BasePairProbability bp = new BasePairProbability(r, c, predicted[r][c]);
+                    bps.add(bp);
+                }
+            }
+        }
+        return bps;
+    }
+
+    public List<BasePairProbability> getAllBasePairs(double pLimit) {
+        double[][] predicted = predictions;
         int n = rnaSequence.length();
         List<BasePairProbability> bps = new ArrayList<>();
         for (int r = 0; r < n; r++) {
