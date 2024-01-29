@@ -29,6 +29,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.datasets.vendor.nmrpipe.NMRPipeData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.math.Vec;
@@ -478,7 +479,11 @@ public class ChartProcessor {
             if (vecDim == 0) {
                 prepDirectVec(nmrData, vecIndex, fileIndices, newVec, j);
             } else {
-                prepIndirectVec(nmrData, rows, fileIndices, newVec, j);
+                if ((nmrData instanceof NMRPipeData) && (vecDim > 1)) {
+                     newVec.zeros();
+                } else {
+                    prepIndirectVec(nmrData, rows, fileIndices, newVec, j);
+                }
             }
             newVec.setPh0(0.0);
             newVec.setPh1(0.0);
@@ -569,6 +574,7 @@ public class ChartProcessor {
         if (opMap == null || opMap.isEmpty()) {
             return;
         }
+        processorController.removeOpListener();
         mapOpLists.clear();
         mapOpLists.putAll(opMap);
         headerList.clear();
@@ -579,6 +585,7 @@ public class ChartProcessor {
             chart.full();
             chart.autoScale();
         }
+        processorController.addOpListener();
     }
 
     public boolean isScriptValid() {
@@ -611,6 +618,10 @@ public class ChartProcessor {
 
     public int getVecDim() {
         return vecDim;
+    }
+
+    public void setCurrentProcessingSection(ProcessingSection processingSection) {
+        currentProcessingSection = processingSection;
     }
 
     public void setVecDim(ProcessingSection section) {
