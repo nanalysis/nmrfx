@@ -2965,7 +2965,7 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
     return op
 
 
-def GRINS(noise=0.0, scale=0.25, zf=0, iterations=64, shapeFactor=0.5, apodize=True, phase=None, preserve=True, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
+def GRINS(noise=0.0, scale=0.25, zf=0, iterations=64, shapeFactor=0.5, apodize=False, phase=None, preserve=True, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
@@ -3317,7 +3317,7 @@ def SB(offset=0.5, end=1.0, power=2.0, c=1.0, apodSize=0, dim=0, inverse=False, 
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = SinebellApod(offset, end, power, c, apodSize, dim, inverse)
+    op = SinebellApod(offset, end, power, c, apodSize, dim-1, inverse)
     if (vector != None):
         op.eval(vector)
     else:
@@ -3362,7 +3362,7 @@ def BLACKMAN(offset=0.5,end=1.0,c=1.0,apodSize=0,dim=1, inverse=False,disabled=F
         process.addOperation(op)
     return op
 
-def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False,disabled=False, vector=None, process=None):
+def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=0, inverse=False,disabled=False, vector=None, process=None):
     '''Kaiser Apodization
     Parameters
     ---------
@@ -3835,8 +3835,7 @@ def genScript(arrayed=False):
                 multiDim += ',' + str(mDim+1)
             multiDim += ')'
             script += multiDim + '\n'
-            for mDim in range(2,fidInfo.nd):
-                script += 'KAISER(dim=' + str(mDim) + ')\n'
+            script += 'SB(dim=0, c=0.5)\n'
             script += 'NESTA()\n'
     for iDim in range(2,fidInfo.nd+1):
         if fidInfo.size[iDim-1] < 2:
