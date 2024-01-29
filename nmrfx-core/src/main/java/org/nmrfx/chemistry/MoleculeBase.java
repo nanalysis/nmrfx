@@ -1268,10 +1268,10 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public void notifyAtomChangeListener() {
-        atomChangeListener.moleculeChanged(new MoleculeEvent("*"));
+        atomChangeListener.moleculeChanged(new MoleculeEvent(this));
     }
     public void notifyAtomTableListener() {
-        atomTableListener.moleculeChanged(new MoleculeEvent("*"));
+        atomTableListener.moleculeChanged(new MoleculeEvent(this));
     }
 
     public void clearChanged() {

@@ -7,16 +7,17 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 public class AtomUpdater implements Updater {
     private static final AtomicBoolean atomUpdated = new AtomicBoolean(false);
     private static final AtomicBoolean needToFireEvent = new AtomicBoolean(false);
 
     protected ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     ScheduledFuture futureUpdate = null;
-    static Molecule molecule;
+    Molecule molecule;
 
     public AtomUpdater(Molecule molecule) {
-        AtomUpdater.molecule = molecule;
+        this.molecule = molecule;
     }
 
     @Override
@@ -62,11 +63,12 @@ public class AtomUpdater implements Updater {
 
     }
 
-    static void checkForUpdates(){
+    void checkForUpdates() {
         if (molecule != null) {
             if (molecule.atomUpdated.get()) {
                 molecule.atomUpdated.set(false);
-                molecule.notifyAtomChangeListener();}
+                molecule.notifyAtomChangeListener();
+            }
             if (molecule.atomTableUpdated.get()) {
                 molecule.atomTableUpdated.set(false);
                 molecule.notifyAtomTableListener();
