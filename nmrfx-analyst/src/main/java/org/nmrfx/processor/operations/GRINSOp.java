@@ -251,6 +251,7 @@ public class GRINSOp extends MatrixOperation {
 
         try {
             matrixND.zeroFill(zfFactor);
+            matrixND.setVSizes(matrixND.getSizes());
             int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
             int[] srcTargetMap = genSrcTargetMap(schedule, matrixND);
             String logFile = null;
