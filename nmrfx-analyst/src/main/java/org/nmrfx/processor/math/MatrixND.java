@@ -462,7 +462,7 @@ public class MatrixND implements MatrixType {
         double offset = 0.5;
         double end = 0.99;
         double start = offset * Math.PI;
-        double power = 2.0;
+        double power = 1.0;
         double c = 0.5;
         double delta = ((end - offset) * Math.PI) / (apodSize - 1);
         for (int i = 0; i < apodSize; i++) {
@@ -583,7 +583,7 @@ public class MatrixND implements MatrixType {
             iterator.next();
             int[] counts = iterator.getCounts();
             getVectorRI(axis, riVec, counts);
-            kaiser(riVec, vSizes[axis] / 2);
+            sineBell(riVec, vSizes[axis] / 2);
             putVectorRI(axis, riVec, counts);
         }
     }
