@@ -87,6 +87,18 @@
             <groupId>org.ojalgo</groupId>
             <artifactId>ojalgo</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-regression-slm</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-data</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
