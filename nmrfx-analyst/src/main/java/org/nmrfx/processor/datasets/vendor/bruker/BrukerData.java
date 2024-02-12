@@ -693,6 +693,24 @@ public class BrukerData implements NMRData {
         if (hDim != -1) {
             Double baseFreq = getParDouble("BF1," + (hDim +1));
             Double lockPPM = getParDouble("LOCKPPM,1");
+            if (lockPPM == null) {
+                if (isAcqueous) {
+                    lockPPM = 4.717;
+                } else {
+                    if (solvent.equalsIgnoreCase("cdcl3")) {
+                        lockPPM = 7.29;
+                    } else  if (solvent.equalsIgnoreCase("cd3od")) {
+                        lockPPM = 4.761;
+                    } else  if (solvent.equalsIgnoreCase("dmso")) {
+                        lockPPM = 2.578;
+                    } else  if (solvent.equalsIgnoreCase("acetone")) {
+                        lockPPM = 1.892;
+                    } else {
+                        lockPPM = 4.717;
+                    }
+                }
+            }
+
             if (actualLockRef == null) {
                 actualLockRef = lockPPM;
             }
