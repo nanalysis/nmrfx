@@ -666,9 +666,9 @@ public class RefManager {
                             referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));
                         }
                         referenceMenuTextField.getTextField().textProperty().bindBidirectional(prop);
-                        if (i == 0) {
-                            referenceMenuTextField.getTextField().textProperty().addListener(e -> updateReference(prop));
-                        }
+                        int iDim = i;
+                        referenceMenuTextField.getTextField().textProperty().addListener(e -> updateReference(prop, iDim));
+
                         gridPane.add(referenceMenuTextField, i + start, row);
                     } else {
                         CustomTextField textField = new CustomTextField();
@@ -728,30 +728,32 @@ public class RefManager {
         invalidateScript();
     }
 
-    private void updateReference(SimpleObjectProperty property) {
-        String refString = property.getValue().toString();
-        NMRData nmrData = getNMRData();
-        double sf = nmrData.getSF(0);
-        String tn = nmrData.getTN(0);
-        Nuclei nuclei = Nuclei.findNuclei(tn);
-        double z;
-        if (refString.isEmpty()) {
-            nmrData.setZeroFreq(null);
-            z = nmrData.getZeroFreq();
-        } else if (refString.equals("H2O")) {
-            double ref = ReferenceCalculator.getH2ORefPPM(nmrData.getTempK());
-            z = sf / (1.0 + ref * 1.0e-6);
-        } else {
-            try {
-                double ref = Double.parseDouble(refString);
-                z = sf / (1.0 + ref * 1.0e-6);
-                z /= nuclei.getRatio() / 100.0;
-            } catch (NumberFormatException nfE) {
+    private void updateReference(SimpleObjectProperty property, int iDim) {
+        if (iDim == 0) {
+            String refString = property.getValue().toString();
+            NMRData nmrData = getNMRData();
+            double sf = nmrData.getSF(0);
+            String tn = nmrData.getTN(0);
+            Nuclei nuclei = Nuclei.findNuclei(tn);
+            double z;
+            if (refString.isEmpty()) {
+                nmrData.setZeroFreq(null);
                 z = nmrData.getZeroFreq();
+            } else if (refString.equals("H2O")) {
+                double ref = ReferenceCalculator.getH2ORefPPM(nmrData.getTempK());
+                z = sf / (1.0 + ref * 1.0e-6);
+            } else {
+                try {
+                    double ref = Double.parseDouble(refString);
+                    z = sf / (1.0 + ref * 1.0e-6);
+                    z /= nuclei.getRatio() / 100.0;
+                } catch (NumberFormatException nfE) {
+                    z = nmrData.getZeroFreq();
+                }
             }
+            zeroFieldProp.set(z);
+            processorController.chartProcessor.setZeroFreq(z);
         }
-        zeroFieldProp.set(z);
-        processorController.chartProcessor.setZeroFreq(z);
         invalidateScript();
     }
 
