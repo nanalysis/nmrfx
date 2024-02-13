@@ -29,9 +29,11 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.nmrpipe.NMRPipeData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
+import org.nmrfx.processor.datasets.vendor.varian.VarianData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.*;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
@@ -46,6 +48,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -869,6 +872,7 @@ public class ChartProcessor {
 
     private String suggestDatasetName() {
         String datasetName;
+        NMRData nmrData = getNMRData();
         String filePath = getNMRData().getFilePath();
         File file = new File(filePath);
         String fileName = file.getName();
@@ -876,12 +880,24 @@ public class ChartProcessor {
             datasetName = fileName;
         } else {
             File lastFile = NMRDataUtil.findNewestFile(getScriptDir().toPath());
+            if ((lastFile != null) && (nmrData instanceof BrukerData)) {
+                Pattern pattern = Pattern.compile("[1-9]r+");
+                if (pattern.matcher(lastFile.getName()).matches()) {
+                    lastFile = null;
+                }
+            }
             if (lastFile != null) {
                 datasetName = lastFile.getName();
             } else {
                 datasetName = getDatasetNameFromScript();
                 if (datasetName.isEmpty()) {
-                    datasetName = getNMRData().getSequence();
+                    if (nmrData instanceof BrukerData brukerData) {
+                        datasetName = brukerData.suggestName();
+                    } else if (nmrData instanceof VarianData varianData) {
+                        datasetName = varianData.suggestName();
+                    } else {
+                        datasetName = getNMRData().getSequence();
+                    }
                 }
             }
         }
