@@ -775,8 +775,8 @@ public class SpectrumStatusBar {
             if (selected == DisplayMode.STACKPLOT) {
                 chart.clearDrawlist();
                 if (!isStacked()) {
-                    chart.getChartProperties().setStackX(0.2);
-                    chart.getChartProperties().setStackY(1.0);
+                    chart.getChartProperties().setStackX(0.35);
+                    chart.getChartProperties().setStackY(0.75);
                 }
             } else {
                 chart.getChartProperties().setStackX(0.0);
