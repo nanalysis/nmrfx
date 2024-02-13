@@ -933,6 +933,11 @@ public class PolyChart extends Region {
             pt[0][1] = limits[1];
             for (int i = 0; i < nDim; i++) {
                 dim[i] = i;
+                if (i > 0) {
+                    int[] lim2 = getPlotLimits(dataAttr, i);
+                    pt[i][0] = 0;
+                    pt[i][1] = lim2[1];
+                }
                 cpt[i] = (pt[i][0] + pt[i][1]) / 2;
                 regionWidth[i] = Math.abs(pt[i][0] - pt[i][1]);
             }
