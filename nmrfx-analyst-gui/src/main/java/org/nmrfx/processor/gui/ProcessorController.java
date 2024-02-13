@@ -1159,6 +1159,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             BaselineGroup baselineGroup = index != -1 ? (BaselineGroup) ops.get(index) : new BaselineGroup();
             if (index == -1) {
                 propertyManager.addOp(baselineGroup, ops, index);
+            } else {
+                ProcessingOperation processingOperation = new ProcessingOperation(opName);
+                propertyManager.addOp(processingOperation, ops, index);
             }
             baselineGroup.update(opName, opName);
         } else {
