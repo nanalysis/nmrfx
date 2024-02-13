@@ -78,6 +78,7 @@ public class CShift extends Operation {
             iShift = (int) Math.round(unit.get().getDoubleDelta(vector));
         }
         double adjustAmount = iShift;
+        iShift = iShift % size;
 
         if ((iShift != 0) && (((int) Math.abs(iShift)) < size)) {
             if (vector.isComplex()) {
@@ -120,9 +121,9 @@ public class CShift extends Operation {
                     System.arraycopy(temp, 0, vector.rvec, marker, iShift);
                 }
             }
-            if (adjustRef) {
-                vector.adjustRef(-adjustAmount, size);
-            }
+        }
+        if ((adjustRef) && (Math.abs(adjustAmount) > 0.1)){
+            vector.adjustRef(-adjustAmount, size);
         }
 
         return this;
