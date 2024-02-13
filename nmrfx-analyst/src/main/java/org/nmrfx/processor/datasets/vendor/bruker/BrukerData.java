@@ -235,7 +235,22 @@ public class BrukerData implements NMRData {
                 append("_").append(pdataNumFile.getName()).append("_").
                 append(file.getName());
         return sBuilder.toString();
+    }
 
+    public String suggestName() {
+        File file = new File(fpath);
+        File numFile;
+        if (file.getName().equals("fid") || file.getName().equals("ser")) {
+            numFile = file.getParentFile();
+        } else {
+            numFile = file;
+        }
+        File rootFile = numFile.getParentFile();
+        String rootName = rootFile != null ? rootFile.getName() : "";
+        rootName = rootName.replace(" ", "_");
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(rootName).append("_").append(numFile.getName());
+        return sBuilder.toString();
     }
 
     @Override
