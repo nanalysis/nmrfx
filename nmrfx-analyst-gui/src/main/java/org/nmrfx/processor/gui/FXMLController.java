@@ -1904,6 +1904,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
+    public boolean isScannerToolPresent() {
+        return (scannerTool != null) && scannerTool.scannerActive();
+    }
+
     public void showScannerTool() {
         BorderPane vBox;
         if (scannerTool != null) {

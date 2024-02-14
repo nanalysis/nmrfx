@@ -137,6 +137,10 @@ public class ScannerTool implements ControllerTool {
         borderPane.setTop(null);
     }
 
+    public boolean scannerActive() {
+        return borderPane.getTop() != null;
+    }
+
     @Override
     public void close() {
         closeAction.accept(this);
@@ -327,6 +331,10 @@ public class ScannerTool implements ControllerTool {
     }
 
     private void measure() {
+        measure(null);
+    }
+
+    public void measure(double[] ppms) {
         TextInputDialog textInput = new TextInputDialog();
         textInput.setHeaderText("New column name");
         Optional<String> columNameOpt = textInput.showAndWait();
@@ -338,7 +346,9 @@ public class ScannerTool implements ControllerTool {
                 alert.showAndWait();
                 return;
             }
-            double[] ppms = chart.getCrossHairs().getVerticalPositions();
+            if (ppms == null) {
+                ppms = chart.getCrossHairs().getVerticalPositions();
+            }
             double[] wppms = new double[2];
             wppms[0] = chart.getAxes().get(0).getLowerBound();
             wppms[1] = chart.getAxes().get(0).getUpperBound();

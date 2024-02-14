@@ -385,16 +385,21 @@ public class PolyChart extends Region {
     private void addRegion(double min, double max) {
         DatasetBase dataset = getDataset();
         if (dataset != null) {
-            DatasetRegion newRegion = dataset.addRegion(min, max);
-            try {
-                newRegion.measure(dataset);
-            } catch (IOException ex) {
-                log.error(ex.getMessage(), ex);
-            }
-            chartProps.setRegions(true);
-            chartProps.setIntegrals(true);
-            if (onRegionAdded != null) {
-                onRegionAdded.accept(newRegion);
+            if (getFXMLController().isScannerToolPresent()) {
+                double[] ppms = {min, max};
+                getFXMLController().scannerTool.measure(ppms);
+            } else {
+                DatasetRegion newRegion = dataset.addRegion(min, max);
+                try {
+                    newRegion.measure(dataset);
+                } catch (IOException ex) {
+                    log.error(ex.getMessage(), ex);
+                }
+                chartProps.setRegions(true);
+                chartProps.setIntegrals(true);
+                if (onRegionAdded != null) {
+                    onRegionAdded.accept(newRegion);
+                }
             }
         }
     }
