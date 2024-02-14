@@ -39,6 +39,7 @@ import org.codehaus.commons.nullanalysis.Nullable;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.Nuclei;
@@ -94,7 +95,8 @@ public class PolyChart extends Region {
     private final ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
     private final ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
     private final ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
-    private final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);    private final PeakListener peakListener = this::peakListChanged;
+    private final ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty<>(TwoD);
+    private final PeakListener peakListener = this::peakListChanged;
     private final FXMLController controller;
     private final ChartDrawingLayers drawingLayers;
     private final Path bcPath = new Path();
@@ -227,7 +229,7 @@ public class PolyChart extends Region {
     }
 
     private void initChart() {
-        useImmediateMode= PreferencesController.getUseImmediateMode();
+        useImmediateMode = PreferencesController.getUseImmediateMode();
         crossHairs = new CrossHairs(this);
         drawingLayers.getTopPane().getChildren().addAll(crossHairs.getAllGraphicalLines());
 
@@ -878,14 +880,20 @@ public class PolyChart extends Region {
     }
 
     protected int[] getPlotLimits(DatasetAttributes datasetAttributes, int iDim) {
-        int min = axes.getMode(iDim).getIndex(datasetAttributes, iDim, axes.get(iDim).getLowerBound());
-        int max = axes.getMode(iDim).getIndex(datasetAttributes, iDim, axes.get(iDim).getUpperBound());
-        if (min > max) {
-            int hold = min;
-            min = max;
-            max = hold;
+        if (axes.count() > iDim) {
+            Axis axis = axes.get(iDim);
+            if (axis != null) {
+                int min = axes.getMode(iDim).getIndex(datasetAttributes, iDim, axis.getLowerBound());
+                int max = axes.getMode(iDim).getIndex(datasetAttributes, iDim, axis.getUpperBound());
+                if (min > max) {
+                    int hold = min;
+                    min = max;
+                    max = hold;
+                }
+                return new int[]{min, max};
+            }
         }
-        return new int[]{min, max};
+        return new int[]{0, 0};
     }
 
     public boolean hasData() {
@@ -923,23 +931,26 @@ public class PolyChart extends Region {
         if (is1D()) {
             DatasetBase dataset = dataAttr.getDataset();
 
-            int[] limits = getPlotLimits(dataAttr, 0);
             int nDim = dataset.getNDim();
             int[][] pt = new int[nDim][2];
             int[] cpt = new int[nDim];
             int[] dim = new int[nDim];
             double[] regionWidth = new double[nDim];
-            pt[0][0] = limits[0];
-            pt[0][1] = limits[1];
+            boolean ok = true;
             for (int i = 0; i < nDim; i++) {
-                dim[i] = i;
-                if (i > 0) {
-                    int[] lim2 = getPlotLimits(dataAttr, i);
-                    pt[i][0] = 0;
-                    pt[i][1] = lim2[1];
+                if (dataset.getSizeReal(i) == 0) {
+                    ok = false;
+                    break;
                 }
+                dim[i] = i;
+                int[] limits = getPlotLimits(dataAttr, i);
+                pt[i][0] = i == 0 ? Math.max(0, limits[0]) : 0;
+                pt[i][1] = Math.max(0, limits[1]);
                 cpt[i] = (pt[i][0] + pt[i][1]) / 2;
                 regionWidth[i] = Math.abs(pt[i][0] - pt[i][1]);
+            }
+            if (!ok) {
+                return;
             }
             RegionData rData;
             try {
@@ -1140,7 +1151,7 @@ public class PolyChart extends Region {
         double refPPM;
         int size;
         double centerPPM;
-        if (is1D() || section.getFirstDimension()  == 0) {
+        if (is1D() || section.getFirstDimension() == 0) {
             position = axes.getMode(0).getIndex(datasetAttributes, 0, crossHairs.getPosition(0, Orientation.VERTICAL));
             size = dataset.getSizeReal(datasetAttributes.dim[0]);
             refPoint = dataset.getRefPt(datasetAttributes.dim[0]);
@@ -1696,6 +1707,7 @@ public class PolyChart extends Region {
                     controller.getCharts().stream().forEach(chart -> chart.useImmediateMode(state));
                 });
     }
+
     public void useImmediateMode(boolean state) {
         useImmediateMode = state;
     }
@@ -1898,7 +1910,7 @@ public class PolyChart extends Region {
         for (int iData = compatibleAttributes.size() - 1; iData >= 0; iData--) {
             DatasetAttributes datasetAttributes = compatibleAttributes.get(iData);
             DatasetBase dataset = datasetAttributes.getDataset();
-            if (datasetAttributes.isProjection() || !datasetAttributes.getPos() || (dataset == null)) {
+            if ((dataset.getSizeReal(0) == 0) || datasetAttributes.isProjection() || !datasetAttributes.getPos() || (dataset == null)) {
                 continue;
             }
             if (firstAttr == null) {
@@ -2674,10 +2686,12 @@ public class PolyChart extends Region {
         PeaksUndo undo = new PeaksUndo(peaks);
         undos.add(undo);
     }
+
     void addPeaksRedo(Collection<Peak> peaks) {
         PeaksUndo undo = new PeaksUndo(peaks);
         redos.add(undo);
     }
+
     void addPeakListUndo(PeakList peakList) {
         if (undos.isEmpty()) {
             redos.clear();
@@ -2685,6 +2699,7 @@ public class PolyChart extends Region {
         PeakListUndo undo = new PeakListUndo(peakList);
         undos.add(undo);
     }
+
     void addPeakListRedo(PeakList peakList) {
         PeakListUndo undo = new PeakListUndo(peakList);
         redos.add(undo);
@@ -2733,7 +2748,7 @@ public class PolyChart extends Region {
             }
             double[] delays = null;
             if ((fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.EXP) ||
-                    (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_SHAPE) || (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY) ) {
+                    (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_SHAPE) || (fitPars.arrayedFitMode() == PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY)) {
                 log.info("nrows {}", fitRows[0]);
                 delays = getFitValues(peakListAttr);
                 if ((delays == null)) {
@@ -3206,7 +3221,9 @@ public class PolyChart extends Region {
         }
     }
 
-    public void setLockAnno(boolean state) { lockAnno = state;}
+    public void setLockAnno(boolean state) {
+        lockAnno = state;
+    }
 
     public Optional<CanvasAnnotation> hitAnnotation(double x, double y, boolean selectMode) {
         Optional<CanvasAnnotation> result = Optional.empty();
@@ -3294,6 +3311,7 @@ public class PolyChart extends Region {
         double[][] bounds = {{xPos + borders.getLeft(), xPos + width - borders.getRight()}, {yPos + borders.getTop(), yPos + height - borders.getBottom()}};
         return bounds;
     }
+
     public double[][] getWorld() {
         double x1, x2, y1, y2;
         if (axes.getX().isReversed()) {
