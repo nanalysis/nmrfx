@@ -435,17 +435,17 @@ public class OrderPar implements RelaxationValues {
         polymer = (polymer == null) || ("null".equals(polymer)) ? "A" : polymer;
         String resNum = String.valueOf(atom.getResidueNumber());
         sBuilder.append(polymer).append("\t").append(resNum).append("\t").append(atom.getName());
-        RelaxationValues.appendValueError(sBuilder, value, error, "%.2f");
-        RelaxationValues.appendValueError(sBuilder, TauE, TauEerr, "%.2f");
-        RelaxationValues.appendValueError(sBuilder, Sf2, Sf2err, "%.2f");
-        RelaxationValues.appendValueError(sBuilder, Ss2, Ss2err, "%.2f");
-        RelaxationValues.appendValueError(sBuilder, TauF, TauFerr, "%.4f");
-        RelaxationValues.appendValueError(sBuilder, TauS, TauSerr, "%.4f");
-        RelaxationValues.appendValueError(sBuilder, Rex, Rexerr, "%.2f");
+        RelaxationValues.appendValueError(sBuilder, value, error, "%.5f");
+        RelaxationValues.appendValueError(sBuilder, TauE, TauEerr, "%.5f");
+        RelaxationValues.appendValueError(sBuilder, Sf2, Sf2err, "%.5f");
+        RelaxationValues.appendValueError(sBuilder, Ss2, Ss2err, "%.5f");
+        RelaxationValues.appendValueError(sBuilder, TauF, TauFerr, "%.5f");
+        RelaxationValues.appendValueError(sBuilder, TauS, TauSerr, "%.5f");
+        RelaxationValues.appendValueError(sBuilder, Rex, Rexerr, "%.5f");
         sBuilder.append("\t").append(model).append("\t").append(modelNum);
         sBuilder.append("\t").append(String.format("%.4f", sumSqErr)).append("\t").
                 append(String.format("%.4f", getReducedChiSqr())).
-                append("\t").append(String.format("%.4f", getAIC())).append("\t").
+                append("\t").append(String.format("%.4f", getAICC())).append("\t").
                 append(nValues).append("\t").append(nPars);
         return sBuilder.toString();
     }
