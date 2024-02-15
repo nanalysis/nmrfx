@@ -11,6 +11,7 @@ import java.util.Optional;
 public class LACSCalculator {
     record PPMDiff(double ppmDDCA, double ppmDDCB, double ppmDDC) {
     }
+
     record LACSResult(double xMin, double xMax, double nMedian, double pMedian, double allMedian) {
     }
 
@@ -65,7 +66,7 @@ public class LACSCalculator {
         Atom caAtom = residue.getAtom("CA");
         Atom cbAtom = residue.getAtom("CB");
         Atom calcAtom = residue.getAtom(calcAtomName);
-        if ((caAtom != null) && (cbAtom != null)) {
+        if ((caAtom != null) && (cbAtom != null) && (calcAtom != null)) {
             PPMv caPPMv = caAtom.getPPM(iGroup);
             Double caRef = caAtom.getRefPPM();
 
@@ -74,7 +75,8 @@ public class LACSCalculator {
 
             PPMv calcPPMv = calcAtom.getPPM(iGroup);
             Double cRef = calcAtom.getRefPPM();
-            if (caPPMv.isValid() && cbPPMv.isValid() && calcPPMv.isValid() &&
+            if ((caPPMv != null) && caPPMv.isValid() && (cbPPMv != null) && cbPPMv.isValid()
+                    && (calcPPMv != null) && calcPPMv.isValid() &&
                     caRef != null && cbRef != null && cRef != null) {
                 double caPPM = caPPMv.getValue();
                 double cbPPM = cbPPMv.getValue();
@@ -88,5 +90,4 @@ public class LACSCalculator {
         }
         return Optional.empty();
     }
-
 }
