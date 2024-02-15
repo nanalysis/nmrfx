@@ -82,6 +82,7 @@ public class OperationInfo {
             "RFT",
             "REVERSE",
             "CSHIFT",
+            "TILT45",
             "SHIFT",
             "TRIM",
             "Cascade-FD-Solvent",
