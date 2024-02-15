@@ -85,6 +85,7 @@ from org.nmrfx.processor.operations import Stack
 from org.nmrfx.processor.operations import DGRINSOp
 from org.nmrfx.processor.operations import TDCombine
 from org.nmrfx.processor.operations import TDPoly
+from org.nmrfx.processor.operations import Tilt45
 from org.nmrfx.processor.operations import Tm
 from org.nmrfx.processor.operations import Tri
 from org.nmrfx.processor.operations import Tdss
@@ -1370,6 +1371,30 @@ def CSHIFT(shift=0, adjref=False, disabled=False, vector=None, process=None):
     shiftObj = convertUnitStringToObject(shift)
     op = CShift(shiftObj, adjref)
     return op
+
+@generic_operation
+def TILT45(disabled=False, vector=None, process=None):
+    '''Perform 45 degree shear (tilt) on a 2D dataset, as is commonly done on 2D J-Resolved
+    datasets.
+'''
+    if disabled:
+        return None
+
+    global fidInfo
+    global dataInfo
+    fidObj = fidInfo.fidObj
+    sw1 = fidObj.getSW(0)
+    sw2 = fidObj.getSW(1)
+    n1 = fidObj.getSize(0);
+    n2 = fidObj.getSize(1);
+
+    # The shift of each row n2 is given by round(m * n2 + c)
+    m = (sw2 * n1) / (sw1 * n2)
+    c = -(sw2 * n1) / (2 * sw1)
+
+    op = Tilt45(m, c)
+    return op
+
 
 @generic_operation
 def COADD(coef=None, disabled=False, vector=None, process=None):
