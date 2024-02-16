@@ -406,9 +406,8 @@ public class OrderPar implements RelaxationValues {
     public static void writeToFile(File file) throws IOException {
         MoleculeBase moleculeBase = MoleculeFactory.getActive();
         var orderParSetMap = moleculeBase.orderParSetMap();
-        System.out.println(orderParSetMap);
         try (FileWriter fileWriter = new FileWriter(file)) {
-            fileWriter.write("Set\tChain\tResidue\tAtom\tS2\tS2_err\tTauE\tTauE_err\tSf2\tSf2_err\tSs2\tSs2_err\tTauF\t" +
+            fileWriter.write("Set\tChain\tResidue\tResName\tAtom\tS2\tS2_err\tTauE\tTauE_err\tSf2\tSf2_err\tSs2\tSs2_err\tTauF\t" +
                     "TauF_err\tTauS\tTauS_err\tRex\tRex_err\tmodel\tmodelNum\tchiSq\tredChiSq\tAIC\tnValues\tnPars\n");
 
             for (var entry : orderParSetMap.entrySet()) {
@@ -434,7 +433,9 @@ public class OrderPar implements RelaxationValues {
         String polymer = atom.getTopEntity().getName();
         polymer = (polymer == null) || ("null".equals(polymer)) ? "A" : polymer;
         String resNum = String.valueOf(atom.getResidueNumber());
-        sBuilder.append(polymer).append("\t").append(resNum).append("\t").append(atom.getName());
+        String resName = String.valueOf(atom.getEntity().getName());
+        sBuilder.append(polymer).append("\t").append(resNum).append("\t").
+                append(resName).append("\t").append(atom.getName());
         RelaxationValues.appendValueError(sBuilder, value, error, "%.5f");
         RelaxationValues.appendValueError(sBuilder, TauE, TauEerr, "%.5f");
         RelaxationValues.appendValueError(sBuilder, Sf2, Sf2err, "%.5f");
