@@ -27,7 +27,7 @@ public class SpectralDensity {
         return spectralDensities;
     }
 
-    public static void writeToFile(File file) throws IOException {
+    public static void writeToFile(File file, String sepChar) throws IOException {
         MoleculeBase moleculeBase = MoleculeFactory.getActive();
         AtomicBoolean firstRow = new AtomicBoolean(true);
         try (FileWriter fileWriter = new FileWriter(file)) {
@@ -45,9 +45,9 @@ public class SpectralDensity {
                         for (var entry : spectralDensityMap.entrySet()) {
                             try {
                                 if (!spectralDensityMap.isEmpty() && firstRow.getAndSet(false)) {
-                                    writeHeaderToFile(fileWriter, entry.getValue());
+                                    writeHeaderToFile(fileWriter, sepChar, entry.getValue());
                                 }
-                                writeToFile(fileWriter, atom, entry.getValue());
+                                writeToFile(fileWriter, sepChar, atom, entry.getValue());
                             } catch (IOException ioE) {
 
                             }
@@ -56,12 +56,16 @@ public class SpectralDensity {
         }
     }
 
-    public static void writeHeaderToFile(FileWriter fileWriter,  SpectralDensity spectralDensity) throws IOException {
+    public static void writeHeaderToFile(FileWriter fileWriter,  String sepChar, SpectralDensity spectralDensity) throws IOException {
         double[][] values = spectralDensity.spectralDensities;
-        fileWriter.write("Chain\tResidue\tResName\tAtom\tOmega\tJ\tJ_Err\n");
+        String header = "Chain" + sepChar + "Residue" + sepChar + "ResName" + sepChar + "Atom" + sepChar + "Omega" + sepChar + "J" + sepChar + "J_err";
+        fileWriter.write(header + "\n");
     }
 
-    public static void writeToFile(FileWriter fileWriter, Atom atom, SpectralDensity spectralDensity) throws IOException {
+    public static void writeToFile(FileWriter fileWriter, String sepChar, Atom atom, SpectralDensity spectralDensity) throws IOException {
+        String precFormat = "%.5f";
+        String format1 = "%s" + sepChar + "%s" + sepChar + "%s" + sepChar + "%s";
+        String format2 = sepChar + precFormat + sepChar + precFormat + sepChar + precFormat + "\n";
         double[][] values = spectralDensity.spectralDensities;
         Compound compound = (Compound) atom.getEntity();
         for (int i = 0; i < values[0].length; i++) {
@@ -72,8 +76,8 @@ public class SpectralDensity {
                     chainName = "A";
                 }
             }
-            fileWriter.write(String.format("%s\t%s\t%s\t%s",  chainName, compound.getNumber(), compound.getName(), atom.getName()));
-            fileWriter.write(String.format("\t%.5f\t%.5f\t%.5f\n", values[0][i] * 1.0e-9, values[1][i] * 1e9, values[2][i] * 1e9));
+            fileWriter.write(String.format(format1,  chainName, compound.getNumber(), compound.getName(), atom.getName()));
+            fileWriter.write(String.format(format2, values[0][i] * 1.0e-9, values[1][i] * 1e9, values[2][i] * 1e9));
         }
     }
 
