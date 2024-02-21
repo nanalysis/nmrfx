@@ -82,7 +82,6 @@ public class GRINS {
             matrix.zeroValues(zeroList);
             double preValue = 0.0;
             double postValue = 0.0;
-            double deltaToOrig = 0.0;
             boolean calcNoise = noise < 1.0e-6;
             double noiseValue = noise;
             boolean doPhase = false;
@@ -167,11 +166,14 @@ public class GRINS {
                 postValue = matrix.calcSumAbs();
             }
             matrix.doHIFT(1.0);
+            MatrixND.MatrixDiff deltaToOrig;
             if (calcStats) {
                 deltaToOrig = matrix.calcDifference(matrixCopy, srcTargetMap);
+            } else {
+                deltaToOrig = new MatrixND.MatrixDiff(0.0, 1.0);
             }
             if (fileWriter != null) {
-                String outLine = String.format("%4d %4d %10.3f %10.3f %10.3f%n", (iteration + 1), nPeaks, preValue, postValue, deltaToOrig);
+                String outLine = String.format("%4d %4d %10.3f %10.3f %10.3f %10.3f %n", (iteration + 1), nPeaks, preValue, postValue, deltaToOrig.mabs() / deltaToOrig.max(), deltaToOrig.max());
                 fileWriter.write(outLine);
             }
             if (!residual && !synthetic) {
