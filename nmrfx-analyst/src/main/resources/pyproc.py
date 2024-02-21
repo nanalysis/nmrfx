@@ -2990,15 +2990,15 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
     return op
 
 
-def GRINS(noise=0.0, scale=0.25, zf=0, iterations=64, shapeFactor=0.5, apodize=True, phase=None, preserve=True, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
+def GRINS(noiseRatio=5.0, scale=0.25, zf=0, iterations=64, shapeFactor=0.5, apodize=True, phase=None, preserve=True, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
-    noise : real
-        amin : 0.0
-        min : 0.0
-        max : 100.0
-        Noise estimate
+    noiseRatio : real
+        amin : 2.0
+        min : 2.0
+        max : 10.0
+        Threshold calculated from noise * noiseRatio 
     scale : real
         amin : 0.1
         min : 0.2
@@ -3063,7 +3063,7 @@ def GRINS(noise=0.0, scale=0.25, zf=0, iterations=64, shapeFactor=0.5, apodize=T
 
     process = process or getCurrentProcess()
 
-    op = GRINSOp(noise, scale, zf, iterations, shapeFactor, apodize, phaseList, preserve, synthetic, schedule, logFileName)
+    op = GRINSOp(noiseRatio, scale, zf, iterations, shapeFactor, apodize, phaseList, preserve, synthetic, schedule, logFileName)
 
     if (dataset != None):
         op.eval(dataset)
