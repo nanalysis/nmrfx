@@ -811,14 +811,17 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    public double calcDifference(MatrixND source, int[] srcTargetMap) {
+    public record MatrixDiff(double mabs, double max) {};
+    public MatrixDiff calcDifference(MatrixND source, int[] srcTargetMap) {
         double sum = 0.0;
+        double max = 0.0;
         for (int i : srcTargetMap) {
             double v1 = source.data[i];
             double v2 = data[i];
+            max = Math.max(max, Math.abs(v1));
             sum += FastMath.abs(v1 - v2);
         }
-        return sum / srcTargetMap.length;
+        return new MatrixDiff(sum/srcTargetMap.length, max);
     }
 
     public double calcSumAbs() {
