@@ -460,8 +460,8 @@ public class IstMatrix extends MatrixOperation {
         }
         matrix.doHIFT(fpMul);
         if (calcStats) {
-            double delta = matrix.calcDifference(matrixCopy, srcTargetMap);
-            log.info("{} {} {} {}", loops, preValue, postValue, delta);
+            var deltaToOrig = matrix.calcDifference(matrixCopy, srcTargetMap);
+            log.info("{} {} {} {}", loops, preValue, postValue, deltaToOrig.mabs());
         }
         matrix.copyValuesFrom(matrixCopy, srcTargetMap);
     }

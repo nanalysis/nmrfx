@@ -39,10 +39,9 @@ public class GRINS {
     private static final Logger log = LoggerFactory.getLogger(GRINS.class);
 
     private static final double THRESHOLD_SCALE = 0.8;
-    private static final double NOISE_SCALE = 3.0;
 
     final MatrixND matrix;
-    final double noise;
+    double noiseRatio;
     final boolean preserve;
     final boolean synthetic;
 
@@ -62,9 +61,9 @@ public class GRINS {
     boolean calcStats = true;
     boolean tdMode = false;  // only freq mode is currently functional
 
-    public GRINS(MatrixND matrix, double noise, double scale, int iterations, double shapeFactor, boolean apodize, double[] phase, boolean preserve, boolean synthetic, int[] zeroList, int[] srcTargetMap, String logFileName) {
+    public GRINS(MatrixND matrix, double noiseRatio, double scale, int iterations, double shapeFactor, boolean apodize, double[] phase, boolean preserve, boolean synthetic, int[] zeroList, int[] srcTargetMap, String logFileName) {
         this.matrix = matrix;
-        this.noise = noise;
+        this.noiseRatio = noiseRatio;
         this.scale = scale;
         this.iterations = iterations;
         this.shapeFactor = shapeFactor;
@@ -82,9 +81,11 @@ public class GRINS {
             matrix.zeroValues(zeroList);
             double preValue = 0.0;
             double postValue = 0.0;
-            double deltaToOrig = 0.0;
-            boolean calcNoise = noise < 1.0e-6;
-            double noiseValue = noise;
+            boolean calcNoise = true;
+            if (noiseRatio < 2.0) {
+                noiseRatio = 2.0;
+            }
+            double noiseValue = 0.0;
             boolean doPhase = false;
             int maxPeaks = 20;
             if (phase != null) {
@@ -123,7 +124,7 @@ public class GRINS {
 
                 double[] measure = matrix.measure(false, 0.0, Double.MAX_VALUE);
                 double max = Math.max(FastMath.abs(measure[0]), FastMath.abs(measure[1]));
-                double noiseThreshold = noiseValue * NOISE_SCALE;
+                double noiseThreshold = noiseValue * noiseRatio;
                 if (max < noiseThreshold) {
                     break;
                 }
@@ -167,11 +168,14 @@ public class GRINS {
                 postValue = matrix.calcSumAbs();
             }
             matrix.doHIFT(1.0);
+            MatrixND.MatrixDiff deltaToOrig;
             if (calcStats) {
                 deltaToOrig = matrix.calcDifference(matrixCopy, srcTargetMap);
+            } else {
+                deltaToOrig = new MatrixND.MatrixDiff(0.0, 1.0);
             }
             if (fileWriter != null) {
-                String outLine = String.format("%4d %4d %10.3f %10.3f %10.3f%n", (iteration + 1), nPeaks, preValue, postValue, deltaToOrig);
+                String outLine = String.format("%4d %4d %10.3f %10.3f %10.3f %10.3f %n", (iteration + 1), nPeaks, preValue, postValue, deltaToOrig.mabs() / deltaToOrig.max(), deltaToOrig.max());
                 fileWriter.write(outLine);
             }
             if (!residual && !synthetic) {
