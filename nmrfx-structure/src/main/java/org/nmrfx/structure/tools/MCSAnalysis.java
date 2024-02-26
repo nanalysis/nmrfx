@@ -1,17 +1,17 @@
 package org.nmrfx.structure.tools;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakList;
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.structure.chemistry.Molecule;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class MCSAnalysis {
@@ -25,7 +25,7 @@ public class MCSAnalysis {
     String[] aNames;
 
     public MCSAnalysis(PeakList peakList, double[] tols, double[] alphas,
-            String[] dimNames, Molecule molecule, String[] aNames) {
+                       String[] dimNames, Molecule molecule, String[] aNames) {
         this.molecule = molecule;
         this.peakList = peakList;
         this.alphas = alphas.clone();
@@ -43,7 +43,7 @@ public class MCSAnalysis {
     }
 
     public MCSAnalysis(PeakList peakList, double[] tols, double[] alphas,
-            String[] dimNames, PeakList peakListRef) {
+                       String[] dimNames, PeakList peakListRef) {
         this.peakList = peakList;
         this.peakListRef = peakListRef;
         this.alphas = alphas.clone();

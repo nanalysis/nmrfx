@@ -6,11 +6,11 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.chemistry.Atom;
-import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
+import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
+
 /**
- *
  * @author brucejohnson
  */
 public class EnergyDistancePairs extends EnergyPairs {

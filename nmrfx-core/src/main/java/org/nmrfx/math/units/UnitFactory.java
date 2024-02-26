@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2022 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,9 @@
 
 package org.nmrfx.math.units;
 
-@SuppressWarnings("unused") // used by pyproc.py
+import org.nmrfx.annotations.PythonAPI;
+
+@PythonAPI("pyproc")
 public class UnitFactory {
 
     /**
@@ -29,7 +31,7 @@ public class UnitFactory {
      * @param value
      * @return
      * @throws NumberFormatException if the value is not properly parseable in the appropriate constructor with the
-     * token stripped off the end of the String.
+     *                               token stripped off the end of the String.
      */
     public static Unit newUnit(String value) {
         if (value.contains("s")) {
@@ -48,8 +50,7 @@ public class UnitFactory {
     }
 
     /**
-     *
-     * @param type The Type of unit to create.
+     * @param type  The Type of unit to create.
      * @param value The value of the Unit. (Integer / Double only, no trailing tokens.)
      * @return
      */

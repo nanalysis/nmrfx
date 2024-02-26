@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,41 +18,34 @@
 package org.nmrfx.graphicsio;
 
 import javafx.geometry.VPos;
-import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.Effect;
-import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.ArcType;
-import javafx.scene.shape.FillRule;
 import javafx.scene.shape.StrokeLineCap;
-import javafx.scene.shape.StrokeLineJoin;
-import javafx.scene.text.FontSmoothingType;
+import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
-
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
+//TODO uncomment when core & utils are regrouped
+//@PluginAPI("ring")
 public class SVGGraphicsContext implements GraphicsContextInterface {
 
     private static final Logger log = LoggerFactory.getLogger(SVGGraphicsContext.class);
-    StringBuilder doc = new StringBuilder();
     double pageWidth = 1024;
     double pageHeight = 1024;
     double fontSize = 12;
@@ -62,8 +55,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     Font font = Font.getDefault();
     double lineWidth = 1.0;
     double[] lineDashes = null;
-    StringBuilder sBuilder = new StringBuilder();
-    OutputStream stream;
     XMLStreamWriter writer;
     String clipPath = "";
     TextAlignment textAlignment = TextAlignment.LEFT;
@@ -75,36 +66,18 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     int clipIndex = 1;
 
     GCCache cache = new GCCache();
-    private List<Object> ArrayList;
 
-    class Rotate {
-
-        final double value;
-
-        Rotate(double value) {
-            this.value = value;
-        }
+    record Rotate(double value) {
     }
 
-    class Translate {
-
-        final double x;
-        final double y;
-
-        Translate(double x, double y) {
-            this.x = x;
-            this.y = y;
-        }
+    record Translate(double x, double y) {
     }
 
-    class GCCache {
-
+    static class GCCache {
         double fontSize = 12;
         String fontFamilyName = "Helvetica";
         Color fill = Color.BLACK;
         Color stroke = Color.BLACK;
-        Font font = Font.getDefault();
-        double lineWidth = 1.0;
         String clipPath = "";
         TextAlignment textAlignment = TextAlignment.LEFT;
         VPos textBaseline = VPos.BASELINE;
@@ -140,21 +113,26 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     }
 
-    public void create(boolean landScape, String fileName) {
-        create(landScape, 1024, 1024, fileName);
+    public void create(String fileName) {
+        create(1024, 1024, fileName);
     }
 
-    public void create(boolean landScape, double width, double height, String fileName) {
+    // still used by RingNMR with landcape=true is all calls
+    @Deprecated(forRemoval = true)
+    public void create(boolean _landscape, double width, double height, String fileName) {
+        create(width, height, fileName);
+    }
+
+    public void create(double width, double height, String fileName) {
         try {
             OutputStream stream = new FileOutputStream(fileName);
-            create(landScape, width, height, stream);
+            create(width, height, stream);
         } catch (FileNotFoundException ex) {
             log.warn(ex.getMessage(), ex);
         }
-
     }
 
-    public void create(boolean landScape, double width, double height, OutputStream stream) {
+    public void create(double width, double height, OutputStream stream) {
         try {
             this.pageWidth = width;
             this.pageHeight = height;
@@ -187,34 +165,20 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     private String getTextAnchor() {
-        switch (textAlignment) {
-            case CENTER:
-                return "middle";
-            case LEFT:
-                return "start";
-            case RIGHT:
-                return "end";
-            default:
-                return "start";
-        }
+        return switch (textAlignment) {
+            case CENTER -> "middle";
+            case LEFT -> "start";
+            case RIGHT -> "end";
+            default -> "start";
+        };
     }
 
     private String getTextDY() {
-        double dYf = 0.0;
-        switch (textBaseline) {
-            case BASELINE:
-                dYf = 0.0;
-                break;
-            case BOTTOM:
-                dYf = 0.0;
-                break;
-            case TOP:
-                dYf = 1.0;
-                break;
-            case CENTER:
-                dYf = 0.5;
-                break;
-        }
+        double dYf = switch (textBaseline) {
+            case BASELINE, BOTTOM -> 0.0;
+            case TOP -> 1.0;
+            case CENTER -> 0.5;
+        };
         return format(dYf * fontSize);
     }
 
@@ -238,29 +202,11 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         return sBuilder.toString();
     }
 
-    private String getTransformShape() {
-        StringBuilder sBuilder = new StringBuilder();
-        //      transform="matrix(1,0,0,1,100,20)"
-
-        sBuilder.append("matrix(");
-        sBuilder.append(transform.getMxx()).append(",");
-        sBuilder.append(transform.getMyx()).append(",");
-        sBuilder.append(transform.getMxy()).append(",");
-        sBuilder.append(transform.getMyy()).append(",");
-        sBuilder.append(transform.getMxz()).append(",");
-        sBuilder.append(transform.getMyz()).append(",");
-        sBuilder.append(transform.getTx()).append(",");
-        sBuilder.append(transform.getTy()).append(")");
-        return sBuilder.toString();
-    }
-
     public void saveFile() {
         try {
             writer.writeEndDocument();
             writer.flush();
             writer.close();
-//            stream.flush();
-//            stream.close();
         } catch (XMLStreamException ex) {
             log.warn(ex.getMessage(), ex);
         }
@@ -280,11 +226,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     private String getTextStyle(boolean fillMode) {
-//        style="font-family: Arial;
-//                 font-size  : 34;
-//                 stroke     : #000000;
-//                 fill       : #00ff00;
-//                "
         StringBuilder builder = new StringBuilder();
         builder.append("stroke: ");
         if (!fillMode) {
@@ -343,26 +284,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
                 (int) (color.getGreen() * 255),
                 (int) (color.getBlue() * 255)
         );
-    }
-
-    @Override
-    public void appendSVGPath(String svgpath) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void applyEffect(Effect e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void arc(double centerX, double centerY, double radiusX, double radiusY, double startAngle, double length) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void arcTo(double x1, double y1, double x2, double y2, double radius) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -428,21 +349,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void drawImage(Image img, double x, double y) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void drawImage(Image img, double x, double y, double w, double h) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void drawImage(Image img, double sx, double sy, double sw, double sh, double dx, double dy, double dw, double dh) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public void fill() {
         try {
             writer.writeEmptyElement("path");
@@ -453,11 +359,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         } catch (XMLStreamException ex) {
             log.warn(ex.getMessage(), ex);
         }
-    }
-
-    @Override
-    public void fillArc(double x, double y, double w, double h, double startAngle, double arcExtent, ArcType closure) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -490,11 +391,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void fillRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) {
-        doRoundRect(x, y, w, h, arcWidth, arcHeight, false, true);
-    }
-
-    @Override
     public void fillText(String text, double x, double y) {
         try {
             writer.writeStartElement("text");
@@ -516,37 +412,8 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void fillText(String text, double x, double y, double maxWidth) {
-        // fixme doesn't use maxWidth
-        try {
-            writer.writeStartElement("text");
-            if (transform != null) {
-                writer.writeAttribute("transform", getTransformText());
-            }
-            writer.writeAttribute("style", getTextStyle(true));
-            writer.writeAttribute("x", format(x));
-            writer.writeAttribute("y", format(y));
-            writer.writeCharacters(text);
-            writer.writeEndElement();
-            writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
-            log.warn(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public Effect getEffect(Effect e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public Paint getFill() {
         return fill;
-    }
-
-    @Override
-    public FillRule getFillRule() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -555,47 +422,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public FontSmoothingType getFontSmoothingType() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public double getGlobalAlpha() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public BlendMode getGlobalBlendMode() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public StrokeLineCap getLineCap() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public double[] getLineDashes() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public double getLineDashOffset() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public StrokeLineJoin getLineJoin() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public double getLineWidth() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public double getMiterLimit() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -605,28 +432,8 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public TextAlignment getTextAlign() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public VPos getTextBaseline() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public Affine getTransform() {
         return getValidTransform();
-    }
-
-    @Override
-    public Affine getTransform(Affine xform) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public boolean isPointInPath(double x, double y) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -645,11 +452,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         pathBuilder.append(',');
         pathBuilder.append(format(y0));
         pathBuilder.append(' ');
-    }
-
-    @Override
-    public void quadraticCurveTo(double xc, double yc, double x1, double y1) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -686,11 +488,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void scale(double x, double y) {
-        getValidTransform().appendScale(x, y);
-    }
-
-    @Override
     public void setEffect(Effect e) {
     }
 
@@ -700,29 +497,14 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void setFillRule(FillRule fillRule) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public void setFont(Font f) {
         this.font = f;
         fontSize = f.getSize();
     }
 
     @Override
-    public void setFontSmoothingType(FontSmoothingType fontsmoothing) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public void setGlobalAlpha(double alpha) {
 
-    }
-
-    @Override
-    public void setGlobalBlendMode(BlendMode op) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -735,23 +517,8 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void setLineDashOffset(double dashOffset) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void setLineJoin(StrokeLineJoin join) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public void setLineWidth(double lw) {
         lineWidth = lw;
-    }
-
-    @Override
-    public void setMiterLimit(double ml) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -775,10 +542,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void setTransform(double mxx, double myx, double mxy, double myy, double mxt, double myt) {
-    }
-
-    @Override
     public void stroke() {
         try {
             writer.writeEmptyElement("path");
@@ -789,11 +552,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         } catch (XMLStreamException ex) {
             log.warn(ex.getMessage(), ex);
         }
-    }
-
-    @Override
-    public void strokeArc(double x, double y, double w, double h, double startAngle, double arcExtent, ArcType closure) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -903,28 +661,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokeRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) {
-        doRoundRect(x, y, w, h, arcWidth, arcHeight, true, false);
-    }
-
-    public void doRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight, boolean strokeMode, boolean fillMode) {
-        String style = getStyle(strokeMode, fillMode);
-        try {
-            writer.writeEmptyElement("rect");
-            writer.writeAttribute("x", format(x));
-            writer.writeAttribute("y", format(y));
-            writer.writeAttribute("height", format(h));
-            writer.writeAttribute("width", format(w));
-            writer.writeAttribute("rx", format(arcWidth));
-            writer.writeAttribute("ry", format(arcHeight));
-            writer.writeAttribute("style", style);
-            writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
-            log.warn(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
     public void strokeText(String text, double x, double y) {
         try {
             writer.writeStartElement("text");
@@ -937,32 +673,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         } catch (XMLStreamException ex) {
             log.warn(ex.getMessage(), ex);
         }
-    }
-
-    @Override
-    public void strokeText(String text, double x, double y, double maxWidth) {
-        // fixme doesn't use maxWidth
-        try {
-            writer.writeStartElement("text");
-            writer.writeAttribute("style", getTextStyle(false));
-            writer.writeAttribute("x", format(x));
-            writer.writeAttribute("y", format(y));
-            writer.writeCharacters(text);
-            writer.writeEndElement();
-            writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
-            log.warn(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public void transform(Affine xform) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void transform(double mxx, double myx, double mxy, double myy, double mxt, double myt) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override

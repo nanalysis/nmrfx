@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,29 +17,14 @@
  */
 package org.nmrfx.analyst.gui;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
+import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellDataFeatures;
-import javafx.scene.control.TableView;
-import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
@@ -55,8 +40,15 @@ import org.nmrfx.peaks.PeakPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- *
  * @author brucejohnson
  */
 public class PathPlotTool {
@@ -152,15 +144,21 @@ public class PathPlotTool {
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         for (String colName : colNames) {
-            TableColumn<PeakPath, Number> col = new TableColumn<>(colName);
             if (colName.equals("Peak")) {
+                TableColumn<PeakPath, Number> col = new TableColumn<>(colName);
                 col.setCellValueFactory(new PropertyValueFactory<>(colName));
+                tableView.getColumns().add(col);
+            } else if (colName.equals("Atom")) {
+                TableColumn<PeakPath, String> atomCol = new TableColumn<>(colName);
+                atomCol.setCellValueFactory(new PropertyValueFactory<>(colName));
+                tableView.getColumns().add(atomCol);
             } else {
+                TableColumn<PeakPath, Number> col = new TableColumn<>(colName);
                 col.setCellValueFactory(new Callback<CellDataFeatures<PeakPath, Number>, ObservableValue<Number>>() {
                     public ObservableValue<Number> call(CellDataFeatures<PeakPath, Number> p) {
                         // p.getValue() returns the Path instance for a particular TableView row
                         int iProp = colNames.indexOf(colName);
-                        iProp--;  // account for Peak column
+                        iProp -= 2;  // account for Peak and Atom column
                         boolean isErr = iProp % 2 == 1;
                         iProp /= 2;  // account for Dev columns
                         if (p.getValue().hasPars()) {
@@ -184,23 +182,29 @@ public class PathPlotTool {
                         }
                     }
                 });
+                tableView.getColumns().add(col);
             }
-
-            tableView.getColumns().add(col);
-
         }
 
+        tableView.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                gotoSelection();
+            }
+        });
         tableView.setOnKeyPressed(e
-                -> {
-            if ((e.getCode() == KeyCode.BACK_SPACE) || (e.getCode() == KeyCode.DELETE)) {
-                List<PeakPath> selPaths = getSelected();
-                pathTool.removeActivePaths(selPaths);
+                        -> {
+                    if ((e.getCode() == KeyCode.BACK_SPACE) || (e.getCode() == KeyCode.DELETE)) {
+                        List<PeakPath> selPaths = getSelected();
+                        pathTool.removeActivePaths(selPaths);
 
-            }
-        }
+                    }
+                }
         );
     }
 
+    public void clearSelection() {
+        tableView.getSelectionModel().clearSelection();
+    }
     public void selectRow(PeakPath path) {
         tableView.getSelectionModel().clearSelection();
         tableView.getSelectionModel().select(path);
@@ -210,7 +214,7 @@ public class PathPlotTool {
         List<PeakPath> paths = new ArrayList<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         for (Integer index : selected) {
-            PeakPath path = (PeakPath) tableView.getItems().get(index);
+            PeakPath path = tableView.getItems().get(index);
             paths.add(path);
         }
         return paths;
@@ -221,10 +225,18 @@ public class PathPlotTool {
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         int iSeries = 0;
         for (Integer index : selected) {
-            PeakPath path = (PeakPath) tableView.getItems().get(index);
+            PeakPath path = tableView.getItems().get(index);
             Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
             pathTool.showXYPath(path, color);
             iSeries++;
+        }
+    }
+
+    final protected void gotoSelection() {
+        PeakPath peakPath = tableView.getSelectionModel().getSelectedItem();
+        if (peakPath != null) {
+            int peakID = peakPath.getPeak();
+            pathTool.peakNavigator.gotoPeakId(peakID);
         }
     }
 

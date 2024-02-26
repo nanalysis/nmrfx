@@ -6,7 +6,6 @@
 package org.nmrfx.chemistry;
 
 /**
- *
  * @author Bruce Johnson
  */
 public enum Order {

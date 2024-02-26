@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.RangeSlider?>
+<VBox fx:id="attributesVBox"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.nmrfx.processor.gui.AttributesController"
+>
+    <children>
+        <VBox fx:id="applyVBox" spacing="5">
+            <HBox spacing="5" alignment="CENTER">
+                <children>
+                    <Label text="Apply to:"/>
+                    <ChoiceBox fx:id="itemChoiceState"/>
+                </children>
+            </HBox>
+        </VBox>
+        <ScrollPane fx:id="attributeScrollPane" fitToHeight="true" fitToWidth="true">
+            <Accordion fx:id="attributesAccordion">
+                <panes>
+                    <TitledPane text="View">
+                        <VBox>
+                            <children>
+                                <Separator orientation="horizontal" minHeight="20"/>
+                                <CheckBox fx:id="aspectCheckBox" text="Constrain aspect ratio"/>
+                                <Label text="Aspect ratio:" minWidth="35"/>
+                                <HBox>
+                                    <Slider fx:id="aspectSlider" prefWidth="150"/>
+                                    <Label fx:id="aspectRatioValue" minWidth="35" maxWidth="35"/>
+                                </HBox>
+                            </children>
+                        </VBox>
+                    </TitledPane>
+                    <TitledPane fx:id="contourLevelPane" text="Contour Levels">
+                        <VBox>
+                            <children>
+
+                                <GridPane BorderPane.alignment="CENTER">
+                                    <children>
+                                        <Label text="Contour Level"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="0"
+                                        />
+                                        <Slider fx:id="lvlSlider" min="1" max="20" prefWidth="150"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2"
+                                        />
+                                        <TextField fx:id="lvlField" text="" prefWidth="60"
+                                                   GridPane.columnIndex="2" GridPane.rowIndex="1"
+                                        />
+                                        <Label text="Contour Level Multiplier"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="2"
+                                        />
+                                        <Slider fx:id="clmSlider" min="1" max="20" prefWidth="150"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
+                                        />
+                                        <TextField fx:id="clmField" text="" prefWidth="60"
+                                                   GridPane.columnIndex="2" GridPane.rowIndex="3"
+                                        />
+                                        <Label text="Number of Contour Levels"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="4"
+                                        />
+                                        <Slider fx:id="nlvlsSlider" min="1" max="20" prefWidth="150"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2"
+                                        />
+                                        <TextField fx:id="nlvlsField" text="" prefWidth="60"
+                                                   GridPane.columnIndex="2" GridPane.rowIndex="5"
+                                        />
+                                    </children>
+                                </GridPane>
+                            </children>
+                        </VBox>
+                    </TitledPane>
+                    <TitledPane fx:id="oneDPane" text="Trace Attributes">
+                        <VBox>
+                            <children>
+                                <GridPane BorderPane.alignment="CENTER">
+                                    <children>
+                                        <CheckBox fx:id="posOnCheckbox1D" text="Display Lines"
+                                                  GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="3"
+                                        />
+                                        <ColorPicker fx:id="posColorPicker1D" promptText=" Color" styleClass="button"
+                                                     GridPane.columnIndex="0" GridPane.rowIndex="1"
+                                                     GridPane.columnSpan="1"
+                                        />
+                                        <Button text="Schema..." onAction="#showPosSchema"
+                                                GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="2"
+                                        />
+                                        <Label text="Vertical Scale"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="2"
+                                        />
+                                        <Slider fx:id="lvlSlider1D" min="1" max="20" prefWidth="150"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
+                                        />
+                                        <TextField fx:id="lvlField1D" text="" prefWidth="60"
+                                                   GridPane.columnIndex="2" GridPane.rowIndex="3"
+                                        />
+                                        <Label text="Vertical Offset"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="4"
+                                        />
+                                        <Slider fx:id="offsetSlider" min="1" max="20" prefWidth="150"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2"
+                                        />
+                                        <TextField fx:id="offsetField" text="" prefWidth="60"
+                                                   GridPane.columnIndex="2" GridPane.rowIndex="5"
+                                        />
+                                        <Label text="Stack X Value"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="6"
+                                        />
+                                        <Slider fx:id="stackXSlider" min="1" max="20" prefWidth="150"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="7" GridPane.columnSpan="2"
+                                        />
+                                        <TextField fx:id="stackXField" text="" prefWidth="50"
+                                                   GridPane.columnIndex="2" GridPane.rowIndex="7"
+                                        />
+                                        <Label text="Stack Y Value"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="8"
+                                        />
+                                        <Slider fx:id="stackYSlider" min="1" max="20" prefWidth="150"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="9" GridPane.columnSpan="2"
+                                        />
+                                        <TextField fx:id="stackYField" text="" prefWidth="50"
+                                                   GridPane.columnIndex="2" GridPane.rowIndex="9"
+                                        />
+                                        <Label text="Line Width:"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="10" GridPane.columnSpan="2"
+                                        />
+                                        <Slider fx:id="posWidthSlider1D" prefWidth="150"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="11" GridPane.columnSpan="2"
+                                        />
+                                        <TextField fx:id="posWidthField1D" text="" prefWidth="35"
+                                                   GridPane.columnIndex="2" GridPane.rowIndex="11"
+                                        />
+
+                                    </children>
+                                </GridPane>
+                            </children>
+                        </VBox>
+                    </TitledPane>
+                    <TitledPane fx:id="contourAppearancePane" text="Contour Appearance">
+                        <VBox>
+                            <children>
+                                <GridPane BorderPane.alignment="CENTER">
+                                    <children>
+                                        <CheckBox fx:id="posOnCheckbox" text="Display Positive Contours"
+                                                  GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="3"
+                                        />
+                                        <ColorPicker fx:id="posColorPicker" promptText=" Color" styleClass="button"
+                                                     GridPane.columnIndex="0" GridPane.rowIndex="1"
+                                                     GridPane.columnSpan="1"
+                                        />
+                                        <Button text="Schema..." onAction="#showPosSchema"
+                                                GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="2"
+                                        />
+                                        <Label text="Line Width:"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2"
+                                        />
+                                        <Slider fx:id="posWidthSlider" prefWidth="150"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
+                                        />
+                                        <TextField fx:id="posWidthField" text="" prefWidth="35"
+                                                   GridPane.columnIndex="2" GridPane.rowIndex="3"
+                                        />
+
+                                    </children>
+                                </GridPane>
+                                <Separator orientation="horizontal" minHeight="30"/>
+                                <GridPane BorderPane.alignment="CENTER">
+                                    <children>
+                                        <CheckBox fx:id="negOnCheckbox" text="Display Negative Contours"
+                                                  GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="3"
+                                        />
+                                        <ColorPicker fx:id="negColorPicker" promptText=" Color" styleClass="button"
+                                                     GridPane.columnIndex="0" GridPane.rowIndex="1"
+                                                     GridPane.columnSpan="1"
+                                        />
+                                        <Button text="Schema..." onAction="#showNegSchema"
+                                                GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="2"
+                                        />
+                                        <Label text="Line Width:"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2"
+                                        />
+                                        <Slider fx:id="negWidthSlider" prefWidth="150"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
+                                        />
+                                        <TextField fx:id="negWidthField" text="" prefWidth="35"
+                                                   GridPane.columnIndex="2" GridPane.rowIndex="3"
+                                        />
+
+                                    </children>
+                                </GridPane>
+                            </children>
+                        </VBox>
+                    </TitledPane>
+                    <TitledPane text="Annotations">
+                        <GridPane BorderPane.alignment="CENTER" GridPane.rowIndex="0"
+                                  GridPane.columnIndex="1" GridPane.columnSpan="1">
+                            <children>
+                                <CheckBox fx:id="titlesCheckBox" mnemonicParsing="false" text="Display dataset titles"
+                                          selected="false"
+                                          GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                <CheckBox fx:id="parametersCheckBox"
+                                          mnemonicParsing="false"
+                                          text="Display dataset parameters" selected="false"
+                                          GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                            </children>
+                        </GridPane>
+
+                    </TitledPane>
+                    <TitledPane fx:id="integralsPane" text="Integrals">
+                        <VBox>
+                            <children>
+                                <CheckBox fx:id="integralCheckBox" text="Show integral profiles"/>
+                                <Label text="Integral display position:" minWidth="35"/>
+                                <HBox>
+                                    <children>
+                                        <HBox minWidth="5"/>
+                                        <Label fx:id="integralLowValue" minWidth="35" maxWidth="35"/>
+                                        <RangeSlider fx:id="integralPosSlider" prefWidth="150.0"/>
+                                        <Label fx:id="integralHighValue" minWidth="35" maxWidth="35"/>
+                                    </children>
+                                </HBox>
+                                <Separator orientation="horizontal" minHeight="20"/>
+                                <CheckBox fx:id="regionCheckBox" text="Display integration regions"/>
+                            </children>
+                        </VBox>
+                    </TitledPane>
+                    <TitledPane fx:id="peakAppearancePane" text="Peak Appearance">
+                        <VBox>
+                            <children>
+                                <CheckBox fx:id="peakDisplayCheckBox" mnemonicParsing="false"
+                                          onAction="#updateSlices" text="Show Peaks"/>
+                                <CheckBox fx:id="simPeakDisplayCheckBox" mnemonicParsing="false"
+                                          onAction="#updateSlices" text="Show Peak Simulation Profiles"/>
+                                <CheckBox fx:id="linkPeakDisplayCheckBox" mnemonicParsing="false"
+                                          onAction="#updateSlices" text="Show Peak Link Lines"/>
+                                <GridPane BorderPane.alignment="CENTER" GridPane.rowIndex="0"
+                                          GridPane.columnIndex="1" GridPane.columnSpan="1">
+                                    <children>
+                                        <Label text="Color peaks by "
+                                               GridPane.columnIndex="0" GridPane.rowIndex="0"
+                                        />
+                                        <ComboBox fx:id="peakColorModeComboBox" editable="false"
+                                                  prefWidth="75.0"
+                                                  GridPane.columnIndex="1" GridPane.rowIndex="0"
+                                        />
+                                        <Label text="On Color "
+                                               GridPane.columnIndex="0" GridPane.rowIndex="1"
+                                        />
+                                        <ColorPicker fx:id="peakOnColorPicker" promptText=" Color" styleClass="button"
+                                                     GridPane.columnIndex="1" GridPane.rowIndex="1"
+                                                     GridPane.columnSpan="1"
+                                        />
+                                        <Label text="Off Color "
+                                               GridPane.columnIndex="0" GridPane.rowIndex="2"
+                                        />
+                                        <ColorPicker fx:id="peakOffColorPicker" promptText=" Color" styleClass="button"
+                                                     GridPane.columnIndex="1" GridPane.rowIndex="2"
+                                                     GridPane.columnSpan="1"
+                                        />
+                                        <Label text="Display peaks as "
+                                               GridPane.columnIndex="0" GridPane.rowIndex="3"
+                                        />
+                                        <ComboBox fx:id="peakDisplayModeComboBox" editable="false"
+                                                  prefWidth="75.0"
+                                                  GridPane.columnIndex="1" GridPane.rowIndex="3"
+                                        />
+                                        <Label text="Label peaks with "
+                                               GridPane.columnIndex="0" GridPane.rowIndex="4"
+                                        />
+                                        <ComboBox fx:id="peakLabelModeComboBox" editable="false"
+                                                  prefWidth="75.0"
+                                                  GridPane.columnIndex="1" GridPane.rowIndex="4"
+                                                  GridPane.columnSpan="1"/>
+                                    </children>
+                                </GridPane>
+                            </children>
+                        </VBox>
+                    </TitledPane>
+                    <TitledPane text="Slices" VBox.vgrow="ALWAYS">
+                        <VBox>
+                            <children>
+                                <CheckBox fx:id="sliceStatusCheckBox" mnemonicParsing="false"
+                                          onAction="#updateSlices" text="Show Slices"/>
+                                <CheckBox fx:id="offsetTrackingCheckBox" mnemonicParsing="false"
+                                          onAction="#sliceAction" text="Center slices at crosshair"/>
+                                <CheckBox fx:id="useDatasetColorCheckBox" mnemonicParsing="false"
+                                          onAction="#sliceAction" text="Use dataset color for slices" selected="true"/>
+                                <GridPane BorderPane.alignment="CENTER" GridPane.rowIndex="0"
+                                          GridPane.columnIndex="0" GridPane.columnSpan="1">
+                                    <rowConstraints>
+                                        <RowConstraints minHeight="25.0" prefHeight="25.0"/>
+                                        <RowConstraints minHeight="25.0" prefHeight="25.0"/>
+                                        <RowConstraints minHeight="25.0" prefHeight="25.0"/>
+                                    </rowConstraints>
+                                    <children>
+                                        <Label text="Slice 1"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="0"
+                                        />
+                                        <CheckBox fx:id="slice1StateCheckBox" mnemonicParsing="false"
+                                                  onAction="#sliceAction" text="" selected="true"
+                                                  GridPane.columnIndex="1" GridPane.rowIndex="0"
+                                        />
+                                        <ColorPicker fx:id="slice1ColorPicker" onAction="#sliceAction"
+                                                     promptText="Slice 1 Color"
+                                                     GridPane.columnIndex="2" GridPane.rowIndex="0"
+                                        />
+                                        <Label text="Slice 2"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="1"
+                                        />
+                                        <CheckBox fx:id="slice2StateCheckBox" mnemonicParsing="false"
+                                                  onAction="#sliceAction" text="" selected="false"
+                                                  GridPane.columnIndex="1" GridPane.rowIndex="1"
+                                        />
+                                        <ColorPicker fx:id="slice2ColorPicker" onAction="#sliceAction"
+                                                     promptText="Slice 2 Color"
+                                                     GridPane.columnIndex="2" GridPane.rowIndex="1"
+                                        />
+                                    </children>
+                                </GridPane>
+                                <GridPane BorderPane.alignment="CENTER" GridPane.rowIndex="0"
+                                          GridPane.columnIndex="0" GridPane.columnSpan="1">
+                                    <columnConstraints>
+                                        <ColumnConstraints minWidth="50.0" prefWidth="50.0"/>
+                                        <ColumnConstraints minWidth="50.0" prefWidth="50.0"/>
+                                        <ColumnConstraints minWidth="50.0" prefWidth="50.0"/>
+                                    </columnConstraints>
+                                    <children>
+                                        <Label text="X Offset" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                        <Slider fx:id="xOffsetSlider" blockIncrement="0.1" max="1.0" value="0.5"
+                                                minHeight="125"
+                                                orientation="VERTICAL"
+                                                GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="1"
+                                        />
+                                        <Label text="Y Offset" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                        <Slider fx:id="yOffsetSlider" blockIncrement="0.1" max="1.0" value="0.5"
+                                                minHeight="125"
+                                                orientation="VERTICAL"
+                                                GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="1"
+                                        />
+                                        <Label text="Scale" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                                        <Slider fx:id="scaleSlider" blockIncrement="1.0" min="1.0" minorTickCount="5"
+                                                minHeight="125"
+                                                orientation="VERTICAL"
+                                                showTickLabels="true" showTickMarks="true"
+                                                value="10.0"
+                                                GridPane.columnIndex="2" GridPane.rowIndex="1" GridPane.columnSpan="1"
+                                        />
+                                    </children>
+                                </GridPane>
+
+                            </children>
+                        </VBox>
+                    </TitledPane>
+                    <TitledPane text="Axes and Borders">
+                        <VBox>
+                            <children>
+                                <CheckBox fx:id="gridCheckBox" mnemonicParsing="false" text="Show grid on spectrum"
+                                          selected="false"/>
+                                <CheckBox fx:id="intensityAxisCheckBox"
+                                          mnemonicParsing="false"
+                                          text="Show intensity axis" selected="false"
+                                          GridPane.columnIndex="0" GridPane.rowIndex="4" GridPane.columnSpan="6"/>
+                                <GridPane>
+                                    <columnConstraints>
+                                        <ColumnConstraints minWidth="20.0" prefWidth="20.0"/>
+                                        <ColumnConstraints minWidth="20.0" prefWidth="20.0"/>
+                                        <ColumnConstraints minWidth="20.0" prefWidth="20.0"/>
+                                        <ColumnConstraints minWidth="20.0" prefWidth="20.0"/>
+                                    </columnConstraints>
+
+                                    <children>
+                                        <Label text="Border Sizes"
+                                               GridPane.columnIndex="2" GridPane.rowIndex="0"
+                                               GridPane.columnSpan="3"/>
+
+                                        <ComboBox fx:id="leftBorderSizeComboBox" editable="false"
+                                                  prefWidth="75.0"
+                                                  GridPane.columnIndex="0" GridPane.rowIndex="2"
+                                                  GridPane.columnSpan="3"/>
+                                        <ComboBox fx:id="rightBorderSizeComboBox" editable="false"
+                                                  prefWidth="75.0"
+                                                  GridPane.columnIndex="4" GridPane.rowIndex="2"
+                                                  GridPane.columnSpan="3"/>
+                                        <ComboBox fx:id="topBorderSizeComboBox" editable="false"
+                                                  prefWidth="75.0"
+                                                  GridPane.columnIndex="2" GridPane.rowIndex="1"
+                                                  GridPane.columnSpan="3"/>
+                                        <ComboBox fx:id="bottomBorderSizeComboBox" editable="false"
+                                                  prefWidth="75.0"
+                                                  GridPane.columnIndex="2" GridPane.rowIndex="3"
+                                                  GridPane.columnSpan="3"/>
+                                    </children>
+                                </GridPane>
+                                <GridPane BorderPane.alignment="CENTER" GridPane.rowIndex="0"
+                                          GridPane.columnIndex="0" GridPane.columnSpan="1">
+                                    <children>
+                                        <Label text="Axis tic mark font size" GridPane.columnIndex="1"
+                                               GridPane.rowIndex="1"/>
+                                        <ComboBox fx:id="ticFontSizeComboBox" editable="false"
+                                                  GridPane.columnIndex="2" GridPane.rowIndex="1"
+                                                  GridPane.columnSpan="1"/>
+                                        <Label text="Axis label font size" GridPane.columnIndex="1"
+                                               GridPane.rowIndex="2"/>
+                                        <ComboBox fx:id="labelFontSizeComboBox" editable="false"
+                                                  GridPane.columnIndex="2" GridPane.rowIndex="2"
+                                                  GridPane.columnSpan="1"/>
+                                    </children>
+                                </GridPane>
+                            </children>
+                        </VBox>
+                    </TitledPane>
+                    <TitledPane text="Colors">
+                        <GridPane BorderPane.alignment="CENTER">
+                            <padding>
+                                <Insets left="20.0" right="20.0"/>
+                            </padding>
+                            <rowConstraints>
+                                <RowConstraints minHeight="10.0" prefHeight="30.0"/>
+                                <RowConstraints minHeight="10.0" prefHeight="30.0"/>
+                                <RowConstraints minHeight="10.0" prefHeight="30.0"/>
+                                <RowConstraints minHeight="10.0" prefHeight="30.0"/>
+                            </rowConstraints>
+                            <children>
+                                <Label text="Background" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                <ColorPicker fx:id="bgColorPicker" promptText="Background Color"
+                                             GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                                <CheckBox fx:id="bgColorCheckBox" mnemonicParsing="false" text=""
+                                          selected="false"
+                                          GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+
+                                <Label text="Axis" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                <ColorPicker fx:id="axisColorPicker" promptText="Axis Color"
+                                             GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+                                <CheckBox fx:id="axisColorCheckBox" mnemonicParsing="false" text=""
+                                          selected="false"
+                                          GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+
+                                <Label text="Cross 0" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                                <ColorPicker fx:id="cross0ColorPicker" promptText="Crosshair 1 Color"
+                                             GridPane.columnIndex="2" GridPane.rowIndex="3"/>
+                                <CheckBox fx:id="cross0ColorCheckBox" mnemonicParsing="false" text=""
+                                          selected="false"
+                                          GridPane.columnIndex="3" GridPane.rowIndex="3"/>
+
+                                <Label text="Cross 1" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                                <ColorPicker fx:id="cross1ColorPicker" promptText="Crosshair 2 Color"
+                                             GridPane.columnIndex="2" GridPane.rowIndex="4"/>
+                                <CheckBox fx:id="cross1ColorCheckBox" mnemonicParsing="false" text=""
+                                          selected="false"
+                                          GridPane.columnIndex="3" GridPane.rowIndex="4"/>
+
+
+                            </children>
+                        </GridPane>
+
+                    </TitledPane>
+                </panes>
+            </Accordion>
+        </ScrollPane>
+    </children>
+</VBox>

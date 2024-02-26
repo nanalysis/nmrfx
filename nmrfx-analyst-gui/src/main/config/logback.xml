@@ -1,22 +1,22 @@
 <configuration>
-    <property name="log_dir" value="${user.dir}/logs/" />
+    <property name="log_dir" value="${user.dir}/logs/"/>
 
     <!-- Windows: %APPDATA%/NMRFX/logs/ -->
     <if condition='isDefined("APPDATA")'>
         <then>
-            <property name="log_dir" value="${APPDATA}/NMRFX/logs/" />
+            <property name="log_dir" value="${APPDATA}/NMRFX/logs/"/>
         </then>
     </if>
     <!-- Mac: %HOME%/Library/Application Support/NMRFX/logs/ -->
     <if condition='property("os.name").toLowerCase().contains("mac")'>
         <then>
-            <property name="log_dir" value="${user.home}/Library/Application Support/NMRFX/logs/" />
+            <property name="log_dir" value="${user.home}/Library/Application Support/NMRFX/logs/"/>
         </then>
     </if>
     <!-- Linux: %HOME%/.NMRFX/logs -->
     <if condition='property("os.name").toLowerCase().contains("linux")'>
         <then>
-            <property name="log_dir" value="${user.home}/.NMRFX/logs/" />
+            <property name="log_dir" value="${user.home}/.NMRFX/logs/"/>
         </then>
     </if>
 
@@ -42,7 +42,7 @@
     </appender>
 
     <root level="info">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
     </root>
 </configuration>

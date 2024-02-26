@@ -5,47 +5,38 @@
  */
 package org.nmrfx.analyst.gui.molecule;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import org.nmrfx.analyst.gui.tools.MinerController;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.rna.RNALabels;
+
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * FXML Controller class
  *
  * @author Bruce Johnson
  */
-public class RNAPeakGeneratorSceneController implements Initializable {
+public class RNAPeakGeneratorSceneController implements Initializable, StageBasedController {
 
     String baseAAtoms = "28";
 
@@ -104,14 +95,14 @@ public class RNAPeakGeneratorSceneController implements Initializable {
 
     Stage stage;
     String[][] baseAtoms = {
-        {"H2", "C2", "H8", "C8"}, // Adenine
-        {"H61", "H62", "N6"},
-        {"H8", "C8"},// Guanine
-        {"H21", "H22", "N2"},
-        {"H5", "C5", "H6", "C6"},// Uridine
-        {"H3", "N3"},
-        {"H5", "C5", "H6", "C6"},//Cytosine
-        {"H41", "H42", "N4"}
+            {"H2", "C2", "H8", "C8"}, // Adenine
+            {"H61", "H62", "N6"},
+            {"H8", "C8"},// Guanine
+            {"H21", "H22", "N2"},
+            {"H5", "C5", "H6", "C6"},// Uridine
+            {"H3", "N3"},
+            {"H5", "C5", "H6", "C6"},//Cytosine
+            {"H41", "H42", "N4"}
     };
     String[] riboseAtoms = {"H1'", "H2'", "H3'", "C1'", "C2'", "C3'", "H4'", "H5'", "H5''", "C4'", "C5'"};
     String[] baseChars = {"A", "G", "U", "C"};
@@ -638,30 +629,21 @@ public class RNAPeakGeneratorSceneController implements Initializable {
 
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     public Stage getStage() {
         return stage;
     }
 
     public static RNAPeakGeneratorSceneController create() {
-        FXMLLoader loader = new FXMLLoader(MinerController.class.getResource("/fxml/RNAPeakGeneratorScene.fxml"));
-        RNAPeakGeneratorSceneController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-            scene.getStylesheets().add("/styles/rnapeakgeneratorscene.css");
-
-            controller = loader.<RNAPeakGeneratorSceneController>getController();
-            controller.stage = stage;
-            stage.setTitle("RNA Label Schemes");
-            stage.show();
-        } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
-        }
-
+        RNAPeakGeneratorSceneController controller = Fxml.load(RNAPeakGeneratorSceneController.class, "RNAPeakGeneratorScene.fxml")
+                .withAdditionalStyleSheet("/styles/rnapeakgeneratorscene.css")
+                .withNewStage("RNA Label Schemes")
+                .getController();
+        controller.stage.show();
         return controller;
-
     }
-
 }

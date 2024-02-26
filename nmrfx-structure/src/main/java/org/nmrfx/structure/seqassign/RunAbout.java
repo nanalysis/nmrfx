@@ -342,9 +342,9 @@ public class RunAbout implements SaveframeWriter {
     }
 
     public void autoSetTolerance(Collection<PeakList> peakLists, double scale) {
-        for (var peakList:peakLists) {
+        for (var peakList : peakLists) {
             int nDim = peakList.getNDim();
-            for (int i=0;i<nDim;i++) {
+            for (int i = 0; i < nDim; i++) {
                 var stat = peakList.widthDStatsPPM(i);
                 double median = stat.getPercentile(50.0);
                 peakList.getSpectralDim(i).setIdTol(median * scale);
@@ -450,7 +450,7 @@ public class RunAbout implements SaveframeWriter {
                     }
                     double value = spinSystem.getValue(k, i);
                     if (!Double.isNaN(value) && aName.equalsIgnoreCase("ca")) {
-                        if ((value < 50.0)  && (value > 40.0)) {
+                        if ((value < 50.0) && (value > 40.0)) {
                             isGly = true;
                         }
                     }

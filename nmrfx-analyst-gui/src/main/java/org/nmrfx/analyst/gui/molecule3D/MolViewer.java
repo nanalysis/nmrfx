@@ -20,10 +20,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Bond;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.rdc.AlignmentCalc;
@@ -33,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- *
  * @author Dub
  */
 public class MolViewer extends Pane {
@@ -61,6 +57,10 @@ public class MolViewer extends Pane {
     Affine transTransform = new Affine();
     List<LabelNode> labelNodes = new ArrayList<>();
     Pane twoDPane;
+
+    Molecule currentMolecule = null;
+    double cornerDistance = 100.0;
+    double defaultScale = 1.0;
 
     ArrayList<MolSelectionListener> selectionListeners = new ArrayList<>();
 
@@ -116,8 +116,6 @@ public class MolViewer extends Pane {
         light.setTranslateZ(camera.getTranslateZ());
         cameraTransform.getChildren().add(light);
 
-        //text = new Text("HA");
-        //root.getChildren().add(text);
         molGroup.setId("molGroup");
         selGroup.setId("selGroup");
 
@@ -133,15 +131,10 @@ public class MolViewer extends Pane {
             }
         };
         molGroup.getChildren().addListener(listener);
-//        Tessellation tessellation = new Tessellation();
-//        tessellation.makeGrannyTube();
-//        TriangleMesh mesh = tessellation.makeMesh();
-//        MeshView meshView = new MeshView(mesh);
-//        root.getChildren().addAll(meshView);
         twoDPane.setMouseTransparent(true);
         try {
             drawMol();
-        } catch (InvalidMoleculeException ex) {
+        } catch (InvalidMoleculeException | MissingCoordinatesException ex) {
             log.warn(ex.getMessage(), ex);
         }
         return subScene;
@@ -162,10 +155,10 @@ public class MolViewer extends Pane {
             KeyCode keycode = event.getCode();
             //Step 2c: Add Zoom controls
             if (keycode == KeyCode.W) {
-                camera.setTranslateZ(camera.getTranslateZ() + change);
+                setCameraZ(camera.getTranslateZ() + change);
             }
             if (keycode == KeyCode.S) {
-                camera.setTranslateZ(camera.getTranslateZ() - change);
+                setCameraZ(camera.getTranslateZ() - change);
             }
 
         });
@@ -256,11 +249,7 @@ public class MolViewer extends Pane {
                 } else if (me.isSecondaryButtonDown()) {
                     double z = camera.getTranslateZ();
                     double newZ = z + mouseDeltaX * modifierFactor * modifier;
-                    camera.setTranslateZ(newZ);
-                } else if (me.isMiddleButtonDown()) {
-//                cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3); // -
-//                cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3); // -
-
+                    setCameraZ(newZ);
                 }
                 showLabels();
             }
@@ -269,16 +258,29 @@ public class MolViewer extends Pane {
             double zoom = zoomEvent.getZoomFactor();
             double z = camera.getTranslateZ();
             double newZ = z * zoom;
-            camera.setTranslateZ(newZ);
+            setCameraZ(newZ);
         });
 
     }
 
+    Molecule getCurrentMolecule()  {
+        if (currentMolecule != Molecule.getActive()) {
+            currentMolecule = Molecule.getActive();
+            if (currentMolecule != null) {
+                try {
+                    var vec3Ds = currentMolecule.getCorner(0);
+                    cornerDistance = vec3Ds[0].distance(vec3Ds[1]);
+                } catch (MissingCoordinatesException mE) {
+                    cornerDistance = 100.0;
+                }
+            }
+        }
+        return currentMolecule;
+    }
     public void showLabels() {
         twoDPane.getChildren().clear();
         for (LabelNode labelNode : labelNodes) {
             Point3D coordinates = labelNode.node.localToScene(javafx.geometry.Point3D.ZERO, true);
-            // coordinates = SceneUtils.subSceneToScene(subScene, coordinates);  got rid of this by using true above
             double x = coordinates.getX();
             double y = coordinates.getY();
             Point2D pt2 = twoDPane.sceneToLocal(0, 0);
@@ -288,7 +290,6 @@ public class MolViewer extends Pane {
     }
 
     public void deleteItems(String mode, String type) {
-//        Group molGroup = (Group) root.getChildren().get(1);
         if (mode.equals("delete")) {
             final Iterator<Node> iter = molGroup.getChildren().iterator();
             while (iter.hasNext()) {
@@ -344,16 +345,18 @@ public class MolViewer extends Pane {
         }
     }
 
-    void drawMol() throws InvalidMoleculeException {
-        Molecule molecule = Molecule.getActive();
+    void drawMol() throws InvalidMoleculeException, MissingCoordinatesException {
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
+        setCameraZ(-defaultScale * cornerDistance);
         if (!molecule.getPolymers().isEmpty()) {
             createItems("tube");
         } else {
             createItems("lines");
         }
+        resetTransform();
     }
 
     class MolPrimitives {
@@ -375,7 +378,7 @@ public class MolViewer extends Pane {
 
     private void createItems(String type) throws InvalidMoleculeException {
         int iStructure = 0;
-        Molecule molecule = Molecule.getActive();
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
@@ -407,7 +410,7 @@ public class MolViewer extends Pane {
     }
 
     public void centerOnSelection() {
-        Molecule molecule = Molecule.getActive();
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
@@ -424,7 +427,7 @@ public class MolViewer extends Pane {
     }
 
     public void addSpheres(int iStructure, double sphereRadius, String tag) {
-        Molecule molecule = Molecule.getActive();
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
@@ -440,7 +443,7 @@ public class MolViewer extends Pane {
     }
 
     public void addLines(int iStructure, String tag) {
-        Molecule molecule = Molecule.getActive();
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
@@ -458,7 +461,7 @@ public class MolViewer extends Pane {
     }
 
     public void addCyls(int iStructure, double cylRadius, double sphereRadius, String tag) {
-        Molecule molecule = Molecule.getActive();
+        Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
@@ -483,12 +486,12 @@ public class MolViewer extends Pane {
      * Adds a box around the molecule.
      *
      * @param iStructure int Structure number
-     * @param radius double Radius of cylinder in plot
-     * @param tag String Tag applied to every associated object
+     * @param radius     double Radius of cylinder in plot
+     * @param tag        String Tag applied to every associated object
      * @throws InvalidMoleculeException
      */
     public void addBox(int iStructure, double radius, String tag) throws InvalidMoleculeException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -540,13 +543,13 @@ public class MolViewer extends Pane {
      * SVD or RDC calculations.
      *
      * @param iStructure int Structure number
-     * @param radius double Radius of cylinder in plot
-     * @param tag String Tag applied to every associated object
-     * @param type String Axis type (rdc, svd, original).
+     * @param radius     double Radius of cylinder in plot
+     * @param tag        String Tag applied to every associated object
+     * @param type       String Axis type (rdc, svd, original).
      * @throws InvalidMoleculeException
      */
     public void addAxes(int iStructure, double radius, String tag, String type) throws InvalidMoleculeException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -600,7 +603,7 @@ public class MolViewer extends Pane {
     }
 
     public void rotateSVDRDC(String type) {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -628,7 +631,7 @@ public class MolViewer extends Pane {
     }
 
     public void addTube(int iStructure, double sphereRadius, String tag) throws InvalidMoleculeException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -651,7 +654,7 @@ public class MolViewer extends Pane {
     }
 
     public void addOrientationSphere(int iStructure, int n, double sphereRadius, int orient, String tag) throws InvalidMoleculeException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -674,14 +677,13 @@ public class MolViewer extends Pane {
             color = Color.BLUE;
         }
         aCalc.genVectors(initialVec);
-        //aCalc.makeSphere(n, 1.0, 1.0);
         List<Vector3D> vecs = aCalc.getVectors();
         Spheres spheres = new Spheres(tag, vecs, color, 0.3, center, radius + 3.0, tag);
         molGroup.getChildren().add(spheres);
     }
 
     public void addOrientationCyls(int iStructure, int n, double sphereRadius, int orient, String tag) throws InvalidMoleculeException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
         }
@@ -698,16 +700,16 @@ public class MolViewer extends Pane {
     }
 
     public void createItems(String mode, String[] args, ArrayList<Bond> bonds,
-            List<BondLine> bondLines, List<Atom> atoms, List<AtomSphere> atomSpheres) {
+                            List<BondLine> bondLines, List<Atom> atoms, List<AtomSphere> atomSpheres) {
         String type = "";
         String text = "";
         double sphereRadius = 0.3;
         double cylRadius = 0.2;
         double[] begin = new double[3];
         double[] end = new double[3];
-        String tag = Molecule.getActive().getName();
+        String tag = getCurrentMolecule().getName();
         Color color = Color.GREEN;
-        String molName = Molecule.getActive().getName();
+        String molName = getCurrentMolecule().getName();
         if (type.equals("molspheres")) {
             MolSpheres spheres = new MolSpheres(molName, atoms, atomSpheres, sphereRadius, true, tag);
             molGroup.getChildren().add(spheres);
@@ -733,7 +735,14 @@ public class MolViewer extends Pane {
         } else {
             throw new IllegalArgumentException("invalid type " + type);
         }
+    }
 
+    public void refresh() {
+        for (var obj:molGroup.getChildren()) {
+            if (obj instanceof MolItem molItem) {
+                molItem.refresh();
+            }
+        }
     }
 
     public void addSelectionListener(MolSelectionListener listener) {
@@ -770,7 +779,12 @@ public class MolViewer extends Pane {
         rotTransform.setToIdentity();
         rotTransform.appendRotation(180.0, 0.0, 0.0, 0.0, new Point3D(1.0, 0.0, 0.0));
         updateView();
-        camera.setTranslateZ(-cameraDistance);
+        Molecule molecule = getCurrentMolecule();
+        if (molecule != null) {
+                setCameraZ(-defaultScale * cornerDistance);
+        } else {
+            camera.setTranslateZ(-cameraDistance);
+        }
         updateView();
     }
 
@@ -786,6 +800,12 @@ public class MolViewer extends Pane {
         }
         rotTransform.prependRotation(delta, 0.0, 0.0, 0.0, dy, -dx, 0.0);
         updateView();
+    }
+
+    void setCameraZ(double z) {
+        z = Math.min(-10, z);
+        z= Math.max(-cornerDistance * 4, z);
+        camera.setTranslateZ(z);
     }
 
     void updateView() {
@@ -807,7 +827,6 @@ public class MolViewer extends Pane {
         }
         if (node != null) {
             selGroup.getChildren().add(node);
-            //drawText("hi", node);
         }
     }
 

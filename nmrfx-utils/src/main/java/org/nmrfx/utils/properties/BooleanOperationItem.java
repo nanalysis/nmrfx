@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -26,19 +26,21 @@ package org.nmrfx.utils.properties;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableBooleanValue;
+import org.controlsfx.control.PropertySheet;
 
 /**
- *
  * @author brucejohnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("ring")
 public class BooleanOperationItem extends OperationItem implements ObservableBooleanValue {
 
     boolean value;
     boolean defaultValue;
     ChangeListener<Boolean> listener;
 
-    public BooleanOperationItem(ChangeListener listener, boolean defaultValue, String category, String name, String description) {
-        super(category, name, description);
+    public BooleanOperationItem(PropertySheet propertySheet, ChangeListener listener, boolean defaultValue, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;

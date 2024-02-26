@@ -1,5 +1,4 @@
 from org.nmrfx.processor.gui import FXMLController
-from org.nmrfx.processor.gui import MainApp
 from org.nmrfx.analyst.gui import GUIScripterAdvanced
 from org.nmrfx.peaks import PeakList
 from org.nmrfx.processor.datasets import Dataset
@@ -25,6 +24,12 @@ class NMRFxWindowAdvScripting(NMRFxWindowScripting):
             return self.cmd.strips()
         else:
             self.cmd.strips(peakListName, xDim, zDim)
+
+    def runabout(self, arrangement=None):
+        if (arrangement==None):
+            return self.cmd.runabout()
+        else:
+            self.cmd.runabout(arrangement)
 
 def parseArgs(argv):
     nw = NMRFxWindowScripting()

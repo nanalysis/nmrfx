@@ -6,12 +6,12 @@
 package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Residue;
-
-import java.util.*;
 import org.nmrfx.chemistry.SecondaryStructure;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
- *
  * @author bajlabuser
  */
 public class InteractionType {
@@ -90,7 +90,7 @@ public class InteractionType {
         typeMap.put("LH", loopAndHelix && aResLoopType == 'L' && dis == 1);
         typeMap.put("HL", loopAndHelix && bResLoopType == 'L' && dis == 1);
         typeMap.put("TA", bothInHelix && dis == 2);
-        
+
         for (Map.Entry<String, Boolean> type : typeMap.entrySet()) {
             if (type.getValue()) {
                 interType = type.getKey();

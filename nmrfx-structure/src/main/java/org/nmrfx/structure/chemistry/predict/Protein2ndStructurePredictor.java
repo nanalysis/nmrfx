@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,31 +17,43 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
-import java.io.IOException;
-import java.io.InputStream;
-import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.deeplearning4j.util.ModelSerializer;
-import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
-import org.nd4j.linalg.factory.Nd4j;
+
+import org.tensorflow.SavedModelBundle;
+import org.tensorflow.types.TFloat32;
+import org.tensorflow.ndarray.Shape;
+import org.tensorflow.ndarray.NdArrays;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 
 /*
-         *
-         * @author brucejohnson
+ *
+ * @author brucejohnson
  */
 public class Protein2ndStructurePredictor {
 
-    static ComputationGraph graphModel;
+    static SavedModelBundle graphModel;
 
-    public static void load() throws IOException {
+    public static void load() throws IOException, URISyntaxException {
         if (graphModel == null) {
-            InputStream iStream = Protein2ndStructurePredictor.class.getResourceAsStream("/data/predict/protein/model2ndstr.zip");
-            graphModel = ModelSerializer.restoreComputationGraph(iStream, true);
+            String jarPath = Protein2ndStructurePredictor.class
+                    .getProtectionDomain()
+                    .getCodeSource()
+                    .getLocation()
+                    .toURI()
+                    .getPath();
+            File jarFile = new File(jarPath);
+            String modelFilePath = jarFile.getParentFile().getParentFile().toPath().resolve("models").resolve("protein_ss_model").toString();
+            System.out.println(modelFilePath);
+            graphModel = SavedModelBundle.load(modelFilePath);
         }
     }
 
-    public void predict(Molecule mol) throws IOException {
+    public void predict(Molecule mol) throws IOException, URISyntaxException {
         if (graphModel == null) {
             load();
         }
@@ -53,14 +65,19 @@ public class Protein2ndStructurePredictor {
                 if (props == null) {
                     continue;
                 }
-                double[][] props2D = {props};
-                var ndArray = Nd4j.create(props2D);
-                INDArray predicted = graphModel.output(ndArray)[0];
-                int rows = predicted.rows();
-                int cols = predicted.columns();
-                double[] state8 = new double[cols];
-                for (int i = 0; i < cols; i++) {
-                    state8[i] = predicted.getDouble(0, i);
+                var ndArray = NdArrays.ofFloats(Shape.of(1,props.length));
+                float[] propsF  = new float[props.length];
+                for (int i = 0; i < props.length; i++) {
+                    propsF[i] = (float) (props[i]);
+                }
+                var tProps = TFloat32.vectorOf(propsF);
+                ndArray.set(tProps, 0);
+                var tensor = TFloat32.tensorOf(ndArray);
+                var predicted = (TFloat32) graphModel.function("serving_default").call(tensor);
+                int cols = props.length;
+                double[] state8 = new double[8];
+                for (int i = 0; i < 8; i++) {
+                    state8[i] = predicted.get(0).getFloat(i);
                 }
                 ProteinResidueAnalysis protAnalysis = new ProteinResidueAnalysis(residue, zIDR, state8);
                 residue.setPropertyObject("Prot2ndStr", protAnalysis);

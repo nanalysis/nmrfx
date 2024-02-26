@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,6 @@ import javafx.scene.paint.Color;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 
 /**
- *
  * @author brucejohnson
  */
 public enum Symbol {
@@ -75,64 +74,4 @@ public enum Symbol {
     static final double TRI_Y = Math.sin(Math.toRadians(30.0));
 
     abstract public void draw(GraphicsContextInterface gC, double x, double y, double radius, Color stroke, Color fill);
-
-    boolean hit(double x, double y, double radius, double pickX, double pickY) {
-        double halo = 3;
-        double dX = Math.abs(x - pickX);
-        double dY = Math.abs(y - pickY);
-        double pickRadius = halo + radius;
-        return ((dX < pickRadius) && (dY < pickRadius));
-    }
-
 }
-/*
-            
-
-            case 1: { //triangle up
-                gPath.moveTo(x1, y1 - radius);
-                gPath.lineTo(x1 - (radius * 0.67f), y1 + (radius * 0.66f));
-                gPath.lineTo(x1 + (radius * 0.67f), y1 + (radius * 0.66f));
-                gPath.closePath();
-
-                break;
-            }
-
-            case 2: { //triangle down
-                gPath.moveTo(x1, y1 + radius);
-                gPath.lineTo(x1 - (radius * 0.67f), y1 - (radius * 0.66f));
-                gPath.lineTo(x1 + (radius * 0.67f), y1 - (radius * 0.66f));
-                gPath.closePath();
-
-                break;
-            }
-
-            case 3: { //cross
-                gPath.moveTo(x1, y1 + radius);
-                gPath.lineTo(x1, y1 - radius);
-                gPath.moveTo(x1 - radius, y1);
-                gPath.lineTo(x1 + radius, y1);
-
-                break;
-            }
-
-            case 4: { //square
-                gPath.moveTo(x1 - radius, y1 - radius);
-                gPath.lineTo(x1 + radius, y1 - radius);
-                gPath.lineTo(x1 + radius, y1 + radius);
-                gPath.lineTo(x1 - radius, y1 + radius);
-                gPath.closePath();
-
-                break;
-            }
-
-            case 5: { //diamond
-                gPath.moveTo(x1, y1 - radius);
-                gPath.lineTo(x1 + radius, y1);
-                gPath.lineTo(x1, y1 + radius);
-                gPath.lineTo(x1 - radius, y1);
-                gPath.closePath();
-
-                break;
-            }
-        }
- */

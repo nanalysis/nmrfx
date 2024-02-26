@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,14 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.utils.properties;
 
-import java.util.function.Consumer;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
@@ -35,23 +34,25 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
+import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.PropertySheet.Item;
 
+import java.util.function.Consumer;
+
 /**
- *
  * @author brucejohnson
  */
 public class TextWaitingOperationItem extends OperationItem implements ObservableStringValue {
+    private static final Background ACTIVE_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY));
 
     ChangeListener<? super String> listener;
-    Consumer<Item> f;
+    Consumer<OperationItem> f;
     String value;
     String defaultValue;
-    static Background activeBackground = new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
 
-    public TextWaitingOperationItem(ChangeListener listener, Consumer<Item> f, String defaultValue, String category, String name, String description) {
-        super(category, name, description);
+    public TextWaitingOperationItem(PropertySheet propertySheet, ChangeListener listener, Consumer<OperationItem> f, String defaultValue, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;
@@ -134,9 +135,7 @@ public class TextWaitingOperationItem extends OperationItem implements Observabl
             textField.setBackground(defaultBackground);
             f.accept(this);
         } else {
-            textField.setBackground(activeBackground);
-
+            textField.setBackground(ACTIVE_BACKGROUND);
         }
     }
-
 }

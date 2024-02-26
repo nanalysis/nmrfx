@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<HBox prefHeight="1024.0" prefWidth="1280.0" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
+      xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.nmrfx.processor.gui.FXMLController"
+      fx:id="topLevelHBox">
+    <children>
+        <BorderPane fx:id="mainBox" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
+            <stylesheets>
+                <URL value="@/styles/Styles.css"/>
+            </stylesheets>
+            <left>
+                <ToolBar fx:id="toolBar" orientation="VERTICAL" BorderPane.alignment="CENTER">
+                    <items>
+                    </items>
+                </ToolBar>
+            </left>
+            <top>
+                <VBox fx:id="topBar" GridPane.hgrow="ALWAYS">
+                </VBox>
+            </top>
+            <center>
+                <SplitPane fx:id="splitPane" orientation="vertical" dividerPositions="1.0">
+                    <items>
+                        <BorderPane fx:id="borderPane" HBox.hgrow="ALWAYS">
+                            <top>
+                            </top>
+                            <center>
+                                <StackPane fx:id="chartPane" prefHeight="1000" VBox.vgrow="ALWAYS"/>
+                            </center>
+                            <right>
+                            </right>
+                            <bottom>
+                                <VBox fx:id="btoolVBox">
+                                    <children>
+                                        <Pane HBox.hgrow="ALWAYS"/>
+                                    </children>
+                                </VBox>
+                            </bottom>
+                        </BorderPane>
+                        <VBox fx:id="bottomBox">
+                            <children>
+                            </children>
+                        </VBox>
+                    </items>
+                </SplitPane>
+            </center>
+            <right>
+            </right>
+            <bottom>
+            </bottom>
+        </BorderPane>
+        <Separator orientation="VERTICAL"/>
+    </children>
+
+</HBox>

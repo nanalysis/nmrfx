@@ -8,7 +8,6 @@ package org.nmrfx.analyst.dataops;
 import org.nmrfx.processor.datasets.Dataset;
 
 /**
- *
  * @author brucejohnson
  */
 public class SimDataVecPars {

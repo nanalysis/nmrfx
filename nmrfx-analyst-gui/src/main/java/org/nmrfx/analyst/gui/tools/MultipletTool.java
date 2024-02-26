@@ -19,6 +19,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.Multiplets;
 import org.nmrfx.datasets.DatasetRegion;
@@ -26,12 +27,13 @@ import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.IconUtilities;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
+import org.nmrfx.processor.gui.undo.PeakListUndo;
+import org.nmrfx.processor.gui.undo.PeakUndo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,9 +71,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     ChangeListener<String> patternListener;
     PopOver popOver = null;
 
-    public MultipletTool(PolyChart chart) {
+    private MultipletTool(PolyChart chart) {
         this.chart = chart;
-        this.controller = chart.getController();
+        this.controller = chart.getFXMLController();
     }
 
     public VBox getBox() {
@@ -107,7 +109,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         vBox.getChildren().addAll(hbox, topBar, gridPane, buttonBar1, buttonBar2);
         chart.addMultipletListener(this);
         getAnalyzer();
-        chart.setRegionConsumer(this::regionAdded);
+        chart.setOnRegionAdded(this::regionAdded);
         patternListener = (ObservableValue<? extends String> observable, String oldValue, String newValue) -> couplingChanged();
         addPatternListener();
         restraintPosCheckBox = new CheckBox("Restraint");
@@ -209,13 +211,13 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         multipletButtons.add(transferButton);
         for (Button button1 : peakButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
-            button1.setStyle("-fx-font-size:" + MainApp.ICON_FONT_SIZE_STR);
+            button1.setStyle("-fx-font-size:" + AnalystApp.ICON_FONT_SIZE_STR);
             button1.getStyleClass().add("toolButton");
             toolBar1.getItems().add(button1);
         }
         for (Button button1 : multipletButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
-            button1.setStyle("-fx-font-size:" + MainApp.ICON_FONT_SIZE_STR);
+            button1.setStyle("-fx-font-size:" + AnalystApp.ICON_FONT_SIZE_STR);
             button1.getStyleClass().add("toolButton");
             toolBar2.getItems().add(button1);
         }
@@ -255,7 +257,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     public Analyzer getAnalyzer() {
         Dataset dataset = (Dataset) chart.getDataset();
-        if ((dataset == null) || (dataset.getNDim() > 1)) {
+        if ((dataset == null) || (dataset.getNFreqDims() > 1)) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("Chart must have a 1D dataset");
             alert.showAndWait();
@@ -265,6 +267,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         if (!chart.getPeakListAttributes().isEmpty()) {
             analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
+        AnalystApp.getShapePrefs(analyzer.getFitParameters());
+
         return analyzer;
     }
 
@@ -399,7 +403,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             activeMultiplet.ifPresent(m -> {
+                PeakUndo undo = new PeakUndo(m.getOrigin());
                 Optional<Double> result = analyzer.fitMultiplet(m);
+                PeakUndo redo = new PeakUndo(m.getOrigin());
+                controller.getUndoManager().add("Fit Multiplet", undo, redo);
+
             });
             refresh();
         }
@@ -415,13 +423,19 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     public void split() {
         CrossHairs crossHairs = chart.getCrossHairs();
-        if (crossHairs.hasCrosshairState("v0")) {
+        PeakListUndo undo = getPeakListUndo();
+        if (crossHairs.hasState("v0")) {
             splitMultipletRegion();
         } else {
             if (getAnalyzer().getPeakList() != null) {
                 splitMultiplet();
             }
         }
+        PeakListUndo redo = getPeakListUndo();
+        if ((undo != null) && (redo != null)) {
+            controller.getUndoManager().add("Split", undo, redo);
+        }
+
         activeMultiplet = Optional.empty();
         if (popOver != null) {
             popOver.hide();
@@ -429,7 +443,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     }
 
     public void splitMultipletRegion() {
-        double ppm = chart.getVerticalCrosshairPositions()[0];
+        double ppm = chart.getCrossHairs().getVerticalPositions()[0];
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             try {
@@ -476,9 +490,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         if (analyzer != null) {
             double ppm0;
             double ppm1;
-            if (chart.getCrossHairs().hasCrosshairState("||")) {
-                ppm0 = chart.getVerticalCrosshairPositions()[0];
-                ppm1 = chart.getVerticalCrosshairPositions()[1];
+            if (chart.getCrossHairs().hasState("||")) {
+                ppm0 = chart.getCrossHairs().getVerticalPositions()[0];
+                ppm1 = chart.getCrossHairs().getVerticalPositions()[1];
             } else {
                 if (activeMultiplet.isPresent()) {
                     Multiplet multiplet = activeMultiplet.get();
@@ -498,14 +512,30 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             }
             analyzer.removeRegion(ppm0, ppm1, true);
             analyzer.addRegion(ppm0, ppm1, true);
+
+            PeakListUndo undo = getPeakListUndo();
+            PeakListUndo redo = null;
             try {
                 activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
                 updateMultipletField(false);
+                if (undo !=  null) {
+                    redo = getPeakListUndo();
+                }
                 chart.refresh();
+                if ((undo != null) && (redo != null)) {
+                    controller.getUndoManager().add("Update regions ", undo, redo);
+                }
             } catch (IOException ex) {
                 log.warn(ex.getMessage(), ex);
             }
         }
+    }
+    PeakListUndo getPeakListUndo() {
+        PeakListUndo undo = null;
+        if (getPeakList().isPresent()) {
+            undo = new PeakListUndo(getPeakList().get());
+        }
+        return undo;
     }
 
     public void mergeRegion(List<Peak> peaks) {
@@ -541,9 +571,10 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         if (analyzer != null) {
             double ppm0;
             double ppm1;
+            PeakListUndo undo = getPeakListUndo();
             if (region == null) {
-                ppm0 = chart.getVerticalCrosshairPositions()[0];
-                ppm1 = chart.getVerticalCrosshairPositions()[1];
+                ppm0 = chart.getCrossHairs().getVerticalPositions()[0];
+                ppm1 = chart.getCrossHairs().getVerticalPositions()[1];
                 analyzer.addRegion(ppm0, ppm1, true);
             } else {
                 ppm0 = region.getRegionStart(0);
@@ -560,6 +591,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                         peakList.scale = activeMultiplet.get().getVolume();
                     }
                 }
+                PeakListUndo redo = getPeakListUndo();
+                if ((undo != null) && (redo != null)) {
+                    controller.getUndoManager().add("Add Region", undo, redo);
+                }
+
                 updateMultipletField(false);
                 chart.refresh();
 
@@ -594,8 +630,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             activeMultiplet.ifPresent(m -> {
                 Optional<Double> result = Multiplets.deviation(m);
                 if (result.isPresent()) {
+                    PeakUndo undo = new PeakUndo(m.getOrigin());
                     Multiplets.addPeaksToMultiplet(m, result.get());
                     analyzer.fitMultiplet(m);
+                    PeakUndo redo = new PeakUndo(m.getOrigin());
+                    controller.getUndoManager().add("Auto Add Peak", undo, redo);
                     chart.refresh();
                     refresh();
 
@@ -617,14 +656,17 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             activeMultiplet.ifPresent(m -> {
-                double ppm1 = chart.getVerticalCrosshairPositions()[0];
-                double ppm2 = chart.getVerticalCrosshairPositions()[1];
+                PeakUndo undo = new PeakUndo(m.getOrigin());
+                double ppm1 = chart.getCrossHairs().getVerticalPositions()[0];
+                double ppm2 = chart.getCrossHairs().getVerticalPositions()[1];
                 if (both) {
                     Multiplets.addPeaksToMultiplet(m, ppm1, ppm2);
                 } else {
                     Multiplets.addPeaksToMultiplet(m, ppm1);
 
                 }
+                PeakUndo redo = new PeakUndo(m.getOrigin());
+                controller.getUndoManager().add("Add Peaks", undo, redo);
                 analyzer.fitMultiplet(m);
                 chart.refresh();
                 refresh();
@@ -640,7 +682,13 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     }
 
     public void toDoublets() {
-        activeMultiplet.ifPresent(Multiplets::toDoublets);
+        activeMultiplet.ifPresent(m -> {
+            PeakUndo undo = new PeakUndo(m.getOrigin());
+            Multiplets.toDoublets(m);
+            PeakUndo redo = new PeakUndo(m.getOrigin());
+            controller.getUndoManager().add("Multiplets to Doublets", undo, redo);
+
+        });
         refresh();
     }
 
@@ -722,8 +770,14 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             List<Multiplet> multiplets = getSelMultiplets(mSet);
             if (multiplets.size() == 1) {
                 Multiplet multiplet = multiplets.get(0);
+                PeakListUndo undo = getPeakListUndo();
                 extractMultiplet(mSet, multiplet);
                 activeMultiplet = Optional.empty();
+                PeakListUndo redo = getPeakListUndo();
+                if ((undo != null) && (redo != null)) {
+                    controller.getUndoManager().add("Add Region", undo, redo);
+                }
+
                 chart.clearSelectedMultiplets();
                 if (popOver != null) {
                     popOver.hide();
@@ -761,8 +815,14 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         if (multiplets.size() == 1) {
             Multiplet multiplet = multiplets.get(0);
             List<MultipletSelection> mSet = chart.getSelectedMultiplets();
+            PeakListUndo undo = getPeakListUndo();
             Multiplet newMultiplet = extractMultiplet(mSet, multiplet);
             activeMultiplet.ifPresent(m -> activeMultiplet = Multiplets.transferPeaks(m, List.of(newMultiplet.getPeakDim().getPeak())));
+            PeakListUndo redo = getPeakListUndo();
+            if ((undo != null) && (redo != null)) {
+                controller.getUndoManager().add("Add Region", undo, redo);
+            }
+
             chart.clearSelectedMultiplets();
             if (popOver != null) {
                 popOver.hide();
@@ -845,8 +905,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
                 String multOrig = m.getMultiplicity();
                 if (!multNew.equals(multOrig)) {
+                    PeakUndo undo = new PeakUndo(m.getOrigin());
                     Multiplets.convertMultiplicity(m, multOrig, multNew);
                     analyzer.fitMultiplet(m);
+                    PeakUndo redo = new PeakUndo(m.getOrigin());
+                    controller.getUndoManager().add("Change Multiplicity", undo, redo);
                     refresh();
                 }
             });
@@ -862,11 +925,14 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                     double newValue = Double.parseDouble(couplingStr);
                     if (newValue > 0.1) {
                         Multiplet multiplet = activeMultiplet.get();
+                        PeakUndo undo = new PeakUndo(multiplet.getOrigin());
                         Coupling coupling = multiplet.getCoupling();
                         if (coupling instanceof CouplingPattern) {
                             CouplingPattern cPattern = (CouplingPattern) coupling;
                             cPattern.adjustCouplings(iRow, newValue);
                         }
+                        PeakUndo redo = new PeakUndo(multiplet.getOrigin());
+                        controller.getUndoManager().add("Change Multiplicity", undo, redo);
                         refresh();
                     }
                 } catch (NumberFormatException nfE) {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2021 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,6 @@ import org.nmrfx.chart.XYCanvasChart.PickPoint;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 
 /**
- *
  * @author brucejohnson
  */
 public class BoxMark extends ChartMark {
@@ -38,7 +37,7 @@ public class BoxMark extends ChartMark {
     }
 
     void draw(GraphicsContextInterface gC, double position, double thickness,
-            BoxPlotData fiveNum, Axis positionAxis, Axis valueAxis) {
+              BoxPlotData fiveNum, Axis positionAxis, Axis valueAxis) {
         gC.setFill(fill);
         double whiskMin = valueAxis.getDisplayPosition(fiveNum.getMinWhisker());
         double whiskMedian = valueAxis.getDisplayPosition(fiveNum.median);
@@ -82,7 +81,7 @@ public class BoxMark extends ChartMark {
     }
 
     boolean hit(double position, double thickness, BoxPlotData fiveNum,
-            PickPoint pt, Axis positionAxis, Axis valueAxis) {
+                PickPoint pt, Axis positionAxis, Axis valueAxis) {
         double whiskMin = valueAxis.getDisplayPosition(fiveNum.getMinWhisker());
         double whiskMax = valueAxis.getDisplayPosition(fiveNum.getMaxWhisker());
         double pixPos = positionAxis.getDisplayPosition(position);

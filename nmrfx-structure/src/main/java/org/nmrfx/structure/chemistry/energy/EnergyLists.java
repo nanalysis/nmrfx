@@ -259,7 +259,6 @@ public class EnergyLists {
         }
         for (Polymer polymer : molecule.getPolymers()) {
             predictor.predictRNAWithDistances(polymer, 0, 0, true);
-            // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
         }
     }
 
@@ -412,15 +411,6 @@ public class EnergyLists {
             }
 
             while (compound != null) {
-                //center point of compound
-                //Point3 centerPoint = getCenter(compound);
-                //determines the atoms closest to the center point
-                //Atom centerAtom = findClosestAtom(compound, centerPoint);
-                //gets the actual position of the center atom
-                //centerPoint = centerAtom.getPoint();
-                //double radius = getRadius(compound, centerPoint);
-                //CompoundSphere cSphere = new CompoundSphere(compound, centerAtom, radius, new ArrayList<>());
-                //compoundList.add(cSphere);
                 for (Atom atom : compound) {
                     if (atom.getAtomEnergyProp() == null) {
                         continue;
@@ -436,7 +426,6 @@ public class EnergyLists {
                     } else if (isCourseGrain(atom.getType())) {
                         continue;
                     }
-                    //cSphere.sSets.add(atom.getSpatialSet());
                 }
 
                 //loops over all compounds in the polymer
@@ -511,7 +500,6 @@ public class EnergyLists {
     }
 
     public void dump(final double limitVal, final double shiftVal, PrintWriter writer) {
-        //        PrintStream out = System.out;
         double dihEnergy = 0.0;
         int nDih = 0;
         double cffnbEnergy = 0.0;
@@ -530,15 +518,6 @@ public class EnergyLists {
         double probDih = 0.0;
         int nRotamers = 0;
         try {
-
-            //            if (forceWeight.getDihedralProb() > 0.0) {
-            //                for (AngleBoundary angleBoundary : angleBoundList) {
-            //                    AtomEnergy energy = AtomMath.calcTorsionAngleEnergy(angleBoundary, forceWeight);
-            //                    if (energy.getEnergy() > limitVal) {
-            //                        writer.format("Tor: %10s %5.2f %5.2f %10s %5.2f\n", angleBoundary.getAtom().getFullName(), angleBoundary.getAtom().dihedralAngle, angleBoundary.angleProp.target[0], angleBoundary.angleProp.angleName, energy.getEnergy());
-            //                    }
-            //                }
-            //            }
             if (forceWeight.getDihedral() > 0.0) {
                 for (AngleConstraint angleBoundary : angleBoundList) {
                     AtomEnergy energy = calcDihedralEnergy(angleBoundary, forceWeight, false);
@@ -552,7 +531,6 @@ public class EnergyLists {
                 }
             }
             if (forceWeight.getShift() > 0.0) {
-                //updateShifts();
                 for (Atom atom : refAtoms) {
                     double deltaShift = AtomMath.calcDeltaShift(atom);
                     if (deltaShift != -1.0) {
@@ -623,13 +601,6 @@ public class EnergyLists {
                 EnergyCoords eCoords = molecule.getEnergyCoords();
                 stackingEnergy = eCoords.calcStacking(false, forceWeight.getStacking());
                 nStack = eCoords.getNStacking();
-//                for (int i = 0; i < nStack; i++) {
-//                    ViolationStats stat = eCoords.getStackError(i, limitVal, forceWeight.getStacking());
-//                    if (stat != null) {
-//                        String errMsg = stat.toString();
-//                        writer.print(errMsg);
-//                    }
-//                }
             }
             EnergyCoords eCoords = molecule.getEnergyCoords();
             List<Polymer> polymers = molecule.getPolymers();
@@ -699,9 +670,9 @@ public class EnergyLists {
                 return dihedral;
             case 4:
                 Point3 pt0,
-                 pt1,
-                 pt2,
-                 pt3;
+                        pt1,
+                        pt2,
+                        pt3;
                 Atom[] atoms = boundary.getAtoms();
                 pt0 = atoms[0].getPoint();
                 pt1 = atoms[1].getPoint();
@@ -715,7 +686,7 @@ public class EnergyLists {
     }
 
     public static AtomEnergy calcDihedralEnergy(AngleConstraint boundary, final ForceWeight forceWeight,
-            final boolean calcDeriv) {
+                                                final boolean calcDeriv) {
         double dihedral = grabDihedral(boundary);
         double upper = boundary.getUpper();
         double lower = boundary.getLower();
@@ -873,9 +844,6 @@ public class EnergyLists {
         eCoords.setupShifts();
         double weight = forceWeight.getShift();
         double energy = eCoords.calcDistShifts(calcDeriv, Predictor.getRMax(), Predictor.getIntraScale(), weight);
-//        if (calcDeriv) {
-//            eCoords.addRepelDerivs(branches);
-//        }
 
         return energy;
     }
@@ -925,7 +893,6 @@ public class EnergyLists {
                         continue;
                     }
                     RotamerScore[] rotamerScores = {rotamerScore};
-//                    RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 1, eCoords);
                     double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
                     if (Double.isNaN(rotamerEnergy) || !Double.isFinite(rotamerEnergy)) {
                         System.out.println("rotamer nan " + rotamerScores.length);
@@ -950,11 +917,6 @@ public class EnergyLists {
 
             }
         }
-
-        //        for (AngleBoundary angleBoundary : angleBoundList) {
-        //            AtomEnergy energy = AtomMath.calcTorsionAngleEnergy(angleBoundary, forceWeight);
-        //            totalEnergy += energy.getEnergy();
-        //        }
         return totalEnergy;
     }
 
@@ -1318,26 +1280,17 @@ public class EnergyLists {
         if (spSet1.atom.rotGroup != null) {
             int unit1 = spSet1.atom.rotGroup.rotUnit;
             if (unit1 >= 0) {
-                //branches[unit1].f = branches[unit1].f.add(v1);
                 branches[unit1].addToF(v1);
-                //branches[unit1].g = branches[unit1].g.add(v2);
                 branches[unit1].addToG(v2);
             }
-
         }
         if (spSet2.atom.rotGroup != null) {
             int unit2 = spSet2.atom.rotGroup.rotUnit;
             if (unit2 >= 0) {
-                //branches[unit2].f = branches[unit2].f.subtract(v1);
                 branches[unit2].subtractToF(v1);
-
-                //branches[unit2].g = branches[unit2].g.subtract(v2);
                 branches[unit2].subtractToG(v2);
-
             }
-
         }
-
     }
 
     public void addDeriv(AtomPair atomPair, double deriv) {
@@ -1434,7 +1387,6 @@ public class EnergyLists {
                 if (REPORTBAD && (Math.abs(dot1 + dot2) > 100000.0)) {
                     System.out.printf("%5d dot1 %9.5g dot2 %9.5g df %9.5g %s\n", i, dot1, dot2, (dot1 + dot2),
                             branches[i].atom.getFullName());
-                    //System.exit(1);
                 }
                 df[k++] = -1.0 * (dot1 + dot2);
             }
@@ -1484,7 +1436,6 @@ public class EnergyLists {
     }
 
     public void makeAtomListFast() {
-        // molecule.updateVecCoords();
         EnergyCoords eCoords = molecule.getEnergyCoords();
         if (!eCoords.fixedCurrent()) {
             if (molecule.getDihedrals() == null) {
@@ -1497,9 +1448,6 @@ public class EnergyLists {
         }
         eCoords.setCells(eCoords.eDistancePairs, deltaEnd, distanceLimit, hardSphere,
                 includeH, shrinkValue, shrinkHValue, forceWeight.getCFFNB() > 0.0);
-        if (forceWeight.getShift() > 0.0) {
-            // eCoords.setCells(eCoords.eShiftPairs, deltaEnd, distanceLimit, 0, true, 0, 0);
-        }
     }
 
     public void makeAtomList2() {
@@ -1542,10 +1490,6 @@ public class EnergyLists {
                                     AtomPair atomPair = new AtomPair(atom1, atom2, hardSphere, includeH, shrinkValue, shrinkHValue,
                                             forceWeight.getRepel());
                                     cPair.atomPairs.add(atomPair);
-                                    //if (getConstraintDistance(atom1, atom2) == null) {
-                                    //cPair.atomPairs.add(atomPair);
-                                    //}
-
                                 }
                             }
                         }
@@ -1571,10 +1515,6 @@ public class EnergyLists {
                                     AtomPair atomPair = new AtomPair(atom1, atom2, hardSphere, includeH, shrinkValue, shrinkHValue,
                                             forceWeight.getRepel());
                                     cPair.atomPairs.add(atomPair);
-                                    //if (getConstraintDistance(atom1, atom2) == null) {
-                                    //cPair.atomPairs.add(atomPair);
-                                    //}
-
                                 }
                             }
                         }

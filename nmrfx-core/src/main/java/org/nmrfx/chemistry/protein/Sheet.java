@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,17 +18,14 @@
 package org.nmrfx.chemistry.protein;
 
 import org.nmrfx.chemistry.Residue;
-
 import org.nmrfx.chemistry.SecondaryStructure;
 
 /**
- *
  * @author bajlabuser, mbeckwith
  */
 public class Sheet extends SecondaryStructure {
-
-    public static int localCounter = 0;
-    public static String name = "Sheet";
+    private static final String NAME = "Sheet";
+    private static int localCounter = 0;
 
     public Sheet(Residue firstResidue, Residue lastResidue) {
         localIndex = localCounter++;
@@ -45,6 +42,6 @@ public class Sheet extends SecondaryStructure {
 
     @Override
     public String getName() {
-        return name;
+        return NAME;
     }
 }

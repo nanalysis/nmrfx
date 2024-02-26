@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,8 +17,9 @@
  */
 package org.nmrfx.chemistry.search;
 
-import java.util.*;
 import org.nmrfx.chemistry.Ring;
+
+import java.util.*;
 
 public class MTree {
 
@@ -254,7 +255,6 @@ public class MTree {
      * Returns an array of node indices describing the path through the tree.
      * Each pair of entries in the tree describes an edge. The edges are in
      * order of the bread-first search
-     *
      */
     public int[] broad_path2(int iStart) {
         int nNodes = nodes.size();
@@ -278,7 +278,6 @@ public class MTree {
 
         cNode = (MNode) nodes.elementAt(iStart);
 
-        //cNode.shell=0;
         path[0] = 0;
         path[1] = iStart;
 
@@ -319,8 +318,6 @@ public class MTree {
                     path[2 * nodesAdded] = m; // node index of current node
                     path[(2 * nodesAdded) + 1] = next; // node index of the node this edge connects
                     nodesAdded++;
-
-                    //nNode.shell = cNode.shell+1;
                 }
             }
 

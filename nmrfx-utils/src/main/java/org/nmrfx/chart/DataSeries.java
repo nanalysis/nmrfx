@@ -25,6 +25,8 @@ import javafx.scene.paint.Color;
 /**
  * @author brucejohnson
  */
+//TODO uncomment once core & utils are merged
+//@PluginAPI("ring")
 public class DataSeries {
 
     private final ObservableList<XYValue> values = FXCollections.observableArrayList();
@@ -45,7 +47,7 @@ public class DataSeries {
     private double minY = Double.MAX_VALUE;
     private double maxY = Double.NEGATIVE_INFINITY;
     private double limitXMin = Double.NEGATIVE_INFINITY;
-    private double limitXMax= Double.MAX_VALUE;
+    private double limitXMax = Double.MAX_VALUE;
 
     public DataSeries() {
         updatePredicate();

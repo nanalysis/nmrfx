@@ -5,23 +5,19 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import org.nmrfx.chemistry.Atom;
-import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.*;
+
+import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
+
 /**
- *
  * @author brucejohnson
  */
 public class EnergyConstraintPairs extends EnergyDistancePairs {
@@ -135,7 +131,7 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
     }
 
     public void updateGroups() {
-        for (int i = 0; i < nPairs;) {
+        for (int i = 0; i < nPairs; ) {
             groupSizes[i] = 1;
             int j = i + 1;
             while (iGroups[j] == iGroups[i] && j < nPairs) {
@@ -166,7 +162,6 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
             // restore if swap not lower energy
             swapIt(i);
         }
-//        double restoreSwap = swapEnergy(swaps);
     }
 
     double swapEnergy(Set<Integer> swaps) {

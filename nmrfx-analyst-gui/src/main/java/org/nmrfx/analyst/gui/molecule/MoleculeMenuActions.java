@@ -6,16 +6,18 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.*;
+import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.io.*;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.OpenChemLibConverter;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
 
 public class MoleculeMenuActions extends MenuActions {
     private MolSceneController molController;
@@ -53,7 +55,17 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem readMol2Item = new MenuItem("Read Mol2...");
         readMol2Item.setOnAction(e -> readMolecule("mol2"));
         molFileMenu.getItems().add(readMol2Item);
-        menu.getItems().add(molFileMenu);
+        MenuItem readSMILESItem = new MenuItem("Read SMILES...");
+        readSMILESItem.setOnAction(e -> readMolecule("smiles"));
+        molFileMenu.getItems().add(readSMILESItem);
+
+        MenuItem clearAllItem = new MenuItem("Clear Molecules...");
+        clearAllItem.setOnAction(e -> clearExisting());
+
+        MenuItem smileItem = new MenuItem("Input SMILE...");
+        smileItem.setOnAction(e -> getSMILEMolecule());
+
+        menu.getItems().addAll(molFileMenu, smileItem, clearAllItem);
 
     }
 
@@ -63,9 +75,9 @@ public class MoleculeMenuActions extends MenuActions {
         seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(app));
 
         MenuItem atomsMenuItem = new MenuItem("Atom Table...");
-        atomsMenuItem.setOnAction(e -> showAtoms(e));
+        atomsMenuItem.setOnAction(this::showAtoms);
         MenuItem sequenceMenuItem = new MenuItem("Sequence Viewer...");
-        sequenceMenuItem.setOnAction(e -> showSequence(e));
+        sequenceMenuItem.setOnAction(this::showSequence);
 
         MenuItem molMenuItem = new MenuItem("Viewer");
         molMenuItem.setOnAction(e -> showMols());
@@ -74,10 +86,23 @@ public class MoleculeMenuActions extends MenuActions {
         rdcMenuItem.setOnAction(e -> showRDCGUI());
 
         MenuItem rnaPeakGenMenuItem = new MenuItem("Show RNA Label Scheme");
-        rnaPeakGenMenuItem.setOnAction(e -> showRNAPeakGenerator(e));
+        rnaPeakGenMenuItem.setOnAction(this::showRNAPeakGenerator);
 
         menu.getItems().addAll(seqGUIMenuItem, atomsMenuItem,
                 sequenceMenuItem, molMenuItem, rdcMenuItem, rnaPeakGenMenuItem);
+    }
+
+    void clearExisting() {
+        if (GUIUtils.affirm("Clear all molecules?")) {
+            MoleculeFactory.clearAllMolecules();
+            if (atomController != null) {
+                atomController.refreshAtomTable();
+            }
+            if (molController != null) {
+                molController.removeAll();
+                molController.clearSS();
+            }
+        }
     }
 
     @FXML
@@ -85,12 +110,8 @@ public class MoleculeMenuActions extends MenuActions {
         if (molController == null) {
             molController = MolSceneController.create();
         }
-        if (molController != null) {
-            molController.getStage().show();
-            molController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make molController");
-        }
+        molController.getStage().show();
+        molController.getStage().toFront();
     }
 
 
@@ -98,24 +119,16 @@ public class MoleculeMenuActions extends MenuActions {
         if (seqDisplayController == null) {
             seqDisplayController = SeqDisplayController.create();
         }
-        if (seqDisplayController != null) {
-            seqDisplayController.getStage().show();
-            seqDisplayController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make seqDisplayController");
-        }
+        seqDisplayController.getStage().show();
+        seqDisplayController.getStage().toFront();
     }
 
     private void showAtoms(ActionEvent event) {
         if (atomController == null) {
             atomController = AtomController.create();
         }
-        if (atomController != null) {
-            atomController.getStage().show();
-            atomController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make atom controller");
-        }
+        atomController.getStage().show();
+        atomController.getStage().toFront();
     }
 
     void showRDCGUI() {
@@ -145,58 +158,52 @@ public class MoleculeMenuActions extends MenuActions {
     }
 
     public void readMolecule(String type) {
+        if (!checkForExisting()) {
+            return;
+        }
+
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
         var currentMol = MoleculeFactory.getActive();
         if (file != null) {
             try {
                 switch (type) {
-                    case "pdb": {
+                    case "pdb" -> {
                         PDBFile pdbReader = new PDBFile();
                         pdbReader.readSequence(file.toString(), false, 0);
-                        System.out.println("read mol: " + file.toString());
-                        break;
                     }
-                    case "pdbx": {
+                    case "pdbx" -> {
                         PDBFile pdbReader = new PDBFile();
                         pdbReader.read(file.toString(), false);
-                        System.out.println("read mol: " + file.toString());
-                        break;
                     }
-                    case "pdb xyz":
+                    case "pdb xyz" -> {
                         PDBFile pdb = new PDBFile();
                         pdb.readCoordinates(file.getPath(), 0, false, true);
                         Molecule mol = Molecule.getActive();
                         mol.updateAtomArray();
-                        System.out.println("read mol: " + file.toString());
-                        break;
-                    case "sdf":
-                    case "mol":
-                        SDFile.read(file.toString(), null);
-                        break;
-                    case "mol2":
-                        Mol2File.read(file.toString(), null);
-                        break;
-                    case "seq":
+                    }
+                    case "sdf", "mol" -> SDFile.read(file.toString(), null);
+                    case "mol2" -> Mol2File.read(file.toString(), null);
+                    case "seq" -> {
                         Sequence seq = new Sequence();
                         seq.read(file.toString());
-                        break;
-                    case "mmcif": {
-                        MMcifReader.read(file);
-                        System.out.println("read mol: " + file.toString());
-                        break;
                     }
-                    default:
-                        break;
+                    case "mmcif" -> MMcifReader.read(file);
+                    case "smiles" -> {
+                        List<Molecule> molecules = OpenChemLibConverter.readSMILES(file);
+                        if (!molecules.isEmpty()) {
+                            molecules.get(0).setActive();
+                        }
+                    }
+                    default -> {
+                    }
                 }
                 showMols();
             } catch (Exception ex) {
                 var mol = MoleculeFactory.getActive();
-                if (mol != null) {
-                    if (mol != currentMol) {
-                        MoleculeFactory.removeMolecule(mol.getName());
-                        MoleculeFactory.setActive(currentMol);
-                    }
+                if ((mol != null) && (mol != currentMol)) {
+                    MoleculeFactory.removeMolecule(mol.getName());
+                    MoleculeFactory.setActive(currentMol);
                 }
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.setTitle("Error reading molecule file");
@@ -205,17 +212,43 @@ public class MoleculeMenuActions extends MenuActions {
             resetAtomController();
         }
     }
+
     @FXML
     private void showRNAPeakGenerator(ActionEvent event) {
         if (rnaPeakGenController == null) {
             rnaPeakGenController = RNAPeakGeneratorSceneController.create();
         }
-        if (rnaPeakGenController != null) {
-            rnaPeakGenController.getStage().show();
-            rnaPeakGenController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make rnaPeakGenController ");
-        }
+        rnaPeakGenController.getStage().show();
+        rnaPeakGenController.getStage().toFront();
     }
 
+    public static boolean checkForExisting() {
+        if (MoleculeFactory.getActive() != null) {
+            var result = GUIUtils.deleteAppendCancel("Molecule exists");
+            if (result == GUIUtils.AlertRespones.CANCEL) {
+                return false;
+            }
+            if (result == GUIUtils.AlertRespones.DELETE) {
+                MoleculeFactory.clearAllMolecules();
+            }
+        }
+        return true;
+    }
+
+    void getSMILEMolecule() {
+        String smileString = GUIUtils.input("SMILE String");
+        if (!smileString.isBlank()) {
+            String molName = GUIUtils.input("Molecule Name");
+            if (!molName.isBlank()) {
+                try {
+                    Molecule molecule = OpenChemLibConverter.parseSmiles("mol", smileString);
+                    molecule.setActive();
+                } catch (IllegalArgumentException iaE) {
+                    GUIUtils.warn("SMILES Parser", iaE.getMessage());
+                    return;
+                }
+                resetAtomController();
+            }
+        }
+    }
 }

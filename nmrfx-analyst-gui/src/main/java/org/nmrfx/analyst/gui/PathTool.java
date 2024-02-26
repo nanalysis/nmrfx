@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class PathTool implements PeakNavigable, ControllerTool {
@@ -99,27 +98,29 @@ public class PathTool implements PeakNavigable, ControllerTool {
         allButton.setOnAction(e -> allDatasets());
         allButton.getStyleClass().add("toolButton");
         dataButtons.add(allButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(this::firstDataset);
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(this::previousDataset);
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(this::nextDataset);
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(this::lastDataset);
         dataButtons.add(bButton);
 
-        Button plusButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        Button plusButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         plusButton.setOnAction(e -> addPeakToPath());
         dataButtons.add(plusButton);
 
-        Button minusButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        Button minusButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         minusButton.setOnAction(e -> removePeakFromPath());
         dataButtons.add(minusButton);
 
+        Button gotoButton = new Button("Goto");
+        gotoButton.setOnAction(e -> gotoPeak());
         actionMenu = new MenuButton("Actions");
         MenuItem loadTitrationItem = new MenuItem("Load Titration Data...");
         loadTitrationItem.setOnAction(e -> loadPathData(PATHMODE.TITRATION));
@@ -185,6 +186,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
         Pane filler5 = new Pane();
         HBox.setHgrow(filler5, Priority.ALWAYS);
 
+        toolBar.getItems().add(gotoButton);
         toolBar.getItems().add(filler1);
         toolBar.getItems().add(actionMenu);
         toolBar.getItems().add(filler2);
@@ -192,8 +194,10 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
         toolBar.getItems().add(filler5);
         radiusField = new TextField("0.5");
+        radiusField.setPrefWidth(50);
         toolBar.getItems().add(radiusField);
         tolField = new TextField("0.2");
+        tolField.setPrefWidth(50);
         toolBar.getItems().add(tolField);
 
         Pane fillerf1 = new Pane();
@@ -229,6 +233,12 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
     }
 
+    void gotoPeak() {
+        var selPeaks = chart.getSelectedPeaks();
+        if (selPeaks.size() == 1) {
+            peakNavigator.setPeak(selPeaks.get(0));
+        }
+    }
     void updatePathSelectMenu() {
         selectMenu.getItems().clear();
         Collection<String> peakPathNames = PeakPaths.getNames();
@@ -339,7 +349,8 @@ public class PathTool implements PeakNavigable, ControllerTool {
             alert.showAndWait();
             return;
         }
-        peakPaths = PeakPaths.loadPathData(pathMode, datasetNames, x0List, x1List, scanTable.getScanDir().getName());
+        String pathName = scanTable.getScanDir() != null ? scanTable.getScanDir().getName() : datasetNames.get(0).toString();
+        peakPaths = PeakPaths.loadPathData(pathMode, datasetNames, x0List, x1List, pathName);
     }
 
     void loadPathDataFromFile(PATHMODE pathMode) {
@@ -362,6 +373,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
             }
         }
     }
+
     void loadPathData(PATHMODE pathMode) {
         peakPaths = null;
         ScannerTool scannerTool = AnalystApp.getAnalystApp().getScannerTool();
@@ -381,6 +393,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
         if (peakPaths != null) {
             List<String> colNames = new ArrayList<>();
             colNames.add("Peak");
+            colNames.add("Atom");
             String[] parNames = peakPaths.getParNames();
             for (String col : parNames) {
                 colNames.add(col);

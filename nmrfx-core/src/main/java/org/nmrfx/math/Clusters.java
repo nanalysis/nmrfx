@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * Clusters.java
  *
  * Created on December 15, 1999, 2:52 PM
@@ -31,9 +31,7 @@ import java.util.Set;
 import static java.util.Comparator.comparing;
 
 /**
- *
  * @author JOHNBRUC
- * @version
  */
 public class Clusters extends Object {
 

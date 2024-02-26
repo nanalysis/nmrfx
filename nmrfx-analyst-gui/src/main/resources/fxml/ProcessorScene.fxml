@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.PropertySheet?>
+<?import org.controlsfx.control.StatusBar?>
+<?import org.fxmisc.richtext.CodeArea?>
+<?import java.net.URL?>
+<?import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane?>
+<BorderPane fx:id="mainBox" minWidth="400" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
+            xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.nmrfx.processor.gui.ProcessorController">
+    <stylesheets>
+        <URL value="@/styles/Styles.css"/>
+    </stylesheets>
+    <top>
+        <ToolBar fx:id="datasetToolBar"/>
+
+    </top>
+    <center>
+        <Accordion fx:id="dimAccordion" maxWidth="400"/>
+    </center>
+    <bottom>
+        <VBox maxWidth="400.0">
+            <HBox spacing="10"  alignment="CENTER_LEFT">
+                <children>
+                    <Button fx:id="processDatasetButton" mnemonicParsing="false" onAction="#processDatasetAction"
+                            text="Process"/>
+                    <Button fx:id="haltProcessButton" mnemonicParsing="false" onAction="#haltProcessAction"
+                            text="Halt"/>
+                    <CheckBox fx:id="autoProcess" mnemonicParsing="false" text="Auto Update" alignment="CENTER_LEFT"/>
+                    <Pane HBox.hgrow="ALWAYS"/>
+                    <ToggleButton fx:id="detailButton" mnemonicParsing="false" text=""/>
+                </children>
+            </HBox>
+            <ToolBar fx:id="toolBar">
+                <items>
+                    <MenuButton mnemonicParsing="false" text="Scripts">
+                        <items>
+                            <MenuItem  mnemonicParsing="false" onAction="#showScriptGUI"
+                                       text="Show Script"/>
+
+                            <MenuItem fx:id="autoGenerateScript" mnemonicParsing="false" onAction="#genDefaultScript"
+                                      text="Auto Generate"/>
+                            <MenuItem fx:id="autoGenerateArrayedScript" mnemonicParsing="false"
+                                      onAction="#genDefaultScriptArrayed" text="Auto Generate (Arrayed)"/>
+                            <MenuItem fx:id="openDefaultScript" mnemonicParsing="false" onAction="#openDefaultScriptAction"
+                                      text="Open (process.py)"/>
+                            <MenuItem fx:id="openScript" mnemonicParsing="false" onAction="#openScriptAction"
+                                      text="Open..."/>
+                            <MenuItem fx:id="saveScript" mnemonicParsing="false" onAction="#writeDefaultScriptAction"
+                                      text="Save (process.py)"/>
+                            <MenuItem fx:id="saveScriptAs" mnemonicParsing="false" onAction="#writeScriptAction"
+                                      text="Save As..."/>
+                            <MenuItem fx:id="openOperations" mnemonicParsing="false" onAction="#openVecScriptAction"
+                                      text="Load Operations..."/>
+                            <MenuItem fx:id="saveOperations" mnemonicParsing="false" onAction="#writeVecScriptAction"
+                                      text="Save Operations..."/>
+                        </items>
+                    </MenuButton>
+                    <ChoiceBox fx:id="viewMode" onAction="#viewMode" value="FID"/>
+                    <ChoiceBox fx:id="dimChoice" value=""/>
+                    <Pane HBox.hgrow="ALWAYS"/>
+                    <Button mnemonicParsing="false" onAction="#showNavigator"
+                            text="Navigator"/>
+
+                </items>
+            </ToolBar>
+            <HBox>
+                <children>
+                    <StatusBar fx:id="statusBar" HBox.hgrow="ALWAYS"/>
+                </children>
+            </HBox>
+        </VBox>
+    </bottom>
+</BorderPane>

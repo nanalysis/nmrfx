@@ -23,10 +23,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.TablePlotGUI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
@@ -37,7 +39,6 @@ import org.nmrfx.processor.datasets.Measure.OffsetTypes;
 import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.utils.FileUtils;
@@ -62,12 +63,19 @@ import java.util.regex.Pattern;
  */
 public class ScannerTool implements ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(ScannerTool.class);
+    private static final String BIN_MEASURE_NAME = "binValues";
+    enum TableSelectionMode {
+        ALL,
+        HIGHLIGHT,
+        ONLY
+    }
 
     BorderPane borderPane;
 
     ToolBar scannerBar;
     private TableView<FileTableItem> tableView;
     Consumer<ScannerTool> closeAction;
+    double splitPanePosition = 0.8;
 
     FXMLController controller;
     PolyChart chart;
@@ -76,42 +84,61 @@ public class ScannerTool implements ControllerTool {
     ToggleGroup measureTypeGroup = new ToggleGroup();
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
-    static Consumer createControllerAction = null;
     TRACTGUI tractGUI = null;
     TablePlotGUI plotGUI = null;
     MinerController miner;
+    ChoiceBox<TableSelectionMode> tableSelectionChoice = new ChoiceBox<>();
+
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
 
-    public ScannerTool(FXMLController controller, Consumer<ScannerTool> closeAction) {
+    public ScannerTool(FXMLController controller) {
         this.controller = controller;
-        this.closeAction = closeAction;
         chart = controller.getActiveChart();
     }
 
     public void initialize(BorderPane borderPane) {
         this.borderPane = borderPane;
         scannerBar = new ToolBar();
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
-        closeButton.setOnAction(e -> close());
-        scannerBar.getItems().add(closeButton);
-        borderPane.setTop(scannerBar);
-
         tableView = new TableView<>();
-        tableView.setPrefHeight(250.0);
         borderPane.setCenter(tableView);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        closeButton.setOnAction(e -> controller.hideScannerMenus());
+        scannerBar.getItems().add(closeButton);
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeProcessMenu());
         scannerBar.getItems().add(makeRegionMenu());
         scannerBar.getItems().add(makeScoreMenu());
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
+        Button reloadButton = new Button("Reload");
+        reloadButton.setOnAction(e -> loadFromDataset());
         scanTable = new ScanTable(this, tableView);
+        tableSelectionChoice.getItems().addAll(TableSelectionMode.values());
+        tableSelectionChoice.setValue(TableSelectionMode.HIGHLIGHT);
+        tableSelectionChoice.valueProperty().addListener(e -> scanTable.selectionChanged());
+        VBox vBox = new VBox();
+        Label label = new Label("Sel. Mode:");
+        vBox.getChildren().addAll(reloadButton, label, tableSelectionChoice);
+        borderPane.setLeft(vBox);
+        loadFromDataset();
     }
 
-    public static void addCreateAction(Consumer<ScannerTool> action) {
-        createControllerAction = action;
+    public TableSelectionMode tableSelectionMode() {
+        return tableSelectionChoice.getValue();
+    }
+
+    public void showMenus() {
+        borderPane.setTop(scannerBar);
+    }
+
+    public void hideMenus() {
+        borderPane.setTop(null);
+    }
+
+    public boolean scannerActive() {
+        return borderPane.getTop() != null;
     }
 
     @Override
@@ -121,6 +148,14 @@ public class ScannerTool implements ControllerTool {
 
     public BorderPane getBox() {
         return borderPane;
+    }
+
+    public void setSplitPanePosition(double value) {
+        splitPanePosition = value;
+    }
+
+    public double getSplitPanePosition() {
+        return splitPanePosition;
     }
 
     private MenuButton makeFileMenu() {
@@ -150,8 +185,10 @@ public class ScannerTool implements ControllerTool {
         processAndCombineItem.setOnAction(e -> processScanDirAndCombine());
         MenuItem processItem = new MenuItem("Process");
         processItem.setOnAction(e -> processScanDir());
+        MenuItem combineItem = new MenuItem("Combine");
+        combineItem.setOnAction(e -> combineDatasets());
         menu.getItems().addAll(loadRowFIDItem, processAndCombineItem,
-                processItem);
+                processItem, combineItem);
         return menu;
     }
 
@@ -228,8 +265,12 @@ public class ScannerTool implements ControllerTool {
         scanTable.processScanDir(chartProcessor, false);
     }
 
+    private void combineDatasets() {
+        scanTable.combineDatasets();
+    }
+
     private void scanDirAction() {
-        scanTable.loadScanFiles(stage);
+        scanTable.loadScanFiles();
     }
 
     private void loadTableAction() {
@@ -248,6 +289,7 @@ public class ScannerTool implements ControllerTool {
 
     private void loadFromDataset() {
         scanTable.loadFromDataset();
+        scanTable.setChart();
     }
 
     private void openSelectedListFile() {
@@ -262,12 +304,13 @@ public class ScannerTool implements ControllerTool {
         return scannerBar;
     }
 
-    public PolyChart getChart() {
-        return chart;
+    public void setChart(PolyChart chart) {
+        this.chart = chart;
+        scanTable.setChart();
     }
 
-    public FXMLController getFXMLController() {
-        return controller;
+    public PolyChart getChart() {
+        return chart;
     }
 
     public ScanTable getScanTable() {
@@ -279,34 +322,36 @@ public class ScannerTool implements ControllerTool {
         boolean result = false;
         for (String header : headers) {
             int colon = header.indexOf(":");
-            if (colon != -1) {
-                if (header.substring(0, colon).equals(columnName)) {
-                    result = true;
-                    break;
-                }
+            if ((colon != -1) && header.substring(0, colon).equals(columnName)) {
+                result = true;
+                break;
             }
         }
         return result;
     }
 
     private void measure() {
+        measure(null);
+    }
+
+    public void measure(double[] ppms) {
         TextInputDialog textInput = new TextInputDialog();
         textInput.setHeaderText("New column name");
         Optional<String> columNameOpt = textInput.showAndWait();
         if (columNameOpt.isPresent()) {
             String columnName = columNameOpt.get();
             columnName = columnName.replace(':', '_').replace(' ', '_');
-            if (!columnName.equals("")) {
-                if (hasColumnName(columnName)) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Column exists");
-                    alert.showAndWait();
-                    return;
-                }
+            if (!columnName.equals("") && hasColumnName(columnName)) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Column exists");
+                alert.showAndWait();
+                return;
             }
-            double[] ppms = chart.getVerticalCrosshairPositions();
+            if (ppms == null) {
+                ppms = chart.getCrossHairs().getVerticalPositions();
+            }
             double[] wppms = new double[2];
-            wppms[0] = chart.getAxis(0).getLowerBound();
-            wppms[1] = chart.getAxis(0).getUpperBound();
+            wppms[0] = chart.getAxes().get(0).getLowerBound();
+            wppms[1] = chart.getAxes().get(0).getUpperBound();
             int extra = 1;
 
             Measure measure = new Measure(columnName, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
@@ -357,13 +402,12 @@ public class ScannerTool implements ControllerTool {
 
     private void measureSearchBins() {
         int nBins = 100;
-        double[] ppms = chart.getVerticalCrosshairPositions();
+        double[] ppms = chart.getCrossHairs().getVerticalPositions();
         double[] wppms = new double[2];
-        wppms[0] = chart.getAxis(0).getLowerBound();
-        wppms[1] = chart.getAxis(0).getUpperBound();
+        wppms[0] = chart.getAxes().get(0).getLowerBound();
+        wppms[1] = chart.getAxes().get(0).getUpperBound();
         int extra = 1;
-
-        Measure measure = new Measure("binValues", 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
+        Measure measure = new Measure(BIN_MEASURE_NAME, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
         measure.setName("bins");
         List<double[]> allValues = new ArrayList<>();
         List<FileTableItem> items = scanTable.getItems();
@@ -381,7 +425,6 @@ public class ScannerTool implements ControllerTool {
                     return;
                 }
             }
-            System.out.println("measure " + itemDataset.getName());
 
             List<double[]> values = measureBins(itemDataset, measure, nBins);
             if (values == null) {
@@ -394,14 +437,14 @@ public class ScannerTool implements ControllerTool {
         }
         int iItem = 0;
         for (FileTableItem item : items) {
-            item.setObjectExtra("binValues", allValues.get(iItem++));
+            item.setObjectExtra(BIN_MEASURE_NAME, allValues.get(iItem++));
         }
     }
 
     void scoreSimilarity() {
         FileTableItem refItem = tableView.getSelectionModel().getSelectedItem();
         if (refItem != null) {
-            double[] refValues = (double[]) refItem.getObjectExtra("binValues");
+            double[] refValues = (double[]) refItem.getObjectExtra(BIN_MEASURE_NAME);
             if (refValues == null) {
                 measureSearchBins();
             }
@@ -412,10 +455,10 @@ public class ScannerTool implements ControllerTool {
     void scoreSimilarity(FileTableItem refItem) {
         String newColumnName = "score";
         List<FileTableItem> items = scanTable.getItems();
-        double[] refValues = (double[]) refItem.getObjectExtra("binValues");
+        double[] refValues = (double[]) refItem.getObjectExtra(BIN_MEASURE_NAME);
         RealVector refVec = new ArrayRealVector(refValues);
         for (FileTableItem item : items) {
-            double[] itemValues = (double[]) item.getObjectExtra("binValues");
+            double[] itemValues = (double[]) item.getObjectExtra(BIN_MEASURE_NAME);
             RealVector itemVec = new ArrayRealVector(itemValues);
             double score = refVec.cosine(itemVec);
             item.setExtra(newColumnName, score);
@@ -503,8 +546,8 @@ public class ScannerTool implements ControllerTool {
             }
         }
         dataset.setRegions(regions);
-        chart.chartProps.setRegions(true);
-        chart.chartProps.setIntegrals(false);
+        chart.getChartProperties().setRegions(true);
+        chart.getChartProperties().setIntegrals(false);
         chart.refresh();
     }
 
@@ -513,7 +556,7 @@ public class ScannerTool implements ControllerTool {
         List<DatasetRegion> regions = new ArrayList<>();
 
         dataset.setRegions(regions);
-        chart.chartProps.setRegions(false);
+        chart.getChartProperties().setRegions(false);
         chart.refresh();
     }
 
@@ -541,40 +584,42 @@ public class ScannerTool implements ControllerTool {
 
     /**
      * Loads the short version of the regions file into the scanner table.
+     *
      * @param file The file to load
      * @throws IOException
      */
     private void loadRegionsShort(File file) throws IOException {
-            try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
-                String s;
-                while ((s = reader.readLine()) != null) {
-                    String[] fields = s.split("\\s+");
-                    if (fields.length > 2) {
-                        String name = fields[0];
-                        StringBuilder sBuilder = new StringBuilder();
-                        for (int i = 1; i < fields.length; i++) {
-                            sBuilder.append(fields[i]);
-                            if (i != fields.length - 1) {
-                                sBuilder.append("_");
-                            }
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+            String s;
+            while ((s = reader.readLine()) != null) {
+                String[] fields = s.split("\\s+");
+                if (fields.length > 2) {
+                    String name = fields[0];
+                    StringBuilder sBuilder = new StringBuilder();
+                    for (int i = 1; i < fields.length; i++) {
+                        sBuilder.append(fields[i]);
+                        if (i != fields.length - 1) {
+                            sBuilder.append("_");
                         }
-                        String columnPrefix;
-                        if (name.startsWith("V.")) {
-                            columnPrefix = scanTable.getNextColumnName("", sBuilder.toString());
-                        } else {
-                            columnPrefix = name;
-                        }
-                        sBuilder.insert(0, ':');
-                        sBuilder.insert(0, columnPrefix);
-                        scanTable.addTableColumn(sBuilder.toString(), "D");
                     }
+                    String columnPrefix;
+                    if (name.startsWith("V.")) {
+                        columnPrefix = scanTable.getNextColumnName("", sBuilder.toString());
+                    } else {
+                        columnPrefix = name;
+                    }
+                    sBuilder.insert(0, ':');
+                    sBuilder.insert(0, columnPrefix);
+                    scanTable.addTableColumn(sBuilder.toString(), "D");
                 }
             }
+        }
     }
 
     /**
      * Loads the long version of the regions file into the Scanner table. The long version regions are assumed to
      * have a Measure Type of volume and an Offset Type of none.
+     *
      * @param file The file to load
      * @throws IOException
      */
@@ -623,7 +668,7 @@ public class ScannerTool implements ControllerTool {
 
     List<Double> toDoubleList(List<String> values) {
         List<Double> doubleValues = new ArrayList<>();
-        for (var s:values) {
+        for (var s : values) {
             try {
                 double dValue = Double.parseDouble(s);
                 doubleValues.add(dValue);
@@ -637,7 +682,7 @@ public class ScannerTool implements ControllerTool {
 
     List<Integer> toIntegerList(List<String> values) {
         List<Integer> intValues = new ArrayList<>();
-        for (var s:values) {
+        for (var s : values) {
             try {
                 int iValue = Integer.parseInt(s);
                 intValues.add(iValue);

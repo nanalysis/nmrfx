@@ -25,7 +25,8 @@ import java.util.Map;
 public class VecBase extends PySequence implements MatrixType, DatasetStorageInterface {
 
     public static final PyType ATYPE = PyType.fromClass(VecBase.class);
-    private static Map<String, VecBase> vecMap = new HashMap<>();
+    private static final Map<String, VecBase> vecMap = new HashMap<>();
+
     /**
      * Array of doubles used for storing data when the Vec is real or the real
      * part of complex data when a Complex array is not used
@@ -84,8 +85,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Create a new named Vec object with the specified size and complex mode.
      *
-     * @param name Name of the vector. Used for retrieving vectors by name.
-     * @param size Size of vector.
+     * @param name    Name of the vector. Used for retrieving vectors by name.
+     * @param size    Size of vector.
      * @param complex true if the data stored in vector is Complex
      */
     public VecBase(int size, String name, boolean complex) {
@@ -96,8 +97,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Create a new named Vec object with the specified size and complex mode.
      *
-     * @param name Name of the vector. Used for retrieving vectors by name.
-     * @param size Size of vector.
+     * @param name    Name of the vector. Used for retrieving vectors by name.
+     * @param size    Size of vector.
      * @param complex true if the data stored in vector is Complex
      */
     public VecBase(int size, String name, boolean complex, PyType type) {
@@ -108,7 +109,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Create a new Vec object with the specified size and complex mode.
      *
-     * @param size Size of vector.
+     * @param size    Size of vector.
      * @param complex true if the data stored in vector is Complex
      */
     public VecBase(int size, boolean complex) {
@@ -125,7 +126,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Create a new Vec object with the specified size and complex mode.
      *
-     * @param size Size of vector.
+     * @param size    Size of vector.
      * @param complex true if the data stored in vector is Complex
      */
     public VecBase(int size, boolean complex, PyType type) {
@@ -180,7 +181,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * specified dataset location.
      *
      * @param size Size of vector.
-     * @param pt dataset location
+     * @param pt   dataset location
      */
     public VecBase(int size, int[][] pt, int[] dim) {
         this(size);
@@ -202,8 +203,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Create a new Vec object with the specified size, complex mode and dataset
      * location
      *
-     * @param size Size of vector.
-     * @param pt dataset location
+     * @param size    Size of vector.
+     * @param pt      dataset location
      * @param complex true if vector stores complex data
      */
     public VecBase(int size, int[][] pt, int[] dim, boolean complex) {
@@ -266,7 +267,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Copy the dataset location of one vector to that of another vector
      *
-     * @param inVec source vector
+     * @param inVec  source vector
      * @param outVec target vector
      */
     public static void copyLocation(VecBase inVec, VecBase outVec) {
@@ -299,7 +300,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
-     *
      * @param orig array to check
      * @return original array
      */
@@ -347,11 +347,11 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Add a one array to a multiple of a second array and store in a third
      * array
      *
-     * @param avec first array
-     * @param size number of values to add
-     * @param bvec multiply these values by scale before adding to avec
+     * @param avec  first array
+     * @param size  number of values to add
+     * @param bvec  multiply these values by scale before adding to avec
      * @param scale factor to multiply by
-     * @param cvec store result
+     * @param cvec  store result
      */
     public static void addMulVector(double[] avec, int size, double[] bvec, double scale, double[] cvec) {
         int i;
@@ -365,14 +365,14 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Add a one vector to a multiple of a second vector and store in a third
      * vector
      *
-     * @param avec first vector
-     * @param size number of values to add
-     * @param bvec multiply these values by scale before adding to avec
+     * @param avec  first vector
+     * @param size  number of values to add
+     * @param bvec  multiply these values by scale before adding to avec
      * @param scale factor to multiply by
-     * @param cvec store result
+     * @param cvec  store result
      */
     public static void addMulVector(VecBase avec, int size, VecBase bvec, double scale,
-            VecBase cvec) {
+                                    VecBase cvec) {
         int i;
 
         for (i = 0; i < size; i++) {
@@ -588,7 +588,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Set values in a range to 0.0
      *
      * @param first first point of range
-     * @param last last point of range
+     * @param last  last point of range
      */
     public void zeros(int first, int last) {
         if (isComplex) {
@@ -720,7 +720,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * are copied so changes in the returned array do not effect this vector.
      *
      * @param values a double array in which to put the real values
-     * @param start the starting position of the Vec at which to read values
+     * @param start  the starting position of the Vec at which to read values
      */
     public void getReal(double[] values, int start) throws IllegalArgumentException {
         if (values.length + start >= size) {
@@ -738,7 +738,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * true/false with this method.
      *
      * @param index position of value
-     * @param imag true to get imaginary, false to get real
+     * @param imag  true to get imaginary, false to get real
      * @return value the value at the index
      */
     public double getRealOrImag(int index, boolean imag) {
@@ -870,7 +870,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Set complex value at specified index. If vector is real, only use the
      * real part of value.
      *
-     * @param index position to set
+     * @param index   position to set
      * @param complex value to set
      */
     public void setComplex(int index, Complex complex) {
@@ -897,8 +897,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * real part of value.
      *
      * @param index position to set
-     * @param real the real part to set
-     * @param imag the imaginary part to set
+     * @param real  the real part to set
+     * @param imag  the imaginary part to set
      */
     public void setComplex(int index, double real, double imag) {
         if (index < size && index >= 0) {
@@ -1052,8 +1052,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Set a real element of vector to a specified value.
      *
-     * @param i The element of the vector to set, which can be any number from 0
-     * to 'size - 1' of the Vec.
+     * @param i   The element of the vector to set, which can be any number from 0
+     *            to 'size - 1' of the Vec.
      * @param val value to set at specified index
      */
     public void set(int i, double val) {
@@ -1069,8 +1069,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Set the i'th element of the real and complex parts of the vector.
      *
-     * @param i The element of the vector to set, which can be any number from 0
-     * to 'size - 1' of the Vec.
+     * @param i    The element of the vector to set, which can be any number from 0
+     *             to 'size - 1' of the Vec.
      * @param real The real value to set.
      * @param imag The imaginary value to set.
      */
@@ -1126,7 +1126,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Set the dataset location pt for this vector
      *
-     * @param pt the new location
+     * @param pt  the new location
      * @param dim dataset dimensions for point location
      */
     public void setPt(int[][] pt, int[] dim) {
@@ -1301,7 +1301,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Copy a portion of one vector to another vector.
      *
      * @param target the target vector
-     * @param start copy starting at this index
+     * @param start  copy starting at this index
      * @param length copy this number of values
      */
     public void copy(VecBase target, int start, int length) {
@@ -1312,10 +1312,10 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Copy portion of one vector to another
      *
-     * @param target the target vector
-     * @param start copy starting at this index
+     * @param target  the target vector
+     * @param start   copy starting at this index
      * @param destPos starting position in target vector
-     * @param length copy this number of values
+     * @param length  copy this number of values
      */
     public void copy(VecBase target, int start, int destPos, int length) {
         int reqSize = destPos + length;
@@ -1356,13 +1356,13 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Adjust the reference value because the vector was resized and/or points
      * at beginning removed
      *
-     * @param shift the starting position of new range.
+     * @param shift   the starting position of new range.
      * @param newSize the new size of the vector
      */
     public void adjustRef(double shift, int newSize) {
         double newCenter = shift + newSize / 2.0;
         double deltaPt = size / 2.0 - newCenter;
-        double delRef =  ((deltaPt / (dwellTime * centerFreq)) / (size));
+        double delRef = ((deltaPt / (dwellTime * centerFreq)) / (size));
         refValue += delRef;
         dwellTime = (dwellTime * size) / (newSize);
     }
@@ -1394,11 +1394,11 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     public void setZeroRefValue(double refValue) {
-        this.refValue = refValue -  getDeltaRef(0.0);
+        this.refValue = refValue - getDeltaRef(0.0);
     }
 
     public double getDeltaRef(double refPt) {
-        double deltaFrac = 0.5 - refPt /size;
+        double deltaFrac = 0.5 - refPt / size;
         return (deltaFrac / dwellTime) / centerFreq;
     }
 
@@ -1507,10 +1507,10 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * point. The values can be multiplied by a scale value before addition.
      *
      * @param addValue The values to add
-     * @param start the starting point in this vector
-     * @param end the ending point in this vector
-     * @param scale multiply values to be added by this scale factor.
-     * @param lb unused at present
+     * @param start    the starting point in this vector
+     * @param end      the ending point in this vector
+     * @param scale    multiply values to be added by this scale factor.
+     * @param lb       unused at present
      * @return this vector
      */
     public VecBase add(Object[] addValue, final double start, final double end, final double scale, final double lb) {
@@ -1542,7 +1542,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Add a multiple of a vector to this vector
      *
-     * @param avec the vector to add
+     * @param avec  the vector to add
      * @param scale multiply values to add by this amount
      * @return this vector
      */
@@ -1931,7 +1931,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
-     *
      * If vector is complex and stores complex values in an array of Complex,
      * change to store in separate arrays of real and imaginary values.
      */
@@ -2265,7 +2264,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      *
      * @return the Complex value array
      * @throws IllegalStateException if the vector is not Complex or doesn't use
-     * a Complex array
+     *                               a Complex array
      */
     public Complex[] getCvec() {
         if (isComplex && useApache) {
@@ -2281,7 +2280,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      *
      * @return the array of doubles that stores real values
      * @throws IllegalStateException if the vector is Complex and doesn't use
-     * Complex array
+     *                               Complex array
      */
     public double[] getRvec() {
         if (!(isComplex && useApache)) {
@@ -2297,7 +2296,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      *
      * @return the array of doubles that stores imaginary values
      * @throws IllegalStateException if the vector is not Complex or uses
-     * Complex array
+     *                               Complex array
      */
     public double[] getIvec() {
         if (isComplex && !useApache) {
@@ -2473,13 +2472,13 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Apply the specified phase values to this vector.
      *
-     * @param p0 The zeroth order phase value
-     * @param p1 The first order phase value
-     * @param phaseAbs if false apply the specified values, if true subtract the
-     * currently stored ph0 and ph1 values from the specified values and then
+     * @param p0               The zeroth order phase value
+     * @param p1               The first order phase value
+     * @param phaseAbs         if false apply the specified values, if true subtract the
+     *                         currently stored ph0 and ph1 values from the specified values and then
      * @param discardImaginary Discard the imaginary values and convert vector
-     * to real. Phasing is a little faster if you do this (and saves calling a
-     * seperate REAL operation.
+     *                         to real. Phasing is a little faster if you do this (and saves calling a
+     *                         seperate REAL operation.
      * @return this vector
      */
     public VecBase phase(double p0, double p1, boolean phaseAbs, boolean discardImaginary) {
@@ -2601,13 +2600,12 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * used here for updating the vector header, but are the values used for
      * setting up pReal and pImag.
      *
-     * @param p0 The zeroth order phase value.
-     * @param p1 The first order phase value from the specified values and then
+     * @param p0               The zeroth order phase value.
+     * @param p1               The first order phase value from the specified values and then
      * @param discardImaginary Discard the imaginary values and convert vector
-     * to real. Phasing is a little faster
-     *
-     * @param pReal Array of real values of phase corrections
-     * @param pImag Array of imaginary values of phase corrections
+     *                         to real. Phasing is a little faster
+     * @param pReal            Array of real values of phase corrections
+     * @param pImag            Array of imaginary values of phase corrections
      * @return this vector
      */
     public VecBase phase(double p0, double p1, boolean discardImaginary, double[] pReal, double[] pImag) {
@@ -2682,7 +2680,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Multiply either rvec[index] and ivec[index] or cvec[index] by factor
      *
-     * @param index position to multiply
+     * @param index  position to multiply
      * @param factor multiply by this value
      */
     public void multiply(int index, Complex factor) {
@@ -2706,7 +2704,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Multiply either rvec[index] and ivec[index] or cvec[index] by
      * (realFactor, imagFactor)
      *
-     * @param index position to multiply
+     * @param index      position to multiply
      * @param realFactor real part of value to multiply by
      * @param imagFactor imaginary part of value to multiply by
      */
@@ -2776,12 +2774,11 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Performs multiplication on the rvec and ivec elements at index with the
      * complex number (realFactor, imagFactor).
-     * @literal { Caller guarantees that 0 <= index < size, and the matrix is complex.}
-     *
-     * @index position to multiply
-     * @realFactor real part of factor
      *
      * @param imagFactor imaginary part of factor
+     * @literal { Caller guarantees that 0 <= index < size, and the matrix is complex.}
+     * @index position to multiply
+     * @realFactor real part of factor
      */
     private void multiplyValue(int index, double realFactor, double imagFactor) {
         rvec[index] = rvec[index] * realFactor - ivec[index] * imagFactor;
@@ -2793,8 +2790,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * correction. Used in the autophase by max method.
      *
      * @param first start of region
-     * @param last end of region
-     * @param p0 phase value
+     * @param last  end of region
+     * @param p0    phase value
      * @return sum of values
      */
     protected double sumRealRegion(int first, int last, double p0) {
@@ -2853,7 +2850,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * If the vector is smaller than size of array it will be resized up to the
      * size of the array.
      *
-     * @param values the array of real values values
+     * @param values  the array of real values values
      * @param valuesI the array of imaginary values
      */
     public void copy(double[] values, double[] valuesI) {
@@ -2914,11 +2911,11 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     /**
      * Trim a vector to a new size and starting point
      *
-     * @param start Starting point in original size
+     * @param start   Starting point in original size
      * @param newSize Size after trimming
      * @return this vector
      * @throws VecException if start is out of range of vector or vector doesn't
-     * have valid data arrays
+     *                      have valid data arrays
      */
     public VecBase trim(int start, int newSize)
             throws VecException {
@@ -3048,7 +3045,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Return the location and value of the maximum in specified range of vector
      *
      * @param first starting point of range
-     * @param last ending point of range
+     * @param last  ending point of range
      * @return IndexValue object with information about the max
      */
     public IndexValue maxIndex(int first, int last) {
@@ -3114,7 +3111,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Return the location and value of the minimum in specified range of vector
      *
      * @param first starting point of range
-     * @param last ending point of range
+     * @param last  ending point of range
      * @return IndexValue object with information about the min
      */
     public IndexValue minIndex(int first, int last) {

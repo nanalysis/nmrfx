@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,33 +17,28 @@
  */
 package org.nmrfx.chemistry.io;
 
-import java.io.BufferedReader;
-
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.util.*;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
+import org.nmrfx.chemistry.constraints.AngleConstraintSet;
+import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.nmrfx.peaks.ResonanceFactory;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.star.Saveframe;
-import org.nmrfx.chemistry.MolFilter;
-import org.nmrfx.chemistry.constraints.AngleConstraintSet;
-import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.nio.file.FileSystems;
+import java.util.*;
+
 /**
- *
  * @author brucejohnson, Martha
  */
+@PluginAPI("ring")
 public class NMRNEFReader {
     private static final Logger log = LoggerFactory.getLogger(NMRNEFReader.class);
 
@@ -53,14 +48,11 @@ public class NMRNEFReader {
 
     Map entities = new HashMap();
     boolean hasResonances = false;
-    Map<Long, List<PeakDim>> resMap = new HashMap<>();
-    public static boolean DEBUG = false;
 
     public NMRNEFReader(final File nefFile, final STAR3 nef) {
         this.nef = nef;
         this.nefFile = nefFile;
         this.nefDir = nefFile.getAbsoluteFile().getParentFile();
-//        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
     /**
@@ -185,10 +177,8 @@ public class NMRNEFReader {
                     RES_POSITION resPos = RES_POSITION.MIDDLE;
                     if (linkType.equals("start")) {
                         resPos = RES_POSITION.START;
-                        //residue.capFirstResidue();
                     } else if (linkType.equals("end")) {
                         resPos = RES_POSITION.END;
-                        //residue.capLastResidue();
                     }
                     String extension = "";
                     if (resVariant.replace("-H3", "").contains("-H")) {
@@ -196,9 +186,6 @@ public class NMRNEFReader {
                     } else if (resVariant.replace("+HXT", "").contains("+H")) {
                         extension = "_prot";
                     }
-                    //                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
-                    //                    extension += "_NCtermVar";
-                    //                }
                     if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
                         log.warn("Can't find residue \"{}{}\" in residue libraries or STAR file", resName, extension);
                         try {
@@ -302,7 +289,7 @@ public class NMRNEFReader {
             List<String> atomColumn = loop.getColumnAsList("atom_name");
             List<String> valColumn = loop.getColumnAsList("value");
             List<String> valErrColumn = loop.getColumnAsList("value_uncertainty");
-            ResonanceFactory resFactory = PeakList.resFactory();
+            ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
             for (int i = 0; i < chainCodeColumn.size(); i++) {
                 String sequenceCode = (String) sequenceCodeColumn.get(i);
                 String chainCode = (String) chainCodeColumn.get(i);
@@ -376,10 +363,6 @@ public class NMRNEFReader {
                             if (resonance == null) {
                                 throw new ParseException("atom elem resonance " + resIDStr + ": invalid resonance");
                             }
-//                    ResonanceSet resonanceSet = resonance.getResonanceSet();
-//                    if (resonanceSet == null) {
-//                        resonanceSet = new ResonanceSet(resonance);
-//                    }
                             atom.setResonance(resonance);
                             resonance.setAtom(atom);
                         }
@@ -397,14 +380,12 @@ public class NMRNEFReader {
         var compoundMap = MoleculeBase.compoundMap();
         List<String>[] chainCodeColumns = new ArrayList[4];
         List<String>[] sequenceCodeColumns = new ArrayList[4];
-//        List<String>[] residueNameColumns = new ArrayList[4];
         List<String>[] atomNameColumns = new ArrayList[4];
 
         List<Integer> restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
         for (int i = 1; i <= 4; i++) {
             chainCodeColumns[i - 1] = loop.getColumnAsList("chain_code_" + i);
             sequenceCodeColumns[i - 1] = loop.getColumnAsList("sequence_code_" + i);
-//            residueNameColumns[i - 1] = loop.getColumnAsList("residue_name_" + i);
             atomNameColumns[i - 1] = loop.getColumnAsList("atom_name_" + i);
         }
         List<String> weightColumn = loop.getColumnAsList("weight");
@@ -505,7 +486,6 @@ public class NMRNEFReader {
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
         ArrayList<String> atomNames[] = new ArrayList[2];
-//        String[] resNames = new String[2];
         atomNames[0] = new ArrayList<>();
         atomNames[1] = new ArrayList<>();
         DistanceConstraintSet distanceSet = molecule.getMolecularConstraints().newDistanceSet(saveframe.getName());
@@ -563,7 +543,6 @@ public class NMRNEFReader {
                     }
                 }
                 atomNames[iAtom].add(fullAtomName);
-//                resNames[iAtom] = resName;
             }
             String targetValue = (String) targetValueColumn.get(i);
             String upperValue = (String) upperColumn.get(i);

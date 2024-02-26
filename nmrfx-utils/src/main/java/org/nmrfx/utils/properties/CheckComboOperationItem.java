@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,23 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.utils.properties;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
 import javafx.collections.ListChangeListener;
+import org.controlsfx.control.PropertySheet;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class CheckComboOperationItem extends OperationItem implements ObservableStringValue {
@@ -43,8 +44,8 @@ public class CheckComboOperationItem extends OperationItem implements Observable
     private final Collection<?> choices;
     private List<String> values = new ArrayList<>();
 
-    public CheckComboOperationItem(ListChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
-        super(category, name, description);
+    public CheckComboOperationItem(PropertySheet propertySheet, ListChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         values.add(defaultValue);

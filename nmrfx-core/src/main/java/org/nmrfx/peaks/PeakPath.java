@@ -1,6 +1,8 @@
 package org.nmrfx.peaks;
 
 
+import org.nmrfx.chemistry.Atom;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -46,7 +48,7 @@ public class PeakPath implements Comparable<PeakPath> {
         radius = dis;
     }
 
-   public PeakPath(PeakPaths peakPaths, Peak peak) {
+    public PeakPath(PeakPaths peakPaths, Peak peak) {
         this.peakPaths = peakPaths;
         firstPeak = peak;
         double[] deltas = new double[peakPaths.tols.length];
@@ -75,6 +77,7 @@ public class PeakPath implements Comparable<PeakPath> {
     public PeakPaths getPeakPaths() {
         return peakPaths;
     }
+
     public void refresh() {
         for (int i = 0; i < peakDists.size(); i++) {
             PeakDistance peakDis = peakDists.get(i);
@@ -167,6 +170,10 @@ public class PeakPath implements Comparable<PeakPath> {
 
     public int getPeak() {
         return firstPeak.getIdNum();
+    }
+
+    public String getAtom() {
+        return firstPeak.getPeakDim(0).getLabel();
     }
 
     public double getPar(int i) {

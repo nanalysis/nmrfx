@@ -354,7 +354,7 @@ class MolPeakGen:
         entities = self.getResiduesAndCompounds(self.mol)
         for entity in entities:
             cList = CouplingList()
-            cList.generateCouplings(entity, 3, 2, 2, transfers)
+            cList.generateCouplings(entity, transfers, 2, 2, transfers)
             tLinks = cList.getHMBCLinks()
             for link in tLinks:
                 nAtoms = link.getNAtoms()
@@ -571,14 +571,17 @@ class MolPeakGen:
             self.addPeaks(peakList, d1Edited, d2Edited, stringified, useN)
 
     def getPeakList(self, dataset, listName, nPeakDim=0):
-        if (dataset == None or dataset == "")  and listName != "":
+        if listName != "":
             peakList = PeakList.get(listName)
-        else:
-            if listName == "":
-                listName = self.getListName(dataset)
-            if not isinstance(dataset,DatasetBase):
-                dataset = DatasetBase.getDataset(dataset)
-            peakList = peakgen.makePeakListFromDataset(listName, dataset, nPeakDim)
+        if peakList == None:
+            if (dataset == None or dataset == "")  and listName != "":
+                peakList = PeakList.get(listName)
+            else:
+                if listName == "":
+                    listName = self.getListName(dataset)
+                if not isinstance(dataset,DatasetBase):
+                    dataset = DatasetBase.getDataset(dataset)
+                peakList = peakgen.makePeakListFromDataset(listName, dataset, nPeakDim)
         return peakList
 
     def genRNASecStrPeaks(self, dataset, listName="", condition="sim", scheme="", useN=False):

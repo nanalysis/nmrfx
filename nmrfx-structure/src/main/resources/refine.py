@@ -18,7 +18,6 @@ from org.nmrfx.structure.chemistry.energy import EnergyLists
 from org.nmrfx.structure.chemistry.energy import ForceWeight
 from org.nmrfx.structure.chemistry.energy import Dihedral
 from org.nmrfx.structure.chemistry.energy import GradientRefinement
-from org.nmrfx.structure.chemistry.energy import StochasticGradientDescent
 from org.nmrfx.structure.chemistry.energy import CmaesRefinement
 #from org.nmrfx.structure.chemistry.energy import FireflyRefinement
 from org.nmrfx.structure.chemistry.energy import RNARotamer
@@ -70,6 +69,60 @@ rnaBPPlanarity = {
 gnraHBonds = [["N2","N7",2.4,2.8],["N3","N6",2.7,5.0],["N2","OP1",2.4,2.9]]
 
 addPlanarity = False
+
+class Cluster:
+    def __init__(self,name,regex,suites,chi,bp,hb):
+        self.name = name
+        self.regex = regex
+        self.suites = suites
+        self.chi = chi
+        self.bp = bp
+        self.hb = hb
+        self.repSeqs = []
+
+def getClusterDict():
+    clusterDict = {}
+    cluster_table_file = "cluster_table.txt"
+    lines = loadFile(cluster_table_file)
+    currCluster = None
+    for nLine, line in enumerate(lines):
+        if nLine%2 != 0:
+            currCluster.repSeqs += [seq for seq in line.strip('\n').split()]
+            continue
+        line = line.strip('\n').split('\t')
+        name,regex,suites,chi = line[:4]
+        nSuites = int(len(suites)/2)
+        suites = [suites[i*2:(i+1)*2] for i in range(nSuites)]
+        bp = [item[3:] for item in line[4:] if item.startswith("bp")]
+        hb = [item[3:] for item in line[4:] if item.startswith("hb")]
+        clusterDict[name] = Cluster(name,regex,suites,chi,bp,hb)
+        currCluster = clusterDict[name]
+    return clusterDict
+
+def getCluster(tetraLoopSeq):
+    matched_cluster = None
+    clusterDict = getClusterDict()
+    search_representative_seqs = [cluster for cluster in clusterDict.values() if any([tetraLoopSeq == seq for seq in cluster.repSeqs])]
+    if search_representative_seqs:
+        matched_cluster  = search_representative_seqs[0]
+    else:
+        search_regex = [cluster for cluster in clusterDict.values() if re.compile(cluster.regex).match(tetraLoopSeq)]
+        if search_regex:
+            matched_cluster = search_regex[0]
+    return matched_cluster
+
+def getLoopType(ss):
+   residues = ss.getResidues()
+   if ss.getName() == "Loop":
+       if len(residues) == 4:
+           residues = [residues[0].getPrevious()] + residues + [residues[-1].getNext()]
+           loopSeq = ''.join([residue.getName() for residue in residues])
+           cluster = getCluster(loopSeq) 
+           if cluster:
+               return ":"+cluster.name
+       return str(len(residues))
+   return ""
+   
 def getRNAResType(ss, residues, residue):
     ssType = ss.getName()
     res = int(residue.getNumber())
@@ -85,25 +138,36 @@ def getRNAResType(ss, residues, residue):
     if prevRes != None:
        ssPrevName = prevRes.getSecondaryStructure().getName()
        if ssNextName == "Loop":
-           subType = "hL"
+           ssNextType = getLoopType(nextRes.getSecondaryStructure())
+           subType = "hL:" + ssNextType 
     if ssType == "Helix":
         subType = 'h'
         if prevRes == None:
             subType = "h5"
         elif ssNextName == "Loop":
-            subType = "hL"
+            ssNextType = getLoopType(nextRes.getSecondaryStructure())
+            subType = "hL" + ssNextType
         elif ssPrevName == "Loop":
-            subType = "hl"
+            ssPrevType = getLoopType(prevRes.getSecondaryStructure())
+            subType = "hl" + ssPrevType
+        elif ssNextName == "Bulge":
+            subType = "hB0"+":"'B'+str(len(nextRes.getSecondaryStructure().getResidues()))
         elif ssPrevName == "Bulge":
-            subType = "hB"
+            subType = "hB1"+":"'B'+str(len(prevRes.getSecondaryStructure().getResidues()))
         elif pairRes.getPrevious():
             if pairRes.getPrevious().getSecondaryStructure().getName() == "Bulge":
-                subType = "hb"
+                subType = "hb1"+":"'B'+str(len(pairRes.getPrevious().getSecondaryStructure().getResidues()))
+        if pairRes.getNext():
+            if pairRes.getNext().getSecondaryStructure().getName() == "Bulge":
+                subType = "hb0"+":"'B'+str(len(pairRes.getNext().getSecondaryStructure().getResidues()))
 
     elif ssType == "Loop":
-        subType = 'T'
+        loopType = getLoopType(ss)
+        subType = 'T' + loopType 
     elif ssType == "Bulge":
-        subType = 'B'+str(len(residues))
+        subType = 'B'+str(len(ss.getResidues()))
+        #check whether res num is greater than paired res num, to determine orientation of bulge
+        subType = subType+'c' if int(ss.getResidues()[0].getPrevious().getNumber()) > int(ss.getResidues()[0].getPrevious().pairedTo.getNumber()) else subType
     if pairRes:
         rName2 = pairRes.getName()
         rName += rName2
@@ -933,11 +997,6 @@ class refine:
         self.refiner.setTrajectoryWriter(self.trajectoryWriter)
         self.refiner.gradMinimize(nsteps, tolerance)
 
-    def sgdmin(self,nsteps=100,tolerance=1.0e-5):
-        self.refiner = StochasticGradientDescent(self.dihedral)
-        self.refiner.setTrajectoryWriter(self.trajectoryWriter)
-        self.refiner.gradMinimize(nsteps, tolerance)
-
     def refineNonDeriv(self,nsteps=10000,stopFitness=0.0,radius=0.01,alg="cmaes",ninterp=1.2,lambdaMul=1, nFireflies=18, diagOnly=1.0,useDegrees=False):
         print self.energyLists.energy()
         self.energyLists.makeAtomListFast()
@@ -1287,6 +1346,12 @@ class refine:
                     self.readMolEditDict(seqReader, molData['edit'])
 
 
+        if 'rna' in data:
+            self.findRNAHelices(data['rna'])
+            if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
+                rnaLinks,rnaBonds = self.findSSLinks()
+                molData['link'] = rnaLinks
+                data['bonds'] = rnaBonds
         self.molecule = MoleculeFactory.getActive()
         self.molName = self.molecule.getName()
 
@@ -1318,6 +1383,8 @@ class refine:
             if len(self.molecule.getEntities()) > 1:
                 linkerList = self.validateLinkerList(linkerList, treeDict, rnaLinkerDict)
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
+            #if 'bonds' in data:
+            #    self.processBonds(data['bonds'], 'break')
             self.measureTree()
         else:
             if nEntities > 1:
@@ -1417,19 +1484,21 @@ class refine:
         angleDict = {}
         for line in lines:
             fields = line.strip().split()
+            if len(fields) < 6:
+                continue
             if headerAtoms == None:
                 headerAtoms = fields[5:]
             else:
                 id = fields[0]
                 ssType = fields[1]
                 posType = fields[2]
-                aaType = fields[3]
+                nucType = fields[3]
                 subType = fields[4]
                 d = {}
                 for field,headerAtom in zip(fields[5:], headerAtoms):
                     if field != '-':
                         d[headerAtom] = float(field)
-                angleDict[ssType+':'+posType+':'+aaType+':'+subType] = d
+                angleDict[ssType+':'+posType+':'+nucType+':'+subType] = d
                 
     def setAnglesDoubleHelix(self,data,doLock):
         if(doLock):
@@ -1457,10 +1526,10 @@ class refine:
                         print 'Unexpected format for residue name: ' + str(isplit) + '... Using previous residue name'
                     if inHelix:
                         if resLett in ['G', 'A']:
-                            aaType = 'GC'
+                            nucType = 'GC'
                         else:
-                            aaType = 'UA'
-                        anglesToSet = angleDict['helix'+':0:'+aaType].copy()
+                            nucType = 'UA'
+                        anglesToSet = angleDict['helix'+':0:'+nucType].copy()
                         if (str(res) == entry['first'][1]):
                             print 'Helix segment end found at residue: ' + str(res)
                             anglesToSet = angleDict['tetra-link'+':0:'+'U'].copy()
@@ -1508,8 +1577,8 @@ class refine:
                         print 'Unexpected format for residue name: ' + str(isplit) + '... Using previous residue name'
                     if inLoop:
                         loopIndices = ['tetraloop1','tetraloop2','tetraloop3','tetraloop4']
-                        aaType = res.getName()
-                        anglesToSet = angleDict['tetra'+':'+str(loopResDone+1)+':'+aaType].copy()
+                        nucType = res.getName()
+                        anglesToSet = angleDict['tetra'+':'+str(loopResDone+1)+':'+nucType].copy()
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, doLock)
                         print 'Residue: ' + str(res) + ' set with angles: ' + str(anglesToSet)
                         loopResDone = loopResDone + 1
@@ -1577,12 +1646,12 @@ class refine:
                     lastRes = lastResI or lastResJ
                     resLett = res.getName()
                     pairLett = res.pairedTo.getName()
-                    aaType = resLett
-                    if aaType == 'A' or aaType == 'G':
-                        aaType = "P"
+                    nucType = resLett
+                    if nucType == 'A' or nucType == 'G':
+                        nucType = "P"
                     else:
-                        aaType = "p"
-                    key = 'Helix'+':0:'+aaType+':'+subType
+                        nucType = "p"
+                    key = 'Helix'+':0:'+nucType+':'+subType
                     if key in angleDict:
                         anglesToSet = angleDict[key].copy()
                         lock = doLock
@@ -1590,28 +1659,36 @@ class refine:
                             lock = False
                         if lastRes and not lockLast:
                             lock = False
+                        if lastRes and ("hL" in subType or "hl" in subType) and lockLoop:
+                            lock = True 
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, lock)
+                    else:
+                        subType = 'hL:GNRAXe' if subType[-2] =='X' else 'hl:GNRAxe'
+                        genericHelixLinker = 'Helix'+':0:'+nucType+':'+subType
+                        anglesToSet = angleDict[genericHelixLinker].copy()
+                        lock = True if lastRes and lockLoop else False
+                        RNARotamer.setDihedrals(res,anglesToSet,0.0,lock)
             elif ss.getName() == "Loop":
                 for iLoop,res in enumerate(residues):
                     subType = getRNAResType(ss, residues, res)
-                    aaType = res.getName()
-                    if aaType == 'A' or aaType == 'G':
-                        aaType = "P"
+                    nucType = res.getName()
+                    if nucType == 'A' or nucType == 'G':
+                        nucType = "P"
                     else:
-                        aaType = "p"
-                    key = 'Loop'+':'+str(iLoop)+':'+aaType+':'+subType
+                        nucType = "p"
+                    key = 'Loop'+':'+str(iLoop)+':'+nucType+':'+subType
                     if key in angleDict:
                         anglesToSet = angleDict[key].copy()
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockLoop)
             elif ss.getName() == "Bulge":
                 for iLoop,res in enumerate(residues):
                     subType = getRNAResType(ss, residues, res)
-                    aaType = res.getName()
-                    if aaType == 'A' or aaType == 'G':
-                        aaType = "P"
+                    nucType = res.getName()
+                    if nucType == 'A' or nucType == 'G':
+                        nucType = "P"
                     else:
-                        aaType = "p"
-                    key = 'Bulge'+':'+str(iLoop)+':'+aaType+':'+subType
+                        nucType = "p"
+                    key = 'Bulge'+':'+str(iLoop)+':'+nucType+':'+subType
                     if key in angleDict:
                         anglesToSet = angleDict[key].copy()
                         RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockBulge)
@@ -2179,6 +2256,8 @@ class refine:
                 if line.startswith("#"):
                     continue
                 (residueNum, rotamerName) = line.split()
+                if rotamerName == "..":
+                    continue
                 angleBoundaries = RNARotamer.getAngleBoundaries(polymer, residueNum, rotamerName, mul)
                 for angleBoundary in angleBoundaries:
                     self.addAngleConstraint(angleBoundary)
@@ -2333,40 +2412,33 @@ class refine:
                 residues = ss.getResidues()
                 self.addHelix(residues)
                 self.addHelixPP(residues)
-        gnraPat = re.compile('G[AGUC][AG]A')
-        uncgPat = re.compile('U[AGUC]CG')
 
         pat = re.compile('\(\(\.\.\.\.\)\)')
         for m in pat.finditer(vienna):
-            gnraStart = m.start()+2
+            start = m.start()+1
             tetraLoopSeq = ""
             tetraLoopRes = []
-            for iRes in range(gnraStart,gnraStart+4):
+            for iRes in range(start,start+6):
                 residue = allResidues[iRes]
                 tetraLoopSeq += residue.getName()
                 tetraLoopRes.append(residue.getNumber())
-            if gnraPat.match(tetraLoopSeq):
-                res1 = allResidues[m.start()+2]
-                res1Num = res1.getNumber()
-                res2 = allResidues[m.start()+3]
-                res2Num = res2.getNumber()
-                res3 = allResidues[m.start()+4]
-                res3Num = res3.getNumber()
-                res4 = allResidues[m.start()+5]
-                res4Num = res4.getNumber()
-                res5 = allResidues[m.start()+6]
-                res5Num = res5.getNumber()
-                if res2.getPolymer() == res5.getPolymer():
-                    self.addSuiteBoundary(polymer, res1Num,"1a")
-                    self.addSuiteBoundary(polymer, res2Num,"1g")
-                    self.addSuiteBoundary(polymer, res3Num,"1a")
-                    self.addSuiteBoundary(polymer, res4Num,"1a")
-                    self.addSuiteBoundary(polymer, res5Num,"1c")
-                addGNRAHBonds = False
-                if addGNRAHBonds: 
-                    atomNameI = self.getAtomName(res1,"P")
-                    atomNameJ5 = self.getAtomName(res4,"P")
-                    self.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
+
+            matched_cluster = getCluster(tetraLoopSeq) 
+
+            if matched_cluster:            
+                loopResidues = [allResidues[start+i] for i in range(6)]
+                if loopResidues[1].getPolymer() == loopResidues[-1].getPolymer():
+                    for i, suite in enumerate(matched_cluster.suites):
+                        if suite != "..":
+                            res = loopResidues[i+1]
+                            self.addSuiteBoundary(polymer, res.getNumber(), suite)
+
+                bps = matched_cluster.bp
+                for bp in bps:
+                    (resNum1, resNum2) = bp.split(':')
+                    res1 = loopResidues[int(resNum1) - 1]
+                    res2 = loopResidues[int(resNum2) - 1]
+                    self.addBasePair(res1, res2)
 
     def restart(self):
         print 'restart'
@@ -2988,7 +3060,7 @@ class refine:
         if self.eFileRoot != None and self.reportDump:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 
-    def init(self,dOpt=None):
+    def init(self,dOpt=None,save=True):
         from anneal import runStage
         from anneal import getAnnealStages
         dOpt = dOpt if dOpt else dynOptions()
@@ -3000,7 +3072,8 @@ class refine:
         print 'start energy is', energy
 
         self.prepAngles()
-        self.output()
+        if save:
+            self.output()
 
     def refine(self,dOpt=None):
         from anneal import runStage
@@ -3083,25 +3156,6 @@ class refine:
         self.rDyn = self.rinertia()
         self.rDyn.initDynamics(temp,temp,steps,timeStep, timePower)
         self.rDyn.run(1.0)
-
-    def sgd(self,dOpt=None,stage1={},stage2={}):
-        if (dOpt==None):
-            dOpt = dynOptions()
-
-        self.annealPrep(dOpt, 100)
-
-        self.updateAt(dOpt['update'])
-        irp = dOpt['irpWeight']
-        self.setForces({'repel':0.5,'dis':1.0,'dih':5,'irp':irp})
-        self.setPars({'end':1000,'useh':False,'hardSphere':0.15,'shrinkValue':0.20})
-        self.setPars(stage1)
-        energy = self.energy()
-
-        steps = dOpt['steps']
-        self.sgdmin(2*steps/3)
-        self.setPars({'useh':True,'hardSphere':0.0,'shrinkValue':0.0,'shrinkHValue':0.0})
-        self.sgdmin(steps/3)
-
 
     def polish(self, steps, usePseudo=False, stage1={}):
         #XXX: Need to complete docstring
@@ -3305,17 +3359,4 @@ def doAnneal(seed,dOpt=None,homeDir=None, writeTrajectory=False):
     if dOpt == None:
         dOpt = dynOptions({'highFrac':0.4})
     refiner.anneal(dOpt)
-    refiner.output()
-
-def doSGD(seed,homeDir=None):
-    import osfiles
-    refiner = refine()
-    dataDir = osfiles.getDataDir(homeDir)
-    osfiles.setOutFiles(refiner,dataDir, seed)
-    osfiles.guessFiles(refiner, homeDir)
-    refiner.molecule.setMethylRotationActive(True)
-    refiner.setup(dataDir,seed)
-    refiner.rootName = "temp"
-    dOpt = dynOptions({'steps':150000,'highFrac':0.4})
-    refiner.sgd(dOpt)
     refiner.output()

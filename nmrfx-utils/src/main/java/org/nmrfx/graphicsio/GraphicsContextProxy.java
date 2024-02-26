@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,49 +19,24 @@ package org.nmrfx.graphicsio;
 
 import javafx.geometry.VPos;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.Effect;
-import javafx.scene.image.Image;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.ArcType;
-import javafx.scene.shape.FillRule;
 import javafx.scene.shape.StrokeLineCap;
-import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontSmoothingType;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
 
 /**
- *
  * @author brucejohnson
  */
+//TODO uncomment when core & utils are regrouped
+//@PluginAPI("ring")
 public class GraphicsContextProxy implements GraphicsContextInterface {
 
     final private GraphicsContext gC;
 
     public GraphicsContextProxy(GraphicsContext gC) {
         this.gC = gC;
-    }
-
-    @Override
-    public void appendSVGPath(String svgpath) {
-        gC.appendSVGPath(svgpath);
-    }
-
-    @Override
-    public void applyEffect(Effect e) {
-        gC.applyEffect(e);
-    }
-
-    @Override
-    public void arc(double centerX, double centerY, double radiusX, double radiusY, double startAngle, double length) {
-        gC.arc(centerX, centerY, radiusX, radiusY, startAngle, length);
-    }
-
-    @Override
-    public void arcTo(double x1, double y1, double x2, double y2, double radius) {
-        gC.arcTo(x1, y1, x2, y2, radius);
     }
 
     @Override
@@ -90,28 +65,8 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     }
 
     @Override
-    public void drawImage(Image img, double x, double y) {
-        gC.drawImage(img, x, y);
-    }
-
-    @Override
-    public void drawImage(Image img, double x, double y, double w, double h) {
-        gC.drawImage(img, x, y, w, h);
-    }
-
-    @Override
-    public void drawImage(Image img, double sx, double sy, double sw, double sh, double dx, double dy, double dw, double dh) {
-        gC.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
-    }
-
-    @Override
     public void fill() {
         gC.fill();
-    }
-
-    @Override
-    public void fillArc(double x, double y, double w, double h, double startAngle, double arcExtent, ArcType closure) {
-        gC.fillArc(x, y, w, h, startAngle, arcExtent, closure);
     }
 
     @Override
@@ -130,23 +85,8 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     }
 
     @Override
-    public void fillRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) {
-        gC.fillRoundRect(x, y, w, h, arcWidth, arcHeight);
-    }
-
-    @Override
     public void fillText(String text, double x, double y) {
         gC.fillText(text, x, y);
-    }
-
-    @Override
-    public void fillText(String text, double x, double y, double maxWidth) {
-        gC.fillText(text, x, y, maxWidth);
-    }
-
-    @Override
-    public Effect getEffect(Effect e) {
-        return gC.getEffect(e);
     }
 
     @Override
@@ -155,48 +95,8 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     }
 
     @Override
-    public FillRule getFillRule() {
-        return gC.getFillRule();
-    }
-
-    @Override
     public Font getFont() {
         return gC.getFont();
-    }
-
-    @Override
-    public FontSmoothingType getFontSmoothingType() {
-        return gC.getFontSmoothingType();
-    }
-
-    @Override
-    public double getGlobalAlpha() {
-        return gC.getGlobalAlpha();
-    }
-
-    @Override
-    public BlendMode getGlobalBlendMode() {
-        return gC.getGlobalBlendMode();
-    }
-
-    @Override
-    public StrokeLineCap getLineCap() {
-        return gC.getLineCap();
-    }
-
-    @Override
-    public double[] getLineDashes() {
-        return gC.getLineDashes();
-    }
-
-    @Override
-    public double getLineDashOffset() {
-        return gC.getLineDashOffset();
-    }
-
-    @Override
-    public StrokeLineJoin getLineJoin() {
-        return gC.getLineJoin();
     }
 
     @Override
@@ -205,38 +105,13 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     }
 
     @Override
-    public double getMiterLimit() {
-        return gC.getMiterLimit();
-    }
-
-    @Override
     public Paint getStroke() {
         return gC.getStroke();
     }
 
     @Override
-    public TextAlignment getTextAlign() {
-        return gC.getTextAlign();
-    }
-
-    @Override
-    public VPos getTextBaseline() {
-        return gC.getTextBaseline();
-    }
-
-    @Override
     public Affine getTransform() {
         return gC.getTransform();
-    }
-
-    @Override
-    public Affine getTransform(Affine xform) {
-        return gC.getTransform(xform);
-    }
-
-    @Override
-    public boolean isPointInPath(double x, double y) {
-        return gC.isPointInPath(x, y);
     }
 
     @Override
@@ -247,11 +122,6 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     @Override
     public void moveTo(double x0, double y0) {
         gC.moveTo(x0, y0);
-    }
-
-    @Override
-    public void quadraticCurveTo(double xc, double yc, double x1, double y1) {
-        gC.quadraticCurveTo(xc, yc, x1, y1);
     }
 
     @Override
@@ -275,11 +145,6 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     }
 
     @Override
-    public void scale(double x, double y) {
-        gC.scale(x, y);
-    }
-
-    @Override
     public void setEffect(Effect e) {
         gC.setEffect(e);
     }
@@ -290,28 +155,13 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     }
 
     @Override
-    public void setFillRule(FillRule fillRule) {
-        gC.setFillRule(fillRule);
-    }
-
-    @Override
     public void setFont(Font f) {
         gC.setFont(f);
     }
 
     @Override
-    public void setFontSmoothingType(FontSmoothingType fontsmoothing) {
-        gC.setFontSmoothingType(fontsmoothing);
-    }
-
-    @Override
     public void setGlobalAlpha(double alpha) {
         gC.setGlobalAlpha(alpha);
-    }
-
-    @Override
-    public void setGlobalBlendMode(BlendMode op) {
-        gC.setGlobalBlendMode(op);
     }
 
     @Override
@@ -325,23 +175,8 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     }
 
     @Override
-    public void setLineDashOffset(double dashOffset) {
-        gC.setLineDashOffset(dashOffset);
-    }
-
-    @Override
-    public void setLineJoin(StrokeLineJoin join) {
-        gC.setLineJoin(join);
-    }
-
-    @Override
     public void setLineWidth(double lw) {
         gC.setLineWidth(lw);
-    }
-
-    @Override
-    public void setMiterLimit(double ml) {
-        gC.setMiterLimit(ml);
     }
 
     @Override
@@ -365,18 +200,8 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     }
 
     @Override
-    public void setTransform(double mxx, double myx, double mxy, double myy, double mxt, double myt) {
-        gC.setTransform(mxx, myx, mxy, myy, mxt, myt);
-    }
-
-    @Override
     public void stroke() {
         gC.stroke();
-    }
-
-    @Override
-    public void strokeArc(double x, double y, double w, double h, double startAngle, double arcExtent, ArcType closure) {
-        gC.strokeArc(x, y, w, h, startAngle, arcExtent, closure);
     }
 
     @Override
@@ -405,28 +230,8 @@ public class GraphicsContextProxy implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokeRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) {
-        gC.strokeRoundRect(x, y, w, h, arcWidth, arcHeight);
-    }
-
-    @Override
     public void strokeText(String text, double x, double y) {
         gC.strokeText(text, x, y);
-    }
-
-    @Override
-    public void strokeText(String text, double x, double y, double maxWidth) {
-        gC.strokeText(text, x, y, maxWidth);
-    }
-
-    @Override
-    public void transform(Affine xform) {
-        gC.transform(xform);
-    }
-
-    @Override
-    public void transform(double mxx, double myx, double mxy, double myy, double mxt, double myt) {
-        gC.transform(mxx, myx, mxy, myy, mxt, myt);
     }
 
     @Override

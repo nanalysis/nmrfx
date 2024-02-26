@@ -16,11 +16,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author brucejohnson
  */
 public class SpinSystems {
-   public enum ClusterModes {
+    public enum ClusterModes {
         ALL,
         CORRECT,
         LONELY,
@@ -28,6 +27,7 @@ public class SpinSystems {
         MISSING_PPM,
         EXTRA
     }
+
     int spinSystemID = 1;
     RunAbout runAbout;
     private List<SpinSystem> systems = new ArrayList<>();
@@ -52,6 +52,7 @@ public class SpinSystems {
     public Optional<SpinSystem> find(int idNum) {
         return systems.stream().filter(s -> s.getId() == idNum).findFirst();
     }
+
     public SpinSystem get(int i) {
         return systems.get(i);
     }
@@ -422,7 +423,7 @@ public class SpinSystems {
         ).collect(Collectors.toList());
     }
 
-    public List<SeqFragment>  getSortedFragments() {
+    public List<SeqFragment> getSortedFragments() {
         Set<SeqFragment> fragments = new HashSet<>();
         for (SpinSystem spinSys : systems) {
             if (spinSys.fragment.isPresent()) {
@@ -475,9 +476,9 @@ public class SpinSystems {
         return uniqueSystems;
     }
 
-   public Optional<SpinSystem> findSpinSystem(Peak peak) {
-        for (var spinSys:systems) {
-            for (var peakMatch:spinSys.peakMatches) {
+    public Optional<SpinSystem> findSpinSystem(Peak peak) {
+        for (var spinSys : systems) {
+            for (var peakMatch : spinSys.peakMatches) {
                 if (peak == peakMatch.peak) {
                     return Optional.of(spinSys);
                 }
@@ -637,10 +638,11 @@ public class SpinSystems {
         }
         NMRStarWriter.endLoop(sBuilder);
     }
+
     void writeSpinSystemFragments(StringBuilder sBuilder) {
         NMRStarWriter.openLoop(sBuilder, "_Fragments", SpinSystem.fragmentLoopTags);
         int i = 0;
-        for (SeqFragment fragment:getSortedFragments()) {
+        for (SeqFragment fragment : getSortedFragments()) {
             fragment.setId(i);
             sBuilder.append(fragment.getFragmentSTARString());
             i++;

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -40,9 +40,9 @@ public class ForceWeight {
     }
 
     public ForceWeight(final double electrostatic, final double cffnb,
-            final double repel, final double noe, double tortionAngle,
-            double dihedral, double irp, double shift, double bond,
-            double stacking, double nbMin) {
+                       final double repel, final double noe, double tortionAngle,
+                       double dihedral, double irp, double shift, double bond,
+                       double stacking, double nbMin) {
         this.electrostatic = electrostatic;
         this.cffnb = cffnb;
         this.repel = repel;

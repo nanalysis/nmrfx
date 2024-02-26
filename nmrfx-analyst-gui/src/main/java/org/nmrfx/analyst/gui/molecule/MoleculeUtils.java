@@ -1,8 +1,8 @@
 package org.nmrfx.analyst.gui.molecule;
 
 import javafx.scene.control.TextInputDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.structure.chemistry.Molecule;
 
@@ -10,7 +10,8 @@ import java.util.Optional;
 
 public class MoleculeUtils {
 
-    private MoleculeUtils() {}
+    private MoleculeUtils() {
+    }
 
     /**
      * Adds the active molecule to the active chart and refreshes the chart.
@@ -18,7 +19,7 @@ public class MoleculeUtils {
     public static void addActiveMoleculeToCanvas() {
         Molecule activeMol = Molecule.getActive();
         if (activeMol != null) {
-            PolyChart activeChart = FXMLController.getActiveController().getActiveChart();
+            PolyChart activeChart = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart();
             var cMols = activeChart.findAnnoTypes(CanvasMolecule.class);
             CanvasMolecule cMol = null;
             if (cMols.isEmpty()) {
@@ -42,13 +43,14 @@ public class MoleculeUtils {
      * Clears any molecules from the active chart and refreshes it.
      */
     public static void removeMoleculeFromCanvas() {
-        PolyChart chart = FXMLController.getActiveController().getActiveChart();
+        PolyChart chart = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart();
         chart.clearAnnoType(CanvasMolecule.class);
         chart.refresh();
     }
 
     /**
      * Displays a text input dialog to the user to get a name for a molecule.
+     *
      * @return The provided name or an empty string.
      */
     public static String moleculeNamePrompt() {

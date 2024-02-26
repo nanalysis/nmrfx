@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.3.3-SNAPSHOT</version>
+        <version>11.4.7-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -14,8 +14,6 @@
 
     <properties>
         <javafx.version>17.0.2</javafx.version>
-        <nd4j.version>1.0.0-M2.1</nd4j.version>
-        <dl4j.version>1.0.0-M2.1</dl4j.version>
     </properties>
 
     <dependencyManagement>
@@ -63,6 +61,11 @@
                 <!-- license: Jython license -->
             </dependency>
             <dependency>
+                <groupId>org.tensorflow</groupId>
+                <artifactId>tensorflow-core-platform</artifactId>
+                <version>0.6.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>28.2-jre</version>
@@ -87,10 +90,10 @@
                 <!-- license: EPL2.0 / GPL2.0 / LGPL 2.1 -->
             </dependency>
             <dependency>
-                <groupId>com.jcraft</groupId>
-                <artifactId>jsch</artifactId>
-                <version>0.1.55</version>
-                <!-- license: BSD -->
+                <groupId>com.hierynomus</groupId>
+                <artifactId>sshj</artifactId>
+                <version>0.32.0</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
@@ -101,7 +104,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.13</version>
+                <version>4.13.1</version>
                 <!-- license: Eclipse Public License 1.0 -->
             </dependency>
             <dependency>
@@ -109,31 +112,6 @@
                 <artifactId>mockito-core</artifactId>
                 <version>4.6.0</version>
                 <!-- license: MIT -->
-            </dependency>
-            <dependency>
-                <groupId>org.deeplearning4j</groupId>
-                <artifactId>deeplearning4j-nn</artifactId>
-                <version>${dl4j.version}</version>
-                <!-- license: Apache License, Version 2.0 -->
-            </dependency>
-            <dependency>
-                <groupId>org.deeplearning4j</groupId>
-                <artifactId>deeplearning4j-modelimport</artifactId>
-                <version>${dl4j.version}</version>
-                <!-- license: Apache License, Version 2.0 -->
-            </dependency>
-            <dependency>
-                <groupId>org.nd4j</groupId>
-                <artifactId>nd4j-native-platform</artifactId>
-                <version>${dl4j.version}</version>
-                <!-- license: Apache License, Version 2.0 -->
-            </dependency>
-            <dependency>
-                <groupId>org.nd4j</groupId>
-                <artifactId>nd4j-native</artifactId>
-                <version>${dl4j.version}</version>
-                <classifier>linux-x86_64-compat</classifier>
-                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.controlsfx</groupId>
@@ -146,6 +124,21 @@
                 <artifactId>fontawesomefx</artifactId>
                 <version>8.9</version>
                 <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.kordamp.ikonli</groupId>
+                <artifactId>ikonli-javafx</artifactId>
+                <version>12.3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kordamp.ikonli</groupId>
+                <artifactId>ikonli-materialdesign2-pack</artifactId>
+                <version>12.3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kordamp.ikonli</groupId>
+                <artifactId>ikonli-material2-pack</artifactId>
+                <version>12.3.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.pdfbox</groupId>
@@ -265,39 +258,15 @@
                 <!-- license: BSD (3 clause) -->
             </dependency>
             <dependency>
-                <groupId>com.github.haifengl</groupId>
-                <artifactId>smile-core</artifactId>
-                <version>2.6.0</version>
-                <!-- license: LGPL 3 -->
-            </dependency>
-            <dependency>
-                <groupId>com.github.haifengl</groupId>
-                <artifactId>smile-interpolation</artifactId>
-                <version>2.6.0</version>
-                <!-- license: LGPL 3 -->
-            </dependency>
-            <dependency>
-                <groupId>com.github.haifengl</groupId>
-                <artifactId>smile-io</artifactId>
-                <version>2.6.0</version>
-                <!-- license: LGPL 3 -->
-            </dependency>
-            <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>javacpp</artifactId>
-                <version>1.5.7</version>
+                <version>1.5.8</version>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>openblas-platform</artifactId>
-                <version>0.3.19-1.5.7</version>
-                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
-            </dependency>
-            <dependency>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>arpack-ng-platform</artifactId>
-                <version>3.8.0-1.5.7</version>
+                <version>0.3.21-1.5.8</version>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
@@ -339,27 +308,21 @@
                 <!-- license: LGPL 2.1 -->
             </dependency>
             <dependency>
-                <groupId>org.nd4j</groupId>
-                <artifactId>nd4j-api</artifactId>
-                <version>${nd4j.version}</version>
-                <!-- license: Apache License, Version 2.0 -->
-            </dependency>
-            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
                 <version>1.9</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
-                <groupId>org.ejml</groupId>
-                <artifactId>ejml-all</artifactId>
-                <version>0.40</version>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.13.0</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
-                <groupId>commons-beanutils</groupId>
-                <artifactId>commons-beanutils</artifactId>
-                <version>1.9.4</version>
+                <groupId>org.ejml</groupId>
+                <artifactId>ejml-all</artifactId>
+                <version>0.40</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
@@ -384,7 +347,7 @@
             <dependency>
                 <groupId>de.jangassen</groupId>
                 <artifactId>nsmenufx</artifactId>
-                <version>3.0.2</version>
+                <version>3.1.0</version>
                 <!-- license: BSD (3 clause) -->
             </dependency>
             <dependency>
@@ -397,6 +360,11 @@
             <groupId>org.ojalgo</groupId>
             <artifactId>ojalgo</artifactId>
             <version>47.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.actelion.research</groupId>
+            <artifactId>openchemlib</artifactId>
+            <version>2023.3.3</version>
         </dependency>
         </dependencies>
     </dependencyManagement>

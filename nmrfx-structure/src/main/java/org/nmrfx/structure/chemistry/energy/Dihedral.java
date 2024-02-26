@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,8 +36,6 @@ public class Dihedral {
 
     final Molecule molecule;
     static Random rand = new Random();
-    //ArrayList<Atom> angleAtoms;
-    //static ArrayList<Atom> pseudoAngleAtoms;
     double[] angleValues;
     double[] savedAngles;
     double[] bestValues;
@@ -214,9 +212,6 @@ public class Dihedral {
                 pseudoVals = calcPseudoAngle(v[2], v[3]);
                 angleValues[i++] = Util.reduceAngle(pseudoVals[0]);
                 angleValues[i++] = Util.reduceAngle(pseudoVals[1]);
-
-                //angleValues[i++] = reduceAngle(calcPseudoAngle(v[2], v[3]));
-                //angleValues[i++] = puckerAmplitude;
             }
         }
         //List of all atoms with rotatable angles as specified in 
@@ -302,13 +297,10 @@ public class Dihedral {
             double[] v = setSugarBonds(Util.reduceAngle(angle), maxTorsionAngle);
             Atom atom2 = pseudoAngleAtoms.get(j);
             atom2.dihedralAngle = (float) Util.reduceAngle(v[2]);
-            //atom2.dihAngle.angleValue = (float) reduceAngle(v[2]);
             Atom atom1 = pseudoAngleAtoms.get(j + 1);
             atom1.dihedralAngle = (float) Util.reduceAngle(v[1] + deltaV1);
-            //atom.dihAngle.angleValue = (float) reduceAngle(v[1] + deltaV1);
             Atom atom3 = pseudoAngleAtoms.get(j + 2);
             atom3.dihedralAngle = (float) Util.reduceAngle(v[3] + deltaV3);
-            //atom3.dihAngle.angleValue = (float) reduceAngle(v[3] + deltaV3);
         }
         molecule.genCoords(false, null);
     }
@@ -325,7 +317,6 @@ public class Dihedral {
 
     /**
      * based on the angleValues value, the dihedral angles of molecules are set
-     *
      */
     public void putDihedrals() {
         int i = 0;
@@ -336,13 +327,10 @@ public class Dihedral {
                         angleValues[i++]);
                 Atom atom2 = pseudoAngleAtoms.get(j);
                 atom2.dihedralAngle = (float) Util.reduceAngle(v[2]);
-                //atom2.dihAngle.angleValue = (float) reduceAngle(v[2]);
                 Atom atom1 = pseudoAngleAtoms.get(j + 1);
                 atom1.dihedralAngle = (float) Util.reduceAngle(v[1] + deltaV1);
-                //atom1.dihAngle.angleValue = (float) reduceAngle(v[1] + deltaV1);
                 Atom atom3 = pseudoAngleAtoms.get(j + 2);
                 atom3.dihedralAngle = (float) Util.reduceAngle(v[3] + deltaV3);
-                //atom3.dihAngle.angleValue = (float) reduceAngle(v[3] + deltaV3);
             }
         }
         List<Atom> angleAtoms = molecule.getAngleAtoms();
@@ -562,7 +550,6 @@ public class Dihedral {
     }
 
     public double fromNormalized(double value, int i) {
-        //double f = (value - normBoundaries[0][i]) / (normBoundaries[1][i] - normBoundaries[0][i]);
         double f = value / 100.0;
 
         double normValue = f * (boundaries[1][i] - boundaries[0][i]) + boundaries[0][i];
@@ -579,7 +566,6 @@ public class Dihedral {
             }
         }
         double f = (value - boundaries[0][i]) / (boundaries[1][i] - boundaries[0][i]);
-        //double normValue = f * (normBoundaries[1][i] - normBoundaries[0][i]) + normBoundaries[0][i];
         double normValue = f * 100.0;
         return normValue;
     }
@@ -603,13 +589,13 @@ public class Dihedral {
     }
 
     public static double[] setSugarBonds(double pseudoRotationAngle,
-            double maxTorsionAngle) {
+                                         double maxTorsionAngle) {
         double[] sugarAngles = new double[5];
 
         for (int i = 0; i < sugarAngles.length; i++) {
             sugarAngles[i] = maxTorsionAngle
                     * Math.cos(pseudoRotationAngle + (i - 2) * 4.0 * Math.PI
-                            / 5.0);
+                    / 5.0);
         }
         return sugarAngles;
     }
@@ -649,7 +635,7 @@ public class Dihedral {
         randomizeAngles();
         if (!useRandom) {
             int nPseudoAngles = pseudoAngleAtoms.size() / 3;
-            for (int i = 0; i < angleValues.length;) {
+            for (int i = 0; i < angleValues.length; ) {
                 Atom atom;
                 boolean incrementByTwo = false;
                 if (i < (2 * nPseudoAngles)) {

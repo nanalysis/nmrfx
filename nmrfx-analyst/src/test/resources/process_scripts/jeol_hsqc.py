@@ -1,0 +1,26 @@
+import os
+from pyproc import *
+procOpts(nprocess=7)
+
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'jeol/indanone_HSQC-1-1.jdf'))
+CREATE(os.path.join(TMPHOME,'tst_jeol_hsqc.nv'))
+
+fixdsp(True)
+label('1H','13C')
+sf('X_FREQ','Y_FREQ')
+sw('X_SWEEP','Y_SWEEP')
+ref('','C')
+DIM(1)
+TDCOMB(coef='echo-antiecho-r')
+SB()
+ZF()
+FT()
+PHASE(ph0=-50.414,ph1=-211.7)
+TRIM()
+DIM(2)
+SB(c=0.5)
+ZF()
+FT()
+PHASE(ph0=0.0,ph1=0.0)
+run()

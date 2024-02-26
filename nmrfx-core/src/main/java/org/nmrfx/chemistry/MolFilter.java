@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MolFilter {
+    private static final String RESRES_PATTERN_STR = "(([a-zA-Z]?-?[0-9]+)-)?([a-zA-Z]?-?[0-9]+)";
+    private static final Pattern RESRES_PATTERN = Pattern.compile(RESRES_PATTERN_STR);
 
     public Vector atomNames = new Vector(4, 4);
     CoordsetAndEntity csAndE = null;
@@ -34,8 +36,6 @@ public class MolFilter {
     public int structureNum = 0;
     public String entityName = null;
     String string = "";
-    private static String resresPatternStr = "(([a-zA-Z]?-?[0-9]+)-)?([a-zA-Z]?-?[0-9]+)";
-    private static Pattern resresPattern = Pattern.compile(resresPatternStr);
 
     private class CoordsetAndEntity {
 
@@ -97,7 +97,7 @@ public class MolFilter {
             if (sPeriodPos >= 0) {
                 seqID = string.substring(colonPos + 1, sPeriodPos);
             }
-        }        
+        }
         int periodPos = molName.indexOf(".");
 
         if (periodPos >= 0) {
@@ -138,7 +138,7 @@ public class MolFilter {
                     firstResTmp = residue;
                     lastResTmp = residue;
                 } else {
-                    Matcher matcher = resresPattern.matcher(residue);
+                    Matcher matcher = RESRES_PATTERN.matcher(residue);
                     if (matcher.matches()) {
                         firstResTmp = matcher.group(2);
                         lastResTmp = matcher.group(3);
@@ -237,7 +237,7 @@ public class MolFilter {
     public String getCoordEntity() {
         return molName;
     }
-    
+
     public String getCoordSeqID() {
         return seqID;
     }

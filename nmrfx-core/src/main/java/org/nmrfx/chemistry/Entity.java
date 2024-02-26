@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,36 +17,13 @@
  */
 package org.nmrfx.chemistry;
 
+import org.nmrfx.annotations.PluginAPI;
+
 import java.io.Serializable;
 import java.util.*;
 
+@PluginAPI("ring")
 public class Entity implements AtomContainer, Serializable, ITree {
-
-    public static String[] entityStrings = {
-        "_Entity.Ambiguous_conformational_states",
-        "_Entity.Ambiguous_chem_comp_sites",
-        "_Entity.Nstd_monomer",
-        "_Entity.Nstd_chirality",
-        "_Entity.Nstd_linkage",
-        "_Entity.Nonpolymer_comp_ID",
-        "_Entity.Nonpolymer_comp_label",
-        "_Entity.Number_of_monomers",
-        "_Entity.Paramagnetic",
-        "_Entity.Thiol_state",
-        "_Entity.Src_method",
-        "_Entity.Fragment",};
-    public final static String[] entityCompIndexLoopStrings = {
-        "_Entity_comp_index.ID",
-        "_Entity_comp_index.Auth_seq_ID",
-        "_Entity_comp_index.Comp_ID",
-        "_Entity_comp_index.Comp_label",
-        "_Entity_comp_index.Entity_ID",};
-    public final static String[] entityPolySeqLoopStrings = {
-        "_Entity_poly_seq.Hetero",
-        "_Entity_poly_seq.Mon_ID",
-        "_Entity_poly_seq.Num",
-        "_Entity_poly_seq.Comp_index_ID",
-        "_Entity_poly_seq.Entity_ID",};
     public String name = null;
     public String label = null;
     String pdbChain = "";
@@ -64,7 +41,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
     public String role = "?";
     public String details = "?";
     HashMap<String, String> propertyMap = new HashMap<>();
-    Map<String, Object> propertyObjectMap= new HashMap<>();
+    Map<String, Object> propertyObjectMap = new HashMap<>();
     ArrayList<EntityCommonName> commonNames = new ArrayList<>();
 
     @Override
@@ -193,16 +170,16 @@ public class Entity implements AtomContainer, Serializable, ITree {
         this.entityID = entityID;
     }
 
-    public void changed() {
+    public void changed(Atom atom) {
         if (molecule != null) {
-            molecule.changed();
+            molecule.changed(atom);
         }
     }
-    
+
     public void setPDBChain(String name) {
         pdbChain = name;
     }
-    
+
     public String getPDBChain() {
         return pdbChain;
     }
@@ -218,7 +195,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
     public Object getPropertyObject(String propID) {
         return propertyObjectMap.get(propID);
     }
-    
+
     public String getProperty(String propName) {
         return propertyMap.get(propName);
     }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * SpatialSet.java
  *
  * Created on October 3, 2003, 8:13 PM
@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Vector;
 
 /**
- *
  * @author Johnbruc
  */
 public class SpatialSet {
@@ -81,13 +80,13 @@ public class SpatialSet {
         PPMv ppmv = new PPMv(0.0);
         ppms.add(ppmv);
     }
-    
+
     public SpatialSet(double ppmValue) {
         PPMv ppmv = new PPMv(ppmValue);
         ppms = new Vector(1);
         ppms.add(ppmv);
     }
-    
+
     public Atom getAtom() {
         return atom;
     }
@@ -209,7 +208,7 @@ public class SpatialSet {
     }
 
     public void addCoords(double x, double y, double z,
-            double occupancy, double bfactor) {
+                          double occupancy, double bfactor) {
         Coords coords = new Coords(x, y, z, occupancy, bfactor);
         coordsList.add(coords);
     }
@@ -236,7 +235,7 @@ public class SpatialSet {
         }
         return coord;
     }
-    
+
     public void clearCoords() {
         coordsList.clear();
     }
@@ -321,6 +320,7 @@ public class SpatialSet {
         }
         refPPMV.setValid(true, atom);
         refPPMVs.set(structureNum, refPPMV);
+        atom.changed();
     }
 
     public void setRefError(int structureNum, double value) {
@@ -578,23 +578,23 @@ public class SpatialSet {
         sBuild.append(String.format("%2s", eName));
         return sBuild.toString();
     }
-    
+
     public String toMMCifString(int iAtom, int iStruct) {
         StringBuilder sBuilder = new StringBuilder();
-        
+
         Coords coord = getCoords(iStruct);
-       
+
         if (getPointCount() < 1 || coord == null) {
             return null;
         }
-        
+
         // group_PDB
         String group = "ATOM";
         // type symbol
         String aType = atom.getSymbol().toUpperCase();
         // atom ID
         String aName = atom.name;
-        if (aName.contains("'")){
+        if (aName.contains("'")) {
             aName = "\"" + aName + "\"";
         }
         // residue name
@@ -629,7 +629,7 @@ public class SpatialSet {
         if (atom.entity instanceof Residue) {
             if (atom.getResidueName().equals("MSE")) {
                 group = "HETATM";
-            }            
+            }
             // residue name
             resName = ((Residue) atom.entity).name;
             //  chain code
@@ -641,11 +641,10 @@ public class SpatialSet {
             seqCode = String.valueOf(((Residue) atom.entity).getIDNum());
         } else if (atom.entity instanceof Compound) {
             group = "HETATM";
-//            String[] labelSplit = atom.entity.label.split(",");
-            resName = atom.entity.label;//labelSplit[0];
+            resName = atom.entity.label;
             chainID = ((Compound) atom.entity).getName().charAt(0);
             entityID = ((Compound) atom.entity).getIDNum();
-            String number = ((Compound) atom.entity).getNumber(); 
+            String number = ((Compound) atom.entity).getNumber();
             if (number.equals("0")) {
                 seqCode = ".";
             }
@@ -766,7 +765,7 @@ public class SpatialSet {
     }
 
     public boolean addXYZtoSTAR(StringBuilder result,
-            int iStruct) {
+                                int iStruct) {
         char sep = ' ';
 
         Coords coord = getCoords(iStruct);

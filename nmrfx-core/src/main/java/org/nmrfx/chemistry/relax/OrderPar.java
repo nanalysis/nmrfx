@@ -1,5 +1,5 @@
 /*
- * NMRFx Analyst : 
+ * NMRFx Analyst :
  * Copyright (C) 2004-2021 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry.relax;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -30,37 +31,39 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public class OrderPar implements RelaxationValues {
 
     static final String[] PAR_NAMES = {"S2", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2", "model", "rms"};
     static final String DEFAULT_FLOAT_FORMAT = " %10.6f";
     public static final String[] orderParLoopStrings = {
             "Order_param_val", DEFAULT_FLOAT_FORMAT,
-            "Order_param_val_fit_err",DEFAULT_FLOAT_FORMAT,
-            "Tau_e_val",DEFAULT_FLOAT_FORMAT,
-            "Tau_e_val_fit_err",DEFAULT_FLOAT_FORMAT,
-            "Tau_f_val",DEFAULT_FLOAT_FORMAT,
-            "Tau_f_val_fit_err",DEFAULT_FLOAT_FORMAT,
-            "Tau_s_val",DEFAULT_FLOAT_FORMAT,
-            "Tau_s_val_fit_err",DEFAULT_FLOAT_FORMAT,
-            "Rex_val",DEFAULT_FLOAT_FORMAT,
-            "Rex_val_fit_err",DEFAULT_FLOAT_FORMAT,
-            "Model_free_sum_squared_errs",DEFAULT_FLOAT_FORMAT,
+            "Order_param_val_fit_err", DEFAULT_FLOAT_FORMAT,
+            "Tau_e_val", DEFAULT_FLOAT_FORMAT,
+            "Tau_e_val_fit_err", DEFAULT_FLOAT_FORMAT,
+            "Tau_f_val", DEFAULT_FLOAT_FORMAT,
+            "Tau_f_val_fit_err", DEFAULT_FLOAT_FORMAT,
+            "Tau_s_val", DEFAULT_FLOAT_FORMAT,
+            "Tau_s_val_fit_err", DEFAULT_FLOAT_FORMAT,
+            "Rex_val", DEFAULT_FLOAT_FORMAT,
+            "Rex_val_fit_err", DEFAULT_FLOAT_FORMAT,
+            "Model_free_sum_squared_errs", DEFAULT_FLOAT_FORMAT,
             "Model_free_n_values", " %4d",
             "Model_free_n_pars", " %4d",
             "Model_fit", " %10s",
-            "Sf2_val",DEFAULT_FLOAT_FORMAT,
-            "Sf2_val_fit_err",DEFAULT_FLOAT_FORMAT,
-            "Ss2_val",DEFAULT_FLOAT_FORMAT,
-            "Ss2_val_fit_err",DEFAULT_FLOAT_FORMAT,
-            "SH2_val",DEFAULT_FLOAT_FORMAT,
-            "SH2_val_fit_err",DEFAULT_FLOAT_FORMAT,
-            "SN2_val",DEFAULT_FLOAT_FORMAT,
-            "SN2_val_fit_err",DEFAULT_FLOAT_FORMAT,
-            "Resonance_ID"," %5d"};
+            "Sf2_val", DEFAULT_FLOAT_FORMAT,
+            "Sf2_val_fit_err", DEFAULT_FLOAT_FORMAT,
+            "Ss2_val", DEFAULT_FLOAT_FORMAT,
+            "Ss2_val_fit_err", DEFAULT_FLOAT_FORMAT,
+            "SH2_val", DEFAULT_FLOAT_FORMAT,
+            "SH2_val_fit_err", DEFAULT_FLOAT_FORMAT,
+            "SN2_val", DEFAULT_FLOAT_FORMAT,
+            "SN2_val_fit_err", DEFAULT_FLOAT_FORMAT,
+            "Resonance_ID", " %5d"};
+
+    private final OrderParSet orderParSet;
 
     private final ResonanceSource resSource;
     private Double value;
@@ -83,17 +86,18 @@ public class OrderPar implements RelaxationValues {
     private String model;
     private Double modelNum;
 
-    public OrderPar(ResonanceSource resSource, Double sumSqErr, Integer nValues, Integer nPars, String model) {
-        this(resSource, null, null, null, null, null, null, null, null, null,
+    public OrderPar(OrderParSet orderParSet, ResonanceSource resSource, Double sumSqErr, Integer nValues, Integer nPars, String model) {
+        this(orderParSet, resSource, null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, sumSqErr, nValues, nPars, model);
 
     }
 
-    public OrderPar(ResonanceSource resSource, Double value, Double error, Double TauE,
+    public OrderPar(OrderParSet orderParSet, ResonanceSource resSource, Double value, Double error, Double TauE,
                     Double TauEerr, Double TauF, Double TauFerr, Double TauS,
                     Double TauSerr, Double Rex, Double Rexerr, Double Sf2,
                     Double Sf2err, Double Ss2, Double Ss2err,
                     Double sumSqErr, Integer nValues, Integer nPars, String model) {
+        this.orderParSet = orderParSet;
         this.resSource = resSource;
         this.value = value;
         this.error = error;
@@ -113,10 +117,11 @@ public class OrderPar implements RelaxationValues {
         this.nValues = nValues;
         this.nPars = nPars;
         this.model = model;
+        orderParSet.add(this);
     }
 
     public OrderPar rEx(Double val, Double err) {
-        return new OrderPar(resSource, value, error,
+        return new OrderPar(orderParSet, resSource, value, error,
                 TauE, TauEerr,
                 TauF, TauFerr,
                 TauS, TauSerr,
@@ -127,7 +132,7 @@ public class OrderPar implements RelaxationValues {
     }
 
     public OrderPar setModel() {
-        OrderPar newPar = new OrderPar(resSource, value, error,
+        OrderPar newPar = new OrderPar(orderParSet, resSource, value, error,
                 TauE, TauEerr,
                 TauF, TauFerr,
                 TauS, TauSerr,
@@ -178,7 +183,7 @@ public class OrderPar implements RelaxationValues {
     }
 
     public OrderPar set(String name, Double val, Double err) {
-        OrderPar newPar = new OrderPar(resSource, value, error,
+        OrderPar newPar = new OrderPar(orderParSet, resSource, value, error,
                 TauE, TauEerr,
                 TauF, TauFerr,
                 TauS, TauSerr,
@@ -253,7 +258,6 @@ public class OrderPar implements RelaxationValues {
         return newPar;
     }
 
-    @Override
     public String getName() {
         return "S2";
     }
@@ -338,12 +342,25 @@ public class OrderPar implements RelaxationValues {
         }
     }
 
+    public double getRMS() {
+        return Math.sqrt(sumSqErr / nValues);
+    }
+
     public double getAIC() {
         if ((nValues != null) && (nPars != null) && (sumSqErr != null)) {
-            return 2 * nPars + nValues * Math.log(sumSqErr);
+            return 2 * (nPars + 1) + nValues * Math.log(sumSqErr / nValues);
         } else {
             return 0.0;
         }
+    }
+
+    public double getAICC() {
+        int k = nPars;
+        return getAIC() + 2.0 * (k + 1) * (k + 2) / (nValues - k);
+    }
+
+    public int getN() {
+        return nValues;
     }
 
     @Override
@@ -369,16 +386,16 @@ public class OrderPar implements RelaxationValues {
         }
     }
 
-    public static Map<String, List<OrderPar>> getOrderParameters(List<Atom> atoms) {
-        var orderParData = new HashMap<String, List<OrderPar>>();
+    public static Map<OrderParSet, List<OrderPar>> getOrderParameters(List<Atom> atoms) {
+        var orderParData = new HashMap<OrderParSet, List<OrderPar>>();
         atoms.forEach((atom) -> {
             for (var orderPars : atom.getOrderPars().entrySet()) {
-                String relaxKey = orderPars.getKey();
+                OrderParSet orderParSet = orderPars.getKey();
                 OrderPar orderPar = orderPars.getValue();
-                List<OrderPar> orderParList = orderParData.get(relaxKey);
-                if (!orderParData.containsKey(relaxKey)) {
+                List<OrderPar> orderParList = orderParData.get(orderParSet);
+                if (!orderParData.containsKey(orderParSet)) {
                     orderParList = new ArrayList<>();
-                    orderParData.put(relaxKey, orderParList);
+                    orderParData.put(orderParSet, orderParList);
                 }
                 orderParList.add(orderPar);
             }
@@ -386,61 +403,76 @@ public class OrderPar implements RelaxationValues {
         return orderParData;
     }
 
-    public static void writeToFile(File file) throws IOException {
+    public static void writeToFile(File file, String sepChar) throws IOException {
         MoleculeBase moleculeBase = MoleculeFactory.getActive();
-        var orderParData = OrderPar.getOrderParameters(moleculeBase.getAtomArray());
-        for (var orderParList:orderParData.values()) {
-            writeToFile(file, orderParList);
+        var orderParSetMap = moleculeBase.orderParSetMap();
+        String header = "Set" + sepChar + "Chain" + sepChar + "Residue" + sepChar + "ResName" + sepChar + "Atom" + sepChar
+                + "S2" + sepChar + "S2_err" + sepChar + "TauE" + sepChar + "TauE_err" + sepChar + "Sf2" + sepChar
+                + "Sf2_err" + sepChar + "Ss2" + sepChar + "Ss2_err" + sepChar + "TauF" + sepChar
+                + "TauF_err" + sepChar + "TauS" + sepChar + "TauS_err" + sepChar + "Rex" + sepChar + "Rex_err" + sepChar
+                + "model" + sepChar + "modelNum" + sepChar + "chiSq" + sepChar + "redChiSq" + sepChar + "AIC" + sepChar
+                + "nValues" + sepChar + "nPars\n";
+
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            fileWriter.write(header);
+
+            for (var entry : orderParSetMap.entrySet()) {
+                writeToFile(fileWriter, sepChar, entry.getKey(), entry.getValue().values());
+            }
         }
     }
 
-    public static void writeToFile(File file, List<OrderPar> orderPars) throws IOException {
-        try (FileWriter fileWriter = new FileWriter(file)) {
-            fileWriter.write("Chain\tResidue\tAtom\tS2\tS2_err\tTauE\tTauE_err\tSf2\tSf2_err\tSs2\tSs2_err\tTauF\t" +
-                    "TauF_err\tTauS\tTauS_err\tRex\tRex_err\tmodel\tmodelNum\tchiSq\tredChiSq\tAIC\tnValues\tnPars\n");
-            for (var orderPar:orderPars) {
-                fileWriter.write(orderPar.toString());
-                fileWriter.write("\n");
+    public static void writeToFile(FileWriter fileWriter, String sepChar, String setName, List<OrderPar> orderPars) throws IOException {
+        for (var orderPar : orderPars) {
+            if (!setName.isEmpty()) {
+                fileWriter.write(setName + sepChar);
             }
+            fileWriter.write(orderPar.toString(sepChar));
+            fileWriter.write("\n");
         }
     }
 
     @Override
     public String toString() {
+        return toString(",");
+    }
+
+    public String toString(String sepChar) {
         StringBuilder sBuilder = new StringBuilder();
         Atom atom = resSource.getAtom();
         String polymer = atom.getTopEntity().getName();
         polymer = (polymer == null) || ("null".equals(polymer)) ? "A" : polymer;
         String resNum = String.valueOf(atom.getResidueNumber());
-        sBuilder.append(polymer).append("\t").append(resNum).append("\t").append(atom.getName());
-        RelaxationValues.appendValueError(sBuilder, value, error,"%.2f");
-        RelaxationValues.appendValueError(sBuilder, TauE, TauEerr,"%.2f");
-        RelaxationValues.appendValueError(sBuilder, Sf2, Sf2err,"%.2f");
-        RelaxationValues.appendValueError(sBuilder, Ss2, Ss2err,"%.2f");
-        RelaxationValues.appendValueError(sBuilder, TauF, TauFerr,"%.4f");
-        RelaxationValues.appendValueError(sBuilder, TauS, TauSerr,"%.4f");
-        RelaxationValues.appendValueError(sBuilder, Rex, Rexerr,"%.2f");
-        sBuilder.append("\t").append(model).append("\t").append(modelNum);
-        sBuilder.append("\t").append(String.format("%.4f", sumSqErr)).append("\t").
+        String resName = String.valueOf(atom.getEntity().getName());
+        sBuilder.append(polymer).append(sepChar).append(resNum).append(sepChar).
+                append(resName).append(sepChar).append(atom.getName());
+        RelaxationValues.appendValueErrorWithSep(sBuilder, value, error, "%.5f", sepChar);
+        RelaxationValues.appendValueErrorWithSep(sBuilder, TauE, TauEerr, "%.5f", sepChar);
+        RelaxationValues.appendValueErrorWithSep(sBuilder, Sf2, Sf2err, "%.5f", sepChar);
+        RelaxationValues.appendValueErrorWithSep(sBuilder, Ss2, Ss2err, "%.5f", sepChar);
+        RelaxationValues.appendValueErrorWithSep(sBuilder, TauF, TauFerr, "%.5f", sepChar);
+        RelaxationValues.appendValueErrorWithSep(sBuilder, TauS, TauSerr, "%.5f", sepChar);
+        RelaxationValues.appendValueErrorWithSep(sBuilder, Rex, Rexerr, "%.5f", sepChar);
+        sBuilder.append(sepChar).append(model).append(sepChar).append(modelNum);
+        sBuilder.append(sepChar).append(String.format("%.4f", sumSqErr)).append(sepChar).
                 append(String.format("%.4f", getReducedChiSqr())).
-                append("\t").append(String.format("%.4f",getAIC())).append("\t").
-        append(nValues).append("\t").append(nPars);
-
+                append(sepChar).append(String.format("%.4f", getAICC())).append(sepChar).
+                append(nValues).append(sepChar).append(nPars);
         return sBuilder.toString();
     }
 
     public void valuesToStarString(StringBuilder sBuilder) {
         String defaultValue = "      . ";
 
-        for (int i=0;i<orderParLoopStrings.length;i += 2) {
+        for (int i = 0; i < orderParLoopStrings.length; i += 2) {
             String fullName = orderParLoopStrings[i];
-            String format = orderParLoopStrings[i+1];
+            String format = orderParLoopStrings[i + 1];
             if (fullName.endsWith("_val")) {
                 String parName = fullName.substring(0, fullName.length() - 4);
                 RelaxationValues.appendValue(sBuilder, getValue(parName), format, defaultValue);
             } else if (fullName.endsWith("_val_fit_err")) {
-                    String parName = fullName.substring(0, fullName.length() - 12);
-                    RelaxationValues.appendValue(sBuilder, getError(parName), format, defaultValue);
+                String parName = fullName.substring(0, fullName.length() - 12);
+                RelaxationValues.appendValue(sBuilder, getError(parName), format, defaultValue);
             } else {
                 switch (fullName) {
                     case "Model_free_sum_squared_errs":
@@ -465,7 +497,7 @@ public class OrderPar implements RelaxationValues {
                         }
                         break;
                     case "Model_fit":
-                        sBuilder.append(String.format(" %8s",model));
+                        sBuilder.append(String.format(" %8s", model));
                         break;
                     default:
                         sBuilder.append(defaultValue);
@@ -476,7 +508,7 @@ public class OrderPar implements RelaxationValues {
 
     public static List<String> getOrderParLoopString() {
         List<String> result = new ArrayList<>();
-        for (int i=0;i<orderParLoopStrings.length;i += 2) {
+        for (int i = 0; i < orderParLoopStrings.length; i += 2) {
             result.add(orderParLoopStrings[i]);
         }
         return result;
