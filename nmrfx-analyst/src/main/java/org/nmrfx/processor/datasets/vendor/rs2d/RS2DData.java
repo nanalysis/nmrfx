@@ -284,7 +284,7 @@ public class RS2DData implements NMRData {
         }
 
         log.info("Opening NUS file: {}", nusFile.getPath());
-        readSampleSchedule(nusFile.getPath(), true);
+        readSampleSchedule(nusFile.getPath(), true, true);
     }
 
     private void openParFile(String parpath) throws IOException {
@@ -589,7 +589,11 @@ public class RS2DData implements NMRData {
 
     @Override
     public int getNVectors() {
-        return nvectors;
+        int num = 1;
+        for (int i = 1; i < getNDim(); i++) {
+            num *= getSize(i) * (isComplex(i) ? 2 : 1);
+        }
+        return num;
     }
 
     @Override
