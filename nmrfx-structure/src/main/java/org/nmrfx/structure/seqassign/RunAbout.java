@@ -410,7 +410,7 @@ public class RunAbout implements SaveframeWriter {
         return result;
     }
 
-    public void filterPeaks() {
+    public Map<String, Integer> filterPeaks() {
         double tolScale = 3.0;
         PeakList refList = peakLists.get(0);
         refList.clearSearchDims();
@@ -422,6 +422,7 @@ public class RunAbout implements SaveframeWriter {
             refList.addSearchDim(dimName, sDim.getIdTol() * tolScale);
         }
 
+        Map<String, Integer> result = new HashMap<>();
         for (PeakList peakList : peakLists) {
             AtomicInteger nFiltered = new AtomicInteger();
             if (refList != peakList) {
@@ -446,8 +447,9 @@ public class RunAbout implements SaveframeWriter {
                 peakList.compress();
                 peakList.reNumber();
             }
-            System.out.println(peakList.getName() + " " + nFiltered);
+            result.put(peakList.getName(), nFiltered.intValue());
         }
+        return result;
     }
 
     public boolean getHasAllAtoms(SpinSystem spinSystem) {

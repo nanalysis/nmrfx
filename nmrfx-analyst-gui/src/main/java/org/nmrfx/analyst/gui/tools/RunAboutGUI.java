@@ -493,7 +493,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         actionMenuButton.getItems().add(alignItem);
 
         MenuItem filterItem = new MenuItem("Filter");
-        filterItem.setOnAction(e -> runAbout.filterPeaks());
+        filterItem.setOnAction(e -> filter());
         actionMenuButton.getItems().add(filterItem);
 
         MenuItem assembleItem = new MenuItem("Assemble");
@@ -1269,6 +1269,14 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
+    void filter() {
+        var filterResult = runAbout.filterPeaks();
+        var console = AnalystApp.getConsoleController();
+        console.write("Filter Peaks\n");
+        for (var entry : filterResult.entrySet()) {
+            console.write(entry.getKey() + " " + entry.getValue() + "\n");
+        }
+    }
     void assemble() {
         runAbout.assemble();
         updatePeakListMenu();
