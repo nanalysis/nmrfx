@@ -117,7 +117,7 @@ public class SpectrumAdjuster {
 
         }
         if (savePars) {
-            writePars(chart);
+            writePars(chart, false);
         }
         chart.refresh();
 
@@ -125,12 +125,24 @@ public class SpectrumAdjuster {
 
     public static void writePars() {
         PolyChart chart = PolyChartManager.getInstance().getActiveChart();
-        writePars(chart);
+        writePars(chart, true);
     }
 
-    private static void writePars(PolyChart chart) {
+    private static void writePars(PolyChart chart, boolean updateAttributes) {
         for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
             DatasetBase dataset = dataAttr.getDataset();
+            if (updateAttributes) {
+                dataset.setLvl(dataAttr.getLvl());
+                int posNeg = 0;
+                if (dataAttr.getPos()) {
+                    posNeg = 1;
+                }
+                if (dataAttr.getNeg()) {
+                    posNeg |= 2;
+                }
+
+                dataset.setPosneg(posNeg);
+            }
             dataset.writeParFile();
         }
 
@@ -218,7 +230,7 @@ public class SpectrumAdjuster {
                 }
             }
             if (shiftDataset && saveParFiles()) {
-                writePars(chart);
+                writePars(chart, false);
             }
             chart.refresh();
         }
@@ -269,7 +281,7 @@ public class SpectrumAdjuster {
 
             chart.refresh();
             if (saveParFiles()) {
-                writePars(chart);
+                writePars(chart, false);
             }
         }
     }
