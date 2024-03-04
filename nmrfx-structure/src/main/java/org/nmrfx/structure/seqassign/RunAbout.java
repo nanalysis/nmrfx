@@ -132,6 +132,23 @@ public class RunAbout implements SaveframeWriter {
         return typeInfoMap.get(typeName);
     }
 
+    public static List<String> getPatterns(SpectralDim sDim) {
+        String pattern = sDim.getPattern();
+        String[] parts = pattern.split("\\.");
+        List<String> choices = new ArrayList<>();
+        if (parts.length == 2) {
+            String[] types = parts[0].split(",");
+            String[] aNames = parts[1].split(",");
+            for (String type : types) {
+                for (String aName : aNames) {
+                    String pat = type + "." + aName;
+                    choices.add(pat);
+                }
+            }
+        }
+        return choices;
+    }
+
     void setAtomCount(String typeName, List<String> patElems, int[][] counts, List<String> stdNames) {
         int[] dimCount = new int[patElems.size()];
         int i = 0;
