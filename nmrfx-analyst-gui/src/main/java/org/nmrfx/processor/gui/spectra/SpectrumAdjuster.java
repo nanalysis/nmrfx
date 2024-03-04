@@ -62,9 +62,7 @@ public class SpectrumAdjuster {
             TextField textField = new TextField();
             grid.add(textField, 1, i + 1);
             textFields.add(textField);
-            textField.textProperty().addListener(e -> {
-                checkChange(applyButton, textField);
-            });
+            textField.textProperty().addListener(e -> checkChange(applyButton, textField));
         }
         CheckBox saveParButton = new CheckBox("Save Par File");
         saveParButton.setSelected(true);
@@ -101,7 +99,7 @@ public class SpectrumAdjuster {
         for (TextField textField : textFields) {
             String s = textField.getText();
             s = s.trim();
-            if (s.length() != 0) {
+            if (!s.isEmpty()) {
                 try {
                     double newRef = Double.parseDouble(s);
                     processReference(chart, iDim, newRef, shiftPeaks);
@@ -196,7 +194,7 @@ public class SpectrumAdjuster {
         double[] deltas = {0.0, 0.0};
         boolean gotShifts = false;
         if (crossHairs.hasState("||") || delXOpt.isPresent()) {
-            deltas[0] = delXOpt.isPresent() ? delXOpt.get() : c1[0] - c0[0];
+            deltas[0] = delXOpt.orElseGet(() -> c1[0] - c0[0]);
             gotShifts = true;
         }
         if ((nDim > 1) && (crossHairs.hasState("=") || delYOpt.isPresent())) {
@@ -263,7 +261,7 @@ public class SpectrumAdjuster {
             datasetUndo.clear();
             peakUndo.clear();
             undoChartName = chart.getName();
-            chart.getDatasetAttributes().forEach((dataAttr) -> {
+            chart.getDatasetAttributes().forEach(dataAttr -> {
                 int dataDim = dataAttr.dim[1];
                 DatasetBase dataset = dataAttr.getDataset();
                 double oldRef = dataset.getRefValue(dataDim);
@@ -292,13 +290,13 @@ public class SpectrumAdjuster {
             for (Map.Entry<String, Double> entry : datasetUndo.entrySet()) {
                 String[] fields = entry.getKey().split(":");
                 Dataset dataset = Dataset.getDataset(fields[0]);
-                int iDim = Integer.valueOf(fields[1]);
+                int iDim = Integer.parseInt(fields[1]);
                 dataset.setRefValue(iDim, entry.getValue());
             }
             for (Map.Entry<String, Double> entry : peakUndo.entrySet()) {
                 String[] fields = entry.getKey().split(":");
-                PeakList peakList = (PeakList) PeakList.get(fields[0]);
-                int iDim = Integer.valueOf(fields[1]);
+                PeakList peakList = PeakList.get(fields[0]);
+                int iDim = Integer.parseInt(fields[1]);
                 peakList.shiftPeak(iDim, -entry.getValue());
             }
             chartOpt.get().refresh();
