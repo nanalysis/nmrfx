@@ -107,7 +107,7 @@ public class TRACTFit {
         }
 
         try {
-            PointValuePair result = fitter.fit(start, lower, upper, 10.0);
+            PointValuePair result = fitter.fit(start, lower, upper, 10.0, 1);
             bestPars = result.getPoint();
             parErrs = fitter.bootstrap(result.getPoint(), 300);
             return result;

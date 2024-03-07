@@ -31,7 +31,7 @@ import java.util.Map.Entry;
 public class PeakPaths implements PeakListener {
 
     private static final String[] PRESSURE_NAMES = {"Ha", "Hb", "Hc", "Xa", "Xb", "Xc"};
-    private static final String[] TITRATION_NAMES = {"K", "C"};
+    private static final String[] TITRATION_NAMES = {"K", "D"};
 
     boolean fit0 = false;
     ArrayList<PeakList> peakLists;
@@ -77,6 +77,20 @@ public class PeakPaths implements PeakListener {
         }
     }
 
+    public enum BINDINGMODE {
+        SINGLE_SITE(1),
+        TWO_SITES(2);
+
+        int nStates;
+
+        public int nStates() {
+            return nStates;
+        }
+
+        BINDINGMODE(int nStates) {
+            this.nStates = nStates;
+        }
+    }
     public enum PATHMODE {
         TITRATION("Concentration", "Shift Delta", TITRATION_NAMES),
         PRESSURE("Pressure", "Shift Delta", PRESSURE_NAMES);
@@ -313,8 +327,10 @@ public class PeakPaths implements PeakListener {
             if (fit0) {
                 baseParNames.add("A");
             }
-            baseParNames.add("K");
-            baseParNames.add("C");
+            baseParNames.add("K1");
+            baseParNames.add("K2");
+            baseParNames.add("D1");
+            baseParNames.add("D2");
         }
         return baseParNames;
     }

@@ -758,7 +758,7 @@ public class PeakFitter {
         }
 
         try {
-            PointValuePair result = fitter.fit(guesses, lower, upper, 10.0);
+            PointValuePair result = fitter.fit(guesses, lower, upper, 10.0, 1);
             bestPars = result.getPoint();
             rms = result.getValue();
             updateBIC(rms, size, nPars);
