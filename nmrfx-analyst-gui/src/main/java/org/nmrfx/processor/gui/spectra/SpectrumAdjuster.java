@@ -198,7 +198,7 @@ public class SpectrumAdjuster {
             gotShifts = true;
         }
         if ((nDim > 1) && (crossHairs.hasState("=") || delYOpt.isPresent())) {
-            deltas[1] = delYOpt.isPresent() ? delXOpt.get() : c1[1] - c0[1];
+            deltas[1] = delYOpt.isPresent() ? delYOpt.get() : c1[1] - c0[1];
             gotShifts = true;
         }
         if (gotShifts) {
