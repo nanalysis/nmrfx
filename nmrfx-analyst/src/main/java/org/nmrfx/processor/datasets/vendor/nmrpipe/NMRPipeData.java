@@ -828,7 +828,7 @@ public class NMRPipeData implements NMRData {
             nusFile = nusPath.toFile();
         }
         if (nusFile.exists()) {
-            readSampleSchedule(nusFile.getPath(), true);
+            readSampleSchedule(nusFile.getPath(), true, false);
             if (sampleSchedule.getTotalSamples() == 0) {
                 throw new IOException("nuslist file exists, but is empty");
             } else {

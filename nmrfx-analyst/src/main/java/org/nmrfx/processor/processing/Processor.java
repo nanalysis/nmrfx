@@ -555,10 +555,12 @@ public class Processor {
             if (isNUS()) {
                 sampleSchedule = nmrData.getSampleSchedule();
                 sampleSchedule.setOutMult(groupSizes, complex, acqOrderToUse);
-                itemsToWrite = sampleSchedule.getTotalSamples() * tmult.getGroupSize();
+                itemsToWrite = sampleSchedule.getTotalSamples();
+                if (!sampleSchedule.isPhaseMode()) {
+                    itemsToWrite *= tmult.getGroupSize();
+                }
                 itemsToRead = itemsToWrite;
             }
-
             totalVecGroups = totalVecs / tmult.getGroupSize();
             vectorsMultiDataMin = nmrDataSets.size() * tmult.getGroupSize();
         } else {

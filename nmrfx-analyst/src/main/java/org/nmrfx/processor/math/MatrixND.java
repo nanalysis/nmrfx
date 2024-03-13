@@ -1035,6 +1035,53 @@ public class MatrixND implements MatrixType {
         return measures;
     }
 
+    public int[][] findZeros() {
+        int[] complexSizes = new int[sizes.length];
+        for (int i = 0; i < sizes.length; i++) {
+            complexSizes[i] = sizes[i] / 2;
+        }
+        int nComplex = (int) Math.round(Math.pow(2, getNDim()));
+        boolean[] validPositions = new boolean[getNElems()];
+
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(complexSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        int nValid = 0;
+        while(iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            int[] complexSample = new int[counts.length];
+            for (int k = 0; k < nComplex; k++) {
+                int divisor = 1;
+                for (int j = 0; j < counts.length; j++) {
+                    int cDelta = (k / divisor) % 2;
+                    divisor *= 2;
+                    complexSample[counts.length - j - 1] = counts[counts.length - j - 1] * 2 + cDelta;
+                }
+                int offset = getOffset(complexSample);
+                if (Math.abs(data[offset]) > 1.0e-12){
+                    validPositions[offset] = true;
+                    nValid++;
+                }
+            }
+        }
+        int nZeros = getNElems() - nValid;
+        int[] zeroList = new int[nZeros];
+        int[] srcTargetMap = new int[nValid];
+        int i = 0;
+        int k = 0;
+        int iValid = 0;
+        for (boolean valid : validPositions) {
+            if (!valid) {
+                zeroList[k++] = i;
+            } else {
+                srcTargetMap[iValid++] = i;
+            }
+            i++;
+        }
+        int[][] result = {zeroList, srcTargetMap};
+        return result;
+    }
+
     public ArrayList<MatrixPeak> peakPick(double globalThreshold, double noiseThreshold, boolean includeNegative, boolean isComplex, double scale) {
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
