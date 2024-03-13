@@ -872,7 +872,7 @@ public class SpinSystem {
 
     }
 
-    void updateSpinSystem() {
+    public void updateSpinSystem() {
         purgeDeleted();
         List<Double>[][] shiftList = new ArrayList[2][ATOM_TYPES.length];
         for (int i = 0; i < ATOM_TYPES.length; i++) {
