@@ -127,9 +127,9 @@ public class NOEAssign {
         return matchCriteria;
     }
 
-    // mode == 0  only extract contraints for peaks with one assignment
-    // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
-    public static void extractNoePeaks(NoeSet noeSet, PeakList peakList, int mode, boolean onlyFrozen) {
+    // unAmbiguous == true  only extract contraints for peaks with one assignment
+    // unAmbiguous == false  extract constraints for peaks with one or more (ambiguous) assignments
+    public static void extractNoePeaks(NoeSet noeSet, PeakList peakList, boolean unAmbiguous, boolean onlyFrozen) {
         double scale = 1.0;
         int[] atomIndex = new int[2];
         int nPeaks;
@@ -180,7 +180,7 @@ public class NOEAssign {
                                 nAssign++;
                             }
                         } else if (includeDiag || !atoms[atomIndex[0]][iPos].getShortName().equals(atoms[atomIndex[1]][iPos].getShortName())) {
-                            if (nAssign == 1) {
+                           if (nAssign == 1) {
                                 if (nProtons == 2) {
                                     Noe noe = new Noe(peak, atoms[atomIndex[0]][iPos].spatialSet, atoms[atomIndex[1]][iPos].spatialSet, scale);
                                     noe.setIntensity(peak.getIntensity());
@@ -188,8 +188,8 @@ public class NOEAssign {
                                     noe.setNPossible(nAssign);
                                     noeSet.add(noe);
                                 }
-                            } else if (mode == 1) {
-                                if (nProtons < 3) {
+                            } else if ((nAssign > 1) && !unAmbiguous) {
+                                if (nProtons == 2) {
                                     Noe noe = new Noe(peak, atoms[atomIndex[0]][iPos].spatialSet, atoms[atomIndex[1]][iPos].spatialSet, scale);
                                     noe.setIntensity(peak.getIntensity());
                                     noe.setVolume(peak.getVolume1());
@@ -232,7 +232,7 @@ public class NOEAssign {
         int nTotal = 0;
         int nMaxAmbig = 0;
         int nAssigned = 0;
-        Map<String, Noe.NoeMatch> map = new HashMap<String, Noe.NoeMatch>();
+        Map<String, Noe.NoeMatch> map = new HashMap<>();
         for (int i = 0; i < nPeaks; i++) {
             peak = peakList.getPeak(i);
             if ((peak != null) && (peak.getStatus() >= 0)) {
@@ -322,7 +322,7 @@ public class NOEAssign {
                     int nProtons2 = atoms[pDim2].length;
                     if ((nProtons1 > 0) && (nProtons2 > 0)) {
                         if ((nProtons1 == nProtons2) || (nProtons1 == 1) || (nProtons2 == 1)) {
-                            int maxN = nProtons1 > nProtons2 ? nProtons1 : nProtons2;
+                            int maxN = Math.max(nProtons1, nProtons2);
                             for (int iProton = 0; iProton < maxN; iProton++) {
                                 SpatialSet sp1 = null;
                                 SpatialSet sp2 = null;
@@ -352,6 +352,8 @@ public class NOEAssign {
                 List<SpatialSet>[] matchList = idPeak.scan3(matchCriteria, true);
                 ArrayList<IdResult> idResults = idPeak.getResults2(matchList, matchCriteria);
                 int nMan = map.size();
+                Map<String, Noe.NoeMatch> autoMap = new HashMap<>();
+
                 if ((nMan == 0) || !strict) {
                     for (IdResult idResult : idResults) {
                         SpatialSet sp1 = idResult.getSpatialSet(0);
@@ -363,15 +365,19 @@ public class NOEAssign {
                                 type = Constraint.GenTypes.AUTOPLUS;
                             }
                             Noe.NoeMatch match = new Noe.NoeMatch(sp1, sp2, type, idResult.getPPMError(1.0));
-                            map.put(name, match);
+                            autoMap.put(name, match);
                         }
                     }
                 }
+                int nAuto = autoMap.size();
+                if (nAuto < maxAmbig) {
+                    map.putAll(autoMap);
+                }
                 int nPossible = map.size();
-                if (nPossible > maxAmbig) {
+                if ((nAuto > maxAmbig) && (nMan == 0)){
                     nMaxAmbig++;
                 } else if (nPossible > 0) {
-                    nTotal += nPossible;
+                    nTotal +=nPossible;
                     nAssigned++;
                     if (noeSetOpt.isPresent()) {
                         NoeSet noeSet = noeSetOpt.get();
@@ -398,8 +404,7 @@ public class NOEAssign {
 
             }
         }
-        AssignResult result = new AssignResult(nPeaks, nAssigned, nMaxAmbig, nTotal);
-        return result;
+        return new AssignResult(nPeaks, nAssigned, nMaxAmbig, nTotal);
     }
 
     public static void updateGenTypes(NoeSet noeSet) {
@@ -490,8 +495,7 @@ public class NOEAssign {
         }
 
         public String toString() {
-            String result = String.format("nPeaks %d nAssignd %d nMaxAmbig %d nTotal %d", nPeaks, nAssigned, nMaxAmbig, nTotal);
-            return result;
+            return String.format("nPeaks %d nAssignd %d nMaxAmbig %d nTotal %d", nPeaks, nAssigned, nMaxAmbig, nTotal);
         }
 
     }
@@ -558,7 +562,6 @@ public class NOEAssign {
             if ((peak != null) && (peak.getStatus() >= 0)) {
                 for (int iDim = 0; iDim < peakList.nDim; iDim++) {
                     PeakDim peakDim = peak.getPeakDim(iDim);
-                    SpectralDim spectralDim = peakList.getSpectralDim(iDim);
                     double ppm = peakDim.getChemShift();
                     matchCriteria[iDim] = new MatchCriteria(iDim, ppm, tol[iDim], atomPats[iDim], resPats[iDim], relation[iDim], folding[iDim], 0);
                 }
@@ -586,7 +589,6 @@ public class NOEAssign {
             mult = peakList.getSpectralDim(dim).getIdTol() / 4.0;
         }
         int ppmSet = 0;
-        boolean getInfo = true;
         int maxAmbig = 1;
         int bestScore = 0;
         double bestTol = 0.1;

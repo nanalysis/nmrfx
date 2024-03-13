@@ -11,6 +11,7 @@ import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
+import org.nmrfx.structure.chemistry.Molecule;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -609,6 +610,14 @@ public class SpinSystems {
                 SpinSystem.extend(spinSystem, minScore);
             }
         }
+    }
+
+    public void thawAll() {
+        Molecule.getActive().getAtoms().forEach(atom -> atom.setPPMValidity(0, false));
+        for (PeakList peakList : runAbout.peakLists) {
+            peakList.clearAtomLabels();
+        }
+        getSortedFragments().forEach(frag -> frag.thawFragment());
     }
 
     public void clearAll() {

@@ -52,13 +52,12 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.noe.NOEAssign;
 import org.nmrfx.structure.noe.NOECalibrator;
 import org.nmrfx.utils.GUIUtils;
-import org.nmrfx.utils.properties.ChoiceOperationItem;
-import org.nmrfx.utils.properties.DoubleRangeOperationItem;
-import org.nmrfx.utils.properties.NvFxPropertyEditorFactory;
+import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +76,9 @@ import java.util.ResourceBundle;
 public class NOETableController implements Initializable, StageBasedController {
 
     private static final Logger log = LoggerFactory.getLogger(NOETableController.class);
+    
+    private static final String CONSTRAINT_GENERATION_STRING = "Constraint Generation";
+    private static final String EXP_CALIBRATION_STRING = "Calibration-Exponential";
     private Stage stage;
     @FXML
     private ToolBar toolBar;
@@ -93,7 +95,12 @@ public class NOETableController implements Initializable, StageBasedController {
     MolecularConstraints molConstr = null;
     PropertySheet propertySheet;
     CheckBox detailsCheckBox;
-    CheckBox onlyFrozenCheckBox;
+    IntRangeOperationItem maxAmbigItem;
+    BooleanOperationItem strictItem;
+    BooleanOperationItem unambiguousItem;
+    BooleanOperationItem autoAssignItem;
+
+    BooleanOperationItem onlyFrozenItem;
     DoubleRangeOperationItem refDistanceItem;
     DoubleRangeOperationItem expItem;
     DoubleRangeOperationItem minDisItem;
@@ -133,19 +140,34 @@ public class NOETableController implements Initializable, StageBasedController {
         updateNoeSetMenu();
         updatePeakListMenu();
         masterDetailPane.showDetailNodeProperty().bindBidirectional(detailsCheckBox.selectedProperty());
+
+        maxAmbigItem = new IntRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
+                20, 1,40, CONSTRAINT_GENERATION_STRING, "Maximum Ambiguity", "Maximum Ambiguity");
+
+        autoAssignItem = new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Auto-Assign", "Autoassign unassigned peaks");
+
+        onlyFrozenItem = new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Only Frozen", "Only extract from frozen peaks");
+
+        strictItem = new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Strictly Assign", "Only extract assigned peaks");
+
+        unambiguousItem= new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Only Unambiguous", "Only extract unambiguous peaks");
+
         List<String> intVolChoice = List.of("Intensity", "Volume");
-        modeItem = new ChoiceOperationItem(propertySheet, (a, b, c) -> refresh(), "intensity", intVolChoice, "Exp Calibrate", "Mode", "Reference Distance");
+        modeItem = new ChoiceOperationItem(propertySheet, (a, b, c) -> refresh(), "intensity", intVolChoice, EXP_CALIBRATION_STRING, "Mode", "Reference Distance");
         refDistanceItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
-                3.0, 1.0, 6.0, false, "Exp Calibrate", "Ref Distance", "Reference Distance");
+                3.0, 1.0, 6.0, false, EXP_CALIBRATION_STRING, "Ref Distance", "Reference Distance");
         expItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
-                6.0, 1.0, 6.0, false, "Exp Calibrate", "Exp Factor", "Exponent value");
+                6.0, 1.0, 6.0, false, EXP_CALIBRATION_STRING, "Exp Factor", "Exponent value");
         minDisItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
-                2.0, 1.0, 3.0, false, "Exp Calibrate", "Min Distance", "Minimum bound");
+                2.0, 1.0, 3.0, false, EXP_CALIBRATION_STRING, "Min Distance", "Minimum bound");
         maxDisItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
-                6.0, 3.0, 6.0, false, "Exp Calibrate", "Max Distance", "Maximum bound");
+                6.0, 3.0, 6.0, false, EXP_CALIBRATION_STRING, "Max Distance", "Maximum bound");
         fErrorItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
-                0.125, 0.0, 0.2, false, "Exp Calibrate", "Tolerance", "Fractional additional bound");
-        propertySheet.getItems().addAll(modeItem, refDistanceItem, expItem, minDisItem, maxDisItem, fErrorItem);
+                0.125, 0.0, 0.2, false, EXP_CALIBRATION_STRING, "Tolerance", "Fractional additional bound");
+        propertySheet.getItems().addAll(
+                autoAssignItem, strictItem, onlyFrozenItem, unambiguousItem,maxAmbigItem,
+                modeItem, refDistanceItem, expItem, minDisItem, maxDisItem, fErrorItem
+        );
     }
 
     @Override
@@ -183,9 +205,10 @@ public class NOETableController implements Initializable, StageBasedController {
         calibrateButton.setOnAction(e -> calibrate());
         noeSetMenuItem = new MenuButton("NoeSets");
         peakListMenuButton = new MenuButton("PeakLists");
-        detailsCheckBox = new CheckBox("Details");
-        onlyFrozenCheckBox = new CheckBox("Only Frozen");
-        toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton, calibrateButton, onlyFrozenCheckBox, detailsCheckBox);
+        detailsCheckBox = new CheckBox("Options");
+
+        toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton,
+                calibrateButton, ToolBarUtils.makeFiller(20), detailsCheckBox);
         updateNoeSetMenu();
     }
 
@@ -354,11 +377,7 @@ public class NOETableController implements Initializable, StageBasedController {
     void calibrate() {
         if (noeSet == null) {
             Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
-            if (noeSetOpt.isEmpty()) {
-                noeSet = molConstr.newNOESet("default");
-            } else {
-                noeSet = noeSetOpt.get();
-            }
+            noeSet = noeSetOpt.orElseGet(() -> molConstr.newNOESet("default"));
         }
         if (noeSet != null) {
             log.info("Calibrate {} {}", noeSet.getName(), noeSet);
@@ -383,18 +402,26 @@ public class NOETableController implements Initializable, StageBasedController {
             GUIUtils.warn("Extract Peaks", "Peak list " + peakList.getName() + " doesn't have two proton dimensions");
             return;
         }
-        boolean onlyFrozen = onlyFrozenCheckBox.isSelected();
+        boolean onlyFrozen = onlyFrozenItem.getValue();
+        boolean autoAssign = autoAssignItem.getValue();
+        boolean unambiguous = unambiguousItem.getValue();
         int nDim = peakList.nDim;
         try {
-            for (int i = 0; i < nDim; i++) {
-                NOEAssign.findMax(peakList, i, 0, onlyFrozen);
+            if (autoAssign) {
+                for (int i = 0; i < nDim; i++) {
+                    NOEAssign.findMax(peakList, i, 0, onlyFrozen);
+                }
             }
             Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
             if (noeSetOpt.isEmpty()) {
                 noeSet = molConstr.newNOESet("default");
                 noeSetOpt = Optional.of(noeSet);
             }
-            NOEAssign.extractNoePeaks2(noeSetOpt, peakList, 2, false, 0, onlyFrozen);
+            if (!autoAssign) {
+                NOEAssign.extractNoePeaks(noeSet, peakList, unambiguous, onlyFrozen );
+            } else {
+                NOEAssign.extractNoePeaks2(noeSetOpt, peakList, maxAmbigItem.get(), strictItem.getValue(), 0, onlyFrozen);
+            }
             NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
             noeCalibrator.updateContributions(false, false);
             noeSet = noeSetOpt.get();
