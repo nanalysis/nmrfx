@@ -793,6 +793,7 @@ public class RefManager {
                 sBuilder.append(System.lineSeparator());
             }
         }
+        getSkipString().ifPresent(s -> sBuilder.append(s).append(System.lineSeparator()));
         return sBuilder.toString();
     }
 
