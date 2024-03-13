@@ -544,14 +544,11 @@ public class PeakPicker {
         lastPeakPicked = null;
 
         for (int i = 0; i < peakPickPar.nPeakDim; i++) {
-            pkToData[i] = i;
+            pkToData[i] = dimOrder[i];
         }
-        for (int i=0;i < nDataDim;i++) {
-            if (i < pkToData.length){
-                dataToPk[i] = pkToData[i];
-            } else {
-                dataToPk[i] = -1;
-            }
+        Arrays.fill(dataToPk, -1);
+        for (int i=0;i < pkToData.length;i++) {
+            dataToPk[pkToData[i]] =i;
         }
         PeakList peakList = PeakList.get(peakPickPar.listName);
         boolean listExists = (peakList != null);
@@ -611,7 +608,7 @@ public class PeakPicker {
             Arrays.fill(dataToPk, -1);
             for (int i = 0; i < peakList.nDim; i++) {
                 for (int j = 0; j < dimOrder.length; j++) {
-                    if (peakList.getSpectralDim(i).getDataDim() == dimOrder[j]) {
+                    if (peakList.getSpectralDim(i).getIndex() == dimOrder[j]) {
                         pkToData[i] = dimOrder[j];
                         dataToPk[dimOrder[j]] = i;
                         nMatch++;

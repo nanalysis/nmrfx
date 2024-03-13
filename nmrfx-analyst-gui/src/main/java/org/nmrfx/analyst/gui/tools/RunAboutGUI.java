@@ -1733,7 +1733,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             if (widthType.equals(("peak"))) {
                 SpectralDim sDim = peakList.getSpectralDim(dataDimName);
                 if (sDim != null) {
-                    var widthStats = peakList.widthStatsPPM(sDim.getDataDim());
+                    var widthStats = peakList.widthStatsPPM(sDim.getIndex());
                     width = 10.0 * widthStats.getAverage();
                 } else {
                     width = null;
