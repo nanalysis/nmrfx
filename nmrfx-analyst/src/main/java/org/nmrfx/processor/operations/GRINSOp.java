@@ -190,8 +190,16 @@ public class GRINSOp extends MatrixOperation {
                 }
 
             }
-            int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
-            int[] srcTargetMap = genSrcTargetMap(schedule, matrixND);
+            int[] zeroList;
+            int[] srcTargetMap;
+            if (schedule != null) {
+                zeroList = IstMatrix.genZeroList(schedule, matrixND);
+                srcTargetMap = genSrcTargetMap(schedule, matrixND);
+            } else {
+                int[][] zeroTarget = matrixND.findZeros();
+                zeroList = zeroTarget[0];
+                srcTargetMap = zeroTarget[1];
+            }
 
             GRINS grins = new GRINS(matrixND, noise, scale, iterations, shapeFactor, apodize, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
             grins.exec();
@@ -245,15 +253,19 @@ public class GRINSOp extends MatrixOperation {
             schedule = sampleSchedule;
         }
 
-        if (schedule == null) {
-            throw new ProcessingException("No sample schedule");
-        }
-
         try {
             matrixND.zeroFill(zfFactor);
             matrixND.setVSizes(matrixND.getSizes());
-            int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
-            int[] srcTargetMap = genSrcTargetMap(schedule, matrixND);
+            int[] zeroList;
+            int[] srcTargetMap;
+            if (schedule != null) {
+                zeroList = IstMatrix.genZeroList(schedule, matrixND);
+                srcTargetMap = genSrcTargetMap(schedule, matrixND);
+            } else {
+                int[][] zeroTarget = matrixND.findZeros();
+                zeroList = zeroTarget[0];
+                srcTargetMap = zeroTarget[1];
+            }
             String logFile = null;
             if (logHome != null) {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
