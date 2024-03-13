@@ -185,6 +185,9 @@ public class PeakPickParameters {
             int nDims = 0;
             DimSizes[] dimSizes = new DimSizes[dataDim];
             for (int i = 0; i < dataDim; i++) {
+                if (!theFile.getFreqDomain(i)) {
+                    pt[i][0] = pt[i][1] = 0;
+                }
                 int dimSize = Math.abs(pt[i][1] - pt[i][0]) + 1;
 
                 if ((dimSize > 1) || (region.equalsIgnoreCase("point"))) {

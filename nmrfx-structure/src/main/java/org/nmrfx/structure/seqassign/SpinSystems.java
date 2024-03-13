@@ -252,8 +252,8 @@ public class SpinSystems {
             int i = 0;
             for (var searchDim : refList.getSearchDims()) {
                 var sDim = refList.getSpectralDim(searchDim.getDim());
-                refDims[i] = sDim.getDataDim();
-                iDims[i] = peakList.getSpectralDim(sDim.getDimName()).getDataDim();
+                refDims[i] = sDim.getIndex();
+                iDims[i] = peakList.getSpectralDim(sDim.getDimName()).getIndex();
                 i++;
             }
             for (Peak peak : peakList.peaks()) {

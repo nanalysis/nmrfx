@@ -412,7 +412,7 @@ public class RunAbout implements SaveframeWriter {
                 int j = 0;
                 for (String dimName : commonDimNames) {
                     SpectralDim sDim = peakList.getSpectralDim(dimName);
-                    dims[j++] = sDim.getDataDim();
+                    dims[j++] = sDim.getIndex();
                 }
                 double[] ppms = new double[dims.length];
                 peakList.peaks().forEach(peak -> {

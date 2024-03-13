@@ -57,6 +57,8 @@ public class SpectralDim {
             "_Spectral_dim.Precision",};
     private PeakList peakList = null;
     // fixme sf should come from dataset
+
+    private final int index;
     private double sf = 1.0;
     private double sw = 1.0;
     private double ref = 0.0;
@@ -93,6 +95,7 @@ public class SpectralDim {
      */
     public SpectralDim(PeakList peakList, int iDim) {
         this.peakList = peakList;
+        this.index = iDim;
         dataDim = iDim;
         magLinkage = iDim;
         dimName = "D" + dataDim;
@@ -102,6 +105,9 @@ public class SpectralDim {
         }
     }
 
+    public int getIndex() {
+        return index;
+    }
     public static String[] parsePattern(String pattern) {
         int dot = pattern.indexOf('.');
         String[] resPats;
@@ -133,7 +139,7 @@ public class SpectralDim {
     }
 
     public SpectralDim copy(PeakList peakList) {
-        SpectralDim newSpectralDim = new SpectralDim(peakList, dataDim);
+        SpectralDim newSpectralDim = new SpectralDim(peakList, index);
         newSpectralDim.sf = sf;
         newSpectralDim.sw = sw;
         newSpectralDim.ref = ref;
@@ -172,7 +178,7 @@ public class SpectralDim {
         StringBuilder result = new StringBuilder();
         String sep = " ";
         char stringQuote = '"';
-        result.append(String.valueOf(getDataDim() + 1)).append(sep);
+        result.append(String.valueOf(getIndex() + 1)).append(sep);
         result.append(getAtomType()).append(sep);
         result.append(getAtomIsotope());
         result.append(sep);
@@ -463,7 +469,7 @@ public class SpectralDim {
     public String getNucleus() {
         if (nucName.equals("")) {
             Nuclei[] nuclei = getPeakList().guessNuclei();
-            nucName = nuclei[dataDim].getNumberName();
+            nucName = nuclei[index].getNumberName();
         }
         return nucName;
     }
@@ -598,7 +604,7 @@ public class SpectralDim {
 
     public double getMeanWidthPPM() {
         if (!meanWidthPPM.isPresent()) {
-            DoubleSummaryStatistics stats = peakList.widthStatsPPM(dataDim);
+            DoubleSummaryStatistics stats = peakList.widthStatsPPM(index);
             meanWidthPPM = Optional.of(stats.getAverage());
         }
         return meanWidthPPM.get();
