@@ -1037,7 +1037,7 @@ public class BrukerData implements NMRData {
             nusFile = new File(fpath + File.separator + "nuslist");
         }
         if (nusMode && nusFile.exists()) {
-            readSampleSchedule(nusFile.getPath(), false);
+            readSampleSchedule(nusFile.getPath(), false, false);
             if (sampleSchedule.getTotalSamples() == 0) {
                 throw new IOException("nuslist file exists, but is empty");
             } else {

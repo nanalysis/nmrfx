@@ -1099,7 +1099,7 @@ public class VarianData implements NMRData {
         if (scheduleFile.exists()) {
             log.info("exists");
             try {
-                readSampleSchedule(scheduleFile.getPath(), false);
+                readSampleSchedule(scheduleFile.getPath(), false, false);
                 gotSchedule = true;
             } catch (IOException ioE) {
                 gotSchedule = false;
