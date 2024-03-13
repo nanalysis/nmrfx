@@ -120,7 +120,7 @@ public class TRACTSimFit {
         double[] lower = {max0 / 2.0, r0 / 2.0, max1 / 2.0, 1.0};
         double[] upper = {max0 * 2.0, r0 * 2.0, max1 * 2.0, 100.0};
         try {
-            PointValuePair result = fitter.fit(start, lower, upper, 10.0);
+            PointValuePair result = fitter.fit(start, lower, upper, 10.0,3);
             bestPars = result.getPoint();
             parErrs = fitter.bootstrap(result.getPoint(), 300);
             return result;

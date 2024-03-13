@@ -19,15 +19,7 @@ public class TableUtils {
     private TableUtils() {
     }
 
-    /**
-     * Copies the contents of a table, including the headers, to the clipboard as a tab separated string.
-     * If no rows are selected or copyAll is true, then all rows will be copied. Otherwise, only the
-     * selected rows will be copied.
-     *
-     * @param tableView    The TableView to copy.
-     * @param forceCopyAll If true, all rows will be copied regardless of selections
-     */
-    public static void copyTableToClipboard(TableView<?> tableView, boolean forceCopyAll) {
+    public static String getTableAsString(TableView<?> tableView, boolean forceCopyAll) {
         List<Integer> rowsToCopy = new ArrayList<>(tableView.getSelectionModel().getSelectedIndices());
         if (rowsToCopy.isEmpty() || forceCopyAll) {
             rowsToCopy = IntStream.range(0, tableView.getItems().size()).boxed().toList();
@@ -39,21 +31,37 @@ public class TableUtils {
         int lastColumnIndex = headerColumns.size() - 1;
         for (Integer rowIndex : rowsToCopy) {
             for (int colIndex = 0; colIndex < headerColumns.size(); colIndex++) {
-                tabSeparatedString.append(tableView.getColumns().get(colIndex).getCellData(rowIndex));
+                Object value = tableView.getColumns().get(colIndex).getCellData(rowIndex);
+                String s = value == null ? "" : value.toString();
+                tabSeparatedString.append(s);
                 if (colIndex != lastColumnIndex) {
                     tabSeparatedString.append("\t");
                 }
             }
             tabSeparatedString.append(System.lineSeparator());
         }
+        return tabSeparatedString.toString();
+    }
+
+    /**
+     * Copies the contents of a table, including the headers, to the clipboard as a tab separated string.
+     * If no rows are selected or copyAll is true, then all rows will be copied. Otherwise, only the
+     * selected rows will be copied.
+     *
+     * @param tableView    The TableView to copy.
+     * @param forceCopyAll If true, all rows will be copied regardless of selections
+     */
+    public static void copyTableToClipboard(TableView<?> tableView, boolean forceCopyAll) {
+        String text = getTableAsString(tableView, forceCopyAll);
         Clipboard clipBoard = Clipboard.getSystemClipboard();
         ClipboardContent content = new ClipboardContent();
-        content.put(DataFormat.PLAIN_TEXT, tabSeparatedString.toString());
+        content.put(DataFormat.PLAIN_TEXT, text);
         clipBoard.setContent(content);
     }
 
+
     public static <T> void addDatasetTextEditor(TableColumn<T, Double> doubleColumn, DoubleStringConverter dsConverter,
-                                                 BiConsumer<T, Double> applyValue) {
+                                                BiConsumer<T, Double> applyValue) {
         doubleColumn.setCellFactory(tc -> new TextFieldTableCell<>(dsConverter));
         doubleColumn.setOnEditCommit(
                 (TableColumn.CellEditEvent<T, Double> t) -> {
