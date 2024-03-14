@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.4.7-SNAPSHOT</version>
+        <version>11.4.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -17,12 +17,12 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-analyst-gui</artifactId>
-            <version>11.4.7-SNAPSHOT</version>
+            <version>11.4.8-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-plugin-api</artifactId>
-            <version>11.4.7-SNAPSHOT</version>
+            <version>11.4.8-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
