@@ -6,7 +6,7 @@ package org.nmrfx.analyst.netmatch;
  */
 class PeakValue extends Value {
 
-    PeakValue(int index, double[] values, double[] tvalues) {
+    PeakValue(int index, Double[] values, Double[] tvalues) {
         super(index, values, tvalues);
     }
 
@@ -26,7 +26,7 @@ class PeakValue extends Value {
         for (int i = 0; i < values.length; i++) {
             // fixme values should be Double so we can use null for missing value
             // fixme  should penalize missing peaks when no missing peak expected
-            if (values[i] > -900) {
+            if (values[i] != null) {
                 AtomShifts atomShifts = atomValue.getAtomShifts(i);
                 if (atomShifts != null) {
                     double prob = atomShifts.getProb(values[i], tvalues[i]);

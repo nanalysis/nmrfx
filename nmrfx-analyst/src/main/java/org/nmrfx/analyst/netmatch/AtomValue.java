@@ -29,7 +29,7 @@ class AtomValue extends Value {
                 if (dotIndex != -1) {
                     resNum = Integer.parseInt(name.substring(0, dotIndex));
                 }
-                Integer id = peakMatcher.atomIndexMap.get(name);
+                Integer id = PeakMatcher.atomIndexMap.get(name);
                 if (id == null) {
                     throw new IllegalArgumentException("No atom " + name + " in map");
                 }
@@ -69,17 +69,6 @@ class AtomValue extends Value {
         return empty;
     }
 
-    double getValue(int index) {
-        //System.out.println("getval " + index + " " + atoms[index]);
-        if (index == -1) {
-            return -999.0;
-        } else if (atoms[index] == -1) {
-            return -999.0;
-        } else {
-            return PeakMatcher.atomShiftsList.get(atoms[index]).getPPM();
-        }
-    }
-
     AtomShifts getAtomShifts(int index) {
         if (index == -1) {
             return null;
@@ -88,10 +77,6 @@ class AtomValue extends Value {
         } else {
             return PeakMatcher.atomShiftsList.get(atoms[index]);
         }
-    }
-
-    double getDistance(PeakValue v) {
-        return 0.0;
     }
 
     int size() {

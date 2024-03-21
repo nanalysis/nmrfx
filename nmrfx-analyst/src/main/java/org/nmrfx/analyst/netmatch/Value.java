@@ -7,10 +7,10 @@ package org.nmrfx.analyst.netmatch;
 abstract class Value {
 
     private final int index;
-    final double[] values;
-    final double[] tvalues;
+    final Double[] values;
+    final Double[] tvalues;
 
-    Value(int index, double[] values, double[] tvalues) {
+    Value(int index, Double[] values, Double[] tvalues) {
         this.index = index;
         this.values = values;
         this.tvalues = tvalues;

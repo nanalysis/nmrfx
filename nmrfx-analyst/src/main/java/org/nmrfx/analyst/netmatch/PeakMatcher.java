@@ -466,7 +466,7 @@ public class PeakMatcher {
         }
         for (int i = 0; i < nExtraPeaks; i++) {
             int index = valuesPeak.size();
-            double[] values = new double[0];
+            Double[] values = new Double[0];
             valuesPeak.add(new PeakValue(index, values, values));
         }
         int nOrigPeaks = nPeaks;
@@ -937,8 +937,8 @@ public class PeakMatcher {
             Value value;
             if (fields[0].equals("Peak")) {
                 int nDim = (fields.length - 2) / 2;
-                double[] dArray = new double[nDim];
-                double[] tArray = new double[nDim];
+                Double[] dArray = new Double[nDim];
+                Double[] tArray = new Double[nDim];
 //                int index = Integer.parseInt(fields[1]);
                 int index = peakType.valuesPeak.size();
                 for (int i = 0; i < nDim; i++) {
@@ -979,8 +979,8 @@ public class PeakMatcher {
         PeakSets localPeakSet = peakSetsMap.get(type);
         String[] fields = line.split(" ");
         int nDim = (fields.length) / 2;
-        double[] dArray = new double[nDim];
-        double[] tArray = new double[nDim];
+        Double[] dArray = new Double[nDim];
+        Double[] tArray = new Double[nDim];
         int index = localPeakSet.valuesPeak.size();
         for (int i = 0; i < nDim; i++) {
             dArray[i] = Double.parseDouble(fields[i * 2]);
