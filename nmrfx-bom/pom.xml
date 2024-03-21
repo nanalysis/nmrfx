@@ -366,6 +366,12 @@
             <artifactId>openchemlib</artifactId>
             <version>2023.3.3</version>
         </dependency>
+        <dependency>
+            <groupId>io.jenetics</groupId>
+            <artifactId>jenetics</artifactId>
+            <version>7.2.0</version>
+        </dependency>
+
         </dependencies>
     </dependencyManagement>
 </project>
