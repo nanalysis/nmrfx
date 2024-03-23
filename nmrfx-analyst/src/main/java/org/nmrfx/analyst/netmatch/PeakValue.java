@@ -24,7 +24,6 @@ class PeakValue extends Value {
         }
         StringBuilder sbuild = new StringBuilder();
         for (int i = 0; i < values.length; i++) {
-            // fixme values should be Double so we can use null for missing value
             // fixme  should penalize missing peaks when no missing peak expected
             if (values[i] != null) {
                 AtomShifts atomShifts = atomValue.getAtomShifts(i);

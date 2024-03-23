@@ -5,6 +5,9 @@ import io.jenetics.engine.*;
 import io.jenetics.internal.util.Requires;
 import io.jenetics.util.ISeq;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 
 import java.io.File;
@@ -341,21 +344,49 @@ public class PeakMatcher {
             while (in.hasNextLine()) {
                 String line = in.nextLine();
                 String[] fields = line.split(" ");
-                String atom = fields[0];
+                String atomName = fields[0];
+                Atom atom = MoleculeBase.getAtomByName(atomName);
                 double value = Double.parseDouble(fields[1]);
                 double sigma = Double.parseDouble(fields[2]);
-                AtomShifts atomShifts = new AtomShifts(atom, value, sigma);
+                if (atom.getRefPPM() == null) {
+                    System.out.println("null " + atom.getShortName());
+                    atom.setRefPPM(value);
+                    atom.setRefError(sigma);
+                } else {
+                    if ((Math.abs(atom.getRefPPM() - value) / value) > 0.05) {
+                        System.out.println(atom.getShortName() + " " + atom.getRefPPM() + " " + atom.getSDevRefPPM() + " " + value + " " + sigma);
+                    }
+                    if ((Math.abs(atom.getSDevRefPPM() - sigma) / sigma) > 0.1) {
+                        System.out.println(atom.getShortName() + " " + atom.getRefPPM() + " " + atom.getSDevRefPPM() + " " + value + " " + sigma);
+                    }
+                }
+               // atom.setRefPPM(value);
+                atom.setRefError(sigma);
+                AtomShifts atomShifts = new AtomShifts(atom);
+
                 int index = atomShiftsList.size();
                 atomShiftsList.add(atomShifts);
-                atomIndexMap.put(atom, index);
+                atomIndexMap.put(atomName, index);
             }
         } catch (IOException ioE) {
             System.out.println(ioE.getMessage());
         }
     }
 
-    public static void addPPM(String atomName, double ppm, double sigma) {
-        AtomShifts atomShifts = new AtomShifts(atomName, ppm, sigma);
+    public static void processPPMs() {
+        var mol = MoleculeFactory.getActive();
+        for (var atom:mol.getAtomArray()) {
+            AtomShifts atomShifts = new AtomShifts(atom);
+            int index = atomShiftsList.size();
+            atomShiftsList.add(atomShifts);
+            atomIndexMap.put(atom.getShortName().toLowerCase(), index);
+            System.out.println(atom.getShortName() + " " + index);
+        }
+
+    }
+
+    public static void addPPM(String atomName) {
+        AtomShifts atomShifts = new AtomShifts(atomName);
         int index = atomShiftsList.size();
         atomShiftsList.add(atomShifts);
         atomIndexMap.put(atomName, index);
@@ -1083,6 +1114,10 @@ public class PeakMatcher {
         List<AtomShifts> aShifts = getAtomShiftList();
         PeakSets peakSets = getFirstSet();
         assignMatches(peakSets, aShifts, true, firstMatching, iMatchFilename);
+        var mol = MoleculeFactory.getActive();
+        for (var atm:mol.getAtomArray()) {
+            System.out.println(atm.getFullName() + " " + atm.getRefPPM() + " " + atm.getSDevRefPPM());
+        }
         GlobalScore gScore = globalScore(aShifts, true, iScoreFilename);
         double fitness = gScore.fitness;
         System.out.println("first bp value " + fitness);

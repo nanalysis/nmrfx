@@ -3,15 +3,15 @@ package org.nmrfx.analyst.netmatch;
 import java.util.ArrayList;
 import org.apache.commons.math3.special.Erf;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeBase;
 
 /**
  * Used to store a predicted shift and a set of assigned values and tolerances for a particular atom
  */
 class AtomShifts {
 
-    final String atomName;
-    final double predictedShift;
-    final double predictionError;
+    final Atom atom;
     double averageShift;
     boolean useList = false;
     DescriptiveStatistics stats = new DescriptiveStatistics();
@@ -21,22 +21,28 @@ class AtomShifts {
     final double ERRMUL = 3.0;
     ArrayList<PeakSetAtom> peakSetAtoms = new ArrayList<>();
 
-    AtomShifts(final String atomName, final double predAvg, double predictionError) {
-        this.atomName = atomName;
-        this.predictedShift = predAvg;
-        // fixme  kluge to increase error range for amide protons as there can be extreme > 10 values
-        if (atomName.toLowerCase().indexOf('h') != -1) {
-            predictionError *= 5.0;
-        }
-        this.predictionError = predictionError;
+    AtomShifts(final String atomName) {
+        this.atom = MoleculeBase.getAtomByName(atomName);
+    }
+    AtomShifts(final Atom atom) {
+        this.atom = atom;
     }
 
     public AtomShifts copy() {
-        double pError = predictionError;
-        if (atomName.toLowerCase().indexOf('h') != -1) {
-            pError /= 5.0;
+        return new AtomShifts(atom);
+    }
+
+    /**
+     * Get the chemical shift associated with this object. Use the prediction if no data values added. Otherwise use the
+     * average of the associated data values.
+     *
+     */
+    Double getPredictedShift() {
+        Double ppm = atom.getRefPPM();
+        if (ppm == null) {
+            System.out.println("error " + atom.getFullName());
         }
-        return new AtomShifts(atomName, predictedShift, pError);
+        return ppm;
     }
 
     /**
@@ -44,26 +50,18 @@ class AtomShifts {
      * average of the associated data values.
      *
      */
-    double getPredictedShift() {
-        return predictedShift;
-
-    }
-
-    /**
-     * Get the chemical shift associated with this object. Use the prediction if no data values added. Otherwise use the
-     * average of the associated data values.
-     *
-     */
-    double getPPM() {
+    Double getPPM() {
         if (!useList) {
-            return predictedShift;
+            return getPredictedShift();
         } else {
             return averageShift;
         }
     }
 
     double getSigma() {
-        return predictionError;
+        double scale = this.atom.getName().equalsIgnoreCase("H") ? 5.0 : 1.0;
+
+        return atom.getSDevRefPPM() * scale;
     }
 
     /**
@@ -75,7 +73,7 @@ class AtomShifts {
     double getQ(final double x) {
         double q = Math.log(1.0 - Erf.erf(Math.abs(x) / SQRT2));
                 if (Double.isInfinite(q)) {
-                    System.out.println("YYY " + x + " " + Erf.erf(Math.abs(x)));
+                    System.out.println("YYY " + atom.getFullName() + " " + x + " " + Erf.erf(Math.abs(x)));
                 }
         return q;
     }
@@ -86,13 +84,12 @@ class AtomShifts {
      * @param ppm the chemical shift to be tested.
      */
     double getQPred(final double ppm) {
-        double x = (ppm - predictedShift) / predictionError;
+        double x = (ppm - getPredictedShift()) / getSigma();
         double q = getQ(x);
         //double x0 = 1.5;
         double x0 = 2.0;
         double q0 = getQ(x0);
-        double QPred = 1.0 + (q / Math.abs(q0));
-        return QPred;
+        return 1.0 + (q / Math.abs(q0));
     }
 
     /**
@@ -168,7 +165,11 @@ class AtomShifts {
      * @return the name of the atom/
      */
     String getAtomName() {
-        return atomName;
+        return atom.getShortName();
+    }
+
+    Atom getAtom() {
+        return atom;
     }
 
     /*
@@ -186,10 +187,10 @@ class AtomShifts {
         if (useList) {
             deltaScaled = (value - getPPM()) / errorValue;
         } else {
-            deltaScaled = (value - getPPM()) / predictionError;
+            deltaScaled = (value - getPPM()) / getSigma();
         }
         // fixme using prediction error /  should it be errorValue for !useList
-        double prob = (1.0 / (Math.sqrt(2.0 * Math.PI * predictionError))) * Math.exp(-1.0 * deltaScaled * deltaScaled / 2.0);
+        double prob = (1.0 / (Math.sqrt(2.0 * Math.PI * getSigma()))) * Math.exp(-1.0 * deltaScaled * deltaScaled / 2.0);
         double prob2 = 1.0 - Erf.erf(Math.abs(deltaScaled) / SQRT2);
         //System.out.println(value + " " + getPPM() + " " + predictionError + " " + deltaScaled + " " + prob2 + " " + prob);
         return prob2;
