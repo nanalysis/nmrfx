@@ -10,6 +10,7 @@ import org.nmrfx.chemistry.MoleculeBase;
  * Used to store a predicted shift and a set of assigned values and tolerances for a particular atom
  */
 class AtomShifts {
+    public static final String SHIFT_PROP = "shift";
 
     final Atom atom;
     double averageShift;
@@ -18,7 +19,7 @@ class AtomShifts {
     ArrayList<Double> errorLims = new ArrayList<>();
     final double SQRT2 = Math.sqrt(2.0);
     // fixme should this be 1.0, or what
-    final double ERRMUL = 3.0;
+     final double ERRMUL = 3.0;
     ArrayList<PeakSetAtom> peakSetAtoms = new ArrayList<>();
 
     AtomShifts(final String atomName) {
@@ -30,6 +31,10 @@ class AtomShifts {
 
     public AtomShifts copy() {
         return new AtomShifts(atom);
+    }
+
+    public static AtomShifts getAtomShifts(Atom atom) {
+        return  atom == null ? null : (AtomShifts) atom.getProperty(SHIFT_PROP);
     }
 
     /**
@@ -131,7 +136,6 @@ class AtomShifts {
      * @param newValue The shift to be added
      * @param errorLim The tolerance value to be used for this shift
      *
-     * @return the quality factor.
      */
     void addPPM(final PeakSetAtom peakSetAtom, final double newValue, final double errorLim) {
         long nValues = stats.getN();
@@ -189,10 +193,6 @@ class AtomShifts {
         } else {
             deltaScaled = (value - getPPM()) / getSigma();
         }
-        // fixme using prediction error /  should it be errorValue for !useList
-        double prob = (1.0 / (Math.sqrt(2.0 * Math.PI * getSigma()))) * Math.exp(-1.0 * deltaScaled * deltaScaled / 2.0);
-        double prob2 = 1.0 - Erf.erf(Math.abs(deltaScaled) / SQRT2);
-        //System.out.println(value + " " + getPPM() + " " + predictionError + " " + deltaScaled + " " + prob2 + " " + prob);
-        return prob2;
+        return 1.0 - Erf.erf(Math.abs(deltaScaled) / SQRT2);
     }
 }

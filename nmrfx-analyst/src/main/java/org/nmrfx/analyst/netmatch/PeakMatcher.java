@@ -5,9 +5,7 @@ import io.jenetics.engine.*;
 import io.jenetics.internal.util.Requires;
 import io.jenetics.util.ISeq;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 
 import java.io.File;
@@ -107,8 +105,7 @@ public class PeakMatcher {
 
     ArrayList<HistoryValue> history = new ArrayList<>();
     double[] tols = {2.0, 2.0};
-    static HashMap<String, Integer> atomIndexMap = new HashMap<>();
-    static ArrayList<AtomShifts> atomShiftsList = new ArrayList<>();
+    static HashMap<Atom, AtomShifts> atomIndexMap = new HashMap<>();
     static HashMap<String, PeakSets> peakSetsMap = new LinkedHashMap<>();
     PeakSets peakType;
 
@@ -223,7 +220,6 @@ public class PeakMatcher {
 
     public static void reset() {
         atomIndexMap.clear();
-        atomShiftsList.clear();
         peakSetsMap.clear();
     }
 
@@ -232,10 +228,10 @@ public class PeakMatcher {
      *
      * @return a copy of the AtomShifts list
      */
-     static List<AtomShifts> getAtomShiftList() {
-        ArrayList<AtomShifts> newList = new ArrayList<>();
-        for (AtomShifts atomShifts : atomShiftsList) {
-            newList.add(atomShifts.copy());
+     static Map<Atom, AtomShifts> getAtomShiftList() {
+        Map<Atom, AtomShifts> newList = new HashMap<>();
+        for (var entry : atomIndexMap.entrySet()) {
+            newList.put(entry.getKey(), entry.getValue().copy());
         }
         return newList;
     }
@@ -246,11 +242,11 @@ public class PeakMatcher {
      * @param dump If set then output print statistics to system.out
      * @return The global score
      */
-    public static GlobalScore globalScore(List<AtomShifts> aShifts, boolean dump) {
+    public static GlobalScore globalScore(Map<Atom, AtomShifts> aShifts, boolean dump) {
         return globalScore(aShifts, dump, "scores.txt");
     }
 
-    public static GlobalScore globalScore(List<AtomShifts> aShifts, boolean dump, String fileName) {
+    public static GlobalScore globalScore(Map<Atom, AtomShifts> aShifts, boolean dump, String fileName) {
         double scoreSum = 0.0;
         double normSum = 0.0;
         double score = 0.0;
@@ -270,7 +266,7 @@ public class PeakMatcher {
             double[] norms = new double[firstSet.getAtoms().size()];
             double[] scores = new double[firstSet.getAtoms().size()];
             localScores = new double[scores.length];
-            for (AtomShifts atomShifts : aShifts) {
+            for (AtomShifts atomShifts : aShifts.values()) {
                 long nValues = atomShifts.stats.getN();
                 double qTotal;
                 double norm = weightPred + weightMulti * nValues;
@@ -363,10 +359,7 @@ public class PeakMatcher {
                // atom.setRefPPM(value);
                 atom.setRefError(sigma);
                 AtomShifts atomShifts = new AtomShifts(atom);
-
-                int index = atomShiftsList.size();
-                atomShiftsList.add(atomShifts);
-                atomIndexMap.put(atomName, index);
+                atomIndexMap.put(atom, atomShifts);
             }
         } catch (IOException ioE) {
             System.out.println(ioE.getMessage());
@@ -377,19 +370,9 @@ public class PeakMatcher {
         var mol = MoleculeFactory.getActive();
         for (var atom:mol.getAtomArray()) {
             AtomShifts atomShifts = new AtomShifts(atom);
-            int index = atomShiftsList.size();
-            atomShiftsList.add(atomShifts);
-            atomIndexMap.put(atom.getShortName().toLowerCase(), index);
-            System.out.println(atom.getShortName() + " " + index);
+            atomIndexMap.put(atom, atomShifts);
         }
 
-    }
-
-    public static void addPPM(String atomName) {
-        AtomShifts atomShifts = new AtomShifts(atomName);
-        int index = atomShiftsList.size();
-        atomShiftsList.add(atomShifts);
-        atomIndexMap.put(atomName, index);
     }
 
     public static PeakSets getFirstSet() {
@@ -411,7 +394,7 @@ public class PeakMatcher {
 
     public static double getValue(int[] matching) {
 //        System.out.println("getvalue " + matching.length);
-        List<AtomShifts> aShifts = getAtomShiftList();
+        Map<Atom, AtomShifts> aShifts = getAtomShiftList();
         PeakSets peakSets = getFirstSet();
 
         assignMatches(peakSets, aShifts, false, matching);
@@ -492,8 +475,8 @@ public class PeakMatcher {
 
         for (int i = 0; i < nExtraAtoms; i++) {
             int index = valuesAtom.size();
-            String[] names = new String[0];
-            valuesAtom.add(new AtomValue(index, names, this));
+            Atom[] atoms = new Atom[0];
+            valuesAtom.add(new AtomValue(index, atoms, this));
         }
         for (int i = 0; i < nExtraPeaks; i++) {
             int index = valuesPeak.size();
@@ -790,7 +773,7 @@ public class PeakMatcher {
                     if (badMatch) {
                         continue;
                     }
-                    List<AtomShifts> aShifts = getAtomShiftList();
+                    Map<Atom, AtomShifts> aShifts = getAtomShiftList();
                     PeakSets peakSets = getFirstSet();
                     assignMatches(peakSets, aShifts, false, matching);
                     GlobalScore gScore = globalScore(aShifts, false);
@@ -859,7 +842,7 @@ public class PeakMatcher {
             }
 
             int[] matching = doBipartiteMatch(typeName, require);
-            List<AtomShifts> aShifts = getAtomShiftList();
+            Map<Atom, AtomShifts> aShifts = getAtomShiftList();
             PeakSets peakSets = getFirstSet();
             assignMatches(peakSets, aShifts, false, matching);
             GlobalScore gScore = globalScore(aShifts, false);
@@ -885,7 +868,7 @@ public class PeakMatcher {
 
     }
 
-    static void assignMatches(PeakSets peakSets, List<AtomShifts> aShifts, boolean dump, int[] matching) {
+    static void assignMatches(PeakSets peakSets, Map<Atom,AtomShifts> aShifts, boolean dump, int[] matching) {
         assignMatches(peakSets, aShifts, dump, matching, "tempmatch.txt");
     }
 
@@ -897,7 +880,7 @@ public class PeakMatcher {
      * @param dump Whether to output statistics about the matches
      * match modified from best set.
      */
-    static void assignMatches(PeakSets peakSets, List<AtomShifts> aShifts, boolean dump, int[] matching, String fileName) {
+    static void assignMatches(PeakSets peakSets, Map<Atom, AtomShifts> aShifts, boolean dump, int[] matching, String fileName) {
         List<AtomValue> valuesAtom = peakSets.getAtoms();
         List<PeakValue> valuesPeak = peakSets.getPeaks();
         int nAtoms = valuesAtom.size();
@@ -923,7 +906,7 @@ public class PeakMatcher {
                 int pkIndex = -1;
                 int atomIndex = -1;
                 double probability = peakSets.getProbability(iAtom, jPeak);
-                if ((iAtom >= 0) && (iAtom < valuesAtom.size())) {
+                if (iAtom < valuesAtom.size()) {
                     atomIndex = atomValue.getIndex();
                     atomString = atomValue.toString();
                     if ((jPeak >= 0) && (jPeak < valuesPeak.size())) {
@@ -933,8 +916,8 @@ public class PeakMatcher {
                             peakString = peakValue.toString();
                             if (probability > 0.0) {
                                 for (int iDim = 0; iDim < atomValue.size(); iDim++) {
-                                    int kAtom = atomValue.getAtom(iDim);
-                                    if (kAtom >= 0) {
+                                    Atom kAtom = atomValue.getAtom(iDim);
+                                    if (kAtom != null) {
                                         AtomShifts atomShifts = aShifts.get(kAtom);
                                         atomShifts.addPPM(new PeakSetAtom(peakSets, iAtom), peakValue.values[iDim], peakValue.tvalues[iDim]);
                                     }
@@ -986,7 +969,11 @@ public class PeakMatcher {
                 int index = peakType.valuesAtom.size();
                 String[] sArray = new String[nDim];
                 System.arraycopy(fields, 2, sArray, 0, nDim);
-                value = new AtomValue(index, sArray, this);
+                Atom[] atoms = new Atom[sArray.length];
+                for (int k=0;k<atoms.length;k++) {
+                    atoms[k] = MoleculeBase.getAtomByName(sArray[k]);
+                }
+                value = new AtomValue(index, atoms, this);
             }
             if (set.equals("Peak")) {
                 peakType.valuesPeak.add((PeakValue) value);
@@ -1031,20 +1018,42 @@ public class PeakMatcher {
         int index = localPeakSet.valuesAtom.size();
         String[] sArray = new String[nDim];
         System.arraycopy(fields, 0, sArray, 0, nDim);
-        AtomValue value = new AtomValue(index, sArray, this);
+
+        Atom[] atoms = new Atom[sArray.length];
+        for (int k=0;k<atoms.length;k++) {
+            atoms[k] = MoleculeBase.getAtomByName(sArray[k]);
+        }
+
+        AtomValue value = new AtomValue(index, atoms, this);
         localPeakSet.valuesAtom.add(value);
     }
 
-    public int[] getOffsets(String type) {
-        PeakSets peakSets = peakSetsMap.get(type);
-        List<AtomValue> valuesAtom = peakSets.getAtoms();
-        int[] resOffsets = null;
-        for (AtomValue atomValue : valuesAtom) {
-            if (atomValue.getComplete()) {
-                resOffsets = atomValue.getOffsets();
+    public void setupProtein() {
+        System.out.println(peakSetsMap);
+        PeakSets localPeakSet = peakSetsMap.get("rbclust");
+        var mol = MoleculeFactory.getActive();
+        String[] cNames = {"CA", "CB", "C"};
+        int nAtoms = 2 + 2 * cNames.length;
+        Atom[] atoms = new Atom[nAtoms];
+        for (Polymer polymer : mol.getPolymers()) {
+            for (Residue residue: polymer.getResidues()) {
+                String hName = residue.previous == null ? hName = "H1" : "H";
+                atoms[0] = residue.getAtom(hName);
+                atoms[1] = residue.getAtom("N");
+                int j = 2;
+                for (String cName : cNames) {
+                    atoms[j++] = residue.getAtom(cName);
+                }
+                if (residue.previous != null) {
+                    for (String cName : cNames) {
+                        atoms[j++] = residue.previous.getAtom(cName);
+                    }
+                }
+                int index = localPeakSet.valuesAtom.size();
+                AtomValue value = new AtomValue(index, atoms, this);
+                localPeakSet.valuesAtom.add(value);
             }
         }
-        return resOffsets;
     }
 
     public void checkOverlaps(String type) {
@@ -1111,7 +1120,7 @@ public class PeakMatcher {
         }
         System.out.println();
         final int stops = firstMatching.length;
-        List<AtomShifts> aShifts = getAtomShiftList();
+        Map<Atom, AtomShifts> aShifts = getAtomShiftList();
         PeakSets peakSets = getFirstSet();
         assignMatches(peakSets, aShifts, true, firstMatching, iMatchFilename);
         var mol = MoleculeFactory.getActive();

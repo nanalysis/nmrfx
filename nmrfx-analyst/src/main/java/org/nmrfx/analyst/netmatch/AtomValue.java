@@ -1,64 +1,38 @@
 package org.nmrfx.analyst.netmatch;
 
+import org.nmrfx.chemistry.Atom;
+
 /**
  *
  * @author brucejohnson
  */
 class AtomValue extends Value {
-
     final PeakMatcher peakMatcher;
-    private final int[] resOffsets;
     private final boolean complete;
     private final boolean empty;
-    private final int[] atoms;
+    private final Atom[] atoms;
 
-    AtomValue(int index, String[] names, PeakMatcher peakMatcher) throws IllegalArgumentException {
+    AtomValue(int index, Atom[] atoms, PeakMatcher peakMatcher) throws IllegalArgumentException {
         super(index, null, null);
         this.peakMatcher = peakMatcher;
-        atoms = new int[names.length];
-        resOffsets = new int[names.length];
+        this.atoms = new Atom[atoms.length];
         int i = 0;
-        int maxRes = Integer.MIN_VALUE;
         boolean gotAll = true;
         boolean allEmpty = true;  // will be true for PRO
-        for (String name : names) {
-            int idNum = -1;
-            int resNum = 0;
-            if (!name.equals("NA")) {
-                int dotIndex = name.indexOf('.');
-                if (dotIndex != -1) {
-                    resNum = Integer.parseInt(name.substring(0, dotIndex));
-                }
-                Integer id = PeakMatcher.atomIndexMap.get(name);
-                if (id == null) {
-                    throw new IllegalArgumentException("No atom " + name + " in map");
-                }
-                idNum = id;
-                if (resNum > maxRes) {
-                    maxRes = resNum;
-                }
+        for (Atom atom : atoms) {
+            if (atom != null) {
                 allEmpty = false;
             } else {
                 gotAll = false;
             }
-            resOffsets[i] = resNum;
-            atoms[i++] = idNum;
+            this.atoms[i++] = atom;
         }
         complete = gotAll;
         empty = allEmpty;
-        for (i = 0; i < resOffsets.length; i++) {
-            if (atoms[i] != -1) {
-                resOffsets[i] -= maxRes;
-            }
-        }
     }
 
-    int getAtom(int i) {
+    Atom getAtom(int i) {
         return atoms[i];
-    }
-
-    int[] getOffsets() {
-        return resOffsets.clone();
     }
 
     boolean getComplete() {
@@ -72,10 +46,10 @@ class AtomValue extends Value {
     AtomShifts getAtomShifts(int index) {
         if (index == -1) {
             return null;
-        } else if (atoms[index] == -1) {
+        } else if (atoms[index] == null) {
             return null;
         } else {
-            return PeakMatcher.atomShiftsList.get(atoms[index]);
+            return PeakMatcher.atomIndexMap.get(atoms[index]);
         }
     }
 
