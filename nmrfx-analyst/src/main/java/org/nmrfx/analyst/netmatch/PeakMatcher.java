@@ -458,7 +458,7 @@ public class PeakMatcher {
      *
      * @param type The peak list type to be processed
      */
-    public void processType(String type) {
+    public void processType(String type, List<Integer> correct) {
         PeakSets peakSets = peakSetsMap.get(type);
         List<PeakValue> valuesPeak = peakSets.getPeaks();
         List<AtomValue> valuesAtom = peakSets.getAtoms();
@@ -512,13 +512,13 @@ public class PeakMatcher {
                 if ((extraAtom >= 0) || (extraPeak >= 0)) {
                     if ((iAtom == extraPeak) || (jPeak == extraAtom) || (extraPeak == extraAtom)) {
                         // System.out.println("add ext " + iAtom + " " + extraAtom + " " + extraPeak);
-                        probability = 1.0e-3;
+                        probability = 1.01e-6;
                     }
                 } else {
                     probability = peakValue.getProbability(atomValue);
                 }
 
-                if (probability > 0.0) {
+                if (probability > 1.0e-6) {
                     ItemMatch peakMatch = new ItemMatch(peakValue.getIndex(), probability);
                     peakMatch.setGroupProbability(probability);
                     atomPeakMatch.add(peakMatch);
@@ -526,9 +526,10 @@ public class PeakMatcher {
                     atomMatch.setGroupProbability(probability);
                     peakSets.atomMatches.get(peakValue.getIndex()).add(atomMatch);
                 }
+                atomPeakMatch.sort(Comparator.comparingDouble(ItemMatch::getGroupProbability).reversed());
             });
         });
-        dumpPeakMatchList("junk.txt");
+        dumpPeakMatchList("junk.txt", correct);
         List<List<ItemMatch>> peakMatchList = peakSets.peakMatches;
         for (int iAtom = 0; iAtom < nOrigAtoms; iAtom++) {
             List<ItemMatch> peakMatchPrev = null;
@@ -620,7 +621,7 @@ public class PeakMatcher {
 
     }
 
-    public void dumpPeakMatchList(String fileName) {
+    public void dumpPeakMatchList(String fileName, List<Integer> correct) {
         PeakSets peakSets = getFirstSet();
         List<List<ItemMatch>> peakMatchList = peakSets.peakMatches;
         List<AtomValue> valuesAtom = peakSets.getAtoms();
@@ -629,6 +630,8 @@ public class PeakMatcher {
         try (PrintWriter out = new PrintWriter(new FileWriter(fileName))) {
             for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                 out.printf("%5d", iAtom);
+                int correctValue = correct != null ? correct.get(iAtom) : -2;
+                out.printf("%5d", correctValue);
                 List<ItemMatch> peakMatches = peakMatchList.get(iAtom);
                 for (ItemMatch itemMatch : peakMatches) {
                     out.printf(" %5d %.5f %.5f", itemMatch.itemNum, itemMatch.probability, itemMatch.getGroupProbability());
@@ -1113,7 +1116,7 @@ public class PeakMatcher {
         String iScoreFilename = Paths.get(rootDir, "initialscore.txt").toString();
         String fMatchFilename = Paths.get(rootDir, "finalmatch.txt").toString();
         String fScoreFilename = Paths.get(rootDir, "finalscore.txt").toString();
-        dumpPeakMatchList(peakMatchFilename);
+        dumpPeakMatchList(peakMatchFilename, null);
         int[] firstMatching = doBipartiteMatch(typeName, null);
         for (int iv : firstMatching) {
             System.out.print(iv + " ");

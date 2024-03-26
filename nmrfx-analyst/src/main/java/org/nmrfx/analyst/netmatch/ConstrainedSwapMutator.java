@@ -46,7 +46,7 @@ public class ConstrainedSwapMutator<
         // build a list of all the indices of atoms that have more than 1 peak match
         int i = 0;
         for (List<ItemMatch> matches : peakMatches) {
-            if (matches.size() > 0) {
+            if (matches.size() > 1) {
                 mutatable.add(i);
             }
             i++;
