@@ -1,13 +1,12 @@
 package org.nmrfx.analyst.netmatch;
 
 import io.jenetics.*;
+import io.jenetics.util.ISeq;
 import io.jenetics.util.MSeq;
 import io.jenetics.util.Seq;
 import org.apache.commons.math3.random.MersenneTwister;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.random.RandomGenerator;
 
 /**
@@ -19,6 +18,7 @@ public class ConstrainedSwapMutator<
         > extends SwapMutator<G, C> {
 
     MersenneTwister twister = new MersenneTwister();
+    PeakSets peakSets;
     List<List<ItemMatch>> peakMatches;
     ArrayList<Integer> mutatable = new ArrayList<>();
     PeakMatcher peakMatcher;
@@ -39,10 +39,11 @@ public class ConstrainedSwapMutator<
 
     }
 
-    ConstrainedSwapMutator(PeakMatcher peakMatcher, List<List<ItemMatch>> peakMatches, double p) {
+    ConstrainedSwapMutator(PeakMatcher peakMatcher, PeakSets peakSets, double p) {
         super(p);
         this.peakMatcher = peakMatcher;
-        this.peakMatches = peakMatches;
+        this.peakSets = peakSets;
+        this.peakMatches = peakSets.peakMatches;
         // build a list of all the indices of atoms that have more than 1 peak match
         int i = 0;
         for (List<ItemMatch> matches : peakMatches) {
@@ -158,49 +159,41 @@ public class ConstrainedSwapMutator<
             double score = 1.0;
             sortedScores.add(new ItemMatch(mutateSite, score));
         }
-        Collections.sort(sortedScores);
-        int nSwap = 0;
-        var genes = MSeq.of(chromosome);
+        int nPeaks = peakSets.nPeaks;
+        int nTotalPeaks = peakSets.valuesPeak.size();
+        int nAtoms = peakSets.nAtoms;
+        int[] peakUsage = new int[nTotalPeaks];
+        int[] atomUsage = new int[nAtoms];
+        Arrays.fill(peakUsage, -1);
+        Arrays.fill(atomUsage, -1);
         for (int mutateSite : mutatable) {
             int jCurrent = getIndex(chromosome.get(mutateSite));
+            peakUsage[jCurrent] = mutateSite;
+            atomUsage[mutateSite] = jCurrent;
+        }
+        Collections.sort(sortedScores);
+        int nSwap = 0;
+        MSeq genes = MSeq.of(chromosome);
+        for (int iSite : mutatable) {
+            int iCluster = atomUsage[iSite];
             double rate = p;
-            for (ItemMatch itemMatch : peakMatches.get(mutateSite)) {
-                if (jCurrent == itemMatch.itemNum) {
-                    rate = itemMatch.getLocalScore();
-                    break;
-                }
-            }
-            if (rate < p) {
-                rate = p;
-            }
-            rate = p;
             if (twister.nextDouble() > rate) {
                 continue;
             }
-            int k = twister.nextInt(peakMatches.get(mutateSite).size());
-            int iPeak = peakMatches.get(mutateSite).get(k).itemNum;
-
-//            System.out.println(mutateSite + " mutate " + iPeak + " " + itemMatch.getLocalScore());
-            // iPeak now is a randomly guessed index of a peak that matches the jth atom
-            // jCurrent is now the index of a peak that currently matches the jth atom
-            if (iPeak != jCurrent) {
-//            System.out.println("no change");
-                boolean ok = false;
-                int iSwap = 0;
-
-                for (int i = 0; i < chromosome.length(); i++) {
-                    if (getIndex(chromosome.get(i)) == iPeak) {
-                        iSwap = i;
-                        ok = true;
-                        break;
-                    }
-                }
-            //    System.out.println(mutateSite + " k " + k + " " + iPeak + " " + jCurrent + " " + iSwap + " " + ok + " " + p);
-
-                if (ok) {
-                    genes.swap(iSwap, mutateSite);
-              //      System.out.println("gen " + genes.length());
+            List<ItemMatch> matches = peakMatches.get(iSite);
+            int k = twister.nextInt(matches.size());
+            int jCluster = matches.get(k).itemNum;
+            if (jCluster != iCluster) {
+                int jSite = peakUsage[jCluster];
+                if (jSite != -1) {
+                    genes.swap(jSite, iSite);
                     nSwap++;
+                } else {
+//                    System.out.println(iSite + " " + iCluster + " " + jCluster);
+//                    EnumGene<Integer> enumGene1 = ((EnumGene<Integer>) genes.get(iSite));
+//                    System.out.println(enumGene1.validAlleles());
+//                    EnumGene<Integer> enumGene = enumGene1.newInstance(jCluster);
+//                    genes.set(iSite, enumGene);
                 }
             }
         }

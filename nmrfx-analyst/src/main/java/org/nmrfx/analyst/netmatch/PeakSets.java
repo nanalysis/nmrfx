@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakSets {
@@ -22,9 +21,19 @@ public class PeakSets {
     int[] bestMatching;
     // match of atoms to peaks obtained by modifiying the bestMatching values
     int[] trialMatching;
+    int nPeaks;
+    int nAtoms;
 
     PeakSets(String type) {
         this.type = type;
+    }
+
+    public void setNPeaks(int nPeaks) {
+        this.nPeaks = nPeaks;
+    }
+
+    public void setNAtoms(int nAtoms) {
+        this.nAtoms = nAtoms;
     }
 
     void setMatching(int[] matching) {

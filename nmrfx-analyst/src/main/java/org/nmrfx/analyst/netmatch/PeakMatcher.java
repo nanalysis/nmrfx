@@ -485,6 +485,8 @@ public class PeakMatcher {
         }
         int nOrigPeaks = nPeaks;
         int nOrigAtoms = nAtoms;
+        peakType.setNPeaks(nPeaks);
+        peakType.setNAtoms(nAtoms);
         nPeaks = valuesPeak.size();
         nAtoms = valuesAtom.size();
         System.out.println("nOrigPeaks " + nOrigPeaks + " nPeaks " + nPeaks + " nOrigAtoms " + nOrigAtoms + " nAtoms " + nAtoms);
@@ -1148,7 +1150,7 @@ public class PeakMatcher {
                 .offspringSelector(new TournamentSelector<>())
                                // .constraint(MatchValidator::isValid)
                 .alterers(
-                        new ConstrainedSwapMutator<>(this, peakSets.peakMatches, mutationRate),
+                        new ConstrainedSwapMutator<>(this, peakSets, mutationRate),
                         new PartiallyMatchedCrossover<>(crossoverRate))
                 .build();
 //        List<AssignmentChromosome<EnumGene<Integer>>> genotypes = new ArrayList<>();
