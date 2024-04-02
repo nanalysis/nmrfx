@@ -79,6 +79,7 @@ import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
 import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
+import org.nmrfx.processor.processing.ProcessingSection;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
@@ -1037,7 +1038,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void linkPeakDims() {
         PeakLinker linker = new PeakLinker();
-        linker.linkAllPeakListsByLabel();
+        linker.linkAllPeakListsByLabel("");
     }
 
     public void removeChart(PolyChart chart) {
@@ -1468,7 +1469,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         phaser.setPhaseDim(phaseDim);
     }
 
-    protected int[] getExtractRegion(String vecDimName, int size) {
+    protected int[] getExtractRegion(ProcessingSection vecDimName, int size) {
         int start = 0;
         int end = size - 1;
         if (chartProcessor != null) {
@@ -1499,11 +1500,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return new int[]{start, end};
     }
 
-    protected ArrayList<Double> getBaselineRegions(String vecDimName) {
+    protected ArrayList<Double> getBaselineRegions(ProcessingSection section) {
         ArrayList<Double> fracs = new ArrayList<>();
         if (chartProcessor != null) {
             int currentIndex = chartProcessor.getProcessorController().getPropertyManager().getCurrentIndex();
-            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(vecDimName);
+            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(section);
             if (listItems != null) {
                 log.info("curr ind {}", currentIndex);
                 Map<String, String> values = null;
@@ -1903,6 +1904,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
+    public boolean isScannerToolPresent() {
+        return (scannerTool != null) && scannerTool.scannerActive();
+    }
+
     public void showScannerTool() {
         BorderPane vBox;
         if (scannerTool != null) {
@@ -1941,6 +1946,14 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (getBottomBox().getChildren().isEmpty()) {
             splitPane.setDividerPosition(0, 1.0);
         }
+    }
+
+    public void setSplitPaneDivider(double f) {
+        splitPane.setDividerPosition(0, f);
+    }
+
+    public double getSplitPaneDivider() {
+        return splitPane.getDividerPositions()[0];
     }
 
 }

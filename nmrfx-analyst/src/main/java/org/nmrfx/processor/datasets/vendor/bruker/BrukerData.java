@@ -235,7 +235,22 @@ public class BrukerData implements NMRData {
                 append("_").append(pdataNumFile.getName()).append("_").
                 append(file.getName());
         return sBuilder.toString();
+    }
 
+    public String suggestName() {
+        File file = new File(fpath);
+        File numFile;
+        if (file.getName().equals("fid") || file.getName().equals("ser")) {
+            numFile = file.getParentFile();
+        } else {
+            numFile = file;
+        }
+        File rootFile = numFile.getParentFile();
+        String rootName = rootFile != null ? rootFile.getName() : "";
+        rootName = rootName.replace(" ", "_");
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(rootName).append("_").append(numFile.getName());
+        return sBuilder.toString();
     }
 
     @Override
@@ -693,6 +708,24 @@ public class BrukerData implements NMRData {
         if (hDim != -1) {
             Double baseFreq = getParDouble("BF1," + (hDim +1));
             Double lockPPM = getParDouble("LOCKPPM,1");
+            if (lockPPM == null) {
+                if (isAcqueous) {
+                    lockPPM = 4.717;
+                } else {
+                    if (solvent.equalsIgnoreCase("cdcl3")) {
+                        lockPPM = 7.29;
+                    } else  if (solvent.equalsIgnoreCase("cd3od")) {
+                        lockPPM = 4.761;
+                    } else  if (solvent.equalsIgnoreCase("dmso")) {
+                        lockPPM = 2.578;
+                    } else  if (solvent.equalsIgnoreCase("acetone")) {
+                        lockPPM = 1.892;
+                    } else {
+                        lockPPM = 4.717;
+                    }
+                }
+            }
+
             if (actualLockRef == null) {
                 actualLockRef = lockPPM;
             }
@@ -995,12 +1028,16 @@ public class BrukerData implements NMRData {
             }
             tdsize[0] = np / 2 - shiftAmount; // tcl line 348, lines 448-459
         }
+        boolean nusMode = false;
+        if ((ipar = getParInt("FnTYPE,1")) != null) {
+            nusMode = ipar == 2;
+        }
         boolean gotSchedule = false;
         if (nusFile == null) {
             nusFile = new File(fpath + File.separator + "nuslist");
         }
-        if (nusFile.exists()) {
-            readSampleSchedule(nusFile.getPath(), false);
+        if (nusMode && nusFile.exists()) {
+            readSampleSchedule(nusFile.getPath(), false, false);
             if (sampleSchedule.getTotalSamples() == 0) {
                 throw new IOException("nuslist file exists, but is empty");
             } else {

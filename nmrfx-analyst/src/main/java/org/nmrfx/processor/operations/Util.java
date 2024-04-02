@@ -349,8 +349,8 @@ public class Util {
         ArrayList lList = new ArrayList(nPoints);
         ArrayList rList = new ArrayList(nPoints);
         for (int i = start; i <= end; i++) {
-            rList.add(new Double(vec[icenter + i]));
-            lList.add(new Double(vec[icenter - i]));
+            rList.add(Double.valueOf(vec[icenter + i]));
+            lList.add(Double.valueOf(vec[icenter - i]));
         }
         Collections.sort(lList);
         Collections.sort(rList);

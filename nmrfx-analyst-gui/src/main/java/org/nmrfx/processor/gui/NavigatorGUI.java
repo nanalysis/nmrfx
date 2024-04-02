@@ -54,6 +54,7 @@ public class NavigatorGUI implements Initializable, StageBasedController {
     Stage stage = null;
     ProcessorController processorController;
     ChartProcessor chartProcessor;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         scanRatio.getItems().addAll(0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 10.0);
@@ -173,23 +174,20 @@ public class NavigatorGUI implements Initializable, StageBasedController {
         Integer iDim = getRowChoice();
         if (iDim != null) {
             int[] rows = getRows();
-            if (rows.length > 0) {
-                if ((vecNum1 != null) && vecNum1.isVisible()) {
-                    int size = vecSizes[iDim - 1];
-                    updateVectorSlider(size);
-                    vecNum1.setMax(size);
-                }
+            if ((rows.length > 0) && (vecNum1 != null) && vecNum1.isVisible()) {
+                int size = vecSizes[iDim - 1];
+                updateVectorSlider(size);
+                vecNum1.setMax(size);
             }
         }
     }
 
-    protected void setRowLabel(int row, int size) {
-        for (int i = 0; i < vectorDimButtons.size(); i++) {
-            if (vectorDimButtons.get(i).isSelected()) {
-                rowTextBoxes[i].setText(row + " / " + size);
-            }
+    protected void setRowLabel(int iDim, int row, int size, boolean allLabels) {
+        if (allLabels || vectorDimButtons.get(iDim).isSelected()) {
+            rowTextBoxes[iDim].setText(row + " / " + size);
         }
     }
+
 
     void setFileIndex(int[] indices) {
         this.rowIndices = indices;
@@ -216,13 +214,13 @@ public class NavigatorGUI implements Initializable, StageBasedController {
         Slider slider = (Slider) event.getSource();
         int iRow = (int) slider.getValue() - 1;
         int iDim = getRowChoice() - 1;
-        updateRowLabels(iDim, iRow);
+        updateRowLabels(iDim, iRow, false);
         int[] rows = getRows();
         chartProcessor.vecRow(rows);
         processorController.chart.layoutPlotChildren();
     }
 
-    private void updateRowLabels(int iDim, int i) {
+    private void updateRowLabels(int iDim, int i, boolean allRows) {
         if (getNMRData() != null) {
             int nDim = getNMRData().getNDim();
             int size = 1;
@@ -236,7 +234,7 @@ public class NavigatorGUI implements Initializable, StageBasedController {
             if (i < 0) {
                 i = 0;
             }
-            setRowLabel(i + 1, size);
+            setRowLabel(iDim - 1, i + 1, size, allRows);
         }
     }
 
@@ -245,7 +243,7 @@ public class NavigatorGUI implements Initializable, StageBasedController {
         if (groupIndex != null) {
             int[] indices = groupIndex.getIndices();
             for (int iDim = 0; iDim < indices.length; iDim++) {
-                updateRowLabels(iDim + 1, indices[iDim]);
+                updateRowLabels(iDim + 1, indices[iDim], true);
             }
             int[] rows = getRows();
             String realImagChoice = groupIndex.getGroupIndex();

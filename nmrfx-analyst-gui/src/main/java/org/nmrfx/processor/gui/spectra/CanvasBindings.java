@@ -133,18 +133,6 @@ public class CanvasBindings {
             }
         });
 
-        mouseNode.setOnRotate((RotateEvent rEvent) -> {
-            PolyChart chart = controller.getActiveChart();
-            if (chart != null) {
-                chart.getGestureBindings().rotate(rEvent);
-            }
-        });
-        mouseNode.setOnRotationFinished((RotateEvent rEvent) -> {
-            PolyChart chart = controller.getActiveChart();
-            if (chart != null) {
-                chart.getGestureBindings().rotationFinished(rEvent);
-            }
-        });
         mouseNode.setOnZoom((Event event) -> {
             PolyChart chart = controller.getActiveChart();
             if (chart != null) {

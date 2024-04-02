@@ -313,8 +313,13 @@ public class RefManager {
 
         String getString(Map<String, SimpleObjectProperty> objectPropertyMap, int iDim) {
             SimpleObjectProperty field = objectPropertyMap.get(name() + iDim);
-            Object value = field.getValue();
+            Object value = field == null ? null : field.getValue();
             return value == null ? "" : value.toString();
+        }
+
+        boolean isDefault(Map<String, SimpleObjectProperty> objectPropertyMap, NMRData nmrData, int iDim) {
+            String dataString = getDataValue(nmrData, iDim);
+            return dataString == null || dataString.equals(getString(objectPropertyMap, iDim));
         }
     }
 
@@ -622,6 +627,9 @@ public class RefManager {
                 } else {
                     prop = dataProp.getObjectProperty();
                 }
+                if (!dataProp.isDefault(objectPropertyMap, nmrData, i)) {
+                    toggleButton.setSelected(false);
+                }
                 objectPropertyMap.put(dataProp.name() + i, prop);
                 if (dataProp == DataProps.SKIP) {
                     if (i > 0) {
@@ -658,9 +666,9 @@ public class RefManager {
                             referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));
                         }
                         referenceMenuTextField.getTextField().textProperty().bindBidirectional(prop);
-                        if (i == 0) {
-                            referenceMenuTextField.getTextField().textProperty().addListener(e -> updateReference(prop));
-                        }
+                        int iDim = i;
+                        referenceMenuTextField.getTextField().textProperty().addListener(e -> updateReference(prop, iDim));
+
                         gridPane.add(referenceMenuTextField, i + start, row);
                     } else {
                         CustomTextField textField = new CustomTextField();
@@ -669,10 +677,12 @@ public class RefManager {
                         textField.setOnKeyPressed(e -> invalidateScript());
                         gridPane.add(textField, i + start, row);
                         if (prop.get() instanceof Double dValue) {
+                            int decimalPlaces = dataProp == DataProps.SF ? 7 : 2;
                             if (currentProp == null) {
                                 prop.set(Double.parseDouble(dataProp.getDataValue(nmrData, i)));
                             }
-                            TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(2), 0.0, new FixedDecimalFilter());
+                            TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(decimalPlaces),
+                                    0.0, new FixedDecimalFilter());
                             textFormatter.valueProperty().bindBidirectional(prop);
                             textField.setTextFormatter(textFormatter);
                         } else if (prop.get() instanceof Integer dValue) {
@@ -718,30 +728,32 @@ public class RefManager {
         invalidateScript();
     }
 
-    private void updateReference(SimpleObjectProperty property) {
-        String refString = property.getValue().toString();
-        NMRData nmrData = getNMRData();
-        double sf = nmrData.getSF(0);
-        String tn = nmrData.getTN(0);
-        Nuclei nuclei = Nuclei.findNuclei(tn);
-        double z;
-        if (refString.isEmpty()) {
-            nmrData.setZeroFreq(null);
-            z = nmrData.getZeroFreq();
-        } else if (refString.equals("H2O")) {
-            double ref = ReferenceCalculator.getH2ORefPPM(nmrData.getTempK());
-            z = sf / (1.0 + ref * 1.0e-6);
-        } else {
-            try {
-                double ref = Double.parseDouble(refString);
-                z = sf / (1.0 + ref * 1.0e-6);
-                z /= nuclei.getRatio() / 100.0;
-            } catch (NumberFormatException nfE) {
+    private void updateReference(SimpleObjectProperty property, int iDim) {
+        if (iDim == 0) {
+            String refString = property.getValue().toString();
+            NMRData nmrData = getNMRData();
+            double sf = nmrData.getSF(0);
+            String tn = nmrData.getTN(0);
+            Nuclei nuclei = Nuclei.findNuclei(tn);
+            double z;
+            if (refString.isEmpty()) {
+                nmrData.setZeroFreq(null);
                 z = nmrData.getZeroFreq();
+            } else if (refString.equals("H2O")) {
+                double ref = ReferenceCalculator.getH2ORefPPM(nmrData.getTempK());
+                z = sf / (1.0 + ref * 1.0e-6);
+            } else {
+                try {
+                    double ref = Double.parseDouble(refString);
+                    z = sf / (1.0 + ref * 1.0e-6);
+                    z /= nuclei.getRatio() / 100.0;
+                } catch (NumberFormatException nfE) {
+                    z = nmrData.getZeroFreq();
+                }
             }
+            zeroFieldProp.set(z);
+            processorController.chartProcessor.setZeroFreq(z);
         }
-        zeroFieldProp.set(z);
-        processorController.chartProcessor.setZeroFreq(z);
         invalidateScript();
     }
 
@@ -781,6 +793,7 @@ public class RefManager {
                 sBuilder.append(System.lineSeparator());
             }
         }
+        getSkipString().ifPresent(s -> sBuilder.append(s).append(System.lineSeparator()));
         return sBuilder.toString();
     }
 

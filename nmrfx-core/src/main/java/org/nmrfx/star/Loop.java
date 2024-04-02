@@ -311,6 +311,9 @@ public class Loop {
         return list;
     }
 
+    public boolean hasTag(String tag) {
+        return loopTags.containsKey(tag);
+    }
     public List<String> getColumn(String tag) throws ParseException {
         ArrayList<String> column = loopTags.get(tag);
         ArrayList<String> list = new ArrayList<>();

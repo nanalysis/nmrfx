@@ -67,10 +67,7 @@ import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public class AnalystApp extends Application {
     private static final Logger log = LoggerFactory.getLogger(AnalystApp.class);
@@ -115,7 +112,8 @@ public class AnalystApp extends Application {
             startInAdvanced = false;
         }
         analystApp = this;
-        getFXMLControllerManager().newController(stage);
+        String title = APP_NAME + " " + getVersion();
+        getFXMLControllerManager().newController(stage, title);
 
         if (isMac()) {
             Platform.setImplicitExit(false);
@@ -123,7 +121,6 @@ public class AnalystApp extends Application {
             Platform.setImplicitExit(true);
         }
         hostServices = getHostServices();
-        stage.setTitle(APP_NAME + " " + getVersion());
 
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(APP_NAME);
@@ -338,7 +335,7 @@ public class AnalystApp extends Application {
     }
 
     private void showMailingListAction(ActionEvent event) {
-        hostServices.showDocument("https://groups.google.com/forum/#!forum/nmrfx-processor");
+        hostServices.showDocument("https://groups.io/g/NMRFx");
     }
 
     private void showOpenSourceAction(ActionEvent event) {
@@ -527,15 +524,24 @@ public class AnalystApp extends Application {
     }
 
     public void showRunAboutTool() {
-        System.out.println("show runabout");
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         if (!controller.containsTool(RunAboutGUI.class)) {
             TabPane tabPane = new TabPane();
             controller.getBottomBox().getChildren().add(tabPane);
+            tabPane.setMinHeight(200);
             RunAboutGUI runaboutTool = new RunAboutGUI(controller, this::removeRunaboutTool);
-            System.out.println("init");
             runaboutTool.initialize(tabPane);
             controller.addTool(runaboutTool);
+        }
+    }
+
+    public Optional<RunAboutGUI> getRunAboutTool() {
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
+        ControllerTool tool = controller.getTool(RunAboutGUI.class);
+        if (tool instanceof RunAboutGUI runAboutGUI) {
+            return Optional.of(runAboutGUI);
+        } else {
+            return Optional.empty();
         }
     }
 

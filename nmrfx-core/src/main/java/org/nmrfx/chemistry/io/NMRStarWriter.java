@@ -20,10 +20,8 @@ package org.nmrfx.chemistry.io;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.ConstraintSet;
-import org.nmrfx.chemistry.relax.OrderPar;
-import org.nmrfx.chemistry.relax.RelaxationData;
-import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
-import org.nmrfx.chemistry.relax.RelaxationRex;
+import org.nmrfx.chemistry.relax.*;
+import org.nmrfx.chemistry.relax.RelaxTypes;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.PeakPaths;
@@ -888,14 +886,13 @@ public class NMRStarWriter {
      *
      * @param chan        Writer. The FileWriter to use
      * @param molecule    Molecule. The molecule to use
-     * @param noeDataList List of NOE relaxation data
+     * @param relaxationSet Set of NOE relaxation data
      * @param listID      int. The number of the NOE block in the file.
      * @throws IOException
      */
-    public static void writeNOE(Writer chan, MoleculeBase molecule, List<RelaxationData> noeDataList, int listID) throws IOException {
-        RelaxationData noeData0 = noeDataList.get(0);
-        String frameName = noeData0.getId();
-        double field = noeData0.getField();
+    public static void writeNOE(Writer chan, MoleculeBase molecule, RelaxationSet relaxationSet, int listID) throws IOException {
+        String frameName = relaxationSet.name();
+        double field = relaxationSet.field();
         chan.write("    ########################################\n");
         chan.write("    #  Heteronuclear NOE values  #\n");
         chan.write("    ########################################\n");
@@ -942,7 +939,7 @@ public class NMRStarWriter {
         int idx = 1;
 
         List<String> prevRes = new ArrayList<>();
-        for (RelaxationData noeData : noeDataList) {
+        for (RelaxationData noeData : relaxationSet.data().values()) {
             var resSource = noeData.getResonanceSource();
             var atom = resSource.getAtom();
             Entity entity = atom.getTopEntity();
@@ -1003,13 +1000,12 @@ public class NMRStarWriter {
      *
      * @param chan          Writer. The Writer to use
      * @param molecule      Molecule. The molecule to use
-     * @param relaxDataList
+     * @param  relaxationSet
      * @param listID        int. The number of the R1/R2/T1rho/NOE block in the file.
      * @throws IOException
      */
-    public static void writeRelaxation(Writer chan, MoleculeBase molecule, List<RelaxationData> relaxDataList, int listID) throws IOException {
-        RelaxationData relaxDataA0 = relaxDataList.get(0);
-        relaxTypes expType = relaxDataA0.getExpType();
+    public static void writeRelaxation(Writer chan, MoleculeBase molecule, RelaxationSet relaxationSet, int listID) throws IOException {
+        RelaxTypes expType = relaxationSet.relaxType();
         String expName = expType.getName().toUpperCase();
         if (expName.equals("R1")) {
             expName = "T1";
@@ -1017,10 +1013,10 @@ public class NMRStarWriter {
             expName = "T2";
         }
 
-        String frameName = relaxDataA0.getId();
-        double field = relaxDataA0.getField();
-        String coherenceType = relaxDataA0.getExtras().get("coherenceType");
-        String units = relaxDataA0.getExtras().get("units");
+        String frameName = relaxationSet.name();
+        double field = relaxationSet.field();
+        String coherenceType = relaxationSet.extras().get("coherenceType");
+        String units = relaxationSet.extras().get("units");
         chan.write("    ########################################\n");
         chan.write("    #  Heteronuclear " + expName + " relaxation values  #\n");
         chan.write("    ########################################\n");
@@ -1062,7 +1058,7 @@ public class NMRStarWriter {
         String[] loopStrings = {"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
                 "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number", "Val", "Val_err", "Resonance_ID", "Auth_entity_assembly_ID",
                 "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Heteronucl_" + expName + "_list_ID"};
-        if (expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO)) {
+        if (expType.equals(RelaxTypes.R2) || expType.equals(RelaxTypes.R1RHO)) {
             loopStrings = new String[]{"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
                     "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number", expName + "_val", expName + "_val_err", "Rex_val", "Rex_err",
                     "Resonance_ID", "Auth_entity_assembly_ID", "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Heteronucl_" + expName + "_list_ID"};
@@ -1077,7 +1073,7 @@ public class NMRStarWriter {
 
         List<String> prevRes = new ArrayList<>();
 
-        for (RelaxationData relaxData : relaxDataList) {
+        for (RelaxationData relaxData : relaxationSet.data().values()) {
             var resSource = relaxData.getResonanceSource();
             var atom = resSource.getAtom();
             Entity entity = atom.getTopEntity();
@@ -1087,9 +1083,13 @@ public class NMRStarWriter {
             List<Double> results = new ArrayList<>();
             results.add(value);
             results.add(error);
-            if (expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO)) {
-                Double RexValue = ((RelaxationRex) relaxData).getRexValue();
-                Double RexError = ((RelaxationRex) relaxData).getRexError();
+            if (expType.equals(RelaxTypes.R2) || expType.equals(RelaxTypes.R1RHO)) {
+                Double RexValue = null;
+                Double RexError = null;
+                if (relaxData instanceof RelaxationRex relaxationRex) {
+                    RexValue = relaxationRex.getRexValue();
+                    RexError = relaxationRex.getRexError();
+                }
                 results.add(RexValue);
                 results.add(RexError);
             }
@@ -1110,7 +1110,7 @@ public class NMRStarWriter {
      * STAR file.
      *
      * @param idx      int. The line index
-     * @param expType  relaxTypes. The experiment type: R1, R2, T1rho.
+     * @param expType  RelaxTypes. The experiment type: R1, R2, T1rho.
      * @param listID   int. The number of the R1/R2/T1rho block in the file.
      * @param entityID int. The number of the molecular entity.
      * @param atom     Atom. The atom in the molecule.
@@ -1118,7 +1118,7 @@ public class NMRStarWriter {
      *                 RexError}.
      * @return String ready for STAR output
      */
-    public static String toStarRelaxationString(int idx, relaxTypes expType, int listID, int entityID, Atom atom, List<Double> results) {
+    public static String toStarRelaxationString(int idx, RelaxTypes expType, int listID, int entityID, Atom atom, List<Double> results) {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(String.format("%-5d", idx));
         buildAtomString(sBuilder, atom, entityID);
@@ -1149,8 +1149,7 @@ public class NMRStarWriter {
      * @param listID       int. The number of the R1/R2/T1rho/NOE block in the file.
      * @throws IOException
      */
-    public static void writeOrderPars(Writer chan, MoleculeBase molecule, List<OrderPar> orderParList, int listID, String frameName) throws IOException {
-        OrderPar orderPar0 = orderParList.get(0);
+    public static void writeOrderPars(Writer chan, MoleculeBase molecule, OrderParSet orderParSet, List<OrderPar> orderParList, int listID, String frameName) throws IOException {
         String catName = "_Order_parameter_list";
 
         chan.write("    ########################################\n");
@@ -1272,7 +1271,7 @@ public class NMRStarWriter {
         chan.write("    ######################################\n");
         chan.write("    # Saved " + date + " #\n");
         chan.write("    ######################################\n");
-        ResonanceFactory resFactory = PeakList.resFactory();
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         resFactory.clean();
         
         MoleculeBase molecule = MoleculeFactory.getActive();
@@ -1319,17 +1318,17 @@ public class NMRStarWriter {
             var molRelaxData = RelaxationData.getRelaxationData(molecule.getAtomArray());
             // loop over types so they always end up in same order in star file (useful for testing)
             // also results in listID counting from 1 for each type
-            for (var type : relaxTypes.values()) {
+            for (var type : RelaxTypes.values()) {
                 int listID = 1;
                 for (var relaxEntry : molRelaxData.entrySet()) {
-                    var relaxDataList = relaxEntry.getValue();
-                    if (!relaxDataList.isEmpty()) {
-                        var relaxType = relaxDataList.get(0).getExpType();
+                    var relaxationSet = relaxEntry.getKey();
+                    if (!relaxationSet.data().isEmpty()) {
+                        var relaxType = relaxationSet.relaxType();
                         if (relaxType == type) {
-                            if (relaxType == relaxTypes.NOE) {
-                                writeNOE(chan, molecule, relaxDataList, listID);
+                            if (relaxType == RelaxTypes.NOE) {
+                                writeNOE(chan, molecule, relaxationSet, listID);
                             } else {
-                                writeRelaxation(chan, molecule, relaxDataList, listID);
+                                writeRelaxation(chan, molecule, relaxationSet, listID);
                             }
                             listID++;
                         }
@@ -1340,8 +1339,9 @@ public class NMRStarWriter {
             int listID = 1;
             for (var relaxEntry : orderParData.entrySet()) {
                 var orderParList = relaxEntry.getValue();
+                var orderParSet = relaxEntry.getKey();
                 if (!orderParList.isEmpty()) {
-                    writeOrderPars(chan, molecule, orderParList, listID, relaxEntry.getKey());
+                    writeOrderPars(chan, molecule, orderParSet,  orderParList, listID, orderParSet.name());
                     listID++;
                 }
             }

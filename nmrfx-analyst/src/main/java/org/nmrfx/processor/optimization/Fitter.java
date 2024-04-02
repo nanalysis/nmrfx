@@ -117,16 +117,27 @@ public class Fitter {
         return values;
     }
 
-    public PointValuePair fit(double[] start, double[] lowerBounds, double[] upperBounds, double inputSigma) throws Exception {
+    public PointValuePair fit(double[] start, double[] lowerBounds, double[] upperBounds, double inputSigma, int nTries) throws Exception {
         this.start = start;
         this.lowerBounds = lowerBounds.clone();
         this.upperBounds = upperBounds.clone();
         this.inputSigma = inputSigma;
         Optimizer opt = new Optimizer();
         opt.setXYE(xValues, yValues, errValues);
-        PointValuePair result = opt.refineCMAES(start, inputSigma);
+        PointValuePair bestResult = null;
+        for (int iTry=0;iTry< nTries;iTry++) {
+            PointValuePair result = opt.refineCMAES(this.start, inputSigma);
+            if ((bestResult == null) || (result.getValue() < bestResult.getValue())) {
+                bestResult = result;
+            }
+            for (int iPar=0;iPar< this.start.length;iPar++) {
+                double delta = (this.upperBounds[iPar] - this.lowerBounds[iPar]);
+                this.start[iPar] = this.lowerBounds[iPar] + delta * 0.8 * random.nextDouble() + delta*0.1;
+            }
+        }
 
-        return result;
+
+        return bestResult;
     }
 
     public double rms(double[] pars) throws Exception {

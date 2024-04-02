@@ -531,10 +531,6 @@ public class GUIScripter {
                 for (CanvasAnnotation annoType : annoTypes) {
                     chart.addAnnotation(annoType);
                 }
-                for (CanvasAnnotation annoType: chart.getCanvasAnnotations()) {
-                    System.out.println(annoType.getClass());
-                }
-
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -557,8 +553,8 @@ public class GUIScripter {
         return future.get();
     }
 
-    public void newStage() {
-        controller = AnalystApp.getFXMLControllerManager().newController();
+    public void newStage(String title) {
+        controller = AnalystApp.getFXMLControllerManager().newController(title);
         PolyChart chartActive = controller.getCharts().get(0);
         controller.setActiveChart(chartActive);
     }

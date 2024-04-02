@@ -529,7 +529,14 @@ public class DatasetsController implements Initializable, StageBasedController, 
         if (valueDataset != null) {
             double[] values = items.stream().mapToDouble(ValueItem::getValue).toArray();
             int nDim = valueDataset.getNDim();
-            valueDataset.setValues(nDim - 1, values);
+            int vDim = nDim - 1;
+            for (int i = 0; i < nDim; i++) {
+                double[] values2 = valueDataset.getValues(i);
+                if ((values2 != null) && (values2.length > 1)) {
+                    vDim = i;
+                }
+            }
+            valueDataset.setValues(vDim, values);
         }
     }
 

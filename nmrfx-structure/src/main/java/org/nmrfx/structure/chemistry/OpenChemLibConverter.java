@@ -8,8 +8,16 @@ import com.actelion.research.chem.SmilesParser;
 import com.actelion.research.chem.StereoMolecule;
 import org.nmrfx.chemistry.*;
 import org.openmolecules.chem.conf.gen.ConformerGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static org.nmrfx.chemistry.Bond.*;
 
@@ -17,13 +25,11 @@ import static org.nmrfx.chemistry.Bond.*;
  * @author brucejohnson
  */
 public class OpenChemLibConverter {
+    private static final Logger log = LoggerFactory.getLogger(OpenChemLibConverter.class);
 
     static final HashMap<String, AtomContainer> molecules = new HashMap<>();
 
-    /**
-     * Creates a new instance of OpenChemLibConverter
-     */
-    public OpenChemLibConverter() {
+    private OpenChemLibConverter() {
     }
 
     public static AtomContainer getMolecule(String name) {
@@ -39,11 +45,66 @@ public class OpenChemLibConverter {
         molecules.clear();
     }
 
-    public static Molecule parseSmiles(String molName, String smilesString) {
+    public static Molecule parseSmiles(String molName, String smilesString) throws IllegalArgumentException {
         SmilesParser smilesParser = new SmilesParser();
         StereoMolecule mol = smilesParser.parseMolecule(smilesString);
+        if (mol == null) {
+            throw new IllegalArgumentException("Invalid SMILES string");
+        }
+        ConformerGenerator.addHydrogenAtoms(mol);
         return convertFromStereoMolecule(mol, molName);
     }
+
+    public static String getMolName(String fileName) {
+        File file = new File(fileName);
+
+        String fileTail = file.getName();
+        String fileRoot;
+        int dot = fileTail.indexOf(".");
+
+        if (dot != -1) {
+            fileRoot = fileTail.substring(0, dot);
+        } else {
+            fileRoot = fileTail;
+        }
+        return fileRoot;
+    }
+
+    public static List<Molecule> readSMILES(File file) throws IOException {
+        List<Molecule> molecules = new ArrayList<>();
+        Path path = file.toPath();
+        String rootName = getMolName(file.getName());
+        int i = 1;
+        List<String> lines = Files.readAllLines(path);
+        for (String line : lines) {
+            String[] fields = line.split("\t");
+            String molName;
+            String smileString;
+            if (fields.length == 2) {
+                molName = fields[0];
+                smileString = fields[1];
+            } else {
+                if (lines.size() > 1) {
+                    molName = rootName + "_" + i;
+                } else {
+                    molName = rootName;
+                }
+                smileString = fields[0];
+            }
+            smileString = smileString.trim();
+            if (!smileString.isEmpty()) {
+                try {
+                    Molecule molecule = parseSmiles(molName, smileString);
+                    molecules.add(molecule);
+                    i++;
+                } catch (IllegalArgumentException iAE) {
+                    log.error("Can't parse SMILES", iAE);
+                }
+            }
+        }
+        return molecules;
+    }
+
 
     public static Molecule convertFromStereoMolecule(StereoMolecule stereoMolecule, String molName) {
         Molecule molecule = new Molecule(molName);
@@ -70,6 +131,12 @@ public class OpenChemLibConverter {
             double z = stereoMolecule.getAtomZ(i);
             Point3 pt = new Point3(x, y, z);
             atom.setPoint(structureNumber, pt);
+            String name = stereoMolecule.getAtomCustomLabel(i);
+            if ((name == null) || name.isEmpty()) {
+                atom.setName(aName + (i + 1));
+            } else {
+                atom.setName(name);
+            }
             compound.addAtom(atom);
         }
         int nBonds = stereoMolecule.getAllBonds();
@@ -89,9 +156,9 @@ public class OpenChemLibConverter {
             Order bondOrder = Order.getOrder(order);
             Atom.addBond(atomStart, atomEnd, bondOrder, stereo, false);
         }
+        compound.molecule.invalidateAtomArray();
         compound.molecule.updateAtomArray();
         compound.molecule.updateBondArray();
-
     }
 
     private static int toBondType(int order, int stereo) {
@@ -102,7 +169,6 @@ public class OpenChemLibConverter {
                     com.actelion.research.chem.Molecule.cBondTypeUp;
             case STEREO_BOND_DOWN -> com.actelion.research.chem.Molecule.cBondTypeDown;
             default -> switch (order) {
-                case 1 -> com.actelion.research.chem.Molecule.cBondTypeSingle;
                 case 2 -> com.actelion.research.chem.Molecule.cBondTypeDouble;
                 case 3 -> com.actelion.research.chem.Molecule.cBondTypeTriple;
                 case 4 -> com.actelion.research.chem.Molecule.cBondTypeDelocalized;
@@ -113,19 +179,22 @@ public class OpenChemLibConverter {
         };
     }
 
-    public static StereoMolecule convertToStereoMolecule(Molecule molecule) {
+    public static StereoMolecule convertToStereoMolecule(AtomContainer molecule) {
         var stereoMolecule = new StereoMolecule();
         int structureNumber = 0;
         HashMap<Atom, Integer> atomHash = new HashMap<>();
-        for (Atom atom : molecule.getAtomArray()) {
+        for (var atomI : molecule.atoms()) {
+            Atom atom = (Atom) atomI;
             int iAtom = stereoMolecule.addAtom(atom.getAtomicNumber());
+            stereoMolecule.setAtomCustomLabel(iAtom, atom.getName());
             Point3 pt = atom.getPoint(structureNumber);
             stereoMolecule.setAtomX(iAtom, pt.getX());
             stereoMolecule.setAtomY(iAtom, pt.getY());
             stereoMolecule.setAtomZ(iAtom, pt.getZ());
             atomHash.put(atom, iAtom);
         }
-        for (Bond bond : molecule.getBondList()) {
+        for (IBond bondI : molecule.bonds()) {
+            Bond bond = (Bond) bondI;
             Atom atom1 = bond.begin;
             Atom atom2 = bond.end;
             int order = bond.order.getOrderNum();
@@ -140,15 +209,16 @@ public class OpenChemLibConverter {
     }
 
     public static void to3D(Molecule molecule) {
-        var ligands = molecule.getLigands();
-        if (!ligands.isEmpty()) {
-            StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(molecule);
+        for (var ligand : molecule.getLigands()) {
+            StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(ligand);
             ConformerGenerator cg = new ConformerGenerator();
             var conf = cg.getOneConformer(sMol);
-            var mol3D = conf.toMolecule();
+            var mol3D = conf.toMolecule(sMol);
             ConformerGenerator.addHydrogenAtoms(mol3D);
-            Compound compound = ligands.get(0);
-            OpenChemLibConverter.convertFromStereoMolecule(mol3D, compound);
+            OpenChemLibConverter.convertFromStereoMolecule(mol3D, ligand);
         }
+        molecule.inactivateAtoms();
+        molecule.updateAtomArray();
+        molecule.updateBondArray();
     }
 }

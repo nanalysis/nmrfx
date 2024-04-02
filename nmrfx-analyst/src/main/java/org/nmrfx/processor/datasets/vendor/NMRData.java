@@ -824,10 +824,10 @@ public interface NMRData {
      * @throws IOException         if an I/O error occurs
      * @throws ProcessingException if a processing error occurs
      */
-    default SampleSchedule readSampleSchedule(String path, boolean demo)
+    default SampleSchedule readSampleSchedule(String path, boolean demo, boolean phaseMode)
             throws IOException, ProcessingException {
         if ((new java.io.File(path)).exists()) {
-            SampleSchedule schedule = new SampleSchedule(path, demo);
+            SampleSchedule schedule = new SampleSchedule(path, demo, phaseMode);
             setSampleSchedule(schedule);
             return schedule;
         } else {

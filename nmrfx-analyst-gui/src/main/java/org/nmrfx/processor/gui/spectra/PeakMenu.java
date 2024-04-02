@@ -59,4 +59,8 @@ public class PeakMenu extends ChartMenu {
     public void setActivePeak(Peak peak) {
         this.peak = peak;
     }
+
+    public Peak getPeak() {
+        return peak;
+    }
 }

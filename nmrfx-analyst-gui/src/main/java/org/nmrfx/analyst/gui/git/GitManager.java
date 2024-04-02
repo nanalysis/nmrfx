@@ -202,15 +202,20 @@ public class GitManager {
         } else {
             msg = "";
         }
-        Task<Boolean> task = new Task<>() {
-            @Override
-            protected Boolean call() {
-                return gitCommit(msg);
-            }
-        };
-        Thread th = new Thread(task);
-        th.setDaemon(true);
-        th.start();
+        boolean useThread = false;
+        if (useThread) {
+            Task<Boolean> task = new Task<>() {
+                @Override
+                protected Boolean call() {
+                    return gitCommit(msg);
+                }
+            };
+            Thread th = new Thread(task);
+            th.setDaemon(true);
+            th.start();
+        } else {
+            gitCommit(msg);
+        }
     }
 
     public boolean gitCommit(String msg) {

@@ -56,6 +56,9 @@ public class WriteVector extends IO {
         // fixme always writes real, what if we want to write complex
         if (makeReal) {
             vector.makeReal();
+        } else {
+            // updates location point even though it doesn't change size
+            vector.resize(vector.getSize(), vector.isComplex());
         }
         if (index >= 0) {
             int[][] pt = vector.getPt();

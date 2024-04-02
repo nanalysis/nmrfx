@@ -1005,6 +1005,7 @@ public class PeakListTools {
             quantifyPeaks(peakList, dataset, f, mode);
         } else if (nDim == (nDataDim - 1)) {
             int scanDim = nDataDim - 1;
+            scanDim = 1;
             int nPlanes = dataset.getSizeTotal(scanDim);
             quantifyPeaks(peakList, dataset, f, mode, nPlanes);
         } else if (nDim > nDataDim) {

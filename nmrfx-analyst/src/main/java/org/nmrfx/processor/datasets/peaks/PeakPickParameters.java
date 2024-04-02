@@ -111,10 +111,6 @@ public class PeakPickParameters {
     }
 
     public void calcRange() {
-        int iDim = 0;
-        int j = 0;
-        String arg;
-        boolean ptMode = true;
         int dataDim = theFile.getNDim();
         pt = new int[dataDim][2];
         cpt = new double[dataDim];
@@ -186,23 +182,21 @@ public class PeakPickParameters {
         }
 
         if (nPeakDim > 1) {
-            int flatDim = 0;
-            int bigDim = 0;
             int nDims = 0;
             DimSizes[] dimSizes = new DimSizes[dataDim];
             for (int i = 0; i < dataDim; i++) {
+                if (!theFile.getFreqDomain(i)) {
+                    pt[i][0] = pt[i][1] = 0;
+                }
                 int dimSize = Math.abs(pt[i][1] - pt[i][0]) + 1;
 
                 if ((dimSize > 1) || (region.equalsIgnoreCase("point"))) {
                     nDims++;
-                } else {
-                    flatDim = i;
                 }
 
                 dimSizes[i] = new DimSizes(i, dimSize);
                 if (dimSize > maxSize) {
                     maxSize = dimSize;
-                    bigDim = i;
                 }
             }
             Arrays.sort(dimSizes);
@@ -233,7 +227,7 @@ public class PeakPickParameters {
         }
     }
 
-    private class DimSizes implements Comparable {
+    private static class DimSizes implements Comparable {
 
         final int iDim;
         final int dimSize;
@@ -246,15 +240,7 @@ public class PeakPickParameters {
         @Override
         public int compareTo(Object o2) {
             DimSizes d2 = (DimSizes) o2;
-            int result;
-            if (dimSize < d2.dimSize) {
-                result = 1;
-            } else if (dimSize > d2.dimSize) {
-                result = -1;
-            } else {
-                result = 0;
-            }
-            return result;
+            return Integer.compare(d2.dimSize, dimSize);
         }
     }
 }

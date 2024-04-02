@@ -7,7 +7,7 @@ import javafx.scene.control.MenuItem;
 import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.processor.gui.DatasetsController;
 import org.nmrfx.processor.gui.project.GUIProject;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 
 public class ViewMenuItems extends MenuActions {
 
@@ -53,7 +53,7 @@ public class ViewMenuItems extends MenuActions {
         if (datasetController == null) {
             datasetController = DatasetsController.create();
         }
-        GUIProject project = (GUIProject) Project.getActive();
+        GUIProject project = (GUIProject) ProjectBase.getActive();
         ObservableList datasetObs = (ObservableList) project.getDatasets();
         datasetController.setDatasetList(datasetObs);
         datasetController.getStage().show();

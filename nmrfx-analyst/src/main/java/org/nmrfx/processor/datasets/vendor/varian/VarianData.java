@@ -121,6 +121,19 @@ public class VarianData implements NMRData {
         checkAndOpenSampleSchedule(path);
     }
 
+    public String suggestName() {
+        File file = new File(fpath);
+        String name = file.getName();
+        if (name.equals("fid")) {
+            name = file.getParentFile().getName();
+        }
+        if (name.endsWith(".fid")) {
+            int len = name.length();
+            name = name.substring(0, len-3);
+        }
+        return name;
+    }
+
     @Override
     public void close() {
         try {
@@ -1086,7 +1099,7 @@ public class VarianData implements NMRData {
         if (scheduleFile.exists()) {
             log.info("exists");
             try {
-                readSampleSchedule(scheduleFile.getPath(), false);
+                readSampleSchedule(scheduleFile.getPath(), false, false);
                 gotSchedule = true;
             } catch (IOException ioE) {
                 gotSchedule = false;

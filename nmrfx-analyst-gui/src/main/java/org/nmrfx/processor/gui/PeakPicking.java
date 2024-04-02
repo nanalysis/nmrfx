@@ -8,6 +8,7 @@ package org.nmrfx.processor.gui;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.Peak;
@@ -43,10 +44,16 @@ public class PeakPicking {
         PolyChart chart = fxmlController.getActiveChart();
         ObservableList<DatasetAttributes> dataList = chart.getDatasetAttributes();
         peakPickPar.useCrossHairs = peakPickPar.useCrossHairs && chart.getCrossHairs().hasRegion();
+        boolean setListName = peakPickPar.listName == null;
         dataList.stream().filter(dataAttr -> !dataAttr.isProjection())
                 .filter(DatasetAttributes::getPos)
-                .forEach((DatasetAttributes dataAttr)
-                        -> peakPickActive(chart, dataAttr, null, peakPickPar));
+                .forEach(dataAttr -> {
+                    if (setListName) {
+                        peakPickPar.listName = getListName(chart, dataAttr);
+                    }
+                    peakPickActive(chart, dataAttr, null, peakPickPar);
+
+                });
         chart.refresh();
     }
 
@@ -99,25 +106,15 @@ public class PeakPicking {
                 return null;
             }
         }
-
-        if (peakPickPar.level == null) {
-            peakPickPar.level = dataAttr.getLvl();
-            if (nDim == 1) {
-                if (chart.getCrossHairs().getState(0, Orientation.HORIZONTAL)) {
-                    peakPickPar.level = chart.getCrossHairs().getPosition(0, Orientation.HORIZONTAL);
-                } else {
-                    peakPickPar.level /= 10.0;
-                }
-            }
-        }
         if (peakPickPar.mode == null) {
             peakPickPar.mode = "appendregion";
         }
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.calcRange();
+        int nFreqDim = datasetBase.getNFreqDims();
         for (int iDim = 0; iDim < nDim; iDim++) {
             int jDim = dataAttr.getDim(iDim);
-            if (iDim < 2) {
+            if ((iDim < 2) && (iDim < nFreqDim)) {
                 if (region != null) {
                     if (region.length > iDim) {
                         peakPickPar.limit(jDim, region[iDim][0], region[iDim][1]);
@@ -148,6 +145,20 @@ public class PeakPicking {
                 }
             }
         }
+
+        if (peakPickPar.level == null) {
+            peakPickPar.level = dataAttr.getLvl();
+            if (chart.is1D()) {
+                if (chart.getCrossHairs().getState(0, Orientation.HORIZONTAL) && chart.getCrossHairs().isVisible(0, Orientation.HORIZONTAL)) {
+                    peakPickPar.level = chart.getCrossHairs().getPosition(0, Orientation.HORIZONTAL);
+                } else {
+                    Analyzer analyzer = new Analyzer(peakPickPar.theFile);
+                    analyzer.calculateThreshold();
+                    peakPickPar.level = analyzer.getThreshold();
+                }
+            }
+        }
+
         PeakPicker picker = new PeakPicker(peakPickPar);
         PeakList peakList = null;
         try {

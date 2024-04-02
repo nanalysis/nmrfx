@@ -30,10 +30,10 @@ public class RelaxationRex extends RelaxationData {
     Double RexValue;
     Double RexError;
 
-    public RelaxationRex(String ID, relaxTypes expType, ResonanceSource resSource, double field, double temperature,
-                         Double value, Double error, Double RexValue, Double RexError, Map<String, String> extras) {
+    public RelaxationRex(RelaxationSet relaxationSet, ResonanceSource resSource,
+                         Double value, Double error, Double RexValue, Double RexError) {
 
-        super(ID, expType, resSource, field, temperature, value, error, extras);
+        super(relaxationSet, resSource, value, error);
 
         this.RexValue = RexValue;
         this.RexError = RexError;
@@ -49,13 +49,13 @@ public class RelaxationRex extends RelaxationData {
 
     @Override
     public String[] getParNames() {
-        String[] parNames = {getExpType().getName(), "Rex"};
+        String[] parNames = {getRelaxationSet().relaxType().getName(), "Rex"};
         return parNames;
     }
 
     @Override
     public Double getValue(String name) {
-        if (name.equals(getExpType().getName())) {
+        if (name.equals(getRelaxationSet().relaxType().getName())) {
             return getValue();
         } else if (name.equals("Rex")) {
             return RexValue;
@@ -66,7 +66,7 @@ public class RelaxationRex extends RelaxationData {
 
     @Override
     public Double getError(String name) {
-        if (name.equals(getExpType().getName())) {
+        if (name.equals(getRelaxationSet().relaxType().getName())) {
             return getError();
         } else if (name.equals("Rex")) {
             return RexError;

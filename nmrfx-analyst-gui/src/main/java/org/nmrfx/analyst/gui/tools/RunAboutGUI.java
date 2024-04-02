@@ -48,8 +48,9 @@ import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.processor.gui.spectra.PeakMenu;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.seqassign.*;
 import org.nmrfx.structure.seqassign.FragmentScoring.AAScore;
@@ -131,12 +132,20 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         return navigatorToolBar;
     }
 
+    public FXMLController getController() {
+        return controller;
+    }
+
     public void close() {
         closeAction.accept(this);
     }
 
     public TabPane getTabPane() {
         return tabPane;
+    }
+
+    public String getArrangement() {
+        return currentArrangement;
     }
 
     class SeqPane extends Pane {
@@ -352,7 +361,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         MapChangeListener<String, PeakList> peakmapChangeListener =
                 (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakTableView();
 
-        Project.getActive().addPeakListListener(peakmapChangeListener);
+        ProjectBase.getActive().addPeakListListener(peakmapChangeListener);
 
         Button configureButton = new Button("Inspector");
         configureButton.setOnAction(e -> inspectPeakList());
@@ -484,7 +493,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         actionMenuButton.getItems().add(alignItem);
 
         MenuItem filterItem = new MenuItem("Filter");
-        filterItem.setOnAction(e -> runAbout.filterPeaks());
+        filterItem.setOnAction(e -> filter());
         actionMenuButton.getItems().add(filterItem);
 
         MenuItem assembleItem = new MenuItem("Assemble");
@@ -547,14 +556,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         thawItem.setOnAction(e -> thawSystem());
         spinSysMenuButton.getItems().add(thawItem);
 
+        MenuItem thawAllItem = new MenuItem("Thaw All");
+        thawAllItem.setOnAction(e -> thawAllSystems());
+        spinSysMenuButton.getItems().add(thawAllItem);
 
         toolBar.getItems().add(spinSysMenuButton);
 
         Slider probSlider = new Slider(1, 100, 20.0);
-        toolBar.getItems().add(probSlider);
         Label probField = new Label();
         probField.setPrefWidth(100);
         probField.setText("0.02");
+        toolBar.getItems().addAll(probSlider, probField);
         probSlider.valueProperty().addListener(v -> probSliderChanged(probSlider, probField));
 
         ToolBarUtils.addFiller(navigatorToolBar, 40, 300);
@@ -603,7 +615,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         });
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
 
-        Project.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(mapChangeListener);
 
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
@@ -836,18 +848,21 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 if (resSeqScores.size() == 1) {
                     frag.setResSeqScore(resSeqScores.get(0));
                 }
-                for (ResidueSeqScore resSeqScore : resSeqScores) {
+                resSeqScores.stream().sorted((a,b) -> Double.compare(a.getScore(), b.getScore())).forEach(resSeqScore -> {
                     log.debug("{} {}", resSeqScore.getFirstResidue().getNumber(), resSeqScore.getScore());
                     Residue residue = resSeqScore.getFirstResidue();
+                    double score = resSeqScore.getScore();
                     for (int iRes = 0; iRes < resSeqScore.getNResidues(); iRes++) {
                         String key = residue.getPolymer().getName() + residue.getNumber();
                         ResidueLabel resLabel = residueLabelMap.get(key);
-                        resLabel.setColor(Color.LIGHTGREEN);
+                        Color color = Color.LIGHTYELLOW.interpolate(Color.LIGHTGREEN, score);
+                        resLabel.setColor(color);
                         SpinSystem iSpinSystem = frag.getSpinSystem(iRes);
                         resLabel.setSpinSystem(iSpinSystem);
+                        resLabel.setTooltip(residue.getNumber() + " " + String.format("%.3f", score));
                         residue = residue.getNext();
                     }
-                }
+                });
             });
         }
 
@@ -957,10 +972,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
                         if (i == 0) {
                             otherSys = spinMatch.getSpinSystemA();
-                            matchSys = otherSys.getMatchToNext().get(0).getSpinSystemB();
+                            var otherMatches = otherSys.getMatchToNext();
+                            matchSys = otherMatches.isEmpty() ? null : otherMatches.get(0).getSpinSystemB();
                         } else {
                             otherSys = spinMatch.getSpinSystemB();
-                            matchSys = otherSys.getMatchToPrevious().get(0).getSpinSystemA();
+                            var otherMatches = otherSys.getMatchToPrevious();
+                            matchSys = otherMatches.isEmpty() ? null : otherMatches.get(0).getSpinSystemA();
                         }
                         boolean confirmed = spinSys.confirmed(spinMatch, i == 0);
                         boolean available = confirmed || !otherSys.confirmed(i == 1);
@@ -1252,6 +1269,14 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
+    void filter() {
+        var filterResult = runAbout.filterPeaks();
+        var console = AnalystApp.getConsoleController();
+        console.write("Filter Peaks\n");
+        for (var entry : filterResult.entrySet()) {
+            console.write(entry.getKey() + " " + entry.getValue() + "\n");
+        }
+    }
     void assemble() {
         runAbout.assemble();
         updatePeakListMenu();
@@ -1266,7 +1291,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             peakListMenuButton.getItems().add(spinSysMenuItem);
         }
 
-        for (String peakListName : Project.getActive().getPeakListNames()) {
+        for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 RunAboutGUI.this.setPeakList(peakListName);
@@ -1708,7 +1733,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             if (widthType.equals(("peak"))) {
                 SpectralDim sDim = peakList.getSpectralDim(dataDimName);
                 if (sDim != null) {
-                    var widthStats = peakList.widthStatsPPM(sDim.getDataDim());
+                    var widthStats = peakList.widthStatsPPM(sDim.getIndex());
                     width = 10.0 * widthStats.getAverage();
                 } else {
                     width = null;
@@ -1798,7 +1823,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                         AnnoSimpleLine annoSimpleLine = iDim == 0 ?
                                 new AnnoSimpleLine(ppm, 0.0, ppm, 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.FRACTION) :
                                 new AnnoSimpleLine(0.0, ppm, 1.0, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
-                        var color = Color.BLUE;
+                        var color = Color.BLUEVIOLET;
                         annoSimpleLine.setStroke(color);
                         chart.addAnnotation(annoSimpleLine);
                     }
@@ -1824,7 +1849,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
-    void genWin(String arrangeName) {
+    public void genWin(String arrangeName) {
         if (runAbout.isActive()) {
             currentArrangement = arrangeName;
             RunAboutArrangement arrangement = runAboutArrangements.getArrangements().get(arrangeName);
@@ -1878,6 +1903,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                             dataAttr.setDims(iDims);
                             List<String> peakLists = Collections.singletonList(peakList.getName());
                             chart.updatePeakLists(peakLists);
+                            updateChartPeakMenu(chart);
                             winPatterns.put(chart, sDims.stream().map(SpectralDim::getPattern).collect(Collectors.toList()));
                         }
                     });
@@ -1893,6 +1919,49 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             }
 
         }
+    }
+
+    void updateChartPeakMenu(PolyChart chart) {
+        if (chart.getPeakMenu() instanceof  PeakMenu peakMenu) {
+            if (peakMenu.chartMenu.getItems().size() == 1) {
+                Menu menuItem = new Menu("Pattern");
+                peakMenu.chartMenu.getItems().add(menuItem);
+                peakMenu.chartMenu.setOnShown(e -> updateChartPeakMenu(peakMenu, menuItem));
+            }
+        }
+    }
+
+    void updateChartPeakMenu(PeakMenu peakMenu, Menu menu) {
+        Peak peak = peakMenu.getPeak();
+        menu.getItems().clear();
+        if (peak != null) {
+            PeakList peakList = peak.getPeakList();
+            for (var sDim : peakList.getSpectralDims()) {
+                var pats = RunAbout.getPatterns(sDim);
+                if (pats.size() > 1) {
+                    for (String pattern : pats) {
+                        PeakDim peakDim = peak.getPeakDim(sDim.getDataDim());
+                        String patternChoice = sDim.getDimName() + " " + pattern.toLowerCase();
+                        if (pattern.equalsIgnoreCase(peakDim.getUser())) {
+                            patternChoice += " <<";
+                        }
+                        MenuItem menuItem = new MenuItem(patternChoice);
+                        menu.getItems().add(menuItem);
+                        menuItem.setOnAction(e -> updatePeakPattern(peak, sDim, pattern.toLowerCase()));
+                    }
+                }
+            }
+        }
+    }
+
+    void updatePeakPattern(Peak peak, SpectralDim sDim, String pattern) {
+        if (pattern.endsWith("-")) {
+            pattern = pattern.substring(0, pattern.length() -1);
+        }
+        peak.getPeakDim(sDim.getDataDim()).setUser(pattern);
+        currentSpinSystem.updateSpinSystem();
+        currentSpinSystem.compare();
+        gotoSpinSystems();
     }
 
     void drawWins(List<Peak> peaks) {
@@ -1912,7 +1981,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             Peak peak = peaks.get(iCol);
             chart.clearAnnotations();
             if (peak != null && !chart.getDatasetAttributes().isEmpty()) {
-                refreshChart(chart, iChart, peak);
+                refreshChart(chart, iChart, peak, true);
             }
             iChart++;
         }
@@ -1944,7 +2013,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             Peak peak = spinSystem.getRootPeak();
             chart.clearAnnotations();
             if (peak != null && !chart.getDatasetAttributes().isEmpty()) {
-                refreshChart(chart, iChart, peak);
+                refreshChart(chart, iChart, peak, false);
                 PeakList currentList = null;
                 if (!chart.getPeakListAttributes().isEmpty()) {
                     PeakListAttributes peakAttr = chart.getPeakListAttributes().get(0);
@@ -2049,7 +2118,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
-    void refreshChart(PolyChart chart, int iChart, Peak peak) {
+    void refreshChart(PolyChart chart, int iChart, Peak peak, boolean annoHorizontal) {
         DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
         int cDim = chart.getNDim();
         int aDim = dataAttr.nDim;
@@ -2073,13 +2142,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 if (i == 0) {
                     AnnoSimpleLine annoSimpleLine = new AnnoSimpleLine(ppms[0], 0.0, ppms[0], 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.
                             FRACTION);
-                    annoSimpleLine.setStroke(Color.BLUE);
+                    annoSimpleLine.setStroke(Color.BLUEVIOLET);
                     annoSimpleLine.setLineWidth(0.0);
                     chart.addAnnotation(annoSimpleLine);
-                } else if (i == 1) {
+                } else if (annoHorizontal && (i == 1)) {
                     AnnoSimpleLine annoSimpleLine = new AnnoSimpleLine(0.0, ppms[1], 1.0, ppms[1], CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.
                             WORLD);
-                    annoSimpleLine.setStroke(Color.BLUE);
+                    annoSimpleLine.setStroke(Color.BLUEVIOLET);
                     annoSimpleLine.setLineWidth(0.0);
                     chart.addAnnotation(annoSimpleLine);
                 }
@@ -2212,5 +2281,14 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             }
             spinStatus.updateFragment(currentSpinSystem);
         });
+    }
+
+    void thawAllSystems() {
+        if (GUIUtils.affirm("Thaw all fragments, this will unassign atoms and peaks")) {
+            runAbout.getSpinSystems().thawAll();
+            spinStatus.updateFragment(currentSpinSystem);
+            gotoSpinSystems();
+            updateClusterCanvas();
+        }
     }
 }

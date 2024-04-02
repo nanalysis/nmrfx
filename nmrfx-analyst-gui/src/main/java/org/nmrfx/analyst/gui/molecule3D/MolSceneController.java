@@ -34,7 +34,9 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PreferencesController;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
+import org.nmrfx.structure.chemistry.MissingCoordinatesException;
+import org.nmrfx.processor.gui.utils.AtomUpdater;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
@@ -55,7 +57,7 @@ import java.util.*;
 
 import static org.nmrfx.analyst.gui.molecule3D.MolSceneController.StructureCalculator.StructureMode.*;
 
-public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater {
+public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater, MoleculeListener {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
@@ -92,6 +94,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     CheckMenuItem frozenCheckBox = new CheckMenuItem("Frozen");
     CheckMenuItem activeCheckBox = new CheckMenuItem("Active");
     CheckMenuItem numbersCheckBox = new CheckMenuItem("Numbers");
+    CheckMenuItem probabilitiesCheckBox = new CheckMenuItem("Probabilities");
     ToggleGroup predictionTypeGroup = new ToggleGroup();
 
     @FXML
@@ -109,6 +112,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     PeakList peakList = null;
     int itemIndex = 0;
     private StructureCalculator structureCalculator = new StructureCalculator();
+    SSPredictor ssPredictor = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -119,6 +123,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         stackPane.getChildren().addAll(molViewer, twoDPane);
         molBorderPane.setCenter(stackPane);
         ssViewer.getDrawNumbersProp().bind(numbersCheckBox.selectedProperty());
+        ssViewer.getDrawProbabilitiesProp().bind(probabilitiesCheckBox.selectedProperty());
         ssViewer.getShowActiveProp().bind(activeCheckBox.selectedProperty());
         dotBracketField.setEditable(true);
         dotBracketField.textProperty().addListener(e -> {
@@ -145,9 +150,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
             updatePeakListMenu();
         };
 
-        Project.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(mapChangeListener);
         updatePeakListMenu();
         modeMenuButton.getItems().add(numbersCheckBox);
+        modeMenuButton.getItems().add(probabilitiesCheckBox);
         modeMenuButton.getItems().add(activeCheckBox);
         modeMenuButton.getItems().add(frozenCheckBox);
         Menu predictionMenu = new Menu("Predictions");
@@ -213,6 +219,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     }
 
+    private void selectedResidue(MouseEvent event) {
+
+    }
+
     private void updateAtoms(String name, boolean selected) {
         if (name.equals("Ribose")) {
             for (var menuItem : atomCheckItems) {
@@ -272,7 +282,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     @FXML
-    void drawMol(ActionEvent event) throws InvalidMoleculeException {
+    void drawMol(ActionEvent event) throws InvalidMoleculeException, MissingCoordinatesException {
         molViewer.drawMol();
     }
 
@@ -306,6 +316,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
         }
     }
 
+    public void clearSS() {
+        dotBracketPane.getChildren().clear();
+        ssViewer.clear();
+        dotBracketField.clear();
+    }
     @FXML
     void layoutSS() throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
@@ -330,6 +345,9 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 ssViewer.loadCoordinates(ssLayout);
                 ssViewer.drawSS();
             }
+            AtomUpdater atomUpdater = new AtomUpdater(Molecule.getActive());
+            Molecule.getActive().registerUpdater(atomUpdater);
+            Molecule.getActive().registerAtomChangeListener(this);
         }
     }
 
@@ -730,7 +748,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : Project.getActive().getPeakListNames()) {
+        for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 PeakList peakList = PeakList.get(peakListName);
@@ -841,7 +859,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     private void seqTo2D() {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
-            SSPredictor ssPredictor = new SSPredictor();
+            ssPredictor = new SSPredictor();
             String rnModelDir = PreferencesController.getRNAModelDirectory();
             if (rnModelDir.isEmpty()) {
                 DirectoryChooser directoryChooser = new DirectoryChooser();
@@ -869,7 +887,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
             String sequence = seqBuilder.toString();
             try {
                 ssPredictor.predict(sequence);
-                List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(0.3);
+                ssViewer.setSSPredictor(ssPredictor);
+                List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(0.30);
                 String dotBracket = ssPredictor.getDotBracket(basePairs);
                 molecule.setDotBracket(dotBracket);
                 layoutSS();
@@ -879,6 +898,15 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 exceptionDialog.showAndWait();
             }
 
+        }
+    }
+    private void get2D(double pLimit) throws InvalidMoleculeException {
+        Molecule molecule = Molecule.getActive();
+        if (molecule != null && ssPredictor != null) {
+            List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(pLimit);
+            String dotBracket = ssPredictor.getDotBracket(basePairs);
+            molecule.setDotBracket(dotBracket);
+            layoutSS();
         }
     }
 
@@ -1127,6 +1155,9 @@ public class MolSceneController implements Initializable, StageBasedController, 
     public void clearProcessingTextLabel() {
         statusBar.setText("");
         statusCircle.setFill(Color.GREEN);
+    }
+    public void moleculeChanged(MoleculeEvent e){
+        Fx.runOnFxThread(ssViewer::drawSS);
     }
 
 }
