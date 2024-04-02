@@ -8,7 +8,6 @@ package org.nmrfx.processor.gui.project;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
-import javafx.concurrent.Task;
 import org.eclipse.jgit.util.FS;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.git.GitManager;
@@ -33,7 +32,6 @@ import java.nio.file.*;
  * @author Bruce Johnson
  */
 public class GUIProject extends StructureProject {
-    static boolean commitActive;
     private static final Logger log = LoggerFactory.getLogger(GUIProject.class);
     private static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     GitManager gitManager;
@@ -93,7 +91,7 @@ public class GUIProject extends StructureProject {
         if (getEnvironmentVariable("XDG_CONFIG_HOME") != null) {
             return;
         }
-        boolean setUserHome = false;
+        boolean setUserHome;
         String home = getEnvironmentVariable("HOME");
         if (home != null) {
             setUserHome = isFileWritable(new File(home));
@@ -177,12 +175,12 @@ public class GUIProject extends StructureProject {
             Path subDirectory = fileSystem.getPath(projectDir.toString(), "windows");
             loadWindows(subDirectory);
             PreferencesController.saveRecentProjects(projectDir.toString());
-        }
 
-        setProjectDir(projectDir);
-        gitManager.setProject(this);
-        gitManager.gitOpen();
-        PreferencesController.saveRecentProjects(projectDir.toString());
+            setProjectDir(projectDir);
+            gitManager.setProject(this);
+            gitManager.gitOpen();
+            PreferencesController.saveRecentProjects(projectDir.toString());
+        }
     }
 
     @Override
@@ -201,26 +199,6 @@ public class GUIProject extends StructureProject {
         currentProject.setActive();
     }
 
-    void gitCommitOnThread() {
-        Task<Boolean> task = new Task<Boolean>() {
-            @Override
-            protected Boolean call() {
-                return gitCommit();
-            }
-        };
-        Thread th = new Thread(task);
-        th.setDaemon(true);
-        th.start();
-    }
-
-    public static boolean isCommitting() {
-        return commitActive;
-    }
-
-    boolean gitCommit() {
-        return gitManager.gitCommit("");
-    }
-
     @Override
     public void addPeakList(PeakList peakList, String name) {
         super.addPeakList(peakList, name);
@@ -228,6 +206,7 @@ public class GUIProject extends StructureProject {
         peakList.registerUpdater(updater);
     }
 
+    @Override
     public void removePeakList(String name) {
         PeakList peakList = peakLists.get(name);
         if (peakList != null) {
@@ -241,13 +220,16 @@ public class GUIProject extends StructureProject {
         WindowIO.loadWindows(dir);
     }
 
-    void saveWindows(Path dir) throws IOException {
+    void saveWindows(Path dir) {
         WindowIO.saveWindows(dir);
     }
 
-    public void addPeakListListener(Object mapChangeListener) {
-        ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
-        obsMap.addListener((MapChangeListener<String, PeakList>) mapChangeListener);
+    @Override
+    public void addPeakListListener(Object mapChangeObject) {
+        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
+            ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
+            obsMap.addListener(mapChangeListener);
+        }
     }
 
     @Override
